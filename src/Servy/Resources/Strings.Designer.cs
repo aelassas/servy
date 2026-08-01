@@ -1069,15 +1069,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Arguments exceed the Windows command-line limit of {0} characters..
-        /// </summary>
-        public static string Msg_ArgumentsLengthReached {
-            get {
-                return ResourceManager.GetString("Msg_ArgumentsLengthReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Failed to load JSON service configuration..
         /// </summary>
         public static string Msg_FailedToLoadJson {

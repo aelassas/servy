@@ -1,66 +1,66 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype">
-    <value>text/microsoft-resx</value>
-  </resheader>
-  <resheader name="version">
-    <value>2.0</value>
-  </resheader>
-  <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
-  </resheader>
-  <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
-  </resheader>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+	</resheader>
 
-  <data name="Msg_SecurityWarningTitle" xml:space="preserve">
+	<data name="Msg_SecurityWarningTitle" xml:space="preserve">
     <value>Elevation Required</value>
   </data>
-  <data name="Msg_SecurityWarningMessage" xml:space="preserve">
+	<data name="Msg_SecurityWarningMessage" xml:space="preserve">
     <value>Servy Manager requires administrative privileges to manage system services.</value>
   </data>
 
-  <data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
+	<data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
     <value>Security Alert</value>
   </data>
-  <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
+	<data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
     <value>Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965.</value>
   </data>
 
-  <!--Splash screen-->
-  <data name="Splash_Text" xml:space="preserve">
+	<!--Splash screen-->
+	<data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy Manager...</value>
   </data>
 
-  <!-- Menus -->
-  <data name="Menu_Import" xml:space="preserve">
+	<!-- Menus -->
+	<data name="Menu_Import" xml:space="preserve">
     <value>Import</value>
   </data>
-  <data name="Menu_ImportXml" xml:space="preserve">
+	<data name="Menu_ImportXml" xml:space="preserve">
     <value>Import XML configuration</value>
   </data>
-  <data name="Menu_ImportJson" xml:space="preserve">
+	<data name="Menu_ImportJson" xml:space="preserve">
     <value>Import JSON configuration</value>
   </data>
 
-  <data name="Menu_Config" xml:space="preserve">
+	<data name="Menu_Config" xml:space="preserve">
     <value>Configurator</value>
   </data>
 
-  <data name="Menu_Help" xml:space="preserve">
+	<data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
   </data>
-  <data name="Menu_Doc" xml:space="preserve">
+	<data name="Menu_Doc" xml:space="preserve">
     <value>Help / Documentation</value>
   </data>
-  <data name="Menu_CheckUpdates" xml:space="preserve">
+	<data name="Menu_CheckUpdates" xml:space="preserve">
     <value>Check for updates...</value>
   </data>
-  <data name="Menu_About" xml:space="preserve">
+	<data name="Menu_About" xml:space="preserve">
     <value>About Servy Manager</value>
   </data>
 
-  <data name="Text_About" xml:space="preserve">
+	<data name="Text_About" xml:space="preserve">
     <value>
 Servy Manager {0}
 
@@ -74,317 +74,317 @@ Copyright © {2} Akram El Assas. All rights reserved.
     </value>
   </data>
 
-  <!--Tabs-->
-  <data name="Label_ServicesTab" xml:space="preserve">
+	<!--Tabs-->
+	<data name="Label_ServicesTab" xml:space="preserve">
     <value>Services</value>
   </data>
-  <data name="Label_LogsTab" xml:space="preserve">
+	<data name="Label_LogsTab" xml:space="preserve">
     <value>Logs</value>
   </data>
-  <data name="Label_PerformanceTab" xml:space="preserve">
+	<data name="Label_PerformanceTab" xml:space="preserve">
     <value>Performance</value>
   </data>
-  <data name="Label_ConsoleTab" xml:space="preserve">
+	<data name="Label_ConsoleTab" xml:space="preserve">
     <value>Console</value>
   </data>
-  <data name="Label_DependenciesTab" xml:space="preserve">
+	<data name="Label_DependenciesTab" xml:space="preserve">
     <value>Dependencies</value>
   </data>
 
-  <data name="Console_Info" xml:space="preserve">
+	<data name="Console_Info" xml:space="preserve">
     <value>Enable service stdout/stderr redirection to live-monitor console output</value>
   </data>
-  <data name="Label_Copy" xml:space="preserve">
+	<data name="Label_Copy" xml:space="preserve">
     <value>Copy</value>
   </data>
-  <data name="Button_Resume" xml:space="preserve">
+	<data name="Button_Resume" xml:space="preserve">
     <value>▶ Resume</value>
   </data>
-  <data name="Tooltip_Resume" xml:space="preserve">
+	<data name="Tooltip_Resume" xml:space="preserve">
     <value>Resume live updates</value>
   </data>
 
-  <data name="Dependencies_Info" xml:space="preserve">
+	<data name="Dependencies_Info" xml:space="preserve">
     <value>Service dependency tree (via SCM)</value>
   </data>
-  <data name="Button_Refresh" xml:space="preserve">
+	<data name="Button_Refresh" xml:space="preserve">
     <value>Refresh</value>
   </data>
-  <data name="Tooltip_Refresh" xml:space="preserve">
+	<data name="Tooltip_Refresh" xml:space="preserve">
     <value>Refresh the service dependency tree</value>
   </data>
-  <data name="Button_ExpandAll" xml:space="preserve">
+	<data name="Button_ExpandAll" xml:space="preserve">
     <value>Expand All</value>
   </data>
-  <data name="Tooltip_ExpandAll" xml:space="preserve">
+	<data name="Tooltip_ExpandAll" xml:space="preserve">
     <value>Expand all nodes in the dependency tree</value>
   </data>
-  <data name="Button_CollapseAll" xml:space="preserve">
+	<data name="Button_CollapseAll" xml:space="preserve">
     <value>Collapse All</value>
   </data>
-  <data name="Tooltip_CollapseAll" xml:space="preserve">
+	<data name="Tooltip_CollapseAll" xml:space="preserve">
     <value>Collapse all nodes in the dependency tree</value>
   </data>
-  <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
+	<data name="Label_Dependencies_Gear_Info" xml:space="preserve">
     <value>Status: Running (green), Stopped (red), Cycle (orange)</value>
   </data>
-  <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
+	<data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
     <value>Press F5 to refresh the dependency tree</value>
   </data>
-  <data name="Tooltip_Cycle" xml:space="preserve">
+	<data name="Tooltip_Cycle" xml:space="preserve">
     <value>Circular dependency detected</value>
   </data>
-  <data name="Tooltip_ServiceRunning" xml:space="preserve">
+	<data name="Tooltip_ServiceRunning" xml:space="preserve">
     <value>This service is running</value>
   </data>
-  <data name="Tooltip_ServiceStopped" xml:space="preserve">
+	<data name="Tooltip_ServiceStopped" xml:space="preserve">
     <value>This service is stopped</value>
   </data>
 
 
-  <!-- Search -->
-  <data name="Button_Search" xml:space="preserve">
+	<!-- Search -->
+	<data name="Button_Search" xml:space="preserve">
     <value>Search</value>
   </data>
-  <data name="Button_Searching" xml:space="preserve">
+	<data name="Button_Searching" xml:space="preserve">
     <value>Searching...</value>
   </data>
-  <data name="Label_F5_Shortcut" xml:space="preserve">
+	<data name="Label_F5_Shortcut" xml:space="preserve">
     <value>Service statuses auto-refresh - Press F5 to refresh the full list</value>
   </data>
-  <data name="Label_F5_Shortcut_Logs" xml:space="preserve">
+	<data name="Label_F5_Shortcut_Logs" xml:space="preserve">
     <value>Press F5 to refresh logs</value>
   </data>
-  <data name="Footer_ServiceRowText" xml:space="preserve">
+	<data name="Footer_ServiceRowText" xml:space="preserve">
     <value>service</value>
   </data>
-  <data name="Footer_LogRowText" xml:space="preserve">
+	<data name="Footer_LogRowText" xml:space="preserve">
     <value>log</value>
   </data>
 
-  <!-- Services DataGrid -->
-  <data name="Column_Name" xml:space="preserve">
+	<!-- Services DataGrid -->
+	<data name="Column_Name" xml:space="preserve">
     <value>Name</value>
   </data>
-  <data name="Column_Description" xml:space="preserve">
+	<data name="Column_Description" xml:space="preserve">
     <value>Description</value>
   </data>
-  <data name="Column_Status" xml:space="preserve">
+	<data name="Column_Status" xml:space="preserve">
     <value>Status</value>
   </data>
-  <data name="Column_StartupType" xml:space="preserve">
+	<data name="Column_StartupType" xml:space="preserve">
     <value>Startup Type</value>
   </data>
-  <data name="Column_LogOnAs" xml:space="preserve">
+	<data name="Column_LogOnAs" xml:space="preserve">
     <value>Log On As</value>
   </data>
 
-  <!--Status-->
-  <data name="Status_Stopped" xml:space="preserve">
+	<!--Status-->
+	<data name="Status_Stopped" xml:space="preserve">
     <value>Stopped</value>
   </data>
-  <data name="Status_StartPending" xml:space="preserve">
+	<data name="Status_StartPending" xml:space="preserve">
     <value>Start Pending</value>
   </data>
-  <data name="Status_StopPending" xml:space="preserve">
+	<data name="Status_StopPending" xml:space="preserve">
     <value>Stop Pending</value>
   </data>
-  <data name="Status_Running" xml:space="preserve">
+	<data name="Status_Running" xml:space="preserve">
     <value>Running</value>
   </data>
-  <data name="Status_ContinuePending" xml:space="preserve">
+	<data name="Status_ContinuePending" xml:space="preserve">
     <value>Continue Pending</value>
   </data>
-  <data name="Status_PausePending" xml:space="preserve">
+	<data name="Status_PausePending" xml:space="preserve">
     <value>Pause Pending</value>
   </data>
-  <data name="Status_Paused" xml:space="preserve">
+	<data name="Status_Paused" xml:space="preserve">
     <value>Paused</value>
   </data>
-  <data name="Status_NotInstalled" xml:space="preserve">
+	<data name="Status_NotInstalled" xml:space="preserve">
     <value>Not Installed</value>
   </data>
 
-  <data name="Label_Fetching" xml:space="preserve">
+	<data name="Label_Fetching" xml:space="preserve">
     <value>Fetching...</value>
   </data>
 
-  <!--Actions-->
-  <data name="Button_Start" xml:space="preserve">
+	<!--Actions-->
+	<data name="Button_Start" xml:space="preserve">
     <value>Start</value>
   </data>
-  <data name="Button_Stop" xml:space="preserve">
+	<data name="Button_Stop" xml:space="preserve">
     <value>Stop</value>
   </data>
-  <data name="Button_Restart" xml:space="preserve">
+	<data name="Button_Restart" xml:space="preserve">
     <value>Restart</value>
   </data>
-  <data name="Button_More" xml:space="preserve">
+	<data name="Button_More" xml:space="preserve">
     <value>More Actions</value>
   </data>
 
-  <data name="Button_StartSelected" xml:space="preserve">
+	<data name="Button_StartSelected" xml:space="preserve">
     <value>Start Selected</value>
   </data>
-  <data name="Button_StopSelected" xml:space="preserve">
+	<data name="Button_StopSelected" xml:space="preserve">
     <value>Stop Selected</value>
   </data>
-  <data name="Button_RestartSelected" xml:space="preserve">
+	<data name="Button_RestartSelected" xml:space="preserve">
     <value>Restart Selected</value>
   </data>
 
-  <data name="Msg_NoServicesSelected" xml:space="preserve">
+	<data name="Msg_NoServicesSelected" xml:space="preserve">
     <value>No services selected.</value>
   </data>
-  <data name="Confirm_StartSelectedServices" xml:space="preserve">
+	<data name="Confirm_StartSelectedServices" xml:space="preserve">
     <value>Start selected services?</value>
   </data>
-  <data name="Confirm_StopSelectedServices" xml:space="preserve">
+	<data name="Confirm_StopSelectedServices" xml:space="preserve">
     <value>Stop selected services?</value>
   </data>
-  <data name="Confirm_RestartSelectedServices" xml:space="preserve">
+	<data name="Confirm_RestartSelectedServices" xml:space="preserve">
     <value>Restart selected services?</value>
   </data>
-  <data name="Msg_OperationCompletedSuccessfully" xml:space="preserve">
+	<data name="Msg_OperationCompletedSuccessfully" xml:space="preserve">
     <value>Operation completed successfully.</value>
   </data>
-  <data name="Msg_OperationCompletedWithErrorsDetails" xml:space="preserve">
+	<data name="Msg_OperationCompletedWithErrorsDetails" xml:space="preserve">
     <value>An error occurred while performing the operation on: {0}</value>
   </data>
-  <data name="Msg_AllOperationsFailed" xml:space="preserve">
+	<data name="Msg_AllOperationsFailed" xml:space="preserve">
     <value>All operations failed.</value>
   </data>
 
-  <data name="Button_Install" xml:space="preserve">
+	<data name="Button_Install" xml:space="preserve">
     <value>Install</value>
   </data>
-  <data name="Button_Uninstall" xml:space="preserve">
+	<data name="Button_Uninstall" xml:space="preserve">
     <value>Uninstall</value>
   </data>
-  <data name="Button_Remove" xml:space="preserve">
+	<data name="Button_Remove" xml:space="preserve">
     <value>Remove</value>
   </data>
-  <data name="Button_Config" xml:space="preserve">
+	<data name="Button_Config" xml:space="preserve">
     <value>Open Configuration</value>
   </data>
-  <data name="Button_ExportXML" xml:space="preserve">
+	<data name="Button_ExportXML" xml:space="preserve">
     <value>Export XML</value>
   </data>
-  <data name="Button_ExportJSON" xml:space="preserve">
+	<data name="Button_ExportJSON" xml:space="preserve">
     <value>Export JSON</value>
   </data>
 
-  <!-- Startup Type Items -->
-  <data name="StartupType_Automatic" xml:space="preserve">
+	<!-- Startup Type Items -->
+	<data name="StartupType_Automatic" xml:space="preserve">
     <value>Automatic</value>
   </data>
-  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+	<data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
     <value>Automatic (delayed)</value>
   </data>
-  <data name="StartupType_Manual" xml:space="preserve">
+	<data name="StartupType_Manual" xml:space="preserve">
     <value>Manual</value>
   </data>
-  <data name="StartupType_Disabled" xml:space="preserve">
+	<data name="StartupType_Disabled" xml:space="preserve">
     <value>Disabled</value>
   </data>
-  <data name="StartupType_Unknown" xml:space="preserve">
+	<data name="StartupType_Unknown" xml:space="preserve">
     <value>Unknown</value>
   </data>
 
-  <!-- XML/JSON import -->
-  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+	<!-- XML/JSON import -->
+	<data name="Msg_FailedToLoadXml" xml:space="preserve">
     <value>Failed to load XML service configuration.</value>
   </data>
-  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+	<data name="Msg_FailedToLoadJson" xml:space="preserve">
     <value>Failed to load JSON service configuration.</value>
   </data>
-  <data name="ImportXml_Success" xml:space="preserve">
+	<data name="ImportXml_Success" xml:space="preserve">
     <value>XML Configuration imported successfully.</value>
   </data>
-  <data name="ImportJson_Success" xml:space="preserve">
+	<data name="ImportJson_Success" xml:space="preserve">
     <value>JSON Configuration imported successfully.</value>
   </data>
-  <data name="ImportXml_Error" xml:space="preserve">
+	<data name="ImportXml_Error" xml:space="preserve">
     <value>Failed to import XML Configuration.</value>
   </data>
-  <data name="ImportJson_Error" xml:space="preserve">
+	<data name="ImportJson_Error" xml:space="preserve">
     <value>Failed to import JSON Configuration.</value>
   </data>
 
-  <!-- XML/JSON export -->
-  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+	<!-- XML/JSON export -->
+	<data name="SaveFileDialog_XmlTitle" xml:space="preserve">
     <value>Export XML configuration</value>
   </data>
-  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+	<data name="SaveFileDialog_JsonTitle" xml:space="preserve">
     <value>Export JSON configuration</value>
   </data>
-  <data name="ExportXml_Success" xml:space="preserve">
+	<data name="ExportXml_Success" xml:space="preserve">
     <value>XML Configuration exported successfully.</value>
   </data>
-  <data name="ExportJson_Success" xml:space="preserve">
+	<data name="ExportJson_Success" xml:space="preserve">
     <value>JSON Configuration exported successfully.</value>
   </data>
 
-  <!-- Messages -->
-  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+	<!-- Messages -->
+	<data name="Msg_InvalidWrapperExePath" xml:space="preserve">
     <value>Service wrapper executable not found.</value>
   </data>
 
-  <data name="Msg_ServiceInstalled" xml:space="preserve">
+	<data name="Msg_ServiceInstalled" xml:space="preserve">
     <value>Service was installed successfully.</value>
   </data>
-  <data name="Msg_UnexpectedError" xml:space="preserve">
+	<data name="Msg_UnexpectedError" xml:space="preserve">
     <value>An unexpected error occurred.</value>
   </data>
-  <data name="Msg_ServiceStarted" xml:space="preserve">
+	<data name="Msg_ServiceStarted" xml:space="preserve">
     <value>Service was started successfully.</value>
   </data>
-  <data name="Msg_ServiceStopped" xml:space="preserve">
+	<data name="Msg_ServiceStopped" xml:space="preserve">
     <value>Service was stopped successfully.</value>
   </data>
-  <data name="Msg_ServiceRestarted" xml:space="preserve">
+	<data name="Msg_ServiceRestarted" xml:space="preserve">
     <value>Service was restarted successfully.</value>
   </data>
 
-  <data name="Msg_ServiceNotFound" xml:space="preserve">
+	<data name="Msg_ServiceNotFound" xml:space="preserve">
     <value>Service not found.</value>
   </data>
 
-  <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
+	<data name="Msg_UninstallServiceConfirm" xml:space="preserve">
     <value>Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered.</value>
   </data>
-  <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
+	<data name="Msg_RemoveServiceConfirm" xml:space="preserve">
     <value>Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered.</value>
   </data>
-  <data name="Msg_DesktopAppNotFound" xml:space="preserve">
+	<data name="Msg_DesktopAppNotFound" xml:space="preserve">
     <value>Servy Desktop App not found.</value>
   </data>
 
-  <!--Logs View-->
-  <data name="Label_Level" xml:space="preserve">
+	<!--Logs View-->
+	<data name="Label_Level" xml:space="preserve">
     <value>Level:</value>
   </data>
-  <data name="Label_From" xml:space="preserve">
+	<data name="Label_From" xml:space="preserve">
     <value>From:</value>
   </data>
-  <data name="Label_To" xml:space="preserve">
+	<data name="Label_To" xml:space="preserve">
     <value>To:</value>
   </data>
-  <data name="Label_Keyword" xml:space="preserve">
+	<data name="Label_Keyword" xml:space="preserve">
     <value>Keyword:</value>
   </data>
 
-  <data name="Column_Time" xml:space="preserve">
+	<data name="Column_Time" xml:space="preserve">
     <value>Time</value>
   </data>
-  <data name="Column_Level" xml:space="preserve">
+	<data name="Column_Level" xml:space="preserve">
     <value>Level</value>
   </data>
-  <data name="Column_Message" xml:space="preserve">
+	<data name="Column_Message" xml:space="preserve">
     <value>Message</value>
   </data>
 
-  <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
+	<data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
     <value>An error occurred while switching tabs. Please try again.</value>
   </data>
 
@@ -399,52 +399,49 @@ If the service is disabled and marked for deletion, installation will fail until
 You need to click Install after importing and restart the service for changes to take effect.
 If the service is disabled and marked for deletion, installation will fail until you restart your PC.</value>
   </data>
-	
-  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+
+	<data name="Msg_ServiceDisabledError" xml:space="preserve">
     <value>The specified service is disabled.</value>
   </data>
 
-  <!--PID-->
-  <data name="Column_Pid" xml:space="preserve">
+	<!--PID-->
+	<data name="Column_Pid" xml:space="preserve">
     <value>PID</value>
   </data>
-  <data name="Button_CopyPid" xml:space="preserve">
+	<data name="Button_CopyPid" xml:space="preserve">
     <value>Copy PID</value>
   </data>
-  <data name="Msg_PidCopied" xml:space="preserve">
+	<data name="Msg_PidCopied" xml:space="preserve">
     <value>PID copied to clipboard.</value>
   </data>
-  <data name="Msg_PidCopyFailed" xml:space="preserve">
+	<data name="Msg_PidCopyFailed" xml:space="preserve">
     <value>Failed to copy PID to clipboard.</value>
   </data>
 
-  <!--CPU/RAM-->
-  <data name="Column_CPU" xml:space="preserve">
+	<!--CPU/RAM-->
+	<data name="Column_CPU" xml:space="preserve">
     <value>CPU</value>
   </data>
-  <data name="Column_RAM" xml:space="preserve">
+	<data name="Column_RAM" xml:space="preserve">
     <value>RAM</value>
   </data>
 
-  <!--Performand tab-->
-  <data name="Column_Service" xml:space="preserve">
+	<!--Performand tab-->
+	<data name="Column_Service" xml:space="preserve">
     <value>Service</value>
   </data>
-  <data name="Label_Pid" xml:space="preserve">
+	<data name="Label_Pid" xml:space="preserve">
     <value>PID</value>
   </data>
-  <data name="Label_CPU" xml:space="preserve">
+	<data name="Label_CPU" xml:space="preserve">
     <value>CPU</value>
   </data>
-  <data name="Label_RAM" xml:space="preserve">
+	<data name="Label_RAM" xml:space="preserve">
     <value>RAM</value>
   </data>
 
-  <!--Miscellaneous-->
-  <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
-    <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
-  </data>
-  <data name="Msg_InvalidServiceName" xml:space="preserve">
+	<!--Miscellaneous-->
+	<data name="Msg_InvalidServiceName" xml:space="preserve">
     <value>Invalid service name.</value>
   </data>
 
@@ -470,7 +467,7 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Found {0} logs in {1}</value>
   </data>
 
-  <data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
+	<data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
     <value>Failed to load service dependency tree.</value>
   </data>
 
