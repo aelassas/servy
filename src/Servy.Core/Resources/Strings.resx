@@ -13,10 +13,6 @@
 		<value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
 	</resheader>
 
-	<data name="Msg_InvalidRecoveryConfig" xml:space="preserve">
-    <value>Recovery actions and restart attempts cannot be configured unless --enableHealth is set to true.</value>
-  </data>
-
 	<data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>
@@ -45,12 +41,6 @@
 	<data name="Msg_InvalidStartupDirectory" xml:space="preserve">
     <value>The specified startup directory is invalid.</value>
   </data>
-	<data name="Msg_InvalidStartupType" xml:space="preserve">
-    <value>The specified startup type is invalid. Options: Automatic, AutomaticDelayedStart, Manual, Disabled.</value>
-  </data>
-	<data name="Msg_InvalidProcessPriority" xml:space="preserve">
-    <value>The specified process priority is invalid. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime.</value>
-  </data>
 	<data name="Msg_InvalidStdoutPath" xml:space="preserve">
     <value>The specified stdout file path is invalid.</value>
   </data>
@@ -59,9 +49,6 @@
   </data>
 	<data name="Msg_InvalidRotationSize" xml:space="preserve">
     <value>Rotation size must be a number of Megabytes (MB) between {0} and {1}.</value>
-  </data>
-	<data name="Msg_InvalidDateRotationType" xml:space="preserve">
-    <value>The specified date rotation type is invalid. Options: Daily, Weekly, Monthly.</value>
   </data>
 	<data name="Msg_InvalidMaxRotations" xml:space="preserve">
     <value>Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations.</value>
@@ -74,9 +61,6 @@
   </data>
 	<data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
     <value>Max Failed Checks must be a number between {0} and {1}.</value>
-  </data>
-	<data name="Msg_InvalidRecoveryAction" xml:space="preserve">
-    <value>The specified recovery action is invalid. Options: None, RestartService, RestartProcess, RestartComputer.</value>
   </data>
 	<data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
     <value>Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
@@ -339,4 +323,22 @@
 	<data name="Msg_InvalidCoreSpecification" xml:space="preserve">
     <value>Invalid core specification: '{0}'</value>
   </data>
+	<data name="Msg_ImportXmlNullOrEmpty" xml:space="preserve">
+  <value>XML content cannot be null or empty.</value>
+</data>
+	<data name="Msg_ImportXmlDeserializationFailed" xml:space="preserve">
+  <value>Failed to deserialize service configuration from XML content.</value>
+</data>
+	<data name="Msg_ImportXmlFailed" xml:space="preserve">
+  <value>Failed to import service from XML: {0}</value>
+</data>
+	<data name="Msg_ImportJsonNullOrEmpty" xml:space="preserve">
+  <value>JSON content cannot be null or empty.</value>
+</data>
+	<data name="Msg_ImportJsonDeserializationFailed" xml:space="preserve">
+  <value>Failed to deserialize service configuration from JSON content.</value>
+</data>
+	<data name="Msg_ImportJsonFailed" xml:space="preserve">
+  <value>Failed to import service from JSON: {0}</value>
+</data>
 </root>

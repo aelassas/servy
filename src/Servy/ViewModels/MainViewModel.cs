@@ -1057,9 +1057,9 @@ namespace Servy.ViewModels
         /// before updating configuration properties, ensuring that user cancellation of a dialog 
         /// does not overwrite existing valid paths.
         /// </remarks>
-        private void BrowseAndAssign(Func<string> dialogAction, Action<string> propertySetter)
+        private void BrowseAndAssign(Func<string, string> dialogAction, Action<string> propertySetter)
         {
-            var result = dialogAction();
+            var result = dialogAction(null);
             if (!string.IsNullOrEmpty(result)) propertySetter(result);
         }
 
@@ -1076,12 +1076,12 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for standard output redirection.
         /// </summary>
-        private void BrowseStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => StdoutPath = v);
+        private void BrowseStdoutPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => StdoutPath = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for standard error redirection.
         /// </summary>
-        private void BrowseStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => StderrPath = v);
+        private void BrowseStderrPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => StderrPath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramPath"/>.
@@ -1106,12 +1106,12 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard output redirection.
         /// </summary>
-        private void BrowsePreLaunchStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => PreLaunchStdoutPath = v);
+        private void BrowsePreLaunchStdoutPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => PreLaunchStdoutPath = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard error redirection.
         /// </summary>
-        private void BrowsePreLaunchStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => PreLaunchStderrPath = v);
+        private void BrowsePreLaunchStderrPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => PreLaunchStderrPath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a post-launch executable file and sets <see cref="PostLaunchExecutablePath"/>.

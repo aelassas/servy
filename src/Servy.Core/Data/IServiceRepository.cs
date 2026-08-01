@@ -1,4 +1,5 @@
-﻿using Servy.Core.DTOs;
+﻿using Servy.Core.Common;
+using Servy.Core.DTOs;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -166,8 +167,8 @@ namespace Servy.Core.Data
         /// </summary>
         /// <param name="xml">The XML data to import.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
-        Task<bool> ImportXmlAsync(string xml, CancellationToken cancellationToken = default);
+        /// <returns>An <see cref="OperationResult"/> indicating success or carrying descriptive error details upon failure.</returns>
+        Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports a <see cref="ServiceDto"/> to a JSON string.
@@ -183,7 +184,7 @@ namespace Servy.Core.Data
         /// </summary>
         /// <param name="json">The JSON data to import.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
-        Task<bool> ImportJsonAsync(string json, CancellationToken cancellationToken = default);
+        /// <returns>An <see cref="OperationResult"/> indicating success or carrying descriptive error details upon failure.</returns>
+        Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default);
     }
 }

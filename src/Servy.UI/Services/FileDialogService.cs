@@ -46,23 +46,23 @@ namespace Servy.UI.Services
         #endregion
 
         /// <inheritdoc />
-        public string OpenExecutable() =>
-            ShowOpenDialog(Strings.FileFilter_Executable, Strings.Title_SelectExecutable);
+        public string OpenExecutable(string title = null) =>
+            ShowOpenDialog(Strings.FileFilter_Executable, title ?? Strings.Title_SelectExecutable);
 
         /// <inheritdoc />
-        public string OpenXml() =>
-            ShowOpenDialog(Strings.FileFilter_Xml, Strings.Title_SelectXml);
+        public string OpenXml(string title = null) =>
+            ShowOpenDialog(Strings.FileFilter_Xml, title ?? Strings.Title_SelectXml);
 
         /// <inheritdoc />
-        public string OpenJson() =>
-            ShowOpenDialog(Strings.FileFilter_Json, Strings.Title_SelectJson);
+        public string OpenJson(string title = null) =>
+            ShowOpenDialog(Strings.FileFilter_Json, title ?? Strings.Title_SelectJson);
 
         /// <inheritdoc />
-        public string OpenFolder()
+        public string OpenFolder(string title = null)
         {
             using (var dlg = new System.Windows.Forms.FolderBrowserDialog
             {
-                Description = Strings.Title_SelectStartupDirectory,
+                Description = title ?? Strings.Title_SelectStartupDirectory,
                 ShowNewFolderButton = true
             })
             {

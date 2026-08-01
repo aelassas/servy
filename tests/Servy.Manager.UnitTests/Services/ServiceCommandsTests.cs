@@ -123,7 +123,7 @@ namespace Servy.Manager.UnitTests.Services
                 if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
                 File.WriteAllText(tempFile, json);
 
-                _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile);
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -165,7 +165,7 @@ namespace Servy.Manager.UnitTests.Services
             {
                 File.WriteAllText(tempJsonFile, "{ invalid-json }");
 
-                _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempJsonFile);
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempJsonFile);
 
                 string outErr = "Invalid JSON";
                 _jsonServiceValidatorMock
@@ -212,7 +212,7 @@ namespace Servy.Manager.UnitTests.Services
                     serializer.Serialize(writer, dto);
                 }
 
-                _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempFile);
+                _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempFile);
 
                 string outErr = null;
                 _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
@@ -253,7 +253,7 @@ namespace Servy.Manager.UnitTests.Services
             {
                 File.WriteAllText(tempXmlFile, "<invalid><xml>");
 
-                _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempXmlFile);
+                _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempXmlFile);
 
                 string outErr = "Malformed XML";
                 _xmlServiceValidatorMock
@@ -283,7 +283,7 @@ namespace Servy.Manager.UnitTests.Services
         {
             // Arrange
             var sut = CreateServiceCommands();
-            _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(string.Empty);
+            _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(string.Empty);
 
             // Act
             await sut.ImportJsonConfigAsync(CancellationToken.None);
@@ -305,7 +305,7 @@ namespace Servy.Manager.UnitTests.Services
                 if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
                 File.WriteAllText(tempFile, "{}");
 
-                _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile);
                 string outErr = null;
                 _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
                 _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto)null);
@@ -336,7 +336,7 @@ namespace Servy.Manager.UnitTests.Services
                 if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
                 File.WriteAllText(tempFile, "{}");
 
-                _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile);
                 string outErr = null;
                 _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
                 _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "InvalidDomain" });
@@ -377,7 +377,7 @@ namespace Servy.Manager.UnitTests.Services
                     serializer.Serialize(writer, dto);
                 }
 
-                _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempFile);
+                _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempFile);
 
                 string outErr = null;
                 _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
@@ -417,7 +417,7 @@ namespace Servy.Manager.UnitTests.Services
                 if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
                 File.WriteAllText(tempFile, "{}");
 
-                _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile);
                 string outErr = null;
                 _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
                 _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "FailedUpsert" });

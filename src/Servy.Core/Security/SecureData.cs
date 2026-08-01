@@ -264,14 +264,11 @@ namespace Servy.Core.Security
             // Convert the span to a string once for use in legacy methods.
             string rawPayload = payload.ToString();
 
-            bool legacyAttempted = false;
             try
             {
                 // Version 1 Legacy Detection
                 if (IsStrictBase64(rawPayload))
                 {
-                    legacyAttempted = true;
-
                     if (!AppConfig.AllowLegacyV1Decryption)
                     {
                         Logger.Warn("Security block: Raw legacy payload encountered with legacy decryption disabled.");
@@ -294,8 +291,7 @@ namespace Servy.Core.Security
             }
 
             // Explicitly log when data is processed as plaintext.
-            if (!legacyAttempted)
-                Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
+            Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
             return rawPayload;
         }
 

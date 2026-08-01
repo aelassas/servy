@@ -640,6 +640,16 @@ namespace Servy.Core.Config
         /// </summary>
         public const string HeartbeatUrlFailFlag = "/fail";
 
+        /// <summary>
+        /// The maximum degree of parallelism allowed for concurrent process-tree metric collection
+        /// and service searching operations.
+        /// </summary>
+        /// <remarks>
+        /// Bounds heavy OS calls and process inspection operations during service searches to prevent
+        /// thread-pool starvation on systems with high core counts. Defaults to <see cref="Environment.ProcessorCount"/>.
+        /// </remarks>
+        public static int ServiceSearchMaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount);
+
         #endregion
 
         #region Limits, Thresholds & Constraints

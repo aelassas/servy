@@ -161,7 +161,7 @@ namespace Servy.Manager.Services
 
             // Bound concurrent process-tree metric collection; GetProcessTreeMetrics issues heavy
             // OS calls and an unbounded fan-out over the result set can exhaust the thread pool.
-            using (var throttler = new SemaphoreSlim(Environment.ProcessorCount))
+            using (var throttler = new SemaphoreSlim(AppConfig.ServiceSearchMaxDegreeOfParallelism))
             {
                 // Map all domain services to Service models in parallel with a bounded degree of parallelism
                 var tasks = results.Select(async r =>
@@ -186,10 +186,7 @@ namespace Servy.Manager.Services
 
                 // Filter out nulls resulting from malformed/orphaned DTOs 
                 // to prevent NullReferenceExceptions during UI data binding.
-                return services
-                    .Where(s => s != null)
-                    .Cast<Service>()
-                    .ToList();
+                return services.OfType<Service>().ToList();
             }
         }
 
@@ -411,8 +408,8 @@ namespace Servy.Manager.Services
                     if (!confirm) return false;
 
                     // 1. Confirm the row still exists before attempting the delete
-                    var existsInDb = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
-                    if (existsInDb == null)
+                    var existing = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
+                    if (existing == null)
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
@@ -420,9 +417,8 @@ namespace Servy.Manager.Services
 
                     // 2. Perform the deletion pass
                     var res = await _serviceRepository.DeleteAsync(service.Name, cancellationToken);
-                    if (res > 0) RemoveService(service);
-
                     var success = res > 0;
+                    if (success) RemoveService(service);
 
                     if (success)
                     {
@@ -455,44 +451,44 @@ namespace Servy.Manager.Services
         public Task ExportServiceToXmlAsync(Service service, CancellationToken cancellationToken = default) =>
             ExportServiceConfigAsync(
                 service,
-                () => _fileDialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
-                ServiceExporter.ExportXml,
-                "XML",
-                Strings.ExportXml_Success,
+                getFilePath: () => _fileDialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
+                exportAction: ServiceExporter.ExportXml,
+                formatName: "XML",
+                successMessage: Strings.ExportXml_Success,
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task ExportServiceToJsonAsync(Service service, CancellationToken cancellationToken = default) =>
             ExportServiceConfigAsync(
                 service,
-                () => _fileDialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
-                ServiceExporter.ExportJson,
-                "JSON",
-                Strings.ExportJson_Success,
+                getFilePath: () => _fileDialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
+                exportAction: ServiceExporter.ExportJson,
+                formatName: "JSON",
+                successMessage: Strings.ExportJson_Success,
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
-                _fileDialogService.OpenXml,
-                (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => _xmlServiceSerializer.Deserialize(content),
-                "XML",
-                Strings.Msg_FailedToLoadXml,
-                Strings.ImportXml_Success,
-                Strings.ImportXml_Error,
+                getFilePath: _fileDialogService.OpenXml,
+                validateContent: (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                deserialize: (content) => _xmlServiceSerializer.Deserialize(content),
+                formatName: "XML",
+                loadErrorMessage: Strings.Msg_FailedToLoadXml,
+                successMessage: Strings.ImportXml_Success,
+                errorMessage: Strings.ImportXml_Error,
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
-                _fileDialogService.OpenJson,
-                (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => _jsonServiceSerializer.Deserialize(content),
-                "JSON",
-                Strings.Msg_FailedToLoadJson,
-                Strings.ImportJson_Success,
-                Strings.ImportJson_Error,
+                getFilePath: _fileDialogService.OpenJson,
+                validateContent: (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                deserialize: (content) => _jsonServiceSerializer.Deserialize(content),
+                formatName: "JSON",
+                loadErrorMessage: Strings.Msg_FailedToLoadJson,
+                successMessage: Strings.ImportJson_Success,
+                errorMessage: Strings.ImportJson_Error,
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
@@ -812,7 +808,7 @@ namespace Servy.Manager.Services
         /// </list>
         /// </remarks>
         private async Task ImportConfigAsync(
-            Func<string> getFilePath,
+            Func<string, string> getFilePath,
             Func<string, (bool IsValid, string ErrorMsg)> validateContent,
             Func<string, ServiceDto> deserialize,
             string formatName,
@@ -825,7 +821,7 @@ namespace Servy.Manager.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var path = getFilePath();
+                var path = getFilePath(null);
                 if (string.IsNullOrEmpty(path)) return;
 
                 // Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
@@ -926,7 +922,7 @@ namespace Servy.Manager.Services
 
             if (process == null)
             {
-                Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}.");
+                Logger.Warn($"Failed to start external process {psi.FileName}.");
             }
 
             return process;

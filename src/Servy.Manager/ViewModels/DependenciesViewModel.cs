@@ -194,7 +194,8 @@ namespace Servy.Manager.ViewModels
         #region Private Methods
 
         /// <summary>
-        /// Recursively sets the expansion state of the specified collection of dependency nodes and all their children.
+        /// Iteratively sets the expansion state of the specified collection of dependency nodes and all their children.
+        /// Uses an explicit stack to prevent stack overflow on deep graphs and a visited set to guard against cycles.
         /// </summary>
         /// <param name="nodes">The collection of <see cref="ServiceDependencyNode"/> to process.</param>
         /// <param name="isExpanded">
@@ -202,42 +203,22 @@ namespace Servy.Manager.ViewModels
         /// </param>
         private void SetExpansion(IEnumerable<ServiceDependencyNode> nodes, bool isExpanded)
         {
-            // Use a HashSet to track visited nodes and prevent infinite recursion in case of 
-            // circular dependencies or shared nodes.
             var visited = new HashSet<ServiceDependencyNode>();
-            SetExpansionRecursive(nodes, isExpanded, visited);
-        }
+            var stack = new Stack<ServiceDependencyNode>(nodes);
 
-        /// <summary>
-        /// Performs the recursive traversal to update the expansion state of dependency nodes while 
-        /// protecting against circular references.
-        /// </summary>
-        /// <param name="nodes">The collection of <see cref="ServiceDependencyNode"/> to process.</param>
-        /// <param name="isExpanded">
-        /// <see langword="true"/> to expand the nodes; <see langword="false"/> to collapse them.
-        /// </param>
-        /// <param name="visited">
-        /// A tracking set used to detect already-processed nodes. This prevents infinite recursion 
-        /// and potential <see cref="StackOverflowException"/> crashes if the dependency tree 
-        /// contains cycles or shared nodes.
-        /// </param>
-        /// <remarks>
-        /// This internal helper ensures the stability of the management layer 
-        /// by providing a cycle guard during deep tree traversal, a critical safety measure when 
-        /// handling complex Win32 SCM dependency graphs.
-        /// </remarks>
-        private void SetExpansionRecursive(IEnumerable<ServiceDependencyNode> nodes, bool isExpanded, HashSet<ServiceDependencyNode> visited)
-        {
-            foreach (var node in nodes)
+            while (stack.Count > 0)
             {
-                // If we've already processed this node in this traversal, skip it.
+                var node = stack.Pop();
                 if (!visited.Add(node)) continue;
 
                 node.IsExpanded = isExpanded;
 
                 if (node.Dependencies != null)
                 {
-                    SetExpansionRecursive(node.Dependencies, isExpanded, visited);
+                    foreach (var child in node.Dependencies)
+                    {
+                        stack.Push(child);
+                    }
                 }
             }
         }

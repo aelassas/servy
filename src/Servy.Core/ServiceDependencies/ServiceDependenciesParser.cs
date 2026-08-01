@@ -21,6 +21,7 @@ namespace Servy.Core.ServiceDependencies
         /// </summary>
         /// <param name="input">The raw configuration text string containing service dependencies.</param>
         /// <returns>An enumerable sequence of normalized, clean service name tokens.</returns>
+        /// <remarks>Drops case-insensitive duplicate dependency names.</remarks>
         public static IEnumerable<string> Tokenize(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -29,7 +30,8 @@ namespace Servy.Core.ServiceDependencies
             return input
                 .Split(new[] { ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
-                .Where(s => s.Length > 0);
+                .Where(s => s.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -59,10 +61,8 @@ namespace Servy.Core.ServiceDependencies
             if (string.IsNullOrWhiteSpace(input))
                 return NoDependencies;
 
-            // Tokenize, then drop case-insensitive duplicate dependency names.
-            var parts = Tokenize(input)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
+            // Tokenize, and drop case-insensitive duplicate dependency names.
+            var parts = Tokenize(input).ToArray();
 
             if (parts.Length == 0)
                 return NoDependencies;

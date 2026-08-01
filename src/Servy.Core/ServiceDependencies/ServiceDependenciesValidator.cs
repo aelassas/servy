@@ -35,7 +35,7 @@ namespace Servy.Core.ServiceDependencies
             }
 
             // Validate each dependency name produced by the shared tokenizer.
-            foreach (string serviceName in ServiceDependenciesParser.Tokenize(input).Distinct(StringComparer.OrdinalIgnoreCase))
+            foreach (string serviceName in ServiceDependenciesParser.Tokenize(input))
             {
                 if (!ValidServiceNameRegex.IsMatch(serviceName))
                 {

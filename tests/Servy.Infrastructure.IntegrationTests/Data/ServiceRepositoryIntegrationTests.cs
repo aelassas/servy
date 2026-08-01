@@ -156,9 +156,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task UpsertBatchAsync_LargeCollection_ExecutesWithinTransactionBoundaries()
         {
-            var cancellationToken = CancellationToken.None;
-
             // Arrange - Generate a genuinely large batch that exceeds default SQLite parameter/chunking limits
+            var cancellationToken = CancellationToken.None;
             const int batchSize = AppConfig.DbBatchIdSyncChunkSize + 150;
             var batch = new List<ServiceDto>();
             for (int i = 1; i <= batchSize; i++)
@@ -192,9 +191,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task UpsertBatchAsync_ExceptionThrownMidBatch_RollsBackEntireTransaction()
         {
-            var cancellationToken = CancellationToken.None;
-
             // Arrange - Get baseline count
+            var cancellationToken = CancellationToken.None;
             var initialCount = (await _repository.GetAllAsync(decrypt: true, cancellationToken)).Count();
 
             // Generate a mix of valid records and a guaranteed fatal record positioned at the end.
@@ -280,10 +278,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task DeleteAsync_ByNameAndId_RemovesTargetEntries()
         {
+            // Arrange
             var cancellationToken = CancellationToken.None;
 
             // --- 1. Verify "ByName" deletion path ---
-            // Arrange
             var serviceByName = new ServiceDto { Name = "KillMeByName", ExecutablePath = "kill_name.exe" };
             int nameId = await _repository.AddAsync(serviceByName, cancellationToken);
 
@@ -314,9 +312,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task SearchAsync_UsingKeywords_EvaluatesWildcardAndSqlEscapeMatchers()
         {
+            // Arrange
             var cancellationToken = CancellationToken.None;
 
-            // Arrange
             // 1. The target record containing literal % and _ characters
             await _repository.AddAsync(new ServiceDto { Name = "App_Development_%_Test", ExecutablePath = "a.exe" }, cancellationToken);
 
@@ -375,10 +373,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, CancellationToken.None));
 
             // Act - Import the serialized XML record back into the repository engine
-            bool xmlImportResult = await _repository.ImportXmlAsync(xmlData, CancellationToken.None);
+            var xmlImportResult = await _repository.ImportXmlAsync(xmlData, CancellationToken.None);
 
             // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
-            Assert.True(xmlImportResult);
+            Assert.True(xmlImportResult.IsSuccess);
 
             var recovered = await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, CancellationToken.None);
             Assert.NotNull(recovered);
@@ -403,10 +401,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, CancellationToken.None));
 
             // Act - Import the serialized JSON record back into the repository engine
-            bool jsonImportResult = await _repository.ImportJsonAsync(jsonData, CancellationToken.None);
+            var jsonImportResult = await _repository.ImportJsonAsync(jsonData, CancellationToken.None);
 
             // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
-            Assert.True(jsonImportResult);
+            Assert.True(jsonImportResult.IsSuccess);
 
             var recovered = await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, CancellationToken.None);
             Assert.NotNull(recovered);
@@ -486,7 +484,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task GetServicePidAsync_NullOrMissingService_ReturnsNull()
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetServicePidAsync(null, CancellationToken.None));
             Assert.Null(await _repository.GetServicePidAsync("NonExistentService", CancellationToken.None));
         }
@@ -518,7 +516,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task GetServiceConsoleStateAsync_NullOrMissingService_ReturnsNull()
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetServiceConsoleStateAsync(null, CancellationToken.None));
             Assert.Null(await _repository.GetServiceConsoleStateAsync("MissingConsoleService", CancellationToken.None));
         }
@@ -542,20 +540,20 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void GetByName_NullOrEmptyInput_ReturnsNull(string input)
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(_repository.GetByName(input, decrypt: false));
         }
 
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public async Task GetByNameAsync_NullOrEmptyInput_ReturnsNull(string input)
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetByNameAsync(input, decrypt: false, CancellationToken.None));
         }
 
@@ -597,7 +595,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public async Task GetServiceConsoleStateAsync_WithPaddedLegacyRow_ResolvesViaResolveByNameAsyncFallback()
         {
             // Arrange: Seed an un-trimmed service row containing leading whitespace.
-            // Removed double backslashes inside the verbatim SQL literal block.
             const string paddedName = " GhostService";
             var sql = $@"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid, ActiveStdoutPath, ActiveStderrPath) 
                          VALUES (@Name, 'C:\ghost.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 8888, 'C:\out.log', 'C:\err.log');";
