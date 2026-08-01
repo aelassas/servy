@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.UnitTests.Utilities;
 using Servy.Testing;
@@ -78,7 +79,7 @@ namespace Servy.Service.UnitTests
 
             ctx.Helper.Verify(h => h.RestartProcess(
                 It.IsAny<IProcessWrapper>(),
-                It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
+                It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
@@ -119,7 +120,7 @@ namespace Servy.Service.UnitTests
                 case RecoveryAction.RestartProcess:
                     ctx.Helper.Verify(h => h.RestartProcess(
                         It.IsAny<IProcessWrapper>(),
-                        It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
+                        It.IsAny<StartProcessCallback>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                     break;
@@ -169,7 +170,7 @@ namespace Servy.Service.UnitTests
 
             var recoveryTriggered = new TaskCompletionSource<bool>();
 
-            ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
+            ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
                                  It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                   .Callback(() => {
@@ -208,7 +209,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
-            ctx.Helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
+            ctx.Helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
                                   It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                                   It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                                   Times.Once);

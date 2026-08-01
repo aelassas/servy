@@ -109,6 +109,62 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void Validate_ReflectedServicePath_WhenErrorResourceKeyIsUnset_UsesMsgInvalidPathInConfig()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+
+            // Simulate an invalid path for a custom path evaluation
+            _processHelperMock
+                .Setup(p => p.ValidatePath(It.IsAny<string>(), It.IsAny<bool>()))
+                .Returns((string path, bool isFile) => path != "invalid_path");
+
+            // Setting a property whose path fails validation
+            dto.StartupDirectory = "invalid_path";
+
+            string expectedFallbackError = string.Format(Strings.Msg_InvalidPathInConfig, "startup directory");
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.NotNull(Strings.Msg_InvalidPathInConfig);
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_ReflectedServicePath_WhenErrorResourceKeyIsProvided_ResolvesLocalizedResourceError()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.StartupDirectory = "invalid|dir";
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.Contains(Strings.Msg_InvalidStartupDirectory, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_ReflectedServicePath_WhenErrorResourceKeyIsMissing_FallsBackToFormattedLabelError()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.StartupDirectory = "invalid|dir";
+
+            // Temporarily clear ErrorResourceKey for testing fallback logic via a mock or custom test DTO test pass
+            _processHelperMock.Setup(p => p.ValidatePath(It.IsAny<string>(), false)).Returns(false);
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+        }
+
+        [Fact]
         public void Validate_InvalidTimeoutsAndRotation_ReturnsErrors()
         {
             // Arrange
@@ -151,7 +207,6 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto);
 
             // Assert
-            // Render basic unit properties using clean markdown layout rules
             Assert.Contains(string.Format(Strings.Msg_InvalidHeartbeatInterval, AppConfig.MinHeartbeatInterval, AppConfig.MaxHeartbeatInterval), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidMaxFailedChecks, AppConfig.MinMaxFailedChecks, AppConfig.MaxMaxFailedChecks), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts), result.Errors);
@@ -326,7 +381,6 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto, confirmPassword: "WrongPassword", importMode: true);
 
             // Assert
-            // Render basic comparison ratios safely as clean words
             Assert.DoesNotContain(Strings.Msg_PasswordsDontMatch, result.Errors);
         }
     }

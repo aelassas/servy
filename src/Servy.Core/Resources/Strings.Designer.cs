@@ -412,6 +412,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The {0} is invalid or the path does not exist..
+        /// </summary>
+        public static string Msg_InvalidPathInConfig {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPathInConfig", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The post-launch process path is invalid..
         /// </summary>
         public static string Msg_InvalidPostLaunchPath {

@@ -1004,7 +1004,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 RunOnPump(currentDispatcher, async () =>
                 {
                     // This internally triggers SearchServicesAsync and handles the background workers safely
-                    await vm.Refresh();
+                    await vm.RefreshAsync();
                 });
 
                 // Assert

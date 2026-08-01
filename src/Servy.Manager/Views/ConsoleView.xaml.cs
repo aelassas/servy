@@ -33,11 +33,6 @@ namespace Servy.Manager.Views
         private bool _isFirstLoad = true;
 
         /// <summary>
-        /// The view model currently bound to the console view, tracked so its events can be unhooked on DataContext change.
-        /// </summary>
-        private ConsoleViewModel _currentViewModel;
-
-        /// <summary>
         /// Define a small tolerance for floating point comparisons 
         /// </summary>
         private const double ScrollTolerance = 0.001;
@@ -97,7 +92,7 @@ namespace Servy.Manager.Views
         /// <param name="e">A <see cref="PropertyChangedEventArgs"/> containing event data such as the property name.</param>
         private void OnVmPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ConsoleViewModel.IsPaused) && sender is ConsoleViewModel vm && !vm.IsPaused)
+            if (e?.PropertyName == nameof(ConsoleViewModel.IsPaused) && sender is ConsoleViewModel vm && !vm.IsPaused)
             {
                 // Clear UI selection
                 LogList.SelectedItems.Clear();
@@ -174,11 +169,11 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Copies the currently selected log lines in the ListBox to the system clipboard.
+        /// Performs the asynchronous copy operation of currently selected log lines in the ListBox to the system clipboard.
+        /// Retries on transient clipboard COM locks.
         /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The event data.</param>
-        private async void CopyMenuItem_Click(object sender, RoutedEventArgs e)
+        /// <returns>A <see cref="Task"/> representing the asynchronous copy operation.</returns>
+        private async Task CopySelectedLinesAsync()
         {
             var selected = LogList.SelectedItems
                                   .OfType<LogLine>()
@@ -198,7 +193,7 @@ namespace Servy.Manager.Views
             {
                 try
                 {
-                    // Since this async void event handler initiates on the UI thread,
+                    // Since this async execution targets the UI thread context,
                     // this direct execution safely targets the required STA clipboard context.
                     Clipboard.SetText(text);
                     return;
@@ -219,11 +214,21 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
+        /// Copies the currently selected log lines in the ListBox to the system clipboard.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
+        private async void CopyMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            await CopySelectedLinesAsync();
+        }
+
+        /// <summary>
         /// Handles keyboard shortcuts for the log list, specifically Ctrl+C for copying.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
-        private void LogList_PreviewKeyDown(object sender, KeyEventArgs e)
+        private async void LogList_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             // 1. Handle ESC to clear selection
             if (e.Key == Key.Escape)
@@ -234,8 +239,8 @@ namespace Servy.Manager.Views
             // 2. Handle Ctrl+C to copy the selected lines
             else if (e.Key == Key.C && Keyboard.Modifiers == ModifierKeys.Control)
             {
-                CopyMenuItem_Click(null, null);
                 e.Handled = true;
+                await CopySelectedLinesAsync();
             }
         }
     }

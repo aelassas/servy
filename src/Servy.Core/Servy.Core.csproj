@@ -213,6 +213,8 @@
     <Compile Include="Services\WindowsServiceInfo.cs" />
     <Compile Include="Validation\ImportGuard.cs" />
     <Compile Include="Validation\IServiceValidationRules.cs" />
+    <Compile Include="Validation\ServicePathValidator.cs" />
+    <Compile Include="Validation\ServicePathViolation.cs" />
     <Compile Include="Validation\ServiceValidationRules.cs" />
     <Compile Include="Validation\ValidationResult.cs" />
   </ItemGroup>

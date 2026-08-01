@@ -224,42 +224,19 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or the specific validation failure.</returns>
         private CommandResult ValidateServicePaths(ServiceDto service)
         {
-            var pathFields = typeof(ServiceDto).GetProperties()
-                .Select(p => new
-                {
-                    Property = p,
-                    Attr = p.GetCustomAttribute<ServicePathAttribute>()
-                })
-                .Where(x => x.Attr != null);
-
-            foreach (var field in pathFields)
+            var violation = ServicePathValidator.FindFirstViolation(service, _processHelper.ValidatePath);
+            if (violation != null)
             {
-                var property = field.Property;
-                var attr = field.Attr;
-
-                // Extract the value from the DTO property
-                var pathValue = property.GetValue(service) as string;
-                bool isPathEmpty = string.IsNullOrWhiteSpace(pathValue);
-
-                // 1. Mandatory Presence Check
-                // attr.Required is safe here as it was filtered by the .Where() clause
-                if (attr.Required && isPathEmpty)
+                if (violation.Property.Name == nameof(ServiceDto.ExecutablePath))
                 {
-                    // Specifically handle ExecutablePath using its dedicated error message
-                    if (property.Name == nameof(ServiceDto.ExecutablePath))
-                        return CommandResult.Fail(string.Format(Strings.Msg_InvalidExecutablePath, string.Empty));
-
-                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidPathInConfig, attr.Label));
+                    return CommandResult.Fail(string.Format(
+                        Strings.Msg_InvalidExecutablePath,
+                        violation.Value ?? string.Empty));
                 }
 
-                // 2. Path Validity Check
-                if (!isPathEmpty && !_processHelper.ValidatePath(pathValue, attr.IsFile))
-                {
-                    if (property.Name == nameof(ServiceDto.ExecutablePath))
-                        return CommandResult.Fail(string.Format(Strings.Msg_InvalidExecutablePath, pathValue));
-
-                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidPathInConfig, attr.Label));
-                }
+                return CommandResult.Fail(string.Format(
+                    Strings.Msg_InvalidPathInConfig,
+                    violation.Attribute.Label));
             }
 
             return CommandResult.Ok();

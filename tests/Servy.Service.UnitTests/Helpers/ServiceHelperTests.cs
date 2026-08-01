@@ -4,6 +4,7 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
+using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;
@@ -338,7 +339,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
-            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startAction =
+            StartProcessCallback startAction =
                 (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
@@ -362,7 +363,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
-            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startAction =
+            StartProcessCallback startAction =
                 (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
@@ -386,7 +387,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
-            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startAction =
+            StartProcessCallback startAction =
                 (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
@@ -700,15 +701,25 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        [InlineData("not-a-valid-url")]
-        [InlineData("/relative/path/only")]
-        public void MaskUrl_InvalidOrNonAbsoluteInput_ShouldReturnEmptyString(string inputUrl)
+        public void MaskUrl_NonAbsoluteInput_ShouldReturnEmptyString(string inputUrl)
         {
             // Act
             var result = ServiceHelper.MaskUrl(inputUrl);
 
             // Assert
             Assert.Equal(string.Empty, result);
+        }
+
+        [Theory]
+        [InlineData("not-a-valid-url")]
+        [InlineData("/relative/path/only")]
+        public void MaskUrl_InvalidInput_ShouldReturnInvalidUrlString(string inputUrl)
+        {
+            // Act
+            var result = ServiceHelper.MaskUrl(inputUrl);
+
+            // Assert
+            Assert.Equal("[INVALID URL]", result);
         }
 
         [Theory]

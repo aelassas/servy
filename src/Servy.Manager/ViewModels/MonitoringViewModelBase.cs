@@ -26,24 +26,24 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// The timer used to trigger periodic monitoring updates on the UI thread dispatcher.
         /// </summary>
-        protected DispatcherTimer _timer;
+        private DispatcherTimer _timer;
 
         /// <summary>
         /// Provides a cancellation token to background tasks associated with the current active monitoring session.
         /// </summary>
-        protected CancellationTokenSource _monitoringCts;
+        private CancellationTokenSource _monitoringCts;
 
         /// <summary>
         /// Atomic flag representing the overall monitoring state. 
         /// 0 = Stopped, 1 = Monitoring.
         /// </summary>
-        protected int _isMonitoringFlag = 0;
+        private int _isMonitoringFlag = 0;
 
         /// <summary>
         /// Atomic flag representing the execution state of the current tick. 
         /// 0 = Idle, 1 = Processing.
         /// </summary>
-        protected int _isTickRunningFlag = 0;
+        private int _isTickRunningFlag = 0;
 
         /// <summary>
         /// Tracks the total number of sequential monitoring failures to support log rate-limiting.
@@ -55,7 +55,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Whether the previous tick had a service selected, used to detect the selection-lost transition.
         /// </summary>
-        protected bool _hadSelectedService;
+        private bool _hadSelectedService;
 
         /// <summary>
         /// Gets or sets the Process ID string for display in the UI.
@@ -272,8 +272,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="service">Service model.</param>
         protected void SetPidText(ServiceItemBase service)
         {
-            var pidTxt = service?.Pid?.ToString() ?? UiConstants.NotAvailable;
-            if (Pid != pidTxt) Pid = pidTxt;
+            Pid = service?.Pid?.ToString() ?? UiConstants.NotAvailable;
         }
 
         /// <summary>
