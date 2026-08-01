@@ -1,4 +1,5 @@
 ﻿using Servy.Core.DTOs;
+using Servy.Core.Security;
 
 namespace Servy.Core.Services
 {
@@ -25,9 +26,11 @@ namespace Servy.Core.Services
         /// or <see langword="null"/> if the input is null or serialization fails.
         /// </returns>
         /// <remarks>
-        /// This method utilizes the same <see cref="Security.JsonSecurity.UntrustedDataSettings"/> 
-        /// as the deserialization path to ensure perfect round-trip symmetry for custom 
-        /// converters, enum formatting, and contract resolvers.
+        /// Serialization reuses <see cref="JsonSecurity.UntrustedDataSettings"/> so that a single
+        /// hardened settings source governs both directions. Note that <c>NullValueHandling.Ignore</c>
+        /// applies to both: null members are omitted from the output, and explicit nulls in the input are
+        /// skipped rather than assigned. Properties with a non-null initializer (<c>Name</c>,
+        /// <c>ExecutablePath</c>) therefore read back as their default, not as null.
         /// </remarks>
         string Serialize(ServiceDto dto);
     }

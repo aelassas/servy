@@ -39,7 +39,7 @@ namespace Servy.Core.Services
         public EventLogService(IEventLogReader reader, string sourceName = null)
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-            _sourceName = sourceName ?? AppConfig.EventSource;
+            _sourceName = (sourceName ?? AppConfig.EventSource).Trim();
         }
 
         /// <inheritdoc />
@@ -57,7 +57,7 @@ namespace Servy.Core.Services
                 var systemFilters = new List<string>();
 
                 // ESCAPE SOURCE NAME
-                if (!string.IsNullOrWhiteSpace(_sourceName))
+                if (!string.IsNullOrEmpty(_sourceName))
                 {
                     // 1. SECURITY GUARD: Validate against allowlist
                     // This prevents any character-based injection before escaping even starts.

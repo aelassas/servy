@@ -232,6 +232,39 @@ namespace Servy.Core.UnitTests.Security
 
         #endregion
 
+        #region Non-Admin Graceful Fallback Coverage Tests
+
+        [Fact]
+        public void HandleNonAdminFallback_LogsWarningMessageWithoutThrowing()
+        {
+            // Arrange
+            var ex = new UnauthorizedAccessException("Access to the path is denied.");
+            string logMessage = "Test non-admin fallback message.";
+
+            // Act & Assert
+            // Invoke internal private fallback handler via reflection to ensure it executes safely
+            var exception = Record.Exception(() =>
+                TestReflection.InvokeNonPublicStatic(typeof(SecurityHelper), "HandleNonAdminFallback", ex, logMessage));
+
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void CreateSecureDirectory_ExistingDirectoryWithBreakInheritanceTrue_GracefullyHandlesNonAdminFailure()
+        {
+            // Arrange
+            var path = Path.Combine(_testBaseDir, "ExistingRootVaultDir");
+            Directory.CreateDirectory(path);
+
+            // Act & Assert
+            // When executing on existing directories, CreateSecureDirectory handles ACL re-hardening gracefully
+            // for non-admin contexts if access is denied on SetAccessControl.
+            var exception = Record.Exception(() => SecurityHelper.CreateSecureDirectory(path, breakInheritance: true));
+            Assert.Null(exception);
+        }
+
+        #endregion
+
         /// <summary>
         /// Helper to invoke the internal method via reflection.
         /// </summary>
