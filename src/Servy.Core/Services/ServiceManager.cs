@@ -1112,10 +1112,10 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public ServiceDependencyNode GetDependencies(string serviceName, CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (!IsServiceInstalled(serviceName, cancellationToken))
             {
