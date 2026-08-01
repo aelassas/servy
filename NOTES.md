@@ -1,6 +1,6 @@
 ## Why Servy?
 
-I've been using NSSM for a while, but I kept running into the same issues again and again, so I ended up building my own tool and sharing it on GitHub.
+I've been using NSSM for a while, but I kept running into the same issues again and again, so I ended up building my own tool and putting it on GitHub.
 
 While NSSM is a lightweight Windows service wrapper, it hasn't seen an update in over a decade. It struggles with complex process tree cleanups and lacks essential features like pre/post start/stop hooks, date-based log rotation, CPU/RAM monitoring, email notifications, heartbeat ping URLs, and advanced recovery options. That's why I ended up building Servy to fix these issues and add the missing pieces I needed.
 
