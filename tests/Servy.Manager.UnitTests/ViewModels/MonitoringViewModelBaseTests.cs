@@ -55,11 +55,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             }
 
             public void ExposeInitTimer() => InitTimer();
-            public DispatcherTimer? ExposeTimer => _timer;
-            public CancellationTokenSource? ExposeCts => _monitoringCts;
+            public DispatcherTimer? ExposeTimer => TestReflection.GetField<DispatcherTimer>(this, "_timer");
+            public CancellationTokenSource? ExposeCts => TestReflection.GetField<CancellationTokenSource>(this, "_monitoringCts");
             public CancellationToken ExposeCurrentToken() => GetCurrentMonitoringToken();
-            public int ExposeIsMonitoringFlag => Volatile.Read(ref _isMonitoringFlag);
-            public int ExposeIsTickRunningFlag => Volatile.Read(ref _isTickRunningFlag);
+            public int ExposeIsMonitoringFlag =>TestReflection.GetField<int>(this, "_isMonitoringFlag");
+            public int ExposeIsTickRunningFlag => TestReflection.GetField<int>(this, "_isTickRunningFlag");
 
             // Connect the base abstraction hook to our local test control field
             protected override ServiceItemBase? SelectedServiceItem => MockedSelectedService;

@@ -7,6 +7,19 @@ using System.ServiceProcess;
 
 namespace Servy.Service.Helpers
 {
+    /// <summary>Launches (or relaunches) the monitored child process.</summary>
+    /// <param name="exePath">Fully resolved path to the child executable.</param>
+    /// <param name="arguments">Command-line arguments for the child.</param>
+    /// <param name="workingDirectory">Working directory the child is started in.</param>
+    /// <param name="environmentVariables">Environment block to inject.</param>
+    /// <param name="cancellationToken">Token observed while starting.</param>
+    public delegate void StartProcessCallback(
+        string exePath,
+        string arguments,
+        string workingDirectory,
+        List<EnvironmentVariable> environmentVariables,
+        CancellationToken cancellationToken);
+
     /// <summary>
     /// Defines methods to assist with service startup operations,
     /// including argument sanitization, logging, validation, and initialization of startup options.
@@ -102,7 +115,7 @@ namespace Servy.Service.Helpers
         /// <param name="cancellationToken">Cancellation token.</param>
         void RestartProcess(
             IProcessWrapper process,
-            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startProcess,
+            StartProcessCallback startProcess,
             string realExePath,
             string realArgs,
             string workingDir,

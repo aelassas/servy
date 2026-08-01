@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Xml.Serialization;
 using Servy.Core.Config;
+using Servy.Core.Resources;
 
 namespace Servy.Core.DTOs
 {
@@ -52,14 +53,14 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Path to the executable of the service.
         /// </summary>
-        [ServicePath("executable path", isFile: true, required: true)]
+        [ServicePath("executable path", isFile: true, required: true, errorResourceKey: nameof(Strings.Msg_InvalidPath))]
         [SqlColumn("TEXT NOT NULL")]
         public string ExecutablePath { get; set; } = string.Empty;
 
         /// <summary>
         /// Optional startup directory for the service executable.
         /// </summary>
-        [ServicePath("startup directory", isFile: false)]
+        [ServicePath("startup directory", isFile: false, errorResourceKey: nameof(Strings.Msg_InvalidStartupDirectory))]
         [SqlColumn("TEXT")]
         public string? StartupDirectory { get; set; }
 
@@ -209,14 +210,14 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Path to the process to run on failure.
         /// </summary>
-        [ServicePath("failure program executable path", isFile: true)]
+        [ServicePath("failure program executable path", isFile: true, errorResourceKey: nameof(Strings.Msg_InvalidFailureProgramPath))]
         [SqlColumn("TEXT")]
         public string? FailureProgramPath { get; set; }
 
         /// <summary>
         /// Working directory for the failure program.
         /// </summary>
-        [ServicePath("failure program startup directory", isFile: false)]
+        [ServicePath("failure program startup directory", isFile: false, errorResourceKey: nameof(Strings.Msg_InvalidFailureProgramStartupDirectory))]
         [SqlColumn("TEXT")]
         public string? FailureProgramStartupDirectory { get; set; }
 
@@ -265,14 +266,14 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional path to an executable that runs before the service starts.
         /// </summary>
-        [ServicePath("pre-launch executable path", isFile: true)]
+        [ServicePath("pre-launch executable path", isFile: true, errorResourceKey: nameof(Strings.Msg_InvalidPreLaunchPath))]
         [SqlColumn("TEXT")]
         public string? PreLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the pre-launch executable.
         /// </summary>
-        [ServicePath("pre-launch startup directory", isFile: false)]
+        [ServicePath("pre-launch startup directory", isFile: false, errorResourceKey: nameof(Strings.Msg_InvalidPreLaunchStartupDirectory))]
         [SqlColumn("TEXT")]
         public string? PreLaunchStartupDirectory { get; set; }
 
@@ -329,14 +330,14 @@ namespace Servy.Core.DTOs
         /// Post-launch hooks always run asynchronously and do not support supervisor features 
         /// (stdout capture, timeouts, or retries).
         /// </remarks>
-        [ServicePath("post-launch executable path", isFile: true)]
+        [ServicePath("post-launch executable path", isFile: true, errorResourceKey: nameof(Strings.Msg_InvalidPostLaunchPath))]
         [SqlColumn("TEXT")]
         public string? PostLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the post-launch executable.
         /// </summary>
-        [ServicePath("post-launch startup directory", isFile: false)]
+        [ServicePath("post-launch startup directory", isFile: false, errorResourceKey: nameof(Strings.Msg_InvalidPostLaunchStartupDirectory))]
         [SqlColumn("TEXT")]
         public string? PostLaunchStartupDirectory { get; set; }
 
@@ -396,14 +397,14 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional path to an executable that runs before the service stops.
         /// </summary>
-        [ServicePath("pre-stop executable path", isFile: true)]
+        [ServicePath("pre-stop executable path", isFile: true, errorResourceKey: nameof(Strings.Msg_InvalidPreStopPath))]
         [SqlColumn("TEXT")]
         public string? PreStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the pre-stop executable.
         /// </summary>
-        [ServicePath("pre-stop startup directory", isFile: false)]
+        [ServicePath("pre-stop startup directory", isFile: false, errorResourceKey: nameof(Strings.Msg_InvalidPreStopStartupDirectory))]
         [SqlColumn("TEXT")]
         public string? PreStopStartupDirectory { get; set; }
 
@@ -428,14 +429,14 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional path to an executable that runs after the service stops.
         /// </summary>
-        [ServicePath("post-stop executable path", isFile: true)]
+        [ServicePath("post-stop executable path", isFile: true, errorResourceKey: nameof(Strings.Msg_InvalidPostStopPath))]
         [SqlColumn("TEXT")]
         public string? PostStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the post-stop executable.
         /// </summary>
-        [ServicePath("post-stop startup directory", isFile: false)]
+        [ServicePath("post-stop startup directory", isFile: false, errorResourceKey: nameof(Strings.Msg_InvalidPostStopStartupDirectory))]
         [SqlColumn("TEXT")]
         public string? PostStopStartupDirectory { get; set; }
 

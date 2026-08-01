@@ -266,8 +266,8 @@ namespace Servy.Manager.ViewModels
             CpuUsage = _processHelper.FormatCpuUsage(processMetrics.CpuUsage);
             RamUsage = _processHelper.FormatRamUsage(processMetrics.RamUsage);
 
-            AddPoint(_cpuValues, processMetrics.CpuUsage, MetricType.Cpu);
-            AddPoint(_ramValues, rawRamMb, MetricType.Ram);
+            AddPoint(processMetrics.CpuUsage, MetricType.Cpu);
+            AddPoint(rawRamMb, MetricType.Ram);
         }
 
         #endregion
@@ -311,12 +311,13 @@ namespace Servy.Manager.ViewModels
         /// Processes new performance data and updates the point collections using an optimized 
         /// double-buffering approach to minimize GC allocations.
         /// </summary>
-        /// <param name="valueHistory">The historical list of data points for the specific metric.</param>
         /// <param name="newValue">The latest raw value captured from the process.</param>
         /// <param name="metricType">The type of metric (CPU or RAM) being updated.</param>
-        private void AddPoint(Queue<double> valueHistory, double newValue, MetricType metricType)
+        private void AddPoint(double newValue, MetricType metricType)
         {
             var isCpu = metricType == MetricType.Cpu;
+            var valueHistory = isCpu ? _cpuValues : _ramValues;
+
             valueHistory.Enqueue(newValue);
 
             if (valueHistory.Count > PerformanceHistoryCapacity)
@@ -335,7 +336,8 @@ namespace Servy.Manager.ViewModels
                 }
             }
 
-            // Scale dynamically if multi-process trees breach normalized boundaries, maintaining rational floor metrics
+            // Grow the axis with the observed peak (plus headroom), but never below the fixed floor
+            // (100% for CPU, _ramDisplayMax MB for RAM) so small processes don't fill the graph.
             double displayMax = isCpu
                 ? Math.Max(currentMax * GraphScaleHeadroom, 100.0)
                 : Math.Max(currentMax * GraphScaleHeadroom, _ramDisplayMax);

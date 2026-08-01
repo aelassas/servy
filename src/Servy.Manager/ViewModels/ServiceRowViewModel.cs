@@ -157,15 +157,8 @@ namespace Servy.Manager.ViewModels
             // This ensures UI buttons (Start, Stop, etc.) update their enabled state immediately.
             if (e.PropertyName == nameof(Service.Status) || e.PropertyName == nameof(Service.IsInstalled) || e.PropertyName == nameof(Service.Pid))
             {
-                (StartCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (StopCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (RestartCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (InstallCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (UninstallCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (RemoveCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (ExportXmlCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (ExportJsonCommand as AsyncCommand)?.RaiseCanExecuteChanged();
-                (CopyPidCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                // CommandManager.InvalidateRequerySuggested is global: one call re-queries every row command.
+                StartCommand.RaiseCanExecuteChanged();
             }
         }
 

@@ -25,6 +25,27 @@ namespace Servy.Manager.Views
     [ExcludeFromCodeCoverage]
     public partial class MainWindow : Window
     {
+        /// <summary>
+        /// Specifies the active tab scope used to coordinate background activity teardown during tab transitions.
+        /// </summary>
+        private enum TabScope
+        {
+            /// <summary>The primary dashboard service management tab.</summary>
+            Main,
+
+            /// <summary>The real-time performance monitoring tab.</summary>
+            Performance,
+
+            /// <summary>The console output tab.</summary>
+            Console,
+
+            /// <summary>The service dependency tree visualization tab.</summary>
+            Dependencies,
+
+            /// <summary>The log search tab.</summary>
+            Logs
+        }
+
         private readonly IMessageBoxService? _messageBoxService;
         private readonly IProcessKiller _processKiller;
 
@@ -245,23 +266,17 @@ namespace Servy.Manager.Views
 
                 if (DataContext is MainViewModel vm)
                 {
-                    // Resolve nested ViewModels for coordinated state management
-                    var perfVm = GetPerformanceVm();
-                    var consoleVm = GetConsoleVm();
-                    var dependenciesVM = GetDependenciesVm();
-                    var logsVm = GetLogsVm();
-
                     // Route to the appropriate handler based on the selected tab
                     if (MainTab.IsSelected)
-                        await HandleMainTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
+                        await HandleMainTabSelected(vm);
                     else if (PerformanceTab.IsSelected)
-                        await HandlePerfTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
+                        await HandlePerfTabSelected(vm, GetPerformanceVm());
                     else if (ConsoleTab.IsSelected)
-                        await HandleConsoleTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
+                        await HandleConsoleTabSelected(vm, GetConsoleVm());
                     else if (DependenciesTab.IsSelected)
-                        await HandleDependenciesTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
+                        await HandleDependenciesTabSelected(vm, GetDependenciesVm());
                     else if (LogsTab.IsSelected)
-                        await HandleLogsTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
+                        await HandleLogsTabSelected(vm, GetLogsVm());
                 }
             }
             catch (OperationCanceledException)
@@ -324,14 +339,14 @@ namespace Servy.Manager.Views
         /// across all tabs except for the explicitly specified active scope.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="activeTab">The tab name identifier that should skip deactivation teardown.</param>
-        private void DeactivateAllExcept(MainViewModel vm, string activeTab)
+        /// <param name="activeTab">The tab scope identifier that should skip deactivation teardown.</param>
+        private void DeactivateAllExcept(MainViewModel vm, TabScope activeTab)
         {
-            if (activeTab != "Main") vm.StopRefreshTimer();
-            if (activeTab != "Performance") GetPerformanceVm()?.StopMonitoring();
-            if (activeTab != "Console") GetConsoleVm()?.StopMonitoring();
-            if (activeTab != "Dependencies") GetDependenciesVm()?.StopMonitoring();
-            if (activeTab != "Logs") GetLogsVm()?.CancelSearch();
+            if (activeTab != TabScope.Main) vm.StopRefreshTimer();
+            if (activeTab != TabScope.Performance) GetPerformanceVm()?.StopMonitoring();
+            if (activeTab != TabScope.Console) GetConsoleVm()?.StopMonitoring();
+            if (activeTab != TabScope.Dependencies) GetDependenciesVm()?.StopMonitoring();
+            if (activeTab != TabScope.Logs) GetLogsVm()?.CancelSearch();
         }
 
         /// <summary>
@@ -340,22 +355,10 @@ namespace Servy.Manager.Views
         /// and starts periodic timer updates in the main tab.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="perfVm">
-        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
-        /// </param> 
-        /// <param name="dependenciesVm">
-        /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
-        /// </param>
-        /// <param name="consoleVm">
-        /// The <see cref="ConsoleViewModel"/> instance for the console tab, or <c>null</c> if unavailable.
-        /// </param>
-        /// <param name="logsVm">
-        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
-        /// </param>
-        private async Task HandleMainTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, ConsoleViewModel? consoleVm, DependenciesViewModel? dependenciesVm, LogsViewModel? logsVm)
+        private async Task HandleMainTabSelected(MainViewModel vm)
         {
             // Stop background workers on all other interfaces, bypassing the Main refresh timer
-            DeactivateAllExcept(vm, "Main");
+            DeactivateAllExcept(vm, TabScope.Main);
 
             // Run search for main tab if applicable
             if (vm.ServicesView.IsEmpty)
@@ -373,18 +376,9 @@ namespace Servy.Manager.Views
         /// <param name="perfVm">
         /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
         /// </param> 
-        /// <param name="consoleVM">
-        /// The <see cref="ConsoleViewModel"/> instance for the console tab, or <c>null</c> if unavailable.
-        /// </param>
-        /// <param name="dependenciesVM">
-        /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
-        /// </param>
-        /// <param name="logsVm">
-        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
-        /// </param>
-        private Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, ConsoleViewModel? consoleVM, DependenciesViewModel? dependenciesVM, LogsViewModel? logsVm)
+        private Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel? perfVm)
         {
-            DeactivateAllExcept(vm, "Performance");
+            DeactivateAllExcept(vm, TabScope.Performance);
 
             // Start timers in performance tab
             perfVm?.StartMonitoring();
@@ -400,24 +394,15 @@ namespace Servy.Manager.Views
         /// cleaning up background activities in other tabs. It should be called whenever the Console tab becomes active
         /// to maintain correct application state.</remarks>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="perfVm">
-        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
-        /// </param> 
-        /// <param name="consoleVM">
+        /// <param name="consoleVm">
         /// The <see cref="ConsoleViewModel"/> instance for the console tab, or <c>null</c> if unavailable.
         /// </param>
-        /// <param name="dependenciesVM">
-        /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
-        /// </param>
-        /// <param name="logsVm">
-        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
-        /// </param>
-        private Task HandleConsoleTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, ConsoleViewModel? consoleVM, DependenciesViewModel? dependenciesVM, LogsViewModel? logsVm)
+        private Task HandleConsoleTabSelected(MainViewModel vm, ConsoleViewModel? consoleVm)
         {
-            DeactivateAllExcept(vm, "Console");
+            DeactivateAllExcept(vm, TabScope.Console);
 
             // Start timers in console tab
-            consoleVM?.StartMonitoring();
+            consoleVm?.StartMonitoring();
 
             return Task.CompletedTask;
         }
@@ -430,24 +415,15 @@ namespace Servy.Manager.Views
         /// cleaning up background activities in other tabs. It should be called whenever the Dependencies tab becomes active
         /// to maintain correct application state.</remarks>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="perfVm">
-        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
-        /// </param> 
-        /// <param name="consoleVM">
-        /// The <see cref="ConsoleViewModel"/> instance for the console tab, or <c>null</c> if unavailable.
-        /// </param>
-        /// <param name="dependenciesVM">
+        /// <param name="dependenciesVm">
         /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
         /// </param>
-        /// <param name="logsVm">
-        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
-        /// </param>
-        private Task HandleDependenciesTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, ConsoleViewModel? consoleVM, DependenciesViewModel? dependenciesVM, LogsViewModel? logsVm)
+        private Task HandleDependenciesTabSelected(MainViewModel vm, DependenciesViewModel? dependenciesVm)
         {
-            DeactivateAllExcept(vm, "Dependencies");
+            DeactivateAllExcept(vm, TabScope.Dependencies);
 
             // Start timers in dependencies tab
-            dependenciesVM?.StartMonitoring();
+            dependenciesVm?.StartMonitoring();
 
             return Task.CompletedTask;
         }
@@ -457,21 +433,12 @@ namespace Servy.Manager.Views
         /// cleans up main tab resources and triggers a search for logs if the logs collection is empty.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="perfVm">
-        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
-        /// </param> 
-        /// <param name="consoleVM">
-        /// The <see cref="ConsoleViewModel"/> instance for the console tab, or <c>null</c> if unavailable.
-        /// </param>
-        /// <param name="dependenciesVM">
-        /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
-        /// </param>
         /// <param name="logsVm">
         /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
         /// </param>
-        private async Task HandleLogsTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, ConsoleViewModel? consoleVM, DependenciesViewModel? dependenciesVM, LogsViewModel? logsVm)
+        private async Task HandleLogsTabSelected(MainViewModel vm, LogsViewModel? logsVm)
         {
-            DeactivateAllExcept(vm, "Logs");
+            DeactivateAllExcept(vm, TabScope.Logs);
 
             // Run search for logs tab if applicable
             if (logsVm?.LogsView?.IsEmpty ?? false)

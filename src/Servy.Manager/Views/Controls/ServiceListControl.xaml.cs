@@ -26,7 +26,7 @@ namespace Servy.Manager.Views.Controls
         /// <summary>
         /// Gets or sets the collection of services displayed in the list.
         /// </summary>
-        public ObservableCollection<ServiceItemBase> Services
+        public ObservableCollection<ServiceItemBase>? Services
         {
             get => (ObservableCollection<ServiceItemBase>)GetValue(ServicesProperty);
             set => SetValue(ServicesProperty, value);
@@ -45,7 +45,7 @@ namespace Servy.Manager.Views.Controls
         /// Gets or sets the currently selected service in the list.
         /// This property supports two-way binding by default.
         /// </summary>
-        public ServiceItemBase SelectedService
+        public ServiceItemBase? SelectedService
         {
             get => (ServiceItemBase)GetValue(SelectedServiceProperty);
             set => SetValue(SelectedServiceProperty, value);
@@ -66,7 +66,7 @@ namespace Servy.Manager.Views.Controls
         /// <summary>
         /// Gets or sets the search text used to filter the services list.
         /// </summary>
-        public string SearchText
+        public string? SearchText
         {
             get => (string)GetValue(SearchTextProperty);
             set => SetValue(SearchTextProperty, value);
@@ -88,7 +88,7 @@ namespace Servy.Manager.Views.Controls
         /// Gets or sets the text displayed on the search button.
         /// This typically reflects the current search state (for example, "Search" or "Searching...").
         /// </summary>
-        public string SearchButtonText
+        public string? SearchButtonText
         {
             get => (string)GetValue(SearchButtonTextProperty);
             set => SetValue(SearchButtonTextProperty, value);
@@ -125,7 +125,7 @@ namespace Servy.Manager.Views.Controls
         /// <summary>
         /// Gets or sets the command executed when the user initiates a service search.
         /// </summary>
-        public ICommand SearchCommand
+        public ICommand? SearchCommand
         {
             get => (ICommand)GetValue(SearchCommandProperty);
             set => SetValue(SearchCommandProperty, value);

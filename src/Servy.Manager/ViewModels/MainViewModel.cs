@@ -34,6 +34,7 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
         private readonly IHelpService _helpService;
+        private IServiceCommands _serviceCommands;
 
         private CancellationTokenSource? _cts;
 
@@ -85,8 +86,6 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        private IServiceCommands _serviceCommands;
-
         /// <summary>
         /// The set of service commands available for each service row.
         /// </summary>
@@ -115,7 +114,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Collection of services displayed in the DataGrid.
         /// </summary>
-        public ICollectionView ServicesView { get; private set; }
+        public ICollectionView ServicesView { get; }
 
         /// <summary>
         /// Indicates whether any services are currently selected.
@@ -687,6 +686,8 @@ namespace Servy.Manager.ViewModels
             string logErrorMessage,
             CancellationToken token)
         {
+            bool busyEntered = false;
+
             try
             {
                 token.ThrowIfCancellationRequested();
@@ -708,6 +709,7 @@ namespace Servy.Manager.ViewModels
                     return;
 
                 await SetBusyStateAsync(true);
+                busyEntered = true;
 
                 // 3. Dispatch all operations concurrently: Scale parallelism up to 2x logical CPU cores, capped by application configuration.
                 int maxDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
@@ -763,7 +765,10 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                await SetBusyStateAsync(false);
+                if (busyEntered)
+                {
+                    await SetBusyStateAsync(false);
+                }
             }
         }
 
@@ -1132,7 +1137,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Refreshes the services list by re-running the search.
         /// </summary>
-        public async Task Refresh()
+        public async Task RefreshAsync()
         {
             await SearchServicesAsync(null);
         }

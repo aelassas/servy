@@ -354,15 +354,22 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Orchestrates the transition between services. This method synchronizes the history 
-        /// loading of both StdOut and StdErr streams before initiating live tailing.
+        /// Orchestrates switching active log tailers or resuming live log streaming for the current service.
         /// </summary>
         /// <remarks>
-        /// Uses an incrementing Session ID to ensure that log updates from previously 
-        /// selected services (still in the Dispatcher queue) are ignored.
+        /// <para>
+        /// This method handles both initial service transitions and live tailing resume sequences (such as when
+        /// unpausing or clearing text selection via <see cref="SetPaused(bool)"/>). Resuming live tailing triggers
+        /// a complete pipeline reset: it cancels existing tailers, re-reads merged stdout/stderr historical logs
+        /// from disk up to <c>_maxLines</c>, sorts the log lines by timestamp, and establishes fresh tailing streams.
+        /// </para>
+        /// <para>
+        /// Uses an incrementing Session ID to ensure that asynchronous history reads or delayed log updates from previously
+        /// active sessions or superseded transitions (still pending in the Dispatcher queue) are safely discarded.
+        /// </para>
         /// </remarks>
-        /// <param name="stdoutPath">Path to the standard output log.</param>
-        /// <param name="stderrPath">Path to the standard error log.</param>
+        /// <param name="stdoutPath">Path to the standard output log file.</param>
+        /// <param name="stderrPath">Path to the standard error log file.</param>
         private async Task SwitchServiceAsync(string? stdoutPath, string? stderrPath)
         {
             try

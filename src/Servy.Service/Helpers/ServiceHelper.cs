@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Validation;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
@@ -129,7 +130,9 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="commandLineProvider">The provider used to access system command line arguments.</param>
         /// <param name="processHelper">The process helper used for any necessary process-related operations during parsing.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="commandLineProvider"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="commandLineProvider"/> or <paramref name="processHelper"/> is null.
+        /// </exception>
         public ServiceHelper(
             ICommandLineProvider commandLineProvider,
             IProcessHelper processHelper
@@ -300,7 +303,7 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public void RestartProcess(
                     IProcessWrapper process,
-                    Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startProcess,
+                    StartProcessCallback startProcess,
                     string realExePath,
                     string realArgs,
                     string workingDir,
@@ -414,7 +417,7 @@ namespace Servy.Service.Helpers
                     // 1. Wait for the restarter to complete the Stop/Start cycle
                     if (!process.WaitForExit(AppConfig.RestarterExeMaxWaitMs))
                     {
-                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / (double)AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
@@ -424,7 +427,7 @@ namespace Servy.Service.Helpers
                             // 3. Brief wait to ensure kernel cleanup is complete before we return control
                             if (!process.WaitForExit(AppConfig.RestarterKillGracePeriodMs))
                             {
-                                logger?.Warn($"Restarter killed, but kernel cleanup is taking longer than {AppConfig.RestarterKillGracePeriodMs / AppConfig.MillisecondsPerSecond} seconds.");
+                                logger?.Warn($"Restarter killed, but kernel cleanup is taking longer than {AppConfig.RestarterKillGracePeriodMs / (double)AppConfig.MillisecondsPerSecond} seconds.");
                             }
                         }
                         catch (Exception killEx)
@@ -593,9 +596,14 @@ namespace Servy.Service.Helpers
         /// <returns>The fully scrubbed and masked URL.</returns>
         internal static string MaskUrl(string? url)
         {
-            if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            if (string.IsNullOrWhiteSpace(url))
             {
                 return string.Empty;
+            }
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                return "[INVALID URL]";
             }
 
             // Capture solely the scheme and host boundary to strip user:pass, query string strings, and precise routing hashes
@@ -604,8 +612,8 @@ namespace Servy.Service.Helpers
 
             if (localPath.Length > 6)
             {
-                // Keep the first few characters of the path for debugging recognition, mask the rest
-                string dynamicSegment = localPath.Substring(1, Math.Min(5, localPath.Length - 1));
+                // localPath.Length > 6 guarantees at least 5 characters after the leading '/'
+                string dynamicSegment = localPath.Substring(1, 5);
                 return $"{baseSecuredUri}/{dynamicSegment}... [MASKED]";
             }
 
@@ -639,37 +647,20 @@ namespace Servy.Service.Helpers
                 return false;
             }
 
-            // 2. Reflective check for all path-based fields
-            var pathFields = typeof(StartOptions).GetProperties()
-                .Select(p => new
-                {
-                    Property = p,
-                    Attr = p.GetCustomAttribute<ServicePathAttribute>()
-                })
-                .Where(x => x.Attr != null);
-
-            foreach (var field in pathFields)
+            // 2. Reflective path evaluation using shared validator
+            var violation = ServicePathValidator.FindFirstViolation(options, _processHelper.ValidatePath);
+            if (violation != null)
             {
-                var property = field.Property;
-                var attr = field.Attr;
-
-                // Get the current path value from options
-                var pathValue = property.GetValue(options) as string;
-                bool isPathEmpty = string.IsNullOrWhiteSpace(pathValue);
-
-                // Required check: Logic specifically matches the original error "not provided"
-                if (attr!.Required && isPathEmpty)
+                if (violation.IsMissing)
                 {
-                    logger?.Error($"{attr.Label} not provided.");
-                    return false;
+                    logger?.Error($"{violation.Attribute.Label} not provided.");
+                }
+                else
+                {
+                    logger?.Error($"{violation.Attribute.Label} {violation.Value} is invalid.");
                 }
 
-                // Validity check: Logic matches original error "{label} {path} is invalid."
-                if (!isPathEmpty && !_processHelper.ValidatePath(pathValue, attr.IsFile))
-                {
-                    logger?.Error($"{attr.Label} {pathValue} is invalid.");
-                    return false;
-                }
+                return false;
             }
 
             return true;

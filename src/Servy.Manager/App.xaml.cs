@@ -212,7 +212,7 @@ namespace Servy.Manager
                     // Break the circular dependency using local proxy functions
                     MainViewModel? viewModel = null;
                     Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
-                    Func<Task> refreshProxy = () => viewModel != null ? viewModel.Refresh() : Task.CompletedTask;
+                    Func<Task> refreshProxy = () => viewModel != null ? viewModel.RefreshAsync() : Task.CompletedTask;
 
                     var serviceCommands = new ServiceCommands(
                         serviceManager,
