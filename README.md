@@ -92,10 +92,11 @@ servy-cli install `
   --name="MyService" `
   --path="C:\Program Files\nodejs\node.exe" `
   --startupDir="C:\MyServer" `
-  --params="server.js"    
+  --params="server.js" `
+  --enableHealth
 ```
 
-This creates a service named `MyService` that runs your Node.js server in the background and starts automatically with Windows.
+This creates a service named `MyService` that runs your Node.js server in the background and starts automatically with Windows, and has [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery) enabled.
 
 Then start the service:
 
