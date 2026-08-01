@@ -9,7 +9,7 @@ using System.Windows.Data;
 
 namespace Servy.Manager.UnitTests.Converters
 {
-    [Collection("Ambient AppServices Dependent Tests")]
+    [Collection(AmbientTestCollection.Name)]
     public class ProcessMetricConverterTests
     {
         #region Minimal Concrete Test Implementation

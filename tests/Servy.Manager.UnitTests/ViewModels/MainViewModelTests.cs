@@ -22,7 +22,7 @@ using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
-    [Collection("Ambient AppServices Dependent Tests")]
+    [Collection(AmbientTestCollection.Name)]
     public class MainViewModelTests
     {
         private readonly Mock<IServiceManager> _serviceManagerMock;
