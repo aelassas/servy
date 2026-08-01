@@ -1,22 +1,8 @@
 ## Why Servy?
 
-Whenever I needed to run an app as a Windows service, I usually relied on tools like `sc.exe`, NSSM, or WinSW. They get the job done, but in real projects, their limitations quickly became frustrating.
+I've been using NSSM for a while, but I kept running into the same issues again and again, so I ended up building my own tool and sharing it on GitHub.
 
-`sc.exe` only works with applications specifically compiled to run as Windows services. NSSM is lightweight, but it doesn't offer monitoring, health checks, hooks, or a fully-featured user interface, and hasn't seen a stable update in over a decade. WinSW is configurable, but it's XML-based, not very user-friendly for quick setups, and does not provide a UI.
-
-After running into these issues too many times, I decided to build my own tool.
-
-I wanted a solution that was easy to use, with a clean desktop app, but also scriptable through CLI and PowerShell for automation and CI/CD pipelines. It needed to be flexible enough to run any type of app (Node.js, Python, Go, .NET, scripts, and more). It also had to be robust, with built-in logging, health checks, recovery options, pre-launch and post-launch hooks, pre-stop and post-stop hooks, CPU and RAM monitoring, live stdout/stderr streaming, service dependencies visualization, and restart policies. Finally, it had to work across a wide range of Windows versions, from Windows 7 SP1 to Windows 11, including Windows Server editions.
-
-The result is Servy, a tool that lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, hooks, and parameters. It is designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
-
-Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
-
-If you've ever struggled with the limitations of the built-in `sc.exe` tool or found NSSM lacking in features or UI, Servy might be exactly what you need. It solves a common limitation of Windows services by allowing you to set a custom working directory. The built-in `sc.exe` tool only works with applications specifically designed to run as Windows services and always uses `C:\Windows\System32` as the working directory with no way to change it. This completely breaks modern applications (like Node.js or Python scripts) that rely on relative paths, local configurations, or local assets. Servy lets you run any app as a service and define the startup directory explicitly, ensuring it behaves exactly as if launched from a shortcut or command prompt.
-
-Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
-
-A service wrapper is not just a starter script. In production, it is the heartbeat of your application. If your wrapper cannot handle graceful signal propagation or proper process cleanup, you risk leaked resources and orphaned processes that manual reboots cannot always fix. Servy is designed to eliminate these vulnerabilities. By delivering live streaming output and real-time resource metrics (CPU/RAM), it ensures you can isolate and resolve critical issues in seconds rather than spending hours debugging in the dark.
+While NSSM is a lightweight Windows service wrapper, it hasn't seen an update in over a decade. It struggles with complex process tree cleanups and lacks essential features like pre/post start/stop hooks, date-based log rotation, CPU/RAM monitoring, email notifications, heartbeat ping URLs, and advanced recovery options. That's why I ended up building Servy to fix these issues and add the missing pieces I needed.
 
 ## Points of Interest
 
