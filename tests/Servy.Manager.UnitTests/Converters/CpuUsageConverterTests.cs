@@ -12,12 +12,10 @@ namespace Servy.Manager.UnitTests.Converters
     public class CpuUsageConverterTests
     {
         private readonly Mock<IProcessHelper> _mockProcessHelper;
-        private readonly Mock<IProcessKiller> _mockProcessKiller;
 
         public CpuUsageConverterTests()
         {
             _mockProcessHelper = new Mock<IProcessHelper>();
-            _mockProcessKiller = new Mock<IProcessKiller>();
         }
 
         [Fact]
@@ -27,7 +25,6 @@ namespace Servy.Manager.UnitTests.Converters
             var originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
 
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
             serviceCollection.AddSingleton(_mockProcessHelper.Object);
 
             // Service registration must precede constructor execution 
@@ -63,7 +60,6 @@ namespace Servy.Manager.UnitTests.Converters
             // Arrange
             var originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
             serviceCollection.AddSingleton(_mockProcessHelper.Object);
 
             App.Services = serviceCollection.BuildServiceProvider();
@@ -90,7 +86,6 @@ namespace Servy.Manager.UnitTests.Converters
             // Arrange
             var originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
             serviceCollection.AddSingleton(_mockProcessHelper.Object);
 
             App.Services = serviceCollection.BuildServiceProvider();

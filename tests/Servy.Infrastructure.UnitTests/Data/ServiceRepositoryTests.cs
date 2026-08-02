@@ -55,18 +55,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         private void SetupDecryptPassthrough()
         {
             _mockSecureData.Setup(s => s.Decrypt(It.IsAny<string>()))
-                           .Returns<string>(v =>
-                           {
-                               // Handle explicitly hardcoded bulk variants or plain string variations cleanly
-                               if (v == "encrypted" || v == "enc1" || v == "enc2")
-                                   return v.Replace("encrypted", "plain").Replace("enc1", "pwd1").Replace("enc2", "pwd2");
-
-                               // If generated dynamically via SensitiveFields rules, revert back seamlessly
-                               if (v.EndsWith("_enc"))
-                                   return v.Replace("_enc", "_plain");
-
-                               return v;
-                           });
+                           .Returns<string>(v => v.EndsWith("_enc") ? v.Replace("_enc", "_plain") : v);
         }
 
         #region Constructor Tests

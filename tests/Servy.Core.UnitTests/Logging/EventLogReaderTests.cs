@@ -116,7 +116,7 @@ namespace Servy.Core.UnitTests.Logging
             var mockEvent = new TestableEventRecord
             {
                 ThrowExceptionOnProperties = true,
-                FormatDescriptionValue = "Will be ignored due to properties exception layout"
+                FormatDescriptionValue = "Message survives a properties-only failure"
             };
 
             // Act
@@ -127,6 +127,7 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal(DateTimeOffset.MinValue, result.Time);
             Assert.Equal(EventLogLevel.Information, result.Level);
             Assert.Equal("<unavailable>", result.ProviderName);
+            Assert.Equal("Message survives a properties-only failure", result.Message);
         }
 
         [Theory]
@@ -157,8 +158,9 @@ namespace Servy.Core.UnitTests.Logging
         #region Helper Mock Stub Layout for EventRecord
 
         /// <summary>
-        /// A testable variant overriding property backing blocks via reflection mappings or mock layout emulation.
-        /// Since fields on EventRecord are protected/internal, reflection allows instantiation without external API dependencies.
+        /// A test double for <see cref="EventRecord"/>. Every member is overridden directly, so no
+        /// reflection or native event-log handle is required. Set <see cref="ThrowExceptionOnProperties"/>
+        /// or <see cref="ExceptionToThrowOnFormat"/> to exercise MapToDto's per-property catch blocks.
         /// </summary>
         private class TestableEventRecord : EventRecord
         {
@@ -169,12 +171,6 @@ namespace Servy.Core.UnitTests.Logging
             public string? FormatDescriptionValue { get; set; }
             public bool ThrowExceptionOnProperties { get; set; }
             public Exception? ExceptionToThrowOnFormat { get; set; }
-
-            // Instantiates via the internal constructor structure or creates a blank layout handle
-            public TestableEventRecord()
-            {
-                // Force base initialization to prevent native validation exceptions if framework code runs
-            }
 
             public override int Id => ThrowExceptionOnProperties
                 ? throw new EventLogNotFoundException("Simulated missing property exception context")
@@ -250,12 +246,6 @@ namespace Servy.Core.UnitTests.Logging
             {
                 return string.Empty;
             }
-        }
-
-        private class ExceptionAttribute : Attribute
-        {
-            public Type ExceptionType { get; }
-            public ExceptionAttribute(Type exceptionType) => ExceptionType = exceptionType;
         }
 
         #endregion
