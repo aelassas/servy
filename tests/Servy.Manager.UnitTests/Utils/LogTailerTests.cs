@@ -469,17 +469,17 @@ namespace Servy.Manager.UnitTests.Utils
             // Arrange
             var tailer = new LogTailer();
 
-            // Act - Verify initial state before disposal context
+            // Act - Verify initial state before disposal
             bool isDisposedBefore = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
             Assert.False(isDisposedBefore, "The logs view model wrapper should not initialize in a pre-disposed state.");
 
-            // Act - First explicit teardown execution context
+            // Act - First disposal
             tailer.Dispose();
 
             bool isDisposedAfterFirst = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
             Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
 
-            // Act - Manually alter the field value back to false to verify short-circuit branch safety coverage profiles natively
+            // Act - Second disposal must hit the Interlocked.Exchange early return
             TestReflection.SetField(tailer, "_isDisposed", 1);
             var doubleDisposeException = Record.Exception(tailer.Dispose);
 

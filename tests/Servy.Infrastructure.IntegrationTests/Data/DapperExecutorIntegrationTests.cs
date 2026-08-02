@@ -16,8 +16,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         #region Shared Test Doubles Base Infrastructure
 
         /// <summary>
-        /// Base test double abstraction providing an inert scaffolding implementation of <see cref="DbConnection"/>
-        /// to centralize boilerplate configuration, clean out scaffold-rot leaks, and track resource disposal safely.
+        /// Base test double providing an inert <see cref="DbConnection"/> implementation so the concrete
+        /// doubles below only have to express their failure behavior. Tracks disposal via <see cref="WasDisposed"/>.
         /// </summary>
         private abstract class TestDbConnectionBase : DbConnection
         {
@@ -724,7 +724,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
-        // Shared tracking abstraction DTO targeting raw database queries directly
+        // Row type for Dapper materialization in this class.
         private class TestServiceDto
         {
             public string ServiceName { get; set; } = string.Empty;

@@ -20,21 +20,17 @@ namespace Servy.Manager.UnitTests
         private readonly ServiceProvider _builtProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AmbientAppServicesScope"/> class, snapshotting the active provider 
-        /// state and applying the provided configuration delegate rules against a fresh inner collection container.
+        /// Captures the ambient <see cref="App.Services"/> provider, installs a test-specific container built by
+        /// <paramref name="configure"/>, and unconditionally restores the original provider (disposing the inner
+        /// container) when the scope is discarded.
         /// </summary>
         /// <param name="configure">An encapsulation action utilized to seed dependencies and mocks directly into the test container.</param>
         public AmbientAppServicesScope(Action<IServiceCollection> configure)
         {
-            // Arrange
             _originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
-
             configure(serviceCollection);
-
             _builtProvider = serviceCollection.BuildServiceProvider();
-
-            // Act
             App.Services = _builtProvider;
         }
 
@@ -44,7 +40,7 @@ namespace Servy.Manager.UnitTests
         /// </summary>
         public void Dispose()
         {
-            // Assert & Restore - Unconditional reversion guarantees no static leaks
+            // Restore before disposing: a consumer that resolves during teardown must not see the disposed container.
             App.Services = _originalProvider;
             _builtProvider.Dispose();
         }

@@ -50,10 +50,7 @@ namespace Servy.Core.UnitTests.Validation
         [InlineData("LPT1.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         public void ValidatePath_ReservedDeviceName_ReturnsFail(string fileName, FileMode mode, FileAccess access, FileShare share)
         {
-            // Arrange
-            // Theory parameterized inputs act as the structural payloads
-
-            // Act
+            // Arrange & Act
             var result = PathSecurityGuard.ValidatePath(fileName, mode, access, share, out var stream);
 
             // Assert
@@ -61,9 +58,7 @@ namespace Servy.Core.UnitTests.Validation
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
 
-            // Narrow validation strictly down to the DOS-device-name guard checkpoint context.
-            // We strip out the lax 'hitUncGuard' fallback condition completely, ensuring that local device
-            // bypasses are explicitly intercepted by the localized device restriction engine.
+            // Assert the reserved-device guard specifically: the message must name the device it rejected.
             bool hitDosGuard = result.ErrorMessage.IndexOf(Path.GetFileNameWithoutExtension(fileName), StringComparison.OrdinalIgnoreCase) >= 0;
 
             Assert.True(hitDosGuard,
