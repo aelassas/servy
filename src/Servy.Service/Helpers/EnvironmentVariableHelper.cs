@@ -45,6 +45,11 @@ namespace Servy.Service.Helpers
         internal const string PercentEscapeToken = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD";
 
         /// <summary>
+        /// Gets a read-only collection of protected system variable names that should never be overridden by user configuration.
+        /// </summary>
+        internal static IReadOnlyCollection<string> ProtectedVariableNames => ProtectedVariables;
+
+        /// <summary>
         /// Protected system variables that should never be overridden by user configuration
         /// to prevent privilege escalation, process hijacking, and system instability.
         /// </summary>

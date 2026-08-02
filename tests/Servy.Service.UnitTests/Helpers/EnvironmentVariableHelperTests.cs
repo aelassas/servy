@@ -511,27 +511,70 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void ExpandEnvironmentVariables_ShouldBlockAllVariablesInProtectedSet()
+        public void ExpandEnvironmentVariables_BlocksEveryVariableInProtectedSet()
         {
             // Arrange
-            var vars = new List<EnvironmentVariable>
+            const string HijackSentinel = "__SERVY_HIJACK__";
+
+            var userVars = EnvironmentVariableHelper.ProtectedVariableNames
+                .Select(name => new EnvironmentVariable { Name = name, Value = HijackSentinel })
+                .ToList();
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars);
+
+            // Assert: Verify that no user-configured value overrode any protected variable
+            var leakedVariables = EnvironmentVariableHelper.ProtectedVariableNames
+                .Where(name => expanded.TryGetValue(name, out var val) && val == HijackSentinel)
+                .ToList();
+
+            Assert.True(leakedVariables.Count == 0,
+                $"User configuration successfully overrode protected variable(s): {string.Join(", ", leakedVariables)}");
+        }
+
+        [Fact]
+        public void ProtectedVariableSet_StillCoversKnownRuntimeInjectionVectors()
+        {
+            // Arrange: Key runtime injection, profiling, and hook vectors that MUST remain protected
+            string[] requiredSecurityVectors =
             {
-                new EnvironmentVariable { Name = "SYSTEMROOT", Value = "C:\\Fake" },
-                new EnvironmentVariable { Name = "TEMP", Value = "C:\\FakeTemp" },
-                new EnvironmentVariable { Name = "USERNAME", Value = "__ServyFakeUser__" }
+                "COR_ENABLE_PROFILING",
+                "COR_PROFILER",
+                "COR_PROFILER_PATH",
+                "CORECLR_ENABLE_PROFILING",
+                "CORECLR_PROFILER",
+                "CORECLR_PROFILER_PATH",
+                "DOTNET_STARTUP_HOOKS",
+                "DOTNET_ADDITIONAL_DEPS",
+                "DOTNET_SHARED_STORE",
+                "DOTNET_ROOT"
+            };
+
+            // Act & Assert
+            Assert.All(requiredSecurityVectors, name =>
+            {
+                Assert.Contains(name, EnvironmentVariableHelper.ProtectedVariableNames, StringComparer.OrdinalIgnoreCase);
+            });
+        }
+
+        [Fact]
+        public void ShouldBeCaseInsensitiveForProtectedVariables()
+        {
+            // Arrange
+            var userVars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "pAtH", Value = "C:\\Evil" },
+                new EnvironmentVariable { Name = "coMspeC", Value = "cmd_evil.exe" },
+                new EnvironmentVariable { Name = "cor_PROFILER", Value = "{EVIL-GUID}" }
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars);
 
             // Assert
-            Assert.NotEqual("C:\\Fake", expanded["SYSTEMROOT"]);
-            Assert.NotEqual("C:\\FakeTemp", expanded["TEMP"]);
-            Assert.NotEqual("__ServyFakeUser__", expanded["USERNAME"]);
-
-            Assert.Equal(Environment.GetEnvironmentVariable("SystemRoot"), expanded["SYSTEMROOT"], ignoreCase: true);
-            Assert.Equal(Environment.GetEnvironmentVariable("TEMP"), expanded["TEMP"], ignoreCase: true);
-            Assert.Equal(Environment.GetEnvironmentVariable("USERNAME"), expanded["USERNAME"], ignoreCase: true);
+            Assert.False(expanded.TryGetValue("pAtH", out var pathVal) && pathVal == "C:\\Evil");
+            Assert.False(expanded.TryGetValue("coMspeC", out var comspecVal) && comspecVal == "cmd_evil.exe");
+            Assert.False(expanded.TryGetValue("cor_PROFILER", out var profilerVal) && profilerVal == "{EVIL-GUID}");
         }
 
         [Fact]

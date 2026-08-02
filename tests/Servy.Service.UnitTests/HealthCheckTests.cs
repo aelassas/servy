@@ -19,7 +19,7 @@ namespace Servy.Service.UnitTests
         private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
 
         [Fact]
-        public void CheckHealth_ProcessExited_IncrementsFailedChecks_AndLogs()
+        public async Task CheckHealth_ProcessExited_IncrementsFailedChecks_AndLogs()
         {
             // Arrange
             var ctx = new ServiceTestContext();
@@ -36,7 +36,7 @@ namespace Servy.Service.UnitTests
             service.SetFailedChecks(0);
 
             // Act
-            service.InvokeCheckHealth(null, null);
+            await service.InvokeCheckHealthAsync(null, null);
 
             // Assert
             Assert.Equal(1, service.GetFailedChecks());
@@ -46,7 +46,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void CheckHealth_ExceedMaxFailedChecks_TriggersRecoveryAction()
+        public async Task CheckHealth_ExceedMaxFailedChecks_TriggersRecoveryAction()
         {
             // Arrange
             var ctx = new ServiceTestContext();
@@ -64,7 +64,7 @@ namespace Servy.Service.UnitTests
             service.SetFailedChecks(0);
 
             // Act
-            service.InvokeCheckHealth(null, null);
+            await service.InvokeCheckHealthAsync(null, null);
 
             // Assert 
             ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed (1/1)")), It.IsAny<Exception>()), Times.Once);
@@ -83,7 +83,7 @@ namespace Servy.Service.UnitTests
         [InlineData(RecoveryAction.RestartService)]
         [InlineData(RecoveryAction.RestartComputer)]
         [InlineData(RecoveryAction.None)]
-        public void CheckHealth_RecoveryActions_ExecuteExpectedLogic(RecoveryAction action)
+        public async Task CheckHealth_RecoveryActions_ExecuteExpectedLogic(RecoveryAction action)
         {
             // Arrange
             var ctx = new ServiceTestContext();
@@ -102,7 +102,7 @@ namespace Servy.Service.UnitTests
             service.SetServiceName("Servy");
 
             // Act
-            service.InvokeCheckHealth(null, null);
+            await service.InvokeCheckHealthAsync(null, null);
 
             // Assert
             switch (action)
@@ -127,7 +127,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void CheckHealth_ProcessHealthy_ResetsFailedChecks_AndLogs()
+        public async Task CheckHealth_ProcessHealthy_ResetsFailedChecks_AndLogs()
         {
             // Arrange
             var ctx = new ServiceTestContext();
@@ -141,7 +141,7 @@ namespace Servy.Service.UnitTests
             service.SetFailedChecks(3);
 
             // Act
-            service.InvokeCheckHealth(null, null);
+            await service.InvokeCheckHealthAsync(null, null);
 
             // Assert
             Assert.Equal(0, service.GetFailedChecks());
@@ -166,7 +166,8 @@ namespace Servy.Service.UnitTests
             ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
                                  It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                  .Callback(() => {
+                  .Callback(() =>
+                  {
                       processHasExited = false;
                       recoveryTriggered.TrySetResult(true);
                   });
@@ -185,7 +186,7 @@ namespace Servy.Service.UnitTests
                 tasks.Add(Task.Run(async () =>
                 {
                     await startingGun.Task;
-                    service.InvokeCheckHealth(null, null);
+                    await service.InvokeCheckHealthAsync(null, null);
                 }, CancellationToken.None));
             }
 
