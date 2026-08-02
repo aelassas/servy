@@ -86,7 +86,7 @@ namespace Servy.Service.UnitTests.CommandLine
             // Simply pass null directly. 
             // Moq's static typing will resolve this to the Returns(ServiceDto) overload.
             _mockRepository
-                .Setup(r => r.GetByName(serviceName, It.IsAny<bool>()))
+                .Setup(r => r.GetByName(serviceName, true))
                 .Returns((ServiceDto)null!);
 
             // Act & Assert
@@ -94,6 +94,22 @@ namespace Servy.Service.UnitTests.CommandLine
                 StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args));
 
             Assert.Contains($"Service {serviceName} not found in the database!", ex.Message);
+        }
+
+        [Fact]
+        public void Parse_ReadsServiceDefinitionWithDecryptionEnabled()
+        {
+            // Arrange
+            string serviceName = "SecretsWorker";
+            string[] args = { "Servy.Service.exe", serviceName };
+            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(new ServiceDto());
+
+            // Act
+            StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+
+            // Assert
+            _mockRepository.Verify(r => r.GetByName(serviceName, true), Times.Once);
+            _mockRepository.Verify(r => r.GetByName(It.IsAny<string>(), false), Times.Never);
         }
 
         #endregion
@@ -162,7 +178,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 PostStopParameters = "--cleanup"
             };
 
-            _mockRepository.Setup(r => r.GetByName(serviceName, It.IsAny<bool>())).Returns(serviceDto);
+            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
 
             // Act
             var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
@@ -248,13 +264,14 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Leaves all fields at their implicit object defaults so the AppConfig fallback paths are exercised
             var sparseDto = new ServiceDto { Priority = null! };
-            _mockRepository.Setup(r => r.GetByName(serviceName, It.IsAny<bool>())).Returns(sparseDto);
+            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(sparseDto);
 
             // Act
             var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
 
             // Assert fallbacks are activated correctly using AppConfig thresholds
             Assert.Equal(StartOptionsParser.MapPriority(AppConfig.DefaultProcessPriority), result.Priority);
+            Assert.Equal(ProcessPriority.Normal, AppConfig.DefaultProcessPriority);
             Assert.Equal(AppConfig.DefaultEnableConsoleUI, result.EnableConsoleUI);
             Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, result.UseLocalTimeForRotation);
             Assert.Equal(AppConfig.DefaultEnableHealthMonitoring, result.EnableHealthMonitoring);
@@ -286,7 +303,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 EnableHealthMonitoring = false,
                 RecoveryAction = 1, // RestartService - Should be completely ignored because monitoring is off
             };
-            _mockRepository.Setup(r => r.GetByName(serviceName, It.IsAny<bool>())).Returns(serviceDto);
+            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
 
             // Act
             var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
@@ -314,7 +331,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 // ensures that the static EnvironmentVariableParser throws a FormatException.
                 EnvironmentVariables = "MALFORMED_VARIABLE_WITHOUT_EQUALS_SIGN_OR_VALUE_TOKEN_CONTEXT"
             };
-            _mockRepository.Setup(r => r.GetByName(serviceName, It.IsAny<bool>())).Returns(serviceDto);
+            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
 
             // Act
             var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
@@ -341,7 +358,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 ExecutablePath = brokenPathInput
             };
 
-            _mockRepository.Setup(r => r.GetByName(serviceName, It.IsAny<bool>())).Returns(serviceDto);
+            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
 
             // Force the injected path utility framework to throw targeted exceptions on matching executions
             _mockProcessHelper

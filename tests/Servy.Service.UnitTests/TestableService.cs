@@ -36,7 +36,7 @@ namespace Servy.Service.UnitTests
 
             public static readonly MethodInfo HandleLogWritersMethod = GetMethod("HandleLogWriters");
             public static readonly MethodInfo SetupHealthMonitoringMethod = GetMethod("SetupHealthMonitoring");
-            public static readonly MethodInfo CheckHealthMethod = GetMethod("CheckHealth");
+            public static readonly MethodInfo CheckHealthCoreAsyncMethod = GetMethod("CheckHealthCoreAsync");
             public static readonly MethodInfo OnOutputDataReceivedMethod = GetMethod("OnOutputDataReceived");
             public static readonly MethodInfo OnErrorDataReceivedMethod = GetMethod("OnErrorDataReceived");
             public static readonly MethodInfo OnProcessExitedMethod = GetMethod("OnProcessExited");
@@ -106,8 +106,11 @@ namespace Servy.Service.UnitTests
         public int GetFailedChecks() =>
             (int)ServiceReflection.FailedChecksField.GetValue(this)!;
 
-        public void InvokeCheckHealth(object? sender, ElapsedEventArgs? e) =>
-            ServiceReflection.CheckHealthMethod.Invoke(this, new object?[] { sender, e });
+        public async Task InvokeCheckHealthAsync(object? sender, ElapsedEventArgs? e)
+        {
+            var task = (Task)ServiceReflection.CheckHealthCoreAsyncMethod.Invoke(this, new object?[] { sender, e })!;
+            await task;
+        }
 
         public void InvokeOnOutputDataReceived(object? sender, DataReceivedEventArgs e) =>
             ServiceReflection.OnOutputDataReceivedMethod.Invoke(this, new object?[] { sender, e });

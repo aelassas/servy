@@ -2057,11 +2057,22 @@ namespace Servy.Service
         /// <param name="sender">The timer instance that triggered the health check.</param>
         /// <param name="e">Event data containing the time the check was triggered.</param>
         /// <remarks>
-        /// This method implements a thread-safe "gatekeeper" pattern using <see cref="_isRecovering"/>.
-        /// If a recovery is already in progress (triggered by this timer or a process exit event), 
-        /// the check exits immediately to prevent duplicate logs and redundant recovery attempts.
+        /// This method acts as an async void event handler for timer ticks and delegates execution to 
+        /// <see cref="CheckHealthCoreAsync"/>.
         /// </remarks>
         private async void CheckHealth(object? sender, ElapsedEventArgs e)
+        {
+            await CheckHealthCoreAsync(sender, e);
+        }
+
+        /// <summary>
+        /// Core internal asynchronous implementation for health monitoring checks.
+        /// Implements a thread-safe "gatekeeper" pattern using <see cref="_isRecovering"/>.
+        /// Exposed internally for deterministic testing and genuine task awaiting.
+        /// </summary>
+        /// <param name="sender">The timer instance that triggered the health check.</param>
+        /// <param name="e">Event data containing the time the check was triggered.</param>
+        internal async Task CheckHealthCoreAsync(object? sender, ElapsedEventArgs? e)
         {
             try
             {
