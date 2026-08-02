@@ -69,18 +69,18 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
-        public void DangerousGetHandle_ReturnsNonZeroPointer_ForCurrentProcess()
+        public void DangerousGetHandle_ReturnsZero_AfterDispose()
         {
             // Arrange
-            int currentPid = GetCurrentProcessId();
+            var handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, GetCurrentProcessId());
+            Assert.NotEqual(IntPtr.Zero, handle.DangerousGetHandle());
 
-            // Act & Assert
-            using (SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid))
-            {
-                IntPtr convertedPtr = handle.DangerousGetHandle();
+            // Act
+            handle.Dispose();
 
-                Assert.NotEqual(IntPtr.Zero, convertedPtr);
-            }
+            // Assert
+            Assert.True(handle.IsClosed);
+            Assert.Equal(IntPtr.Zero, handle.DangerousGetHandle());
         }
 
         private int GetCurrentProcessId()

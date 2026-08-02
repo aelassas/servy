@@ -6,14 +6,18 @@ namespace Servy.Core.Native
     /// <summary>
     /// Represents a safe wrapper around a Windows process handle.
     /// </summary>
-    /// <remarks>
-    /// Deriving from <see cref="SafeHandleZeroOrMinusOneIsInvalid"/> ensures the handle 
-    /// is closed exactly once, even if the object is finalized or disposed multiple times.
-    /// </remarks>
     [ExcludeFromCodeCoverage]
     public sealed class SafeWinProcessHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        public SafeWinProcessHandle() : base(true) { }
+        public SafeWinProcessHandle() : base(ownsHandle: true) { }
+
+        /// <summary>
+        /// Returns the underlying handle value, or <see cref="IntPtr.Zero"/> if the handle is closed.
+        /// </summary>
+        public new IntPtr DangerousGetHandle()
+        {
+            return IsClosed ? IntPtr.Zero : base.DangerousGetHandle();
+        }
 
         protected override bool ReleaseHandle()
         {
