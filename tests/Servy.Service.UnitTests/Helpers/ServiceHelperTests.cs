@@ -103,9 +103,6 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
-
-            // Defensively ensure logs directory exists in test sandbox
-            Directory.CreateDirectory(Logger.LogsPath);
             string tempLogFilePath = Path.Combine(Logger.LogsPath, tempLogFileName);
 
             try
