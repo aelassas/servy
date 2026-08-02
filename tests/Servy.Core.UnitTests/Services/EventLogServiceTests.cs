@@ -346,7 +346,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task SearchAsync_ShouldUseDefaultLevelWhenLevelIsNull()
+        public async Task SearchAsync_WhenLevelIsNull_OmitsLevelClauseFromQuery()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
