@@ -800,7 +800,7 @@ namespace Servy.Manager.ViewModels
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
 #if DEBUG
                 stopwatch.Stop();
-                Debug.WriteLine($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
+                Logger.Debug($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
 #endif
                 var allServicesDict = BuildUniqueNameDictionary(allServicesList, s => s.Name);
 
@@ -1124,6 +1124,7 @@ namespace Servy.Manager.ViewModels
                 ServicesView.Refresh();
 
                 stopwatch.Stop();
+                Logger.Debug($"RemoveService({serviceName}) finished in {stopwatch.ElapsedMilliseconds} ms");
                 ClearActiveSearchContext();
                 UpdateSelectAllState();
             };
