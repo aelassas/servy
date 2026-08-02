@@ -1,6 +1,5 @@
 ﻿using Moq;
 using Servy.Core.EnvironmentVariables;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.UnitTests.Utilities;
@@ -10,20 +9,13 @@ namespace Servy.Service.UnitTests
 {
     public class ProcessManagementTests
     {
-        private readonly Mock<IProcessKiller> _mockProcessKiller;
-
-        public ProcessManagementTests()
-        {
-            _mockProcessKiller = new Mock<IProcessKiller>();
-        }
-
         [Fact]
         public void StartProcess_StartsProcess()
         {
             // Arrange
             var ctx = new ServiceTestContext();
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 var mockProcess = new Mock<IProcessWrapper>();
                 mockProcess.Setup(p => p.Id).Returns(123);
@@ -48,7 +40,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 var mockProcess = new Mock<IProcessWrapper>();
                 mockProcess.Setup(p => p.HasExited).Returns(false);
@@ -69,7 +61,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 var mockProcess = new Mock<IProcessWrapper>();
                 mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Throws(new Exception("Boom!"));

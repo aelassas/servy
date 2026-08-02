@@ -21,6 +21,7 @@ namespace Servy.Service.UnitTests.Utilities
         public Mock<IProcessFactory> ProcessFactory { get; } = new Mock<IProcessFactory>();
         public Mock<IPathValidator> PathValidator { get; } = new Mock<IPathValidator>();
         public Mock<IServiceRepository> ServiceRepository { get; } = new Mock<IServiceRepository>();
+        public Mock<Core.Helpers.IProcessKiller> ProcessKiller { get; } = new Mock<Core.Helpers.IProcessKiller>();
 
         public ServiceTestContext()
         {
@@ -31,7 +32,7 @@ namespace Servy.Service.UnitTests.Utilities
         /// <summary>
         /// Builds a new <see cref="TestableService"/> bounded context utilizing the internal mock signatures.
         /// </summary>
-        public TestableService Build(Core.Helpers.IProcessKiller processKiller)
+        public TestableService Build()
         {
             return new TestableService(
                 Helper.Object,
@@ -41,7 +42,7 @@ namespace Servy.Service.UnitTests.Utilities
                 ProcessFactory.Object,
                 PathValidator.Object,
                 ServiceRepository.Object,
-                processKiller
+                ProcessKiller.Object
             );
         }
     }

@@ -6,10 +6,15 @@ namespace Servy.Service.UnitTests.Helpers
     public static class DataReceivedEventArgsFactory
     {
         /// <summary>
-        /// Uses reflection to instantiate the internal DataReceivedEventArgs class for testing streams.
+        /// Uses reflection to invoke the non-public DataReceivedEventArgs(string) constructor,
+        /// which is the only way to synthesize these args in a test.
         /// </summary>
-        /// <param name="data">The data to be passed to the DataReceivedEventArgs constructor.</param>
-        public static DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
+        /// <param name="data">
+        /// The line payload. Pass <see langword="null"/> to reproduce the end-of-stream sentinel
+        /// that <see cref="System.Diagnostics.Process"/> raises when redirected output closes.
+        /// </param>
+        /// <returns>A <see cref="DataReceivedEventArgs"/> whose <c>Data</c> is <paramref name="data"/>.</returns>
+        public static DataReceivedEventArgs CreateDataReceivedEventArgs(string? data)
         {
             var constructor = typeof(DataReceivedEventArgs).GetConstructor(
                 BindingFlags.NonPublic | BindingFlags.Instance,
@@ -18,7 +23,8 @@ namespace Servy.Service.UnitTests.Helpers
                 modifiers: null)
                 ?? throw new InvalidOperationException(
                     "Internal DataReceivedEventArgs(string) constructor not found; the runtime layout may have changed.");
-            return (DataReceivedEventArgs)constructor.Invoke(new object[] { data });
+
+            return (DataReceivedEventArgs)constructor.Invoke(new object?[] { data });
         }
     }
 }
