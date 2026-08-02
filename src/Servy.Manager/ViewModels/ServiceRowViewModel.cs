@@ -47,6 +47,7 @@ namespace Servy.Manager.ViewModels
                 _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Running,
                 name: nameof(RestartCommand));
             ConfigureCommand = new AsyncCommand(ConfigureServiceAsync,
+                CanExecuteServiceCommand,
                 name: nameof(ConfigureCommand));
             InstallCommand = new AsyncCommand(InstallServiceAsync,
                 CanExecuteServiceCommand, // We don't check Service.IsInstalled != true to allow re-installing an installed service to update its configuration in DB and SCM
