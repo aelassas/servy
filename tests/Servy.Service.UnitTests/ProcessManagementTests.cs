@@ -32,7 +32,6 @@ namespace Servy.Service.UnitTests
 
                 // Assert
                 var childProcess = service.GetChildProcess();
-                Assert.NotNull(childProcess);
                 Assert.Equal(mockProcess.Object, childProcess);
                 mockProcess.Verify(p => p.Start(), Times.Once);
             }
@@ -55,7 +54,8 @@ namespace Servy.Service.UnitTests
 
                 // Assert
                 mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
-                ctx.Logger.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.AtLeast(1));
+                ctx.Logger.Verify(l => l.Info(
+                    It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Once);
             }
         }
 

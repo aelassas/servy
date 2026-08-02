@@ -122,5 +122,20 @@ namespace Servy.Service.UnitTests.Helpers
                 It.IsAny<Exception>()),
                 Times.Once);
         }
+
+        [Fact]
+        public void ExpandAndAudit_ArgumentsReferencingCustomVariable_AreExpanded()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "APP_HOME", Value = @"C:\App" } };
+            string args = @"--config %APP_HOME%\config.json";
+
+            // Act
+            var result = ProcessHelper.ExpandAndAudit(vars, args, _mockLogger.Object, "Test");
+
+            // Assert
+            Assert.Equal(@"--config C:\App\config.json", result.expandedArgs);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Arguments")), It.IsAny<Exception>()), Times.Never);
+        }
     }
 }

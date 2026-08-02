@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -12,7 +11,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.ServiceProcess;
 using System.Text.RegularExpressions;
 using System.Threading;
