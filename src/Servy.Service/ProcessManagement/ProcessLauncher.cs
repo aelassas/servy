@@ -73,7 +73,7 @@ namespace Servy.Service.ProcessManagement
             string auditContext)
         {
             // 1. Resolve environment variables and arguments
-            var (expandedEnv, finalArgs) = Servy.Service.Helpers.ProcessHelper.ExpandAndAudit(environmentVariables, arguments ?? string.Empty, logger, auditContext);
+            var (expandedEnv, finalArgs) = Helpers.ProcessHelper.ExpandAndAudit(environmentVariables, arguments ?? string.Empty, logger, auditContext);
 
             // 2. Configure ProcessStartInfo with unified defaults
             var psi = new ProcessStartInfo
