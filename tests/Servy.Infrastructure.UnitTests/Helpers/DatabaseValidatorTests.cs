@@ -1,4 +1,5 @@
-﻿using Servy.Infrastructure.Helpers;
+﻿using Servy.Core.Config;
+using Servy.Infrastructure.Helpers;
 using System;
 using Xunit;
 
@@ -20,31 +21,43 @@ namespace Servy.Infrastructure.UnitTests.Helpers
             Assert.True(Version.TryParse(detectedVersion, out _), $"Detected version '{detectedVersion}' should be parseable.");
         }
 
+        public static TheoryData<string, bool> VersionCases()
+        {
+            var min = AppConfig.MinRequiredSqliteVersion;
+            var justBelow = new Version(min.Major, min.Minor, Math.Max(0, min.Build - 1));
+            var newerPatch = new Version(min.Major, min.Minor, min.Build + 2);
+
+            return new TheoryData<string, bool>
+            {
+                // Branch 1: Valid and Safe (sqlVersion >= MinRequiredSqliteVersion)
+                { min.ToString(), true },        // Exact boundary: comparison must be >=
+                { newerPatch.ToString(), true }, // Newer patch version
+                { "4.0.0", true },               // Major-version bump must still compare as newer
+                { "10.0.0", true },              // Multi-digit major must not compare lexically
+
+                // Branch 2: Valid but Unsafe (sqlVersion < MinRequiredSqliteVersion)
+                { justBelow.ToString(), false }, // One patch level below must be rejected
+                { "1.0.0", false },
+                { "0.0.0", false },
+
+                // Branch 3: Invalid/Unparseable (Version.TryParse returns false)
+                { "not-a-version", false },
+                { "invalid", false },
+                { "v3.50.2", false },            // Version.TryParse fails on leading characters
+                { "", false },
+                { null, false }
+            };
+        }
+
         [Theory]
-        // Branch 1: Valid and Safe (sqlVersion >= MinRequiredSqliteVersion)
-        [InlineData("3.50.2", true)]
-        [InlineData("3.50.4", true)]
-        [InlineData("4.0.0", true)]  // major-version bump must still compare as newer
-        [InlineData("10.0.0", true)] // multi-digit major must not compare lexically
-
-        // Branch 2: Valid but Unsafe (sqlVersion < MinRequiredSqliteVersion)
-        [InlineData("3.50.1", false)]
-        [InlineData("1.0.0", false)]
-        [InlineData("0.0.0", false)]
-
-        // Branch 3: Invalid/Unparseable (Version.TryParse returns false)
-        [InlineData("not-a-version", false)]
-        [InlineData("invalid", false)]      // Retained value map from redundant check block
-        [InlineData("v3.50.2", false)] // Version.TryParse fails on leading characters
-        [InlineData("", false)]
-        [InlineData(null, false)]
-        public void ValidateVersion_CoverageTest(string inputVersion, bool expectedResult)
+        [MemberData(nameof(VersionCases))]
+        public void ValidateVersion_ParsesAndComparesAgainstMinimum(string inputVersion, bool expectedSafe)
         {
             // Act
             bool actualResult = DatabaseValidator.ValidateVersion(inputVersion);
 
             // Assert
-            Assert.Equal(expectedResult, actualResult);
+            Assert.Equal(expectedSafe, actualResult);
         }
     }
 }

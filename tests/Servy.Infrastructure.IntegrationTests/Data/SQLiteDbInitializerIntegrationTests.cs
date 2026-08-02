@@ -125,15 +125,15 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 };
 
                 // Build the structural schema with strict column alignments populated
-                var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "EnableRotation", "EnableSizeRotation");
+                var context = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "EnableRotation", "EnableSizeRotation");
 
                 // Insert two case-duplicates sequentially (Id 2..3); dedup must keep MIN(Id)=1,
                 // so a last-write-wins/MAX(Id) implementation would fail the assertion below.
                 var duplicateSeed1 = new Dictionary<string, string>(seedData) { ["Name"] = "'testservice'", ["EnableRotation"] = "0" };
                 var duplicateSeed2 = new Dictionary<string, string>(seedData) { ["Name"] = "'TESTSERVICE'", ["EnableRotation"] = "0" };
 
-                InsertLegacyRow(conn, insertCols, duplicateSeed1);
-                InsertLegacyRow(conn, insertCols, duplicateSeed2);
+                InsertLegacyRow(conn, context, duplicateSeed1);
+                InsertLegacyRow(conn, context, duplicateSeed2);
 
                 // Create the legacy non-unique index to trigger the index replacement branch
                 conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
@@ -275,14 +275,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var seedData = new Dictionary<string, string> { { "Name", "'Alpha-Service'" } };
 
                 // Construct a valid pre-v6 table layout using the centralized factory
-                var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
+                var context = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
 
                 // Setup the old functional index as NON-UNIQUE so it permits the insert of casing variations on legacy systems.
                 conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
 
                 // Seed duplicate rows out of chronological order to check oldest historical match selection (MIN(Id) resolution)
                 var duplicateSeed = new Dictionary<string, string>(seedData) { ["Name"] = "'alpha-service'" };
-                InsertLegacyRow(conn, insertCols, duplicateSeed);
+                InsertLegacyRow(conn, context, duplicateSeed);
 
                 // Act: Trigger initialization to catch version 5 -> 6 transition pipeline branch
                 SQLiteDbInitializer.Initialize(conn);
@@ -328,12 +328,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
                 var seedData = new Dictionary<string, string> { { "Name", "'Ä-Service'" } };
 
-                var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
+                var context = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
                 conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
 
                 // Seed duplicate rows utilizing wide non-ASCII variants out of case parity
                 var duplicateSeed = new Dictionary<string, string>(seedData) { ["Name"] = "'ä-service'" };
-                InsertLegacyRow(conn, insertCols, duplicateSeed);
+                InsertLegacyRow(conn, context, duplicateSeed);
 
                 // Act
                 SQLiteDbInitializer.Initialize(conn);
@@ -574,12 +574,26 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         /// <summary>
+        /// Encapsulates the columns and type-aware padding map generated when constructing a legacy table.
+        /// </summary>
+        private sealed class LegacyTableContext
+        {
+            public List<string> InsertCols { get; }
+            public Dictionary<string, string> Padding { get; }
+
+            public LegacyTableContext(List<string> insertCols, Dictionary<string, string> padding)
+            {
+                InsertCols = insertCols;
+                Padding = padding;
+            }
+        }
+
+        /// <summary>
         /// Creates a legacy Services table from <paramref name="colDefs"/> and inserts one seed row,
         /// padding any expected NOT NULL column that has no DEFAULT and is not in <paramref name="skipColumns"/>.
-        /// Returns the column list used for the insert, for reuse by <see cref="InsertLegacyRow"/>.
+        /// Returns a <see cref="LegacyTableContext"/> containing the column list and padding map for reuse by <see cref="InsertLegacyRow"/>.
         /// </summary>
-
-        private static List<string> CreateLegacyServicesTable(
+        private static LegacyTableContext CreateLegacyServicesTable(
             DbConnection conn,
             List<string> colDefs,
             Dictionary<string, string> seedData,
@@ -588,6 +602,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var expectedCols = (IEnumerable<string>)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetExpectedColumns");
             var insertCols = seedData.Keys.ToList();
             var insertVals = seedData.Values.ToList();
+            var padding = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var col in expectedCols)
             {
@@ -602,6 +617,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     insertCols.Add(col);
                     string defaultSeedLiteral = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "''" : "0";
                     insertVals.Add(defaultSeedLiteral);
+                    padding[col] = defaultSeedLiteral;
                 }
             }
 
@@ -609,17 +625,20 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} ({string.Join(", ", colDefs)});");
             conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
 
-            return insertCols;
+            return new LegacyTableContext(insertCols, padding);
         }
 
         /// <summary>
-        /// Inserts an additional row into the legacy Services table using the column list from
-        /// <see cref="CreateLegacyServicesTable"/>, overriding the values present in <paramref name="dynamicSeed"/>.
+        /// Inserts an additional row into the legacy Services table using the column list and padding map from
+        /// <see cref="CreateLegacyServicesTable"/>, overriding values present in <paramref name="dynamicSeed"/>.
         /// </summary>
-        private static void InsertLegacyRow(DbConnection conn, List<string> insertCols, Dictionary<string, string> dynamicSeed)
+        private static void InsertLegacyRow(DbConnection conn, LegacyTableContext context, Dictionary<string, string> dynamicSeed)
         {
-            var valuesRow = insertCols.Select(col => dynamicSeed.ContainsKey(col) ? dynamicSeed[col] : "0").ToList();
-            conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", valuesRow)});");
+            var valuesRow = context.InsertCols
+                .Select(col => dynamicSeed.TryGetValue(col, out var val) ? val : context.Padding.TryGetValue(col, out var padVal) ? padVal : "0")
+                .ToList();
+
+            conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} ({string.Join(", ", context.InsertCols)}) VALUES ({string.Join(", ", valuesRow)});");
         }
 
         #endregion
