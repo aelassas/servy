@@ -24,8 +24,8 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         // Branch 1: Valid and Safe (sqlVersion >= MinRequiredSqliteVersion)
         [InlineData("3.50.2", true)]
         [InlineData("3.50.4", true)]
-        [InlineData("4.0.0", true)]  // Folded from old logic check to maintain future version variant coverage
-        [InlineData("10.0.0", true)]
+        [InlineData("4.0.0", true)]  // major-version bump must still compare as newer
+        [InlineData("10.0.0", true)] // multi-digit major must not compare lexically
 
         // Branch 2: Valid but Unsafe (sqlVersion < MinRequiredSqliteVersion)
         [InlineData("3.50.1", false)]
@@ -40,8 +40,6 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         [InlineData(null, false)]
         public void ValidateVersion_CoverageTest(string inputVersion, bool expectedResult)
         {
-            // Arrange - Handled by xUnit data attributes
-
             // Act
             bool actualResult = DatabaseValidator.ValidateVersion(inputVersion);
 

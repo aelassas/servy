@@ -573,16 +573,17 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         /// <summary>
-        /// Shared abstraction builder to securely initialize legacy table instances 
-        /// while automatically aligning strict, un-seeded NOT NULL constraints dynamically.
+        /// Creates a legacy Services table from <paramref name="colDefs"/> and inserts one seed row,
+        /// padding any expected NOT NULL column that has no DEFAULT and is not in <paramref name="skipColumns"/>.
+        /// Returns the column list used for the insert, for reuse by <see cref="InsertLegacyRow"/>.
         /// </summary>
+
         private static List<string> CreateLegacyServicesTable(
             DbConnection conn,
             List<string> colDefs,
             Dictionary<string, string> seedData,
             params string[] skipColumns)
         {
-            // Arrange & Act
             var expectedCols = (IEnumerable<string>)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetExpectedColumns");
             var insertCols = seedData.Keys.ToList();
             var insertVals = seedData.Values.ToList();
@@ -607,12 +608,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} ({string.Join(", ", colDefs)});");
             conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
 
-            // Assert
             return insertCols;
         }
 
         /// <summary>
-        /// Formats and pushes secondary duplicate entries safely leveraging mapped columns tracking templates.
+        /// Inserts an additional row into the legacy Services table using the column list from
+        /// <see cref="CreateLegacyServicesTable"/>, overriding the values present in <paramref name="dynamicSeed"/>.
         /// </summary>
         private static void InsertLegacyRow(DbConnection conn, List<string> insertCols, Dictionary<string, string> dynamicSeed)
         {

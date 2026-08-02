@@ -53,7 +53,7 @@ namespace Servy.Core.UnitTests.Validation
         [InlineData("LPT1.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         public void ValidatePath_ReservedDeviceName_ReturnsFail(string fileName, FileMode mode, FileAccess access, FileShare share)
         {
-            // Act
+            // Arrange & Act
             var result = PathSecurityGuard.ValidatePath(fileName, mode, access, share, out var stream);
 
             // Assert
@@ -61,6 +61,7 @@ namespace Servy.Core.UnitTests.Validation
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
 
+            // Assert the reserved-device guard specifically: the message must name the device it rejected.
             // NOTE: On .NET Framework 4.8, OS path expansion forces reserved device names into the 
             // NT namespace format (\\.\CON), causing them to hit the UNC protection gate first.
             bool hitDosGuard = result.ErrorMessage.IndexOf(Path.GetFileNameWithoutExtension(fileName), StringComparison.OrdinalIgnoreCase) >= 0;

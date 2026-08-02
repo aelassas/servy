@@ -13,9 +13,6 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         [Fact]
         public void InitializeDatabase_Throws_WhenDbContextIsNull()
         {
-            // Arrange
-            // No preparation needed for null instance validation paths
-
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 DatabaseInitializer.InitializeDatabase(null, conn => { }));

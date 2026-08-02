@@ -59,8 +59,6 @@ namespace Servy.Manager.UnitTests.Services
             _processHelperMock = new Mock<IProcessHelper>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
 
-            _removedServiceName = null;
-
             // Default safe returns for ServiceManager to prevent internal NullRefs
             _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
             _serviceManagerMock.Setup(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
@@ -499,7 +497,7 @@ namespace Servy.Manager.UnitTests.Services
 
             try
             {
-                // 2. Clear out the initial zero-byte .tmp allocation immediately to prevent file leakage leaks
+                // 2. Delete initial empty temp file before writing mock executable payload
                 if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
 
                 // 3. Write our mock executable artifact safely
@@ -591,7 +589,7 @@ namespace Servy.Manager.UnitTests.Services
             }
             finally
             {
-                // Cleanup the tracking file resource layout safely
+                // Delete temporary executable path on test completion
                 if (File.Exists(tempTrackingFile))
                 {
                     File.Delete(tempTrackingFile);
@@ -1121,7 +1119,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.CopyPidAsync(service, cancellationToken: CancellationToken.None);
 
             // Assert
-            // Verifies that the internal retry loop honored Core.Config.AppConfig.ClipboardComMaxRetries (typically 3 or 5)
+            // Verifies that the internal retry loop honored Core.Config.AppConfig.ClipboardComMaxRetries
             _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Exactly(Core.Config.AppConfig.ClipboardComMaxRetries));
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_PidCopyFailed, UiAppConfig.Caption), Times.Once);
         }
@@ -1211,7 +1209,7 @@ namespace Servy.Manager.UnitTests.Services
             var service = new Service { Name = "MissingService" };
             _fileDialogServiceMock.Setup(f => f.SaveXml(It.IsAny<string>())).Returns(@"C:\out.xml");
 
-            // Simulate the database lacking this specific record window mapping
+            // The service is absent from the database.
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceDto)null);
 
@@ -1333,7 +1331,7 @@ namespace Servy.Manager.UnitTests.Services
 
             _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(true);
 
-            // Mock the process helper response tree metrics structure to catch the metrics calculation evaluation trigger
+            // Stub process helper tree metrics call for process ID 4321
             var expectedMetrics = new ProcessMetrics(12.5, 2048576);
             _processHelperMock.Setup(p => p.GetProcessTreeMetrics(4321)).Returns(expectedMetrics);
 
@@ -1361,12 +1359,11 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "LockingService" };
 
-            // Trigger internal Lazy allocation of a SemaphoreSlim via a private locked method path
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto { Name = service.Name });
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Manual);
 
-            // Execute a command once to eagerly generate an unmanaged lock reference window inside _serviceLocks
+            // Run one command so ExecuteLockedAsync allocates a SemaphoreSlim in _serviceLocks.
             await sut.StartServiceAsync(service, showMessageBox: false, cancellationToken: CancellationToken.None);
 
             // Act - Dispose the first time
