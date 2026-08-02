@@ -96,7 +96,7 @@ servy-cli install `
   --enableHealth
 ```
 
-This creates a service named `MyService` that runs your Node.js server in the background and starts automatically with Windows, and has [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery) enabled.
+This creates a service named `MyService` that runs your Node.js server in the background, starts automatically with Windows, and has [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery) enabled.
 
 Then start the service:
 
@@ -121,9 +121,7 @@ Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examp
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
 ## Features
-<!--
-When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro, all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
--->
+
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM monitoring with live performance graphs for installed services
@@ -132,20 +130,20 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, CPU affinity, working directory, environment variables, and dependencies
-* Environment variable expansion supported in parameters, process paths and startup directories
+* Environment variable expansion supported in parameters, process paths, and startup directories
 * Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
-* Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
-* Run post-launch hook after the application starts successfully
+* Run pre-launch hooks before starting the service, with retries, timeout, logging and failure handling
+* Run post-launch hooks after the application starts successfully
 * Run pre-stop and post-stop hooks before the application stops and after the application stops
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
 * Supports `Ctrl+C` propagation to descendant processes of the wrapped process
-* Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
+* Prevent orphaned/zombie processes with improved lifecycle management while ensuring resource cleanup
 * Health checks and automatic service recovery
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
 * Export/Import service configurations for easy backups and automation
 * Service Event Notification alerts on service failures via Windows notifications and email
-* Compatible with Windows 7 SP1 to 11 (x64/ARM64) and Windows Server editions
+* Compatible with Windows 7 SP1 through 11 (x64/ARM64) and Windows Server editions
 
 ## Changelog
 
@@ -157,11 +155,11 @@ See [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
-Servy is free and open-source. If you are using it in a commercial or revenue-generating context, or simply find it valuable, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/aelassas), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
+Servy is free and open-source. If you are use it in a commercial or revenue-generating context, or simply find it valuable, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/aelassas), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
 
 Open-source software requires time, effort, and resources to maintain. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
 
-If you have suggestions, issues, or would like to contribute, feel free to [open an issue](https://github.com/aelassas/servy/issues) or [submit a pull request](https://github.com/aelassas/servy/pulls).
+If you have suggestions or issues or would like to contribute, feel free to [open an issue](https://github.com/aelassas/servy/issues) or [submit a pull request](https://github.com/aelassas/servy/pulls).
 
 ## Stats for Nerds
 
