@@ -7,7 +7,6 @@ namespace Servy.Core.Services
     /// Concrete implementation of the service controller provider that fetches 
     /// real services from the Windows Service Control Manager.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class ServiceControllerProvider : IServiceControllerProvider
     {
         private readonly Func<string, IServiceControllerWrapper> _factory;
@@ -25,6 +24,7 @@ namespace Servy.Core.Services
         /// Retrieves all Windows services from the local machine and wraps them in testable abstractions.
         /// </summary>
         /// <returns>An array of <see cref="IServiceControllerWrapper"/> instances.</returns>
+        [ExcludeFromCodeCoverage]
         public IServiceControllerWrapper[] GetServices()
         {
             // Retrieve native ServiceController instances from the OS,

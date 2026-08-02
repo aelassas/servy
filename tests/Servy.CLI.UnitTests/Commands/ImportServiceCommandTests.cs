@@ -58,7 +58,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Wipe physical artifacts and the tracking directory completely to clean up the workspace safely
             if (Directory.Exists(_tempDirectory))
             {
-                Directory.Delete(_tempDirectory, recursive: true);
+                try { Directory.Delete(_tempDirectory, recursive: true); } catch { /* fail-safe */ }
             }
         }
 

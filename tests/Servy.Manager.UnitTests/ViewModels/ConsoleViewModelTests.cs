@@ -387,29 +387,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
 
-                // Create mock dependencies for the view model constructor
-                var mockRepo = new Mock<IServiceRepository>();
-                var mockCommands = new Mock<IServiceCommands>();
-                var mockConfig = new Mock<IAppConfiguration>();
-                var mockCursor = new Mock<ICursorService>();
-                var mockDispatcher = new Mock<IUiDispatcher>();
-
-                // Mock application configurations
-                mockConfig.Setup(c => c.ConsoleMaxLines).Returns(1000);
-                mockConfig.Setup(c => c.ConsoleRefreshIntervalInMs).Returns(100);
-
-                // Intercept dispatcher callbacks to execute immediately on the test thread context
-                mockDispatcher
-                    .Setup(d => d.InvokeAsync(It.IsAny<Action>()))
-                    .Callback<Action>((action) => action())
-                    .Returns(Task.CompletedTask);
+                _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(1000);
 
                 // Generate temporary clean workspace files to feed the internal LogTailer stream engines
                 string tempStdoutFile = Path.GetTempFileName();
                 string tempStderrFile = Path.GetTempFileName();
 
                 // Write sequential log statements sharing identical log line prefix timestamp keys
-                // Line 2 arrives first in the combined list ordering paradigm based on SwitchServiceAsync structure
                 File.WriteAllText(tempStdoutFile, $"[{sameTime:yyyy-MM-dd HH:mm:ss.fff}Z] [INFO] | Line 2{Environment.NewLine}");
                 File.WriteAllText(tempStderrFile, $"[{sameTime:yyyy-MM-dd HH:mm:ss.fff}Z] [ERROR] | Line 1{Environment.NewLine}");
 
@@ -428,38 +412,39 @@ namespace Servy.Manager.UnitTests.ViewModels
                     ActiveStderrPath = tempStderrFile
                 };
 
-                mockRepo
+                _serviceRepoMock
                     .Setup(r => r.GetServiceConsoleStateAsync(serviceName, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(stateDto);
 
-                var viewModel = new ConsoleViewModel(mockRepo.Object, mockCommands.Object, mockConfig.Object, mockCursor.Object, mockDispatcher.Object);
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var viewModel = CreateViewModel())
                 {
-                    // Act
-                    // Setting the selected service triggers the internal SwitchServiceAsync pipeline loop,
-                    // forcing the production merge-sort block to parse and arrange the matching timestamps.
-                    viewModel.SelectedService = testService;
+                    try
+                    {
+                        // Act
+                        // Setting the selected service triggers the internal SwitchServiceAsync pipeline loop,
+                        // forcing the production merge-sort block to parse and arrange the matching timestamps.
+                        viewModel.SelectedService = testService;
 
-                    // Pump background tasks manually or allow Task.WhenAll background frames to resolve file I/O cycles
-                    Task.Delay(200).ContinueWith(_ => { }).Wait();
+                        // Pump background tasks manually to allow background file I/O cycles to resolve
+                        Task.Delay(200).ContinueWith(_ => { }).Wait();
 
-                    // Assert
-                    // Verify against the real production collection state boundary rather than an inline duplicate
-                    Assert.NotEmpty(viewModel.RawLines);
-                    Assert.Equal(2, viewModel.RawLines.Count);
+                        // Assert
+                        // Both lines share a timestamp, so stable-sort order must follow arrival order.
+                        Assert.NotEmpty(viewModel.RawLines);
+                        Assert.Equal(2, viewModel.RawLines.Count);
 
-                    // The LogLine loaded via LogTailer preserves the entire trace line format. 
-                    // Validate that the stable sort correctly placed the arrival elements chronologically by checking text content endings.
-                    Assert.EndsWith("Line 2", viewModel.RawLines[0].Text);
-                    Assert.EndsWith("Line 1", viewModel.RawLines[1].Text);
-                }
-                finally
-                {
-                    // Clean up disk footprint safely
-                    viewModel.Dispose();
-                    try { File.Delete(tempStdoutFile); } catch { /* fail-silent */ }
-                    try { File.Delete(tempStderrFile); } catch { /* fail-silent */ }
+                        // The LogLine loaded via LogTailer preserves the entire trace line format. 
+                        // Validate that the stable sort correctly placed the arrival elements chronologically by checking text content endings.
+                        Assert.EndsWith("Line 2", viewModel.RawLines[0].Text);
+                        Assert.EndsWith("Line 1", viewModel.RawLines[1].Text);
+                    }
+                    finally
+                    {
+                        // Clean up disk footprint safely
+                        try { File.Delete(tempStdoutFile); } catch { /* fail-silent */ }
+                        try { File.Delete(tempStderrFile); } catch { /* fail-silent */ }
+                    }
                 }
             });
         }
