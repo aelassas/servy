@@ -349,7 +349,7 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
-        public async Task ImportConfigAsync_FileDialogCancelled_ServiceAlreadyExists()
+        public async Task ImportConfigAsync_ServiceAlreadyExists_UserConfirms_UpsertsAndRefreshes()
         {
             // Arrange
             var sut = CreateServiceCommands();
@@ -357,13 +357,11 @@ namespace Servy.Manager.UnitTests.Services
 
             var serializer = new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto));
 
-            // Change extension from .tmp to .xml to pass ValidatePathSecurity
             var baseTempFile = Path.GetTempFileName();
             var tempFile = Path.ChangeExtension(baseTempFile, ".xml");
 
             try
             {
-                // Clean up original .tmp file and write the payload to the authorized .xml path
                 if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
 
                 using (var writer = new StreamWriter(tempFile))
@@ -379,6 +377,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
                 _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(true);
+                _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
                 _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>())).Returns(dto);
 
@@ -390,6 +389,56 @@ namespace Servy.Manager.UnitTests.Services
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Once);
                 _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string?>()), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
+                _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+                Assert.True(_refreshCalled);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public async Task ImportConfigAsync_ServiceAlreadyExists_UserDeclines_DoesNotUpsert()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var dto = new ServiceDto { Name = "XmlService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+
+            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto));
+
+            var baseTempFile = Path.GetTempFileName();
+            var tempFile = Path.ChangeExtension(baseTempFile, ".xml");
+
+            try
+            {
+                if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
+
+                using (var writer = new StreamWriter(tempFile))
+                {
+                    serializer.Serialize(writer, dto);
+                }
+
+                _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(tempFile);
+
+                string? outErr = null;
+                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+                _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(false);
+
+                _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>())).Returns(dto);
+
+                // Act
+                await sut.ImportXmlConfigAsync(TestContext.Current.CancellationToken);
+
+                // Assert
+                _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()), Times.Once);
+                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Once);
+                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string?>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
+                _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
             }
             finally

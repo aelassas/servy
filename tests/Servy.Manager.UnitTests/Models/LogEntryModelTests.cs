@@ -86,7 +86,7 @@ namespace Servy.Manager.UnitTests.Models
         [InlineData(EventLogLevel.Information, "Info.png")]
         [InlineData(EventLogLevel.Verbose, "Info.png")]
         [InlineData((EventLogLevel)999, "Info.png")] // Undefined/Default boundary fallback branch
-        public void LevelIcon_GetsInvoked_ReturnsExpectedAbsolutePackUri(EventLogLevel inputLevel, string expectedIconFile)
+        public void LevelIcon_ForEachLevel_ReturnsUriEndingWithExpectedIconFile(EventLogLevel inputLevel, string expectedIconFile)
         {
             // Arrange
             var logEntry = new LogEntryModel { Level = inputLevel };
@@ -98,6 +98,7 @@ namespace Servy.Manager.UnitTests.Models
             // Validate that the string suffix resolves to the correct filename payload
             // without hardcoding or binding against the absolute WPF application pack infrastructure schema.
             Assert.NotNull(actualUri);
+            Assert.StartsWith("pack://application:", actualUri, StringComparison.OrdinalIgnoreCase);
             Assert.EndsWith(expectedIconFile, actualUri, StringComparison.OrdinalIgnoreCase);
         }
     }
