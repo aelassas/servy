@@ -59,21 +59,27 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #region Initialization & Constructor Verification
 
-        [Fact]
-        public void Constructor_NullGuards_ThrowsArgumentNullException()
+        [Theory]
+        [InlineData(0, "serviceRepository")]
+        [InlineData(1, "serviceCommands")]
+        [InlineData(2, "appConfig")]
+        [InlineData(3, "cursorService")]
+        [InlineData(4, "processHelper")]
+        [InlineData(5, "uiDispatcher")]
+        public void Constructor_NullGuards_ThrowsArgumentNullException(int nullIndex, string expectedParamName)
         {
             // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
-                // 1. Direct Guards
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(null!, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, null!, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, null!, _mockUiDispatcher.Object));
+                var ex = Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(
+                    nullIndex == 0 ? null! : _mockServiceRepository.Object,
+                    nullIndex == 1 ? null! : _mockServiceCommands.Object,
+                    nullIndex == 2 ? null! : _mockAppConfig.Object,
+                    nullIndex == 3 ? null! : _mockCursorService.Object,
+                    nullIndex == 4 ? null! : _mockProcessHelper.Object,
+                    nullIndex == 5 ? null! : _mockUiDispatcher.Object));
 
-                // 2. Inherited Base Class Guards
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, null!, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, null!, _mockProcessHelper.Object, _mockUiDispatcher.Object));
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, null!));
+                Assert.Equal(expectedParamName, ex.ParamName);
             }, createApp: true);
         }
 

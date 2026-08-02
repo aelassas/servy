@@ -31,28 +31,19 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #region Constructor Guard Clauses Tests
 
-        [Fact]
-        public void Constructor_NullService_ThrowsArgumentNullException()
+        [Theory]
+        [InlineData(0, "service")]
+        [InlineData(1, "serviceCommands")]
+        [InlineData(2, "cursorService")]
+        public void Constructor_NullArguments_ThrowsArgumentNullException(int nullIndex, string expectedParamName)
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
-                new ServiceRowViewModel(null!, _serviceCommandsMock.Object, _cursorServiceMock.Object));
-        }
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRowViewModel(
+                nullIndex == 0 ? null : new Service { Name = "RowSvc" },
+                nullIndex == 1 ? null : _serviceCommandsMock.Object,
+                nullIndex == 2 ? null : _cursorServiceMock.Object));
 
-        [Fact]
-        public void Constructor_NullServiceCommands_ThrowsArgumentNullException()
-        {
-            // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
-                new ServiceRowViewModel(new Service { Name = "RowSvc" }, null!, _cursorServiceMock.Object));
-        }
-
-        [Fact]
-        public void Constructor_NullCursorService_ThrowsArgumentNullException()
-        {
-            // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
-                new ServiceRowViewModel(new Service { Name = "RowSvc" }, _serviceCommandsMock.Object, null!));
+            Assert.Equal(expectedParamName, ex.ParamName);
         }
 
         [Fact]

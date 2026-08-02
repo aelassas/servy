@@ -66,18 +66,19 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #region Constructor Tests
 
-        [Fact]
-        public void Constructor_NullArguments_ThrowsArgumentNullException()
+        [Theory]
+        [InlineData(0, "cursorService")]
+        [InlineData(1, "uiDispatcher")]
+        [InlineData(2, "serviceCommands")]
+        public void Constructor_NullArguments_ThrowsArgumentNullException(int nullIndex, string expectedParamName)
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
-                new TestServiceSearchViewModel(null!, _uiDispatcherMock.Object, _serviceCommandsMock.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new TestServiceSearchViewModel(
+                nullIndex == 0 ? null! : _cursorServiceMock.Object,
+                nullIndex == 1 ? null! : _uiDispatcherMock.Object,
+                nullIndex == 2 ? null! : _serviceCommandsMock.Object));
 
-            Assert.Throws<ArgumentNullException>(() =>
-                new TestServiceSearchViewModel(_cursorServiceMock.Object, null!, _serviceCommandsMock.Object));
-
-            Assert.Throws<ArgumentNullException>(() =>
-                new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, null!));
+            Assert.Equal(expectedParamName, ex.ParamName);
         }
 
         [Fact]
