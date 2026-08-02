@@ -157,26 +157,23 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Constructors & Properties
 
         [Theory]
-        [InlineData(0)]  // serviceManager
-        [InlineData(1)]  // serviceRepository
-        [InlineData(2)]  // serviceCommands
-        [InlineData(3)]  // helpService
-        [InlineData(4)]  // messageBoxService
-        [InlineData(5)]  // performanceVM
-        [InlineData(6)]  // consoleVM
-        [InlineData(7)]  // dependenciesVM
-        [InlineData(8)]  // appConfig
-        [InlineData(9)]  // cursorService
-        [InlineData(10)] // processHelper
-        public void Constructor_NullGuards_ThrowsArgumentNullException(int nullParamIndex)
+        [InlineData(0, "serviceManager")]
+        [InlineData(1, "serviceRepository")]
+        [InlineData(2, "serviceCommands")]
+        [InlineData(3, "helpService")]
+        [InlineData(4, "messageBoxService")]
+        [InlineData(5, "performanceVM")]
+        [InlineData(6, "consoleVM")]
+        [InlineData(7, "dependenciesVM")]
+        [InlineData(8, "appConfig")]
+        [InlineData(9, "cursorService")]
+        [InlineData(10, "processHelper")]
+        public void Constructor_NullGuards_ThrowsArgumentNullException(int nullParamIndex, string expectedParamName)
         {
             // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
-                // Symmetrical Hardening: Construct parameter inputs safely INSIDE the STA loop boundary
-                // so Dispatcher.CurrentDispatcher binds strictly to the newly initialized application thread context.
-                var args = new object[]
-                {
+                var ex = Assert.Throws<ArgumentNullException>(() => new MainViewModel(
                     nullParamIndex == 0 ? null : _serviceManagerMock.Object,
                     nullParamIndex == 1 ? null : _serviceRepositoryMock.Object,
                     nullParamIndex == 2 ? null : _serviceCommandsMock.Object,
@@ -188,22 +185,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     nullParamIndex == 8 ? null : _appConfigMock.Object,
                     nullParamIndex == 9 ? null : _cursorServiceMock.Object,
                     nullParamIndex == 10 ? null : _processHelperMock.Object,
-                    Dispatcher.CurrentDispatcher
-                };
+                    Dispatcher.CurrentDispatcher));
 
-                var ex = Assert.Throws<ArgumentNullException>(() =>
-                {
-                    try
-                    {
-                        Activator.CreateInstance(typeof(MainViewModel), args);
-                    }
-                    catch (System.Reflection.TargetInvocationException targetEx) when (targetEx.InnerException != null)
-                    {
-                        ExceptionDispatchInfo.Capture(targetEx.InnerException).Throw();
-                    }
-                });
-
-                Assert.NotNull(ex);
+                Assert.Equal(expectedParamName, ex.ParamName);
             }, createApp: true);
         }
 

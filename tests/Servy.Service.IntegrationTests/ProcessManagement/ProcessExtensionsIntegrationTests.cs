@@ -364,11 +364,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             if (root.HasExited || !found)
             {
-                string foundNames = string.Join(", ", lastResults.Select(p => p.ProcessName));
+                string foundNames = string.Join(", ", lastResults.Select(GetSafeProcessName));
                 foreach (var r in lastResults) r.Dispose();
-                throw root.HasExited
-                    ? new InvalidOperationException($"The root parent process exited prematurely (ExitCode: {root.ExitCode}). The process tree collapsed.")
-                    : throw new TimeoutException($"Failed to find '{targetName}' child process within {TestTimeouts.ChildTimeoutSeconds} seconds. Found instead: [{foundNames}]");
+
+                if (root.HasExited)
+                {
+                    throw new InvalidOperationException(
+                        $"The root parent process exited prematurely (ExitCode: {root.ExitCode}). The process tree collapsed.");
+                }
+
+                throw new TimeoutException(
+                    $"Failed to find '{targetName}' child process within {TestTimeouts.ChildTimeoutSeconds} seconds. Found instead: [{foundNames}]");
             }
 
             return lastResults;
