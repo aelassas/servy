@@ -1,7 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
@@ -17,20 +16,14 @@ namespace Servy.Service.UnitTests
 {
     public class HealthCheckTests : IDisposable
     {
-        private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
-
-        public HealthCheckTests()
-        {
-            _mockProcessKiller = new Mock<IProcessKiller>();
-        }
 
         [Fact]
         public void CheckHealth_ProcessExited_IncrementsFailedChecks_AndLogs()
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
@@ -57,7 +50,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
@@ -94,7 +87,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
@@ -138,7 +131,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
@@ -160,7 +153,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             bool processHasExited = true;

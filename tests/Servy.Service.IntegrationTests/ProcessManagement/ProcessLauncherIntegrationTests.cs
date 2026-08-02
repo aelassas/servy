@@ -163,8 +163,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 // Assert
                 Assert.True(wrapper.HasExited);
-
-                // Swap the tautological >= 0 check for a strict > 0 validation to prove the heartbeat callback ran.
                 Assert.True(heartbeats > 0, $"Expected SCM heartbeats to be reported, but captured count was {heartbeats}.");
             }
         }
@@ -250,10 +248,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             options.EnvironmentVariables.Add(envVarInstance);
 
             // Act
-            // Cast the dynamic output to IProcessWrapper to break out of the dynamic binder loop
             using (IProcessWrapper wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
             {
-                // Assert strong-typing and non-DLR indexer behavior
                 Assert.Equal(string.Empty, wrapper.StartInfo.Environment["CUSTOM_TEST_ENV_PADDED"]);
             }
         }
@@ -285,7 +281,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // but guarantees an absolute failure when the file stream opens.
             string structuralFailurePath = @"\\?\C:\illegal|char.log";
 
-            // Extended total timeout to 30000ms to allow powershell.exe ample runtime margin to process startup hooks on cold hosts
+            // powershell.exe needs headroom for startup hooks on cold CI hosts.
             var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'TRIGGER'\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
@@ -449,8 +445,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         /// <summary>
-        /// Implements the unvaried baseline surface layer of IProcessWrapper 
-        /// once to eliminate duplicate member declarations across inner mock definitions.
+        /// Shared no-op implementation of the IProcessWrapper members that the mocks in this file
+        /// do not exercise, so each mock only overrides the behaviour it is testing.
         /// </summary>
         private abstract class BaseMockProcessWrapper : IProcessWrapper
         {

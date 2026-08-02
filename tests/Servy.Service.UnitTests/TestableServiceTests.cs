@@ -1,6 +1,5 @@
 ﻿using Moq;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.UnitTests.Utilities;
@@ -13,13 +12,6 @@ namespace Servy.Service.UnitTests
 {
     public class TestableServiceTests
     {
-        private readonly Mock<IProcessKiller> _mockProcessKiller;
-
-        public TestableServiceTests()
-        {
-            _mockProcessKiller = new Mock<IProcessKiller>();
-        }
-
         [Fact]
         public void OnStart_Workflow_ParsesPromotesAndValidates()
         {
@@ -44,7 +36,7 @@ namespace Servy.Service.UnitTests
                       .Returns(true);
             ctx.Helper.Setup(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object));
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 // Act
                 service.TestOnStart();
@@ -82,7 +74,7 @@ namespace Servy.Service.UnitTests
                 .Setup(h => h.ParseOptions(ctx.ServiceRepository.Object, fullArgs))
                 .Returns((StartOptions)null);
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 // Act
                 service.TestOnStart(fullArgs);
@@ -110,7 +102,7 @@ namespace Servy.Service.UnitTests
                 .Setup(h => h.GetArgs())
                 .Throws(exception);
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 // Act
                 service.TestOnStart(new string[] { });
@@ -138,7 +130,7 @@ namespace Servy.Service.UnitTests
                 .Setup(f => f.Create(It.IsAny<double>()))
                 .Returns(mockTimer.Object);
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 service.SetRecoveryActionEnabled(true);
 
@@ -174,7 +166,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
 
-            using (var service = ctx.Build(_mockProcessKiller.Object))
+            using (var service = ctx.Build())
             {
                 var options = new StartOptions
                 {

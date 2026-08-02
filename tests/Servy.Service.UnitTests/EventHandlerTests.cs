@@ -1,6 +1,5 @@
 ﻿using Moq;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
@@ -15,13 +14,7 @@ namespace Servy.Service.UnitTests
 {
     public class EventHandlerTests : IDisposable
     {
-        private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
-
-        public EventHandlerTests()
-        {
-            _mockProcessKiller = new Mock<IProcessKiller>();
-        }
 
         private static StartOptions CreateDefaultStartOptions() => new StartOptions
         {
@@ -38,7 +31,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service); // Track SUT instance for teardown disposal
 
             var mockWriter = new Mock<IStreamWriter>();
@@ -77,7 +70,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             var mockWriter = new Mock<IStreamWriter>();
@@ -117,7 +110,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
@@ -138,7 +131,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
@@ -159,7 +152,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var ctx = new ServiceTestContext();
-            var service = ctx.Build(_mockProcessKiller.Object);
+            var service = ctx.Build();
             _disposableServices.Add(service);
 
             TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
