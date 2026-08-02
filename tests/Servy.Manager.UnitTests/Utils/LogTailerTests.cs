@@ -478,7 +478,7 @@ namespace Servy.Manager.UnitTests.Utils
 
             // Act - Verify initial state before disposal
             bool isDisposedBefore = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
-            Assert.False(isDisposedBefore, "The logs view model wrapper should not initialize in a pre-disposed state.");
+            Assert.False(isDisposedBefore, "A new LogTailer instance should not initialize in a pre-disposed state.");
 
             // Act - First disposal
             tailer.Dispose();
@@ -486,8 +486,8 @@ namespace Servy.Manager.UnitTests.Utils
             bool isDisposedAfterFirst = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
             Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
 
-            // Act - Second disposal must hit the Interlocked.Exchange early return
-            TestReflection.SetField(tailer, "_isDisposed", 1);
+            // Act - Reset guard field back to 0 (alive) to verify second disposal hits Interlocked.Exchange
+            TestReflection.SetField(tailer, "_isDisposed", 0);
             var doubleDisposeException = Record.Exception(tailer.Dispose);
 
             // Assert

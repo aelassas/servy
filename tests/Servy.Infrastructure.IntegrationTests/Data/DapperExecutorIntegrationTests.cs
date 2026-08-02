@@ -18,7 +18,7 @@ using Xunit;
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
     [Collection("SequentialDatabaseTests")]
-    public class DapperExecutorIntegrationTests : IDisposable
+    public class DapperExecutorIntegrationTests : TempDirectoryTestBase
     {
         #region Shared Test Doubles Base Infrastructure
 
@@ -172,7 +172,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public DapperExecutorIntegrationTests()
         {
             // 1. Create a unique temporary database file for this specific test run
-            _tempDbPath = Path.GetTempFileName();
+            _tempDbPath = Path.Combine(TempDirectory, "dapper-tests.db");
             _connectionString = $"Data Source={_tempDbPath};Version=3;";
 
             _mockDbContext = new Mock<IAppDbContext>();
@@ -611,15 +611,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
-        public void Dispose()
+        public override void Dispose()
         {
             // Clear SQLite pools so it releases any file locks, then delete the temp DB
             SQLiteConnection.ClearAllPools();
 
-            if (File.Exists(_tempDbPath))
-            {
-                try { File.Delete(_tempDbPath); } catch { /* Ignore cleanup faults */ }
-            }
+            base.Dispose(); // then the retrying recursive delete
         }
 
         // Row type for Dapper materialization in this class.
