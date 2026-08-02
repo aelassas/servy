@@ -95,54 +95,91 @@ namespace Servy.Service.UnitTests.Helpers
         public void LogStartupArguments_EnableDebugLogsTrue_LogsMaskedSensitiveDataToTextLog()
         {
             // Arrange
-            var mockEventLog = new Mock<IServyLogger>();
+            string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
+            string tempLogFilePath = Path.Combine(Logger.LogsPath, tempLogFileName);
 
-            var options = new StartOptions
+            try
             {
-                ServiceName = "SecureService",
-                EnableDebugLogs = true,
-                ExecutableArgs = "--password=SuperSecretPassword --api_key DB12345 --port 8080",
-                FailureProgramArgs = "/token:SecretToken123 /normalArg test",
-                EnvironmentVariables = new List<EnvironmentVariable>
+                // Initialize the static Logger to capture Logger.Info calls
+                Logger.Initialize(tempLogFileName, LogLevel.Info);
+
+                var mockEventLog = new Mock<IServyLogger>();
+
+                var options = new StartOptions
                 {
-                    new EnvironmentVariable { Name = "DB_PASSWORD", Value = "SqlPass123" },
-                    new EnvironmentVariable { Name = "NORMAL_ENV", Value = "PublicValue" }
-                },
-                PreLaunchExecutableArgs = "connect --jwt=TokenVal",
-                PreLaunchEnvironmentVariables = new List<EnvironmentVariable>
+                    ServiceName = "SecureService",
+                    EnableDebugLogs = true,
+                    ExecutableArgs = "--password=SuperSecretPassword --api_key DB12345 --port 8080",
+                    FailureProgramArgs = "/token:SecretToken123 /normalArg test",
+                    EnvironmentVariables = new List<EnvironmentVariable>
+                    {
+                        new EnvironmentVariable { Name = "DB_PASSWORD", Value = "SqlPass123" },
+                        new EnvironmentVariable { Name = "NORMAL_ENV", Value = "PublicValue" }
+                    },
+                    PreLaunchExecutableArgs = "connect --jwt=TokenVal",
+                    PreLaunchEnvironmentVariables = new List<EnvironmentVariable>
+                    {
+                        new EnvironmentVariable { Name = "AUTH_TOKEN", Value = "JwtSecret" }
+                    },
+                    PostLaunchExecutableArgs = "--session \"Active Session Id\"",
+                    PreStopExecutableArgs = "stop --cert-thumbprint abcde123",
+                    PostStopExecutableArgs = "cleanup --pat SecretPatToken"
+                };
+
+                // Capture public parameters logged through the IServyLogger interface
+                var publicLoggedEntries = new List<string>();
+                mockEventLog
+                    .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
+                    .Callback<string, Exception?>((msg, _) => publicLoggedEntries.Add(msg));
+
+                // Act
+                _helper.LogStartupArguments(options, mockEventLog.Object);
+
+                // Flush/Shutdown static logger to release file locks for reading
+                Logger.Shutdown();
+
+                // Assert
+                string publicLogOutput = string.Join(Environment.NewLine, publicLoggedEntries);
+                string textLogOutput = File.Exists(tempLogFilePath) ? File.ReadAllText(tempLogFilePath) : string.Empty;
+                string combinedLogOutput = publicLogOutput + Environment.NewLine + textLogOutput;
+
+                // 0. The dump actually happened on the channels under test
+                Assert.NotEmpty(publicLoggedEntries);
+                Assert.Contains("Startup Parameters", publicLogOutput, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("Startup Parameters - SENSITIVE DATA", textLogOutput, StringComparison.OrdinalIgnoreCase);
+
+                // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked anywhere
+                Assert.DoesNotContain("SuperSecretPassword", combinedLogOutput);
+                Assert.DoesNotContain("DB12345", combinedLogOutput);
+                Assert.DoesNotContain("SecretToken123", combinedLogOutput);
+                Assert.DoesNotContain("SqlPass123", combinedLogOutput);
+                Assert.DoesNotContain("TokenVal", combinedLogOutput);
+                Assert.DoesNotContain("JwtSecret", combinedLogOutput);
+                Assert.DoesNotContain("Active Session Id", combinedLogOutput);
+                Assert.DoesNotContain("abcde123", combinedLogOutput);
+                Assert.DoesNotContain("SecretPatToken", combinedLogOutput);
+
+                // 2. Sensitive values were emitted in masked form in the local text log
+                Assert.Contains("********", textLogOutput);
+                Assert.Contains("--password=********", textLogOutput);
+                Assert.Contains("DB_PASSWORD", textLogOutput); // key kept for diagnosability
+
+                // 3. Confirm separation: Sensitive log section is present in text log, but NOT sent to the event logger interface
+                Assert.DoesNotContain("SENSITIVE DATA", publicLogOutput);
+
+                // 4. Non-sensitive data is untouched and present
+                Assert.Contains("PublicValue", textLogOutput);
+                Assert.Contains("--port 8080", textLogOutput);
+                Assert.Contains("/normalArg test", textLogOutput);
+            }
+            finally
+            {
+                Logger.Shutdown();
+                if (File.Exists(tempLogFilePath))
                 {
-                    new EnvironmentVariable { Name = "AUTH_TOKEN", Value = "JwtSecret" }
-                },
-                PostLaunchExecutableArgs = "--session \"Active Session Id\"",
-                PreStopExecutableArgs = "stop --cert-thumbprint abcde123",
-                PostStopExecutableArgs = "cleanup --pat SecretPatToken"
-            };
-
-            // Capture all text allocations funneled through the logger interface pipeline
-            var loggedEntries = new List<string>();
-            mockEventLog
-                .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
-                .Callback<string, Exception?>((msg, _) => loggedEntries.Add(msg));
-
-            // Act
-            _helper.LogStartupArguments(options, mockEventLog.Object);
-
-            // Assert
-            string combinedLogOutput = string.Join(Environment.NewLine, loggedEntries);
-
-            // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked to the text log
-            Assert.DoesNotContain("SuperSecretPassword", combinedLogOutput);
-            Assert.DoesNotContain("DB12345", combinedLogOutput);
-            Assert.DoesNotContain("SecretToken123", combinedLogOutput);
-            Assert.DoesNotContain("SqlPass123", combinedLogOutput);
-            Assert.DoesNotContain("TokenVal", combinedLogOutput);
-            Assert.DoesNotContain("JwtSecret", combinedLogOutput);
-            Assert.DoesNotContain("Active Session Id", combinedLogOutput);
-            Assert.DoesNotContain("abcde123", combinedLogOutput);
-            Assert.DoesNotContain("SecretPatToken", combinedLogOutput);
-
-            // 2. Sensitive masked data is written to Servy.Service.log log file with the expected masking pattern
-            // Sensitive data is never written to the event log, only to the text log file.
+                    try { File.Delete(tempLogFilePath); } catch { /* Ignore file cleanup errors */ }
+                }
+            }
         }
 
         #endregion

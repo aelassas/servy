@@ -96,16 +96,17 @@ namespace Servy.Service.UnitTests.Helpers
         [Fact]
         public void ExpandEnvironmentVariables_ShouldExpandSystemVariable()
         {
-            // Arrange
             var vars = new List<EnvironmentVariable>();
+            string osSystemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
+            Assert.False(string.IsNullOrEmpty(osSystemRoot), "Precondition failed: SystemRoot OS variable is not set.");
 
             // Act
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
-            string systemRoot = expanded["SystemRoot"]!; // should always exist
             string result = EnvironmentVariableHelper.ExpandEnvironmentVariables("%SystemRoot%", expanded);
 
             // Assert
-            Assert.Equal(systemRoot, result, ignoreCase: true);
+            Assert.Equal(osSystemRoot, expanded["SystemRoot"], ignoreCase: true);   // dictionary matches the OS
+            Assert.Equal(osSystemRoot, result, ignoreCase: true);                   // string overload matches the OS
         }
 
         [Fact]

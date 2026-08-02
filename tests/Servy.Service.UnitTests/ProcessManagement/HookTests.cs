@@ -103,15 +103,13 @@ namespace Servy.Service.UnitTests.ProcessManagement
             {
                 hook.Process = process;
 
-                // Act
+                // Act - finalizer path: managed members must not be touched
                 hook.CallProtectedDispose(false);
 
-                // Process should not be disposed here, ensuring we don't try to 
-                // access managed objects during finalization.
-                var ex = Record.Exception(() => hook.CallProtectedDispose(false));
-
-                // Assert
+                // Assert - the Process is still usable, i.e. it was NOT disposed
+                var ex = Record.Exception(() => _ = process.StartInfo);
                 Assert.Null(ex);
+                Assert.Same(process, hook.Process);
             }
         }
     }

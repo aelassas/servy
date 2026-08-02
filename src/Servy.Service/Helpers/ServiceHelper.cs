@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -8,7 +7,6 @@ using Servy.Core.Validation;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
-using System.Reflection;
 using System.ServiceProcess;
 using System.Text.RegularExpressions;
 
