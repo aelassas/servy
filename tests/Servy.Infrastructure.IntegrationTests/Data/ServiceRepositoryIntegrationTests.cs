@@ -449,10 +449,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public void Update_SynchronousPath_SavesAndPreservesStateSymmetrically()
         {
             // Arrange
-            var service = new ServiceDto { Name = "SyncService", ExecutablePath = "C:\\s.exe", Pid = 444 };
             int id = _executor.ExecuteScalar<int>(
                 $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();");
-            service.Id = id;
 
             // Act
             var updatePayload = new ServiceDto { Id = id, Name = "SyncService", ExecutablePath = "C:\\new_sync.exe", Pid = 888 };
@@ -525,7 +523,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public void GetByName_SynchronousPath_ResolvesEntryCleanly()
         {
             // Arrange
-            var service = new ServiceDto { Name = "SynchronousQueryService", ExecutablePath = "C:\\sync.exe" };
             _executor.Execute(
                 $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');");
 

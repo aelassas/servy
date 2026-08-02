@@ -514,11 +514,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Step 2: Sabotage the schema
                 conn.Execute($"DROP TABLE {SqlConstants.ServicesTableName};");
 
-                // We rebuild it, intentionally omitting the second column (usually 'Name' or 'ServiceName')
-                // We change the type of 'EnableSizeRotation' to TEXT to force a Type Mismatch.
-                // We add an 'OrphanColumn' to force the Orphan branch.
-                var missingColumn = expectedColumns.First(c => c != "Id" && !c.Contains("Rotation") && c != "HeartbeatUrl" && c != "CpuAffinity");
+                // Explicitly target 'Name' as the omitted column to exercise the missing-column reconciliation branch.
+                const string missingColumn = "Name";
+                Assert.Contains(missingColumn, expectedColumns);
 
+                // Rebuild the table intentionally omitting 'Name', changing 'EnableSizeRotation' to TEXT (type mismatch),
+                // and adding an 'OrphanColumn' (orphan branch).
                 var corruptedTableDef = new List<string> { "Id INTEGER PRIMARY KEY", "OrphanColumn TEXT" };
                 foreach (var col in expectedColumns)
                 {
