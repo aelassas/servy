@@ -21,6 +21,13 @@ using Servy.Core.Config;
 
 namespace Servy.Service.UnitTests.Helpers
 {
+    [CollectionDefinition("ServiceHelperTests", DisableParallelization = true)]
+    public class ServiceHelperTestsCollection
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
+    [Collection("ServiceHelperTests")]
     public class ServiceHelperTests
     {
         private readonly Mock<ICommandLineProvider> _mockCommandLineProvider;
@@ -101,11 +108,15 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
+
+            // Defensively ensure logs directory exists in test sandbox
+            Directory.CreateDirectory(Logger.LogsPath);
             string tempLogFilePath = Path.Combine(Logger.LogsPath, tempLogFileName);
 
             try
             {
-                // Initialize the static Logger to capture Logger.Info calls
+                // Re-initialize static Logger cleanly for this test
+                Logger.Shutdown();
                 Logger.Initialize(tempLogFileName, LogLevel.Info);
 
                 var mockEventLog = new Mock<IServyLogger>();
@@ -140,7 +151,7 @@ namespace Servy.Service.UnitTests.Helpers
                 // Act
                 _helper.LogStartupArguments(options, mockEventLog.Object);
 
-                // Flush/Shutdown static logger to release file locks for reading
+                // Flush/Shutdown static logger to release file handles
                 Logger.Shutdown();
 
                 // Assert
@@ -151,6 +162,7 @@ namespace Servy.Service.UnitTests.Helpers
                 // 0. The dump actually happened on the channels under test
                 Assert.NotEmpty(publicLoggedEntries);
                 Assert.Contains("Startup Parameters", publicLogOutput, StringComparison.OrdinalIgnoreCase);
+                Assert.True(File.Exists(tempLogFilePath), $"Expected log file was not created at '{tempLogFilePath}'. Ensure process has write permissions.");
                 Assert.Contains("Startup Parameters - SENSITIVE DATA", textLogOutput, StringComparison.OrdinalIgnoreCase);
 
                 // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked anywhere
