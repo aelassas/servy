@@ -72,15 +72,21 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 new EnvironmentVariable { Name = "", Value = "Empty" },
                 new EnvironmentVariable { Name = "    ", Value = "Whitespace" },
-                new EnvironmentVariable { Name = null!, Value = "Null" }
+                new EnvironmentVariable { Name = null!, Value = "Null" },
+                new EnvironmentVariable { Name = "GOOD_VAR", Value = "KeptValue" },   // positive control
             };
 
             // Act
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
 
-            // Assert
+            // Assert - the malformed entries are dropped ...
             Assert.False(expanded.ContainsKey(""));
             Assert.False(expanded.ContainsKey("    "));
+            Assert.DoesNotContain(expanded.Values, v => v == "Empty" || v == "Whitespace" || v == "Null");
+
+            // ... and everything else survives
+            Assert.Equal("KeptValue", expanded["GOOD_VAR"]);
+            Assert.True(expanded.ContainsKey("PATH"));
         }
 
         #endregion
