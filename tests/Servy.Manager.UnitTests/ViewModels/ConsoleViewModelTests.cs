@@ -371,8 +371,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Null(TestReflection.GetField<CancellationTokenSource>(vm, "_tailingCts"));
                     Assert.Null(TestReflection.GetField<CancellationTokenSource>(vm, "_logFilterCts"));
 
-                    // 3. Verify event cleanup checks
-                    Assert.False(scrollTriggered);
+                    // 3. Verify event cleanup checks - RequestScroll event delegate must be cleared (null) after disposal
+                    Assert.Null(TestReflection.GetField<Action<bool>>(vm, "RequestScroll"));
+                    Assert.False(scrollTriggered, "RequestScroll event handler should not have executed.");
 
                     // Final cleanup of local anchors
                     expectedTailingCts.Dispose();

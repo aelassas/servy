@@ -624,6 +624,9 @@ namespace Servy.Manager.ViewModels
                 // 3. Dispose Log Filter Debounce CTS
                 var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
                 Helpers.Helper.CancelAndDisposeSafely(oldFilterCts);
+
+                // 4. Detach all event subscribers to prevent rooting disposed ViewModels/Views
+                RequestScroll = null;
             }
 
             base.Dispose(disposing);
