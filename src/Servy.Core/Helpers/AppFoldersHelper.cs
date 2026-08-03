@@ -51,14 +51,18 @@ namespace Servy.Core.Helpers
         /// </param>
         /// <param name="aesKeyFilePath">Full filesystem path to the AES master key file.</param>
         /// <param name="aesIVFilePath">Full filesystem path to the legacy AES Initialization Vector (IV) file.</param>
+        /// <param name="rootVaultPath">
+        /// Optional root directory for the application data vault. 
+        /// If <c>null</c>, defaults to <see cref="AppConfig.ProgramDataPath"/>.
+        /// </param>
         /// <remarks>
         /// <para>
         /// This method follows a hierarchical security approach:
         /// <list type="number">
         /// <item>
         /// <description>
-        /// <b>Root Vault:</b> The primary data path defined in <see cref="AppConfig.ProgramDataPath"/> is secured first 
-        /// by breaking inheritance to block standard users.
+        /// <b>Root Vault:</b> The primary data path defined by <paramref name="rootVaultPath"/> (or <see cref="AppConfig.ProgramDataPath"/>) 
+        /// is secured first by breaking inheritance to block standard users.
         /// </description>
         /// </item>
         /// <item>
@@ -78,7 +82,7 @@ namespace Servy.Core.Helpers
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown if any of the provided paths or connection strings are null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the connection string format is invalid or directory names cannot be parsed.</exception>
-        public static void EnsureFolders(string connectionString, string aesKeyFilePath, string aesIVFilePath)
+        public static void EnsureFolders(string connectionString, string aesKeyFilePath, string aesIVFilePath, string rootVaultPath = null)
         {
             // Reject null/blank paths before any filesystem or ACL work
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -124,15 +128,20 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(aesIVFolder))
                 throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
-            // 4. Secure the Root Vault (ProgramData) so its ACLs exist for children to inherit
-            SecurityHelper.CreateSecureDirectory(AppConfig.ProgramDataPath, breakInheritance: true);
+            var root = rootVaultPath ?? AppConfig.ProgramDataPath;
+            var recoveryPath = rootVaultPath is null ? AppConfig.RecoveryFolderPath : Path.Combine(root, "recovery");
+            var logsPath = rootVaultPath is null ? AppConfig.LogsFolderPath : Path.Combine(root, "logs");
+
+            // 4. Secure the Root Vault so its ACLs exist for children to inherit
+            SecurityHelper.CreateSecureDirectory(root, breakInheritance: true);
 
             // 5. Secure operational folders while respecting inheritance
-            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, AppConfig.RecoveryFolderPath, AppConfig.LogsFolderPath }
+            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, recoveryPath, logsPath }
                 .Select(Path.GetFullPath)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
-            var canonicalRoot = Path.GetFullPath(AppConfig.ProgramDataPath);
+
+            var canonicalRoot = Path.GetFullPath(root);
             var normalizedRoot = canonicalRoot
                 .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                 + Path.DirectorySeparatorChar;
@@ -150,6 +159,5 @@ namespace Servy.Core.Helpers
                 SecurityHelper.CreateSecureDirectory(folder, breakInheritance: !isChildOfRoot);
             }
         }
-
     }
 }
