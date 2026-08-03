@@ -15,8 +15,7 @@ namespace Servy.Service.UnitTests.CommandLine
             string[] actualArgs = provider.GetArgs();
 
             // Assert
-            // Verifies the structural content equality to confirm the provider correctly forwards the BCL framework arrays
-            Assert.Equal(expectedArgs.Length, actualArgs.Length);
+            // The provider is a pure delegation to Environment.GetCommandLineArgs(); compare contents.
             Assert.Equal(expectedArgs, actualArgs);
         }
     }

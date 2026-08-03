@@ -1,87 +1,85 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>false</SelfContained>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
-    <InvariantGlobalization>true</InvariantGlobalization>
-    <StripSymbols>true</StripSymbols>
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>false</SelfContained>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<StripSymbols>true</StripSymbols>
 
-    <IsTrimmable>true</IsTrimmable>
-    <PublishTrimmed>true</PublishTrimmed>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <TrimMode>partial</TrimMode>   
-    <DebuggerSupport>false</DebuggerSupport>
-    <PublishReadyToRun>false</PublishReadyToRun>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-  </PropertyGroup>
+		<IsTrimmable>true</IsTrimmable>
+		<PublishTrimmed>true</PublishTrimmed>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<TrimMode>partial</TrimMode>
+		<DebuggerSupport>false</DebuggerSupport>
+		<PublishReadyToRun>false</PublishReadyToRun>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <TrimmerRootAssembly Include="System.Threading.Thread" />
-  </ItemGroup>
+	<ItemGroup>
+		<TrimmerRootAssembly Include="System.Threading.Thread" />
+	</ItemGroup>
 
-  <PropertyGroup>
-    <AssemblyTitle>Servy.Service</AssemblyTitle>
-    <AssemblyDescription>Servy Wrapper Windows Service</AssemblyDescription>
-    <Company>Akram El Assas</Company>
-    <Product>Servy</Product>
-    <Version>9.0.0</Version>
-    <FileVersion>9.0.0.0</FileVersion>
-    <AssemblyVersion>9.0.0.0</AssemblyVersion>
-    <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <None Remove="Resources\Servy.Restarter.exe" />
-    <None Remove="Resources\Servy.Restarter.pdb" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Content Include="appsettings.service.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+	<PropertyGroup>
+		<AssemblyTitle>Servy.Service</AssemblyTitle>
+		<AssemblyDescription>Servy Wrapper Windows Service</AssemblyDescription>
+		<Company>Akram El Assas</Company>
+		<Product>Servy</Product>
+		<Version>9.0.0</Version>
+		<FileVersion>9.0.0.0</FileVersion>
+		<AssemblyVersion>9.0.0.0</AssemblyVersion>
+		<Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Restarter.exe" />
-    <EmbeddedResource Include="Resources\Servy.Restarter.pdb" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="Resources\Servy.Restarter.exe" />
+		<None Remove="Resources\Servy.Restarter.pdb" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.10" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="appsettings.service.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
-    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\Servy.Restarter.exe" />
+		<EmbeddedResource Include="Resources\Servy.Restarter.pdb" />
+	</ItemGroup>
 
-  <!--<ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+		<PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.10" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
+		<ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<!--<ItemGroup>
     <FrameworkReference Include="Microsoft.NETCore.App" />
   </ItemGroup>-->
 
-  <ItemGroup>
-    <!-- Always include the shared base preserves -->
-    <TrimmerRootDescriptor Include="..\linker.shared.xml" />
+	<ItemGroup>
+		<!-- Always include the shared base preserves -->
+		<TrimmerRootDescriptor Include="..\linker.shared.xml" />
 
-    <!-- Include project-specific preserves if the file exists in the project directory -->
-    <TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
-  </ItemGroup>
+		<!-- Include project-specific preserves if the file exists in the project directory -->
+		<TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Servy.Service.UnitTests</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
-
+	<ItemGroup>
+		<InternalsVisibleTo Include="Servy.Service.UnitTests" />
+		<InternalsVisibleTo Include="Servy.Service.IntegrationTests" />
+	</ItemGroup>
 </Project>

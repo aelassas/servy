@@ -1,4 +1,5 @@
-﻿using Servy.Service.ProcessManagement;
+﻿using Servy.Core.Native;
+using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System.Diagnostics;
 
@@ -183,7 +184,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void PriorityClass_Get_ReturnsValidProcessPriority()
+        public void PriorityClass_Get_ReturnsPriorityAssignedToUnderlyingProcess()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
@@ -191,34 +192,27 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act
-                ProcessPriorityClass priority = wrapper.PriorityClass;
+                wrapper.UnderlyingProcess.PriorityClass = ProcessPriorityClass.BelowNormal;
 
                 // Assert
-                // Verify the getter correctly retrieves the active priority assigned by the OS scheduler
-                Assert.Equal(wrapper.UnderlyingProcess.PriorityClass, priority);
-
-                // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                Assert.Equal(ProcessPriorityClass.BelowNormal, wrapper.PriorityClass);
             }
         }
 
         [Fact]
-        public void ProcessorAffinity_Get_ReturnsValidProcessorAffinity()
+        public void ProcessorAffinity_Get_ReturnsAffinityAssignedToUnderlyingProcess()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
                 wrapper.Start();
 
-                // Assert
-                // Verify the wrapper property returns the native process affinity bitmask assigned by the OS scheduler
-                Assert.Equal(wrapper.UnderlyingProcess.ProcessorAffinity, wrapper.ProcessorAffinity);
-                Assert.NotEqual(IntPtr.Zero, wrapper.ProcessorAffinity);
+                // Act
+                var expected = new IntPtr(1L);              // CPU 0 - valid on every core count
+                wrapper.UnderlyingProcess.ProcessorAffinity = expected;
 
-                // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                // Assert
+                Assert.Equal(expected, wrapper.ProcessorAffinity);
             }
         }
 
@@ -438,7 +432,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 int parentPid = underlyingProcess?.Id ?? wrapper.Id;
                 DateTime parentStartTime = underlyingProcess?.StartTime ?? wrapper.StartTime;
 
-                // Dynamically poll until the child process infrastructure has fully completed initialization
+                // Dynamically poll until the child process infrastructure has fully completed initialization (5 second budget)
                 int childPid = 0;
                 bool childSpawned = SpinWait.SpinUntil(() =>
                 {
@@ -462,46 +456,40 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                         // Suppress intermittent access deviations while process is initializing
                     }
                     return false;
-                }, TimeSpan.FromMilliseconds(TestTimeouts.ProcessWrapperStopDescendantsTimeoutMs));
+                }, TimeSpan.FromSeconds(5));
 
                 // Act
-                // Pass a non-existent, isolated PID space to execute the tracking loop cleanly.
-                int fakePid = 99999;
-                wrapper.StopDescendants(fakePid, DateTime.Now, 1000);
-
-                // Now forcefully clean up the actual running tree via the managed root wrapper asset
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                // Pass the actual parent process identity to execute tree termination via the SUT
+                wrapper.StopDescendants(parentPid, parentStartTime, 1000);
 
                 // Assert
-                if (childSpawned && childPid > 0)
+                Assert.True(childSpawned && childPid > 0, "Child cmd.exe never spawned; the test cannot verify descendant termination.");
+
+                bool childCleanedUp = SpinWait.SpinUntil(() =>
                 {
-                    bool childCleanedUp = SpinWait.SpinUntil(() =>
+                    try
                     {
-                        try
+                        using (var targetChild = Process.GetProcessById(childPid))
                         {
-                            using (var targetChild = Process.GetProcessById(childPid))
-                            {
-                                targetChild.Refresh();
-                                return targetChild.HasExited;
-                            }
+                            targetChild.Refresh();
+                            return targetChild.HasExited;
                         }
-                        catch (ArgumentException)
-                        {
-                            // Process identifier has been completely cleared out by the OS kernel
-                            return true;
-                        }
-                        catch (InvalidOperationException)
-                        {
-                            // Process state tracking references are dead/gone
-                            return true;
-                        }
-                    }, TimeSpan.FromSeconds(3));
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Process identifier has been completely cleared out by the OS kernel
+                        return true;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Process state tracking references are dead/gone
+                        return true;
+                    }
+                }, TimeSpan.FromSeconds(3));
 
-                    Assert.True(childCleanedUp, $"Descendant process with PID {childPid} survived the tree termination attempt.");
-                }
+                Assert.True(childCleanedUp, $"Descendant process with PID {childPid} survived StopDescendants.");
 
-                // Ensure the root test wrapper handle itself is fully torn down cleanly
+                // Cleanup after assertions
                 try
                 {
                     if (underlyingProcess != null && !underlyingProcess.HasExited)
@@ -741,7 +729,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void SendCtrlC_ProcessWithNoConsoleAttached_GracefullyReturnsFalseToFallbackChain()
+        public void SendCtrlC_LiveWindowlessChild_ReturnsFalseToFallbackChain()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 5\""))
@@ -777,62 +765,14 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
-        [Fact]
-        public void SendCtrlC_WhenAttachFailsWithErrorPipeNotConnected_ReturnsTrue()
-        {
-            // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 5\""))
-            {
-                wrapper.Start();
-
-                // Act - Evaluating SendCtrlC behavior against an unattached windowless process
-                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
-
-                // Assert - For windowless background processes, SendCtrlC returns false or non-null fallback state
-                Assert.NotNull(result);
-
-                // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
-            }
-        }
-
-        [Fact]
-        public void SendCtrlC_WhenAttachFailsWithErrorInvalidHandleOrGenFailure_ReturnsFalse()
-        {
-            // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
-            {
-                wrapper.Start();
-
-                // Act - Invoking SendCtrlC on a process running without an attached console window (ERROR_INVALID_HANDLE / ERROR_GEN_FAILURE)
-                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
-
-                // Assert
-                Assert.False((bool)result!);
-
-                // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
-            }
-        }
-
-        [Fact]
-        public void SendCtrlC_WhenAttachFailsWithErrorInvalidParameter_ReturnsNull()
-        {
-            // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
-            {
-                wrapper.Start();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
-
-                // Act
-                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
-
-                // Assert
-                Assert.Null(result);
-            }
-        }
+        [Theory]
+        [InlineData(Errors.ERROR_PIPE_NOT_CONNECTED, true)]
+        [InlineData(Errors.ERROR_INVALID_HANDLE, false)]
+        [InlineData(Errors.ERROR_GEN_FAILURE, false)]
+        [InlineData(Errors.ERROR_INVALID_PARAMETER, null)]
+        [InlineData(1234, false)]   // default arm
+        public void ClassifyAttachFailure_MapsWin32ErrorToSignalOutcome(int error, bool? expected)
+            => Assert.Equal(expected, ProcessWrapper.ClassifyAttachFailure(error));
 
         #endregion
 

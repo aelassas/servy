@@ -370,7 +370,25 @@ namespace Servy.Service.ProcessManagement
             }
             else if (result == true)
             {
-                _logger?.Info($"Process '{process.Format()}' canceled with code {process.ExitCode}.");
+                int? exitCode = null;
+                try
+                {
+                    exitCode = process.ExitCode;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process was attached/enumerated externally (e.g., via PID enumeration in GetChildren)
+                    // and not started directly by this .NET Process instance.
+                }
+
+                if (exitCode.HasValue)
+                {
+                    _logger?.Info($"Process '{process.Format()}' canceled with code {exitCode.Value}.");
+                }
+                else
+                {
+                    _logger?.Info($"Process '{process.Format()}' canceled gracefully.");
+                }
             }
             else
             {
@@ -511,6 +529,34 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <summary>
+        /// Classifies a Win32 error code returned from an <c>AttachConsole</c> call into a signal outcome.
+        /// </summary>
+        /// <param name="error">The Win32 error code returned by <see cref="Marshal.GetLastWin32Error"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> if the process shares a console (e.g., <see cref="Errors.ERROR_PIPE_NOT_CONNECTED"/>);
+        /// <see langword="false"/> if the attach failed due to handle issues or unexpected error conditions;
+        /// <see langword="null"/> if the attach failed because the target process has already exited (<see cref="Errors.ERROR_INVALID_PARAMETER"/>).
+        /// </returns>
+        internal static bool? ClassifyAttachFailure(int error)
+        {
+            switch (error)
+            {
+                case Errors.ERROR_PIPE_NOT_CONNECTED:
+                    return true;
+
+                case Errors.ERROR_INVALID_HANDLE:
+                case Errors.ERROR_GEN_FAILURE:
+                    return false;
+
+                case Errors.ERROR_INVALID_PARAMETER:
+                    return null;
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
         /// Attempts to send a CTRL+C signal to a console-based process to initiate a graceful shutdown.
         /// </summary>
         /// <param name="process">The native process to which the signal will be sent.</param>
@@ -551,30 +597,18 @@ namespace Servy.Service.ProcessManagement
                     }
 
                     int error = Marshal.GetLastWin32Error();
+                    bool? outcome = ClassifyAttachFailure(error);
 
-                    // ERROR_PIPE_NOT_CONNECTED (233)
-                    // The child shares the parent's console. It already received the broadcasted Ctrl+C 
-                    // when the parent was signaled. We return TRUE to force the wrapper to wait for 
-                    // a graceful exit rather than instantly triggering process.Kill().
                     if (error == Errors.ERROR_PIPE_NOT_CONNECTED)
                     {
                         _logger?.Info($"Process '{process.Format()}' shares a console group. Awaiting graceful shutdown...");
-                        return true;
                     }
-
-                    // ERROR_INVALID_HANDLE (6) or ERROR_GEN_FAILURE (31)
-                    if (error == Errors.ERROR_INVALID_HANDLE || error == Errors.ERROR_GEN_FAILURE)
+                    else if (outcome == false)
                     {
-                        return false;
+                        _logger?.Warn($"Sending Ctrl+C: Failed to attach to '{process.Format()}': {new Win32Exception(error).Message} (Error: {error})");
                     }
 
-                    if (error == Errors.ERROR_INVALID_PARAMETER)
-                    {
-                        return null; // Process already exited
-                    }
-
-                    _logger?.Warn($"Sending Ctrl+C: Failed to attach to '{process.Format()}': {new Win32Exception(error).Message} (Error: {error})");
-                    return false;
+                    return outcome;
                 }
 
                 // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
