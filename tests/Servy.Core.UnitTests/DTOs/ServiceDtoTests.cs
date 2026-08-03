@@ -7,32 +7,45 @@ namespace Servy.Core.UnitTests.DTOs
 {
     public class ServiceDtoTests
     {
+        private static readonly string[] OrderedPropertyNames =
+            typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(p => p.Name)
+                .OrderBy(n => n, StringComparer.Ordinal)
+                .ToArray();
+
         [Fact]
         public void Clone_AllProperties_MatchSourceValues()
         {
             // 1. Arrange: Create a source with non-default values for ALL properties
-            var source = CreateFullyPopulatedServiceDto();
+            var sourcePass1 = CreateFullyPopulatedServiceDto();
+            var sourcePass2 = CreateFullyPopulatedServiceDto();
 
-            // 2. Act
-            var clone = (ServiceDto)source.Clone();
+            // Invert boolean properties on pass 2 to ensure two-pass complete boolean swap detection
+            InvertAllBooleanProperties(sourcePass2);
 
-            // 3. Assert
-            Assert.NotSame(source, clone); // Ensure it's a new instance
+            var testPasses = new[] { sourcePass1, sourcePass2 };
 
-            var properties = typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var prop in properties)
+            foreach (var source in testPasses)
             {
-                // Skip properties that aren't readable/writable if any exist
-                if (!prop.CanRead || !prop.CanWrite) continue;
+                // 2. Act
+                var clone = (ServiceDto)source.Clone();
 
-                var expectedValue = prop.GetValue(source);
-                var actualValue = prop.GetValue(clone);
+                // 3. Assert
+                Assert.NotSame(source, clone); // Ensure it's a new instance
 
-                // Assert.Equal handles strings, ints, bools, and nulls correctly.
-                Assert.True(Equals(expectedValue, actualValue),
-                    $"Property '{prop.Name}' was not cloned correctly. " +
-                    $"Expected: {expectedValue}, Actual: {actualValue}");
+                var properties = typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                foreach (var prop in properties)
+                {
+                    // Skip properties that aren't readable/writable if any exist
+                    if (!prop.CanRead || !prop.CanWrite) continue;
+
+                    var expectedValue = prop.GetValue(source);
+                    var actualValue = prop.GetValue(clone);
+
+                    // Assert.Equal handles strings, ints, bools, and nulls correctly while providing clear diff output on failure.
+                    Assert.Equal(expectedValue, actualValue);
+                }
             }
         }
 
@@ -135,17 +148,41 @@ namespace Servy.Core.UnitTests.DTOs
         }
 
         /// <summary>
+        /// Inverts all boolean property values on the target <see cref="ServiceDto"/> instance.
+        /// Enables complete mapping swap detection across boolean fields.
+        /// </summary>
+        private static void InvertAllBooleanProperties(ServiceDto dto)
+        {
+            var props = typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var p in props)
+            {
+                if (!p.CanWrite) continue;
+                var targetType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+
+                if (targetType == typeof(bool))
+                {
+                    var val = (bool?)p.GetValue(dto);
+                    if (val.HasValue)
+                    {
+                        p.SetValue(dto, !val.Value);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Assigns a generic non-default value based on the underlying property type (including Nullables).
-        /// Value type outputs are dynamically seeded using the property name's hash code to ensure distinct 
-        /// values are allocated across properties of identical types, enabling robust mapping swap detection.
+        /// Value type outputs are deterministically seeded using ordinal property index ordering to ensure
+        /// reproducible execution across processes.
         /// </summary>
         private void SetDummyValue(ServiceDto dto, PropertyInfo p)
         {
             // Unwrap Nullable<T> to get the actual underlying type (e.g., int? becomes int)
             var targetType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
 
-            // Generate a stable seed derived directly from the unique property string literal name
-            int seed = Math.Abs(p.Name.GetHashCode());
+            // Deterministic seed: the property's index in a fixed ordinal ordering of ServiceDto's properties.
+            // Reproducible across processes, unlike string.GetHashCode().
+            int seed = Array.IndexOf(OrderedPropertyNames, p.Name) + 1;
 
             if (targetType == typeof(string))
             {
@@ -161,7 +198,9 @@ namespace Servy.Core.UnitTests.DTOs
             }
             else if (targetType == typeof(bool))
             {
-                // Alternates true/false states uniformly across structural positions
+                // NOTE: bool? has only two non-null values, so same-typed swap detection is not
+                // achievable in a single pass — alternating keeps the pattern reproducible while
+                // dual-pass cloning validates all boolean states.
                 p.SetValue(dto, (seed & 1) == 0);
             }
             else if (targetType == typeof(double))

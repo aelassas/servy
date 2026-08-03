@@ -40,7 +40,7 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
-        public void ServyServiceUIExe_ShouldEndWithExe()
+        public void ServyServiceUIExe_ShouldBeCorrect()
         {
             // Arrange (Static property validation context)
 
@@ -48,11 +48,11 @@ namespace Servy.Core.UnitTests.Config
             var exeName = AppConfig.ServyServiceUIExe;
 
             // Assert
-            Assert.EndsWith(".exe", exeName);
+            Assert.Equal("Servy.Service.exe", exeName);
         }
 
         [Fact]
-        public void ServyServiceCLIExe_ShouldEndWithExe()
+        public void ServyServiceCLIExe_ShouldBeCorrect()
         {
             // Arrange (Static property validation context)
 
@@ -60,7 +60,7 @@ namespace Servy.Core.UnitTests.Config
             var exeName = AppConfig.ServyServiceCLIExe;
 
             // Assert
-            Assert.EndsWith(".exe", exeName);
+            Assert.Equal("Servy.Service.CLI.exe", exeName);
         }
 
         [Fact]
@@ -137,7 +137,7 @@ namespace Servy.Core.UnitTests.Config
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
             Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
-            Assert.EndsWith(AppConfig.ServyServiceCLIExe, path);
+            Assert.EndsWith("Servy.Service.CLI.exe", path, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -151,11 +151,11 @@ namespace Servy.Core.UnitTests.Config
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
             Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
-            Assert.EndsWith(AppConfig.ServyServiceUIExe, path);
+            Assert.EndsWith("Servy.Service.exe", path, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
-        public void ProgramDataPath_ShouldContainAppFolderName()
+        public void ProgramDataPath_ShouldBeUnderCommonApplicationData()
         {
             // Arrange (Static property validation context)
 
@@ -163,11 +163,12 @@ namespace Servy.Core.UnitTests.Config
             var path = AppConfig.ProgramDataPath;
 
             // Assert
-            Assert.Contains(AppConfig.AppFolderName, path);
+            var expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Servy");
+            Assert.Equal(expected, path);
         }
 
         [Fact]
-        public void SecurityFolderPath_ShouldBeSubfolderOfProgramDataPath()
+        public void SecurityFolderPath_ShouldBeTheSecuritySubfolder()
         {
             // Arrange (Static property validation context)
 
@@ -175,7 +176,8 @@ namespace Servy.Core.UnitTests.Config
             var path = AppConfig.SecurityFolderPath;
 
             // Assert
-            Assert.StartsWith(AppConfig.ProgramDataPath, path);
+            var expected = Path.Combine(AppConfig.ProgramDataPath, "security");
+            Assert.Equal(expected, path);
         }
     }
 }
