@@ -94,6 +94,24 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public ServiceDependencyNode GetDependencies(CancellationToken cancellationToken = default)
         {
+            return GetDependenciesInternal(null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Internal overload allowing dependency resolution factory injection for unit testing.
+        /// </summary>
+        /// <param name="serviceFactory">
+        /// Optional factory delegate used to construct child service wrappers. 
+        /// If <c>null</c>, falls back to real SCM <see cref="ServiceControllerWrapper"/> instantiation.
+        /// </param>
+        /// <param name="cancellationToken">A token to observe while resolving dependencies.</param>
+        /// <returns>
+        /// A <see cref="ServiceDependencyNode"/> representing the root of the resolved dependency hierarchy.
+        /// </returns>
+        internal ServiceDependencyNode GetDependenciesInternal(
+            Func<string, IServiceControllerWrapper> serviceFactory,
+            CancellationToken cancellationToken = default)
+        {
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -103,7 +121,7 @@ namespace Servy.Core.Services
             // Tracks services that have already been fully resolved across ANY branch
             var fullyExpanded = new Dictionary<string, ServiceDependencyNode>(StringComparer.OrdinalIgnoreCase);
 
-            return BuildDependencyTree(_serviceName, currentPath, fullyExpanded, cancellationToken: cancellationToken);
+            return BuildDependencyTree(_serviceName, currentPath, fullyExpanded, serviceFactory, cancellationToken);
         }
 
         /// <summary>
@@ -120,16 +138,19 @@ namespace Servy.Core.Services
         /// A dictionary of service names to already fully expanded nodes, used to prevent 
         /// redundant SCM queries and properly populate shared/diamond dependency paths.
         /// </param>
+        /// <param name="serviceFactory">
+        /// Optional internal factory used to construct child wrappers; falls back to live SCM wrapper instantiation if <c>null</c>.
+        /// </param>
         /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
         /// <returns>
-        /// A <see cref="ServiceDependencyNode"/> representing the service
-        /// and its dependencies. If a cycle is detected, a placeholder
-        /// node is returned.
+        /// A <see cref="ServiceDependencyNode"/> representing the service and its dependencies. 
+        /// If a cycle is detected, a placeholder node is returned.
         /// </returns>
         private static ServiceDependencyNode BuildDependencyTree(
             string serviceName,
             HashSet<string> currentPath,
             Dictionary<string, ServiceDependencyNode> fullyExpanded,
+            Func<string, IServiceControllerWrapper> serviceFactory = null,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -138,22 +159,36 @@ namespace Servy.Core.Services
             var isCyclic = currentPath.Contains(serviceName);
 
             // 2. Check if we've already built the subtree for this service elsewhere
-            // We only return the cached subtree if this isn't a cycle in the current path.
             if (!isCyclic && fullyExpanded.TryGetValue(serviceName, out var cachedNode))
             {
-                // Re-use the existing populated node reference for diamond dependencies.
                 return cachedNode;
             }
 
             try
             {
-                using (var service = new ServiceController(serviceName))
+                // Use injected factory seam if supplied; otherwise fall back to real ServiceController allocation
+                IServiceControllerWrapper wrapper = serviceFactory != null
+                    ? serviceFactory(serviceName)
+                    : new ServiceControllerWrapper(serviceName);
+
+                using (wrapper as IDisposable)
                 {
-                    var isRunning = service.Status == ServiceControllerStatus.Running;
+                    bool isRunning = false;
+                    string displayName = serviceName;
+
+                    // Safely cast once at the scope level
+                    var realWrapper = wrapper as ServiceControllerWrapper;
+
+                    if (realWrapper != null)
+                    {
+                        // Real SCM invocation path
+                        isRunning = realWrapper._controller.Status == ServiceControllerStatus.Running;
+                        displayName = realWrapper._controller.DisplayName;
+                    }
 
                     var node = new ServiceDependencyNode(
-                        service.ServiceName,
-                        service.DisplayName,
+                        serviceName,
+                        displayName,
                         isRunning,
                         isCyclic
                     );
@@ -166,27 +201,28 @@ namespace Servy.Core.Services
 
                     try
                     {
-                        // Collect children in a temporary list so they can be sorted before being added to the node
                         var childNodes = new List<ServiceDependencyNode>();
 
-                        // Accessing this property can throw Win32Exception (Access Denied)
-                        var deps = service.ServicesDependedOn;
+                        if (realWrapper != null)
+                        {
+                            // Accessing this property can throw Win32Exception (Access Denied)
+                            var deps = realWrapper._controller.ServicesDependedOn;
 
-                        try
-                        {
-                            foreach (var dep in deps)
+                            try
                             {
-                                cancellationToken.ThrowIfCancellationRequested();
-                                childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded, cancellationToken));
+                                foreach (var dep in deps)
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested();
+                                    childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded, serviceFactory, cancellationToken));
+                                }
                             }
-                        }
-                        finally
-                        {
-                            // ROBUSTNESS: Dispose all remaining handles if the foreach exited early due to an exception.
-                            // ServiceController.Dispose() is idempotent, making this safe for previously disposed items.
-                            foreach (var dep in deps)
+                            finally
                             {
-                                try { dep.Dispose(); } catch { /* Ignore exceptions during disposal */ }
+                                // Disposal pass for SCM handles
+                                foreach (var dep in deps)
+                                {
+                                    try { dep.Dispose(); } catch { /* Ignore exceptions during disposal */ }
+                                }
                             }
                         }
 
@@ -198,19 +234,15 @@ namespace Servy.Core.Services
                             node.Dependencies.Add(child);
                         }
 
-                        // MEMOIZATION REUSE: Evaluate if any descendant down this newly constructed 
-                        // subtree flagged a cycle tracking placeholder. If an explicit cycle placeholder exists, 
-                        // this subtree structure is path-dependent and cannot safely be stored globally.
+                        // MEMOIZATION REUSE: Cache completed node only if cycle-free
                         if (!HasCyclicDescendant(node))
                         {
-                            // Mark globally as fully expanded by caching the completed node only if completely cycle-free
                             fullyExpanded[serviceName] = node;
                         }
                     }
                     finally
                     {
-                        // 5. BACKTRACK: Ensure the service is always removed from the current path,
-                        // preventing path corruption for sibling nodes if an exception occurred.
+                        // 5. BACKTRACK: Ensure the service is always removed from the current path
                         currentPath.Remove(serviceName);
                     }
 
@@ -268,7 +300,7 @@ namespace Servy.Core.Services
 
             if (disposing)
             {
-                _controller.Dispose();
+                _controller?.Dispose();
             }
 
             _disposed = true;
