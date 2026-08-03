@@ -85,7 +85,7 @@ scoop install servy
 
 **Patch My PC**
 
-Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) (`Servy (EXE-x64)`) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
+Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
 
 ## Quick Example
 
