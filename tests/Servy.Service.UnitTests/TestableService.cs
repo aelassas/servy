@@ -36,7 +36,6 @@ namespace Servy.Service.UnitTests
 
             public static readonly MethodInfo HandleLogWritersMethod = GetMethod("HandleLogWriters");
             public static readonly MethodInfo SetupHealthMonitoringMethod = GetMethod("SetupHealthMonitoring");
-            public static readonly MethodInfo CheckHealthCoreAsyncMethod = GetMethod("CheckHealthCoreAsync");
             public static readonly MethodInfo OnOutputDataReceivedMethod = GetMethod("OnOutputDataReceived");
             public static readonly MethodInfo OnErrorDataReceivedMethod = GetMethod("OnErrorDataReceived");
             public static readonly MethodInfo OnProcessExitedMethod = GetMethod("OnProcessExited");
@@ -74,7 +73,17 @@ namespace Servy.Service.UnitTests
 
         public void TestOnStart(string[] args)
         {
-            base.OnStart(args);
+            // Guarantee TestModeFlag is at position 0 so args[0] in Service.OnStart always matches
+            var testArgs = args ?? Array.Empty<string>();
+
+            if (testArgs.Length == 0 || !string.Equals(testArgs[0], TestModeFlag, StringComparison.OrdinalIgnoreCase))
+            {
+                // Remove duplicate TestModeFlag if it was placed elsewhere in the array, then insert at position 0
+                var filtered = testArgs.Where(a => !string.Equals(a, TestModeFlag, StringComparison.OrdinalIgnoreCase));
+                testArgs = new[] { TestModeFlag }.Concat(filtered).ToArray();
+            }
+
+            base.OnStart(testArgs);
         }
 
         public void InvokeSetProcessPriority(ProcessPriorityClass priority) => SetProcessPriority(priority);
@@ -106,11 +115,8 @@ namespace Servy.Service.UnitTests
         public int GetFailedChecks() =>
             (int)ServiceReflection.FailedChecksField.GetValue(this)!;
 
-        public async Task InvokeCheckHealthAsync(object? sender, ElapsedEventArgs? e)
-        {
-            var task = (Task)ServiceReflection.CheckHealthCoreAsyncMethod.Invoke(this, new object?[] { sender, e })!;
-            await task;
-        }
+        public Task InvokeCheckHealthAsync(object? sender, ElapsedEventArgs? e) =>
+            CheckHealthCoreAsync(sender, e);
 
         public void InvokeOnOutputDataReceived(object? sender, DataReceivedEventArgs e) =>
             ServiceReflection.OnOutputDataReceivedMethod.Invoke(this, new object?[] { sender, e });

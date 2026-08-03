@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.UnitTests.Utilities;
+using Servy.Testing;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -117,6 +118,45 @@ namespace Servy.Service.UnitTests
             }
         }
 
+        [Theory]
+        [InlineData(0, 3, RecoveryAction.RestartService, false)]
+        [InlineData(5, 0, RecoveryAction.RestartService, false)]
+        [InlineData(5, 3, RecoveryAction.None, false)]
+        [InlineData(0, 0, RecoveryAction.None, false)]
+        [InlineData(5, 3, RecoveryAction.RestartService, true)]
+        public void OnStart_ComputesRecoveryActionEnabledFromOptions(
+            int heartbeat, int maxFailedChecks, RecoveryAction recovery, bool expected)
+        {
+            // Arrange
+            var ctx = new ServiceTestContext();
+            var fullArgs = new[] { "TestService" };
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                EnableHealthMonitoring = true,
+                HeartbeatIntervalInSeconds = heartbeat,
+                MaxFailedChecks = maxFailedChecks,
+                RecoveryAction = recovery
+            };
+
+            var mockScopedLogger = new Mock<IServyLogger>();
+
+            ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            ctx.Helper.Setup(h => h.ParseOptions(ctx.ServiceRepository.Object, It.IsAny<string[]>())).Returns(options);
+            ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
+            ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
+            ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
+
+            using (var service = ctx.Build())
+            {
+                // Act
+                service.TestOnStart(fullArgs);
+
+                // Assert
+                Assert.Equal(expected, TestReflection.GetField<bool>(service, "_recoveryActionEnabled"));
+            }
+        }
+
         [Fact]
         public void SetupHealthMonitoring_ValidParameters_CreatesAndStartsTimer_AndLogs()
         {
@@ -154,33 +194,23 @@ namespace Servy.Service.UnitTests
             }
         }
 
-        [Theory]
-        [InlineData(0, 3, RecoveryAction.RestartService)]
-        [InlineData(5, 0, RecoveryAction.RestartService)]
-        [InlineData(5, 3, RecoveryAction.None)]
-        [InlineData(0, 0, RecoveryAction.None)]
-        public void SetupHealthMonitoring_InvalidParameters_DoesNotCreateTimer(int heartbeat, int maxFailedChecks, RecoveryAction recovery)
+        [Fact]
+        public void SetupHealthMonitoring_WhenRecoveryDisabled_DoesNotCreateTimer()
         {
             // Arrange
             var ctx = new ServiceTestContext();
 
             using (var service = ctx.Build())
             {
+                service.SetRecoveryActionEnabled(false);
+
                 var options = new StartOptions
                 {
-                    EnableHealthMonitoring = true, // Attempt to request monitoring
-                    HeartbeatIntervalInSeconds = heartbeat,
-                    MaxFailedChecks = maxFailedChecks,
-                    RecoveryAction = recovery
+                    EnableHealthMonitoring = true,
+                    HeartbeatIntervalInSeconds = 5,
+                    MaxFailedChecks = 3,
+                    RecoveryAction = RecoveryAction.RestartService
                 };
-
-                // Actively calculate the true production gating state based on configuration validation rules
-                bool calculatedRecoveryActionEnabled = options.EnableHealthMonitoring
-                    && options.HeartbeatIntervalInSeconds > 0
-                    && options.MaxFailedChecks > 0
-                    && options.RecoveryAction != RecoveryAction.None;
-
-                service.SetRecoveryActionEnabled(calculatedRecoveryActionEnabled);
 
                 // Act
                 service.InvokeSetupHealthMonitoring(options);
