@@ -173,14 +173,14 @@ jobs:
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          Invoke-Git add CHANGELOG.md
-          
           # Scope the check to CHANGELOG.md so unrelated working-tree changes don't trigger a commit
           $hasChanges = (Invoke-Git status --porcelain CHANGELOG.md) -join "`n"
           if ([string]::IsNullOrWhiteSpace($hasChanges)) {
               Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
               exit 0
           }
+
+          Invoke-Git add CHANGELOG.md
 
           git diff --staged --quiet
           if ($LASTEXITCODE -ne 0) {
