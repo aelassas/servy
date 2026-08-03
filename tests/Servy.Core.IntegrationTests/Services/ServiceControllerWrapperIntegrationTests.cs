@@ -37,27 +37,28 @@ namespace Servy.Core.IntegrationTests.Services
             SkipUnlessScmAndServiceAvailable(StandardTestService);
 
             // Arrange
-            var wrapper = new ServiceControllerWrapper(StandardTestService);
-
-            // Act
-            var rootNode = wrapper.GetDependencies(cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.NotNull(rootNode);
-            Assert.Equal(StandardTestService, rootNode.ServiceName);
-            Assert.False(rootNode.IsCyclic);
-
-            // Ensure the ordering assertion is never silently bypassed when running on environments with < 2 dependencies
-            Assert.SkipWhen(rootNode.Dependencies.Count < 2,
-                $"'{StandardTestService}' resolved {rootNode.Dependencies.Count} dependencies on this host; alphabetical ordering evaluation requires at least 2.");
-
-            // Dependencies collection must verify accurate structural sorting parameters
-            for (int i = 0; i < rootNode.Dependencies.Count - 1; i++)
+            using (var wrapper = new ServiceControllerWrapper(StandardTestService))
             {
-                var current = rootNode.Dependencies[i].DisplayName;
-                var next = rootNode.Dependencies[i + 1].DisplayName;
-                Assert.True(string.Compare(current, next, StringComparison.OrdinalIgnoreCase) <= 0,
-                    $"Dependencies are incorrectly ordered: '{current}' appeared before '{next}'");
+                // Act
+                var rootNode = wrapper.GetDependencies(cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.NotNull(rootNode);
+                Assert.Equal(StandardTestService, rootNode.ServiceName);
+                Assert.False(rootNode.IsCyclic);
+
+                // Ensure the ordering assertion is never silently bypassed when running on environments with < 2 dependencies
+                Assert.SkipWhen(rootNode.Dependencies.Count < 2,
+                    $"'{StandardTestService}' resolved {rootNode.Dependencies.Count} dependencies on this host; alphabetical ordering evaluation requires at least 2.");
+
+                // Dependencies collection must verify accurate structural sorting parameters
+                for (int i = 0; i < rootNode.Dependencies.Count - 1; i++)
+                {
+                    var current = rootNode.Dependencies[i].DisplayName;
+                    var next = rootNode.Dependencies[i + 1].DisplayName;
+                    Assert.True(string.Compare(current, next, StringComparison.OrdinalIgnoreCase) <= 0,
+                        $"Dependencies are incorrectly ordered: '{current}' appeared before '{next}'");
+                }
             }
         }
 
@@ -67,7 +68,7 @@ namespace Servy.Core.IntegrationTests.Services
             Assert.SkipUnless(OperatingSystem.IsWindows(), "Live SCM dependency resolution requires Windows OS.");
 
             // Arrange
-            var wrapper = new ServiceControllerWrapper(StandardTestService);
+            using (var wrapper = new ServiceControllerWrapper(StandardTestService))
             using (var cts = new CancellationTokenSource())
             {
                 cts.Cancel();
@@ -84,20 +85,21 @@ namespace Servy.Core.IntegrationTests.Services
 
             // Arrange
             string phantomService = $"PhantomService_{Guid.NewGuid()}";
-            var wrapper = new ServiceControllerWrapper(phantomService);
+            using (var wrapper = new ServiceControllerWrapper(phantomService))
+            {
+                // Act
+                var result = wrapper.GetDependencies(cancellationToken: TestContext.Current.CancellationToken);
 
-            // Act
-            var result = wrapper.GetDependencies(cancellationToken: TestContext.Current.CancellationToken);
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(phantomService, result.ServiceName);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(phantomService, result.ServiceName);
-
-            // Check that the fallback string template hydration matches internal catch definitions
-            string expectedErrorMessage = string.Format(Strings.Msg_DependencyUnavailable, phantomService);
-            Assert.Equal(expectedErrorMessage, result.DisplayName);
-            Assert.False(result.IsRunning);
-            Assert.False(result.IsCyclic);
+                // Check that the fallback string template hydration matches internal catch definitions
+                string expectedErrorMessage = string.Format(Strings.Msg_DependencyUnavailable, phantomService);
+                Assert.Equal(expectedErrorMessage, result.DisplayName);
+                Assert.False(result.IsRunning);
+                Assert.False(result.IsCyclic);
+            }
         }
 
         #endregion
