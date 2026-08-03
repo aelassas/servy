@@ -593,7 +593,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             // Arrange
             ServiceDto dto = null;
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
+            _mockDapper
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dto);
 
             var repo = CreateRepository();
 
@@ -959,7 +961,6 @@ namespace Servy.Infrastructure.UnitTests.Data
             var xml = $"<ServiceDto><Name>{dto.Name}</Name></ServiceDto>";
 
             _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns(dto);
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
@@ -1068,7 +1069,6 @@ namespace Servy.Infrastructure.UnitTests.Data
             var json = "{\"Name\":\"A\"}";
 
             _mockJsonServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns(dto);
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act

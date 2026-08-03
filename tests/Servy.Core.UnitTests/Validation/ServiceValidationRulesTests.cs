@@ -92,13 +92,10 @@ namespace Servy.Core.UnitTests.Validation
             dto.StdoutPath = "invalid>out";
             dto.StderrPath = "invalid>err";
 
-            // Testing non-existent wrapper path
-            string nonExistentWrapper = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-
-            _processHelperMock.Setup(h => h.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(false);
+            string invalidWrapper = @"C:\invalid\wrapper.exe";   // matched by the ctor stub's "invalid" rule
 
             // Act
-            var result = _sut.Validate(dto, nonExistentWrapper);
+            var result = _sut.Validate(dto, invalidWrapper);
 
             // Assert
             Assert.Contains(Strings.Msg_InvalidPath, result.Errors);
@@ -253,6 +250,8 @@ namespace Servy.Core.UnitTests.Validation
             // Arrange
             var dto = ServiceDtoFactory.CreateValidValidationBase();
             dto.PreLaunchExecutablePath = "invalid|path";
+            dto.PreLaunchStartupDirectory = "invalid|dir";
+            dto.PreLaunchEnvironmentVariables = "INVALID_VAR"; // Missing '=' -> Triggers Strings.Msg_EnvironmentVariableMissingEquals
             dto.PreLaunchTimeoutSeconds = AppConfig.MaxPreLaunchTimeoutSeconds + 1;
             dto.PreLaunchRetryAttempts = -1;
             dto.PreLaunchStdoutPath = "invalid>out";
@@ -263,6 +262,8 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.Contains(Strings.Msg_InvalidPreLaunchPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidPreLaunchStartupDirectory, result.Errors);
+            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts), result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreLaunchStdoutPath, result.Errors);
@@ -280,6 +281,7 @@ namespace Servy.Core.UnitTests.Validation
             dto.PostLaunchStartupDirectory = "bad|dir";
             dto.PreStopExecutablePath = "bad|path";
             dto.PreStopStartupDirectory = "bad|dir";
+            dto.PreStopTimeoutSeconds = AppConfig.MaxPreStopTimeoutSeconds + 1;
             dto.PostStopExecutablePath = "bad|path";
             dto.PostStopStartupDirectory = "bad|dir";
 
@@ -293,6 +295,7 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(Strings.Msg_InvalidPostLaunchStartupDirectory, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreStopPath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreStopStartupDirectory, result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidPreStopTimeout, AppConfig.MinPreStopTimeoutSeconds, AppConfig.MaxPreStopTimeoutSeconds), result.Errors);
             Assert.Contains(Strings.Msg_InvalidPostStopPath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPostStopStartupDirectory, result.Errors);
         }

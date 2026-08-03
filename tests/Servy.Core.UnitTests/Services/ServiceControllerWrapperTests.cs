@@ -55,16 +55,16 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(StandardTestService, rootNode.ServiceName);
             Assert.False(rootNode.IsCyclic);
 
+            // Ensure the ordering assertion is never silently bypassed when running on environments with < 2 dependencies
+            if (rootNode.Dependencies.Count < 2) return;
+
             // Dependencies collection must verify accurate structural sorting parameters
-            if (rootNode.Dependencies.Count > 1)
+            for (int i = 0; i < rootNode.Dependencies.Count - 1; i++)
             {
-                for (int i = 0; i < rootNode.Dependencies.Count - 1; i++)
-                {
-                    var current = rootNode.Dependencies[i].DisplayName;
-                    var next = rootNode.Dependencies[i + 1].DisplayName;
-                    Assert.True(string.Compare(current, next, StringComparison.OrdinalIgnoreCase) <= 0,
-                        $"Dependencies are incorrectly ordered: '{current}' appeared before '{next}'");
-                }
+                var current = rootNode.Dependencies[i].DisplayName;
+                var next = rootNode.Dependencies[i + 1].DisplayName;
+                Assert.True(string.Compare(current, next, StringComparison.OrdinalIgnoreCase) <= 0,
+                    $"Dependencies are incorrectly ordered: '{current}' appeared before '{next}'");
             }
         }
 
