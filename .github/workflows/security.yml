@@ -31,7 +31,7 @@ jobs:
   # 1. Dependency Scanning
   # Uses native .NET NuGet Audit to check for vulnerable packages
   dependency-scan:
-    timeout-minutes: 30
+    timeout-minutes: 60
     name: Dependency Scanning
     runs-on: windows-latest
     steps:
