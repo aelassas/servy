@@ -83,6 +83,10 @@ scoop bucket add extras
 scoop install servy
 ```
 
+**Patch My PC**
+
+Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) (`Servy (EXE-x64)`) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
+
 ## Quick Example
 
 You can manage services using the [desktop app (GUI)](https://github.com/aelassas/servy/wiki/Servy-Desktop-App), the [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI), or [PowerShell](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
