@@ -97,7 +97,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="options">The startup options containing the working directory to validate.</param>
         /// <param name="logger">The logger to write warnings to.</param>
-        void EnsureValidWorkingDirectory(StartOptions options, IServyLogger logger);
+        void EnsureValidStartupDirectory(StartOptions options, IServyLogger logger);
 
         /// <summary>
         /// Attempts to restart the given process by:

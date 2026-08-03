@@ -206,13 +206,13 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var mockLog = new Mock<IServyLogger>();
             string validDir = Path.GetTempPath();
-            var options = new StartOptions { WorkingDirectory = validDir };
+            var options = new StartOptions { StartupDirectory = validDir };
 
             // Act
-            _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
+            _helper.EnsureValidStartupDirectory(options, mockLog.Object);
 
             // Assert
-            Assert.Equal(validDir, options.WorkingDirectory);
+            Assert.Equal(validDir, options.StartupDirectory);
             mockLog.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
@@ -222,16 +222,16 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var options = new StartOptions
             {
-                WorkingDirectory = "C:\\InvalidPath_That_Does_Not_Exist",
+                StartupDirectory = "C:\\InvalidPath_That_Does_Not_Exist",
                 ExecutablePath = "C:\\Windows\\System32\\notepad.exe"
             };
             var mockLog = new Mock<IServyLogger>();
 
             // Act
-            _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
+            _helper.EnsureValidStartupDirectory(options, mockLog.Object);
 
             // Assert
-            Assert.Equal(Path.GetDirectoryName(options.ExecutablePath), options.WorkingDirectory);
+            Assert.Equal(Path.GetDirectoryName(options.ExecutablePath), options.StartupDirectory);
             mockLog.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Falling back to")), It.IsAny<Exception>()), Times.Once);
         }
 
@@ -239,15 +239,15 @@ namespace Servy.Service.UnitTests.Helpers
         public void EnsureValidWorkingDirectory_InvalidDirectoryAndEmptyExePath_FallsBackToSystem32()
         {
             // Arrange
-            var options = new StartOptions { WorkingDirectory = " ", ExecutablePath = null };
+            var options = new StartOptions { StartupDirectory = " ", ExecutablePath = null };
             string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var mockLog = new Mock<IServyLogger>();
 
             // Act
-            _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
+            _helper.EnsureValidStartupDirectory(options, mockLog.Object);
 
             // Assert
-            Assert.Equal(system32, options.WorkingDirectory);
+            Assert.Equal(system32, options.StartupDirectory);
         }
 
         #endregion

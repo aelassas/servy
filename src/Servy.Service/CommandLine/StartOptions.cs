@@ -27,7 +27,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the working directory for the process.
         /// </summary>
         [ServicePath("Startup directory", isFile: false)]
-        public string WorkingDirectory { get; set; }
+        public string StartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the process priority class.
@@ -137,7 +137,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the working directory for the failure program.
         /// </summary>
         [ServicePath("Failure program startup directory", isFile: false)]
-        public string FailureProgramWorkingDirectory { get; set; }
+        public string FailureProgramStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the command-line arguments to pass to the failure program.
@@ -159,7 +159,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the working directory for the pre-launch process.
         /// </summary>
         [ServicePath("Pre-launch startup directory", isFile: false)]
-        public string PreLaunchWorkingDirectory { get; set; }
+        public string PreLaunchStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the command-line arguments to pass to the pre-launch executable.
@@ -209,7 +209,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the working directory for the post-launch process.
         /// </summary>
         [ServicePath("Post-launch startup directory", isFile: false)]
-        public string PostLaunchWorkingDirectory { get; set; }
+        public string PostLaunchStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the command-line arguments to pass to the post-launch executable.
@@ -267,7 +267,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the optional startup directory for the pre-stop executable.
         /// </summary>
         [ServicePath("Pre-stop startup directory", isFile: false)]
-        public string PreStopWorkingDirectory { get; set; }
+        public string PreStopStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the optional parameters for the pre-stop executable.
@@ -294,7 +294,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the optional startup directory for the post-stop executable.
         /// </summary>
         [ServicePath("Post-stop startup directory", isFile: false)]
-        public string PostStopWorkingDirectory { get; set; }
+        public string PostStopStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the optional parameters for the post-stop executable.

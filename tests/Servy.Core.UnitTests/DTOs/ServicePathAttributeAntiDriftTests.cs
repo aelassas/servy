@@ -69,8 +69,8 @@ namespace Servy.Core.UnitTests.DTOs
 
             foreach (var x in startOptionsPaths)
             {
-                // 2. Ensure IsFile correctly matches the property role (false for WorkingDirectory, true for executable paths)
-                bool expectedIsFile = !x.Property.Name.EndsWith("WorkingDirectory", StringComparison.Ordinal);
+                // 2. Ensure IsFile correctly matches the property role (false for StartupDirectory, true for executable paths)
+                bool expectedIsFile = !x.Property.Name.EndsWith("StartupDirectory", StringComparison.Ordinal);
                 Assert.True(
                     x.Attr.IsFile == expectedIsFile,
                     $"StartOptions.{x.Property.Name}: IsFile is {x.Attr.IsFile}, expected {expectedIsFile}.");
@@ -89,11 +89,7 @@ namespace Servy.Core.UnitTests.DTOs
             var dtoPaths = typeof(ServiceDto).GetProperties()
                 .Select(p => new { Name = p.Name, Attr = p.GetCustomAttribute<ServicePathAttribute>() })
                 .Where(x => x.Attr != null)
-                .ToDictionary(
-                    x => x.Name.EndsWith("StartupDirectory", StringComparison.Ordinal)
-                        ? x.Name.Replace("StartupDirectory", "WorkingDirectory")
-                        : x.Name,
-                    x => x.Attr);
+                .ToDictionary(x => x.Name, x => x.Attr);
 
             var optionsPaths = typeof(StartOptions).GetProperties()
                 .Select(p => new { Name = p.Name, Attr = p.GetCustomAttribute<ServicePathAttribute>() })

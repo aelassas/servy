@@ -34,7 +34,7 @@ namespace Servy.Service.UnitTests
             // 3. Setup Validation and Working Directory check (using the SCOPED logger)
             ctx.Helper.Setup(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object))
                       .Returns(true);
-            ctx.Helper.Setup(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object));
+            ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(expectedOptions, mockScopedLogger.Object));
 
             using (var service = ctx.Build())
             {
@@ -55,7 +55,7 @@ namespace Servy.Service.UnitTests
 
                 // Verify validation and working directory check used the NEW scoped logger
                 ctx.Helper.Verify(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object), Times.Once);
-                ctx.Helper.Verify(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object), Times.Once);
+                ctx.Helper.Verify(h => h.EnsureValidStartupDirectory(expectedOptions, mockScopedLogger.Object), Times.Once);
             }
         }
 
@@ -86,7 +86,7 @@ namespace Servy.Service.UnitTests
                 // Verify that subsequent steps (Promotion/Validation/WorkingDir) were NEVER reached
                 ctx.Logger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
                 ctx.Helper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
-                ctx.Helper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
+                ctx.Helper.Verify(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
             }
         }
 
