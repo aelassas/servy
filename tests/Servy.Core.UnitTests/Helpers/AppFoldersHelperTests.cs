@@ -32,34 +32,44 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("Data Source=db.db;", "key.aes", "   ")]
         public void EnsureFolders_NullOrWhitespaceArgs_Throws(string? conn, string? key, string? iv)
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentException>(() => AppFoldersHelper.EnsureFolders(conn!, key!, iv!));
         }
 
         [Fact]
         public void EnsureFolders_ConnectionStringMissingDataSource_ThrowsInvalidOperationException()
         {
+            // Arrange
             var conn = "Server=myserver;Database=mydb;";
             var key = Path.Combine(_tempDir, "key.aes");
             var iv = Path.Combine(_tempDir, "iv.aes");
 
-            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
+
+            // Assert
             Assert.Contains("Data Source", ex.Message);
         }
 
         [Fact]
         public void EnsureFolders_InvalidDbFilePath_ThrowsInvalidOperationException()
         {
+            // Arrange
             var conn = "Data Source=:db:"; // invalid path will fail Path.GetDirectoryName
             var key = Path.Combine(_tempDir, "key.aes");
             var iv = Path.Combine(_tempDir, "iv.aes");
 
-            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
+
+            // Assert
             Assert.Equal("Cannot determine database folder path.", ex.Message);
         }
 
         [Fact]
-        public void EnsureFolders_ValidPaths_CreatesAllFolders()
+        public void EnsureFolders_ValidPaths_CreatesAllFoldersUnderCustomRoot()
         {
+            // Arrange
             var dbFolder = Path.Combine(_tempDir, "db");
             var keyFolder = Path.Combine(_tempDir, "keys");
             var ivFolder = Path.Combine(_tempDir, "iv");
@@ -68,12 +78,22 @@ namespace Servy.Core.UnitTests.Helpers
             var key = Path.Combine(keyFolder, "key.aes");
             var iv = Path.Combine(ivFolder, "iv.aes");
 
-            // Call the helper
-            AppFoldersHelper.EnsureFolders(conn, key, iv);
+            // Act: Supply custom rootVaultPath so tests execute deterministically without touching system C:\ProgramData\Servy
+            AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir);
 
+            // Assert: Verify all operational directories exist under the scoped test root
             Assert.True(Directory.Exists(dbFolder));
             Assert.True(Directory.Exists(keyFolder));
             Assert.True(Directory.Exists(ivFolder));
+            Assert.True(Directory.Exists(Path.Combine(_tempDir, "recovery")));
+            Assert.True(Directory.Exists(Path.Combine(_tempDir, "logs")));
+
+            // Assert: Folders nested inside the root vault maintain inheritance
+            if (OperatingSystem.IsWindows())
+            {
+                var dbSecurity = new DirectoryInfo(dbFolder).GetAccessControl();
+                Assert.False(dbSecurity.AreAccessRulesProtected); // child of root -> inheritance preserved
+            }
         }
 
         [Theory]
@@ -89,7 +109,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Act
             var ex = Assert.Throws<InvalidOperationException>(() =>
-                AppFoldersHelper.EnsureFolders(resolvedConn, resolvedKey, resolvedIv));
+                AppFoldersHelper.EnsureFolders(resolvedConn, resolvedKey, resolvedIv, rootVaultPath: _tempDir));
 
             // Assert
             Assert.Equal(expectedMessage, ex.Message);
