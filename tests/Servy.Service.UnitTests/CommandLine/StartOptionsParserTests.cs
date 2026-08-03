@@ -187,7 +187,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(serviceName, result.ServiceName);
             Assert.Equal(@"C:\App\worker.exe", result.ExecutablePath);
             Assert.Equal(@"--port 8080", result.ExecutableArgs);
-            Assert.Equal(@"C:\App", result.WorkingDirectory);
+            Assert.Equal(@"C:\App", result.StartupDirectory);
             Assert.Equal(ProcessPriorityClass.High, result.Priority);
             Assert.True(result.EnableConsoleUI);
 
@@ -211,7 +211,7 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Assert Pre-Launch block
             Assert.Equal(@"C:\App\init.exe", result.PreLaunchExecutablePath);
-            Assert.Equal(@"C:\App\init", result.PreLaunchWorkingDirectory);
+            Assert.Equal(@"C:\App\init", result.PreLaunchStartupDirectory);
             Assert.Equal("--clean", result.PreLaunchExecutableArgs);
             Assert.Equal(@"C:\Logs\init_out.log", result.PreLaunchStdoutPath);
             Assert.Equal(@"C:\Logs\init_err.log", result.PreLaunchStderrPath);
@@ -223,12 +223,12 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Assert FailureProgram block
             Assert.Equal(@"C:\App\alert.exe", result.FailureProgramPath);
-            Assert.Equal(@"C:\App\alert", result.FailureProgramWorkingDirectory);
+            Assert.Equal(@"C:\App\alert", result.FailureProgramStartupDirectory);
             Assert.Equal("--notify admin", result.FailureProgramArgs);
 
             // Assert Post-Launch block
             Assert.Equal(@"C:\App\post.exe", result.PostLaunchExecutablePath);
-            Assert.Equal(@"C:\App\post_dir", result.PostLaunchWorkingDirectory);
+            Assert.Equal(@"C:\App\post_dir", result.PostLaunchStartupDirectory);
             Assert.Equal("--sync", result.PostLaunchExecutableArgs);
 
             // Assert Operational Toggles
@@ -244,14 +244,14 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Assert Pre-Stop block
             Assert.Equal(@"C:\App\pre_stop.exe", result.PreStopExecutablePath);
-            Assert.Equal(@"C:\App\pre_stop_dir", result.PreStopWorkingDirectory);
+            Assert.Equal(@"C:\App\pre_stop_dir", result.PreStopStartupDirectory);
             Assert.Equal("--drain", result.PreStopExecutableArgs);
             Assert.Equal(20, result.PreStopTimeoutInSeconds);
             Assert.True(result.PreStopLogAsError);
 
             // Assert Post-Stop block
             Assert.Equal(@"C:\App\post_stop.exe", result.PostStopExecutablePath);
-            Assert.Equal(@"C:\App\post_stop_dir", result.PostStopWorkingDirectory);
+            Assert.Equal(@"C:\App\post_stop_dir", result.PostStopStartupDirectory);
             Assert.Equal("--cleanup", result.PostStopExecutableArgs);
         }
 

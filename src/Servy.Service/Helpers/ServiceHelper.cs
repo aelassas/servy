@@ -159,7 +159,7 @@ namespace Servy.Service.Helpers
                   "--------Main-------------------\n" +
                   $"- serviceName: {options.ServiceName}\n" +
                   $"- realExePath: {options.ExecutablePath}\n" +
-                  $"- workingDir: {options.WorkingDirectory}\n" +
+                  $"- startupDirectory: {options.StartupDirectory}\n" +
                   $"- priority: {options.Priority}\n" +
                   $"- cpuAffinity: {options.CpuAffinity}\n" +
                   $"- startTimeoutInSeconds: {options.StartTimeoutInSeconds}\n" +
@@ -186,11 +186,11 @@ namespace Servy.Service.Helpers
                   $"- heartbeatUrlTimeoutSeconds: {options.HeartbeatUrlTimeoutInSeconds}\n" +
                   $"- enableHeartbeatUrlFlags: {options.EnableHeartbeatUrlFlags}\n" +
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
-                  $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n\n" +
+                  $"- failureProgramStartupDirectory: {options.FailureProgramStartupDirectory}\n\n" +
 
                   "--------Pre-Launch-------------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
-                  $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
+                  $"- preLaunchStartupDirectory: {options.PreLaunchStartupDirectory}\n" +
                   $"- preLaunchStdoutPath: {options.PreLaunchStdoutPath}\n" +
                   $"- preLaunchStderrPath: {options.PreLaunchStderrPath}\n" +
                   $"- preLaunchTimeout: {options.PreLaunchTimeoutInSeconds}\n" +
@@ -199,17 +199,17 @@ namespace Servy.Service.Helpers
 
                   "--------Post-Launch------------\n" +
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
-                  $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n\n" +
+                  $"- postLaunchStartupDirectory: {options.PostLaunchStartupDirectory}\n\n" +
 
                   "--------Pre-Stop-------------\n" +
                   $"- preStopExecutablePath: {options.PreStopExecutablePath}\n" +
-                  $"- preStopWorkingDirectory: {options.PreStopWorkingDirectory}\n" +
+                  $"- preStopStartupDirectory: {options.PreStopStartupDirectory}\n" +
                   $"- preStopTimeout: {options.PreStopTimeoutInSeconds}\n" +
                   $"- preStopLogAsError: {options.PreStopLogAsError}\n\n" +
 
                   "--------Post-Stop-------------\n" +
                   $"- postStopExecutablePath: {options.PostStopExecutablePath}\n" +
-                  $"- postStopWorkingDirectory: {options.PostStopWorkingDirectory}\n"
+                  $"- postStopStartupDirectory: {options.PostStopStartupDirectory}\n"
             );
 
             // 2. SENSITIVE DATA: Logged to Local Text Logs ONLY (Servy.Service.log)
@@ -248,17 +248,17 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void EnsureValidWorkingDirectory(StartOptions options, IServyLogger? logger)
+        public void EnsureValidStartupDirectory(StartOptions options, IServyLogger? logger)
         {
             // Check if the current directory is missing, malformed, or physically non-existent
-            if (string.IsNullOrWhiteSpace(options.WorkingDirectory) ||
-                !Helper.IsValidPath(options.WorkingDirectory) ||
-                !Directory.Exists(options.WorkingDirectory))
+            if (string.IsNullOrWhiteSpace(options.StartupDirectory) ||
+                !Helper.IsValidPath(options.StartupDirectory) ||
+                !Directory.Exists(options.StartupDirectory))
             {
                 // 1. Capture original value
-                string originalValue = string.IsNullOrWhiteSpace(options.WorkingDirectory)
+                string originalValue = string.IsNullOrWhiteSpace(options.StartupDirectory)
                     ? "[Empty]"
-                    : options.WorkingDirectory;
+                    : options.StartupDirectory;
 
                 // 2. Establish the absolute floor (System32)
                 string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
@@ -270,10 +270,10 @@ namespace Servy.Service.Helpers
                     : Path.GetDirectoryName(options.ExecutablePath);
 
                 // 4. Final safety check: if GetDirectoryName returned null or empty, use System32
-                options.WorkingDirectory = string.IsNullOrEmpty(exeDir) ? system32 : exeDir!;
+                options.StartupDirectory = string.IsNullOrEmpty(exeDir) ? system32 : exeDir!;
 
                 // 5. Diagnostic logging with full context
-                logger?.Warn($"Working directory '{originalValue}' is invalid or inaccessible. Falling back to '{options.WorkingDirectory}'.");
+                logger?.Warn($"Working directory '{originalValue}' is invalid or inaccessible. Falling back to '{options.StartupDirectory}'.");
             }
         }
 

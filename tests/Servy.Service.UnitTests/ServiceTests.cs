@@ -185,7 +185,7 @@ namespace Servy.Service.UnitTests
             {
                 ServiceName = "TestService",
                 ExecutablePath = "C:\\Windows\\notepad.exe",
-                WorkingDirectory = "C:\\Windows",
+                StartupDirectory = "C:\\Windows",
                 EnableHealthMonitoring = true,
                 HeartbeatIntervalInSeconds = 10,
                 MaxFailedChecks = 3,

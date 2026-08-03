@@ -427,7 +427,7 @@ namespace Servy.Service
                 }
 
                 // Ensure working directory is valid
-                _serviceHelper.EnsureValidWorkingDirectory(options, _logger);
+                _serviceHelper.EnsureValidStartupDirectory(options, _logger);
 
                 _serviceName = options.ServiceName;
                 _recoveryActionEnabled = options.EnableHealthMonitoring && options.HeartbeatIntervalInSeconds > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
@@ -907,9 +907,9 @@ namespace Servy.Service
             var vars = options.PreLaunchEnvironmentVariables ?? options.EnvironmentVariables;
             var args = options.PreLaunchExecutableArgs ?? string.Empty;
 
-            var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
-                ? options.WorkingDirectory
-                : options.PreLaunchWorkingDirectory;
+            var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchStartupDirectory)
+                ? options.StartupDirectory
+                : options.PreLaunchStartupDirectory;
 
             var fireAndForget = options.PreLaunchTimeoutInSeconds == 0;
 
@@ -1182,7 +1182,7 @@ namespace Servy.Service
         /// <param name="token">The cancellation token for the operation.</param>
         private void StartMonitoredProcess(StartOptions options, CancellationToken token)
         {
-            StartProcess(options.ExecutablePath!, options.ExecutableArgs!, options.WorkingDirectory!, options.EnvironmentVariables, token);
+            StartProcess(options.ExecutablePath!, options.ExecutableArgs!, options.StartupDirectory!, options.EnvironmentVariables, token);
             SetProcessPriority(options.Priority);
             SetProcessCpuAffinity(options.CpuAffinity);
         }
@@ -1451,7 +1451,7 @@ namespace Servy.Service
                 "post-launch",
                 exePath: _options?.PostLaunchExecutablePath,
                 rawArgs: _options?.PostLaunchExecutableArgs,
-                hookWorkingDir: _options?.PostLaunchWorkingDirectory,
+                hookWorkingDir: _options?.PostLaunchStartupDirectory,
                 track: true);
         }
 
@@ -1483,7 +1483,7 @@ namespace Servy.Service
             try
             {
                 var workingDir = string.IsNullOrWhiteSpace(hookWorkingDir)
-                    ? _options.WorkingDirectory : hookWorkingDir;
+                    ? _options.StartupDirectory : hookWorkingDir;
                 var launchOptions = new ProcessLaunchOptions
                 {
                     ExecutablePath = exePath,
@@ -1525,7 +1525,7 @@ namespace Servy.Service
                  "failure program",
                  exePath: _options?.FailureProgramPath,
                  rawArgs: _options?.FailureProgramArgs,
-                 hookWorkingDir: _options?.FailureProgramWorkingDirectory,
+                 hookWorkingDir: _options?.FailureProgramStartupDirectory,
                  track: false);
         }
 
@@ -2665,9 +2665,9 @@ namespace Servy.Service
                 // 1. Prepare Environment and Arguments
                 var args = options.PreStopExecutableArgs ?? string.Empty;
 
-                var workingDir = string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory)
-                    ? options.WorkingDirectory
-                    : options.PreStopWorkingDirectory;
+                var workingDir = string.IsNullOrWhiteSpace(options.PreStopStartupDirectory)
+                    ? options.StartupDirectory
+                    : options.PreStopStartupDirectory;
 
                 // 2. Configure Launch Options
                 var effectiveTimeoutMs = ClampTimeout(options.PreStopTimeoutInSeconds);
@@ -2914,7 +2914,7 @@ namespace Servy.Service
                  "post-stop",
                  exePath: _options?.PostStopExecutablePath,
                  rawArgs: _options?.PostStopExecutableArgs,
-                 hookWorkingDir: _options?.PostStopWorkingDirectory,
+                 hookWorkingDir: _options?.PostStopStartupDirectory,
                  track: false);
         }
 
