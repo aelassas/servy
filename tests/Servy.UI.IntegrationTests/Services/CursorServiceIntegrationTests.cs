@@ -1,6 +1,8 @@
 ﻿using Servy.Testing;
 using Servy.UI.Services;
+using System;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Xunit;
@@ -8,13 +10,22 @@ using Xunit;
 namespace Servy.UI.IntegrationTests.Services
 {
     [Collection("UiSta")]
-    public class CursorServiceIntegrationTests
+    public class CursorServiceIntegrationTests : IDisposable
     {
         private readonly CursorService _service;
+        private readonly Application _originalApp;
 
         public CursorServiceIntegrationTests()
         {
+            // Capture the process-global Application instance prior to test execution
             _service = new CursorService();
+            _originalApp = Application.Current;
+        }
+
+        public void Dispose()
+        {
+            // Restore the original process-global Application instance to avoid cross-test static state pollution
+            TestReflection.SetFieldStatic(typeof(Application), "_appInstance", _originalApp);
         }
 
         #region Branch: Headless / Null Dispatcher
@@ -22,11 +33,10 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public void SetWaitCursorAndResetCursor_WhenApplicationIsNull_DoNotThrow()
         {
+            // Arrange
             // Branch: if (Application.Current?.Dispatcher == null) return;
-            // This is the default state in standard xUnit runners because Application.Current is null.
-
             // Reset the process-global Application instance using TestReflection to ensure branch isolation
-            TestReflection.SetFieldStatic(typeof(System.Windows.Application), "_appInstance", null);
+            TestReflection.SetFieldStatic(typeof(Application), "_appInstance", null);
 
             // Act
             var exception = Record.Exception(() =>
@@ -71,6 +81,7 @@ namespace Servy.UI.IntegrationTests.Services
                     await Task.Delay(100); // Small delay to allow the UI thread to process
                     retries++;
                 }
+
                 // Assert
                 // Verification: Since we are back on the STA thread after the await,
                 // we can check the cursor state immediately.

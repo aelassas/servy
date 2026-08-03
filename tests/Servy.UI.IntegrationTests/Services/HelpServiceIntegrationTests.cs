@@ -24,9 +24,9 @@ namespace Servy.UI.IntegrationTests.Services
 
         public HelpServiceIntegrationTests()
         {
+            // Arrange
             _mockMessageBox = new Mock<IMessageBoxService>();
             _service = new HelpService(_mockMessageBox.Object);
-            UiHeadless.IsEnabled = true;
         }
 
         public void Dispose()
@@ -63,7 +63,7 @@ namespace Servy.UI.IntegrationTests.Services
         public async Task OpenDocumentation_InHeadlessMode_GracefullyDropsExecutionWithoutError()
         {
             // Arrange & Act
-            // UiHeadless is enabled, so OpenExternalUrl short-circuits before Process.Start;
+            // UiHeadless is enabled via fixture, so OpenExternalUrl short-circuits before Process.Start;
             // verify no error dialog is raised.
             await _service.OpenDocumentationAsync(Caption);
 

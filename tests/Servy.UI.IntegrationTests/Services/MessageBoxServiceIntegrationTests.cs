@@ -1,18 +1,24 @@
 ﻿using Servy.Testing;
 using Servy.UI.Services;
+using System;
 using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services
 {
     [Collection("UiSta")]
-    public class MessageBoxServiceIntegrationTests
+    public class MessageBoxServiceIntegrationTests : IDisposable
     {
         private readonly MessageBoxService _service;
 
         public MessageBoxServiceIntegrationTests()
         {
+            // Arrange
             _service = new MessageBoxService(new WpfUiDispatcher());
-            UiHeadless.IsEnabled = true;
+        }
+
+        public void Dispose()
+        {
+            // Standard cleanup hook for collection consistency
         }
 
         #region Smoke Tests (Dispatcher Verification)

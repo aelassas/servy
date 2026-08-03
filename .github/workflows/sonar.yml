@@ -21,7 +21,7 @@ jobs:
   build:
     name: Build and analyze
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     
     env:
       SONAR_SCANNER_VERSION: "11.2.1"    
