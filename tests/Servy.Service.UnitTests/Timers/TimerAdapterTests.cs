@@ -109,19 +109,21 @@ namespace Servy.Service.UnitTests.Timers
         #region Operational Tests
 
         [Fact]
-        public void Start_And_Stop_DoNotThrowExceptions()
+        public void Start_And_Stop_ToggleUnderlyingTimerEnabled()
         {
             // Arrange
             using (var timer = new TimerAdapter(Interval))
             {
-                // Act
-                // Simple functional smoke test
-                var exceptionStart = Record.Exception(() => timer.Start());
-                var exceptionStop = Record.Exception(() => timer.Stop());
+                var internalTimer = TestReflection.GetField<System.Timers.Timer>(timer, "_timer");
+                Assert.NotNull(internalTimer);
 
-                // Assert
-                Assert.Null(exceptionStart);
-                Assert.Null(exceptionStop);
+                // Act & Assert: Start phase
+                timer.Start();
+                Assert.True(internalTimer.Enabled, "Start() did not enable the underlying timer.");
+
+                // Act & Assert: Stop phase
+                timer.Stop();
+                Assert.False(internalTimer.Enabled, "Stop() did not disable the underlying timer.");
             }
         }
 

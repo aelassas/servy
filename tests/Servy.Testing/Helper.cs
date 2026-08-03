@@ -127,10 +127,9 @@ namespace Servy.Testing
                     throw;
                 }
             }
-            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050) || ex is IOException) // ERROR_FILE_EXISTS / Destination exists
+            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS: another runner published it first  
             {
-                // If we hit a race where the file was created between our check and our move, 
-                // it's a win-the file is there.
+                // Lost the publish race - the file is there, which is the outcome we wanted.
             }
         }
 
