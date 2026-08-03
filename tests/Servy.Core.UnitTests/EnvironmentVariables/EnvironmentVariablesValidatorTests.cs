@@ -279,7 +279,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Assert
             Assert.False(isValid);
             Assert.NotEmpty(errorMessages);
-            Assert.Equal(errorMessages[0], string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "KEY\0ATTACK"));
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "KEY\0ATTACK"), errorMessages[0]);
         }
 
         #endregion

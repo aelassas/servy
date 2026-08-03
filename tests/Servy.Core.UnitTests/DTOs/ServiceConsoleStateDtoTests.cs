@@ -50,10 +50,11 @@ namespace Servy.Core.UnitTests.DTOs
         [Fact]
         public void Clone_ShouldHandleNullValues()
         {
-            // Arrange
+            // Arrange - only the paths are null; Pid is set, so a clone that returns
+            // a fresh instance instead of a copy is distinguishable from a real one.
             var original = new ServiceConsoleStateDto
             {
-                Pid = null,
+                Pid = 4321,
                 ActiveStdoutPath = null,
                 ActiveStderrPath = null
             };
@@ -63,7 +64,8 @@ namespace Servy.Core.UnitTests.DTOs
 
             // Assert
             Assert.NotNull(clone);
-            Assert.Null(clone.Pid);
+            Assert.NotSame(original, clone);
+            Assert.Equal(4321, clone.Pid);
             Assert.Null(clone.ActiveStdoutPath);
             Assert.Null(clone.ActiveStderrPath);
         }
