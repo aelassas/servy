@@ -60,9 +60,11 @@ This video demonstrates Servy 1.0. While Servy has evolved significantly since t
 [![Servy Demo Video](https://github.com/user-attachments/assets/183a48eb-0763-46b5-aba2-7db01857c942)](https://www.youtube.com/watch?v=biHq17j4RbI)
 
 ## Why?
+
 See [NOTES.md](NOTES.md) for details.
 
 ## Getting Started
+
 Download the latest release from [GitHub](https://github.com/aelassas/servy/releases/latest) or install via a package manager:
 
 **WinGet**
@@ -113,6 +115,7 @@ sc.exe start MyService
 Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other popular frameworks.
 
 ## Quick Links
+
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
 * [Overview](https://github.com/aelassas/servy/wiki/Overview)
