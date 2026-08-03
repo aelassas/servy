@@ -226,7 +226,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 tickExecuted = true;
                 return Task.CompletedTask;
             });
-            vm.ExposeInitTimer();
+
+            // A valid selection: the ONLY thing that may block the payload is _isMonitoringFlag == 0.
+            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
+            vm.ExposeInitTimer();          // timer exists, but StartMonitoring() was never called
 
             // Act
             vm.ExposeOnTick();
@@ -234,6 +237,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Assert
             Assert.False(tickExecuted);
             Assert.Equal(0, vm.ExposeIsTickRunningFlag);
+            Assert.False(vm.IsResetMonitoringStateCalled);   // OnTickAsync was never entered at all
         }
 
         [Fact]

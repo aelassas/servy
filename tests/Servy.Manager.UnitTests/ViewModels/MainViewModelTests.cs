@@ -366,8 +366,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     })
                     .Returns(() =>
                     {
-                        // Wait until the test tells us to proceed
-                        unblockGetAllServicesTcs.Task.Wait();
+                        // Bounded: a missing release must fail the test, not park a pool thread forever.
+                        Assert.True(unblockGetAllServicesTcs.Task.Wait(TimeSpan.FromSeconds(10)),
+                            "Test never released the first tick.");
                         return new List<ServiceInfo>();
                     });
 
@@ -387,13 +388,19 @@ namespace Servy.Manager.UnitTests.ViewModels
                 TestReflection.InvokeNonPublic(vm, "OnTick", null!, EventArgs.Empty);
 
                 // Wait until the first tick has actually entered GetAllServices
-                await Task.WhenAny(getAllServicesCalledTcs.Task, Task.Delay(2000));
+                var completedTask = await Task.WhenAny(getAllServicesCalledTcs.Task, Task.Delay(2000));
+                Assert.Same(getAllServicesCalledTcs.Task, completedTask); // Ensure tick 1 entered GetAllServices before proceeding
 
-                // 2. Fire second tick while the first tick is guaranteed to be in-flight (_isRefreshingFlag == 1)
-                TestReflection.InvokeNonPublic(vm, "OnTick", null!, EventArgs.Empty);
-
-                // Unblock the first tick so it can complete cleanly
-                unblockGetAllServicesTcs.TrySetResult(true);
+                try
+                {
+                    // 2. Fire second tick while the first tick is guaranteed to be in-flight (_isRefreshingFlag == 1)
+                    TestReflection.InvokeNonPublic(vm, "OnTick", null!, EventArgs.Empty);
+                }
+                finally
+                {
+                    // Unblock the first tick on all execution paths so threads are not leaked
+                    unblockGetAllServicesTcs.TrySetResult(true);
+                }
 
                 // Allow the dispatcher to flush remaining continuations
                 await Dispatcher.Yield(DispatcherPriority.ContextIdle);
@@ -744,7 +751,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
                 _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
-                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
                 collection.Clear();
 
                 // Generate 5 checked service lines to thrash against our MaxBulkOperationParallelism = 2 threshold cap
@@ -754,44 +761,58 @@ namespace Servy.Manager.UnitTests.ViewModels
                     collection.Add(new ServiceRowViewModel(svc, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true });
                 }
 
+                var gate = new TaskCompletionSource<bool>();
+                var arrived = new SemaphoreSlim(0);
                 int currentInFlightCount = 0;
                 int maxObservedParallelism = 0;
-                var lockObject = new object();
 
-                // CONCURRENCY TRACKING SEAM: Inject counting wrappers into the asynchronous mock execution path
+                // CONCURRENCY TRACKING SEAM: Inject deterministic gating into the asynchronous mock execution path
                 _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
                     .Returns(async (Service s, bool flag, CancellationToken token) =>
                     {
-                        int activeThreads;
-                        lock (lockObject)
+                        var active = Interlocked.Increment(ref currentInFlightCount);
+                        int observed;
+                        while (active > (observed = Volatile.Read(ref maxObservedParallelism)) &&
+                               Interlocked.CompareExchange(ref maxObservedParallelism, active, observed) != observed)
                         {
-                            activeThreads = Interlocked.Increment(ref currentInFlightCount);
-                            if (activeThreads > maxObservedParallelism)
-                            {
-                                maxObservedParallelism = activeThreads;
-                            }
                         }
 
-                        // Artificially delay task processing to let internal pipeline operations overlap and queue
-                        await Task.Delay(50, token);
+                        arrived.Release();
+                        await gate.Task;
 
                         Interlocked.Decrement(ref currentInFlightCount);
                         return true;
                     });
 
                 // Act
-                RunOnPump(currentDispatcher, async () =>
+                var executeTask = Task.Run(() =>
                 {
-                    await vm.StartSelectedCommand.ExecuteAsync(null);
+                    RunOnPump(currentDispatcher, async () =>
+                    {
+                        await vm.StartSelectedCommand.ExecuteAsync(null);
+                    });
                 });
 
-                // Assert
-                // 1. Prove all selected worker nodes reached completion bounds
-                _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()), Times.Exactly(5));
+                try
+                {
+                    // Assert: Prove exactly 2 worker slots fill concurrently, while the 3rd slot is held back by the cap
+                    Assert.True(await arrived.WaitAsync(TimeSpan.FromSeconds(5)), "First task failed to reach execution gate.");
+                    Assert.True(await arrived.WaitAsync(TimeSpan.FromSeconds(5)), "Second task failed to reach execution gate.");
+                    Assert.False(await arrived.WaitAsync(TimeSpan.FromMilliseconds(200)), "Throttling cap violated! Third task entered execution gate concurrently.");
+                }
+                finally
+                {
+                    // Unblock the gate so all 5 tasks complete cleanly
+                    gate.SetResult(true);
+                    await executeTask;
+                }
 
-                // 2. Validate that parallel worker processing never crossed our configured limit of 2
+                // Assert
+                // 1. Validate that parallel worker processing never crossed our configured limit of 2
                 Assert.True(maxObservedParallelism <= 2, $"Throttling regression detected! Max concurrent tasks reached: {maxObservedParallelism}");
-                Assert.True(maxObservedParallelism > 1, "Concurrency gate was completely single-threaded; execution failed to split workload tasks.");
+
+                // 2. Prove all selected worker nodes reached completion bounds
+                _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()), Times.Exactly(5));
             }, createApp: true);
         }
 
@@ -1002,7 +1023,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 var vm = CreateViewModel();
 
-                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
 
                 var childRow1 = new ServiceRowViewModel(new Service { Name = "S1" }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true };
                 var childRow2 = new ServiceRowViewModel(new Service { Name = "S2" }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = false };
@@ -1012,10 +1033,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 collection.Add(childRow2);
                 TestReflection.SetField(vm, "_isUpdatingSelectAll", false);
 
-                bool selectAllChangedFired = false;
+                var notifications = new List<string>();
                 vm.PropertyChanged += (s, e) =>
                 {
-                    if (e.PropertyName == nameof(vm.SelectAll)) selectAllChangedFired = true;
+                    if (e.PropertyName != null) notifications.Add(e.PropertyName);
                 };
 
                 TestReflection.SetField(vm, "_selectAll", true);
@@ -1023,8 +1044,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Act
                 vm.SelectAll = null;
 
-                // Assert
-                Assert.True(selectAllChangedFired);
+                // Assert - assigning null collapses to false once child rows are re-derived
+                Assert.False(vm.SelectAll);
+                Assert.False(childRow1.IsChecked);
+                Assert.False(childRow2.IsChecked);
+                Assert.Contains(nameof(vm.SelectAll), notifications);
+                Assert.Contains(nameof(vm.HasSelectedServices), notifications);
             }, createApp: true);
         }
 
@@ -1091,13 +1116,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void SelectAll_Setter_CascadesCorrectlyToChildrenAndPreventsInfiniteLoops()
+        public void SelectAll_Setter_CascadesCorrectlyToChildren()
         {
             // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
 
                 var childRow1 = new ServiceRowViewModel(new Service { Name = "S1" }, _serviceCommandsMock.Object, _cursorServiceMock.Object);
                 var childRow2 = new ServiceRowViewModel(new Service { Name = "S2" }, _serviceCommandsMock.Object, _cursorServiceMock.Object);
@@ -1110,7 +1135,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     if (e.PropertyName == nameof(vm.SelectAll)) selectAllNotified = true;
                 };
 
-                // Act
+                // Act - Cascade true to all children
                 vm.SelectAll = true;
 
                 // Assert
@@ -1119,16 +1144,45 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.False(childRow1.IsSelected);
                 Assert.True(selectAllNotified);
 
+                // Act - Idempotent re-assignment should no-op and not re-notify
                 selectAllNotified = false;
-
                 vm.SelectAll = true;
+
+                // Assert
                 Assert.False(selectAllNotified);
+            }, createApp: true);
+        }
 
+        [Fact]
+        public void SelectAll_Setter_WhileUpdatingGuardLatched_DoesNotCascadeToChildren()
+        {
+            // Arrange
+            Helper.RunOnSTA(() =>
+            {
+                var vm = CreateViewModel();
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
+
+                var childRow1 = new ServiceRowViewModel(new Service { Name = "S1" }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true };
+                var childRow2 = new ServiceRowViewModel(new Service { Name = "S2" }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true };
+                collection.Add(childRow1);
+                collection.Add(childRow2);
+
+                // Act & Assert - Loop-suppression check: with the re-entrancy guard latched,
+                // the setter updates the backing state but must NOT cascade changes to the child rows.
                 TestReflection.SetField(vm, "_isUpdatingSelectAll", true);
-                childRow1.IsChecked = false;
-                vm.SelectAll = false;
+                try
+                {
+                    childRow1.IsChecked = false;
+                    vm.SelectAll = false;
 
-                Assert.True(childRow2.IsChecked);
+                    Assert.False(vm.SelectAll);           // Backing field is updated
+                    Assert.True(childRow2.IsChecked);     // ... but no cascade reached child rows due to guard latch
+                }
+                finally
+                {
+                    // Restore the re-entrancy guard so vm state remains clean
+                    TestReflection.SetField(vm, "_isUpdatingSelectAll", false);
+                }
             }, createApp: true);
         }
 
