@@ -1,7 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Common;
 using Servy.Core.Config;
-using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ServiceProcess;
@@ -17,9 +16,9 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock = new Mock<IServiceManager>();
         }
 
-        private Service CreateService(string name = "TestService")
+        private Core.Domain.Service CreateService(string name = "TestService")
         {
-            return new Service(_serviceManagerMock.Object)
+            return new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = name,
                 ExecutablePath = @"C:\path\app.exe"
@@ -193,7 +192,7 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_ShouldCallServiceManagerWithCorrectArguments()
         {
             // Arrange
-            var service = new Service(_serviceManagerMock.Object)
+            var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
                 DisplayName = "TestService",
@@ -356,7 +355,7 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_WithRunAsLocalSystem_DoesNotForwardCredentials()
         {
             // Arrange
-            var service = new Service(_serviceManagerMock.Object)
+            var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "LocalSystemService",
                 ExecutablePath = @"C:\real.exe",
@@ -385,7 +384,7 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_ShouldCallServiceManagerWithCorrectArguments_NoWrapperExe()
         {
             // Arrange
-            var service = new Service(_serviceManagerMock.Object)
+            var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
                 ExecutablePath = @"C:\real.exe",
@@ -424,7 +423,7 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_WithZeroRotationSize_ClampsToMinimumOneMegabyte()
         {
             // Arrange
-            var service = new Service(_serviceManagerMock.Object)
+            var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestServiceZeroSize",
                 ExecutablePath = @"C:\real.exe",
@@ -457,7 +456,7 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_ShouldCallServiceManagerWithCorrectArguments_IsCLI()
         {
             // Arrange
-            var service = new Service(_serviceManagerMock.Object)
+            var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
                 ExecutablePath = @"C:\real.exe"
@@ -483,7 +482,7 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_ShouldHandleNullStartupDirectoryAndExecutablePath()
         {
             // Arrange
-            var service = new Service(_serviceManagerMock.Object)
+            var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
                 ExecutablePath = null!,

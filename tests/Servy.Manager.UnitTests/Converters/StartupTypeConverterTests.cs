@@ -10,20 +10,47 @@ namespace Servy.Manager.UnitTests.Converters
     {
         private readonly StartupTypeConverter _converter = new StartupTypeConverter();
 
+        #region Theory Data Source
+
+        /// <summary>
+        /// Shared bidirectional mapping data between <see cref="ServiceStartType"/> enums and localized <see cref="Strings"/> resource keys.
+        /// </summary>
+        public static TheoryData<ServiceStartType, string> StartupTypeMappings => new TheoryData<ServiceStartType, string>()
+        {
+            { ServiceStartType.Automatic,             nameof(Strings.StartupType_Automatic) },
+            { ServiceStartType.AutomaticDelayedStart, nameof(Strings.StartupType_AutomaticDelayedStart) },
+            { ServiceStartType.Manual,                nameof(Strings.StartupType_Manual) },
+            { ServiceStartType.Disabled,              nameof(Strings.StartupType_Disabled) },
+            { ServiceStartType.Unknown,               nameof(Strings.StartupType_Unknown) },
+        };
+
+        #endregion
+
+        #region Convert Tests
+
         [Theory]
-        [InlineData(ServiceStartType.Automatic, nameof(Strings.StartupType_Automatic))]
-        [InlineData(ServiceStartType.AutomaticDelayedStart, nameof(Strings.StartupType_AutomaticDelayedStart))]
-        [InlineData(ServiceStartType.Manual, nameof(Strings.StartupType_Manual))]
-        [InlineData(ServiceStartType.Disabled, nameof(Strings.StartupType_Disabled))]
-        [InlineData(ServiceStartType.Unknown, nameof(Strings.StartupType_Unknown))]
+        [MemberData(nameof(StartupTypeMappings))]
         public void Convert_ValidEnum_ReturnsLocalizedResource(ServiceStartType input, string resourceName)
         {
             // Act
             var result = _converter.Convert(input, typeof(string), null!, CultureInfo.InvariantCulture);
 
-            // Assert - Retrieve the expected value from the ResourceManager dynamically
+            // Assert: Retrieve the expected value from the ResourceManager dynamically
             var expected = typeof(Strings).GetProperty(resourceName)?.GetValue(null!);
             Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Convert_UnknownStartType_ReturnsToString()
+        {
+            // Arrange: Cast an undefined integer to the enum
+            var unknown = (ServiceStartType)999;
+
+            // Act
+            var result = _converter.Convert(unknown, typeof(string), null!, CultureInfo.InvariantCulture);
+
+            // Assert: Unmapped enum value falls through GetFallbackValue and returns its string representation
+            Assert.Equal(unknown.ToString(), result);
         }
 
         [Fact]
@@ -34,20 +61,13 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal("Invalid", _converter.Convert("Invalid", typeof(string), null!, CultureInfo.InvariantCulture));
         }
 
-        [Fact]
-        public void ConvertBack_NullInput_ReturnsDoNothing()
-        {
-            // Act & Assert
-            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null!, typeof(string), null!, CultureInfo.InvariantCulture));
-        }
+        #endregion
+
+        #region ConvertBack Tests
 
         [Theory]
-        [InlineData(nameof(Strings.StartupType_Automatic), ServiceStartType.Automatic)]
-        [InlineData(nameof(Strings.StartupType_AutomaticDelayedStart), ServiceStartType.AutomaticDelayedStart)]
-        [InlineData(nameof(Strings.StartupType_Manual), ServiceStartType.Manual)]
-        [InlineData(nameof(Strings.StartupType_Disabled), ServiceStartType.Disabled)]
-        [InlineData(nameof(Strings.StartupType_Unknown), ServiceStartType.Unknown)]
-        public void ConvertBack_ValidString_ReturnsEnum(string resourceName, ServiceStartType expected)
+        [MemberData(nameof(StartupTypeMappings))]
+        public void ConvertBack_ValidString_ReturnsEnum(ServiceStartType expected, string resourceName)
         {
             // Arrange
             var input = typeof(Strings).GetProperty(resourceName)?.GetValue(null!) as string;
@@ -60,6 +80,13 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
+        public void ConvertBack_NullInput_ReturnsDoNothing()
+        {
+            // Act & Assert
+            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null!, typeof(string), null!, CultureInfo.InvariantCulture));
+        }
+
+        [Fact]
         public void ConvertBack_InvalidString_ReturnsDoNothing()
         {
             // Act
@@ -68,5 +95,30 @@ namespace Servy.Manager.UnitTests.Converters
             // Assert
             Assert.Equal(Binding.DoNothing, result);
         }
+
+        #endregion
+
+        #region Completeness Guard Tests
+
+        [Fact]
+        public void ServiceStartTypeEnum_AllValuesAreMappedAndAccountedFor()
+        {
+            // Arrange & Act: Extract the distinct mapped enum values via ITheoryDataRow interface explicit implementation
+            var covered = StartupTypeMappings
+                .Select(row => (ServiceStartType)((ITheoryDataRow)row).GetData()[0]!)
+                .ToHashSet();
+
+            // Use non-generic Enum.GetValues for net48 / multi-target framework compatibility
+            var declared = Enum.GetValues(typeof(ServiceStartType)).Cast<ServiceStartType>().ToHashSet();
+
+            // Assert: Ensure bidirectional completeness (no missing mappings and no phantom mappings)
+            var unmappedValues = declared.Except(covered).ToList();
+            var extraValues = covered.Except(declared).ToList();
+
+            Assert.Empty(unmappedValues);
+            Assert.Empty(extraValues);
+        }
+
+        #endregion
     }
 }

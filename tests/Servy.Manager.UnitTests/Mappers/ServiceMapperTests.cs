@@ -109,22 +109,35 @@ namespace Servy.Manager.UnitTests.Mappers
             Assert.Null(result);
         }
 
-        [Fact]
-        public void ToModel_ConsoleService_MapsPaths()
+        public static IEnumerable<object?[]> GetToModelSubtypeData()
         {
-            // Arrange
-            var consoleService = new ConsoleService { Name = "C", Pid = 1234, StdoutPath = "out.txt", StderrPath = "err.txt" };
+            yield return new object?[] { new ConsoleService { Name = "C", Pid = 1234, StdoutPath = "out.txt", StderrPath = "err.txt" }, "C", 1234, true, "out.txt", "err.txt" };
+            yield return new object?[] { new DependencyService { Name = "D", Pid = 4321 }, "D", 4321, true, null, null };
+            yield return new object?[] { new PerformanceService { Name = "P", Pid = null }, "P", null, false, null, null };
+        }
 
+        [Theory]
+        [MemberData(nameof(GetToModelSubtypeData))]
+        public void ToModel_Subtypes_MapsBaseFieldsAndConsolePathsPolymorphically(
+            ServiceItemBase item,
+            string expectedName,
+            int? expectedPid,
+            bool expectedIsPidEnabled,
+            string? expectedStdoutPath,
+            string? expectedStderrPath)
+        {
             // Act
-            var result = ServiceMapper.ToModel(consoleService);
+            var result = ServiceMapper.ToModel(item);
 
-            // Assert
+            // Assert: Common ServiceItemBase fields
             Assert.NotNull(result);
-            Assert.Equal("C", result.Name);
-            Assert.Equal(1234, result.Pid);
-            Assert.True(result.IsPidEnabled);
-            Assert.Equal("out.txt", result.StdoutPath);
-            Assert.Equal("err.txt", result.StderrPath);
+            Assert.Equal(expectedName, result.Name);
+            Assert.Equal(expectedPid, result.Pid);
+            Assert.Equal(expectedIsPidEnabled, result.IsPidEnabled);
+
+            // Assert: Console-specific paths (populated only for ConsoleService, null for others)
+            Assert.Equal(expectedStdoutPath, result.StdoutPath);
+            Assert.Equal(expectedStderrPath, result.StderrPath);
         }
 
         #endregion

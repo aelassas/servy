@@ -17,6 +17,19 @@ namespace Servy.Core.UnitTests.Validation
         #region FindFirstViolation Tests
 
         [Fact]
+        public void FindFirstViolation_WhenTargetIsNull_ReturnsNull()
+        {
+            // Arrange
+            TestDto? dto = null;
+
+            // Act
+            var violation = ServicePathValidator.FindFirstViolation(dto, (path, isFile) => true);
+
+            // Assert
+            Assert.Null(violation);
+        }
+
+        [Fact]
         public void FindFirstViolation_WhenRequiredPropertyIsNull_ReturnsMissingViolation()
         {
             // Arrange
@@ -139,6 +152,50 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.Empty(violations);
+        }
+
+        [Fact]
+        public void FindAllViolations_WhenOptionalPathIsEmpty_ReturnsEmptyEnumerable()
+        {
+            // Arrange
+            var dto = new TestDto { ExecutablePath = @"C:\valid\app.exe", StartupDirectory = null };
+
+            // Act
+            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) => true);
+
+            // Assert
+            Assert.Empty(violations);
+        }
+
+        [Fact]
+        public void FindAllViolations_WhenStartupDirectoryIsInvalid_PassesIsFileFalseToValidatorAndReturnsViolation()
+        {
+            // Arrange
+            var dto = new TestDto
+            {
+                ExecutablePath = @"C:\valid\app.exe",
+                StartupDirectory = @"C:\invalid\dir"
+            };
+
+            bool? receivedIsFile = null;
+
+            // Act
+            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) =>
+            {
+                if (path == dto.StartupDirectory)
+                {
+                    receivedIsFile = isFile;
+                    return false; // Force directory path to fail validation
+                }
+                return true;
+            }).ToList();
+
+            // Assert
+            var violation = Assert.Single(violations);
+            Assert.False(violation.IsMissing);
+            Assert.Equal(@"C:\invalid\dir", violation.Value);
+            Assert.Equal("startup directory", violation.Attribute.Label);
+            Assert.False(receivedIsFile); // Verifies isFile = false was evaluated for StartupDirectory
         }
 
         [Fact]
