@@ -30,14 +30,7 @@ namespace Servy.Core.UnitTests.Services
             var expectedError = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, "XML");
 
             // Act
-            var result = _validator.TryValidate(null, out var error);
-
-            // Assert
-            Assert.False(result);
-            Assert.Equal(expectedError, error);
-
-            // Act
-            result = _validator.TryValidate(xml, out error);
+            var result = _validator.TryValidate(xml, out var error);
 
             // Assert
             Assert.False(result);

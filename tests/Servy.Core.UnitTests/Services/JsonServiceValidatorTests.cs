@@ -139,6 +139,19 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void TryValidate_JsonNotMatchingServiceDto_ReturnsFalse()
+        {
+            // Valid JSON, but the shape cannot bind to ServiceDto
+            var json = "[1, 2, 3]";
+            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "JSON", string.Empty).TrimEnd();
+
+            var result = _validator.TryValidate(json, out var error);
+
+            Assert.False(result);
+            Assert.Contains(expectedPrefix, error);
+        }
+
+        [Fact]
         public void TryValidate_ValidServiceDto_ReturnsTrue()
         {
             // Arrange
