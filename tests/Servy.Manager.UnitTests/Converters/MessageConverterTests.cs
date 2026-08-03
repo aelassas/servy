@@ -1,6 +1,7 @@
-﻿using System.Globalization;
+﻿using Servy.Manager.Converters;
+using System;
+using System.Globalization;
 using System.Windows.Data;
-using Servy.Manager.Converters;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.Converters
@@ -22,11 +23,16 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Convert_NonStringValue_ReturnsFirstLineOfToString()
         {
+            // Arrange - an object whose ToString() is multi-line, as an Exception's is.
+            var value = new InvalidOperationException("Boom");
+            var expected = value.ToString().Split('\n')[0].TrimEnd('\r');
+
             // Act
-            var result = _converter.Convert(123, typeof(string), null, CultureInfo.InvariantCulture);
+            var result = _converter.Convert(value, typeof(string), null, CultureInfo.InvariantCulture);
 
             // Assert
-            Assert.Equal("123", result);
+            Assert.Equal(expected, result);
+            Assert.DoesNotContain('\n', (string)result);
         }
 
         [Theory]

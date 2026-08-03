@@ -429,6 +429,21 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task GetByNameAsync_NonAsciiCasingDifference_ResolvesViaUnicodeNoCaseCollation()
+        {
+            // Arrange - stored through the repository, i.e. on a connection other than the initializer's.
+            var ct = CancellationToken.None;
+            await _repository.AddAsync(new ServiceDto { Name = "ÖffnenService", ExecutablePath = "C:\\o.exe" }, ct);
+
+            // Act
+            var found = await _repository.GetByNameAsync("öffnenservice", decrypt: false, ct);
+
+            // Assert - built-in NOCASE cannot fold 'Ö'/'ö'; only UNICODE_NOCASE can.
+            Assert.NotNull(found);
+            Assert.Equal("ÖffnenService", found.Name);
+        }
+
+        [Fact]
         public async Task DeleteAsync_WithPaddedLegacyRow_PurgesViaUntrimmedFallback()
         {
             // Arrange: Direct SQL seed injects zombie row with hidden trailing whitespace
