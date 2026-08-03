@@ -36,7 +36,7 @@ runs:
       run: |
         $url     = $env:INPUT_URL
         # Expand any literal environment variable expressions (e.g. $env:USERPROFILE) passed in output_path
-        $out     = $ExecutionContext.InvokeCommand.ExpandString($env:INPUT_OUTPUT_PATH)
+        $out     = [Environment]::ExpandEnvironmentVariables($env:INPUT_OUTPUT_PATH)
         $asset   = $env:INPUT_ASSET_NAME
         $retries = [int]$env:INPUT_MAX_RETRIES
         
