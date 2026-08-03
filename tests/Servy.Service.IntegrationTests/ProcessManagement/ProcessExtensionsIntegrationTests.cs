@@ -58,35 +58,22 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Format_AccessDeniedOnSystemProcess_CatchesWin32ExceptionAndReturnsFallback()
         {
             // Arrange
-            // PID 0 (Idle) or PID 4 (System) is guaranteed to exist on Windows and throws a Win32Exception 
-            // when attempting to query protected native properties (like ProcessName) under non-elevated states.
             Process? systemProcess = null;
-            try
-            {
-                systemProcess = Process.GetProcessById(4); // System process
-            }
-            catch (ArgumentException)
-            {
-                // Fallback safe-guard for cross-platform/alternative test environments where PID 4 isn't "System"
-                try { systemProcess = Process.GetProcessById(0); } catch { /* Ignore */ }
-            }
+            try { systemProcess = Process.GetProcessById(4); }
+            catch (ArgumentException) { /* Ignore */ }
 
-            if (systemProcess != null)
-            {
-                try
-                {
-                    // Act
-                    string formatted = systemProcess.Format();
+            Assert.SkipWhen(systemProcess is null, "PID 4 (System) is not resolvable on this host.");
 
-                    // Assert
-                    Assert.NotNull(formatted);
-                    // Since Id succeeds but ProcessName throws Win32Exception, it falls back to the ID or inaccessible string
-                    Assert.True(formatted.Contains("PID") || formatted.Contains("Inaccessible Process") || formatted.Contains("System"));
-                }
-                finally
-                {
-                    systemProcess.Dispose();
-                }
+            using (systemProcess)
+            {
+                // Precondition: the property access must actually be denied, otherwise this
+                // test is exercising the success path, not the Win32Exception fallback.
+                var denied = Record.Exception(() => _ = systemProcess.ProcessName);
+                Assert.SkipWhen(!(denied is Win32Exception),
+                    $"ProcessName on PID 4 did not raise Win32Exception (got {denied?.GetType().Name ?? "no exception"}); runner is likely elevated.");
+
+                // Act & Assert
+                Assert.Equal($"(PID {systemProcess.Id})", systemProcess.Format());
             }
         }
 

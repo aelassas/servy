@@ -31,18 +31,7 @@ namespace Servy.Restarter.UnitTests
             _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
             _expectedLogFilePath = Path.Combine(Logger.LogsPath, LogFileName);
 
-            string mockConfigJson = "{\r\n" +
-                "  \"ConnectionStrings\": {\r\n" +
-                "    \"DefaultConnection\": \" " + SharedInMemoryConnectionString + "\"\r\n" +
-                "  },\r\n" +
-                "  \"Security\": {\r\n" +
-                "    \"AESKeyFilePath\": \"" + KeyFileName + "\",\r\n" +
-                "    \"AESIVFilePath\": \"" + IvFileName + "\"\r\n" +
-                "  },\r\n" +
-                "  \"RestartTimeoutSeconds\": \"30\"\r\n" +
-                "}";
-
-            File.WriteAllText(_tempConfigPath, mockConfigJson);
+            File.WriteAllText(_tempConfigPath, BuildConfigJson("30"));
 
             // Open the persistent handle to anchor the shared memory segment lifecycle
             _dbKeepAliveConnection = new SQLiteConnection(SharedInMemoryConnectionString);
@@ -51,6 +40,18 @@ namespace Servy.Restarter.UnitTests
             // Bootstrap the schema table directly into the shared memory segment
             SQLiteDbInitializer.Initialize(_dbKeepAliveConnection);
         }
+
+        private static string BuildConfigJson(string restartTimeoutSeconds) =>
+            "{\r\n" +
+            "  \"ConnectionStrings\": {\r\n" +
+            "    \"DefaultConnection\": \"" + SharedInMemoryConnectionString + "\"\r\n" +
+            "  },\r\n" +
+            "  \"Security\": {\r\n" +
+            "    \"AESKeyFilePath\": \"" + KeyFileName + "\",\r\n" +
+            "    \"AESIVFilePath\": \"" + IvFileName + "\"\r\n" +
+            "  },\r\n" +
+            "  \"RestartTimeoutSeconds\": \"" + restartTimeoutSeconds + "\"\r\n" +
+            "}";
 
         #region Guard Conditions Branch Coverage
 
@@ -128,16 +129,7 @@ namespace Servy.Restarter.UnitTests
             try
             {
                 // 2. Build a structurally complete configuration payload where only the timeout option is corrupted.
-                string corruptedConfigJson = "{\r\n" +
-                    "  \"ConnectionStrings\": {\r\n" +
-                    "    \"DefaultConnection\": \"" + SharedInMemoryConnectionString + "\"\r\n" +
-                    "  },\r\n" +
-                    "  \"Security\": {\r\n" +
-                    "    \"EncryptionKey\": \"StandardKeyPlaceholderForTestingOnly\"\r\n" +
-                    "  },\r\n" +
-                    "  \"RestartTimeoutSeconds\": \"NotAnInteger\"\r\n" +
-                    "}";
-                File.WriteAllText(_tempConfigPath, corruptedConfigJson);
+                File.WriteAllText(_tempConfigPath, BuildConfigJson("NotAnInteger"));
 
                 string[] args = new string[] { serviceName };
 
@@ -175,11 +167,15 @@ namespace Servy.Restarter.UnitTests
         public void Main_CorruptedAppDirectoryContext_FailsInitializationAndTriggersCatchBlocks()
         {
             // Arrange
-            // Provide a malformed layout containing an unparseable connection string string. 
+            // Provide a malformed layout containing an unparseable connection string. 
             // This safely simulates database driver crashes while remaining completely isolated.
             string brokenConnectionConfigJson = "{\r\n" +
                 "  \"ConnectionStrings\": {\r\n" +
                 "    \"DefaultConnection\": \"Data Source=||InvalidPath||:?\"\r\n" +
+                "  },\r\n" +
+                "  \"Security\": {\r\n" +
+                "    \"AESKeyFilePath\": \"" + KeyFileName + "\",\r\n" +
+                "    \"AESIVFilePath\": \"" + IvFileName + "\"\r\n" +
                 "  }\r\n" +
                 "}";
             File.WriteAllText(_tempConfigPath, brokenConnectionConfigJson);

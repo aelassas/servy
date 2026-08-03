@@ -17,5 +17,7 @@
         public static readonly TimeSpan ServiceRestarterRestartTimeout = TimeSpan.FromSeconds(5);
         public static readonly TimeSpan ServiceRestarterStuckInPendingStateTimeout = TimeSpan.FromSeconds(1);
         public static readonly TimeSpan ServiceRestarterHandleTransitionalErrorTimeout = TimeSpan.FromSeconds(10);
+        public static readonly TimeSpan ServiceRestarterMidLoopExpiryBudget = TimeSpan.FromMilliseconds(500);
+        public static readonly TimeSpan ServiceRestarterMidLoopExpiryBurn = TimeSpan.FromMilliseconds(750);
     }
 }

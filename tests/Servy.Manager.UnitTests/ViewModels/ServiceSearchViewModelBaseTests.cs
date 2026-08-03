@@ -99,19 +99,28 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Properties_SetNewValues_TriggersPropertyNotificationEvents()
         {
-            // Arrange
             var changedProperties = new List<string>();
             _sut.PropertyChanged += (s, e) => { if (e.PropertyName != null) changedProperties.Add(e.PropertyName); };
 
-            // Act
+            // Act & Assert - value is stored and the change is announced
+            _sut.SearchText = "Wexflow";
+            Assert.Equal("Wexflow", _sut.SearchText);
+            Assert.Contains(nameof(_sut.SearchText), changedProperties);
+
+            _sut.SearchButtonText = "Searching Now...";
+            Assert.Equal("Searching Now...", _sut.SearchButtonText);
+            Assert.Contains(nameof(_sut.SearchButtonText), changedProperties);
+
+            _sut.IsBusy = true;
+            Assert.True(_sut.IsBusy);
+            Assert.Contains(nameof(_sut.IsBusy), changedProperties);
+
+            // Re-assigning the same values must not re-notify
+            changedProperties.Clear();
             _sut.SearchText = "Wexflow";
             _sut.SearchButtonText = "Searching Now...";
             _sut.IsBusy = true;
-
-            // Assert
-            Assert.Contains(nameof(_sut.SearchText), changedProperties);
-            Assert.Contains(nameof(_sut.SearchButtonText), changedProperties);
-            Assert.Contains(nameof(_sut.IsBusy), changedProperties);
+            Assert.Empty(changedProperties);
         }
 
         #endregion
