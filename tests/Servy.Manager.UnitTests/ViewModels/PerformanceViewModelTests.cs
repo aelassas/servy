@@ -88,8 +88,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void DesignTimeConstructor_InitializesAndSeedsGraphsSuccessfully()
+        public void DesignTimeConstructor_InitializesEmptyGraphCollections()
         {
+            // Arrange & Act
             Helper.RunOnSTA(() =>
             {
                 var originalProvider = App.Services;
@@ -104,25 +105,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     var dtViewModel = new PerformanceViewModel();
 
-                    // Verify basic structural state
+                    // Assert
+                    // Verify basic structural state and clean empty graph collection initialization
                     Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
                     Assert.NotNull(dtViewModel.CpuPointCollection);
                     Assert.NotNull(dtViewModel.RamPointCollection);
-
-                    // Verify that we initialized graph instances
-                    // If the application design-time mode allows seeding in test environments, check for items.
-                    // Otherwise, we gracefully document and test that empty collections are initialized.
-                    if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
-                    {
-                        Assert.NotEmpty(dtViewModel.CpuPointCollection);
-                        Assert.NotEmpty(dtViewModel.RamPointCollection);
-                    }
-                    else
-                    {
-                        // In non-designer (test) contexts, we prove the initialization path created clean empty collections
-                        Assert.Empty(dtViewModel.CpuPointCollection);
-                        Assert.Empty(dtViewModel.RamPointCollection);
-                    }
+                    Assert.Empty(dtViewModel.CpuPointCollection);
+                    Assert.Empty(dtViewModel.RamPointCollection);
                 }
                 finally
                 {
@@ -305,9 +294,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var fakeMetrics = new ProcessMetrics(45.5, 50 * 1024 * 1024);
                     _mockProcessHelper.Setup(p => p.GetProcessTreeMetrics(2050)).Returns(fakeMetrics);
 
-                    // Pin formatting inputs precisely to verify that collected metrics reach the formatters rather than generic defaults
-                    _mockProcessHelper.Setup(p => p.FormatCpuUsage(It.Is<double>(d => d == 45.5))).Returns("15%");
-                    _mockProcessHelper.Setup(p => p.FormatRamUsage(It.Is<long>(b => b == 50L * 1024 * 1024))).Returns("120 MB");
+                    // Pin formatting inputs precisely with distinguishable return strings to verify that collected metrics reach formatters rather than generic defaults
+                    _mockProcessHelper.Setup(p => p.FormatCpuUsage(It.Is<double>(d => Math.Abs(d - 45.5) < 0.001))).Returns("45.5%");
+                    _mockProcessHelper.Setup(p => p.FormatRamUsage(It.Is<long>(b => b == 50L * 1024 * 1024))).Returns("50 MB");
 
                     // Mock IUiDispatcher to invoke actions immediately on this thread
                     _mockUiDispatcher.Setup(d => d.InvokeAsync(It.IsAny<Action>()))
@@ -319,11 +308,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
 
                     // 2. Keep the message pump processing while waiting for Task.Run to finish
+                    var pumpTimeout = TimeSpan.FromSeconds(10);
                     var sw = Stopwatch.StartNew();
                     while (!task.IsCompleted)
                     {
-                        if (sw.Elapsed > TimeSpan.FromSeconds(10))
-                            throw new TimeoutException("OnTickAsync did not complete within 5s.");
+                        if (sw.Elapsed > pumpTimeout)
+                            throw new TimeoutException($"OnTickAsync did not complete within {pumpTimeout.TotalSeconds:0}s.");
                         Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
                         Thread.Sleep(1);
                     }
@@ -332,8 +322,12 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     Assert.Equal("2050", vm.Pid);
-                    Assert.Equal("15%", vm.CpuUsage);
-                    Assert.Equal("120 MB", vm.RamUsage);
+                    Assert.Equal("45.5%", vm.CpuUsage);
+                    Assert.Equal("50 MB", vm.RamUsage);
+
+                    // Explicitly verify that exact metrics passed through the mock formatters
+                    _mockProcessHelper.Verify(p => p.FormatCpuUsage(45.5), Times.Once);
+                    _mockProcessHelper.Verify(p => p.FormatRamUsage(50L * 1024 * 1024), Times.Once);
 
                     Assert.NotEmpty(vm.CpuPointCollection);
                     Assert.NotEmpty(vm.CpuFillPoints);
