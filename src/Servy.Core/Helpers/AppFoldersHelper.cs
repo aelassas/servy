@@ -125,14 +125,14 @@ namespace Servy.Core.Helpers
                 throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
             var root = rootVaultPath ?? AppConfig.ProgramDataPath;
-            var recoveryPath = rootVaultPath is null ? AppConfig.RecoveryFolderPath : Path.Combine(root, "recovery");
-            var logsPath = rootVaultPath is null ? AppConfig.LogsFolderPath : Path.Combine(root, "logs");
+            var recoveryFolder = rootVaultPath is null ? AppConfig.RecoveryFolderPath : Path.Combine(root, "recovery");
+            var logsFolder = rootVaultPath is null ? AppConfig.LogsFolderPath : Path.Combine(root, "logs");
 
             // 4. Secure the Root Vault so its ACLs exist for children to inherit
             SecurityHelper.CreateSecureDirectory(root, breakInheritance: true);
 
             // 5. Secure operational folders while respecting inheritance
-            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, recoveryPath, logsPath }
+            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, recoveryFolder, logsFolder }
                 .Select(Path.GetFullPath)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
