@@ -12,8 +12,10 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         public void InitializeDatabase_Throws_WhenDbContextIsNull()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
+            var ex = Assert.Throws<ArgumentNullException>(() =>
                 DatabaseInitializer.InitializeDatabase(null!, conn => { }));
+
+            Assert.Equal("dbContext", ex.ParamName);
         }
 
         [Fact]
@@ -23,8 +25,10 @@ namespace Servy.Infrastructure.UnitTests.Helpers
             var mockDbContext = new Mock<IAppDbContext>();
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
+            var ex = Assert.Throws<ArgumentNullException>(() =>
                 DatabaseInitializer.InitializeDatabase(mockDbContext.Object, null!));
+
+            Assert.Equal("initializer", ex.ParamName);
         }
 
         [Fact]
@@ -60,10 +64,30 @@ namespace Servy.Infrastructure.UnitTests.Helpers
 
             // Act
             Action act = () => DatabaseInitializer.InitializeDatabase(mockDbContext.Object,
-                       _ => throw new InvalidOperationException("Boom!"));
+                        _ => throw new InvalidOperationException("Boom!"));
 
             // Assert
             Assert.Throws<InvalidOperationException>(act);
+            mockConnection.Protected().Verify("Dispose", Times.Once(), true, ItExpr.IsAny<bool>());
+        }
+
+        [Fact]
+        public void InitializeDatabase_DisposesConnection_WhenOpenThrows()
+        {
+            // Arrange
+            var mockConnection = new Mock<DbConnection>();
+            mockConnection.Setup(c => c.Open()).Throws(new InvalidOperationException("Database file is locked or inaccessible."));
+
+            var mockDbContext = new Mock<IAppDbContext>();
+            mockDbContext.Setup(c => c.CreateConnection()).Returns(mockConnection.Object);
+
+            var initializerCalled = false;
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() =>
+                DatabaseInitializer.InitializeDatabase(mockDbContext.Object, _ => initializerCalled = true));
+
+            Assert.False(initializerCalled); // The initializer callback must never be executed if connection opening fails
             mockConnection.Protected().Verify("Dispose", Times.Once(), true, ItExpr.IsAny<bool>());
         }
     }

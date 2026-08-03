@@ -1,11 +1,18 @@
 ﻿using Servy.Core.Resources;
 using Servy.Core.Validation;
 using Servy.Testing;
+using System.Runtime.InteropServices;
 
 namespace Servy.Core.UnitTests.Validation
 {
     public class PathSecurityGuardTests : TempDirectoryTestBase
     {
+        private static class NativeTestMethods
+        {
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern bool DefineDosDevice(uint dwFlags, string lpDeviceName, string? lpTargetPath);
+        }
+
         #region Common Security Rules
 
         [Fact]
@@ -19,6 +26,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
             Assert.NotNull(result.ErrorMessage);
             Assert.Contains(Strings.Msg_InvalidPath, result.ErrorMessage);
             Assert.Null(stream);
@@ -35,12 +43,15 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
-            Assert.True(
-                result.ErrorMessage.IndexOf("UNC paths", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                result.ErrorMessage.IndexOf("UNC destination", StringComparison.OrdinalIgnoreCase) >= 0,
-                $"Expected UNC guard rejection. Actual: {result.ErrorMessage}");
+            var expected = mode == FileMode.Open
+                ? Strings.Msg_SecurityUncPathProhibited
+                : Strings.Msg_SecurityUncPathExportProhibited;
+
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Equal(expected, result.ErrorMessage);
         }
 
         [Theory]
@@ -55,6 +66,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
 
@@ -79,6 +91,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.NotNull(result.ErrorMessage);
             Assert.Contains(protectedDir, result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
             Assert.Null(stream);
@@ -98,6 +111,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
             Assert.NotNull(result.ErrorMessage);
             Assert.Contains(Path.GetExtension(fileName).ToLowerInvariant(), result.ErrorMessage);
             Assert.Null(stream);
@@ -127,8 +141,162 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Equal(Strings.Msg_SecurityFileReparsePointProhibited, result.ErrorMessage);
             Assert.Null(stream);
+        }
+
+        [Fact]
+        public void ValidatePath_ResolvedProtectedFolder_ReturnsFail()
+        {
+            // Arrange: Find an existing .json or .xml file inside %WINDIR% or System32.
+            string winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            string? targetFile = FindAnySystemConfigFile(winDir);
+
+            if (string.IsNullOrEmpty(targetFile))
+            {
+                Assert.Skip("No accessible system .json or .xml configuration file found in Windows directory.");
+            }
+
+            string targetDir = Path.GetDirectoryName(targetFile)!;
+            string fileName = Path.GetFileName(targetFile);
+
+            char driveLetter = GetUnusedDriveLetter();
+            if (driveLetter == '\0')
+            {
+                Assert.Skip("No unused drive letter available for subst mapping.");
+            }
+
+            string drivePath = $"{driveLetter}:";
+            if (!NativeTestMethods.DefineDosDevice(0, drivePath, targetDir))
+            {
+                Assert.Skip($"Failed to define virtual drive {drivePath}. Win32 Error: {Marshal.GetLastWin32Error()}");
+            }
+
+            try
+            {
+                string substFilePath = Path.Combine($"{drivePath}\\", fileName);
+
+                // Act: Pre-open check sees "Z:\<file>.xml" (bypassing pre-open string check).
+                // Handle resolution unrolls "Z:" to C:\Windows\System32\..., catching it in the post-resolution check.
+                var result = PathSecurityGuard.ValidatePath(substFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
+
+                // Assert
+                Assert.False(result.IsValid);
+                Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+                Assert.NotNull(result.ErrorMessage);
+                Assert.Contains(winDir, result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+                Assert.Null(stream);
+            }
+            finally
+            {
+                // Clean up virtual DOS drive mapping (DDD_REMOVE_DEFINITION = 0x2)
+                NativeTestMethods.DefineDosDevice(2, drivePath, null);
+            }
+        }
+
+        [Fact]
+        public void ValidatePath_ResolvedProtectedFolderExport_ReturnsFail()
+        {
+            // Arrange: Find an existing .json or .xml file inside %WINDIR% or System32.
+            string winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            string? targetFile = FindAnySystemConfigFile(winDir);
+
+            if (string.IsNullOrEmpty(targetFile))
+            {
+                Assert.Skip("No accessible system .json or .xml configuration file found in Windows directory.");
+            }
+
+            string targetDir = Path.GetDirectoryName(targetFile)!;
+            string fileName = Path.GetFileName(targetFile);
+
+            char driveLetter = GetUnusedDriveLetter();
+            if (driveLetter == '\0')
+            {
+                Assert.Skip("No unused drive letter available for subst mapping.");
+            }
+
+            string drivePath = $"{driveLetter}:";
+            if (!NativeTestMethods.DefineDosDevice(0, drivePath, targetDir))
+            {
+                Assert.Skip($"Failed to define virtual drive {drivePath}. Win32 Error: {Marshal.GetLastWin32Error()}");
+            }
+
+            try
+            {
+                string substFilePath = Path.Combine($"{drivePath}\\", fileName);
+
+                // Act: Pass FileMode.OpenOrCreate to test the export path security logic, using FileAccess.Read
+                // to avoid OS-level Access Denied exceptions on existing system files.
+                var result = PathSecurityGuard.ValidatePath(substFilePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read, out var stream);
+
+                // Assert
+                Assert.False(result.IsValid);
+                Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+                Assert.NotNull(result.ErrorMessage);
+                Assert.Contains(winDir, result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+                Assert.Null(stream);
+            }
+            finally
+            {
+                // Clean up virtual DOS drive mapping (DDD_REMOVE_DEFINITION = 0x2)
+                NativeTestMethods.DefineDosDevice(2, drivePath, null);
+            }
+        }
+
+        /// <summary>
+        /// Reliably locates any valid .json or .xml file in %WINDIR% or its subdirectories across all Windows builds.
+        /// </summary>
+        private static string? FindAnySystemConfigFile(string winDir)
+        {
+            var options = new EnumerationOptions
+            {
+                IgnoreInaccessible = true,
+                RecurseSubdirectories = true,
+                AttributesToSkip = FileAttributes.ReparsePoint
+            };
+
+            // Probe standard System32/WinSxS directories where XML/JSON files exist on all Windows installations
+            string[] searchDirs = new[]
+            {
+                Path.Combine(winDir, "System32"),
+                Path.Combine(winDir, "SysWOW64"),
+                Path.Combine(winDir, "WinSxS"),
+                winDir
+            };
+
+            foreach (var dir in searchDirs)
+            {
+                if (!Directory.Exists(dir)) continue;
+
+                try
+                {
+                    var match = Directory.EnumerateFiles(dir, "*.xml", options).FirstOrDefault()
+                             ?? Directory.EnumerateFiles(dir, "*.json", options).FirstOrDefault();
+
+                    if (match != null) return match;
+                }
+                catch
+                {
+                    /* Ignore directory access errors and try next location */
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the first available drive letter starting from Z: going down to G:.
+        /// </summary>
+        private static char GetUnusedDriveLetter()
+        {
+            var activeDrives = new HashSet<char>(DriveInfo.GetDrives().Select(d => char.ToUpper(d.Name[0])));
+            for (char c = 'Z'; c >= 'G'; c--)
+            {
+                if (!activeDrives.Contains(c)) return c;
+            }
+            return '\0';
         }
 
         #endregion
@@ -147,8 +315,10 @@ namespace Servy.Core.UnitTests.Validation
             var result = PathSecurityGuard.ValidatePath(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
 
             // Assert
-            Assert.NotNull(result.ErrorMessage);
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Contains(filePath, result.ErrorMessage);
             Assert.Null(stream);
         }
 

@@ -635,44 +635,44 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         #region Route Core Components (Reflection Helpers)
 
         [Theory]
-        [InlineData("SELECT * FROM MyTable\r\nWHERE Id = 1", "SELECT * FROM MyTable  WHERE Id = 1")]
-        [InlineData("SELECT LongQueryStringThatExceedsTheStandardTruncationLimitForLogs", "SELECT LongQueryStringThatExceedsTheStandardTruncationL...")]
-        [InlineData("", "Unknown Query")]
-        [InlineData(null, "Unknown Query")]
-        public void FormatSqlForLog_Variants_EvaluatesCorrectly(string? inputSql, string expectedLoggedSql)
+        [InlineData("SELECT * FROM MyTable\r\nWHERE Id = 1", null, "SELECT * FROM MyTable  WHERE Id = 1")]
+        [InlineData("SELECT LongQueryStringThatExceedsTheStandardTruncationLimitForLogs", null, "SELECT LongQueryStringThatExceedsTheStandardTruncationLimitF...")] // Default 60-char limit
+        [InlineData("SELECT VeryLongQueryStringThatNeedsCustomTruncationParametersForTesting", 25, "SELECT VeryLongQueryStrin...")] // Sync logger profile bound (25 chars + ...)
+        [InlineData("SELECT VeryLongQueryStringThatNeedsCustomTruncationParametersForTesting", 50, "SELECT VeryLongQueryStringThatNeedsCustomTruncatio...")] // Async logger profile bound (50 chars + ...)
+        [InlineData("", null, "Unknown Query")]
+        [InlineData(null, null, "Unknown Query")]
+        public void FormatSqlForLog_Variants_EvaluatesCorrectly(string? inputSql, int? maxLength, string expectedLoggedSql)
         {
-            // Arrange
-            const int truncationLength = 55;
+            // Arrange & Act
+            // Pass Type.Missing for null maxLength to exercise the C# optional parameter default (maxLength = 60)
+            object[] parameters = maxLength.HasValue
+                ? new object[] { inputSql!, maxLength.Value }
+                : new object[] { inputSql!, Type.Missing };
 
-            // Act
-            var formatted = TestReflection.InvokeNonPublicStatic(typeof(DapperExecutor), "FormatSqlForLog", inputSql!, truncationLength) as string;
+            var formatted = TestReflection.InvokeNonPublicStatic(
+                typeof(DapperExecutor),
+                "FormatSqlForLog",
+                parameters) as string;
 
             // Assert
             Assert.Equal(expectedLoggedSql, formatted);
         }
 
         [Theory]
-        [InlineData(0, 100)]    // Base case: 100 << 0 = 100
-        [InlineData(1, 200)]    // Growth step 1: 100 << 1 = 200
-        [InlineData(2, 400)]    // Growth step 2: 100 << 2 = 400
-        [InlineData(10, 30000)] // Ordinary upper ceiling cap block: 100 << 10 = 102400 -> Clamped to 30000
-        [InlineData(64, 30000)] // OVERFLOW GUARD: If unguarded, C# masks shift to (64 & 63) = 0.
-                                // 100 << 0 would return 100 (un-capped). The clamp ensures it stays pinned to 30000.
+        [InlineData(0, 100)]
+        [InlineData(10, AppConfig.DbBackoffMaxMs)]   // 100 << 10 = 102400 -> clamped
+        [InlineData(64, AppConfig.DbBackoffMaxMs)]   // shift clamp via Math.Min(attempt, 30)
         public void CalculateBackoff_ValidatesGrowthAndOverflowGuardRailCeilings(int attempt, int expectedBaseDelay)
         {
-            // Arrange
-            const int initialDelayMs = 100;
-            const int jitterMs = 0; // Disabled for deterministic baseline calculation checks
-            const int maxDelayMs = 30000;
-
-            // Act
+            // Arrange & Act
+            // Pass four parameters to match CalculateBackoff(attempt, initialDelayMs, maxJitterMs, maxBackoffMs)
             var calculatedDelay = (int)TestReflection.InvokeNonPublicStatic(
                 typeof(DapperExecutor),
                 "CalculateBackoff",
                 attempt,
-                initialDelayMs,
-                jitterMs,
-                maxDelayMs)!;
+                AppConfig.DbAsyncInitialDelayMs,
+                0,
+                AppConfig.DbBackoffMaxMs)!;
 
             // Assert
             Assert.Equal(expectedBaseDelay, calculatedDelay);

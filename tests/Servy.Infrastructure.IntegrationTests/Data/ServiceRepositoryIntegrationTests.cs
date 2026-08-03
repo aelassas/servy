@@ -50,6 +50,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
     public sealed class TestSecureData : ISecureData
     {
         public string Encrypt(string plainText) => $"SECRET_HASH:{plainText}";
+
         public string Decrypt(string cipherText)
         {
             if (cipherText == "POISON_PAYLOAD")
@@ -60,7 +61,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 throw new System.Security.Cryptography.CryptographicException("Padding check failed.");
             }
 
-            return cipherText.Replace("SECRET_HASH:", "");
+            return cipherText.StartsWith("SECRET_HASH:", StringComparison.Ordinal)
+                ? cipherText.Substring("SECRET_HASH:".Length)
+                : cipherText;
         }
 
         public void Dispose()
@@ -220,7 +223,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 ExecutablePath = "old1.exe",
                 Pid = 5050,
                 RunAsLocalSystem = true,
-                Password = "SECRET_HASH:KeepMe"
+                Password = "KeepMe"
             };
             var existingService2 = new ServiceDto
             {
@@ -229,7 +232,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Pid = 6060,
                 RunAsLocalSystem = false,
                 UserAccount = "SrvUser",
-                Password = "SECRET_HASH:KeepMe2"
+                Password = "KeepMe2"
             };
 
             await _repository.AddAsync(existingService1, TestContext.Current.CancellationToken);
