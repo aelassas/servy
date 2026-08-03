@@ -26,6 +26,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     [Collection("ProcessLauncherIntegrationTests")]
     public class ProcessLauncherIntegrationTests : IDisposable
     {
+        private const int TimeoutTripBudgetMs = 2_000;
         private readonly List<string> _tempFiles = new List<string>();
         private readonly List<IProcessWrapper> _spawnedWrappers = new List<IProcessWrapper>();
         private readonly TestLogger _logger = new TestLogger();
@@ -71,12 +72,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_NullOptions_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => ProcessLauncher.Start(null, _realFactory, _logger));
         }
 
         [Theory]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         [InlineData(null)]
         public void Start_EmptyExecutable_ThrowsArgumentException(string exePath)
         {
@@ -167,47 +169,33 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
-        [Fact]
-        public void Start_SynchronousTimeout_LogErrorAsWarningFalse_ThrowsTimeoutExceptionAndLogsAsError()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Start_SynchronousTimeout_RoutesTimeoutToConfiguredChannel(bool logErrorAsWarning)
         {
             // Arrange
-            // Raised execution target, while keeping threshold low to ensure a deterministic timeout trip
-            var optionsError = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds * 1000);
-            optionsError.WaitChunkMs = 100;
-            optionsError.LogErrorAsWarning = false;
+            // Child outlives the budget by design: 15s of work against a 2s budget.
+            var options = CreateOptions(
+                "powershell.exe",
+                $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"",
+                fireAndForget: false,
+                timeoutMs: TimeoutTripBudgetMs);
+            options.WaitChunkMs = 100;
+            options.LogErrorAsWarning = logErrorAsWarning;
 
-            var errorLogger = new TestLogger();
+            var logger = new TestLogger();
 
             // Act
-            var ex = Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsError, _realFactory, errorLogger));
+            var ex = Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(options, _realFactory, logger));
 
             // Assert
             Assert.Contains("exceeded the maximum allowed timeout", ex.Message);
-            Assert.Contains(errorLogger.Errors, m => m.Contains("timed out after"));
-            // Verify that timeout messages did NOT bleed into the warnings channel
-            Assert.DoesNotContain(errorLogger.Warnings, m => m.Contains("timed out after"));
-        }
+            var expectedChannel = logErrorAsWarning ? logger.Warnings : logger.Errors;
+            var forbiddenChannel = logErrorAsWarning ? logger.Errors : logger.Warnings;
 
-        [Fact]
-        public void Start_SynchronousTimeout_LogErrorAsWarningTrue_ThrowsTimeoutExceptionAndLogsAsWarning()
-        {
-            // Arrange
-            // Raised execution target, while keeping threshold low to ensure a deterministic timeout trip
-            var optionsWarn = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds * 1000);
-            optionsWarn.WaitChunkMs = 100;
-            optionsWarn.LogErrorAsWarning = true;
-
-            var warnLogger = new TestLogger();
-
-            // Act
-            var ex = Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsWarn, _realFactory, warnLogger));
-
-            // Assert
-            Assert.Contains("exceeded the maximum allowed timeout", ex.Message);
-            Assert.Contains(warnLogger.Warnings, m => m.Contains("timed out after"));
-
-            // Symmetric Exclusion Check: Verifies that the warning configuration didn't leak down or duplicate onto the Error channel
-            Assert.DoesNotContain(warnLogger.Errors, m => m.Contains("timed out after"));
+            Assert.Contains(expectedChannel, m => m.Contains("timed out after"));
+            Assert.DoesNotContain(forbiddenChannel, m => m.Contains("timed out after"));
         }
 
         #endregion
@@ -218,18 +206,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_NullWorkingDirectory_ResolvesToDefaultSafely()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", null, fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+            string exe = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+            var options = CreateOptions(exe, "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.WorkingDirectory = null; // Triggers Path.GetDirectoryName fallback branch
-
-            // Configure short execution task to exit cleanly
-            options.Arguments = "-NoProfile -Command \"exit 0\"";
 
             // Act
             using (var wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
             {
                 // Assert
                 Assert.True(wrapper.HasExited);
-                Assert.NotNull(wrapper.StartInfo.WorkingDirectory);
+                Assert.Equal(Path.GetDirectoryName(exe), wrapper.StartInfo.WorkingDirectory);
             }
         }
 
@@ -250,6 +236,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Act
             using (IProcessWrapper wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
             {
+                // Assert
                 Assert.Equal(string.Empty, wrapper.StartInfo.Environment["CUSTOM_TEST_ENV_PADDED"]);
             }
         }
@@ -406,7 +393,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             for (int i = 0; i < 15; i++)
             {
-                content = File.ReadAllText(logPath);
+                try { content = File.ReadAllText(logPath); }
+                catch (IOException) { /* writer still holds the handle - retry */ }
                 if (content.Contains("STDOUT_MSG") && content.Contains("STDERR_MSG"))
                 {
                     containsBoth = true;
@@ -417,8 +405,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             // Assert
             Assert.True(containsBoth, $"Log file content did not fully stabilize with both outputs. Current file string content: '{content}'");
-            Assert.Contains("STDOUT_MSG", content);
-            Assert.Contains("STDERR_MSG", content);
         }
 
         #endregion
