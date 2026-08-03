@@ -4,6 +4,7 @@ using Servy.Manager.Resources;
 using Servy.Testing;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Data;
 using Xunit;
 
@@ -13,16 +14,30 @@ namespace Servy.Manager.UnitTests.Converters
     {
         private readonly StatusConverter _converter = new StatusConverter();
 
+        #region Theory Data Source
+
+        /// <summary>
+        /// Shared bidirectional mapping data between <see cref="ServiceStatus"/> enums and localized <see cref="Strings"/> resource keys.
+        /// </summary>
+        public static TheoryData<ServiceStatus, string> StatusMappings => new TheoryData<ServiceStatus, string>()
+        {
+            { ServiceStatus.None,            nameof(Strings.Label_Fetching) },
+            { ServiceStatus.NotInstalled,    nameof(Strings.Status_NotInstalled) },
+            { ServiceStatus.Stopped,         nameof(Strings.Status_Stopped) },
+            { ServiceStatus.StartPending,    nameof(Strings.Status_StartPending) },
+            { ServiceStatus.StopPending,     nameof(Strings.Status_StopPending) },
+            { ServiceStatus.Running,         nameof(Strings.Status_Running) },
+            { ServiceStatus.ContinuePending, nameof(Strings.Status_ContinuePending) },
+            { ServiceStatus.PausePending,    nameof(Strings.Status_PausePending) },
+            { ServiceStatus.Paused,          nameof(Strings.Status_Paused) },
+        };
+
+        #endregion
+
+        #region Convert Tests
+
         [Theory]
-        [InlineData(ServiceStatus.None, nameof(Strings.Label_Fetching))]
-        [InlineData(ServiceStatus.NotInstalled, nameof(Strings.Status_NotInstalled))]
-        [InlineData(ServiceStatus.Stopped, nameof(Strings.Status_Stopped))]
-        [InlineData(ServiceStatus.StartPending, nameof(Strings.Status_StartPending))]
-        [InlineData(ServiceStatus.StopPending, nameof(Strings.Status_StopPending))]
-        [InlineData(ServiceStatus.Running, nameof(Strings.Status_Running))]
-        [InlineData(ServiceStatus.ContinuePending, nameof(Strings.Status_ContinuePending))]
-        [InlineData(ServiceStatus.PausePending, nameof(Strings.Status_PausePending))]
-        [InlineData(ServiceStatus.Paused, nameof(Strings.Status_Paused))]
+        [MemberData(nameof(StatusMappings))]
         public void Convert_ValidStatus_ReturnsLocalizedResource(ServiceStatus status, string resourceName)
         {
             // Act
@@ -56,27 +71,13 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(string.Empty, result);
         }
 
-        [Fact]
-        public void ConvertBack_NullInput_ReturnsDoNothing()
-        {
-            // Act
-            var result = _converter.ConvertBack(null, typeof(string), null, CultureInfo.InvariantCulture);
+        #endregion
 
-            // Assert
-            Assert.Equal(Binding.DoNothing, result);
-        }
+        #region ConvertBack Tests
 
         [Theory]
-        [InlineData(nameof(Strings.Label_Fetching), ServiceStatus.None)]
-        [InlineData(nameof(Strings.Status_NotInstalled), ServiceStatus.NotInstalled)]
-        [InlineData(nameof(Strings.Status_Stopped), ServiceStatus.Stopped)]
-        [InlineData(nameof(Strings.Status_StartPending), ServiceStatus.StartPending)]
-        [InlineData(nameof(Strings.Status_StopPending), ServiceStatus.StopPending)]
-        [InlineData(nameof(Strings.Status_Running), ServiceStatus.Running)]
-        [InlineData(nameof(Strings.Status_ContinuePending), ServiceStatus.ContinuePending)]
-        [InlineData(nameof(Strings.Status_PausePending), ServiceStatus.PausePending)]
-        [InlineData(nameof(Strings.Status_Paused), ServiceStatus.Paused)]
-        public void ConvertBack_ValidString_ReturnsEnum(string resourceName, ServiceStatus expected)
+        [MemberData(nameof(StatusMappings))]
+        public void ConvertBack_ValidString_ReturnsEnum(ServiceStatus expected, string resourceName)
         {
             // Arrange: Extract the static public resource string value via TestReflection infrastructure
             var input = (string)TestReflection.InvokeStatic(typeof(Strings), $"get_{resourceName}");
@@ -89,6 +90,16 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
+        public void ConvertBack_NullInput_ReturnsDoNothing()
+        {
+            // Act
+            var result = _converter.ConvertBack(null, typeof(string), null, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal(Binding.DoNothing, result);
+        }
+
+        [Fact]
         public void ConvertBack_InvalidString_ReturnsDoNothing()
         {
             // Act
@@ -98,17 +109,25 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(Binding.DoNothing, result);
         }
 
+        #endregion
+
+        #region Completeness Guard Tests
+
         [Fact]
         public void ServiceStatusEnum_AllValuesAreMappedAndAccountedFor()
         {
-            // Arrange & Act
-            var totalEnumCount = Enum.GetValues(typeof(ServiceStatus)).Length;
+            // Arrange & Act: Extract the distinct mapped enum values directly from the theory data source using Param1
+            var covered = StatusMappings.Select(row => (ServiceStatus)row[0]).ToHashSet();
+            var declared = Enum.GetValues(typeof(ServiceStatus)).Cast<ServiceStatus>().ToHashSet();
 
-            // Expected hardcoded check count must equal the amount listed in the mappings above (9)
-            const int ExpectedMappedCount = 9;
+            // Assert: Ensure bidirectional completeness (no missing mappings and no phantom mappings)
+            var unmappedValues = declared.Except(covered).ToList();
+            var extraValues = covered.Except(declared).ToList();
 
-            // Assert
-            Assert.Equal(ExpectedMappedCount, totalEnumCount);
+            Assert.Empty(unmappedValues);
+            Assert.Empty(extraValues);
         }
+
+        #endregion
     }
 }
