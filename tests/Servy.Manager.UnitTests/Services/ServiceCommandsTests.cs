@@ -776,25 +776,23 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "TestService" };
 
-            // Use reflection to gracefully handle the conditional existence of the debug folder property.
-            var debugFolderProp = typeof(Core.Config.AppConfig).GetProperty("ServyServiceManagerDebugFolder");
-            string? debugDir = debugFolderProp?.GetValue(null) as string;
-
+            string? debugDir = null;
             bool directoryCreatedByTest = false;
 
-            if (!string.IsNullOrEmpty(debugDir))
+#if DEBUG
+            // Ensure the debug directory exists to satisfy the #if DEBUG validation check in InstallServiceAsync
+            debugDir = Path.GetFullPath(AppConfig.ServyServiceManagerDebugFolder);
+
+            try
             {
-                try
+                if (!Directory.Exists(debugDir))
                 {
-                    debugDir = Path.GetFullPath(debugDir);
-                    if (!Directory.Exists(debugDir))
-                    {
-                        Directory.CreateDirectory(debugDir);
-                        directoryCreatedByTest = true;
-                    }
+                    Directory.CreateDirectory(debugDir);
+                    directoryCreatedByTest = true;
                 }
-                catch { /* Ignore creation errors if running in restricted environments */ }
             }
+            catch { /* Ignore creation errors if running in restricted environments */ }
+#endif
 
             // 1. Bypass Service Exists check
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(false);
@@ -1113,8 +1111,8 @@ namespace Servy.Manager.UnitTests.Services
             await sut.CopyPidAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            // Verifies that the internal retry loop honored Core.Config.AppConfig.ClipboardComMaxRetries
-            _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Exactly(Core.Config.AppConfig.ClipboardComMaxRetries));
+            // Verifies that the internal retry loop honored AppConfig.ClipboardComMaxRetries
+            _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Exactly(AppConfig.ClipboardComMaxRetries));
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_PidCopyFailed, UiAppConfig.Caption), Times.Once);
         }
 

@@ -23,17 +23,59 @@ namespace Servy.UnitTests.Validation
             _validator = new ServiceConfigurationValidator(_mockMessageBox.Object, _validationRules);
         }
 
+        #region Constructor Guard Tests
+
         [Fact]
-        public void Constructor_NullArguments_ThrowsArgumentNullException()
+        public void Constructor_NullMessageBoxService_ThrowsArgumentNullExceptionWithParamName()
         {
-            Assert.Throws<ArgumentNullException>(() => new ServiceConfigurationValidator(null!, _validationRules));
-            Assert.Throws<ArgumentNullException>(() => new ServiceConfigurationValidator(_mockMessageBox.Object, null!));
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new ServiceConfigurationValidator(null!, _validationRules));
+
+            // Assert
+            Assert.Equal("messageBoxService", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullValidationRules_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new ServiceConfigurationValidator(_mockMessageBox.Object, null!));
+
+            // Assert
+            Assert.Equal("serviceValidationRules", ex.ParamName);
+        }
+
+        #endregion
+
+        #region Cancellation & Validation Execution Tests
+
+        [Fact]
+        public async Task ValidateAsync_TokenAlreadyCancelled_ThrowsOperationCanceledExceptionAndDoesNotShowDialog()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                var dto = new ServiceDto { Name = "ValidService", ExecutablePath = @"C:\ValidService.exe", RunAsLocalSystem = true };
+
+                // Act & Assert
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                    _validator.ValidateAsync(dto, importMode: false, cancellationToken: cts.Token));
+
+                _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
         }
 
         [Fact]
         public async Task Validate_NullDto_ShowsErrorAndReturnsFalse()
         {
+            // Act
             var result = await _validator.ValidateAsync(null, cancellationToken: CancellationToken.None);
+
+            // Assert
             Assert.False(result);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(
                 It.Is<string>(s => s != null && s.IndexOf(Strings.Msg_ValidationError, StringComparison.OrdinalIgnoreCase) >= 0),
@@ -116,5 +158,7 @@ namespace Servy.UnitTests.Validation
             Assert.True(result);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
+
+        #endregion
     }
 }

@@ -331,17 +331,26 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 var vm = CreateViewModel();
 
-                // Act & Assert
-                vm.CreateAndStartTimer();
+                // Ctor already created and started the timer.
                 var timer = TestReflection.GetField<DispatcherTimer?>(vm, "_refreshTimer");
-
                 Assert.NotNull(timer);
                 Assert.True(timer.IsEnabled);
 
+                // Stop -> field nulled
                 vm.StopRefreshTimer();
-                timer = TestReflection.GetField<DispatcherTimer?>(vm, "_refreshTimer");
+                Assert.Null(TestReflection.GetField<DispatcherTimer?>(vm, "_refreshTimer"));
 
-                Assert.Null(timer);
+                // Re-create branch (_refreshTimer == null)
+                vm.CreateAndStartTimer();
+                var recreated = TestReflection.GetField<DispatcherTimer?>(vm, "_refreshTimer");
+                Assert.NotNull(recreated);
+                Assert.True(recreated.IsEnabled);
+
+                // Restart branch (exists but disabled)
+                recreated.Stop();
+                vm.CreateAndStartTimer();
+                Assert.True(recreated.IsEnabled);
+                Assert.Same(recreated, TestReflection.GetField<DispatcherTimer?>(vm, "_refreshTimer"));
             }, createApp: true);
         }
 
