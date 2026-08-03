@@ -574,7 +574,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
-                // Start a process that exits immediately
                 var psi = new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
@@ -583,25 +582,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     UseShellExecute = false
                 };
 
-                using (var exitedProcess = Process.Start(psi)!)
-                {
-                    exitedProcess.WaitForExit();
+                // Act
+                var exitedProcess = Process.Start(psi)!;
+                exitedProcess.WaitForExit();
+                exitedProcess.Close(); // Id/StartTime access inside StopTree throws InvalidOperationException
 
-                    // Disposing the internal handle forces StartTime / Id access inside StopTree's 
-                    // initial try block to throw InvalidOperationException while keeping the object valid.
-                    // To prevent TryStopGracefullyOrKill from throwing when calling process.Refresh()/HasExited,
-                    // we wrap the StopTree invocation to verify it logs the warning and recovers cleanly.
+                var exception = Record.Exception(() =>
+                    TestReflection.InvokeNonPublic(wrapper, "StopTree", exitedProcess, 1000));
 
-                    // Act
-                    var exception = Record.Exception(() =>
-                    {
-                        TestReflection.InvokeNonPublic(wrapper, "StopTree", exitedProcess, 1000);
-                    });
-
-                    // Assert
-                    Assert.Null(exception);
-                    Assert.Contains(_logger.Infos, m => m.Contains("has already exited.") || m.Contains("Terminating node:"));
-                }
+                // Assert
+                Assert.Null(exception);
+                Assert.Contains(_logger.Warnings, m => m.Contains("StopTree could not read process PID/StartTime"));
             }
         }
 
@@ -631,22 +622,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act - Execute TryStopGracefullyOrKill cleanly without broadcasting Ctrl+C to test host
-                TestReflection.InvokeNonPublic(
+                var result = TestReflection.InvokeNonPublic(
                     wrapper,
                     "TryStopGracefullyOrKill",
                     wrapper.UnderlyingProcess,
                     100,
                     100);
 
-                // Ensure the wrapper is safely killed if still alive on headless runners
-                if (!wrapper.HasExited)
-                {
-                    wrapper.Kill(entireProcessTree: true);
-                    wrapper.WaitForExit(1000);
-                }
-
                 // Assert
+                Assert.False((bool?)result);   // graceful path not available headless -> force-kill fallback
                 Assert.True(wrapper.HasExited);
+                Assert.Contains(_logger.Infos, m => m.Contains("Graceful shutdown not supported or timed out"));
             }
         }
 
