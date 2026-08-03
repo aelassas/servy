@@ -35,7 +35,7 @@ runs:
       uses: ./.github/actions/download-with-retry
       with:
         url: "https://github.com/CycloneDX/cyclonedx-cli/releases/download/${{ inputs.cli_version }}/cyclonedx-win-x64.exe"
-        output_path: "$env:USERPROFILE\\cyclonedx-cli\\cyclonedx.exe"
+        output_path: "%USERPROFILE%\\cyclonedx-cli\\cyclonedx.exe"
         asset_name: "CycloneDX CLI executable"
 
     # --- 2. CycloneDX CLI Cryptographic Verification & Path Exposure ---
@@ -65,7 +65,7 @@ runs:
       uses: ./.github/actions/download-with-retry
       with:
         url: "https://www.nuget.org/api/v2/package/CycloneDX/${{ inputs.tool_version }}"
-        output_path: "$env:USERPROFILE\\cyclonedx-tool\\CycloneDX.${{ inputs.tool_version }}.nupkg"
+        output_path: "%USERPROFILE%\\cyclonedx-tool\\CycloneDX.${{ inputs.tool_version }}.nupkg"
         asset_name: "CycloneDX NuGet package"
 
     # --- 4. CycloneDX .NET Tool Verification & Isolated Installation ---
