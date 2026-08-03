@@ -9,7 +9,7 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         public void IsSqliteVersionSafe_CurrentEnvironment_ReturnsParseableVersion()
         {
             // Arrange & Act
-            DatabaseValidator.IsSqliteVersionSafe(out string? detectedVersion);
+            bool isSafe = DatabaseValidator.IsSqliteVersionSafe(out string? detectedVersion);
 
             // Assert
             // We do not assert whether the environment is safe or unsafe (which is environment-dependent).
@@ -17,6 +17,9 @@ namespace Servy.Infrastructure.UnitTests.Helpers
             // proving the detection mechanism itself works without crashing.
             Assert.NotNull(detectedVersion);
             Assert.True(Version.TryParse(detectedVersion, out _), $"Detected version '{detectedVersion}' should be parseable.");
+
+            // Verify that the boolean verdict strictly agrees with direct delegation to ValidateVersion
+            Assert.Equal(DatabaseValidator.ValidateVersion(detectedVersion), isSafe);
         }
 
         public static TheoryData<string?, bool> VersionCases()

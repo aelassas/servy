@@ -100,70 +100,54 @@ namespace Servy.Manager.UnitTests.Converters
         public void Convert_ValueIsCorrectType_InvokesFormatSubclassMethod()
         {
             // Arrange
-            using (new AmbientAppServicesScope(sc => { }))
-            {
-                App.Services = null;
-                var converter = new TestMetricConverter();
-                double inputValue = 45.2;
+            var converter = new TestMetricConverter();
+            double inputValue = 45.2;
 
-                // Act
-                var result = converter.Convert(inputValue, typeof(string), null!, CultureInfo.InvariantCulture);
+            // Act
+            var result = converter.Convert(inputValue, typeof(string), null!, CultureInfo.InvariantCulture);
 
-                // Assert
-                Assert.Equal("45.2 Unit", result);
-            }
+            // Assert
+            Assert.Equal("45.2 Unit", result);
         }
 
         [Fact]
         public void Convert_ValueIsNull_ReturnsUnknownMetricPlaceholder()
         {
             // Arrange
-            using (new AmbientAppServicesScope(sc => { }))
-            {
-                App.Services = null;
-                var converter = new TestMetricConverter();
+            var converter = new TestMetricConverter();
 
-                // Act
-                var result = converter.Convert(null!, typeof(string), null!, CultureInfo.InvariantCulture);
+            // Act
+            var result = converter.Convert(null!, typeof(string), null!, CultureInfo.InvariantCulture);
 
-                // Assert
-                Assert.Equal(UiConstants.NotAvailable, result);
-            }
+            // Assert
+            Assert.Equal(UiConstants.NotAvailable, result);
         }
 
         [Fact]
         public void Convert_ValueIsIncompatibleType_ReturnsUnknownMetricPlaceholder()
         {
             // Arrange
-            using (new AmbientAppServicesScope(sc => { }))
-            {
-                App.Services = null;
-                var converter = new TestMetricConverter();
-                string illegalTypeInput = "Malformed String Intruding into Double Path";
+            var converter = new TestMetricConverter();
+            string illegalTypeInput = "Malformed String Intruding into Double Path";
 
-                // Act
-                var result = converter.Convert(illegalTypeInput, typeof(string), null!, CultureInfo.InvariantCulture);
+            // Act
+            var result = converter.Convert(illegalTypeInput, typeof(string), null!, CultureInfo.InvariantCulture);
 
-                // Assert
-                Assert.Equal(UiConstants.NotAvailable, result);
-            }
+            // Assert
+            Assert.Equal(UiConstants.NotAvailable, result);
         }
 
         [Fact]
         public void ConvertBack_Always_ReturnsBindingDoNothingToken()
         {
             // Arrange
-            using (new AmbientAppServicesScope(sc => { }))
-            {
-                App.Services = null;
-                var converter = new TestMetricConverter();
+            var converter = new TestMetricConverter();
 
-                // Act
-                var result = converter.ConvertBack("Any UI Value String", typeof(double), null!, CultureInfo.InvariantCulture);
+            // Act
+            var result = converter.ConvertBack("Any UI Value String", typeof(double), null!, CultureInfo.InvariantCulture);
 
-                // Assert
-                Assert.Equal(Binding.DoNothing, result);
-            }
+            // Assert
+            Assert.Equal(Binding.DoNothing, result);
         }
 
         #endregion
