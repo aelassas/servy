@@ -303,40 +303,36 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             bool hasSlept = false;
+            int stopCallCount = 0;
 
-            _mockController.SetupSequence(c => c.Status)
-                .Returns(ServiceControllerStatus.Running)      // Step 1: Initial sanity check
-                .Returns(ServiceControllerStatus.Running)      // Step 2: Pre-Stop execution check
-                .Returns(ServiceControllerStatus.StopPending)  // Step 3: Loop entry evaluation pass
-                .Returns(() =>
+            // 1. Return Running for all status checks so it doesn't hit targetStatus prematurely
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            // 2. Stop() throws InvalidOperationException on the 1st call to force entry into HandleTransitionalError.
+            // On subsequent calls inside HandleTransitionalError, it also throws so execution stays in the loop.
+            _mockController.Setup(c => c.Stop()).Callback(() => stopCallCount++).Throws<InvalidOperationException>();
+
+            // 3. Refresh() burns the budget ONCE after HandleTransitionalError has been entered (stopCallCount > 0)
+            _mockController.Setup(c => c.Refresh()).Callback(() =>
+            {
+                if (stopCallCount > 0 && !hasSlept)
                 {
-                    if (!hasSlept)
-                    {
-                        // Deliberately burn the remaining timeout budget inside the loop body
-                        // right after Refresh() is called, forcing the next evaluation loop check to fail.
-                        Thread.Sleep(60);
-                        hasSlept = true;
-                    }
-                    return ServiceControllerStatus.StopPending;
-                });
-
-            // Throw the transitional exception immediately to force entry into HandleTransitionalError
-            _mockController.Setup(c => c.Stop()).Throws<InvalidOperationException>();
+                    Thread.Sleep(TestTimeouts.ServiceRestarterMidLoopExpiryBurn);
+                    hasSlept = true;
+                }
+            });
 
             // Act & Assert
-            // We pass a 50ms budget; the initial actions happen instantly, then the loop body burns 60ms
             var ex = Assert.Throws<System.TimeoutException>(() =>
-                _restarter.RestartService("MyService", TimeSpan.FromMilliseconds(50)));
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterMidLoopExpiryBudget));
 
             // Assert
+            Assert.True(hasSlept, "The handler loop body was never reached; the budget expired before entry.");
             Assert.Contains("failed to reach Stopped within the timeout period", ex.Message);
 
-            // This will now pass cleanly because code execution is forced to traverse the loop body 
-            // to hit the sleeping Status lambda sequence.
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce(),
                 "The transitional error loop condition was short-circuited; code execution failed to traverse internal mid-loop monitoring steps.");
 
-            // Ensure deep mid-loop timeout evaluation passes don't drop handles
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
@@ -352,11 +348,12 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.Stop()).Throws<InvalidOperationException>();
             _mockController.Setup(c => c.Refresh()).Throws<InvalidOperationException>();
 
-            // Act & Assert
+            // Act
             // The catch (InvalidOperationException) block matches, remaining time runs down, and it exits via loop break
             var ex = Assert.Throws<System.TimeoutException>(() =>
                 _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterHandleTransitionalErrorTimeout));
 
+            // Assert
             Assert.Contains("failed to reach Stopped within the timeout period", ex.Message);
 
             // Verify teardown routines hit even under cascading exception loop conditions

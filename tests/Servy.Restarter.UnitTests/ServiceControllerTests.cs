@@ -40,20 +40,23 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             var controller = new ServiceController(DummyServiceName);
+            var inner = TestReflection.GetField<System.ServiceProcess.ServiceController>(controller, "_controller");
 
-            // Execute the initial disposal loop to alter core backing states
             controller.Dispose();
             Assert.True(TestReflection.GetField<bool>(controller, "_disposed"));
 
-            // Act
-            // Manually override the state flag back to false using TestReflection to verify short-circuit behavior re-entry paths 
-            TestReflection.SetField(controller, "_disposed", false);
+            // A disposed Component raises Disposed only on the transition; a second real
+            // teardown would have to re-enter the disposing branch to do anything at all.
+            var innerDisposals = 0;
+            inner.Disposed += (s, e) => innerDisposals++;
 
+            // Act - the guard must make this a no-op
             var exception = Record.Exception(() => controller.Dispose());
 
             // Assert
             Assert.Null(exception);
-            Assert.True(TestReflection.GetField<bool>(controller, "_disposed"), "The state engine failed to toggle back to an active disposed layout configuration.");
+            Assert.Equal(0, innerDisposals);
+            Assert.True(TestReflection.GetField<bool>(controller, "_disposed"));
         }
 
         [Theory]
