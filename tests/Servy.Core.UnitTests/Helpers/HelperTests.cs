@@ -287,7 +287,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Arrange & Act
             // Invoke the public static method safely using the updated reflection infrastructure
-            return (string)TestReflection.InvokeStatic(typeof(Helper), "GetBuiltWithFramework", assembly)!;
+            return (string)TestReflection.InvokePublicStatic(typeof(Helper), "GetBuiltWithFramework", assembly)!;
         }
 
         [Fact]
