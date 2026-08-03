@@ -49,7 +49,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             lock (_lockGate)
             {
-                _debugs.Add(message);
+                _debugs.Add(Format(message, ex));
             }
         }
 

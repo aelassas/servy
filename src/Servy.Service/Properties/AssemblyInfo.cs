@@ -33,3 +33,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("9.0.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.Service.UnitTests")]
+[assembly: InternalsVisibleTo("Servy.Service.IntegrationTests")]
