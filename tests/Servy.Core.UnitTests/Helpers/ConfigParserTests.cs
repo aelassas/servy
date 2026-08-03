@@ -203,7 +203,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ParseEnum_String_MalformedText_ReturnsDefaultAndLogsWarning()
+        public void ParseEnum_String_MalformedText_ReturnsDefault()
         {
             // Arrange
             string malformedInput = "Banana";
