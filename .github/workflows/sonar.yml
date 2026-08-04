@@ -24,7 +24,8 @@ jobs:
     timeout-minutes: 60
     
     env:
-      SONAR_SCANNER_VERSION: "11.2.1"    
+      SONAR_SCANNER_VERSION: "11.2.1"
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
 
     steps:
       # 1. Checkout code
@@ -43,6 +44,8 @@ jobs:
       # 3. Setup .NET (Satisfies global.json and provides environment for scanner)
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}              
 
       # 4. Add MSBuild and NuGet to the PATH
       - name: Setup MSBuild

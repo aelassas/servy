@@ -26,6 +26,10 @@ inputs:
     description: 'Expected SHA256 hash of the CLI binary executable'
     required: false
     default: 'da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f'
+  max_retries:
+    description: 'Maximum download retries for CycloneDX CLI and .NET Tool'
+    required: false
+    default: '5'
 
 runs:
   using: 'composite'
@@ -37,6 +41,7 @@ runs:
         url: "https://github.com/CycloneDX/cyclonedx-cli/releases/download/${{ inputs.cli_version }}/cyclonedx-win-x64.exe"
         output_path: "%USERPROFILE%\\cyclonedx-cli\\cyclonedx.exe"
         asset_name: "CycloneDX CLI executable"
+        max_retries: ${{ inputs.max_retries }}
 
     # --- 2. CycloneDX CLI Cryptographic Verification & Path Exposure ---
     - name: Verify and Register CycloneDX CLI
@@ -67,6 +72,7 @@ runs:
         url: "https://www.nuget.org/api/v2/package/CycloneDX/${{ inputs.tool_version }}"
         output_path: "%USERPROFILE%\\cyclonedx-tool\\CycloneDX.${{ inputs.tool_version }}.nupkg"
         asset_name: "CycloneDX NuGet package"
+        max_retries: ${{ inputs.max_retries }}
 
     # --- 4. CycloneDX .NET Tool Verification & Isolated Installation ---
     - name: Verify and Install CycloneDX .NET Tool

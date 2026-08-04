@@ -46,6 +46,7 @@ jobs:
     env:
       # Mapping to an environment variable prevents Expression Injection attacks
       INPUT_VERSION: ${{ github.event.inputs.version }}
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
 
     steps:
       # -----------------------------------------------------
@@ -73,6 +74,8 @@ jobs:
       # -----------------------------------------------------
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}        
 
       - name: Install CycloneDX Tools
         uses: ./.github/actions/setup-cyclonedx
