@@ -18,9 +18,9 @@
 #       - Artifact name
 #
 # Security / Trust Notes:
-#   - Version input is validated early and the workflow fails fast on error.
-#   - Repository checkout uses full history to support provenance generation.
-#   - The SBOM artifact is retained for 1 day to reduce exposure surface.
+#    - Version input is validated early and the workflow fails fast on error.
+#    - Repository checkout is shallow; the SBOM is derived from the working tree only.
+#    - The SBOM artifact is retained for 1 day to reduce exposure surface.
 #
 # Output:
 #   - servy-<version>-net48-sbom.xml (CycloneDX XML)
@@ -36,7 +36,6 @@ on:
         description: 'Version in Major.Minor format (e.g. 4.2)'
         required: true
 
-# Lockdown the token to read-only
 permissions:
   contents: read
 
