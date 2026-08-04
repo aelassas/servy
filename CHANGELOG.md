@@ -1,5 +1,46 @@
 # Changelog
 
+## [Servy 9.0](https://github.com/aelassas/servy/releases/tag/v9.0)
+
+**Date:** 2026-08-04 | **Tag:** [`v9.0`](https://github.com/aelassas/servy/tree/v9.0)
+
+* fix(core): ServiceValidationRules.cs - the shared validator hardcodes the 12 [ServicePath] fields that the CLI-import and service-startup validators reflect over, so a new path property is silently unvalidated for the Manager and desktop app (#4401)
+* fix(core): AppFoldersHelperTests.cs / AppFoldersHelper.cs - EnsureFolders_ValidPaths looks temp-dir scoped but EnsureFolders unconditionally re-ACLs the real C:\ProgramData\Servy vault plus its recovery and logs folders (#4491)
+* fix(core): InstallServiceOptions.cs (Core) - HeartbeatUrl and its two companions omit the 'Only used when EnableHealthMonitoring is true' caveat their five siblings carry, and the gate silently drops every ping (#4498)
+* fix(core): NativeMethodsHelpers.cs / NativeMethodsHelpersTests.cs - AtomicSecureMove guards with IsNullOrWhiteSpace but its message says 'null or empty' and neither theory has a whitespace row; ValidateCredentials in the same file does all three correctly (#4506)
+* fix(core): ServiceDependenciesValidator.cs - Validate emits one error per duplicate occurrence while Parse de-duplicates the same token stream (#4513)
+* fix(core): SecurityHelper.cs - the breakInheritance:true non-admin fallback cannot fall back: both downstream catch filters require !breakInheritance (#4556)
+* fix(core): EventLogService.cs - a whitespace-only sourceName disables both provider filters and skips the allowlist (IsNullOrWhiteSpace at line 55 vs IsNullOrEmpty at line 130) (#4561)
+* fix(core): IServiceManager.cs / ServiceManager.cs - GetDependencies checks cancellation before its argument guard, so the documented ArgumentException becomes an OperationCanceledException; its three sibling reads do the opposite (#4564)
+* fix(core): SafeWinProcessHandle.cs - DangerousGetHandle hides the non-virtual base member with 'new', so the documented "IntPtr.Zero when closed" guarantee is bypassed through any base-typed reference (#4640)
+* fix(manager): PerformanceViewModel.cs - AddPoint takes both the history queue and the MetricType that already selects it; a mismatched pair compiles and silently renders the wrong graph (#4374)
+* fix(manager): MainViewModel.cs (Manager) - five minor items: ServiceCommands setter (null guard / notification / field placement), ServicesView private set, Refresh() naming, cursor reset on early returns, no disposed guard on CreateAndStartTimer (#4369)
+* fix(manager): ServiceRowViewModel.cs - ConfigureCommand is the only one of the ten row commands built without the shared CanExecuteServiceCommand predicate (#4594)
+* fix(cli): BaseCommand.cs - a failed service operation with a blank OperationResult.ErrorMessage logs nothing at all; the #3387 fix hardened only the user-facing path (residual) (#4701)
+* ci(publish.yml): $env:SEVEN_ZIP assignment in the install step is a no-op; only the GITHUB_ENV export on the next line reaches the packaging step (#4664)
+* ci(publish.yml): setup/servy.iss and setup/servy-arm64.iss are 575 of 582 lines identical; the 7 differing lines are all expressible with an Inno /DArch define, which both callers already use for /DMyAppVersion (#4688)
+* ci(dependabot.yml): schedule.interval is inert while open-pull-requests-limit is 0, so the nuget/github-actions daily-vs-weekly split implies a cadence difference that does not exist (#4662)
+* ci(scoop.yml): the Extras branch probe is wrapped in Invoke-Git, which exits on non-zero; 'rev-parse --verify --quiet' always exits 1 on a fresh clone, so run_extras_pr:true can never succeed (#4667)
+* ci(changelog.yml): 'git add' runs before the porcelain check, so the following 'git diff --staged' else branch is unreachable; choco.yml and bump-version.yml order the same two guards the other way (#4659)
+* ci(wiki.yml):  the 'workspace files are present' guard uses 'ls -A .', which always lists .git after actions/checkout, so the empty/inaccessible branch is unreachable (#4678)
+* ci(security.yml): the concurrency group falls back to github.sha for push/schedule/dispatch, making it unique per run and inert; all five sibling workflows key on github.ref (residual of #1098) (#4673)
+* ci(download-with-retry/action.yml): output_path is run through ExpandString, which evaluates $(...) subexpressions as code; no caller uses the environment-variable expansion it was added for (#4657)
+* fix: various robustness, security, inconsistency, and code quality issues (check GitHub Issues for more details)
+
+### Downloads
+* [servy-9.0-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-arm64-installer.exe) - 76.19 MB
+* [servy-9.0-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-arm64-portable.7z) - 77.53 MB
+* [servy-9.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-net48-sbom.xml) - 0.03 MB
+* [servy-9.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-net48-x64-installer.exe) - 4.31 MB
+* [servy-9.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-net48-x64-portable.7z) - 2.07 MB
+* [servy-9.0-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-sbom.xml) - 0.04 MB
+* [servy-9.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-x64-installer.exe) - 82.24 MB
+* [servy-9.0-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-x64-portable.7z) - 80.11 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.0.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.0.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v8.9...v9.0
+
 ## [Servy 8.9](https://github.com/aelassas/servy/releases/tag/v8.9)
 
 **Date:** 2026-07-30 | **Tag:** [`v8.9`](https://github.com/aelassas/servy/tree/v8.9)
