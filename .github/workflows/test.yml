@@ -41,6 +41,7 @@ jobs:
       VSTEST_EXCLUSIONS: "[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/*.Designer.cs,**/obj/**/*"
       REPORTGENERATOR_ASSEMBLIES: "-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
       REPORTGENERATOR_FILES: "-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
 
     steps:
       - name: Checkout repository
@@ -48,6 +49,8 @@ jobs:
                   
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Restore dependencies
         run: dotnet restore Servy.sln

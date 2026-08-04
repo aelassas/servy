@@ -24,6 +24,7 @@ jobs:
     
     env:
       SONAR_SCANNER_VERSION: "11.2.1"
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
 
     steps:
       # 1. Checkout code first so the custom local action is available
@@ -43,6 +44,8 @@ jobs:
       # 3. CRITICAL: Setup .NET using the custom action to satisfy global.json
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}          
 
       # 4. Cache Packages
       - name: Cache SonarCloud packages

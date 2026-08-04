@@ -309,13 +309,13 @@ jobs:
                   description  = $canonicalObj.description
                   homepage     = $canonicalObj.homepage
                   license      = $canonicalObj.license
-                  architecture = @{
-                      '64bit' = @{
+                  architecture = [PSCustomObject]@{
+                      '64bit' = [PSCustomObject]@{
                           url         = $installerUrlX64
                           hash        = $env:HASH_X64
                           extract_dir = $extractX64
                       }
-                      'arm64' = @{
+                      'arm64' = [PSCustomObject]@{
                           url         = $installerUrlArm64
                           hash        = $env:HASH_ARM64
                           extract_dir = $extractArm64

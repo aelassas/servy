@@ -19,9 +19,9 @@ namespace Servy.UI.IntegrationTests.Services
 
         public HelpServiceIntegrationTests()
         {
-            // Arrange
             _mockMessageBox = new Mock<IMessageBoxService>();
             _service = new HelpService(_mockMessageBox.Object);
+            UiHeadless.IsEnabled = true;
         }
 
         public void Dispose()
@@ -141,6 +141,40 @@ namespace Servy.UI.IntegrationTests.Services
 
             // Assert
             _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task CheckUpdates_NewerVersionAvailable_UserConfirms_InHeadlessMode_DoesNotOpenBrowser()
+        {
+            // Arrange
+            // 1. Mock GitHub API returning a newer version tag
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("{ 'tag_name': 'v9999.0', 'html_url': 'https://github.com/aelassas/servy/releases/tag/v9999.0' }")
+                });
+
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+
+            // 2. Mock user clicking "Yes" on the update prompt
+            _mockMessageBox
+                .Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption))
+                .ReturnsAsync(true);
+
+            // Act
+            // Because UiHeadless.IsEnabled is true (via UiHeadlessFixture),
+            // HelpService.OpenExternalUrl short-circuits and will NOT call Process.Start.
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption), Times.Once);
         }
 
         #endregion

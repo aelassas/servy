@@ -35,7 +35,7 @@ jobs:
       CONFIGURATION: Release
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream script downloads
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
       
       # Dynamic Environment Variables based on selected architecture
       RUNTIME: ${{ inputs.arm64 == true && 'win-arm64' || 'win-x64' }}
@@ -85,6 +85,8 @@ jobs:
       # -----------------------------------------------------
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Install CycloneDX Tools
         uses: ./.github/actions/setup-cyclonedx
@@ -661,11 +663,12 @@ jobs:
 
       - name: Check Installer VT Status
         if: ${{ steps.vt_installer.outcome == 'failure' }}
+        shell: pwsh
         run: echo "::warning::VirusTotal scan for installer failed or timed out."
 
       - name: Cool down API
-        run: Start-Sleep -s 15
         shell: pwsh
+        run: Start-Sleep -s 15
 
       - name: Scan Portable Package with VirusTotal
         id: vt_portable
@@ -678,4 +681,5 @@ jobs:
 
       - name: Check Portable VT Status
         if: ${{ steps.vt_portable.outcome == 'failure' }}
+        shell: pwsh
         run: echo "::warning::VirusTotal scan for portable package failed or timed out."

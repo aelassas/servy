@@ -7,18 +7,26 @@
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
 
+inputs:
+  max_retries:
+    description: 'Maximum number of download attempts for dotnet-install.ps1'
+    required: false
+    default: '5'
+
 runs:
   using: "composite"
   steps:
     - name: Install .NET SDK
       shell: pwsh
+      env:
+        INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
       run: |
         $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
         # Relocate the temporary script to the runner's temp directory to prevent workspace pollution
         $installerPath = Join-Path $env:RUNNER_TEMP "dotnet-install.ps1"
 
-        $maxRetries = 5
+        $maxRetries = [int]$env:INPUT_MAX_RETRIES
         for ($i = 0; $i -lt $maxRetries; $i++) {
           # Use --fail to force exit code 22 on HTTP 400+, allowing the retry loop to capture transient server errors.
           curl.exe -fL $url -o $installerPath

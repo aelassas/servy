@@ -33,12 +33,18 @@ jobs:
     timeout-minutes: 60
     name: Dependency Scanning
     runs-on: windows-latest
+
+    env:
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
+
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
 
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}          
 
       - name: Cache NuGet packages 
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
@@ -102,6 +108,10 @@ jobs:
     timeout-minutes: 30
     name: Static Analysis (CodeQL)
     runs-on: windows-latest
+
+    env:
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads    
+
     # Elevate permissions specifically for CodeQL to write security results
     permissions:
       security-events: write
@@ -119,6 +129,8 @@ jobs:
 
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}    
 
       - name: Check .NET version
         run: dotnet --version
