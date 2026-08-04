@@ -26,6 +26,8 @@
     Author: Akram El Assas
     Project: Servy
 #>
+
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidatePattern("^\d+\.\d+$")]
