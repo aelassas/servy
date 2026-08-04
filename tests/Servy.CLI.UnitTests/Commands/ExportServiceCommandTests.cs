@@ -73,7 +73,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Strings.Msg_InvalidConfigFileType, result.Message);
+            Assert.Equal(string.Format(Strings.Msg_UnsupportedFileType, "invalid"), result.Message);
         }
 
         [Fact]
