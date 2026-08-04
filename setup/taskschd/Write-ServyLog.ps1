@@ -73,7 +73,8 @@ function Write-ServyLog {
                     if ([System.IO.File]::Exists($target)) {
                         $attempt = 0
                         do {
-                            if ($attempt -gt 0) { Start-Sleep -Milliseconds 1; $localTime = (Get-Date).ToString('yyyyMMdd-HHmmss-fff', $inv) }
+                            Start-Sleep -Milliseconds 1
+                            $localTime = (Get-Date).ToString('yyyyMMdd-HHmmss-fff', $inv)
                             $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
                             $target = Join-Path $logDir $rotatedFileName
                             $attempt++
@@ -83,11 +84,13 @@ function Write-ServyLog {
                     # Use .NET IO for atomic renaming; Rename-Item can exhibit quirky behavior under load
                     [System.IO.File]::Move($absPath, $target)
 
-                    $rotatedPattern = "${baseName}_*${ext}"
-                    Get-ChildItem -Path $logDir -Filter $rotatedPattern -ErrorAction SilentlyContinue |
-                        Sort-Object LastWriteTime -Descending |
-                        Select-Object -Skip $MaxBackupFiles |
-                        Remove-Item -Force -ErrorAction SilentlyContinue
+                    if ($MaxBackupFiles -gt 0) {
+                        $rotatedPattern = "${baseName}_*${ext}"
+                        Get-ChildItem -Path $logDir -Filter $rotatedPattern -ErrorAction SilentlyContinue |
+                            Sort-Object LastWriteTime -Descending |
+                            Select-Object -Skip $MaxBackupFiles |
+                            Remove-Item -Force -ErrorAction SilentlyContinue
+                    }
                 }
             }
 
@@ -114,9 +117,7 @@ function Write-ServyLog {
             if ($hasLock) {
                 $mutex.ReleaseMutex()
             }
-            if ($null -ne $mutex) {
-                $mutex.Dispose()
-            }
+            $mutex.Dispose()
         }
     }
     catch {

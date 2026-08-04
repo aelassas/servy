@@ -5,7 +5,7 @@ $LogScriptPath = Join-Path $ScriptDir "Write-ServyLog.ps1"
 
 if (-not (Test-Path $LogScriptPath)) {
     Write-Host "Error: Could not find Write-ServyLog.ps1 at $LogScriptPath" -ForegroundColor Red
-    return
+    exit 1
 }
 
 # Define centralized test workload dimensions to eliminate magic number duplication
@@ -35,7 +35,7 @@ $WorkerScript = {
     $rng = [System.Random]::new()
     for ($i = 1; $i -le $WritesCount; $i++) {
         $Msg = "Worker {0:D2} | Payload Sequence {1:D3} | Testing Mutex Integrity" -f $WorkerId, $i
-        Write-ServyLog -FilePath $FilePath -Message $Msg -MaxSizeBytes $MaxSize
+        Write-ServyLog -FilePath $FilePath -Message $Msg -MaxSizeBytes $MaxSize -MaxBackupFiles 0
         
         # Micro-sleep to vary execution interleaving slightly
         [System.Threading.Thread]::Sleep($rng.Next(1, 5))
@@ -58,7 +58,7 @@ Write-Host "Analyzing log files for multi-process safety exceptions..." -Foregro
 $CapturedOutput = $Jobs | Receive-Job *>&1
 
 # Extract warnings or errors matching our criteria
-$Warnings = $CapturedOutput | Where-Object { $_ -match "Servy Critical Logging Failure" }
+$Warnings = $CapturedOutput | Where-Object { $_ -match "Servy Critical Logging Failure|Mutex timeout" }
 
 if ($Warnings) {
     Write-Host "FAIL: Swallowed I/O exceptions or Mutex timeouts detected:" -ForegroundColor Red
@@ -94,6 +94,7 @@ Write-Host "  Total Written:     $TotalLines / $ExpectedLines expected lines." -
 
 if ($TotalLines -eq $ExpectedLines -and -not $Warnings) {
     Write-Host "SUCCESS: 100% of concurrent log entries were structurally preserved without line drops!" -ForegroundColor Green
+    exit 0
 } else {
     $Deficit = $ExpectedLines - $TotalLines
     if ($Deficit -gt 0) {
@@ -101,4 +102,5 @@ if ($TotalLines -eq $ExpectedLines -and -not $Warnings) {
     } else {
         Write-Host "FAIL: Total line count matches, but tracking execution warnings were emitted." -ForegroundColor Red
     }
+    exit 1
 }
