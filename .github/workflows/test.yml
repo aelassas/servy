@@ -329,12 +329,19 @@ jobs:
                 state: 'open'
               });
 
+              const body = `${target.provider} upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+
+              if (issues.data.length === 0) {
+                core.warning(`${target.provider} upload failed, but no open issue is labelled '${target.label}' - nobody was notified. ${body}`);
+                continue;
+              }
+
               for (const issue of issues.data) {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issue.number,
-                  body: `${target.provider} upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+                  body,
                 });
               }
             }

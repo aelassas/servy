@@ -19,9 +19,9 @@ inputs:
     description: 'Descriptive name of the asset used in logging contexts'
     required: true
   max_retries:
-    description: 'Maximum number of network connection attempts before breaking out'
+    description: 'Number of retries after the initial attempt (0 = try once, no retry)'
     required: false
-    default: '5'
+    default: '4'
 
 runs:
   using: 'composite'
@@ -46,17 +46,18 @@ runs:
             New-Item -ItemType Directory -Force -Path $parentDir | Out-Null
         }
 
-        for ($i = 0; $i -lt $retries; $i++) {
+        $attempts = $retries + 1
+        for ($i = 0; $i -lt $attempts; $i++) {
             try {
                 Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
                 break
             }
             catch {
-                if ($i -eq ($retries - 1)) { 
-                    throw "Failed to download $asset after $retries attempts. Error: $_" 
+                if ($i -eq ($attempts - 1)) {
+                    throw "Failed to download $asset after $attempts attempts. Error: $_"
                 }
                 $delay = 3 * [math]::Pow(2, $i)
-                Write-Host "Transient download failure for $asset. Retrying in $delay seconds... (Attempt $($i + 1)/$retries)"
+                Write-Host "Transient download failure for $asset. Retrying in $delay seconds... (Attempt $($i + 1)/$attempts)"
                 Start-Sleep -Seconds $delay
             }
         }

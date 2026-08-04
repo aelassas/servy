@@ -2,6 +2,7 @@
 using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading;
 using static Servy.Core.Native.NativeMethods;
@@ -35,12 +36,14 @@ namespace Servy.Core.Native
         /// parent-to-children relationship map and a complete snapshot map for upward traversal.
         /// </summary>
         /// <returns>A tuple containing the metadata snapshot map and the parent-to-child relationship map.</returns>
+        /// <exception cref="Win32Exception">Thrown when the OS snapshot creation fails due to unrecoverable system errors or exhausted retries.</exception>
         public static (Dictionary<int, ProcessInfoNode> Snapshot, Dictionary<int, List<int>> ByParent) BuildSnapshotAndChildMap()
         {
             var snapshotMap = new Dictionary<int, ProcessInfoNode>();
             var byParent = new Dictionary<int, List<int>>();
 
             IntPtr snapshot = IntPtr.Zero;
+            int lastError = 0;
 
             // Bounded retry sequence matching Microsoft's explicit optimization guidance for busy systems
             for (int attempt = 0; attempt < AppConfig.Toolhelp32SnapshotMaxRetries; attempt++)
@@ -50,13 +53,13 @@ namespace Servy.Core.Native
                 if (snapshot != IntPtr.Zero && snapshot != INVALID_HANDLE_VALUE)
                     break;
 
-                int err = Marshal.GetLastWin32Error();
+                lastError = Marshal.GetLastWin32Error();
 
                 // If it is a hard structural failure (e.g., Access Denied), abort immediately without wasting time in a loop
-                if (err != ERROR_BAD_LENGTH)
+                if (lastError != ERROR_BAD_LENGTH)
                 {
-                    Logger.Warn($"CreateToolhelp32Snapshot failed with a non-recoverable system error (Win32 error {err}). Process map build will be a no-op for this invocation.");
-                    return (snapshotMap, byParent);
+                    Logger.Warn($"CreateToolhelp32Snapshot failed with a non-recoverable system error (Win32 error {lastError}).");
+                    throw new Win32Exception(lastError, $"CreateToolhelp32Snapshot failed with Win32 error {lastError}.");
                 }
 
                 // Small brief yield thread break to give the system process table time to settle down
@@ -65,8 +68,8 @@ namespace Servy.Core.Native
 
             if (snapshot == IntPtr.Zero || snapshot == INVALID_HANDLE_VALUE)
             {
-                Logger.Warn("CreateToolhelp32Snapshot kept failing transiently with ERROR_BAD_LENGTH after maximum retries; process map build is a no-op for this invocation.");
-                return (snapshotMap, byParent);
+                Logger.Warn("CreateToolhelp32Snapshot kept failing transiently with ERROR_BAD_LENGTH after maximum retries.");
+                throw new Win32Exception(lastError != 0 ? lastError : ERROR_BAD_LENGTH, "CreateToolhelp32Snapshot kept failing transiently after maximum retries.");
             }
 
             try
