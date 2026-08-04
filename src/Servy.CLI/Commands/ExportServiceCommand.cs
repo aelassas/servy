@@ -22,6 +22,9 @@ namespace Servy.CLI.Commands
         /// Initializes a new instance of the <see cref="ExportServiceCommand"/> class.
         /// </summary>
         /// <param name="serviceRepository">Service repository.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="serviceRepository"/> is <c>null</c>.
+        /// </exception>
         public ExportServiceCommand(IServiceRepository serviceRepository)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));

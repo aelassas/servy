@@ -2,6 +2,7 @@
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
+using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -39,27 +40,40 @@ namespace Servy.CLI.Commands
             var action = string.Format(Strings.Msg_UninstallServiceAction, opts.ServiceName);
             var suggestion = Strings.Msg_UninstallServiceSuggestion;
 
-            // Handle the case where the Windows service is already removed from SCM, but leftover database records remain.
-            if (!_serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken: cancellationToken))
+            return await ExecuteWithHandlingAsync("uninstall", action, suggestion, async () =>
             {
-                var existingDbService = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: false, cancellationToken: cancellationToken);
-                if (existingDbService != null)
+                if (string.IsNullOrWhiteSpace(opts.ServiceName))
                 {
-                    await _serviceRepository.DeleteAsync(opts.ServiceName, cancellationToken);
-                    return CommandResult.Ok(string.Format(Strings.Msg_UninstallServiceNotInstalled, opts.ServiceName));
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
                 }
-            }
 
-            return await ExecuteServiceOperationAsync(
-                commandName: "uninstall",
-                action: action,
-                suggestion: suggestion,
-                serviceName: opts.ServiceName,
-                serviceManager: _serviceManager,
-                operation: (token) => _serviceManager.UninstallServiceAsync(opts.ServiceName, cancellationToken: token),
-                successMessageFormatter: (name) => string.Format(Strings.Msg_UninstallSuccess, name),
-                onSuccess: (token) => _serviceRepository.DeleteAsync(opts.ServiceName, cancellationToken: token),
-                cancellationToken: cancellationToken);
+                if (!BypassElevationCheck)
+                {
+                    SecurityHelper.EnsureAdministrator();
+                }
+
+                // Handle the case where the Windows service is already removed from SCM, but leftover database records remain.
+                if (!_serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken: cancellationToken))
+                {
+                    var existingDbService = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: false, cancellationToken: cancellationToken);
+                    if (existingDbService != null)
+                    {
+                        await _serviceRepository.DeleteAsync(opts.ServiceName, cancellationToken);
+                        return CommandResult.Ok(string.Format(Strings.Msg_UninstallServiceNotInstalled, opts.ServiceName));
+                    }
+                }
+
+                return await ExecuteServiceOperationAsync(
+                    commandName: "uninstall",
+                    action: action,
+                    suggestion: suggestion,
+                    serviceName: opts.ServiceName,
+                    serviceManager: _serviceManager,
+                    operation: (token) => _serviceManager.UninstallServiceAsync(opts.ServiceName, cancellationToken: token),
+                    successMessageFormatter: (name) => string.Format(Strings.Msg_UninstallSuccess, name),
+                    onSuccess: (token) => _serviceRepository.DeleteAsync(opts.ServiceName, cancellationToken: token),
+                    cancellationToken: cancellationToken);
+            });
         }
     }
 }

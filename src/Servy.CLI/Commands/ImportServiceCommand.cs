@@ -37,6 +37,12 @@ namespace Servy.CLI.Commands
         /// <param name="xmlServiceValidator">Validator for XML service configurations.</param>
         /// <param name="jsonServiceValidator">Validator for JSON service configurations.</param>
         /// <param name="processHelper">Helper for process related formatting and parsing.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="serviceRepository"/>, <paramref name="xmlServiceSerializer"/>,
+        /// <paramref name="jsonServiceSerializer"/>, <paramref name="serviceManager"/>,
+        /// <paramref name="xmlServiceValidator"/>, <paramref name="jsonServiceValidator"/>, or
+        /// <paramref name="processHelper"/> is <c>null</c>.
+        /// </exception>
         public ImportServiceCommand(
             IServiceRepository serviceRepository,
             IXmlServiceSerializer xmlServiceSerializer,

@@ -190,7 +190,8 @@ namespace Servy.CLI.Commands
                 }
                 else
                 {
-                    Logger.Error(res.ErrorMessage);
+                    var reason = string.IsNullOrWhiteSpace(res.ErrorMessage) ? Strings.Msg_UnknownError : res.ErrorMessage;
+                    Logger.Error($"install: failed to install service '{opts.ServiceName}': {reason}");
                     return res.ToFailure();
                 }
             });
