@@ -648,7 +648,7 @@ namespace Servy.Core.Config
         /// Bounds heavy OS calls and process inspection operations during service searches to prevent
         /// thread-pool starvation on systems with high core counts. Defaults to <see cref="Environment.ProcessorCount"/>.
         /// </remarks>
-        public static int ServiceSearchMaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount);
+        public static readonly int ServiceSearchMaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount);
 
         #endregion
 

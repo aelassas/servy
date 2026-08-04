@@ -116,6 +116,13 @@ namespace Servy.Core.EnvironmentVariables
                 return false;
             }
 
+            if (value.Contains("\0"))
+            {
+                errorMessage = string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, value);
+                resultKind = EnvVarValidationResultKind.GeneralFailure;
+                return false;
+            }
+
             // Return clean success state across all validation boundaries
             resultKind = EnvVarValidationResultKind.Success;
             return true;
