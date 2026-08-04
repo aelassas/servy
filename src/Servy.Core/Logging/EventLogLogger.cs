@@ -146,38 +146,16 @@ namespace Servy.Core.Logging
 
         #region IDisposable implementation
 
-        private bool _disposed = false;
-
         /// <summary>
-        /// Releases all resources used by the <see cref="EventLogLogger"/>.
+        /// Disables Windows Event Log output and resets initialization state for this logger instance.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Protected implementation of Dispose pattern.
-        /// </summary>
-        /// <param name="disposing">True if called from Dispose, false if called from a finalizer.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (_disposed)
+            lock (_eventLogLock)
             {
-                return;
+                _isInitialized = false;
+                _isEventLogEnabled = false;
             }
-
-            if (disposing)
-            {
-                lock (_eventLogLock)
-                {
-                    _isInitialized = false;
-                    _isEventLogEnabled = false;
-                }
-            }
-
-            _disposed = true;
         }
 
         #endregion
@@ -331,12 +309,12 @@ namespace Servy.Core.Logging
 
         /// <summary>
         /// A lightweight wrapper that delegates logging to the parent <see cref="EventLogLogger"/> instance.
-        /// This prevents allocating a new native <see cref="EventLog"/> handle for every scope creation.
+        /// Centralizes event source registration and message formatting across scoped contexts.
         /// </summary>
         /// <remarks>
-        /// Unlike the parent logger, scoped instances maintain their own independent LogLevel and enabled status.
-        /// Exception: enabling event logging on a scope also (re-)enables the parent, because the parent owns
-        /// the native EventLog handle ("self-heal"). Disabling a scope never affects the parent.
+        /// Scoped instances maintain their own independent LogLevel and enabled status.
+        /// Enabling event logging on a scope also (re-)enables the parent ("self-heal").
+        /// Disabling a scope never affects the parent.
         /// </remarks>
         private sealed class ScopedEventLogLogger : IServyLogger
         {
@@ -350,7 +328,7 @@ namespace Servy.Core.Logging
             /// <summary>
             /// Initializes a new instance of the <see cref="ScopedEventLogLogger"/> class.
             /// </summary>
-            /// <param name="parent">The parent logger instance that holds the unmanaged EventLog handle.</param>
+            /// <param name="parent">The parent logger instance that manages event source initialization.</param>
             /// <param name="prefix">The prefix for this scoped logger.</param>
             /// <param name="level">The active structural log level baseline context applied for filtering.</param>
             /// <param name="isEventLogEnabled">Specifies the initial pipeline tracking state for the Event Log sink.</param>
@@ -408,9 +386,9 @@ namespace Servy.Core.Logging
             }
 
             /// <summary>
-            /// No-op implementation. The parent <see cref="EventLogLogger"/> owns the unmanaged resources.
+            /// No-op implementation. Holds no managed or unmanaged resources.
             /// </summary>
-            public void Dispose() { /* no-op; parent owns the EventLog */ }
+            public void Dispose() { /* no-op */ }
 
             /// <inheritdoc />
             public IServyLogger CreateScoped(string prefix) => CreateScopedInstance(prefix);

@@ -32,12 +32,14 @@ namespace Servy.Core.Logging
 
                     // Enforces immediate context disposal of the native EVT_HANDLE 
                     // as soon as the mapped data transfer object is yielded.
+                    ServyEventLogEntry dto;
                     using (evt)
                     {
-                        ServyEventLogEntry dto = MapToDto(evt);
-                        processedCount++;
-                        yield return dto;
+                        dto = MapToDto(evt);
                     }
+
+                    processedCount++;
+                    yield return dto;
                 }
             }
         }
@@ -133,14 +135,15 @@ namespace Servy.Core.Logging
             if (raw.Value < DateTime.MinValue.AddDays(1))
                 return DateTimeOffset.MinValue;
 
-            // If the framework passes it as explicitly UTC, 
-            // project it directly with a Zero offset to satisfy the UTC contract.
+            // Explicitly-UTC values project straight to a Zero offset.
             if (raw.Value.Kind == DateTimeKind.Utc)
             {
-                return new DateTimeOffset(DateTime.SpecifyKind(raw.Value, DateTimeKind.Utc), TimeSpan.Zero);
+                return new DateTimeOffset(raw.Value, TimeSpan.Zero);
             }
 
-            // Otherwise, handle it safely as local system time (observed as UTC+1 during local non-DST)
+            // Local and Unspecified are both interpreted with the reading machine's current
+            // UTC offset by this constructor; Unspecified .evtx timestamps therefore inherit
+            // the offset of the machine reading the log, not the one that wrote it.
             return new DateTimeOffset(raw.Value);
         }
     }
