@@ -112,12 +112,11 @@ namespace Servy.Core.Native
                 throw new ArgumentException(invalidMsg);
             }
 
-            string domain = null;
-            string user = username;
-
             var parts = username.Split('\\');
-            domain = parts[0]?.Trim();
-            user = parts[1]?.Trim();
+
+            // The regex above admits exactly one backslash, so parts.Length == 2 here.
+            string domain = parts[0].Trim();
+            string user = parts[1].Trim();
 
             if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(user?.TrimEnd('$')))
             {
