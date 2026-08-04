@@ -147,7 +147,7 @@ namespace Servy.Service.ProcessManagement
             var psi = CreateStartInfo(
                 options.ExecutablePath,
                 options.Arguments ?? string.Empty,
-                options.WorkingDirectory!,
+                options.StartupDirectory!,
                 options.EnvironmentVariables!,
                 options.EnableConsoleUI,
                 logger,

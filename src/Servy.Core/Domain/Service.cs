@@ -537,7 +537,7 @@ namespace Servy.Core.Domain
                 Description = Description ?? string.Empty,
                 WrapperExePath = wrapperExePath,
                 RealExePath = ExecutablePath,
-                WorkingDirectory = StartupDirectory ?? Path.GetDirectoryName(ExecutablePath) ?? string.Empty,
+                StartupDirectory = StartupDirectory,
                 RealArgs = Parameters ?? string.Empty,
                 StartType = StartupType,
                 ProcessPriority = Priority,
@@ -563,7 +563,7 @@ namespace Servy.Core.Domain
                 Password = RunAsLocalSystem ? null : Password,
 
                 PreLaunchExePath = PreLaunchExecutablePath,
-                PreLaunchWorkingDirectory = PreLaunchStartupDirectory,
+                PreLaunchStartupDirectory = PreLaunchStartupDirectory,
                 PreLaunchArgs = PreLaunchParameters,
                 PreLaunchEnvironmentVariables = PreLaunchEnvironmentVariables,
                 PreLaunchStdoutPath = PreLaunchStdoutPath,
@@ -573,11 +573,11 @@ namespace Servy.Core.Domain
                 PreLaunchIgnoreFailure = PreLaunchIgnoreFailure,
 
                 FailureProgramPath = FailureProgramPath,
-                FailureProgramWorkingDirectory = FailureProgramStartupDirectory,
+                FailureProgramStartupDirectory = FailureProgramStartupDirectory,
                 FailureProgramArgs = FailureProgramParameters,
 
                 PostLaunchExePath = PostLaunchExecutablePath,
-                PostLaunchWorkingDirectory = PostLaunchStartupDirectory,
+                PostLaunchStartupDirectory = PostLaunchStartupDirectory,
                 PostLaunchArgs = PostLaunchParameters,
 
                 EnableDebugLogs = EnableDebugLogs,
@@ -589,13 +589,13 @@ namespace Servy.Core.Domain
                 StopTimeout = StopTimeout,
 
                 PreStopExePath = PreStopExecutablePath,
-                PreStopWorkingDirectory = PreStopStartupDirectory,
+                PreStopStartupDirectory = PreStopStartupDirectory,
                 PreStopArgs = PreStopParameters,
                 PreStopTimeout = PreStopTimeoutSeconds,
                 PreStopLogAsError = PreStopLogAsError,
 
                 PostStopExePath = PostStopExecutablePath,
-                PostStopWorkingDirectory = PostStopStartupDirectory,
+                PostStopStartupDirectory = PostStopStartupDirectory,
                 PostStopArgs = PostStopParameters,
             };
 

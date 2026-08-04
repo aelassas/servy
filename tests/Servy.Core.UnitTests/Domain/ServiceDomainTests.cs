@@ -270,7 +270,7 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.DisplayName, captured.DisplayName);
             Assert.Equal(service.Description, captured.Description);
             Assert.Equal(service.ExecutablePath, captured.RealExePath);
-            Assert.Equal(service.StartupDirectory, captured.WorkingDirectory);
+            Assert.Equal(service.StartupDirectory, captured.StartupDirectory);
             Assert.Equal(service.Parameters, captured.RealArgs);
             Assert.Equal(service.StartupType, captured.StartType);
             Assert.Equal(service.Priority, captured.ProcessPriority);
@@ -296,7 +296,7 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.UserAccount, captured.Username);
             Assert.Equal(service.Password, captured.Password);
             Assert.Equal(service.PreLaunchExecutablePath, captured.PreLaunchExePath);
-            Assert.Equal(service.PreLaunchStartupDirectory, captured.PreLaunchWorkingDirectory);
+            Assert.Equal(service.PreLaunchStartupDirectory, captured.PreLaunchStartupDirectory);
             Assert.Equal(service.PreLaunchParameters, captured.PreLaunchArgs);
             Assert.Equal(service.PreLaunchEnvironmentVariables, captured.PreLaunchEnvironmentVariables);
             Assert.Equal(service.PreLaunchStdoutPath, captured.PreLaunchStdoutPath);
@@ -305,23 +305,23 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.PreLaunchRetryAttempts, captured.PreLaunchRetryAttempts);
             Assert.Equal(service.PreLaunchIgnoreFailure, captured.PreLaunchIgnoreFailure);
             Assert.Equal(service.FailureProgramPath, captured.FailureProgramPath);
-            Assert.Equal(service.FailureProgramStartupDirectory, captured.FailureProgramWorkingDirectory);
+            Assert.Equal(service.FailureProgramStartupDirectory, captured.FailureProgramStartupDirectory);
             Assert.Equal(service.FailureProgramParameters, captured.FailureProgramArgs);
             Assert.Equal(service.EnvironmentVariables, captured.EnvironmentVariables);
             Assert.Equal(service.ServiceDependencies, captured.ServiceDependencies);
             Assert.Equal(service.PostLaunchExecutablePath, captured.PostLaunchExePath);
-            Assert.Equal(service.PostLaunchStartupDirectory, captured.PostLaunchWorkingDirectory);
+            Assert.Equal(service.PostLaunchStartupDirectory, captured.PostLaunchStartupDirectory);
             Assert.Equal(service.PostLaunchParameters, captured.PostLaunchArgs);
             Assert.Equal(service.EnableDebugLogs, captured.EnableDebugLogs);
             Assert.Equal(service.StartTimeout, captured.StartTimeout);
             Assert.Equal(service.StopTimeout, captured.StopTimeout);
             Assert.Equal(service.PreStopExecutablePath, captured.PreStopExePath);
-            Assert.Equal(service.PreStopStartupDirectory, captured.PreStopWorkingDirectory);
+            Assert.Equal(service.PreStopStartupDirectory, captured.PreStopStartupDirectory);
             Assert.Equal(service.PreStopParameters, captured.PreStopArgs);
             Assert.Equal(service.PreStopTimeoutSeconds, captured.PreStopTimeout);
             Assert.Equal(service.PreStopLogAsError, captured.PreStopLogAsError);
             Assert.Equal(service.PostStopExecutablePath, captured.PostStopExePath);
-            Assert.Equal(service.PostStopStartupDirectory, captured.PostStopWorkingDirectory);
+            Assert.Equal(service.PostStopStartupDirectory, captured.PostStopStartupDirectory);
             Assert.Equal(service.PostStopParameters, captured.PostStopArgs);
         }
 
@@ -493,7 +493,7 @@ namespace Servy.Core.UnitTests.Domain
                 .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
                     o.ServiceName == service.Name &&
                     o.RealExePath == null &&
-                    o.WorkingDirectory == string.Empty &&
+                    o.StartupDirectory == null &&
                     o.RealArgs == string.Empty
                 ), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success())

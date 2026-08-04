@@ -24,7 +24,7 @@ namespace Servy.Service.ProcessManagement
         /// Gets or sets the directory in which the process will be started. 
         /// If null, the directory containing the executable is used by default.
         /// </summary>
-        public string? WorkingDirectory { get; set; }
+        public string? StartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the list of environment variables to be injected into the process's environment block.
