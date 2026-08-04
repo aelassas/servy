@@ -38,7 +38,7 @@ namespace Servy.Core.Config
         /// </summary>
         public static readonly ImmutableHashSet<string> LocalServiceAliases = ImmutableHashSet.Create(
             StringComparer.OrdinalIgnoreCase,
-            "LocalService", @".\LocalService", LocalService);
+            "LocalService", @".\LocalService", LocalService, @"NT AUTHORITY\LOCAL SERVICE", "LOCAL SERVICE");
 
         /// <summary>
         /// A collection of well-known alias strings representing the 'NetworkService' account,
@@ -46,6 +46,6 @@ namespace Servy.Core.Config
         /// </summary>
         public static readonly ImmutableHashSet<string> NetworkServiceAliases = ImmutableHashSet.Create(
             StringComparer.OrdinalIgnoreCase,
-            "NetworkService", @".\NetworkService", NetworkService);
+            "NetworkService", @".\NetworkService", NetworkService, @"NT AUTHORITY\NETWORK SERVICE", "NETWORK SERVICE");
     }
 }

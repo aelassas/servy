@@ -207,9 +207,22 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void TryParseFileType_NullOrWhitespaceInputs_ReturnsFalseAndAppendsErrorToken(string input)
+        {
+            // Arrange & Act
+            bool result = Helper.TryParseFileType(input, out ConfigFileType _, out string error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(Strings.Msg_InvalidConfigFileType, error);
+        }
+
+        [Theory]
         [InlineData("invalid")]
         [InlineData("123")]
-        [InlineData("")]
         [InlineData("xml,json")]
         public void TryParseFileType_InvalidInputs_ReturnsFalseAndAppendsErrorToken(string input)
         {
@@ -218,7 +231,7 @@ namespace Servy.CLI.UnitTests.Helpers
 
             // Assert
             Assert.False(result);
-            Assert.Equal(Strings.Msg_InvalidConfigFileType, error);
+            Assert.Equal(string.Format(Strings.Msg_UnsupportedFileType, input), error);
         }
     }
 }
