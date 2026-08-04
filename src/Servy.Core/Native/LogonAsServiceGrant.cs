@@ -132,12 +132,10 @@ namespace Servy.Core.Native
 
             try
             {
-                // Unified: Shared policy initialization block
                 policy = OpenPolicyOrThrow(POLICY_ACCESS.POLICY_LOOKUP_NAMES);
 
                 uint rightsCount = 0;
 
-                // Unified: Shared SID HGlobal allocation block
                 sidPtr = AllocAndCopySid(sid);
 
                 int status = LsaEnumerateAccountRights(policy, sidPtr, out rightsPtr, out rightsCount);
@@ -182,7 +180,8 @@ namespace Servy.Core.Native
                 }
                 if (rightsPtr != IntPtr.Zero)
                 {
-                    // Capture the NTSTATUS result to satisfy code analysis metrics
+                    // A failed LsaFreeMemory leaks the rights buffer; log it rather than
+                    // masking any exception already in flight from the try block.
                     int freeStatus = LsaFreeMemory(rightsPtr);
                     if (freeStatus != 0)
                     {
@@ -191,7 +190,6 @@ namespace Servy.Core.Native
                     }
                 }
 
-                // Apply the same defensive rule check to LsaClose for complete hygiene
                 SafeLsaClose(policy, "account rights check");
             }
         }
@@ -216,7 +214,6 @@ namespace Servy.Core.Native
                                   POLICY_ACCESS.POLICY_CREATE_ACCOUNT |
                                   POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE;
 
-                // Unified: Shared policy initialization block
                 policy = OpenPolicyOrThrow(accessMask);
 
                 buffer = Marshal.StringToHGlobalUni(SE_SERVICE_LOGON_NAME);
@@ -228,7 +225,6 @@ namespace Servy.Core.Native
                 };
                 var rights = new[] { lus };
 
-                // Unified: Shared SID HGlobal allocation block
                 sidPtr = AllocAndCopySid(sid);
 
                 int status = LsaAddAccountRights(policy, sidPtr, rights, 1);
@@ -249,7 +245,6 @@ namespace Servy.Core.Native
                     Marshal.FreeHGlobal(buffer);
                 }
 
-                // Apply the same defensive rule check to LsaClose for complete hygiene
                 SafeLsaClose(policy, "privilege assignment");
             }
         }

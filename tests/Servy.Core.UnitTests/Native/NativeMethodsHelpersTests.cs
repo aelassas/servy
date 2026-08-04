@@ -310,7 +310,7 @@ namespace Servy.Core.UnitTests.Native
 
             // Assert
             Assert.False(identity.IsValidHandleInfo); // Kernel32 probe failed
-            Assert.Null(identity.PrefixDigest); // Prefix probe skipped (CanSeek was false)
+            Assert.Empty(identity.PrefixDigest); // Prefix probe skipped (CanSeek was false)
         }
 
         #endregion

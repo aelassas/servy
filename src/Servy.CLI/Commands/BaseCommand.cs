@@ -157,7 +157,8 @@ namespace Servy.CLI.Commands
                 }
                 else
                 {
-                    Logger.Error(res.ErrorMessage);
+                    var reason = string.IsNullOrWhiteSpace(res.ErrorMessage) ? Strings.Msg_UnknownError : res.ErrorMessage;
+                    Logger.Error($"{commandName}: failed to {action} for '{serviceName}': {reason}");
                     return res.ToFailure();
                 }
             });
