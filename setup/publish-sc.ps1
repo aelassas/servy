@@ -32,7 +32,6 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-
 $scriptDir = $PSScriptRoot
 
 # Import newly extracted common functions first to make Assert-ServyVersion available
@@ -56,7 +55,6 @@ Assert-ServyVersion -Version $Version
 # ========================
 # Configuration
 # ========================
-
 # Resolve the root once at the start (this is safe as the script is running inside it)
 $rootDir    = (Resolve-Path (Join-Path $scriptDir "..")).Path
 $servyDir   = Join-Path $rootDir "src\Servy"
@@ -65,7 +63,7 @@ $managerDir = Join-Path $rootDir "src\Servy.Manager"
 
 # Define paths as strings. Do not resolve them yet.
 $signPath      = Join-Path $rootDir "setup\signpath.ps1"
-$issFile       = Join-Path $scriptDir $(if ($Runtime -eq "win-arm64") { "servy-arm64.iss" } else { "servy.iss" })
+$issFile       = Join-Path $scriptDir "servy.iss"
 $arch          = if ($Runtime -eq "win-arm64") { "arm64" } else { "x64" }
 $packageFolder = Join-Path $scriptDir "servy-$Version-$arch-portable"
 $outputZip     = "$packageFolder.7z"
@@ -125,7 +123,7 @@ foreach ($project in $projects) {
 # Step 2: Build & Sign Installer
 # ========================
 Remove-ItemSafely -Path $installerPath
-Build-Installer -InnoCompiler $innoCompiler -IssFile $issFile -Version $Version
+Build-Installer -InnoCompiler $innoCompiler -IssFile $issFile -Version $Version -Arch $arch
 
 # Validate the installer exists before attempting to sign
 if (Test-Path $installerPath) {

@@ -12,11 +12,25 @@
 
 #define CliExeName "servy-cli.exe"
 
+#ifndef Arch
+  #define Arch "x64"
+#endif
+
+#if Arch == "arm64"
+  #define AppIdGuid    "8343B121-BE1C-463F-AA5B-FD237DD2F8D1"
+  #define ArchAllowed  "arm64"
+  #define Runtime      "win-arm64"
+#else
+  #define AppIdGuid    "8343B121-BE1C-463F-AA5B-FD237DD2F8D0"
+  #define ArchAllowed  "x64compatible"
+  #define Runtime      "win-x64"
+#endif
+
 [Setup]
 PrivilegesRequired=admin
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}
+AppId={{{#AppIdGuid}}
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -31,7 +45,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE.txt
 OutputDir=.
-OutputBaseFilename=servy-{#MyAppVersion}-x64-installer
+OutputBaseFilename=servy-{#MyAppVersion}-{#Arch}-installer
 SetupIconFile=..\src\Servy\servy.ico
 
 Compression=lzma2
@@ -44,15 +58,15 @@ LZMANumFastBytes=273
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 
-ArchitecturesAllowed=x64compatible
-ArchitecturesInstallIn64BitMode=x64compatible
+ArchitecturesAllowed={#ArchAllowed}
+ArchitecturesInstallIn64BitMode={#ArchAllowed}
 WizardStyle=modern dynamic
 
 UsePreviousTasks=no
 AlwaysRestart=no
 
 [Messages]
-SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
+SetupAppRunningError=Setup has detected that %1 is currently running.%n%Please close all instances of it now, then click OK to continue, or Cancel to exit.
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -72,13 +86,13 @@ Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional
 
 [Files]
 ; Main app EXE
-Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
+Source: "..\src\Servy\bin\Release\net10.0-windows\{#Runtime}\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
 
 ; appsettings.desktop.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy\appsettings.desktop.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_main_app
 
 ; CLI
-Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\{#Runtime}\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
 
 ; appsettings.cli.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.CLI\appsettings.cli.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_cli
@@ -89,7 +103,7 @@ Source: "..\src\Servy.CLI\Servy.psd1"; DestDir: "{app}"; Flags: ignoreversion; C
 Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 
 ; Manager
-Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
+Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\{#Runtime}\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
 
 ; appsettings.manager.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.Manager\appsettings.manager.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_manager

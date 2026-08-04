@@ -40,7 +40,7 @@ jobs:
       # Dynamic Environment Variables based on selected architecture
       RUNTIME: ${{ inputs.arm64 == true && 'win-arm64' || 'win-x64' }}
       ARCH: ${{ inputs.arm64 == true && 'arm64' || 'x64' }}
-      ISS_FILE: ${{ inputs.arm64 == true && 'setup\servy-arm64.iss' || 'setup\servy.iss' }}
+      ISS_FILE: 'setup\servy.iss'
       
       # Binary Version & Checksum Pins
       INNO_SETUP_VERSION: "6.6.1"
@@ -506,7 +506,7 @@ jobs:
       - name: Build unsigned installer
         shell: pwsh
         run: |
-          & "$env:ISCC" "$env:ISS_FILE" /DMyAppVersion=$env:VERSION
+          & "$env:ISCC" "$env:ISS_FILE" /DMyAppVersion=$env:VERSION /DArch=$env:ARCH
 
       # -----------------------------------------------------
       # SIGN installer
