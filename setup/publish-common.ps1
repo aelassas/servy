@@ -199,7 +199,7 @@ function New-PortablePackage {
 function Assert-ServyVersion {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory=$true)]
         [string]$Version
     )
 

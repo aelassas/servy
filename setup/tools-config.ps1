@@ -26,7 +26,7 @@
 function Resolve-Tool {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory=$true)]
         [string]$Name,
 
         [string[]]$Fallbacks
