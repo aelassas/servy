@@ -3,6 +3,13 @@
     /// <summary>
     /// Defines service start types for Windows services.
     /// </summary>
+    /// <remarks>
+    /// <b>CRITICAL ARCHITECTURAL NOTE:</b> The integer values assigned to this enumeration are actively
+    /// persisted as <c>INTEGER</c> rows within the underlying SQLite database schema (e.g., <c>ServiceDto.StartupType</c>).
+    /// They must never be renumbered, reordered, or deleted. In particular, <see cref="AutomaticDelayedStart"/> (5) is
+    /// a Servy-defined internal sentinel with no native Win32 anchor, and changing its underlying integer value will
+    /// corrupt existing database rows across upgrades.
+    /// </remarks>
     public enum ServiceStartType : uint
     {
         /// <summary>

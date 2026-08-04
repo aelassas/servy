@@ -214,6 +214,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The environment variable value &apos;{0}&apos; contains illegal characters..
+        /// </summary>
+        public static string Msg_EnvironmentVariableValueInvalidChars {
+            get {
+                return ResourceManager.GetString("Msg_EnvironmentVariableValueInvalidChars", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Service process path cannot be empty..
         /// </summary>
         public static string Msg_ExecutablePathRequired {

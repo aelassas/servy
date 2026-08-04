@@ -248,6 +248,21 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Contains(errorMessages, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
         }
 
+        [Fact]
+        public void Validate_VariableWithNullTerminatorInValue_ReturnsFalse()
+        {
+            // Arrange
+            string input = "KEY=VAL\0ATTACK";
+
+            // Act
+            bool isValid = EnvironmentVariablesValidator.Validate(input, out List<string> errorMessages);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.NotEmpty(errorMessages);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, "VAL\0ATTACK"), errorMessages[0]);
+        }
+
         #region Key Formatting and Security Robustness Rule Tests
 
         [Fact]
