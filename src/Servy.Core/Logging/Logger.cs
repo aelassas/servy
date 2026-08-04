@@ -387,7 +387,7 @@ namespace Servy.Core.Logging
         /// <param name="message">The content of the log entry.</param>
         private static void Log(LogLevel level, string? message)
         {
-            // 1. Volatile read: Thread sees 'null' as soon as InternalInitialize starts
+            // Fast path: nothing to write to. Shutdown() is the only writer that nulls this.
             if (_writer == null) return;
 
             if (string.IsNullOrEmpty(message)) return;
@@ -430,7 +430,9 @@ namespace Servy.Core.Logging
 
                 lock (_lock)
                 {
-                    // 2. Double-check: Correctly see either null or the NEW writer.
+                    // Re-check under the lock: Shutdown() may have disposed and nulled the writer
+                    // between the fast-path read and here. InternalInitialize swaps atomically and
+                    // never publishes null, so a re-init cannot be observed as a gap.
                     if (_writer == null) return;
 
                     _writer.WriteLine(logEntry);

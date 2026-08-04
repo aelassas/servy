@@ -1,8 +1,10 @@
 /**
  * Small Node.js utility to test environment variables in Servy.
- * * Usage example:
+ *
+ * Usage example:
  * .\servy-cli.exe install --name "ServyEnvTest" --path "C:\Program Files\nodejs\node.exe" --params "C:\path\to\nodejs-app-env-vars\console.js" --env "var1=val1;var2=val2;"
- * * This script writes all environment variables except those in baselineEnvKeys to 'output.txt' in the script directory,
+ *
+ * This script writes all environment variables except those in baselineEnvKeys to 'output.txt' in the script directory,
  * and logs them to the console.
  */
 
@@ -69,9 +71,6 @@ fs.appendFileSync(filePath, '\n', "utf8")
 // child.unref()
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// Registered event handles shifted ABOVE the infinite execution block
-// so they successfully attach and provide operational termination interception pathways.
 
 // Handle Ctrl+C (SIGINT) and other termination signals
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
