@@ -46,12 +46,16 @@ function Remove-ItemSafely {
 
     .PARAMETER Version
     The version string to stamp onto the installer package via the preprocessor directive.
+
+    .PARAMETER Arch
+    The target architecture ("x64" or "arm64") passed to the Inno preprocessor directive.
 #>
 function Build-Installer {
     param (
         [Parameter(Mandatory=$true)][string]$InnoCompiler,
         [Parameter(Mandatory=$true)][string]$IssFile,
         [Parameter(Mandatory=$true)][string]$Version,
+        [string]$Arch = "x64",
         [int]$MaxRetry = 3,
         [int]$RetryDelaySeconds = 2
     )
@@ -68,7 +72,7 @@ function Build-Installer {
                 Write-Host "Inno Setup retry attempt $currentAttempt..." -ForegroundColor Yellow 
             }
 
-            & $InnoCompiler $IssFile /DMyAppVersion=$Version
+            & $InnoCompiler $IssFile "/DMyAppVersion=$Version" "/DArch=$Arch"
 
             # MUST check exit code manually to trigger the 'catch' block
             if ($LASTEXITCODE -eq 0) { 
