@@ -297,7 +297,9 @@ jobs:
           $branchName = "update-servy-$env:VERSION"
 
           # Check for an existing PR (merged or open) for this version's branch so we don't recreate it
-          $existingPR = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state all --json number,state --limit 1 | ConvertFrom-Json
+          $prJson = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state all --json number,state --limit 1
+          if ($LASTEXITCODE -ne 0) { throw "gh pr list failed with exit code $LASTEXITCODE" }
+          $existingPR = $prJson | ConvertFrom-Json
           
           if ($existingPR.Count -gt 0) {
               if ($existingPR[0].state -eq "MERGED") {
@@ -424,4 +426,5 @@ jobs:
                 --base master `
                 --head "aelassas:update-servy-$env:VERSION" `
                 --repo ScoopInstaller/Extras
+              if ($LASTEXITCODE -ne 0) { throw "gh pr create failed with exit code $LASTEXITCODE" }
           }

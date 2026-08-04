@@ -11,6 +11,9 @@
     - UTF-16 Big Endian
     - UTF-8 without BOM (Default)
 
+    All return paths configure throwOnInvalidBytes=true so invalid or corrupt
+    bytes fail loudly during decoding instead of being silently replaced with U+FFFD.
+
 .PARAMETER Path
     The full path to the file to check.
 
@@ -39,31 +42,29 @@ function Get-FileEncoding {
     # UTF-32 LE (FF FE 00 00)
     # Check this before UTF-16 LE to avoid false positives.
     if ($readCount -ge 4 -and $buffer[0] -eq 0xFF -and $buffer[1] -eq 0xFE -and $buffer[2] -eq 0x00 -and $buffer[3] -eq 0x00) {
-        return [System.Text.Encoding]::UTF32
+        return New-Object System.Text.UTF32Encoding($false, $true, $true)
     }
 
     # UTF-32 BE (00 00 FE FF)
     if ($readCount -ge 4 -and $buffer[0] -eq 0x00 -and $buffer[1] -eq 0x00 -and $buffer[2] -eq 0xFE -and $buffer[3] -eq 0xFF) {
-        # .NET ships GetEncoding(12001) for UTF-32 BE; new System.Text.UTF32Encoding($true, $true) also works.
-        return [System.Text.Encoding]::GetEncoding(12001)
+        return New-Object System.Text.UTF32Encoding($true, $true, $true)
     }
 
     # UTF-8 with BOM (EF BB BF)
     if ($readCount -ge 3 -and $buffer[0] -eq 0xEF -and $buffer[1] -eq 0xBB -and $buffer[2] -eq 0xBF) {
-        return [System.Text.Encoding]::UTF8
+        return New-Object System.Text.UTF8Encoding($true, $true)
     }
 
     # UTF-16 LE / Unicode (FF FE)
     if ($readCount -ge 2 -and $buffer[0] -eq 0xFF -and $buffer[1] -eq 0xFE) {
-        return [System.Text.Encoding]::Unicode
+        return New-Object System.Text.UnicodeEncoding($false, $true, $true)
     }
 
     # UTF-16 BE / BigEndianUnicode (FE FF)
     if ($readCount -ge 2 -and $buffer[0] -eq 0xFE -and $buffer[1] -eq 0xFF) {
-        return [System.Text.Encoding]::BigEndianUnicode
+        return New-Object System.Text.UnicodeEncoding($true, $true, $true)
     }
 
-    # Default: UTF-8 without BOM; throwOnInvalidBytes=true so a legacy-ANSI file
-    # fails loudly instead of being silently rewritten with U+FFFD replacements
+    # Default: UTF-8 without BOM
     return New-Object System.Text.UTF8Encoding($false, $true)
 }

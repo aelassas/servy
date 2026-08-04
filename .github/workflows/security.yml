@@ -66,21 +66,31 @@ jobs:
           # The pipeline streams the strings sequentially, and ConvertFrom-Json automatically
           # reassembles them into a single coherent JSON block.
           $json = $rawJson | ConvertFrom-Json
-          $hasVuln = $false
+          $vuln = @()
 
           if ($json -and $json.projects) {
             foreach ($proj in $json.projects) {
               foreach ($fw in $proj.frameworks) {
-                if ($fw.topLevelPackages -and $fw.topLevelPackages.vulnerabilities) { $hasVuln = $true }
-                if ($fw.transitivePackages -and $fw.transitivePackages.vulnerabilities) { $hasVuln = $true }
+                foreach ($set in @($fw.topLevelPackages, $fw.transitivePackages)) {
+                  foreach ($pkg in $set) {
+                    foreach ($v in $pkg.vulnerabilities) {
+                      $vuln += [PSCustomObject]@{
+                        Project  = Split-Path $proj.path -Leaf
+                        Package  = $pkg.id
+                        Version  = $pkg.resolvedVersion
+                        Severity = $v.severity
+                        Advisory = $v.advisoryurl
+                      }
+                    }
+                  }
+                }
               }
             }
           }
 
-          if ($hasVuln) {
-            # Print human-readable output to logs for rapid local manual triage
-            dotnet list Servy.sln package --vulnerable --include-transitive
-            throw "Vulnerable NuGet packages detected in Servy.sln - see the package list above."
+          if ($vuln.Count -gt 0) {
+            $vuln | Format-Table -AutoSize | Out-String | Write-Host
+            throw "Vulnerable NuGet packages detected in Servy.sln - see the table above."
           }
           else {
             Write-Host "No vulnerable NuGet packages found in Servy.sln." -ForegroundColor Green

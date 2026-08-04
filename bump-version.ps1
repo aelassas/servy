@@ -31,6 +31,7 @@ Previews all version modifications that would be applied for version 4.0 without
     - Ensure you have backups or version control before running.
 #>
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidatePattern("^\d+\.\d+$")]
