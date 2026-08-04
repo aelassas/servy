@@ -183,8 +183,7 @@ jobs:
           Write-Host "Installing to $installDir..."
           Start-Process ".\$installer" -ArgumentList "/S", "/D=$installDir" -Wait
 
-          # 2. Set variables for runtime state context
-          $env:SEVEN_ZIP = $exePath
+          # 2. Export the 7-Zip path for the packaging step
           Add-Content -Path $env:GITHUB_ENV -Value "SEVEN_ZIP=$exePath"
           if (-not (Test-Path $exePath)) { throw "7z.exe not found at $exePath" }
 

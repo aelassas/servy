@@ -29,8 +29,8 @@ jobs:
 
       - name: Check for non-ASCII bytes in filenames
         run: |
-          # 1. Safety check: Ensure workspace files are present (now at root)
-          if [ -z "$(ls -A .)" ]; then
+          # 1. Safety check: Ensure the wiki checkout contains at least one markdown page
+          if [ -z "$(find . -path ./.git -prune -o -type f -name '*.md' -print -quit)" ]; then
             echo "Error: Wiki repository appears empty or inaccessible."
             exit 1
           fi
