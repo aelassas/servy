@@ -21,7 +21,7 @@ namespace Servy.Core.Services
         public string RealExePath { get; set; } = string.Empty;
 
         /// <summary>The working directory to use when launching the real executable.</summary>
-        public string WorkingDirectory { get; set; }
+        public string StartupDirectory { get; set; }
 
         /// <summary>The command line arguments to pass to the real executable.</summary>
         public string RealArgs { get; set; }
@@ -87,7 +87,7 @@ namespace Servy.Core.Services
         public string FailureProgramPath { get; set; }
 
         /// <summary>Failure program working directory.</summary>
-        public string FailureProgramWorkingDirectory { get; set; }
+        public string FailureProgramStartupDirectory { get; set; }
 
         /// <summary>Failure program parameters.</summary>
         public string FailureProgramArgs { get; set; }
@@ -108,7 +108,7 @@ namespace Servy.Core.Services
         public string PreLaunchExePath { get; set; }
 
         /// <summary>Pre-launch working directory.</summary>
-        public string PreLaunchWorkingDirectory { get; set; }
+        public string PreLaunchStartupDirectory { get; set; }
 
         /// <summary>Command line arguments to pass to the pre-launch executable.</summary>
         public string PreLaunchArgs { get; set; }
@@ -135,7 +135,7 @@ namespace Servy.Core.Services
         public string PostLaunchExePath { get; set; }
 
         /// <summary>Post-launch working directory.</summary>
-        public string PostLaunchWorkingDirectory { get; set; }
+        public string PostLaunchStartupDirectory { get; set; }
 
         /// <summary>Command line arguments to pass to the post-launch executable.</summary>
         public string PostLaunchArgs { get; set; }
@@ -165,7 +165,7 @@ namespace Servy.Core.Services
         public string PreStopExePath { get; set; }
 
         /// <summary>The startup directory for the pre-stop executable.</summary>
-        public string PreStopWorkingDirectory { get; set; }
+        public string PreStopStartupDirectory { get; set; }
 
         /// <summary>The parameters for the pre-stop executable.</summary>
         public string PreStopArgs { get; set; }
@@ -180,7 +180,7 @@ namespace Servy.Core.Services
         public string PostStopExePath { get; set; }
 
         /// <summary>The startup directory for the post-stop executable.</summary>
-        public string PostStopWorkingDirectory { get; set; }
+        public string PostStopStartupDirectory { get; set; }
 
         /// <summary>The parameters for the post-stop executable.</summary>
         public string PostStopArgs { get; set; }

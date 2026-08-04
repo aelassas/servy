@@ -862,7 +862,7 @@ namespace Servy.Service
             {
                 ExecutablePath = options.PreLaunchExecutablePath,
                 Arguments = args,
-                WorkingDirectory = workingDir,
+                StartupDirectory = workingDir,
                 EnvironmentVariables = vars,
                 WaitChunkMs = _waitChunkMs,
                 ScmAdditionalTimeMs = _scmAdditionalTimeMs,
@@ -1433,7 +1433,7 @@ namespace Servy.Service
                 {
                     ExecutablePath = exePath,
                     Arguments = rawArgs ?? string.Empty,
-                    WorkingDirectory = workingDir,
+                    StartupDirectory = workingDir,
                     EnvironmentVariables = _options.EnvironmentVariables,
                     FireAndForget = true,
                     EnableConsoleUI = _options.EnableConsoleUI,
@@ -2520,7 +2520,7 @@ namespace Servy.Service
                 {
                     ExecutablePath = options.PreStopExecutablePath,
                     Arguments = args,
-                    WorkingDirectory = workingDir,
+                    StartupDirectory = workingDir,
                     EnvironmentVariables = options.EnvironmentVariables,
                     FireAndForget = (effectiveTimeoutMs == 0),
                     TimeoutMs = effectiveTimeoutMs,

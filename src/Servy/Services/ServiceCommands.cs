@@ -170,7 +170,7 @@ namespace Servy.Services
                     Description = dto.Description,
                     WrapperExePath = wrapperExePath,
                     RealExePath = dto.ExecutablePath,
-                    WorkingDirectory = dto.StartupDirectory,
+                    StartupDirectory = dto.StartupDirectory,
                     RealArgs = dto.Parameters,
                     StartType = (ServiceStartType)(dto.StartupType ?? (int)AppConfig.DefaultStartupType),
                     ProcessPriority = (ProcessPriority)(dto.Priority ?? (int)AppConfig.DefaultProcessPriority),
@@ -202,7 +202,7 @@ namespace Servy.Services
                     ServiceDependencies = dto.ServiceDependencies,
 
                     PreLaunchExePath = dto.PreLaunchExecutablePath,
-                    PreLaunchWorkingDirectory = dto.PreLaunchStartupDirectory,
+                    PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory,
                     PreLaunchArgs = dto.PreLaunchParameters,
                     PreLaunchEnvironmentVariables = dto.PreLaunchEnvironmentVariables,
                     PreLaunchStdoutPath = dto.PreLaunchStdoutPath,
@@ -212,24 +212,24 @@ namespace Servy.Services
                     PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
                     FailureProgramPath = dto.FailureProgramPath,
-                    FailureProgramWorkingDirectory = dto.FailureProgramStartupDirectory,
+                    FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory,
                     FailureProgramArgs = dto.FailureProgramParameters,
 
                     PostLaunchExePath = dto.PostLaunchExecutablePath,
-                    PostLaunchWorkingDirectory = dto.PostLaunchStartupDirectory,
+                    PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
                     PostLaunchArgs = dto.PostLaunchParameters,
 
                     StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout,
                     StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout,
 
                     PreStopExePath = dto.PreStopExecutablePath,
-                    PreStopWorkingDirectory = dto.PreStopStartupDirectory,
+                    PreStopStartupDirectory = dto.PreStopStartupDirectory,
                     PreStopArgs = dto.PreStopParameters,
                     PreStopTimeout = dto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
                     PreStopLogAsError = dto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
 
                     PostStopExePath = dto.PostStopExecutablePath,
-                    PostStopWorkingDirectory = dto.PostStopStartupDirectory,
+                    PostStopStartupDirectory = dto.PostStopStartupDirectory,
                     PostStopArgs = dto.PostStopParameters,
 
                     // Maintain the EnableDebugLogs override from the incoming config

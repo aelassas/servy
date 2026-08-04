@@ -103,7 +103,7 @@ namespace Servy.CLI.Commands
                     Description = opts.ServiceDescription ?? string.Empty,
                     WrapperExePath = wrapperExePath,
                     RealExePath = opts.ProcessPath ?? string.Empty,
-                    WorkingDirectory = opts.StartupDirectory ?? string.Empty,
+                    StartupDirectory = opts.StartupDirectory ?? string.Empty,
                     RealArgs = opts.ProcessParameters ?? string.Empty,
                     StartType = startupType,
                     ProcessPriority = processPriority,
@@ -131,7 +131,7 @@ namespace Servy.CLI.Commands
 
                     // Pre-Launch
                     PreLaunchExePath = opts.PreLaunchPath,
-                    PreLaunchWorkingDirectory = opts.PreLaunchStartupDir,
+                    PreLaunchStartupDirectory = opts.PreLaunchStartupDir,
                     PreLaunchArgs = opts.PreLaunchParameters,
                     PreLaunchEnvironmentVariables = opts.PreLaunchEnvironmentVariables,
                     PreLaunchStdoutPath = opts.PreLaunchStdoutPath,
@@ -142,12 +142,12 @@ namespace Servy.CLI.Commands
 
                     // Failure program
                     FailureProgramPath = opts.FailureProgramPath,
-                    FailureProgramWorkingDirectory = opts.FailureProgramStartupDir,
+                    FailureProgramStartupDirectory = opts.FailureProgramStartupDir,
                     FailureProgramArgs = opts.FailureProgramParameters,
 
                     // Post-Launch
                     PostLaunchExePath = opts.PostLaunchPath,
-                    PostLaunchWorkingDirectory = opts.PostLaunchStartupDir,
+                    PostLaunchStartupDirectory = opts.PostLaunchStartupDir,
                     PostLaunchArgs = opts.PostLaunchParameters,
 
                     // Debug Logs
@@ -169,14 +169,14 @@ namespace Servy.CLI.Commands
 
                     // Pre-Stop
                     PreStopExePath = opts.PreStopPath,
-                    PreStopWorkingDirectory = opts.PreStopStartupDir,
+                    PreStopStartupDirectory = opts.PreStopStartupDir,
                     PreStopArgs = opts.PreStopParameters,
                     PreStopTimeout = preStopTimeout,
                     PreStopLogAsError = opts.PreStopLogAsError,
 
                     // Post-Stop
                     PostStopExePath = opts.PostStopPath,
-                    PostStopWorkingDirectory = opts.PostStopStartupDir,
+                    PostStopStartupDirectory = opts.PostStopStartupDir,
                     PostStopArgs = opts.PostStopParameters
                 };
 
