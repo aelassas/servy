@@ -19,6 +19,9 @@ namespace Servy.CLI.Commands
         /// Initializes a new instance of the <see cref="StartServiceCommand"/> class.
         /// </summary>
         /// <param name="serviceManager">Service manager to perform service operations.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="serviceManager"/> is <c>null</c>.
+        /// </exception>
         public StartServiceCommand(IServiceManager serviceManager)
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
