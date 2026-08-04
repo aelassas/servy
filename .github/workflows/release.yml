@@ -4,9 +4,9 @@
 #  Purpose:
 #    This workflow provides a unified "release" badge
 #    that reflects the combined status of the following workflows:
-#      - winget.yml       -> Publishes the WinGet manifest
-#      - choco.yml        -> Publishes the Chocolatey package
-#      - scoop.yml        -> Publishes the Scoop manifest to aelassas/scoop-bucket
+#      - winget.yml        -> Publishes the WinGet manifest
+#      - choco.yml         -> Publishes the Chocolatey package
+#      - scoop.yml         -> Publishes the Scoop manifest to aelassas/scoop-bucket
 #      - bump-version.yml -> Bumps version
 #      - changelog.yml    -> Updates the project changelog
 #
@@ -53,14 +53,23 @@ jobs:
             const pending = [];
 
             for (const wf of workflows) {
-              const runs = await github.rest.actions.listWorkflowRuns({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: `${wf}.yml`,
-                per_page: 1,
-              });
-
-              const run = runs.data.workflow_runs[0];
+              let run;
+              try {
+                const runs = await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: `${wf}.yml`,
+                  per_page: 1,
+                });
+                run = runs.data.workflow_runs[0];
+              } catch (e) {
+                if (e.status === 404) {
+                  console.log(`${wf} (workflow not found)`);
+                  failed.push(`${wf} (workflow not found)`);
+                  continue;
+                }
+                throw e;
+              }
               
               if (run) {
                 console.log(`${wf}: ${run.conclusion}`);

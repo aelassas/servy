@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
-                 
+                  
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
 
@@ -235,12 +235,19 @@ jobs:
                 state: 'open'
               });
 
+              const body = `${target.provider} upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+
+              if (issues.data.length === 0) {
+                core.warning(`${target.provider} upload failed, but no open issue is labelled '${target.label}' - nobody was notified. ${body}`);
+                continue;
+              }
+
               for (const issue of issues.data) {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issue.number,
-                  body: `${target.provider} upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+                  body,
                 });
               }
             }

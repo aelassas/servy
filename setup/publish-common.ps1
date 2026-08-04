@@ -121,19 +121,21 @@ function Copy-CommonArtifacts {
     )
     
     # 1. Include Task Scheduler hooks
+    $excludedPatterns = @('smtp-cred.xml', '*.dat', '*.log', '*.test.ps1', 'temp.ps1')
+
     $taskSchdSource = Join-Path $ScriptDir "taskschd"
     if (Test-Path $taskSchdSource) {
         $taskSchdDest = Join-Path $DestFolder "taskschd"
         [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
 
         # Use Get-ChildItem -Recurse -Exclude to ensure the exclusion propagates to all levels
-        Get-ChildItem -Path $taskSchdSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log', '*.test.ps1', 'temp.ps1' |
+        Get-ChildItem -Path $taskSchdSource -Recurse -Exclude $excludedPatterns |
             Copy-Item -Destination {
                 Join-Path $taskSchdDest $_.FullName.Substring($taskSchdSource.Length).TrimStart('\')
             } -Force
 
         # Post-copy verification to ensure no sensitive files leaked into the package
-        $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include 'smtp-cred.xml','*.dat','*.log'
+        $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include $excludedPatterns
         if ($leaks) { 
             throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')" 
         }
