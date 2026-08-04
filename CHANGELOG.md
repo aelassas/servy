@@ -2806,7 +2806,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.0...v6.1
 * fix(desktop): reduce window height on small resolutions
 * fix(cli): typo in `--preStopTimeout` option documentation for `install` command
 * chore(ci): add LoC badges for prod, tests, and total code
-* docs(wiki): add Pre‐Stop & Post‐Stop Actions docs
+* docs(wiki): add Pre-Stop & Post-Stop Actions docs
 
 ### Downloads
 * [servy-6.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-net48-sbom.xml) - 0.01 MB
@@ -3724,7 +3724,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.6...v1.7
 
 **Date:** 2025-09-23 | **Tag:** [`v1.6`](https://github.com/aelassas/servy/tree/v1.6)
 
-* feat(core): add support for [post-launch actions](https://github.com/aelassas/servy/wiki/Pre‐Launch-&-Post‐Launch-Actions#post-launch)
+* feat(core): add support for [post-launch actions](https://github.com/aelassas/servy/wiki/Pre-Launch-&-Post-Launch-Actions#post-launch)
 * feat(installer): add Servy to [Scoop package manager](https://github.com/aelassas/servy/wiki/Installation-Guide#quick-install)
 * fix(configurator): increase tab height for better visibility
 * fix(installer): adjust LZMA dictionary size to 64MB to reduce memory usage during install
@@ -3887,4 +3887,3 @@ choco install -y servy
 * [servy-1.0-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net8.0-x64-installer.exe) - 138.14 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.0.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v1.0.tar.gz)
-

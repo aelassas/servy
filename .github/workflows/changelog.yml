@@ -90,7 +90,14 @@ jobs:
           Function Get-ReleaseEntry {
               param($Release, $PrevRelease)
 
-              $title = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
+              # Regex pattern matching Unicode hyphens, n-dashes, m-dashes, minus signs, and related dash symbols
+              # U+2010 (hyphen), U+2011 (non-breaking hyphen), U+2012 (figure dash), U+2013 (en dash), 
+              # U+2014 (em dash), U+2015 (horizontal bar), U+2212 (minus sign), plus Unicode Dash Punctuation (\p{Pd})
+              $dashPattern = '[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\p{Pd}]'
+
+              $rawTitle = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
+              $title = $rawTitle -replace $dashPattern, '-'
+
               $url = $Release.html_url
               
               $date = if (![string]::IsNullOrWhiteSpace($Release.published_at)) { 
@@ -101,7 +108,9 @@ jobs:
               }
               
               $tag = $Release.tag_name
-              $body = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
+
+              $rawBody = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
+              $body = $rawBody -replace $dashPattern, '-'
 
               $bt = [char]96 
 
@@ -111,7 +120,7 @@ jobs:
               $md += "### Downloads`n"
 
               foreach ($asset in $Release.assets) {
-                  $aName = $asset.name
+                  $aName = $asset.name -replace $dashPattern, '-'
                   $aUrl = $asset.browser_download_url
                   $size = [math]::Round($asset.size / 1MB, 2)
                   $md += "* [$aName]($aUrl) - ${size} MB`n"
