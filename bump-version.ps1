@@ -88,55 +88,16 @@ Update-FilesContent `
 # -----------------------------
 # 2. Update all *.csproj files recursively
 # -----------------------------
-Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch $global:BuildArtifactExclusionRegex } |
-    ForEach-Object {
+$csprojFiles = Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch $script:BuildArtifactExclusionRegex }
 
-    $csproj = $_.FullName
-    try {
-        $encoding = Get-FileEncoding $csproj
-        $content = [System.IO.File]::ReadAllText($csproj, $encoding)
+$csprojEdits = @(
+    @{ Pattern = '(<Version(?:\s+[^>]*)?>)[^<]*(</Version>)';         Replacement = { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" } },
+    @{ Pattern = '(<FileVersion(?:\s+[^>]*)?>)[^<]*(</FileVersion>)';     Replacement = { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" } },
+    @{ Pattern = '(<AssemblyVersion(?:\s+[^>]*)?>)[^<]*(</AssemblyVersion>)'; Replacement = { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" } }
+)
 
-        $totalReplacements = 0
-        $versionTags = @('Version', 'FileVersion', 'AssemblyVersion')
-
-        foreach ($tag in $versionTags) {
-            $replacementValue = switch ($tag) {
-                "Version"         { $fullVersion }
-                "FileVersion"     { $fileVersion }
-                "AssemblyVersion" { $fileVersion }
-            }
-
-            $tagPattern = "(<$tag(?:\s+[^>]*)?>)[^<]*(</$tag>)"
-            $tagMatches = [regex]::Matches($content, $tagPattern)
-        
-            if ($tagMatches.Count -gt 0) {
-                $totalReplacements += $tagMatches.Count
-                $content = [regex]::Replace($content, $tagPattern, { 
-                    param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)" 
-                })
-            }
-        }
-
-        if ($totalReplacements -gt 0) {
-            if (-not $DryRun) {
-                [System.IO.File]::WriteAllText($csproj, $content, $encoding)
-                Write-Host "UPDATED ($($encoding.BodyName)): $csproj" -ForegroundColor Green
-            } else {
-                Write-Host "DRY-RUN: Would update ($($encoding.BodyName)): $csproj ($totalReplacements matches)" -ForegroundColor Yellow
-            }
-            $script:filesModified++
-            $script:totalReplacements += $totalReplacements
-        } else {
-            Write-Warning "Skipped project: No versioning identifiers found in $csproj. Verify if this project requires version metadata."
-        }
-        $script:totalFilesScanned++
-    }
-    catch {
-        Write-Warning "Failed to update project: $csproj. $($_.Exception.Message)"
-        $script:HadFailure = $true
-    }
-}
+Update-FilesContent -Files $csprojFiles -Edits $csprojEdits -DryRun:$DryRun
 
 # -----------------------------
 # 3. Update src\Servy.CLI\Servy.psd1

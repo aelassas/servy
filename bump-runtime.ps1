@@ -94,7 +94,7 @@ $script:totalReplacements = 0
 
 # 1. Bulk file updates (PowerShell, Inno, Projects)
 $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch $global:BuildArtifactExclusionRegex }
+    Where-Object { $_.FullName -notmatch $script:BuildArtifactExclusionRegex }
 Update-FilesContent -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
 # 2. Explicitly-targeted files that must contain the version pattern (publish.yml TFM env)

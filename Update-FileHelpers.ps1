@@ -9,7 +9,7 @@
 #>
 
 # Shared exclusion pattern for transient build artifacts, dependencies, and vcs metadata
-$global:BuildArtifactExclusionRegex = '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]'
+$script:BuildArtifactExclusionRegex = '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]'
 
 # Bootstrap Get-FileEncoding.ps1
 $helperFile = "Get-FileEncoding.ps1"
@@ -25,21 +25,44 @@ function Update-FilesContent {
     <#
     .SYNOPSIS
         Safely updates file content using regex patterns while preserving original file encoding.
+
+    .DESCRIPTION
+        Iterates over the provided files and applies regex replacements while preserving byte-order marks 
+        and original file encodings via Get-FileEncoding.
+
+    .NOTES
+        Contract & Scoped Variables:
+        This function expects and mutates the following caller-scoped ($script:) variables:
+          - $script:HadFailure        [bool]   - Set to $true if any file read, write, or expected match fails.
+          - $script:totalFilesScanned [int]    - Incremented for each evaluated file path.
+          - $script:filesModified     [int]    - Incremented for each file with matching replacements.
+          - $script:totalReplacements [int]    - Accumulated count of all successful regex match replacements.
+
+        Calling scripts must initialize these variables prior to calling Update-FilesContent.
     #>
+    [CmdletBinding(DefaultParameterSetName = 'SingleEdit')]
     param(
         [Parameter(Mandatory = $true)]
         $Files,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SingleEdit')]
         [string]$Pattern,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SingleEdit')]
         $Replacement,
 
-        [bool]$DryRun = $false,
+        [Parameter(Mandatory = $true, ParameterSetName = 'MultiEdit')]
+        [array]$Edits,
+
+        [switch]$DryRun,
 
         [switch]$ExpectMatch
     )
+
+    # Normalize single pattern/replacement input to the Edits array format
+    if ($PSCmdlet.ParameterSetName -eq 'SingleEdit') {
+        $Edits = @(@{ Pattern = $Pattern; Replacement = $Replacement })
+    }
 
     foreach ($file in $Files) {
         if ($null -eq $file) { continue }
@@ -59,8 +82,25 @@ function Update-FilesContent {
             $encoding = Get-FileEncoding $path
             $content = [System.IO.File]::ReadAllText($path, $encoding)
 
-            $regexMatches = [regex]::Matches($content, $Pattern)
-            $matchCount = $regexMatches.Count
+            $matchCount = 0
+            $newContent = $content
+
+            foreach ($edit in $Edits) {
+                $editPattern = $edit.Pattern
+                $editReplacement = $edit.Replacement
+
+                $regexMatches = [regex]::Matches($newContent, $editPattern)
+                $found = $regexMatches.Count
+
+                if ($found -gt 0) {
+                    $matchCount += $found
+                    if ($editReplacement -is [scriptblock] -or $editReplacement -is [System.Text.RegularExpressions.MatchEvaluator]) {
+                        $newContent = [regex]::Replace($newContent, $editPattern, $editReplacement)
+                    } else {
+                        $newContent = [regex]::Replace($newContent, $editPattern, [string]$editReplacement)
+                    }
+                }
+            }
 
             if ($matchCount -gt 0) {
                 $script:filesModified++
@@ -69,17 +109,11 @@ function Update-FilesContent {
                 if ($DryRun) {
                     Write-Host "DRY-RUN: Would update $path ($matchCount matches)" -ForegroundColor Gray
                 } else {
-                    $newContent = if ($Replacement -is [scriptblock] -or $Replacement -is [System.Text.RegularExpressions.MatchEvaluator]) {
-                        [regex]::Replace($content, $Pattern, $Replacement)
-                    } else {
-                        [regex]::Replace($content, $Pattern, [string]$Replacement)
-                    }
-
                     [System.IO.File]::WriteAllText($path, $newContent, $encoding)
                     Write-Host "UPDATED ($($encoding.BodyName)): $path" -ForegroundColor Green
                 }
             } elseif ($ExpectMatch) {
-                Write-Warning "No version patterns matching '$Pattern' were located in explicitly-targeted path: $path"
+                Write-Warning "No version patterns matching provided edits were located in explicitly-targeted path: $path"
                 $script:HadFailure = $true
             }
         }
