@@ -17,7 +17,7 @@ PackageUrl: https://servy-win.github.io/
 License: MIT
 LicenseUrl: https://github.com/aelassas/servy/blob/HEAD/LICENSE.txt
 Copyright: Copyright (c) 2026 Akram El Assas
-ShortDescription: Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters.
+ShortDescription: Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, hooks, and parameters.
 Description: |-
   Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
 
