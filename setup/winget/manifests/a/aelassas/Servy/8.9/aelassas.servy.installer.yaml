@@ -8,9 +8,6 @@
 # The manifest is designed to be used with the Windows Package Manager (WinGet) to facilitate 
 # the installation and management of the Servy application on Windows systems.
 
-# Created with WinGet Releaser using komac v2.16.0
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
-
 PackageIdentifier: aelassas.Servy
 PackageVersion: '8.9'
 InstallerLocale: en-US
