@@ -599,6 +599,9 @@ function Invoke-ServyServiceCommand {
     .PARAMETER Quiet
         If set, suppresses non-essential output from the CLI.
 
+    .PARAMETER SkipElevationCheck
+        If set, skips the Administrator elevation assertion. Useful for read-only commands like 'status'.
+
     .EXAMPLE
         Invoke-ServyServiceCommand -Command "start" -Name "Wexflow" -Quiet
         Starts the 'Wexflow' service silently.
@@ -613,9 +616,13 @@ function Invoke-ServyServiceCommand {
     [ValidateNotNullOrEmpty()]
     [string] $Name,
 
-    [switch] $Quiet
+    [switch] $Quiet,
+
+    [switch] $SkipElevationCheck
   )
-  Assert-Administrator
+  if (-not $SkipElevationCheck) {
+    Assert-Administrator
+  }
 
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
@@ -650,13 +657,11 @@ function Set-ServyConfig {
   #>
   [CmdletBinding()]
   param(
-    # Default: 600 seconds
     [ValidateRange(1, 86400)]
-    [int] $TimeoutSeconds = 600,
+    [int] $TimeoutSeconds,
 
-    # Default: 1048576 characters (1MB)
     [ValidateRange(1024, 2147483647)]
-    [int] $MaxBufferChars = 1048576
+    [int] $MaxBufferChars
   )
 
   # Update the script-scoped variables only if the parameters were explicitly provided.
@@ -1252,7 +1257,7 @@ function Install-ServyService {
       "--maxFailedChecks"            = "MaxFailedChecks"
       "--recoveryAction"             = "RecoveryAction"
       "--maxRestartAttempts"         = "MaxRestartAttempts"
-      "--heartbeatUrl" 		         = "HeartbeatUrl"
+      "--heartbeatUrl" 		          = "HeartbeatUrl"
       "--heartbeatUrlTimeoutSeconds" = "HeartbeatUrlTimeoutSeconds"
       "--failureProgramPath"         = "FailureProgramPath"
       "--failureProgramStartupDir"   = "FailureProgramStartupDir"
@@ -1287,17 +1292,17 @@ function Install-ServyService {
   }
 
   # 3. Handle standalone Flags/Switches separately
-  if ($EnableConsoleUI)                        { $argsList = Add-Arg $argsList "--enableConsoleUI" -Flag }
-  if ($EnableRotation)                         { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
-  if ($EnableRotation -or $EnableSizeRotation) { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
-  if ($EnableDateRotation)                     { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
-  if ($UseLocalTimeForRotation)                { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
-  if ($EnableHealth)                           { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
-  if ($RecoveryOnCleanExit)                    { $argsList = Add-Arg $argsList "--recoveryOnCleanExit" -Flag }
-  if ($EnableHeartbeatUrlFlags)                { $argsList = Add-Arg $argsList "--enableHeartbeatUrlFlags" -Flag }
-  if ($PreLaunchIgnoreFailure)                 { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
-  if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
-  if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
+  if ($EnableConsoleUI)                         { $argsList = Add-Arg $argsList "--enableConsoleUI" -Flag }
+  if ($EnableRotation)                          { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
+  if ($EnableRotation -or $EnableSizeRotation)  { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
+  if ($EnableDateRotation)                      { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
+  if ($UseLocalTimeForRotation)                 { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
+  if ($EnableHealth)                            { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
+  if ($RecoveryOnCleanExit)                     { $argsList = Add-Arg $argsList "--recoveryOnCleanExit" -Flag }
+  if ($EnableHeartbeatUrlFlags)                 { $argsList = Add-Arg $argsList "--enableHeartbeatUrlFlags" -Flag }
+  if ($PreLaunchIgnoreFailure)                  { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
+  if ($EnableDebugLogs)                         { $argsList = Add-Arg $argsList "--debug" -Flag }
+  if ($PreStopLogAsError)                       { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 
   # 4. Secure Parameter Marshaling (Memory Safety & Env Var Injection)
   $secureEnv = @{}
@@ -1502,7 +1507,6 @@ function Get-ServyServiceStatus {
     .DESCRIPTION
         Wraps the Servy CLI `status` command to get the status of a service by its name.
         Possible status results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused, NotInstalled.
-        Requires Administrator privileges.
 
     .PARAMETER Quiet
         Suppress spinner and run in non-interactive mode. Optional.
@@ -1522,7 +1526,7 @@ function Get-ServyServiceStatus {
     [string] $Name
   )
 
-  Invoke-ServyServiceCommand -Command "status" -Name $Name -Quiet:$Quiet
+  Invoke-ServyServiceCommand -Command "status" -Name $Name -Quiet:$Quiet -SkipElevationCheck
 }
 
 function Export-ServyServiceConfig {

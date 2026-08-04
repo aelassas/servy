@@ -133,7 +133,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the rotation size in megabytes (MB) for log files.
         /// Must be >= 1 MB if rotation is enabled.
         /// </summary>
-        [Option("rotationSize", HelpText = "Log rotation size in Megabytes (MB). Must be greater than or equal to 1 MB.")]
+        [Option("rotationSize", HelpText = "Log rotation size in Megabytes (MB). Must be between 1 and 10240 MB.")]
         public string? RotationSize { get; set; }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the maximum number of rotated log files to keep.
         /// Set to 0 for unlimited.
         /// </summary>
-        [Option("maxRotations", HelpText = "Maximum rotated log files to keep. Set to 0 or leave empty for unlimited.")]
+        [Option("maxRotations", HelpText = "Maximum rotated log files to keep. Must be between 0 and 10000. Set to 0 or leave empty for unlimited.")]
         public string? MaxRotations { get; set; }
 
         /// <summary>
@@ -182,14 +182,14 @@ namespace Servy.CLI.Options
         /// Gets or sets the heartbeat interval in seconds for health monitoring.
         /// Must be >= 5 seconds if health monitoring is enabled.
         /// </summary>
-        [Option("heartbeatInterval", HelpText = "Heartbeat interval in seconds.")]
+        [Option("heartbeatInterval", HelpText = "Heartbeat interval in seconds. Must be between 5 and 86400 seconds.")]
         public string? HeartbeatInterval { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of failed health checks before recovery action.
         /// Must be >= 1 if health monitoring is enabled.
         /// </summary>
-        [Option("maxFailedChecks", HelpText = "Maximum allowed failed health checks.")]
+        [Option("maxFailedChecks", HelpText = "Maximum allowed failed health checks. Must be between 1 and 100000.")]
         public string? MaxFailedChecks { get; set; }
 
         /// <summary>
@@ -215,7 +215,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the maximum number of restart attempts after failure.
         /// Must be >= 0 if health monitoring is enabled.
         /// </summary>
-        [Option("maxRestartAttempts", HelpText = "Maximum restart attempts on failure. Set to 0 for unlimited restart attempts.")]
+        [Option("maxRestartAttempts", HelpText = "Maximum restart attempts on failure. Must be between 0 and 100000. Set to 0 for unlimited restart attempts.")]
         public string? MaxRestartAttempts { get; set; }
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace Servy.CLI.Options
         /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
-        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Timeout in seconds for external heartbeat URL requests.")]
+        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Timeout in seconds for external heartbeat URL requests. Must be between 2 and 30 seconds.")]
         public string? HeartbeatUrlTimeoutSeconds { get; set; }
 
         /// <summary>
@@ -371,7 +371,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the timeout for the pre-launch executable.
         /// Optional.
         /// </summary>
-        [Option("preLaunchTimeout", HelpText = "Timeout for the pre-launch executable. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use this only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.")]
+        [Option("preLaunchTimeout", HelpText = "Timeout for the pre-launch executable. Must be between 0 and 86400 seconds. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use this only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.")]
         public string? PreLaunchTimeout { get; set; }
 
         /// <summary>
@@ -379,7 +379,7 @@ namespace Servy.CLI.Options
         /// Must be greater or equal to 0.
         /// Optional.
         /// </summary>
-        [Option("preLaunchRetryAttempts", HelpText = "Number of retry attempts for the pre-launch executable if it fails. Must be greater or equal to 0.")]
+        [Option("preLaunchRetryAttempts", HelpText = "Number of retry attempts for the pre-launch executable if it fails. Must be between 0 and 100000.")]
         public string? PreLaunchRetryAttempts { get; set; }
 
         /// <summary>
@@ -429,7 +429,7 @@ namespace Servy.CLI.Options
         /// Must be >= 1 second.
         /// Optional. Defaults to 10 seconds.
         /// </summary>
-        [Option("startTimeout", HelpText = "Timeout in seconds to wait for the process to start successfully before considering the startup as failed. Must be greater than or equal to 1 second. Defaults to 10 seconds.")]
+        [Option("startTimeout", HelpText = "Timeout in seconds to wait for the process to start successfully before considering the startup as failed. Must be between 1 and 86400 seconds. Defaults to 10 seconds.")]
         public string? StartTimeout { get; set; }
 
         /// <summary>
@@ -437,7 +437,7 @@ namespace Servy.CLI.Options
         /// Must be >= 1 second.
         /// Optional. Defaults to 5 seconds.
         /// </summary>
-        [Option("stopTimeout", HelpText = "Timeout in seconds to wait for the process to exit. Must be greater than or equal to 1 second. Defaults to 5 seconds.")]
+        [Option("stopTimeout", HelpText = "Timeout in seconds to wait for the process to exit. Must be between 1 and 86400 seconds. Defaults to 5 seconds.")]
         public string? StopTimeout { get; set; }
 
         /// <summary>
@@ -471,7 +471,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the timeout for the pre-stop executable.
         /// Optional.
         /// </summary>
-        [Option("preStopTimeout", HelpText = "Timeout for the pre-stop executable. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.")]
+        [Option("preStopTimeout", HelpText = "Timeout for the pre-stop executable. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode. Must be between 0 and 86400 seconds.")]
         public string? PreStopTimeout { get; set; }
 
         /// <summary>

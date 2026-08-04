@@ -122,7 +122,7 @@ namespace Servy.CLI.Helpers
             if (match == null)
             {
                 fileType = default;
-                error = Strings.Msg_InvalidConfigFileType;
+                error = string.Format(Strings.Msg_UnsupportedFileType, trimmed);
                 return false;
             }
 
