@@ -9,6 +9,8 @@ runs:
       run: |
         @'
         # Helper: run git and abort the step immediately on any non-zero exit code.
+        # DO NOT use Invoke-Git for predicate probes where a non-zero exit code is an expected result
+        # (e.g. `rev-parse --verify`, `diff --quiet`, `show-ref --quiet`). Use bare `git` for those.
         function Invoke-Git {
             param([Parameter(Mandatory=$true,ValueFromRemainingArguments=$true)][string[]]$GitArgs)
             & git @GitArgs

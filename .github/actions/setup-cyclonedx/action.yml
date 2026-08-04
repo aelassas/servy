@@ -76,8 +76,11 @@ runs:
         INPUT_TOOL_HASH: ${{ inputs.tool_hash }}
       run: |
         # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
-        # We verify the CycloneDX nupkg itself. To ensure transitive dependencies 
-        # are also verified/pinned, we utilize an isolated NuGet.config below.
+        # We verify the CycloneDX nupkg itself against inputs.tool_hash.
+        # The isolated NuGet.config below then restricts restore to that one verified
+        # package - it does not verify transitive dependencies, it prevents them from
+        # being fetched at all. CycloneDX currently has none; if a future version adds
+        # one, this install fails with NU1101 rather than silently pulling it.
         $toolVersion = $env:INPUT_TOOL_VERSION
         $toolHash    = $env:INPUT_TOOL_HASH
         $toolPkgDir  = "$env:USERPROFILE\cyclonedx-tool"

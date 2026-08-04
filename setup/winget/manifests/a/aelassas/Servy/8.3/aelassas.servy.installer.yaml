@@ -8,8 +8,11 @@
 # The manifest is designed to be used with the Windows Package Manager (WinGet) to facilitate 
 # the installation and management of the Servy application on Windows systems.
 
+# Created with WinGet Releaser using komac v2.16.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
+
 PackageIdentifier: aelassas.Servy
-PackageVersion: '8.3'
+PackageVersion: '8.9'
 InstallerLocale: en-US
 InstallerType: inno
 Scope: machine
@@ -18,16 +21,22 @@ InstallModes:
 - silent
 - silentWithProgress
 UpgradeBehavior: install
-ProductCode: '{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}_is1'
-ReleaseDate: 2026-04-27
-AppsAndFeaturesEntries:
-- ProductCode: '{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}_is1'
+ReleaseDate: 2026-07-30
 ElevationRequirement: elevatesSelf
 InstallationMetadata:
   DefaultInstallLocation: '%ProgramFiles%\Servy'
 Installers:
 - Architecture: x64
-  InstallerUrl: https://github.com/aelassas/servy/releases/download/v8.3/servy-8.3-x64-installer.exe
-  InstallerSha256: B2747253F21A0495BA598E9B4FE1C662081C21EA3AE263BE6D109168371ABBF5
+  InstallerUrl: https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-x64-installer.exe
+  InstallerSha256: 61A25D31BC9CFCE24857BF97EF942155612CFA146C1A9FE1604401549A3235F1
+  ProductCode: '{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}_is1'
+  AppsAndFeaturesEntries:
+  - ProductCode: '{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}_is1'
+- Architecture: arm64
+  InstallerUrl: https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-arm64-installer.exe
+  InstallerSha256: 90200DBD00020EC8A5285512E757ED3E6EEE1BF98AA7EA599D7C5A0565E60708
+  ProductCode: '{8343B121-BE1C-463F-AA5B-FD237DD2F8D1}_is1'
+  AppsAndFeaturesEntries:
+  - ProductCode: '{8343B121-BE1C-463F-AA5B-FD237DD2F8D1}_is1'
 ManifestType: installer
 ManifestVersion: 1.12.0

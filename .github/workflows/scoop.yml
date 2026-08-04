@@ -315,10 +315,7 @@ jobs:
           Invoke-Git fetch upstream master
           Invoke-Git checkout -B master upstream/master
             
-          if (Invoke-Git rev-parse --verify --quiet "refs/heads/$branchName" 2>$null) {
-              Invoke-Git branch -D $branchName
-          }
-          Invoke-Git checkout -b $branchName
+          Invoke-Git checkout -B $branchName
             
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath

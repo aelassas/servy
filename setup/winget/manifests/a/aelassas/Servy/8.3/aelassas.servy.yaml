@@ -5,7 +5,7 @@
 # It is not intended to be used directly, but rather to provide a structured format for defining
 
 PackageIdentifier: aelassas.Servy
-PackageVersion: '8.3'
+PackageVersion: '8.9'
 DefaultLocale: en-US
 ManifestType: version
 ManifestVersion: 1.12.0
