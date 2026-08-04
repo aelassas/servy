@@ -12,11 +12,11 @@ namespace Servy.Core.Native
         public SafeWinProcessHandle() : base(ownsHandle: true) { }
 
         /// <summary>
-        /// Returns the underlying handle value, or <see cref="IntPtr.Zero"/> if the handle is closed.
+        /// Returns the underlying handle value, or <see cref="IntPtr.Zero"/> if the handle is closed or invalid.
         /// </summary>
-        public new IntPtr DangerousGetHandle()
+        public IntPtr GetHandleOrZero()
         {
-            return IsClosed ? IntPtr.Zero : base.DangerousGetHandle();
+            return IsClosed || IsInvalid ? IntPtr.Zero : base.DangerousGetHandle();
         }
 
         protected override bool ReleaseHandle()

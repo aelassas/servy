@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: security-audit-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  group: security-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

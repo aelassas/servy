@@ -25,7 +25,7 @@ namespace Servy.Core.UnitTests.Native
                 Assert.False(handle.IsClosed, "The handle should not be closed while inside the using block.");
 
                 // Verify the underlying pointer is assigned
-                IntPtr rawValue = handle.DangerousGetHandle();
+                IntPtr rawValue = handle.GetHandleOrZero();
                 Assert.NotEqual(IntPtr.Zero, rawValue);
                 Assert.NotEqual(new IntPtr(-1), rawValue);
             }
@@ -44,7 +44,7 @@ namespace Servy.Core.UnitTests.Native
                 // Assert
                 Assert.NotNull(handle);
                 Assert.True(handle.IsInvalid, "Opening a non-existent PID should return an invalid handle.");
-                Assert.Equal(IntPtr.Zero, handle.DangerousGetHandle());
+                Assert.Equal(IntPtr.Zero, handle.GetHandleOrZero());
             }
         }
 
@@ -69,18 +69,18 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
-        public void DangerousGetHandle_ReturnsZero_AfterDispose()
+        public void GetHandleOrZero_ReturnsZero_AfterDispose()
         {
             // Arrange
             var handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, GetCurrentProcessId());
-            Assert.NotEqual(IntPtr.Zero, handle.DangerousGetHandle());
+            Assert.NotEqual(IntPtr.Zero, handle.GetHandleOrZero());
 
             // Act
             handle.Dispose();
 
             // Assert
             Assert.True(handle.IsClosed);
-            Assert.Equal(IntPtr.Zero, handle.DangerousGetHandle());
+            Assert.Equal(IntPtr.Zero, handle.GetHandleOrZero());
         }
 
         private int GetCurrentProcessId()
