@@ -107,9 +107,17 @@ namespace Servy.Restarter
                 // 8. Execution
                 scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
-                restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
+                var result = restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
 
-                scopedLogger.Info($"Successfully restarted service '{serviceName}'.");
+                if (result == RestartResult.ServiceNotFound)
+                {
+                    scopedLogger.Warn($"Service '{serviceName}' no longer exists in the SCM; nothing to restart.");
+                    Environment.ExitCode = 1;
+                }
+                else
+                {
+                    scopedLogger.Info($"Successfully restarted service '{serviceName}'.");
+                }
             }
             catch (Exception ex)
             {

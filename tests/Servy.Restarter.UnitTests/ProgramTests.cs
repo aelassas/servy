@@ -125,9 +125,10 @@ namespace Servy.Restarter.UnitTests
 
                 // Assert
                 // The application successfully bypassed the corrupted token string and fell back 
-                // to standard timeout bounds, successfully finishing the operational lifecycle with ExitCode 0.
-                Assert.Equal(0, Environment.ExitCode);
-                AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
+                // to standard timeout bounds. Because the service does not actually exist in the SCM,
+                // it detects ServiceNotFound, logs a warning, and sets ExitCode = 1.
+                Assert.Equal(1, Environment.ExitCode);
+                AssertLogContainsMessage($"Service '{serviceName}' no longer exists in the SCM; nothing to restart.");
             }
             finally
             {
