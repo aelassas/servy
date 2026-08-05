@@ -1,4 +1,4 @@
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System.Collections.Immutable;
@@ -42,12 +42,12 @@ namespace Servy.Core.Config
         public const string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
 
         /// <summary>
-        /// Command-line argument used to bypass hardware acceleration and force 
+        /// Command-line argument used to bypass hardware acceleration and force
         /// the application to use software-based rendering.
         /// </summary>
         /// <remarks>
-        /// This is primarily used to resolve "blank UI" issues in remote management 
-        /// environments (like MeshCentral or specialized RDP configurations) where 
+        /// This is primarily used to resolve "blank UI" issues in remote management
+        /// environments (like MeshCentral or specialized RDP configurations) where
         /// the hardware DirectX pipeline cannot be correctly captured.
         /// </remarks>
         public const string ForceSoftwareRenderingArg = "--force-sr";
@@ -64,13 +64,13 @@ namespace Servy.Core.Config
 
 #if DEBUG
         /// <summary>
-        /// The cached full filesystem path to the root of the repository. 
+        /// The cached full filesystem path to the root of the repository.
         /// This property is only available in <b>DEBUG</b> builds.
         /// </summary>
         /// <remarks>
-        /// This path is resolved at runtime by traversing upward from the current 
-        /// application base directory until the solution-level anchor is found. 
-        /// It serves as the primary reference point for locating development-time assets 
+        /// This path is resolved at runtime by traversing upward from the current
+        /// application base directory until the solution-level anchor is found.
+        /// It serves as the primary reference point for locating development-time assets
         /// and solution-relative configurations.
         /// </remarks>
         private static readonly string RepoRoot = FindRepoRoot(AppDomain.CurrentDomain.BaseDirectory);
@@ -213,8 +213,8 @@ namespace Servy.Core.Config
         /// The default SQLite connection string for the Servy application.
         /// </summary>
         /// <remarks>
-        /// This string configures the connection to <c>Servy.db</c> within the <see cref="DbFolderPath"/>. 
-        /// It includes performance and resilience settings such as <c>Journal Mode=WAL</c> and a 5000ms busy timeout. 
+        /// This string configures the connection to <c>Servy.db</c> within the <see cref="DbFolderPath"/>.
+        /// It includes performance and resilience settings such as <c>Journal Mode=WAL</c> and a 5000ms busy timeout.
         /// This value serves as the hardcoded fallback if no override is provided in the <c>ConnectionStrings:DefaultConnection</c> configuration of the application settings.
         /// </remarks>
         public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, "Servy.db")};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
@@ -223,7 +223,7 @@ namespace Servy.Core.Config
         /// The default file path for the AES encryption key.
         /// </summary>
         /// <remarks>
-        /// Points to <c>aes_key.dat</c> within the <see cref="SecurityFolderPath"/>. 
+        /// Points to <c>aes_key.dat</c> within the <see cref="SecurityFolderPath"/>.
         /// This path is used by all Servy components (UI, CLI, and Service) to locate the master encryption key.
         /// This value serves as the hardcoded fallback if no override is provided in the <c>Security:AESKeyFilePath</c> configuration of the application settings.
         /// </remarks>
@@ -233,7 +233,7 @@ namespace Servy.Core.Config
         /// The default file path for the AES initialization vector (IV).
         /// </summary>
         /// <remarks>
-        /// Points to <c>aes_iv.dat</c> within the <see cref="SecurityFolderPath"/>. 
+        /// Points to <c>aes_iv.dat</c> within the <see cref="SecurityFolderPath"/>.
         /// Maintaining a single source of truth for this path prevents "split-brain" encryption issues between the configuration UI and the Windows Service.
         /// This value serves as the hardcoded fallback if no override is provided in the <c>Security:AESIVFilePath</c> configuration of the application settings.
         /// </remarks>
@@ -262,8 +262,8 @@ namespace Servy.Core.Config
         /// The default maximum number of log lines to retain in the console tab.
         /// </summary>
         /// <remarks>
-        /// This value balances visibility of historical logs with application performance. 
-        /// Increasing this beyond the default may lead to increased memory usage and UI virtualization lag 
+        /// This value balances visibility of historical logs with application performance.
+        /// Increasing this beyond the default may lead to increased memory usage and UI virtualization lag
         /// in the <see cref="Servy.Manager"/> views.
         /// </remarks>
         public static readonly int DefaultConsoleMaxLines = 20_000;
@@ -272,8 +272,8 @@ namespace Servy.Core.Config
         /// The absolute hard limit for the console tab.
         /// </summary>
         /// <remarks>
-        /// Set to twice the <see cref="DefaultConsoleMaxLines"/>, this constant prevents 
-        /// exceptionally large log retention from causing OutOfMemory exceptions or 
+        /// Set to twice the <see cref="DefaultConsoleMaxLines"/>, this constant prevents
+        /// exceptionally large log retention from causing OutOfMemory exceptions or
         /// unresponsiveness in the WPF rendering thread.
         /// </remarks>
         public static readonly int MaxConsoleMaxLines = 2 * DefaultConsoleMaxLines;
@@ -412,12 +412,12 @@ namespace Servy.Core.Config
         public const int DefaultStopTimeout = 5;
 
         /// <summary>
-        /// The maximum time, in milliseconds, the restarter executable will wait for the 
+        /// The maximum time, in milliseconds, the restarter executable will wait for the
         /// main service process to terminate.
         /// </summary>
         /// <remarks>
-        /// Defaults to 240,000ms (4 minutes). This provides a significant buffer for 
-        /// the service to perform a graceful shutdown, flush logs, and release 
+        /// Defaults to 240,000ms (4 minutes). This provides a significant buffer for
+        /// the service to perform a graceful shutdown, flush logs, and release
         /// file handles before the restarter attempts to perform maintenance or a restart.
         /// </remarks>
         public const int RestarterExeMaxWaitMs = 240_000;
@@ -429,9 +429,9 @@ namespace Servy.Core.Config
         public const int ScmStartupRequestThresholdSeconds = 20;
 
         /// <summary>
-        /// Defines the safety buffer, in seconds, added to the configured service start 
-        /// timeout when requesting additional time from the Service Control Manager (SCM). 
-        /// This ensures the service has sufficient overhead to initialize without 
+        /// Defines the safety buffer, in seconds, added to the configured service start
+        /// timeout when requesting additional time from the Service Control Manager (SCM).
+        /// This ensures the service has sufficient overhead to initialize without
         /// being prematurely terminated by the SCM.
         /// </summary>
         public const int ScmStartupRequestBufferSeconds = 10;
@@ -440,8 +440,8 @@ namespace Servy.Core.Config
         /// The wait hint in milliseconds sent to the Service Control Manager (SCM) during a Pre-Shutdown event.
         /// </summary>
         /// <remarks>
-        /// This value informs Windows how long the service expects to take to finish its cleanup. 
-        /// Servy defaults to 30,000ms (30 seconds) to allow for graceful shutdown of child processes 
+        /// This value informs Windows how long the service expects to take to finish its cleanup.
+        /// Servy defaults to 30,000ms (30 seconds) to allow for graceful shutdown of child processes
         /// and flushing of pending log buffers.
         /// </remarks>
         public const int PreShutdownWaitHintMs = 30_000;
@@ -490,7 +490,7 @@ namespace Servy.Core.Config
         public const int DefaultRotationSizeMB = 10;
 
         /// <summary>
-        /// Default maximum number of rotated log files to keep by default. 
+        /// Default maximum number of rotated log files to keep by default.
         /// A value of 0 indicates no limit (unlimited retention).
         /// </summary>
         public const int DefaultMaxRotations = 0;
@@ -522,30 +522,30 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// <para>Default is <c>false</c> (UTC).</para>
-        /// <para>When set to <c>false</c>, log rotation intervals are calculated using Coordinated Universal Time (UTC). 
+        /// <para>When set to <c>false</c>, log rotation intervals are calculated using Coordinated Universal Time (UTC).
         /// This ensures a consistent, monotonic rotation schedule that is unaffected by Daylight Saving Time transitions.</para>
         /// <para>
-        /// <b>CRITICAL SIDE EFFECT:</b> Changing this value introduces a global side effect 
-        /// that extends beyond log file splitting boundaries. It directly dictates whether log entry line 
-        /// headers are written using the host system's localized time zone context (<see cref="DateTime.Now"/>) 
+        /// <b>CRITICAL SIDE EFFECT:</b> Changing this value introduces a global side effect
+        /// that extends beyond log file splitting boundaries. It directly dictates whether log entry line
+        /// headers are written using the host system's localized time zone context (<see cref="DateTime.Now"/>)
         /// or Coordinated Universal Time (<see cref="DateTime.UtcNow"/>).
         /// </para>
         /// <para>
-        /// Flipping this configuration will cause subsequent log lines within a single file to straddle 
-        /// two distinct time-base formats (e.g., transitioning from a 'Z' suffix to a '+02:00' suffix), 
-        /// which may complicate historical time-series aggregation, text parsing, and cross-environment 
+        /// Flipping this configuration will cause subsequent log lines within a single file to straddle
+        /// two distinct time-base formats (e.g., transitioning from a 'Z' suffix to a '+02:00' suffix),
+        /// which may complicate historical time-series aggregation, text parsing, and cross-environment
         /// log stream diffing.
         /// </para>
         /// </remarks>
         public const bool DefaultUseLocalTimeForRotation = false;
 
         /// <summary>
-        /// The hard timeout for the HttpClient used in update checks. 
+        /// The hard timeout for the HttpClient used in update checks.
         /// This acts as a global safety net for the request.
         /// </summary>
         /// <remarks>
         /// This value defines the absolute ceiling for network operations. If the server does not respond
-        /// within this duration, the underlying <see cref="System.Net.Http.HttpClient"/> will forcibly 
+        /// within this duration, the underlying <see cref="System.Net.Http.HttpClient"/> will forcibly
         /// terminate the connection.
         /// </remarks>
         public const int UpdateCheckHttpTimeoutSeconds = 20;
@@ -553,18 +553,18 @@ namespace Servy.Core.Config
         /// <summary>
         /// The cooperative cancellation timeout for update checks.
         /// NOTE: This value must be ≤ UpdateCheckHttpTimeoutSeconds.
-        /// If this is greater than the HTTP timeout, the user will see a generic 
+        /// If this is greater than the HTTP timeout, the user will see a generic
         /// connection error instead of the friendly 'Update check timed out' message.
         /// </summary>
         /// <remarks>
         /// <para>
         /// This value governs the application-level logic for cancelling pending tasks. By ensuring this
-        /// is strictly less than <see cref="UpdateCheckHttpTimeoutSeconds"/>, we guarantee that the 
-        /// system provides a deterministic, high-level timeout notification before the lower-level 
+        /// is strictly less than <see cref="UpdateCheckHttpTimeoutSeconds"/>, we guarantee that the
+        /// system provides a deterministic, high-level timeout notification before the lower-level
         /// transport layer reaches its hard limit.
         /// </para>
         /// <para>
-        /// To ensure the relationship between <see cref="UpdateCheckHttpTimeoutSeconds"/> 
+        /// To ensure the relationship between <see cref="UpdateCheckHttpTimeoutSeconds"/>
         /// and <see cref="UpdateCheckTimeoutSeconds"/> remains valid, there is a unit test
         /// that validates the constraint.
         /// </para>
@@ -577,11 +577,11 @@ namespace Servy.Core.Config
         public const int DefaultLogsWindowDays = 3;
 
         /// <summary>
-        /// The interval in milliseconds used to poll for the existence of a target application's 
+        /// The interval in milliseconds used to poll for the existence of a target application's
         /// directory (e.g., when waiting for a sidecar app to be installed or become available).
         /// </summary>
         /// <remarks>
-        /// A value of 3000ms (3 seconds) provides a balance between UI responsiveness and 
+        /// A value of 3000ms (3 seconds) provides a balance between UI responsiveness and
         /// minimizing background I/O overhead.
         /// </remarks>
         public const int AppAvailabilityPollIntervalMs = 3_000;
@@ -597,11 +597,11 @@ namespace Servy.Core.Config
         public const int DefaultSearchDebounceDelayMs = 300;
 
         /// <summary>
-        /// The default maximum number of concurrent Service Control Manager (SCM) operations 
+        /// The default maximum number of concurrent Service Control Manager (SCM) operations
         /// permitted during bulk lifecycle tasks (start, stop, or restart).
         /// </summary>
         /// <remarks>
-        /// To prevent thread starvation and SCM contention, the actual degree of parallelism is 
+        /// To prevent thread starvation and SCM contention, the actual degree of parallelism is
         /// throttled by a hardware-aware ceiling: <c>Math.Min(Environment.ProcessorCount * 2, DefaultMaxBulkOperationParallelism)</c>.
         /// </remarks>
         public const int DefaultMaxBulkOperationParallelism = 8;
@@ -619,7 +619,7 @@ namespace Servy.Core.Config
         public const int LogTailerBatchFlushThreshold = 500;
 
         /// <summary>
-        /// The sleep duration in milliseconds before the tailing loop restarts after encountering 
+        /// The sleep duration in milliseconds before the tailing loop restarts after encountering
         /// an unexpected, unhandled exception.
         /// </summary>
         public const int LogTailerUnhandledErrorRecoveryDelayMs = 1_000;
@@ -628,7 +628,7 @@ namespace Servy.Core.Config
         /// The allocation buffer size in bytes used by the log tailer during background backward-scan file operations.
         /// </summary>
         /// <remarks>
-        /// This value directly controls the chunk size for sequential disk reads when parsing log file history 
+        /// This value directly controls the chunk size for sequential disk reads when parsing log file history
         /// up to the maximum line threshold, mitigating multiple small I/O calls on larger files.
         /// </remarks>
         public const int LogTailerHistoryScanBufferSize = 4_096;
@@ -637,8 +637,8 @@ namespace Servy.Core.Config
         /// Defines the minimum execution duration threshold (in milliseconds) required to keep the splash screen visible.
         /// </summary>
         /// <remarks>
-        /// This boundary constant prevents visual stutter or jarring UI flashes on high-performance environments. 
-        /// If the core application subsystem initialization sequence completes faster than this designated time window, 
+        /// This boundary constant prevents visual stutter or jarring UI flashes on high-performance environments.
+        /// If the core application subsystem initialization sequence completes faster than this designated time window,
         /// the layout engine introduces an artificial padding delay before transitioning to the primary application workspace.
         /// </remarks>
         public const int SplashMinDisplayThresholdMs = 1_000;
@@ -647,7 +647,7 @@ namespace Servy.Core.Config
         /// Specifies the minimum splash screen display delay (in milliseconds) enforced when initialization completes quickly.
         /// </summary>
         /// <remarks>
-        /// When application startup completes faster than this threshold, a brief pause is added to ensure 
+        /// When application startup completes faster than this threshold, a brief pause is added to ensure
         /// the splash screen displays long enough to prevent a jarring visual flicker before transitioning to the main UI.
         /// </remarks>
         public const int SplashMinDisplayPaddingMs = 500;
@@ -656,7 +656,7 @@ namespace Servy.Core.Config
         /// The positional launch argument string passed to indicate whether the splash screen should be bypassed on application startup.
         /// </summary>
         /// <remarks>
-        /// This string value binds the producer contract in <c>ServiceCommands.OpenManager</c> directly with the consumer parsing engine 
+        /// This string value binds the producer contract in <c>ServiceCommands.OpenManager</c> directly with the consumer parsing engine
         /// in <c>AppBootstrapper.OnStartup</c>. Changing this configuration field guarantees that both boundaries remain synchronized.
         /// </remarks>
         public const string SkipSplashArgument = "false";
@@ -691,8 +691,8 @@ namespace Servy.Core.Config
         /// The maximum allowed length for a Windows service name.
         /// </summary>
         /// <remarks>
-        /// According to Windows API specifications, the maximum length for a service name 
-        /// is 256 characters. This limit applies to the service name itself, though 
+        /// According to Windows API specifications, the maximum length for a service name
+        /// is 256 characters. This limit applies to the service name itself, though
         /// display names may have different constraints.
         /// </remarks>
         public const int MaxServiceNameLength = 256;
@@ -707,7 +707,7 @@ namespace Servy.Core.Config
         /// The default timeout in milliseconds for regular expression matching operations.
         /// </summary>
         /// <remarks>
-        /// A 2000ms timeout is used as a security measure to prevent Regular Expression Denial of Service (ReDoS) 
+        /// A 2000ms timeout is used as a security measure to prevent Regular Expression Denial of Service (ReDoS)
         /// attacks while providing enough headroom for complex service name or log filtering patterns.
         /// </remarks>
         public const int InputRegexTimeoutMs = 2_000;
@@ -716,7 +716,7 @@ namespace Servy.Core.Config
         /// Gets a <see cref="TimeSpan"/> representation of the <see cref="InputRegexTimeoutMs"/>.
         /// </summary>
         /// <remarks>
-        /// This static readonly field is used to provide a pre-allocated <see cref="TimeSpan"/> object 
+        /// This static readonly field is used to provide a pre-allocated <see cref="TimeSpan"/> object
         /// for high-performance reuse in regex engine calls across the application.
         /// </remarks>
         public static readonly TimeSpan InputRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs);
@@ -725,18 +725,18 @@ namespace Servy.Core.Config
         /// Gets the timeout duration for Regex operations used to parse output from handle.exe.
         /// </summary>
         /// <remarks>
-        /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output, 
+        /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output,
         /// such as when a single large file is associated with thousands of owners or handles.
         /// </remarks>
         public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(1);
 
         /// <summary>
-        /// Specifies the maximum duration, in milliseconds, allowed for standard output and error streams 
+        /// Specifies the maximum duration, in milliseconds, allowed for standard output and error streams
         /// of <c>handle.exe</c> to completely flush and drain after a termination event.
         /// </summary>
         /// <remarks>
-        /// This timeout provides a best-effort structural buffer to ensure that diagnostic traces are fully 
-        /// written to logs before resources are cleaned up, preventing deadlocks if the underlying stream is blocked 
+        /// This timeout provides a best-effort structural buffer to ensure that diagnostic traces are fully
+        /// written to logs before resources are cleaned up, preventing deadlocks if the underlying stream is blocked
         /// during a forced <see cref="TimeoutException"/> escalation.
         /// </remarks>
         public const int HandleExeKillDrainTimeoutMs = 2_000;
@@ -745,13 +745,13 @@ namespace Servy.Core.Config
         /// Timeout in milliseconds to wait for an individual child process to exit after a termination signal.
         /// </summary>
         /// <remarks>
-        /// A shorter timeout (2,000ms) is used here to prevent the "KillChildren" loop from hanging 
+        /// A shorter timeout (2,000ms) is used here to prevent the "KillChildren" loop from hanging
         /// if one specific sub-process is non-responsive.
         /// </remarks>
         public const int KillChildWaitMs = 2_000;
 
         /// <summary>
-        /// The absolute minimum time (in milliseconds) the system will wait for a process to 
+        /// The absolute minimum time (in milliseconds) the system will wait for a process to
         /// exit after a kill command. This prevents race conditions in high-latency environments.
         /// </summary>
         public const int MinKillWaitMs = 1_000;
@@ -760,7 +760,7 @@ namespace Servy.Core.Config
         /// Timeout in milliseconds to wait for an entire process tree to terminate.
         /// </summary>
         /// <remarks>
-        /// A longer timeout (10_000ms) is allocated to allow Windows to clean up nested 
+        /// A longer timeout (10_000ms) is allocated to allow Windows to clean up nested
         /// process hierarchies and release associated kernel handles.
         /// </remarks>
         public const int KillTreeWaitMs = 10_000;
@@ -787,7 +787,7 @@ namespace Servy.Core.Config
         /// The maximum permitted length for a service description.
         /// </summary>
         /// <remarks>
-        /// While the registry can technically store larger strings, this limit prevents 
+        /// While the registry can technically store larger strings, this limit prevents
         /// unnecessary bloat in the Windows Registry and the local SQLite database.
         /// </remarks>
         public const int MaxDescriptionLength = 8_192;
@@ -796,21 +796,21 @@ namespace Servy.Core.Config
         /// The maximum permitted length for command-line arguments.
         /// </summary>
         /// <remarks>
-        /// The theoretical Win32 limit for the CreateProcess argument string is 32,767 characters. 
+        /// The theoretical Win32 limit for the CreateProcess argument string is 32,767 characters.
         /// This value is set slightly lower to provide a safety margin for internal path canonicalization.
         /// </remarks>
         public const int MaxArgumentLength = 32_000;
 
         /// <summary>
-        /// Safety threshold that defines the maximum number of recursive expansion passes 
-        /// allowed when resolving nested environment variables. This prevents infinite 
+        /// Safety threshold that defines the maximum number of recursive expansion passes
+        /// allowed when resolving nested environment variables. This prevents infinite
         /// loops caused by circular references.
         /// </summary>
         public const int MaxEnvVarExpansionPasses = 5;
 
         /// <summary>
-        /// The maximum allowed length for a fully expanded environment variable string. 
-        /// Set to 32,768 characters to align with the maximum environment variable 
+        /// The maximum allowed length for a fully expanded environment variable string.
+        /// Set to 32,768 characters to align with the maximum environment variable
         /// size limit on modern Windows systems.
         /// </summary>
         public const int MaxEnvVarExpandedLength = 32_768;
@@ -819,7 +819,7 @@ namespace Servy.Core.Config
         /// The maximum allowed size for imported configuration files (XML or JSON) in Megabytes.
         /// </summary>
         /// <remarks>
-        /// This constant acts as a safety threshold to prevent "Out of Memory" exceptions or 
+        /// This constant acts as a safety threshold to prevent "Out of Memory" exceptions or
         /// Large Object Heap (LOH) fragmentation when parsing malformed or excessively large files.
         /// Default is 10 MB.
         /// </remarks>
@@ -843,27 +843,27 @@ namespace Servy.Core.Config
         public const long BytesInMegabyte = 1_024 * 1_024;
 
         /// <summary>
-        /// The maximum time in milliseconds to wait for the standard output and error streams 
-        /// to drain after a process has exited. This prevents hanging the SCM thread if pipes 
+        /// The maximum time in milliseconds to wait for the standard output and error streams
+        /// to drain after a process has exited. This prevents hanging the SCM thread if pipes
         /// are stuck or asynchronous reads do not complete.
         /// </summary>
         public const int OutputDrainTimeoutMs = 5_000;
 
         /// <summary>
-        /// The minimum duration to wait after a non-critical rotation failure (e.g., transient IO contention) 
+        /// The minimum duration to wait after a non-critical rotation failure (e.g., transient IO contention)
         /// before attempting another rotation.
         /// </summary>
         public const int LogRotationCooldownMs = 1_000;
 
         /// <summary>
-        /// The duration the rotation circuit breaker remains tripped after a critical failure. 
-        /// Defaults to 10 minutes to prevent log-storming and excessive CPU usage during persistent 
+        /// The duration the rotation circuit breaker remains tripped after a critical failure.
+        /// Defaults to 10 minutes to prevent log-storming and excessive CPU usage during persistent
         /// infrastructure issues (e.g., unmounted drives or roaming profile sync locks).
         /// </summary>
         public const int LogRotationCriticalFailureCooldownMs = 600_000; // 10 Minutes
 
         /// <summary>
-        /// The maximum number of synchronous retries for the low-level <c>File.Move</c> operation 
+        /// The maximum number of synchronous retries for the low-level <c>File.Move</c> operation
         /// during a rotation event.
         /// </summary>
         public const int LogRotationMaxSyncRetries = 3;
@@ -880,7 +880,7 @@ namespace Servy.Core.Config
         public const int LoggerMaxInnerExceptionDepth = 16;
 
         /// <summary>
-        /// The maximum character length for a formatted exception string. 
+        /// The maximum character length for a formatted exception string.
         /// Excessively large stack traces or messages are truncated to prevent application memory pressure and excessive disk usage in log files.
         /// </summary>
         public const int LoggerMaxFormattedExceptionLength = 16_384; // 16 KB cap to prevent log bloat
@@ -902,107 +902,107 @@ namespace Servy.Core.Config
         /// <remarks>
         /// <para>
         /// The underlying Windows Event Log API has a strict per-entry size limit of approximately 31,839 characters.
-        /// This constant enforces a truncation limit of 31,000 characters to provide a safety margin for multi-byte Unicode 
+        /// This constant enforces a truncation limit of 31,000 characters to provide a safety margin for multi-byte Unicode
         /// characters and header metadata, ensuring that log writes do not fail due to message bloat.
         /// </para>
         /// <para>
-        /// When a log message exceeds this limit, the <c>SafeWriteToEventLog</c> method in <see cref="EventLogLogger"/> will truncate the string 
+        /// When a log message exceeds this limit, the <c>SafeWriteToEventLog</c> method in <see cref="EventLogLogger"/> will truncate the string
         /// and append a "[truncated]" suffix to maintain forensic visibility while ensuring the write operation succeeds.
         /// </para>
         /// </remarks>
         public const int EventLogMessageMaxChars = 31_000;
 
         /// <summary>
-        /// Specifies the default duration in milliseconds to wait for the operating system 
+        /// Specifies the default duration in milliseconds to wait for the operating system
         /// to finalize the cleanup of a process and its descendant tree after a forced kill is issued.
         /// </summary>
         /// <remarks>
-        /// This delay helps prevent race conditions where subsequent file system operations 
-        /// (like re-extracting resources) fail because the OS hasn't fully released file 
+        /// This delay helps prevent race conditions where subsequent file system operations
+        /// (like re-extracting resources) fail because the OS hasn't fully released file
         /// handles held by the terminated process tree.
         /// </remarks>
         public const int DefaultDescendantPostKillWaitMs = 3_000;
 
         /// <summary>
-        /// Specifies the delay in milliseconds to wait after registering the PRESHUTDOWN notification 
+        /// Specifies the delay in milliseconds to wait after registering the PRESHUTDOWN notification
         /// with the Service Control Manager (SCM) to ensure the registration is fully processed.
         /// </summary>
         public const int PreShutdownRegistrationDelayMs = 500;
 
         /// <summary>
-        /// Specifies the maximum duration in milliseconds to wait for the internal logger 
+        /// Specifies the maximum duration in milliseconds to wait for the internal logger
         /// to flush its final buffers to disk during service shutdown.
         /// </summary>
         public const int LoggerFlushTimeoutMs = 1_500;
 
         /// <summary>
-        /// Specifies the minimum safety buffer in seconds used to determine if a service 
+        /// Specifies the minimum safety buffer in seconds used to determine if a service
         /// has reached a stable "Running" state after a recovery reset.
         /// </summary>
         public const int ConditionalResetStabilityBufferSeconds = 30;
 
         /// <summary>
-        /// Specifies the fixed delay in milliseconds applied when scheduling service recovery 
+        /// Specifies the fixed delay in milliseconds applied when scheduling service recovery
         /// actions to prevent rapid restart loops.
         /// </summary>
         public const int RecoverySchedulingDelayMs = 5_000;
 
         /// <summary>
-        /// Specifies the absolute maximum duration in milliseconds added to the cumulative 
+        /// Specifies the absolute maximum duration in milliseconds added to the cumulative
         /// process-tree timeout to protect the SCM from kernel-level hangs during termination.
         /// </summary>
         public const int SafeKillProcessSafetyBufferMs = 10_000;
 
         /// <summary>
-        /// Specifies the interval in milliseconds between pulses during a safe-kill operation 
+        /// Specifies the interval in milliseconds between pulses during a safe-kill operation
         /// where the service requests additional "Wait Hint" time from the SCM.
         /// </summary>
         public const int SafeKillProcessPulseIntervalMs = 5_000;
 
         /// <summary>
-        /// Specifies the polling interval in milliseconds when asynchronously waiting for 
+        /// Specifies the polling interval in milliseconds when asynchronously waiting for
         /// a process to exit or reach a timeout threshold.
         /// </summary>
         public const int WaitForExitOrTimeoutDelayMs = 500;
 
         /// <summary>
-        /// Specifies the thread yield duration in milliseconds required for the operating system 
+        /// Specifies the thread yield duration in milliseconds required for the operating system
         /// to finalize console attachment or control-handler registration.
         /// </summary>
         public const int ConsoleAttachYieldMs = 50;
 
         /// <summary>
-        /// Specifies the polling interval in milliseconds used by the service restarter 
+        /// Specifies the polling interval in milliseconds used by the service restarter
         /// when waiting for a service to transition out of a pending or transitional state.
         /// </summary>
         public const int ServiceRestarterPollIntervalMs = 500;
 
         /// <summary>
-        /// Specifies the polling interval in milliseconds used to check if a managed process 
+        /// Specifies the polling interval in milliseconds used to check if a managed process
         /// has successfully exited during a teardown sequence.
         /// </summary>
         public const int ProcessExitPollIntervalMs = 500;
 
         /// <summary>
-        /// Specifies the refresh interval in milliseconds for the CLI progress spinner 
+        /// Specifies the refresh interval in milliseconds for the CLI progress spinner
         /// to maintain a smooth visual frame rate during long-running commands.
         /// </summary>
         public const int ConsoleSpinnerDelayMs = 100;
 
         /// <summary>
-        /// Specifies the retry delay in milliseconds applied when a clipboard operation fails 
+        /// Specifies the retry delay in milliseconds applied when a clipboard operation fails
         /// due to a temporary COM locking exception.
         /// </summary>
         public const int ClipboardComRetryDelayMs = 50;
 
         /// <summary>
-        /// The maximum time, in milliseconds, the service will wait for a tracked hook process tree 
+        /// The maximum time, in milliseconds, the service will wait for a tracked hook process tree
         /// (pre-launch, post-launch, or pre-stop) to exit after a kill signal has been issued.
         /// </summary>
         /// <remarks>
-        /// This timeout prevents the service teardown sequence from hanging indefinitely if an auxiliary 
-        /// hook is blocked by uninterruptible I/O or a kernel-mode lock. When reached, the service 
-        /// will log a warning and proceed with its own shutdown to remain responsive to the 
+        /// This timeout prevents the service teardown sequence from hanging indefinitely if an auxiliary
+        /// hook is blocked by uninterruptible I/O or a kernel-mode lock. When reached, the service
+        /// will log a warning and proceed with its own shutdown to remain responsive to the
         /// Windows Service Control Manager (SCM).
         /// </remarks>
         public const int HookCleanupTimeoutMs = 5_000;
@@ -1011,15 +1011,15 @@ namespace Servy.Core.Config
         /// The default timeout, in seconds, for service restart operations within the wrapper service.
         /// </summary>
         /// <remarks>
-        /// Set to 120 seconds to ensure maximum resiliency for background operations. 
-        /// This extended duration allows the restarter to wait out long 'Pending' transitions 
-        /// (e.g., heavy I/O cleanup or database flushes) without triggering a timeout 
+        /// Set to 120 seconds to ensure maximum resiliency for background operations.
+        /// This extended duration allows the restarter to wait out long 'Pending' transitions
+        /// (e.g., heavy I/O cleanup or database flushes) without triggering a timeout
         /// exception in the host service.
         /// </remarks>
         public const int DefaultRestarterTimeoutSeconds = 120;
 
         /// <summary>
-        /// The number of bytes read from the beginning of a file to generate a prefix digest. 
+        /// The number of bytes read from the beginning of a file to generate a prefix digest.
         /// 4096 bytes is the default to clear common application log headers and prologues.
         /// </summary>
         public const int FileIdentityPrefixBytes = 4_096;
@@ -1028,14 +1028,14 @@ namespace Servy.Core.Config
         /// The safety window, in seconds, used to detect Windows PID reuse during recursive process tree traversals.
         /// </summary>
         /// <remarks>
-        /// Windows recycles Process IDs (PIDs) aggressively. Without an identity check, a recursive 
-        /// operation might inadvertently target a new, unrelated process that has claimed the PID 
-        /// of a recently terminated child or parent. 
-        /// 
-        /// This constant defines the maximum allowed drift between the creation time of a parent 
-        /// and its detected children. If a "child" process has a <see cref="System.Diagnostics.Process.StartTime"/> 
-        /// that is significantly older or younger than its parent beyond this threshold (accounting for 
-        /// kernel-scheduling jitter), it is flagged as a recycled PID and excluded from the operation 
+        /// Windows recycles Process IDs (PIDs) aggressively. Without an identity check, a recursive
+        /// operation might inadvertently target a new, unrelated process that has claimed the PID
+        /// of a recently terminated child or parent.
+        ///
+        /// This constant defines the maximum allowed drift between the creation time of a parent
+        /// and its detected children. If a "child" process has a <see cref="System.Diagnostics.Process.StartTime"/>
+        /// that is significantly older or younger than its parent beyond this threshold (accounting for
+        /// kernel-scheduling jitter), it is flagged as a recycled PID and excluded from the operation
         /// to prevent "process suicide" or the accidental termination of system-critical infrastructure.
         /// </remarks>
         public const int PidReuseToleranceSeconds = 2;
@@ -1051,19 +1051,19 @@ namespace Servy.Core.Config
         public const int MillisecondsPerMinute = 60_000;
 
         /// <summary>
-        /// Defines the consecutive failure limit before a file system access error is escalated from a 
+        /// Defines the consecutive failure limit before a file system access error is escalated from a
         /// warning to a high-severity error message.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Telemetry Noise Reduction:</b> In long-running background worker environments, transient filesystem 
-        /// locks (such as temporary file locks from antivirus sweeps, backup software indexing, or active 
-        /// log monitoring tools) can cause intermittent deletion failures. Logging these as errors immediately 
+        /// <b>Telemetry Noise Reduction:</b> In long-running background worker environments, transient filesystem
+        /// locks (such as temporary file locks from antivirus sweeps, backup software indexing, or active
+        /// log monitoring tools) can cause intermittent deletion failures. Logging these as errors immediately
         /// would pollute event streams with non-actionable noise.
         /// </para>
         /// <para>
-        /// If the cleanup loop encounters <value>10</value> consecutive deletion failures without a successful pass, 
-        /// it escalates the log level to <c>Logger.Error</c> to notify administrators that rotated log files are 
+        /// If the cleanup loop encounters <value>10</value> consecutive deletion failures without a successful pass,
+        /// it escalates the log level to <c>Logger.Error</c> to notify administrators that rotated log files are
         /// no longer being pruned and disk space may grow unbounded.
         /// </para>
         /// </remarks>
@@ -1073,9 +1073,9 @@ namespace Servy.Core.Config
         /// Defines the maximum number of retry attempts allowed when performing an atomic file swap operation.
         /// </summary>
         /// <remarks>
-        /// Protects against transient I/O conflicts during atomic file replacement. While content is written to a temporary file, 
-        /// the final file move via <see cref="File.Move(string, string, bool)"/> can hit temporary locks if background OS processes 
-        /// (like file indexers or antivirus filters) inspect the destination. This setting allows up to <value>3</value> retries 
+        /// Protects against transient I/O conflicts during atomic file replacement. While content is written to a temporary file,
+        /// the final file move via <see cref="File.Move(string, string, bool)"/> can hit temporary locks if background OS processes
+        /// (like file indexers or antivirus filters) inspect the destination. This setting allows up to <value>3</value> retries
         /// before propagating an exception.
         /// </remarks>
         public const int WriteFileAtomicMaxRetries = 3;
@@ -1085,29 +1085,29 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Win32 File Locking Dynamics:</b> When a temporary file or configuration file is written to disk, 
+        /// <b>Win32 File Locking Dynamics:</b> When a temporary file or configuration file is written to disk,
         /// background processes like antivirus scanners or Windows Search indexing may temporarily open a shared read lock on it.
         /// </para>
         /// <para>
-        /// If a lock is active during an atomic file move, the operation fails with a Win32 Error 5 
-        /// (<see cref="UnauthorizedAccessException"/>) or Error 32 (<see cref="IOException"/> sharing violation). This 
+        /// If a lock is active during an atomic file move, the operation fails with a Win32 Error 5
+        /// (<see cref="UnauthorizedAccessException"/>) or Error 32 (<see cref="IOException"/> sharing violation). This
         /// <value>100</value> millisecond delay gives external locks time to release before the next retry.
         /// </para>
         /// </remarks>
         public const int WriteFileAtomicRetryDelayMs = 100;
 
         /// <summary>
-        /// The minimum interval, in seconds, before the same UI exception message 
+        /// The minimum interval, in seconds, before the same UI exception message
         /// will trigger another modal error dialog.
         /// </summary>
         /// <remarks>
-        /// This debounce window prevents a flood of repetitive error messages from 
+        /// This debounce window prevents a flood of repetitive error messages from
         /// modal-locking the UI thread during recurring background task failures.
         /// </remarks>
         public const int UnexpectedErrorDialogDebounceSeconds = 15;
 
         /// <summary>
-        /// The maximum allowed length for a full Windows file path, typically defined as 260 characters including the null terminator. 
+        /// The maximum allowed length for a full Windows file path, typically defined as 260 characters including the null terminator.
         /// A limit of 259 is used to safely accommodate paths without overflowing the buffer.
         /// </summary>
         public const int WriteFileAtomicMaxPathLength = 259;
@@ -1119,14 +1119,14 @@ namespace Servy.Core.Config
         public const int ConditionalResetMaxThresholdSeconds = 3_600;
 
         /// <summary>
-        /// The maximum time, in milliseconds, that a logging thread will wait for an 
+        /// The maximum time, in milliseconds, that a logging thread will wait for an
         /// in-flight log file rotation to complete before timing out and dropping the entry.
         /// </summary>
         public const int LogRotationWaitTimeoutMs = 15_000;
 
         /// <summary>
-        /// Defines the maximum Process ID (PID) value reserved for critical Windows system processes 
-        /// (e.g., Idle at 0, System at 4). These IDs must never be targeted for termination 
+        /// Defines the maximum Process ID (PID) value reserved for critical Windows system processes
+        /// (e.g., Idle at 0, System at 4). These IDs must never be targeted for termination
         /// to avoid system-level instability or accidental kernel-space interference.
         /// </summary>
         public const int MaxReservedSystemPid = 4;
@@ -1135,29 +1135,29 @@ namespace Servy.Core.Config
         /// The maximum allowed depth limit constraint when deserializing untrusted or external JSON data structures.
         /// </summary>
         /// <remarks>
-        /// This security-relevant hardening threshold strictly bounds structural recursion depth during token parsing. 
-        /// Enforcing an upper ceiling of 32 effectively blocks stack-exhaustion denial-of-service (DoS) exploits 
+        /// This security-relevant hardening threshold strictly bounds structural recursion depth during token parsing.
+        /// Enforcing an upper ceiling of 32 effectively blocks stack-exhaustion denial-of-service (DoS) exploits
         /// engineered via deeply nested malicious JSON payloads.
         /// </remarks>
         public const int UntrustedJsonMaxDepth = 32;
 
         /// <summary>
-        /// The maximum duration in seconds that a process will block while waiting to acquire 
+        /// The maximum duration in seconds that a process will block while waiting to acquire
         /// the cross-process global synchronization mutex lock for protected cryptographic key operations.
         /// </summary>
         /// <remarks>
-        /// This value prevents application startup or installation deadlocks across multiple process 
-        /// boundaries (e.g., CLI, Service Wrapper, and UI Manager) by throwing a deterministic 
+        /// This value prevents application startup or installation deadlocks across multiple process
+        /// boundaries (e.g., CLI, Service Wrapper, and UI Manager) by throwing a deterministic
         /// <see cref="TimeoutException"/> if the key material lock cannot be acquired within 30 seconds.
         /// </remarks>
         public const int KeyProviderMutexTimeoutSeconds = 30;
 
         /// <summary>
-        /// The base backoff delay period in milliseconds used inside the exponential backoff 
+        /// The base backoff delay period in milliseconds used inside the exponential backoff
         /// strategy when retrying file-read IO operations on cryptographic keys.
         /// </summary>
         /// <remarks>
-        /// This 100ms base time multiplier governs the sleep window (<c>Base * (1 &lt;&lt; attempt)</c>) 
+        /// This 100ms base time multiplier governs the sleep window (<c>Base * (1 &lt;&lt; attempt)</c>)
         /// during retry loops, helping to safely resolve concurrent file-system access races on the raw key storage layer.
         /// </remarks>
         public const int KeyProviderReadRetryBackoffBaseMs = 100;
@@ -1166,13 +1166,13 @@ namespace Servy.Core.Config
         /// The collection of lowercase file extensions allowed for service configuration file operations.
         /// </summary>
         /// <remarks>
-        /// This security policy centralizes the application's supported file types, keeping the validation 
+        /// This security policy centralizes the application's supported file types, keeping the validation
         /// boundaries in <c>PathSecurityGuard</c> synchronized with the file dialog filters and serializers.
         /// </remarks>
         public static readonly ImmutableArray<string> AllowedConfigFileExtensions = ImmutableArray.Create(".json", ".xml");
 
         /// <summary>
-        /// Specifies the maximum number of retry attempts for <c>CreateToolhelp32Snapshot</c> when encountering 
+        /// Specifies the maximum number of retry attempts for <c>CreateToolhelp32Snapshot</c> when encountering
         /// <c>ERROR_BAD_LENGTH</c> (0x18) caused by rapid process creation/destruction races.
         /// </summary>
         /// <remarks>
@@ -1228,13 +1228,13 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Win32 Shared Resource Architecture:</b> The Windows Clipboard is a session-wide shared resource. 
-        /// When another process holds the clipboard open (e.g., Remote Desktop sessions, password managers, or security scanners), 
-        /// requests from other applications fail with a <see cref="System.Runtime.InteropServices.COMException"/> or 
+        /// <b>Win32 Shared Resource Architecture:</b> The Windows Clipboard is a session-wide shared resource.
+        /// When another process holds the clipboard open (e.g., Remote Desktop sessions, password managers, or security scanners),
+        /// requests from other applications fail with a <see cref="System.Runtime.InteropServices.COMException"/> or
         /// <see cref="System.Runtime.InteropServices.ExternalException"/>.
         /// </para>
         /// <para>
-        /// To handle these transient locks without crashing or freezing the UI dispatcher thread, 
+        /// To handle these transient locks without crashing or freezing the UI dispatcher thread,
         /// the application retries up to <value>5</value> times before logging a warning and giving up.
         /// </para>
         /// </remarks>
@@ -1386,7 +1386,7 @@ namespace Servy.Core.Config
         public const int LogTailerEofPollIntervalMs = 150;
 
         /// <summary>
-        /// Grace period in milliseconds to wait for a process to fully terminate and release kernel handles 
+        /// Grace period in milliseconds to wait for a process to fully terminate and release kernel handles
         /// before the restarter attempts to launch the new instance.
         /// </summary>
         public const int RestarterKillGracePeriodMs = 3_000;
@@ -1425,8 +1425,8 @@ namespace Servy.Core.Config
         /// The absolute maximum delay allowed for database retry operations, in milliseconds.
         /// </summary>
         /// <remarks>
-        /// This constant serves as the upper safety cap for the exponential backoff algorithm to 
-        /// ensure that retries remain responsive and do not grow indefinitely during sustained 
+        /// This constant serves as the upper safety cap for the exponential backoff algorithm to
+        /// ensure that retries remain responsive and do not grow indefinitely during sustained
         /// infrastructure failures.
         /// </remarks>
         public const int DbBackoffMaxMs = 5_000;
@@ -1482,7 +1482,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPasswordEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string PasswordEnvVarName = "SERVY_PASSWORD";
@@ -1492,7 +1492,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyProcessParametersEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string ProcessParametersEnvVarName = "SERVY_PROCESS_PARAMETERS";
@@ -1502,7 +1502,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyEnvironmentVariablesEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string EnvironmentVariablesEnvVarName = "SERVY_ENVIRONMENT_VARIABLES";
@@ -1512,7 +1512,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyFailureProgramParametersEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string FailureProgramParametersEnvVarName = "SERVY_FAILURE_PROGRAM_PARAMETERS";
@@ -1522,7 +1522,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPreLaunchParametersEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string PreLaunchParametersEnvVarName = "SERVY_PRE_LAUNCH_PARAMETERS";
@@ -1532,7 +1532,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPreLaunchEnvironmentVariablesEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string PreLaunchEnvironmentVariablesEnvVarName = "SERVY_PRE_LAUNCH_ENVIRONMENT_VARIABLES";
@@ -1542,7 +1542,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPostLaunchParametersEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string PostLaunchParametersEnvVarName = "SERVY_POST_LAUNCH_PARAMETERS";
@@ -1552,7 +1552,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPreStopParametersEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string PreStopParametersEnvVarName = "SERVY_PRE_STOP_PARAMETERS";
@@ -1562,7 +1562,7 @@ namespace Servy.Core.Config
         /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPostStopParametersEnvVar)
         /// </summary>
         /// <remarks>
-        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text
         /// within command-line history, logs, or system process lists.
         /// </remarks>
         public const string PostStopParametersEnvVarName = "SERVY_POST_STOP_PARAMETERS";
@@ -1571,8 +1571,8 @@ namespace Servy.Core.Config
         /// Controls whether the system will process legacy v1 (unauthenticated) ciphertexts.
         /// </summary>
         /// <remarks>
-        /// This flag is maintained as a hardcoded compile-time constant <c>false</c> to mitigate ciphertext 
-        /// downgrade attack vectors. Automated runtime migration windows are no longer supported. Older 
+        /// This flag is maintained as a hardcoded compile-time constant <c>false</c> to mitigate ciphertext
+        /// downgrade attack vectors. Automated runtime migration windows are no longer supported. Older
         /// configurations must be modernized by re-saving them through the Servy Manager UI or the CLI tool.
         /// </remarks>
         public const bool AllowLegacyV1Decryption = false;
@@ -1634,8 +1634,8 @@ namespace Servy.Core.Config
         /// <param name="fileName">The base name of the executable (without the .exe extension).</param>
         /// <returns>The fully qualified path to the executable; callers must verify with File.Exists.</returns>
         /// <remarks>
-        /// In <c>DEBUG</c> mode, this resolves to the application's base directory (the build output folder), 
-        /// where the required executables are copied during the build. In <c>RELEASE</c> mode, it checks the application's 
+        /// In <c>DEBUG</c> mode, this resolves to the application's base directory (the build output folder),
+        /// where the required executables are copied during the build. In <c>RELEASE</c> mode, it checks the application's
         /// base directory (supporting unit tests/portable use) before falling back to the hardened <c>ProgramData</c> vault.
         /// </remarks>
         private static string ResolveExe(string fileName)
@@ -1659,7 +1659,7 @@ namespace Servy.Core.Config
         }
 
         /// <summary>
-        /// Traverses up the directory hierarchy from the specified starting point to locate the 
+        /// Traverses up the directory hierarchy from the specified starting point to locate the
         /// repository root, identified by the presence of the <c>Servy.sln</c> file.
         /// </summary>
         /// <param name="startDir">The directory path where the upward search begins.</param>

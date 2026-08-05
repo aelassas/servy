@@ -13,7 +13,7 @@ namespace Servy.Core.Helpers
         /// plus the console handles CONIN$/CONOUT$.
         /// </summary>
         /// <remarks>
-        /// Enforcing an <see cref="ImmutableHashSet{T}"/> guarantees structural integrity across the application 
+        /// Enforcing an <see cref="ImmutableHashSet{T}"/> guarantees structural integrity across the application
         /// lifecycle, preventing external consumers from mutating, clearing, or injecting values into the definition block.
         /// </remarks>
         public static readonly ImmutableHashSet<string> ReservedDeviceNames = ImmutableHashSet.Create(

@@ -14,8 +14,8 @@ namespace Servy.Manager.ViewModels
     /// Base class that provides robust, re-entrant-safe monitoring timer logic.
     /// </summary>
     /// <remarks>
-    /// This class utilizes <see cref="Interlocked"/> operations to ensure that overlapping timer ticks 
-    /// do not result in concurrent execution of the polling logic. It also prevents the timer 
+    /// This class utilizes <see cref="Interlocked"/> operations to ensure that overlapping timer ticks
+    /// do not result in concurrent execution of the polling logic. It also prevents the timer
     /// from "resurrecting" if a stop request is issued while a tick is currently processing.
     /// </remarks>
     public abstract class MonitoringViewModelBase : ServiceSearchViewModelBase
@@ -31,13 +31,13 @@ namespace Servy.Manager.ViewModels
         private CancellationTokenSource? _monitoringCts;
 
         /// <summary>
-        /// Atomic flag representing the overall monitoring state. 
+        /// Atomic flag representing the overall monitoring state.
         /// 0 = Stopped, 1 = Monitoring.
         /// </summary>
         private int _isMonitoringFlag = 0;
 
         /// <summary>
-        /// Atomic flag representing the execution state of the current tick. 
+        /// Atomic flag representing the execution state of the current tick.
         /// 0 = Idle, 1 = Processing.
         /// </summary>
         private int _isTickRunningFlag = 0;
@@ -92,7 +92,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Initializes the <see cref="DispatcherTimer"/> if it has not been created yet, 
+        /// Initializes the <see cref="DispatcherTimer"/> if it has not been created yet,
         /// binding it to the defined <see cref="RefreshIntervalMs"/> and hooking the tick event.
         /// </summary>
         protected void InitTimer()
@@ -110,8 +110,8 @@ namespace Servy.Manager.ViewModels
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">An object that contains no event data.</param>
         /// <remarks>
-        /// This method implements an atomic guard to prevent re-entrancy. The timer is explicitly stopped 
-        /// during the asynchronous execution of <see cref="OnTickAsync"/> and restarted in the finally block 
+        /// This method implements an atomic guard to prevent re-entrancy. The timer is explicitly stopped
+        /// during the asynchronous execution of <see cref="OnTickAsync"/> and restarted in the finally block
         /// only if <see cref="_isMonitoringFlag"/> indicates monitoring is still requested.
         /// </remarks>
         private async void OnTick(object? sender, EventArgs? e)
@@ -163,7 +163,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Performs the centralized asynchronous monitoring execution loop logic, managing selection states 
+        /// Performs the centralized asynchronous monitoring execution loop logic, managing selection states
         /// and providing standardized hooks to derived context implementations.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous execution sequence operation.</returns>
@@ -214,7 +214,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Starts the monitoring timer, initializes the cancellation context, 
+        /// Starts the monitoring timer, initializes the cancellation context,
         /// and atomically sets the monitoring flag to active.
         /// </summary>
         public virtual void StartMonitoring()
@@ -228,7 +228,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Stops the monitoring timer, cancels any in-flight background operations, 
+        /// Stops the monitoring timer, cancels any in-flight background operations,
         /// and atomically sets the monitoring flag to stopped.
         /// </summary>
         public virtual void StopMonitoring()
@@ -242,7 +242,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Invoked unconditionally by <see cref="StopMonitoring"/> to allow derived classes to execute 
+        /// Invoked unconditionally by <see cref="StopMonitoring"/> to allow derived classes to execute
         /// teardown logic, state persistence, or view clearing operations.
         /// </summary>
         protected virtual void OnMonitoringStopped()

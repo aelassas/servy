@@ -99,7 +99,7 @@ namespace Servy.Core.Helpers
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // --- ROBUSTNESS: Settle In-Flight Transitional Pending States ---
-                        // If a service is transitioning (e.g., StopPending from a prior failure/command), 
+                        // If a service is transitioning (e.g., StopPending from a prior failure/command),
                         // wait for it to land on a terminal state before deciding whether to issue Start or Continue.
                         var stopwatch = Stopwatch.StartNew();
                         while (sc.Status == ServiceControllerStatus.StopPending ||
@@ -325,7 +325,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Calculates the total stop timeout by evaluating configured limits, 
+        /// Calculates the total stop timeout by evaluating configured limits,
         /// historical stop times, and mandatory safety buffers.
         /// </summary>
         /// <param name="configuredTimeout">The timeout value from the service configuration.</param>
@@ -358,7 +358,7 @@ namespace Servy.Core.Helpers
         #region Private Methods
 
         /// <summary>
-        /// Queries the Service Control Manager (SCM) via native Win32 APIs to safely find all active services 
+        /// Queries the Service Control Manager (SCM) via native Win32 APIs to safely find all active services
         /// associated with a specific set of executables without relying on registry subkey read capabilities.
         /// </summary>
         /// <param name="wrapperExes">The set of executable filenames to search for (e.g., "Servy.Service.exe").</param>
@@ -368,7 +368,7 @@ namespace Servy.Core.Helpers
         /// <remarks>
         /// This method bypasses <see cref="ServiceController.ServicesDependedOn"/> (and related
         /// SCM round-trips) to prevent COM timeout issues in large-scale deployments.
-        /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables, 
+        /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables,
         /// and safely parses out executable paths that contain quotes or command-line arguments.
         /// </remarks>
         [ExcludeFromCodeCoverage]

@@ -17,11 +17,11 @@ namespace Servy.Core.Helpers
         #region Safety Guardrails
 
         /// <summary>
-        /// A safelist of critical Windows processes that should never be terminated, even if they 
+        /// A safelist of critical Windows processes that should never be terminated, even if they
         /// are holding file locks or are part of a target process tree.
         /// </summary>
         /// <remarks>
-        /// NOTE: This list must be updated when Windows introduces new kernel-pseudo-host processes 
+        /// NOTE: This list must be updated when Windows introduces new kernel-pseudo-host processes
         /// (e.g., future virtualization services or hypervisor hosts).
         /// </remarks>
         private static readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -97,7 +97,7 @@ namespace Servy.Core.Helpers
             // Step 1: Create a handle-less view of the entire system process table in a single pass
             var (snapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
 
-            // SECURITY: Get ancestor PIDs to prevent killing the Servy process chain if it happens 
+            // SECURITY: Get ancestor PIDs to prevent killing the Servy process chain if it happens
             // to be a descendant (e.g. through PID reuse or complex supervisor patterns)
             var protectedPids = GetAncestorPids(snapshot);
 
@@ -139,7 +139,7 @@ namespace Servy.Core.Helpers
                 {
                     using (var child = Process.GetProcessById(childPid))
                     {
-                        // SECURITY: Use centralized IsProtected as the single source of truth 
+                        // SECURITY: Use centralized IsProtected as the single source of truth
                         // to guard against killing ancestors or system critical processes.
                         if (IsProtected(childPid, child.ProcessName, protectedPids)) continue;
 
@@ -153,7 +153,7 @@ namespace Servy.Core.Helpers
                             continue;
                         }
 
-                        // Identity check: Ensures we don't kill a process that recycled a PID 
+                        // Identity check: Ensures we don't kill a process that recycled a PID
                         // from a target that died before this operation started.
                         if (childStart < parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
                             continue;
@@ -307,7 +307,7 @@ namespace Servy.Core.Helpers
                     using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
                     // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
-                    // Aligned with the string overload to use SafeStartTime wrapper to prevent Win32Exception 
+                    // Aligned with the string overload to use SafeStartTime wrapper to prevent Win32Exception
                     // or InvalidOperationException from skipping the subsequent KillProcessTree execution.
                     if (killParents) KillParentProcesses(target.Id, SafeStartTime(target), protectedPids, completeSnapshot, new HashSet<int>());
                     KillProcessTree(target, selfPid, protectedPids, byParent);
@@ -458,7 +458,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="name">The file name or path string to process.</param>
         /// <returns>
-        /// The file name without the ".exe" extension if it was present; 
+        /// The file name without the ".exe" extension if it was present;
         /// otherwise, the original string. Returns the input as-is if it is null or empty.
         /// </returns>
         private static string StripExe(string name)
@@ -522,7 +522,7 @@ namespace Servy.Core.Helpers
                 // This isolates PID recycling exploits at the boundary and blocks the walk from leaking into unrelated trees.
                 try
                 {
-                    // Verify the handle context directly using a single live process start time 
+                    // Verify the handle context directly using a single live process start time
                     // to completely eliminate the PID-recycling exploit window.
                     DateTime exactStartTime = parentProcess.StartTime;
 
@@ -547,7 +547,7 @@ namespace Servy.Core.Helpers
                 }
                 catch (Win32Exception)
                 {
-                    // If a Win32 Access Denied exception is thrown here during direct live verification, 
+                    // If a Win32 Access Denied exception is thrown here during direct live verification,
                     // we must fail closed and abort immediately rather than risking blind tree termination.
                     Logger.Warn($"KillParentProcesses: Access Denied establishing live temporal identity for parent PID {parentId}. Aborting walk.");
                     return;

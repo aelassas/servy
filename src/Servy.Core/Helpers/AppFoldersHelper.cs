@@ -19,9 +19,9 @@ namespace Servy.Core.Helpers
         /// addressing the "Shell Game" found in .NET Single-File and Self-Contained deployments.
         /// </para>
         /// <para>
-        /// It prioritizes <see cref="Environment.ProcessPath"/> to locate the actual native executable on disk. 
-        /// This ensures that even if the runtime has extracted assemblies to a temporary directory (the behavior 
-        /// of <see cref="AppContext.BaseDirectory"/> in some bundled modes), the path returned points to the 
+        /// It prioritizes <see cref="Environment.ProcessPath"/> to locate the actual native executable on disk.
+        /// This ensures that even if the runtime has extracted assemblies to a temporary directory (the behavior
+        /// of <see cref="AppContext.BaseDirectory"/> in some bundled modes), the path returned points to the
         /// folder where the user actually placed the application.
         /// </para>
         /// </remarks>
@@ -42,13 +42,13 @@ namespace Servy.Core.Helpers
         /// Ensures that the database, security, and operational folders exist and are configured with correct security descriptors.
         /// </summary>
         /// <param name="connectionString">
-        /// The SQLite connection string (e.g., <c>Data Source=C:\Path\To\Servy.db;</c>). 
+        /// The SQLite connection string (e.g., <c>Data Source=C:\Path\To\Servy.db;</c>).
         /// Used to determine the database directory.
         /// </param>
         /// <param name="aesKeyFilePath">Full filesystem path to the AES master key file.</param>
         /// <param name="aesIVFilePath">Full filesystem path to the legacy AES Initialization Vector (IV) file.</param>
         /// <param name="rootVaultPath">
-        /// Optional root directory for the application data vault. 
+        /// Optional root directory for the application data vault.
         /// If <c>null</c>, defaults to <see cref="AppConfig.ProgramDataPath"/>.
         /// </param>
         /// <remarks>
@@ -57,19 +57,19 @@ namespace Servy.Core.Helpers
         /// <list type="number">
         /// <item>
         /// <description>
-        /// <b>Root Vault:</b> The primary data path defined by <paramref name="rootVaultPath"/> (or <see cref="AppConfig.ProgramDataPath"/>) 
+        /// <b>Root Vault:</b> The primary data path defined by <paramref name="rootVaultPath"/> (or <see cref="AppConfig.ProgramDataPath"/>)
         /// is secured first by breaking inheritance to block standard users.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Operational Folders:</b> Subfolders (db, security, recovery, logs) are processed. If they reside within the Root Vault, 
+        /// <b>Operational Folders:</b> Subfolders (db, security, recovery, logs) are processed. If they reside within the Root Vault,
         /// inheritance is preserved to allow manually granted service account permissions to cascade down.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// <b>External Paths:</b> If a folder is located outside the primary data path, it is treated as a new Root Vault 
+        /// <b>External Paths:</b> If a folder is located outside the primary data path, it is treated as a new Root Vault
         /// and inheritance is broken for safety.
         /// </description>
         /// </item>

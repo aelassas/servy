@@ -304,7 +304,7 @@ namespace Servy.CLI
         }
 
         /// <summary>
-        /// Attempts to execute a cleanup action, suppressing any exceptions to ensure 
+        /// Attempts to execute a cleanup action, suppressing any exceptions to ensure
         /// the teardown process proceeds.
         /// </summary>
         /// <param name="action">The delegate containing the cleanup logic to execute.</param>
@@ -325,12 +325,12 @@ namespace Servy.CLI
         private static extern IntPtr GetConsoleWindow();
 
         /// <summary>
-        /// Performs a multi-layered check to determine if the current process is running in a real, 
+        /// Performs a multi-layered check to determine if the current process is running in a real,
         /// interactive console window.
         /// </summary>
         /// <returns>
-        /// <c>true</c> if a physical or emulated terminal is attached that supports interactive 
-        /// features (like cursor manipulation); <c>false</c> if the output is redirected, 
+        /// <c>true</c> if a physical or emulated terminal is attached that supports interactive
+        /// features (like cursor manipulation); <c>false</c> if the output is redirected,
         /// running in Session 0 (SYSTEM account), or headless.
         /// </returns>
         /// <remarks>
@@ -363,7 +363,7 @@ namespace Servy.CLI
 
             try
             {
-                // 4. Property check: Accessing buffer properties on a redirected 
+                // 4. Property check: Accessing buffer properties on a redirected
                 // handle will throw an IOException (Invalid Descriptor).
                 return Console.WindowHeight > 0;
             }

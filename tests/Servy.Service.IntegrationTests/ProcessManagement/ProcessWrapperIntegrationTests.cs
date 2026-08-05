@@ -146,7 +146,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 string formatString = wrapper.Format();
                 Assert.Contains(wrapper.Id.ToString(), formatString);
 
-                // Act: Await terminal completion 
+                // Act: Await terminal completion
                 bool exited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Assert: Verify post-execution properties
@@ -705,7 +705,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
                 wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
-                // Act 
+                // Act
                 // Act on an already exited process handle to trigger the initial null/exited evaluation checks
                 var result = TestReflection.InvokeNonPublic(wrapper, "TryStopGracefullyOrKill", wrapper.UnderlyingProcess, 1000, 500);
 

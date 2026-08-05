@@ -23,13 +23,13 @@
         Automatic = 0x00000002,
 
         /// <summary>
-        /// A service that starts automatically after other auto-start services 
+        /// A service that starts automatically after other auto-start services
         /// are started plus a short delay.
         /// </summary>
         /// <remarks>
-        /// <b>Internal sentinel.</b> This is NOT a valid Win32 <c>dwStartType</c>. 
-        /// To implement this, the service must first be set to <see cref="Automatic"/> 
-        /// via <c>ChangeServiceConfig</c>, followed by a separate call to 
+        /// <b>Internal sentinel.</b> This is NOT a valid Win32 <c>dwStartType</c>.
+        /// To implement this, the service must first be set to <see cref="Automatic"/>
+        /// via <c>ChangeServiceConfig</c>, followed by a separate call to
         /// <c>ChangeServiceConfig2</c> using <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c>.
         /// </remarks>
         AutomaticDelayedStart = 0x00000005,

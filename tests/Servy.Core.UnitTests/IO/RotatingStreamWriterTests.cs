@@ -158,7 +158,7 @@ namespace Servy.Core.UnitTests.IO
             try
             {
                 // Act & Assert
-                // Path.GetDirectoryName("filename.txt") returns null or string.Empty 
+                // Path.GetDirectoryName("filename.txt") returns null or string.Empty
                 // depending on the .NET runtime version, triggering the check.
                 Assert.Throws<ArgumentException>(() => InvokeGenerateUniqueFileName(fileName));
             }
@@ -464,7 +464,7 @@ namespace Servy.Core.UnitTests.IO
             // 1. Ensure the active tracking file base structure was cleanly recreated
             Assert.True(File.Exists(filePath));
 
-            // 2. Firm Validation: Target the middle-timestamp layout and explicitly filter out 
+            // 2. Firm Validation: Target the middle-timestamp layout and explicitly filter out
             // the base tracking path to verify a genuine archival stream rotation took place.
             var rotatedFiles = Directory.GetFiles(_testDir, "rotate2.*.txt")
                                         .Where(f => !f.EndsWith("rotate2.txt", StringComparison.OrdinalIgnoreCase))
@@ -597,7 +597,7 @@ namespace Servy.Core.UnitTests.IO
             File.SetLastWriteTime(rotated2, DateTime.Now.AddMinutes(-1));
 
             // Set the size rotation limit threshold high (e.g., 100 * 1024 * 1024 bytes)
-            // to prevent the writer from triggering an automatic internal rotation loop 
+            // to prevent the writer from triggering an automatic internal rotation loop
             // during the writer.Write("") initialization pass.
             long safeSizeLimit = 100 * 1024 * 1024;
 
@@ -679,7 +679,7 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             var filePath = Path.Combine(_testDir, "weekly_same.log");
 
-            // To prevent flakiness near the Monday 00:00 UTC ISO-week boundary, 
+            // To prevent flakiness near the Monday 00:00 UTC ISO-week boundary,
             // calculate the previous hour relative to the current live clock day.
             // If today is Monday, subtracting 1 hour might fall into the previous week.
             // By adding 2 days if it's Monday, we push the test execution window safely into mid-week.
@@ -861,7 +861,7 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
                 // 1. Act: Case - File doesn't exist yet (Lazy Init)
-                // Calling Write("") triggers CheckRotation, but _writer is still null 
+                // Calling Write("") triggers CheckRotation, but _writer is still null
                 // until the write physically starts.
                 writer.Write("");
                 writer.Flush();
@@ -935,7 +935,7 @@ namespace Servy.Core.UnitTests.IO
                 var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // Assert
-                // Even though it is a new day (April 11 vs April 10), 
+                // Even though it is a new day (April 11 vs April 10),
                 // the 23-hour buffer should block the rotation.
                 Assert.False(shouldRotate, "Should not rotate if < 23 hours have passed, even if the calendar day changed.");
             }
@@ -949,7 +949,7 @@ namespace Servy.Core.UnitTests.IO
             var lastRotationUtc = new DateTime(2026, 4, 10, 10, 0, 0, DateTimeKind.Utc);
 
             // April 11th, 11:00 AM UTC (25 hours later)
-            // 25 hours ensures that even in the most extreme time zones, 
+            // 25 hours ensures that even in the most extreme time zones,
             // a new calendar day has started.
             var nowUtc = lastRotationUtc.AddHours(25);
 
@@ -1092,7 +1092,7 @@ namespace Servy.Core.UnitTests.IO
                 // 1. Trip breaker manually
                 TestReflection.SetField(writer, "_rotationDisabled", true);
 
-                // Set the cooldown to the future so the self-healing logic 
+                // Set the cooldown to the future so the self-healing logic
                 // doesn't immediately reset the breaker to false.
                 TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(10));
 
@@ -1162,8 +1162,8 @@ namespace Servy.Core.UnitTests.IO
                     }
 
                     // Assert: Await state settlement loop pass
-                    // Because the background retry loops complete outside the public lock, 
-                    // we allow up to 1 second for the task success handler block to commit 
+                    // Because the background retry loops complete outside the public lock,
+                    // we allow up to 1 second for the task success handler block to commit
                     // its state updates back down to the default variables.
                     bool isDisabled = true;
                     DateTime cooldown = DateTime.MaxValue;
@@ -1202,8 +1202,8 @@ namespace Servy.Core.UnitTests.IO
                 }
 
                 // 3. Assert: Await state settlement loop pass
-                // ROBUSTNESS REFACTOR: Because PerformPhysicalRotation executes loops and fallback updates completely 
-                // outside of the public lock thread boundary, we must use SpinWait to prevent a reflection execution 
+                // ROBUSTNESS REFACTOR: Because PerformPhysicalRotation executes loops and fallback updates completely
+                // outside of the public lock thread boundary, we must use SpinWait to prevent a reflection execution
                 // race condition before the exception cooldown timestamp is officially committed.
                 bool isDisabled = true;
                 DateTime cooldown = DateTime.MinValue;
@@ -1256,7 +1256,7 @@ namespace Servy.Core.UnitTests.IO
 
                 // 2. EXHAUSTION SETUP: Create the exact rotated file and ALL possible collision suffixes.
                 // This forces GenerateUniqueFileName to throw an IOException. Because this specific
-                // method call is outside the IO/Unauthorized retry loop, its exception is caught by 
+                // method call is outside the IO/Unauthorized retry loop, its exception is caught by
                 // the outer block and correctly treated as a permanent critical failure.
                 var timestamp = fixedTime.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
                 var baseRotatedPath = Path.Combine(subDir, $"breaker_test.{timestamp}.log");
@@ -1323,7 +1323,7 @@ namespace Servy.Core.UnitTests.IO
                 TestReflection.SetField(writer, "_rotationDisabled", true);
                 TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(10));
 
-                // 2. Write 30 bytes (3x the limit). 
+                // 2. Write 30 bytes (3x the limit).
                 // Because the breaker is tripped, the writer will append the data but skip rotation.
                 writer.Write(new string('X', 30));
                 writer.Flush();

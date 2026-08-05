@@ -38,7 +38,7 @@
         /// If the input is <c>null</c>, empty, or contains no valid entries, the service is configured with no dependencies.
         /// </param>
         /// <returns>
-        /// A MULTI_SZ string suitable for the <c>lpDependencies</c> parameter of 
+        /// A MULTI_SZ string suitable for the <c>lpDependencies</c> parameter of
         /// <c>ChangeServiceConfig</c>. The format is:
         /// <list type="bullet">
         /// <item><description>Each dependency is separated by a single null character ('\0').</description></item>
@@ -65,7 +65,7 @@
 
             // Windows API compatibility: When working with Windows service dependencies,
             // the Service Control Manager expects dependency lists as a multi-string (MULTI_SZ),
-            // which is a sequence of null-terminated strings ending with an additional null 
+            // which is a sequence of null-terminated strings ending with an additional null
             // terminator (i.e., strings separated by \0 and double \0 at the end).
             // "no dependencies" vs "list terminator" are the same SCM construct.
             return string.Join("\0", parts) + NoDependencies;

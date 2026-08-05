@@ -202,7 +202,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Assert.True(childExited, $"The child process (PID {childId}) should have exited within the timeout.");
                 Assert.True(parentExited, $"The parent process (PID {parentId}) should have been terminated through the upward walk.");
 
-                // Hardening: If both processes are dead, a false return value usually indicates an acceptable 
+                // Hardening: If both processes are dead, a false return value usually indicates an acceptable
                 // native race condition (e.g., trying to inspect a PID that vanished mid-walk).
                 if (!result)
                 {

@@ -49,7 +49,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void StripExe_ShouldNormalizeExtensionsCaseInsensitively(string input, string expected)
         {
             // Arrange & Act
-            // Invoke the private 'StripExe' static method directly using the TestReflection engine. 
+            // Invoke the private 'StripExe' static method directly using the TestReflection engine.
             // This bypasses live process-table dependencies and targets the text manipulation algorithm directly.
             string? actual = TestReflection.InvokeNonPublicStatic(typeof(ProcessKiller), "StripExe", input) as string;
 

@@ -59,7 +59,7 @@ namespace Servy.Core.Security
                 _v2EncryptionKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, HkdfV2EncInfo);
                 _v2HmacKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, HkdfV2HmacInfo);
 
-                // Const-gated branch allows compiler to strip key cloning 
+                // Const-gated branch allows compiler to strip key cloning
                 // and eliminate unneeded DPAPI I/O when AllowLegacyV1Decryption is false.
                 if (AppConfig.AllowLegacyV1Decryption)
                 {
@@ -176,14 +176,14 @@ namespace Servy.Core.Security
         /// <item><term>v1 (Gated):</term><description>Legacy AES-256-CBC with static IV (No authentication).</description></item>
         /// <item><term>Fallback (Gated):</term><description>Validates if the input is raw Base64; if so, attempts v1 decryption.</description></item>
         /// </list>
-        /// <b>Security Note on Downgrade Vectors:</b> Processing v1 or raw legacy ciphertexts introduces an attacker-controllable 
-        /// downgrade vector because these formats lack an HMAC integrity check. An attacker with write access to the configuration 
-        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is permanently disabled 
+        /// <b>Security Note on Downgrade Vectors:</b> Processing v1 or raw legacy ciphertexts introduces an attacker-controllable
+        /// downgrade vector because these formats lack an HMAC integrity check. An attacker with write access to the configuration
+        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is permanently disabled
         /// via <c>AppConfig.AllowLegacyV1Decryption</c> to safeguard production systems.
         /// </remarks>
         /// <param name="cipherText">The versioned ciphertext (with marker) or a raw legacy string.</param>
         /// <returns>
-        /// The decrypted plain text on success, or the original <paramref name="cipherText"/> 
+        /// The decrypted plain text on success, or the original <paramref name="cipherText"/>
         /// only when the input has no marker and does not look like Base64.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="cipherText"/> is null.</exception>
@@ -204,7 +204,7 @@ namespace Servy.Core.Security
             if (cipherText == null) throw new ArgumentNullException(nameof(cipherText));
             if (cipherText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(cipherText));
 
-            // PERF: Create a span of the input string to perform prefix checks and slicing 
+            // PERF: Create a span of the input string to perform prefix checks and slicing
             // without allocating new string objects on the heap.
             ReadOnlySpan<char> textSpan = cipherText.AsSpan();
             ReadOnlySpan<char> markerSpan = EncryptMarker.AsSpan();
@@ -249,7 +249,7 @@ namespace Servy.Core.Security
                 }
                 catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
                 {
-                    // We log the failure and re-throw. Upstream callers (UI/CLI) must handle this failure 
+                    // We log the failure and re-throw. Upstream callers (UI/CLI) must handle this failure
                     // to prevent the use of tampered or corrupted credentials.
                     Logger.Error("Integrity failure for marked payload.", ex);
                     throw;
@@ -280,7 +280,7 @@ namespace Servy.Core.Security
             }
             catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
             {
-                // For unmarked strings, we preserve the defensive fallback to avoid breaking 
+                // For unmarked strings, we preserve the defensive fallback to avoid breaking
                 // fields that were never meant to be encrypted.
                 Logger.Warn($"Legacy fallback decryption failed for unmarked data: {ex.Message}. Returning as plaintext.");
                 return rawPayload;
@@ -296,12 +296,12 @@ namespace Servy.Core.Security
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Security Warning:</b> This method implements a legacy format that lacks an HMAC integrity check. 
+        /// <b>Security Warning:</b> This method implements a legacy format that lacks an HMAC integrity check.
         /// It is vulnerable to ciphertext manipulation and does not provide authentication.
         /// </para>
         /// <para>
-        /// This version utilizes a static Initialization Vector (IV), which reduces cryptographic variance 
-        /// compared to the random IV used in v2. It is maintained strictly for backward compatibility 
+        /// This version utilizes a static Initialization Vector (IV), which reduces cryptographic variance
+        /// compared to the random IV used in v2. It is maintained strictly for backward compatibility
         /// with data encrypted prior to the implementation of the authenticated v2 format.
         /// </para>
         /// </remarks>
@@ -387,7 +387,7 @@ namespace Servy.Core.Security
                 {
                     aes.Key = _v2EncryptionKey!;
 
-                    // Pre-allocate the output buffer for plaintext. 
+                    // Pre-allocate the output buffer for plaintext.
                     // In PKCS7, plaintext length is always <= ciphertext length.
                     byte[] outputBuffer = new byte[ciphertext.Length];
                     try
@@ -427,7 +427,7 @@ namespace Servy.Core.Security
         /// <item><description>Characters belong exclusively to the Base64 alphabet (A-Z, a-z, 0-9, +, /).</description></item>
         /// <item><description>Padding ('=') only appears at the very end of the string.</description></item>
         /// </list>
-        /// It is used to quickly distinguish between encrypted markers and raw legacy text without triggering 
+        /// It is used to quickly distinguish between encrypted markers and raw legacy text without triggering
         /// expensive <see cref="System.FormatException"/> exceptions during decryption attempts.
         /// </remarks>
         /// <param name="value">The string to validate.</param>

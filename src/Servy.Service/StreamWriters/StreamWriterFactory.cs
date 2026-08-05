@@ -19,10 +19,10 @@ namespace Servy.Service.StreamWriters
             bool useLocalTimeForRotation)
         {
             return new RotatingStreamWriterAdapter(path,
-                enableSizeRotation, 
-                rotationSizeInBytes, 
+                enableSizeRotation,
+                rotationSizeInBytes,
                 enableDateRotation,
-                dateRotationType, 
+                dateRotationType,
                 maxRotations,
                 useLocalTimeForRotation);
         }

@@ -8,11 +8,11 @@ using System.Data.SQLite;
 namespace Servy.Infrastructure.Data
 {
     /// <summary>
-    /// Provides a concrete implementation of <see cref="IDapperExecutor"/> using Dapper 
+    /// Provides a concrete implementation of <see cref="IDapperExecutor"/> using Dapper
     /// and <see cref="System.Data.SQLite"/> for database operations.
     /// </summary>
     /// <remarks>
-    /// This implementation includes automatic retry logic to handle <see cref="SQLiteErrorCode.Busy"/> 
+    /// This implementation includes automatic retry logic to handle <see cref="SQLiteErrorCode.Busy"/>
     /// and <see cref="SQLiteErrorCode.Locked"/> errors, ensuring resilience in multi-process environments.
     /// </remarks>
     public class DapperExecutor : IDapperExecutor
@@ -34,12 +34,12 @@ namespace Servy.Infrastructure.Data
         #region Transaction Wrapper
 
         /// <summary>
-        /// Wraps an <see cref="IDbTransaction"/> and its parent <see cref="IDbConnection"/> to ensure both 
+        /// Wraps an <see cref="IDbTransaction"/> and its parent <see cref="IDbConnection"/> to ensure both
         /// are safely disposed when the transaction scope is closed by the caller.
         /// </summary>
         /// <remarks>
-        /// Because the enclosing executor operates statelessly by default, this nested class acts as an 
-        /// ownership container. It ties the lifetime of the open database connection directly to the lifecycle 
+        /// Because the enclosing executor operates statelessly by default, this nested class acts as an
+        /// ownership container. It ties the lifetime of the open database connection directly to the lifecycle
         /// of the transaction itself, allowing standard <c>using</c> block usage without resource leaks.
         /// </remarks>
         private sealed class WrappedDbTransaction : IDbTransaction
@@ -97,7 +97,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Unwraps the custom transaction wrapper to provide ADO.NET and Dapper with the 
+        /// Unwraps the custom transaction wrapper to provide ADO.NET and Dapper with the
         /// native database provider's transaction object, preventing InvalidCastExceptions.
         /// </summary>
         private static IDbTransaction? Unwrap(IDbTransaction? transaction)
@@ -476,7 +476,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // ROBUSTNESS: Re-bind the CommandDefinition inside the retry lambda here to ensure 
+                // ROBUSTNESS: Re-bind the CommandDefinition inside the retry lambda here to ensure
                 // Dapper uses the correct local iteration token 'ct' and the unwrapped transaction.
                 var cmd = new CommandDefinition(
                     command.CommandText,

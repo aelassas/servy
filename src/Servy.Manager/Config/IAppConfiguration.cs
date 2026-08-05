@@ -48,7 +48,7 @@ namespace Servy.Manager.Config
         bool ForceSoftwareRendering { get; }
 
         /// <summary>
-        /// Gets the window period in days for the logs tab search, loaded from configuration. 
+        /// Gets the window period in days for the logs tab search, loaded from configuration.
         /// This determines the default date range applied when retrieving service log entries.
         /// </summary>
         int LogsWindowDays { get; }
@@ -63,7 +63,7 @@ namespace Servy.Manager.Config
         /// permitted during bulk lifecycle tasks (start, stop, or restart).
         /// </summary>
         /// <remarks>
-        /// To prevent thread starvation and SCM contention, the actual degree of parallelism is 
+        /// To prevent thread starvation and SCM contention, the actual degree of parallelism is
         /// throttled by a hardware-aware ceiling: <c>Math.Max(1, Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism))</c>.
         /// </remarks>
         int MaxBulkOperationParallelism { get; }

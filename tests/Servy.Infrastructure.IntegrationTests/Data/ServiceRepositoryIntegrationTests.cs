@@ -11,7 +11,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 {
     /// <summary>
     /// A lightweight, concrete test factory for managing a shared in-memory SQLite state lifespan.
-    /// In-memory SQLite databases disappear the moment their connection drops; keeping a master connection 
+    /// In-memory SQLite databases disappear the moment their connection drops; keeping a master connection
     /// handle open allows DapperExecutor to safely open and close transient connection pools during execution.
     /// </summary>
     public sealed class TestDbContext : IAppDbContext, IDisposable
@@ -325,7 +325,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var results = (await _repository.SearchAsync("development_%", decrypt: true, cancellationToken)).ToList();
 
             // Assert
-            // If escaping is broken, "development_%" will match "App_Development_XYZ_Test" (wildcard %) 
+            // If escaping is broken, "development_%" will match "App_Development_XYZ_Test" (wildcard %)
             // and return multiple results. Asserting single-result delivery ensures strict literal evaluation.
             Assert.Single(results);
             Assert.Equal("App_Development_%_Test", results[0].Name);
@@ -605,7 +605,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange: Seed an un-trimmed service row containing leading whitespace.
             const string paddedName = " GhostService";
-            var sql = $@"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid, ActiveStdoutPath, ActiveStderrPath) 
+            var sql = $@"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid, ActiveStdoutPath, ActiveStderrPath)
                          VALUES (@Name, 'C:\ghost.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 8888, 'C:\out.log', 'C:\err.log');";
             await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: TestContext.Current.CancellationToken);
 

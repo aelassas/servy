@@ -18,7 +18,7 @@ namespace Servy.UI.Converters
         /// <param name="parameter">Not used.</param>
         /// <param name="culture">Not used.</param>
         /// <returns>
-        /// <see cref="Visibility.Visible"/> if <paramref name="value"/> is <c>true</c>; 
+        /// <see cref="Visibility.Visible"/> if <paramref name="value"/> is <c>true</c>;
         /// <see cref="Visibility.Collapsed"/> if <c>false</c>; otherwise <see cref="Binding.DoNothing"/>.
         /// </returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -36,8 +36,8 @@ namespace Servy.UI.Converters
         /// <param name="parameter">Not used.</param>
         /// <param name="culture">Not used.</param>
         /// <returns>
-        /// <c>true</c> if <paramref name="value"/> is <see cref="Visibility.Visible"/>; 
-        /// <c>false</c> if <see cref="Visibility.Collapsed"/> or <see cref="Visibility.Hidden"/>; 
+        /// <c>true</c> if <paramref name="value"/> is <see cref="Visibility.Visible"/>;
+        /// <c>false</c> if <see cref="Visibility.Collapsed"/> or <see cref="Visibility.Hidden"/>;
         /// otherwise <see cref="Binding.DoNothing"/>.
         /// </returns>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

@@ -12,11 +12,11 @@ namespace Servy.Infrastructure.Helpers
         /// </summary>
         /// <param name="currentVersion">When this method returns, contains the version string of the loaded SQLite engine.</param>
         /// <returns>
-        /// <see langword="true"/> if the detected version is greater than or equal to 
+        /// <see langword="true"/> if the detected version is greater than or equal to
         /// <see cref="AppConfig.MinRequiredSqliteVersion"/>; otherwise, <see langword="false"/>.
         /// </returns>
         /// <remarks>
-        /// This check is critical for mitigating memory corruption vulnerabilities (CVE-2025-6965) 
+        /// This check is critical for mitigating memory corruption vulnerabilities (CVE-2025-6965)
         /// found in SQLite versions prior to 3.50.2.
         /// </remarks>
         public static bool IsSqliteVersionSafe(out string? currentVersion)
@@ -30,7 +30,7 @@ namespace Servy.Infrastructure.Helpers
         /// </summary>
         /// <param name="versionText">The raw version string to validate (e.g., "3.50.4").</param>
         /// <returns>
-        /// <see langword="true"/> if the string is a valid version and meets security thresholds; 
+        /// <see langword="true"/> if the string is a valid version and meets security thresholds;
         /// otherwise, <see langword="false"/>.
         /// </returns>
         /// <example>

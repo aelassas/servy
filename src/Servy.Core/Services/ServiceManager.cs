@@ -19,14 +19,14 @@ namespace Servy.Core.Services
     /// <summary>
     /// Provides methods to install, uninstall, start, stop, restart, and update Windows services.
     /// Acts as the central, unified orchestration engine for Windows Service lifecycle operations.
-    /// This hub deliberately aggregates low-level Windows Service Control Manager (SCM) interactions, 
-    /// Win32 P/Invoke boundaries, local system CRUD lifecycle management, parallel topology exploration, 
+    /// This hub deliberately aggregates low-level Windows Service Control Manager (SCM) interactions,
+    /// Win32 P/Invoke boundaries, local system CRUD lifecycle management, parallel topology exploration,
     /// and service data synchronization mechanics.
     /// </summary>
     /// <remarks>
     /// Architectural Intent:
-    /// Leaving these domains combined ensures strict atomic synchronization between the operating system's native 
-    /// configuration states and the internal repository storage engine. This consolidation eliminates cross-process race 
+    /// Leaving these domains combined ensures strict atomic synchronization between the operating system's native
+    /// configuration states and the internal repository storage engine. This consolidation eliminates cross-process race
     /// conditions and transactional state drift during high-contention service installation, modification, and uninstallation.
     /// </remarks>
     public class ServiceManager : IServiceManager
@@ -187,7 +187,7 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Configures the service to accept pre-shutdown notifications and sets the maximum timeout 
+        /// Configures the service to accept pre-shutdown notifications and sets the maximum timeout
         /// the Service Control Manager (SCM) will wait for this service to stop during a system shutdown.
         /// </summary>
         /// <param name="serviceHandle">A valid handle to the target Windows service.</param>
@@ -234,7 +234,7 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(options.WrapperExePath)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
 
-            // HARDENING: Check database via UNICODE_NOCASE to intercept if this service or a linguistic 
+            // HARDENING: Check database via UNICODE_NOCASE to intercept if this service or a linguistic
             // variation of it already exists before running native SCM queries.
             var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
             bool isUpdateMode = existingDbService != null;
@@ -244,7 +244,7 @@ namespace Servy.Core.Services
             ServiceDto? legacyBackupDto = null;
 
             // If the database has a record under a different casing layout (e.g. 'serviceä' vs 'serviceÄ'),
-            // the Windows SCM will treat them as two entirely different entities. We must aggressively drop the old 
+            // the Windows SCM will treat them as two entirely different entities. We must aggressively drop the old
             // casing layout registration from the OS before proceeding to avoid split-brain or orphaned processes.
             if (isUpdateMode && !string.Equals(existingDbService!.Name, options.ServiceName, StringComparison.Ordinal))
             {
@@ -338,7 +338,7 @@ namespace Servy.Core.Services
                     int createServiceError = _win32ErrorProvider.GetLastWin32Error();
                     bool serviceCreated = serviceHandle != null && !serviceHandle.IsInvalid;
 
-                    // ROBUSTNESS: Establish a comprehensive try/catch/finally sequence immediately 
+                    // ROBUSTNESS: Establish a comprehensive try/catch/finally sequence immediately
                     // following native creation. This guarantees cleanup upon cancellation or async IO exceptions.
                     bool needsRollback = false;
 
@@ -596,15 +596,15 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Orchestrates an isolated database rollback sequence to restore state tracking for a legacy 
+        /// Orchestrates an isolated database rollback sequence to restore state tracking for a legacy
         /// service variant if the subsequent installation pipeline fails or is canceled.
         /// </summary>
         /// <param name="legacyDroppedFromDb">A flag indicating whether the legacy service record was successfully removed during validation hardening.</param>
         /// <param name="legacyBackupDto">The original service data tracking context captured before structural execution began.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous database recovery operations.</returns>
         /// <remarks>
-        /// This routine enforces data tracking atomicity across case-renaming scenarios. It executes under 
-        /// <see cref="CancellationToken.None"/> to ensure that recovery routines finish processing even 
+        /// This routine enforces data tracking atomicity across case-renaming scenarios. It executes under
+        /// <see cref="CancellationToken.None"/> to ensure that recovery routines finish processing even
         /// if the primary installation process was canceled via user interaction.
         /// </remarks>
         private async Task ExecuteDatabaseRecoveryAsync(bool legacyDroppedFromDb, ServiceDto? legacyBackupDto)
@@ -694,7 +694,7 @@ namespace Servy.Core.Services
                     }
 
                     // ROBUSTNESS: Standardize start type *only after* confirming the service is completely stopped.
-                    // This guarantees that if the wait loop times out or throws a cancellation exception above, 
+                    // This guarantees that if the wait loop times out or throws a cancellation exception above,
                     // the original SCM startup configuration remains unaltered, eliminating the manual-start downgrade trap.
                     bool configSuccess = _windowsServiceApi.ChangeServiceConfig(
                         serviceHandle,
@@ -711,7 +711,7 @@ namespace Servy.Core.Services
 
                     if (!configSuccess)
                     {
-                        // We log this as a warning rather than a failure, as we can still attempt 
+                        // We log this as a warning rather than a failure, as we can still attempt
                         // the delete command, but it's important for diagnostic visibility.
                         Logger.Warn($"Failed to standardize start type before uninstall for '{serviceName}': Win32 Error {_win32ErrorProvider.GetLastWin32Error()}");
                     }
@@ -939,7 +939,7 @@ namespace Servy.Core.Services
             }
             catch (InvalidOperationException ex)
             {
-                // Catching InvalidOperationException handles cases where the service does not exist 
+                // Catching InvalidOperationException handles cases where the service does not exist
                 // or was uninstalled mid-flight, safely satisfying the nullable fallback contract.
                 Logger.Debug($"Service '{serviceName}' was not found or was removed during status retrieval: {ex.Message}");
                 return null;
@@ -1097,7 +1097,7 @@ namespace Servy.Core.Services
             }
             finally
             {
-                // Guarantee disposal of all service controller wrappers, 
+                // Guarantee disposal of all service controller wrappers,
                 // including those left unprocessed due to Parallel loop cancellation.
                 foreach (var service in services)
                 {
@@ -1328,13 +1328,13 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Maps a <see cref="ServiceStartType"/> to its corresponding Windows Service Control Manager (SCM) 
+        /// Maps a <see cref="ServiceStartType"/> to its corresponding Windows Service Control Manager (SCM)
         /// constant value for the <c>CreateService</c> API.
         /// </summary>
         /// <remarks>
-        /// The SCM does not have a native "Delayed Start" type; instead, the delayed property is 
-        /// managed as a separate configuration change after service creation. This helper 
-        /// coerces <see cref="ServiceStartType.AutomaticDelayedStart"/> to <see cref="ServiceStartType.Automatic"/> 
+        /// The SCM does not have a native "Delayed Start" type; instead, the delayed property is
+        /// managed as a separate configuration change after service creation. This helper
+        /// coerces <see cref="ServiceStartType.AutomaticDelayedStart"/> to <see cref="ServiceStartType.Automatic"/>
         /// to ensure the service is created with the correct base start mode.
         /// </remarks>
         /// <param name="t">The <see cref="ServiceStartType"/> requested by the configuration.</param>

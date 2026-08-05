@@ -72,7 +72,7 @@ namespace Servy.Core.Helpers
             };
 
             // NOTE: The /accepteula flag must be appended as the first positional parameter.
-            // If the target file path occupies the primary position index, handle.exe occasionally 
+            // If the target file path occupies the primary position index, handle.exe occasionally
             // evaluates the target scope prematurely and skips subsequent license parameters.
             psi.ArgumentList.Add("/accepteula");
             psi.ArgumentList.Add(filePath);
@@ -154,7 +154,7 @@ namespace Servy.Core.Helpers
                                  $"Stdout: {output.Trim()}. Stderr: {error.Trim()}. " +
                                  "Handle detection is unreliable; aborting operation to prevent file corruption.");
 
-                    // Throwing an InvalidOperationException forces the caller (ResourceHelper) 
+                    // Throwing an InvalidOperationException forces the caller (ResourceHelper)
                     // to catch the error and return 'false', halting the file-replacement pipeline.
                     throw new InvalidOperationException($"Handle detection failed with exit code {process.ExitCode}.");
                 }

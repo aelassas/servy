@@ -69,7 +69,7 @@ namespace Servy.Core.UnitTests.Services
             };
 
             // Act & Assert
-            // No native SCManager, mock handles, or 13-argument CreateService mock arrangements 
+            // No native SCManager, mock handles, or 13-argument CreateService mock arrangements
             // are configured here because validation constraints fail and exit before hitting any OS boundaries.
             await Assert.ThrowsAsync<ArgumentException>(() =>
                 _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken));
@@ -486,8 +486,8 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null, It.IsAny<string>()), Times.Once);
 
-            // BUNDLED SCENARIO: ChangeServiceConfig2 is invoked exactly Times.Once in both scenarios 
-            // because the existing update configuration loop explicitly sets fDelayedAutostart to false 
+            // BUNDLED SCENARIO: ChangeServiceConfig2 is invoked exactly Times.Once in both scenarios
+            // because the existing update configuration loop explicitly sets fDelayedAutostart to false
             // for standard Automatic configurations to clear down stale state drift.
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
         }
@@ -1382,7 +1382,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var serviceHandle = CreateServiceHandle(456);
 
-            // The underlying Windows API should be called unconditionally to allow passing 
+            // The underlying Windows API should be called unconditionally to allow passing
             // empty or null pointers down to clean or reset stale description registry settings.
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
@@ -1733,7 +1733,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var serviceName = "TestService";
 
-            // We simulate the progression: 
+            // We simulate the progression:
             // 1. Initial check (Stopped)
             // 2. First loop poll (Stopped)
             // 3. Second loop poll (Running) -> Loop exits
@@ -1831,7 +1831,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var serviceName = "TestService";
 
-            // We want: 
+            // We want:
             // 1. Initial check (Running) -> Proceed to Stop()
             // 2. First loop poll (Running) -> Wait and Refresh
             // 3. Second loop poll (Stopped) -> Exit Loop
@@ -1867,7 +1867,7 @@ namespace Servy.Core.UnitTests.Services
             var serviceName = "TestService";
             var stopTimeout = 5; // Keep it short for the test
 
-            // We want the status to be Running the first time it's checked, 
+            // We want the status to be Running the first time it's checked,
             // then Stopped the next time to satisfy the loop.
             _mockController.SetupSequence(c => c.Status)
                 .Returns(ServiceControllerStatus.Running) // Initial check before sc.Stop()
@@ -2164,7 +2164,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(ServiceStartType.Automatic, result);
 
             // Verify handles are still cleaned up even on P/Invoke failure
-            // We check IsClosed because SafeHandle.Dispose() triggers native cleanup 
+            // We check IsClosed because SafeHandle.Dispose() triggers native cleanup
             // that bypasses the Moq interface.
             Assert.True(svcHandle.IsClosed, "Service handle was not disposed.");
             Assert.True(scmHandle.IsClosed, "SCM handle was not disposed.");
@@ -2191,7 +2191,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             string serviceName = "EventLog";
 
-            // 1. MUST setup the controller mock to return Automatic 
+            // 1. MUST setup the controller mock to return Automatic
             // so the code enters the P/Invoke block you want to test.
             _mockController.Setup(x => x.StartType).Returns(ServiceStartMode.Automatic);
 
@@ -2344,7 +2344,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DELAYED_AUTO_START_INFO, ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
                 {
-                    // Branch Coverage: This ensures 'info.fDelayedAutostart' is false 
+                    // Branch Coverage: This ensures 'info.fDelayedAutostart' is false
                     // so the 'if (ok && info.fDelayedAutostart)' block is skipped.
                     info.fDelayedAutostart = false;
                     return true; // ok = true

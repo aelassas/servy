@@ -117,7 +117,7 @@ namespace Servy.Core.Helpers
                             {
                                 Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
 
-                                // Intentionally pass CancellationToken.None here so an upfront 
+                                // Intentionally pass CancellationToken.None here so an upfront
                                 // pipeline cancellation signal doesn't discard orphaned background services.
                                 await _serviceHelper.StartServicesAsync(runningServices, CancellationToken.None);
                             }
@@ -162,12 +162,12 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>DANGER:</b> Unlike its asynchronous counterpart, this method forcefully terminates 
-        /// any processes holding a lock on the target file WITHOUT performing a graceful service 
+        /// <b>DANGER:</b> Unlike its asynchronous counterpart, this method forcefully terminates
+        /// any processes holding a lock on the target file WITHOUT performing a graceful service
         /// shutdown or restart. It completely circumvents the standard service lifecycle.
         /// </para>
         /// <para>
-        /// This should <b>only</b> be called by external bootstrapping utilities or during 
+        /// This should <b>only</b> be called by external bootstrapping utilities or during
         /// installation phases when it is guaranteed that no Servy services are actively running.
         /// </para>
         /// </remarks>
@@ -220,21 +220,21 @@ namespace Servy.Core.Helpers
         /// Retrieves the last write time of the host process executable.
         /// </summary>
         /// <returns>
-        /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified, 
-        /// or <see cref="DateTime.MinValue"/> if the file cannot be accessed. The sentinel 
-        /// value causes <c>ShouldCopyResource</c> to leave any existing extraction untouched 
+        /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified,
+        /// or <see cref="DateTime.MinValue"/> if the file cannot be accessed. The sentinel
+        /// value causes <c>ShouldCopyResource</c> to leave any existing extraction untouched
         /// when the timestamp probe fails.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method uses the main module of the current process as a proxy for the 
-        /// "deployment timestamp." This is an acceptable proxy in the current single-exe 
-        /// distribution model of Servy, as it represents the last time the application 
+        /// This method uses the main module of the current process as a proxy for the
+        /// "deployment timestamp." This is an acceptable proxy in the current single-exe
+        /// distribution model of Servy, as it represents the last time the application
         /// artifacts were updated on the host machine.
         /// </para>
         /// <para>
-        /// Note: If resources are moved to a separate library assembly in the future, 
-        /// this method should be updated to query that specific assembly's file path 
+        /// Note: If resources are moved to a separate library assembly in the future,
+        /// this method should be updated to query that specific assembly's file path
         /// to ensure accurate re-extraction logic.
         /// </para>
         /// </remarks>

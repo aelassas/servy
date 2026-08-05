@@ -330,7 +330,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Safely disposes of resources, specifically cancelling and disposing the internal 
+        /// Safely disposes of resources, specifically cancelling and disposing the internal
         /// <see cref="CancellationTokenSource"/> to prevent memory leaks.
         /// </summary>
         /// <param name="disposing">True if called from Dispose(), false if from a finalizer.</param>

@@ -1,7 +1,7 @@
 ﻿namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
-    /// Shared abstract base class managing the thread-safe extraction and registration 
+    /// Shared abstract base class managing the thread-safe extraction and registration
     /// of Sysinternals diagnostic assets across separate integration test containers.
     /// </summary>
     public abstract class HandleExeIntegrationTestBase

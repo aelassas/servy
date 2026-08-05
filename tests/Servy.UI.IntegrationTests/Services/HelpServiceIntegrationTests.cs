@@ -182,7 +182,7 @@ namespace Servy.UI.IntegrationTests.Services
         #region Private Mock Injection Framework
 
         /// <summary>
-        /// Bypasses runtime initonly restrictions by modifying the private execution handler 
+        /// Bypasses runtime initonly restrictions by modifying the private execution handler
         /// instance deep inside the existing static HttpClient instance across .NET Core/5+ and .NET Framework 4.8.
         /// </summary>
         private void InjectMockHandlerIntoStaticClient(HttpMessageHandler mockHandler)

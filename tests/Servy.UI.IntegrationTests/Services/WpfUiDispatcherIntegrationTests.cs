@@ -24,7 +24,7 @@ namespace Servy.UI.IntegrationTests.Services
                 // Act: Wait for the background yield pass to complete cleanly
                 await task;
 
-                // Assert: If we reach here, the Background priority action was executed 
+                // Assert: If we reach here, the Background priority action was executed
                 // and the dispatcher processed it.
                 Assert.True(task.IsCompleted && !task.IsFaulted && !task.IsCanceled);
             });

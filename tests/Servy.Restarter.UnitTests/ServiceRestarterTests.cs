@@ -257,7 +257,7 @@ namespace Servy.Restarter.UnitTests
             // Call 2: Inner HandleTransitionalError block (Succeeds)
             _mockController.Verify(c => c.Start(), Times.Exactly(2));
 
-            // Verifies that HandleTransitionalError issues the final wait command 
+            // Verifies that HandleTransitionalError issues the final wait command
             // to block until the transition to Running completes fully.
             _mockController.Verify(c => c.WaitForStatus(ServiceControllerStatus.Running, It.IsAny<TimeSpan>()), Times.Once);
 

@@ -11,12 +11,12 @@ namespace Servy.Core.Security
     public static class SecurityHelper
     {
         /// <summary>
-        /// Ensures a directory exists and applies a restrictive security descriptor to mitigate 
+        /// Ensures a directory exists and applies a restrictive security descriptor to mitigate
         /// local privilege escalation (LPE) risks by limiting access to high-privileged accounts.
         /// </summary>
         /// <param name="path">The full filesystem path of the directory to secure.</param>
         /// <param name="breakInheritance">
-        /// <see langword="true"/> to sever inheritance from the parent directory (establishing a Root Vault). 
+        /// <see langword="true"/> to sever inheritance from the parent directory (establishing a Root Vault).
         /// <see langword="false"/> to ensure inheritance remains active, allowing parent ACLs to cascade down before optimization.
         /// </param>
         /// <remarks>
@@ -25,28 +25,28 @@ namespace Servy.Core.Security
         /// <list type="bullet">
         /// <item>
         /// <description>
-        /// <b>Atomic Creation (<c>breakInheritance: true</c>):</b> If the directory is missing, it is created atomically 
-        /// with the severe security descriptor pre-applied. This eliminates race windows where the folder could briefly 
+        /// <b>Atomic Creation (<c>breakInheritance: true</c>):</b> If the directory is missing, it is created atomically
+        /// with the severe security descriptor pre-applied. This eliminates race windows where the folder could briefly
         /// exist with loose inherited permissions.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Progressive Initialization (<c>breakInheritance: false</c>):</b> If the directory is missing, it is initialized 
-        /// normally first. This allows the Windows kernel to naturally compute and bind the parent directory's cascading inheritance 
+        /// <b>Progressive Initialization (<c>breakInheritance: false</c>):</b> If the directory is missing, it is initialized
+        /// normally first. This allows the Windows kernel to naturally compute and bind the parent directory's cascading inheritance
         /// maps prior to executing the in-place DACL optimization pass.
         /// </description>
         /// </item>
         /// </list>
         /// </para>
         /// <para>
-        /// For existing directories, or immediately following initialization, the DACL is modified in-place to purge broad 
+        /// For existing directories, or immediately following initialization, the DACL is modified in-place to purge broad
         /// unprivileged groups and anti-squatting components via <see cref="ApplySecurityRules"/>.
         /// </para>
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or whitespace.</exception>
         /// <exception cref="UnauthorizedAccessException">
-        /// Thrown when the process lacks sufficient privileges to modify security descriptors, except when operating 
+        /// Thrown when the process lacks sufficient privileges to modify security descriptors, except when operating
         /// as a non-administrator against an existing directory, where it gracefully falls back.
         /// </exception>
         /// <exception cref="IOException">Thrown when a general I/O error occurs during directory access.</exception>
@@ -63,8 +63,8 @@ namespace Servy.Core.Security
 
             if (!Directory.Exists(path))
             {
-                // ATOMIC CREATION BOUNDARY: Only enforce atomic security descriptors upfront 
-                // if we are actively building a Root Vault (breaking inheritance). 
+                // ATOMIC CREATION BOUNDARY: Only enforce atomic security descriptors upfront
+                // if we are actively building a Root Vault (breaking inheritance).
                 if (breakInheritance)
                 {
                     var ds = new DirectorySecurity();
@@ -78,7 +78,7 @@ namespace Servy.Core.Security
                 }
 
                 // INHERITANCE: If breakInheritance is false, create a standard directory first.
-                // This allows Windows to naturally bind and compute the parent's cascading inheritance maps 
+                // This allows Windows to naturally bind and compute the parent's cascading inheritance maps
                 // correctly before we perform our subsequent in-place DACL optimization pass.
                 try
                 {
@@ -111,16 +111,16 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Configures a <see cref="FileSystemSecurity"/> object with restrictive rules, 
+        /// Configures a <see cref="FileSystemSecurity"/> object with restrictive rules,
         /// purging broad group access and optionally managing inheritance boundaries.
         /// </summary>
         /// <param name="security">The file or directory security descriptor to modify.</param>
         /// <param name="currentUserSid">
-        /// The SID of the current user to conditionally grant access to. 
+        /// The SID of the current user to conditionally grant access to.
         /// Usually retrieved via <see cref="WindowsIdentity.User"/>.
         /// </param>
         /// <param name="breakInheritance">
-        /// If <see langword="true"/>, severs the link to the parent directory's permissions. 
+        /// If <see langword="true"/>, severs the link to the parent directory's permissions.
         /// If <see langword="false"/>, restores inheritance to allow parent ACLs to flow down.
         /// </param>
         /// <remarks>
@@ -128,19 +128,19 @@ namespace Servy.Core.Security
         /// <list type="number">
         /// <item>
         /// <description>
-        /// <b>Inheritance Management:</b> Either blocks inheritance (Root Vault) or enables it (Child Folder) 
+        /// <b>Inheritance Management:</b> Either blocks inheritance (Root Vault) or enables it (Child Folder)
         /// to support multi-account setups.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Dangerous Group Purge:</b> Explicitly removes access for <c>Users</c>, <c>Authenticated Users</c>, 
+        /// <b>Dangerous Group Purge:</b> Explicitly removes access for <c>Users</c>, <c>Authenticated Users</c>,
         /// and <c>Everyone</c> to close LPE vectors.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Anti-Squatting Purge:</b> Explicitly removes any <c>Deny</c> rules for <c>Administrators</c> and 
+        /// <b>Anti-Squatting Purge:</b> Explicitly removes any <c>Deny</c> rules for <c>Administrators</c> and
         /// <c>Local System</c> (and the current user) to prevent Denial-of-Service via directory squatting.
         /// </description>
         /// </item>
@@ -151,7 +151,7 @@ namespace Servy.Core.Security
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Operational Continuity:</b> Grants <c>Full Control</c> to the current process user if they 
+        /// <b>Operational Continuity:</b> Grants <c>Full Control</c> to the current process user if they
         /// are not a member of the Administrators group and are not the LocalSystem account.
         /// </description>
         /// </item>
@@ -186,7 +186,7 @@ namespace Servy.Core.Security
 
             foreach (FileSystemAccessRule rule in explicitRules)
             {
-                // Purge Allow rules for broad, unprivileged groups. 
+                // Purge Allow rules for broad, unprivileged groups.
                 // NOTE: We intentionally preserve explicit 'Allow' rules for other principals (e.g., custom service accounts),
                 // otherwise a user could never run a service under a custom account, as CreateSecureDirectory
                 // is invoked during service start, desktop app and manager startup, and CLI operations.
@@ -218,7 +218,7 @@ namespace Servy.Core.Security
             security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, inheritanceFlags, propagationFlags, AccessControlType.Allow));
 
             // 5. Add current user key
-            // We grant explicit Full Control to the current user unless they are the 
+            // We grant explicit Full Control to the current user unless they are the
             // LocalSystem account (which is already covered in Step 4) or have administrator privileges.
             bool isSystem = currentUserSid != null && currentUserSid.Equals(systemSid);
             bool isAdmin = IsAdministrator();
@@ -233,7 +233,7 @@ namespace Servy.Core.Security
         /// Determines whether the current process is running with administrative privileges.
         /// </summary>
         /// <returns>
-        /// <see langword="true"/> if the current user has the <see cref="WindowsBuiltInRole.Administrator"/> role; 
+        /// <see langword="true"/> if the current user has the <see cref="WindowsBuiltInRole.Administrator"/> role;
         /// otherwise, <see langword="false"/>.
         /// </returns>
         [ExcludeFromCodeCoverage]
@@ -253,7 +253,7 @@ namespace Servy.Core.Security
         /// Thrown when the current process does not have administrative privileges.
         /// </exception>
         /// <remarks>
-        /// Use this as a pre-flight check before performing service management operations 
+        /// Use this as a pre-flight check before performing service management operations
         /// to avoid opaque Win32 errors during service creation or deletion.
         /// </remarks>
         [ExcludeFromCodeCoverage]
@@ -272,7 +272,7 @@ namespace Servy.Core.Security
         /// <param name="message">The warning message to log.</param>
         private static void HandleNonAdminFallback(UnauthorizedAccessException ex, string message)
         {
-            // GRACEFUL FALLBACK: 
+            // GRACEFUL FALLBACK:
             // If a non-admin process cannot modify an existing directory's security descriptor,
             // we assume the vault/directory was previously created and secured by an Administrator.
             Logger.Warn($"{message} ({ex.Message})");

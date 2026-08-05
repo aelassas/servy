@@ -38,7 +38,7 @@ namespace Servy.Restarter
                     }
                     catch (InvalidOperationException)
                     {
-                        // ROBUSTNESS: Service was uninstalled or marked for deletion mid-flight. 
+                        // ROBUSTNESS: Service was uninstalled or marked for deletion mid-flight.
                         // There is no longer an active handle to manage or restart; exit cleanly.
                         return RestartResult.ServiceNotFound;
                     }
@@ -72,7 +72,7 @@ namespace Servy.Restarter
                 }
 
                 // 2. Stop phase
-                // ROBUSTNESS: Secure the stop-phase entry check against mid-flight uninstalls 
+                // ROBUSTNESS: Secure the stop-phase entry check against mid-flight uninstalls
                 // to prevent unhandled top-level crashes before entering the main execution frame.
                 ServiceControllerStatus stopEntryStatus;
                 try
@@ -163,7 +163,7 @@ namespace Servy.Restarter
         /// </summary>
         /// <param name="status">The <see cref="ServiceControllerStatus"/> to evaluate.</param>
         /// <returns>
-        /// <c>true</c> if the service is currently in a "Pending" state (Start, Stop, Continue, or Pause); 
+        /// <c>true</c> if the service is currently in a "Pending" state (Start, Stop, Continue, or Pause);
         /// otherwise, <c>false</c>.
         /// </returns>
         private bool IsPendingState(ServiceControllerStatus status)
@@ -175,7 +175,7 @@ namespace Servy.Restarter
         }
 
         /// <summary>
-        /// Handles race conditions where a service enters a transitional state between 
+        /// Handles race conditions where a service enters a transitional state between
         /// a status check and a command execution.
         /// </summary>
         /// <param name="serviceName">Windows Service name.</param>
@@ -183,12 +183,12 @@ namespace Servy.Restarter
         /// <param name="targetStatus">The desired <see cref="ServiceControllerStatus"/> (typically Running or Stopped).</param>
         /// <param name="timeout">The maximum <see cref="TimeSpan"/> allowed for the entire recovery operation.</param>
         /// <exception cref="System.TimeoutException">
-        /// Thrown if the service fails to reach the <paramref name="targetStatus"/> 
+        /// Thrown if the service fails to reach the <paramref name="targetStatus"/>
         /// before the <paramref name="timeout"/> expires.
         /// </exception>
         /// <remarks>
-        /// This method uses an interrogation loop with <see cref="ServiceController.Refresh"/> 
-        /// to wait out <see cref="InvalidOperationException"/> errors caused by the Windows SCM 
+        /// This method uses an interrogation loop with <see cref="ServiceController.Refresh"/>
+        /// to wait out <see cref="InvalidOperationException"/> errors caused by the Windows SCM
         /// locking the service during state transitions.
         /// </remarks>
         private void HandleTransitionalError(string serviceName, IServiceController controller, ServiceControllerStatus targetStatus, TimeSpan timeout)

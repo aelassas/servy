@@ -3,7 +3,7 @@
 namespace Servy.Core.RegexWrapper
 {
     /// <summary>
-    /// Provides a concrete implementation of <see cref="IRegexWrapper"/> that delegates 
+    /// Provides a concrete implementation of <see cref="IRegexWrapper"/> that delegates
     /// regex operations to an underlying <see cref="Regex"/> instance.
     /// </summary>
     public class RegexWrapper : IRegexWrapper

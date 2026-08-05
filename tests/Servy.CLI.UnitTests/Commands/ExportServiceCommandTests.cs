@@ -329,8 +329,8 @@ namespace Servy.CLI.UnitTests.Commands
             // We use a path where the directory chain does NOT exist, forcing SaveFile to create it.
             var deepSubDir = Path.Combine(_tempDir, "finally_coverage_tree", "nested_leaf");
 
-            // We use an invalid file extension (.log). This ensures that the directory creation pass 
-            // succeeds completely, populates 'directoriesCreatedByUs', and THEN PathSecurityGuard 
+            // We use an invalid file extension (.log). This ensures that the directory creation pass
+            // succeeds completely, populates 'directoriesCreatedByUs', and THEN PathSecurityGuard
             // rejects the file layout, throwing an ArgumentException!
             var filePath = Path.Combine(deepSubDir, "validation_failure_target.log");
 

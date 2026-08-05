@@ -4,7 +4,7 @@ using System.Windows;
 namespace Servy.UI.Services
 {
     /// <summary>
-    /// Concrete implementation of <see cref="IMessageBoxService"/> using InvokeAsync 
+    /// Concrete implementation of <see cref="IMessageBoxService"/> using InvokeAsync
     /// to ensure callers wait for user dismissal.
     /// </summary>
     [ExcludeFromCodeCoverage]
@@ -16,7 +16,7 @@ namespace Servy.UI.Services
         /// Initializes a new instance of the <see cref="MessageBoxService"/> class.
         /// </summary>
         /// <param name="dispatcher">
-        /// The <see cref="IUiDispatcher"/> abstraction used to marshal message box calls 
+        /// The <see cref="IUiDispatcher"/> abstraction used to marshal message box calls
         /// onto the UI thread, ensuring thread-safe interaction with WPF visual components.
         /// </param>
         public MessageBoxService(IUiDispatcher dispatcher)

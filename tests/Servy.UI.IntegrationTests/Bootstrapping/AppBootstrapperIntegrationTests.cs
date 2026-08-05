@@ -119,7 +119,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         [Fact]
         public async Task OnStartup_ValidEnvironment_ForcesSoftwareRenderingOnArg()
         {
-            // Execute entirely within the persistent async STA context pump thread 
+            // Execute entirely within the persistent async STA context pump thread
             // to ensure internal thread safety boundaries match Application.Current initialization rules.
             await Helper.RunOnSTA(async () =>
             {

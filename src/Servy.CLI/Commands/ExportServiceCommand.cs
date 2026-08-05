@@ -94,7 +94,7 @@ namespace Servy.CLI.Commands
 
         /// <summary>
         /// Safely persists the exported service configuration to a user-defined file path.
-        /// Validates that the target is a supported file type, not a UNC path, 
+        /// Validates that the target is a supported file type, not a UNC path,
         /// not a reserved device name, and not a protected system location.
         /// Resolves NTFS junctions and symlinks to prevent path redirection bypasses.
         /// </summary>

@@ -44,7 +44,7 @@ namespace Servy.UI.IntegrationTests.Services
 
             // Assert
             Assert.Null(exception);
-            // Coverage: This confirms the guard clause effectively prevented an 
+            // Coverage: This confirms the guard clause effectively prevented an
             // ObjectDisposedException or NullReferenceException when the WPF context is missing.
         }
 
@@ -62,7 +62,7 @@ namespace Servy.UI.IntegrationTests.Services
                 Mouse.OverrideCursor = Cursors.Hand;
 
                 // Act
-                // The service should detect we are on a background thread 
+                // The service should detect we are on a background thread
                 // and use Dispatcher.InvokeAsync
                 await Task.Run(() =>
                 {

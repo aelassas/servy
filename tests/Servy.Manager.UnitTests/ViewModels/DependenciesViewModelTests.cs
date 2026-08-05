@@ -231,7 +231,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         Assert.False(anyPropertyChangedFired);
 
                         // 2. Verify the 'OrReload' optimization contract.
-                        // Since we verified that the initial load was registered by the polling loop above, 
+                        // Since we verified that the initial load was registered by the polling loop above,
                         // a count of EXACTLY once proves that the redundant second assignment was cleanly ignored.
                         _mockServiceManager.Verify(m => m.GetDependencies("TestService", It.IsAny<CancellationToken>()), Times.Once);
                     }

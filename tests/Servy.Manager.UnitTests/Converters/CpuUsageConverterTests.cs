@@ -27,7 +27,7 @@ namespace Servy.Manager.UnitTests.Converters
 
             serviceCollection.AddSingleton(_mockProcessHelper.Object);
 
-            // Service registration must precede constructor execution 
+            // Service registration must precede constructor execution
             // to satisfy the constructor's immediate ServiceProvider lookup check.
             App.Services = serviceCollection.BuildServiceProvider();
 

@@ -19,7 +19,7 @@ using static Servy.Manager.Utils.LogTailer;
 namespace Servy.Manager.ViewModels
 {
     /// <summary>
-    /// ViewModel for the Console view, responsible for real-time log tailing, 
+    /// ViewModel for the Console view, responsible for real-time log tailing,
     /// service monitoring, and log filtering.
     /// </summary>
     public class ConsoleViewModel : MonitoringViewModelBase
@@ -53,7 +53,7 @@ namespace Servy.Manager.ViewModels
         #region Events
 
         /// <summary>
-        /// Occurs when the view should scroll to the bottom. 
+        /// Occurs when the view should scroll to the bottom.
         /// Boolean parameter indicates if the scroll is a "forced" reset (e.g., after clearing search).
         /// </summary>
         public event Action<bool>? RequestScroll;
@@ -114,11 +114,11 @@ namespace Servy.Manager.ViewModels
         /// <description><b>State Capture:</b> Synchronizes internal <c>_stdoutPath</c> and <c>_stderrPath</c> fields.</description>
         /// </item>
         /// <item>
-        /// <description><b>File I/O:</b> Initiates <see cref="SwitchServiceAsync"/>, which clears the current log buffer, 
+        /// <description><b>File I/O:</b> Initiates <see cref="SwitchServiceAsync"/>, which clears the current log buffer,
         /// performs asynchronous disk reads to load history, and starts new background tailing tasks.</description>
         /// </item>
         /// <item>
-        /// <description><b>Timer Orchestration:</b> Restarts the performance monitoring loop by calling 
+        /// <description><b>Timer Orchestration:</b> Restarts the performance monitoring loop by calling
         /// <see cref="StopMonitoring"/> and <see cref="StartMonitoring"/>, resetting the cancellation tokens.</description>
         /// </item>
         /// </list>
@@ -425,7 +425,7 @@ namespace Servy.Manager.ViewModels
 
                     if (combinedHistory.Count > 0)
                     {
-                        // Enforce sorting stability during Introspective Sort operations by capturing original sequence indexes 
+                        // Enforce sorting stability during Introspective Sort operations by capturing original sequence indexes
                         // as a secondary tie-breaker constraint. This prevents stdout/stderr line interleaving jank on tied timestamps.
                         var indexedHistory = new List<(LogLine Line, int Index)>(combinedHistory.Count);
                         for (int i = 0; i < combinedHistory.Count; i++)
@@ -596,14 +596,14 @@ namespace Servy.Manager.ViewModels
             {
                 // Restart the process (This will reload history + start new tailer)
                 // Re-run the switch logic using the current paths.
-                // This will stop the old tailer, reload the merged history, 
+                // This will stop the old tailer, reload the merged history,
                 // and start a fresh live tail.
                 _ = SwitchServiceAsync(_stdoutPath, _stderrPath);
             }
         }
 
         /// <summary>
-        /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
+        /// Cleans up resources, cancels background tasks, and explicitly unsubscribes
         /// from timer events to prevent memory leaks.
         /// </summary>
         protected override void Dispose(bool disposing)

@@ -15,7 +15,7 @@ namespace Servy.Manager.UnitTests.Converters
         #region Minimal Concrete Test Implementation
 
         /// <summary>
-        /// A minimal concrete implementation of the abstract ProcessMetricConverter 
+        /// A minimal concrete implementation of the abstract ProcessMetricConverter
         /// to facilitate isolated testing of the base scaffolding.
         /// </summary>
         private class TestMetricConverter : ProcessMetricConverter<double>

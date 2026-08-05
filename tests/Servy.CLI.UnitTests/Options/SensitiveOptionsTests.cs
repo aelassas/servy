@@ -6,7 +6,7 @@ namespace Servy.CLI.UnitTests.Options
 {
     public class SensitiveOptionsTests
     {
-        // Discover all option verbs dynamically via reflection 
+        // Discover all option verbs dynamically via reflection
         // to prevent new properties from escaping the sensitive field leak guard.
         private static readonly Type[] OptionTypes = typeof(InstallServiceOptions).Assembly
             .GetTypes()

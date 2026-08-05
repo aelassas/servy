@@ -1,4 +1,4 @@
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Testing;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace Servy.Core.IntegrationTests.Config
 {
     /// <summary>
-    /// Tests to ensure that magic strings and configurations are synchronized 
+    /// Tests to ensure that magic strings and configurations are synchronized
     /// between the C# codebase and the external PowerShell CLI modules.
     /// </summary>
     public class PowerShellConfigSyncIntegrationTests

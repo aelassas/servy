@@ -7,7 +7,7 @@ namespace Servy.Manager.Design
     /// Lightweight no-op implementation of IServiceCommands for XAML design-time support.
     /// </summary>
     /// <remarks>
-    /// This implementation provides safe defaults to prevent runtime exceptions 
+    /// This implementation provides safe defaults to prevent runtime exceptions
     /// during UI layout and preview sessions in Visual Studio or Blend.
     /// </remarks>
     public class DesignTimeServiceCommands : IServiceCommands

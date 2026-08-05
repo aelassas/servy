@@ -88,7 +88,7 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.True(File.Exists(ivPath));
 
                 // Verify the IV file is protected, not plaintext
-                byte[] fileBytes = File.ReadAllBytes(ivPath); 
+                byte[] fileBytes = File.ReadAllBytes(ivPath);
                 Assert.NotEqual(iv, fileBytes);
             }
         }
@@ -304,7 +304,7 @@ namespace Servy.Core.IntegrationTests.Security
             var ivPath = GetTempFilePath($"locked_{targetType}.iv");
             var targetPath = targetType == "key" ? keyPath : ivPath;
 
-            // Save some mock dummy payload data to force execution past the file creation stage 
+            // Save some mock dummy payload data to force execution past the file creation stage
             // directly into the ReadAllBytes runtime sequence block.
             File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03, 0x04 });
 
@@ -412,7 +412,7 @@ namespace Servy.Core.IntegrationTests.Security
                 }
                 catch
                 {
-                    // Swallow cleanup exceptions to prevent failing the test runner 
+                    // Swallow cleanup exceptions to prevent failing the test runner
                     // if a file lock lingers momentarily.
                 }
             }

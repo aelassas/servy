@@ -18,8 +18,8 @@ namespace Servy.Service.UnitTests
     public class TestableService : Service
     {
         /// <summary>
-        /// Caches reflection bindings at class-load time. 
-        /// Throws loudly and immediately if the underlying Service class is refactored 
+        /// Caches reflection bindings at class-load time.
+        /// Throws loudly and immediately if the underlying Service class is refactored
         /// (e.g., variables renamed) ensuring tests don't silently fail.
         /// </summary>
         private static class ServiceReflection

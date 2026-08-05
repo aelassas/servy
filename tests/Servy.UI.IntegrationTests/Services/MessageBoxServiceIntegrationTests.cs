@@ -31,7 +31,7 @@ namespace Servy.UI.IntegrationTests.Services
             Helper.RunOnSTA(() =>
             {
                 // We use a timeout or a mock-like approach because MessageBox.Show blocks.
-                // In a pure unit test, you would typically wrap MessageBox.Show in 
+                // In a pure unit test, you would typically wrap MessageBox.Show in
                 // a virtual method to override it, but here we test the service orchestration.
 
                 // Act

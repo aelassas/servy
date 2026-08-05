@@ -17,7 +17,7 @@ namespace Servy.UI.Services
         public void ResetCursor() => SetCursorSafe(null);
 
         /// <summary>
-        /// Safely sets the cursor, marshaling to the UI thread if necessary, 
+        /// Safely sets the cursor, marshaling to the UI thread if necessary,
         /// and ignoring calls during headless unit tests.
         /// </summary>
         [ExcludeFromCodeCoverage] // Flaky on CI

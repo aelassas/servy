@@ -137,7 +137,7 @@ namespace Servy.Core.UnitTests.Helpers
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
 
-            // SANDBOX GUARD: By passing clean relative combinations, testFilePath is guaranteed 
+            // SANDBOX GUARD: By passing clean relative combinations, testFilePath is guaranteed
             // to resolve directly inside the safe, unique tempDir boundary layout.
             var testFilePath = Path.Combine(tempDir, filePath);
 
@@ -338,7 +338,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void GetBuiltWithFramework_DefaultsToExecutingAssembly()
         {
             // Arrange
-            // Explicitly pass the production library assembly context to match what 
+            // Explicitly pass the production library assembly context to match what
             // Assembly.GetExecutingAssembly() resolves to internally inside the utility method.
             var coreLibraryAssembly = typeof(Helper).Assembly;
             string expectedFrameworkString = Helper.GetBuiltWithFramework(coreLibraryAssembly);
@@ -460,7 +460,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Verifies that service names utilizing leading or trailing dots are explicitly rejected 
+        /// Verifies that service names utilizing leading or trailing dots are explicitly rejected
         /// to prevent filesystem and registry volatility.
         /// </summary>
         [Theory]
@@ -501,7 +501,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Edge-case safety check verifying that inputs consisting purely of multiple dots 
+        /// Edge-case safety check verifying that inputs consisting purely of multiple dots
         /// are handled cleanly and fail closed.
         /// </summary>
         [Theory]
@@ -518,7 +518,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Ensures valid, standard multi-segment service names that simply contain a reserved substring 
+        /// Ensures valid, standard multi-segment service names that simply contain a reserved substring
         /// embedded inside a longer segment are allowed (e.g. "CON" inside "Controller").
         /// </summary>
         [Theory]
@@ -632,7 +632,7 @@ namespace Servy.Core.UnitTests.Helpers
                 Assert.True(File.Exists(targetPath));
                 Assert.Equal("atomic-sync-test-48", File.ReadAllText(targetPath));
 
-                // VACUOUS CHECK REFACTOR: Evaluate all matching staging remnants in the container directory 
+                // VACUOUS CHECK REFACTOR: Evaluate all matching staging remnants in the container directory
                 // to verify that the core dynamic GUID-suffixed file format handles cleanup routines successfully.
                 var leftovers = Directory.GetFiles(tempDir, "*.tmp");
                 Assert.Empty(leftovers);
@@ -668,7 +668,7 @@ namespace Servy.Core.UnitTests.Helpers
                 // CleanupTempFile is called in finally to ensure .tmp is removed
                 Assert.False(File.Exists(targetPath), "Target should not exist if move was never reached.");
 
-                // Ensure no dynamically generated GUID staging targets 
+                // Ensure no dynamically generated GUID staging targets
                 // are leaked inside the scratch tracking folder when an unhandled execution exception triggers.
                 var leftovers = Directory.GetFiles(tempDir, "*.tmp");
                 Assert.Empty(leftovers);
@@ -862,7 +862,7 @@ namespace Servy.Core.UnitTests.Helpers
             bool result = Helper.HasAncestorReparsePoint(nonExistentPath);
 
             // Assert
-            // Branch Covered: The loop safely walks upward past non-existent directories 
+            // Branch Covered: The loop safely walks upward past non-existent directories
             // until reaching the root, verifying no ReparsePoint exists anywhere in the chain.
             Assert.False(result);
         }
@@ -885,7 +885,7 @@ namespace Servy.Core.UnitTests.Helpers
                 bool result = Helper.HasAncestorReparsePoint(targetFilePath);
 
                 // Assert
-                // Branch Covered: Walks past the non-existent 'NotYet' folder and successfully 
+                // Branch Covered: Walks past the non-existent 'NotYet' folder and successfully
                 // detects the junction at the existing ancestor level.
                 Assert.True(result);
             }
@@ -992,7 +992,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Centralized teardown engine ensuring that both link anchors and real backup items 
+        /// Centralized teardown engine ensuring that both link anchors and real backup items
         /// are cleared via safe DeleteDirectoryLink calls rather than divergent inline Directory.Delete overrides.
         /// </summary>
         private static void TeardownDirectoryLinkWithRetry(string linkPath, string targetPath)

@@ -19,17 +19,17 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The pattern <c>(^|\s)(-J)?-Dfile\.encoding([=\s]|$)</c> is designed to avoid false positives by ensuring the 
-        /// flag is at the start of the string or preceded by whitespace, and followed by an assignment or a delimiter. 
+        /// The pattern <c>(^|\s)(-J)?-Dfile\.encoding([=\s]|$)</c> is designed to avoid false positives by ensuring the
+        /// flag is at the start of the string or preceded by whitespace, and followed by an assignment or a delimiter.
         /// This prevents matching similar substrings inside file paths or JAR names.
         /// </para>
         /// <para>
-        /// The optional <c>(-J)?</c> prefix group handles compiler contexts, ensuring that the alternative 
+        /// The optional <c>(-J)?</c> prefix group handles compiler contexts, ensuring that the alternative
         /// <c>javac</c> parameter format (<c>-J-Dfile.encoding</c>) is successfully intercepted.
         /// </para>
         /// <para>
-        /// This regex uses <see cref="RegexOptions.Compiled"/> for performance during process startup and 
-        /// <see cref="AppConfig.InputRegexTimeout"/> to prevent potential Denial of Service (DoS) from backtracking 
+        /// This regex uses <see cref="RegexOptions.Compiled"/> for performance during process startup and
+        /// <see cref="AppConfig.InputRegexTimeout"/> to prevent potential Denial of Service (DoS) from backtracking
         /// on malformed user input.
         /// </para>
         /// </remarks>
@@ -107,7 +107,7 @@ namespace Servy.Service.ProcessManagement
         /// Orchestrates the initialization and startup of an external process based on the provided options.
         /// </summary>
         /// <remarks>
-        /// This implementation implements lazy-loading to prevent zero-byte log file sprawl 
+        /// This implementation implements lazy-loading to prevent zero-byte log file sprawl
         /// and uses local path captures to satisfy compiler null-safety analysis inside event handlers.
         /// </remarks>
         /// <param name="options">The configuration parameters for the process launch.</param>
@@ -163,7 +163,7 @@ namespace Servy.Service.ProcessManagement
             // 2. Launch the process
             var process = factory.Create(psi, logger);
 
-            // ROBUSTNESS: Track ownership. If the method fails before returning, 
+            // ROBUSTNESS: Track ownership. If the method fails before returning,
             // we must terminate the process and dispose the wrapper to prevent handle and process leaks.
             bool returnedOwnership = false;
 
@@ -401,7 +401,7 @@ namespace Servy.Service.ProcessManagement
 
             string fileNameOnly = Path.GetFileNameWithoutExtension(psi.FileName);
 
-            // Python Logic: 
+            // Python Logic:
             // Matches 'python', 'pythonw', 'python2', 'python3', or 'python3.x' patterns.
             bool isPython;
             try { isPython = PythonExeRegex.IsMatch(fileNameOnly); }
@@ -419,7 +419,7 @@ namespace Servy.Service.ProcessManagement
                 SetIfMissing(psi, "PYTHONUNBUFFERED", "1");
             }
 
-            // Java Logic: 
+            // Java Logic:
             // Separate 'javac' (Java Compiler) from 'java'/'javaw' (Java Runtime Engines)
             // to support distinct flag formatting boundaries (-J-D vs -D).
             bool isJavaRuntime =
@@ -460,11 +460,11 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <summary>
-        /// Sets an environment variable in the specified <see cref="ProcessStartInfo"/> only if 
+        /// Sets an environment variable in the specified <see cref="ProcessStartInfo"/> only if
         /// the key does not already exist in the current environment block.
         /// </summary>
         /// <remarks>
-        /// This utility ensures that default runtime settings do not overwrite 
+        /// This utility ensures that default runtime settings do not overwrite
         /// explicit user-defined environment configurations.
         /// </remarks>
         /// <param name="psi">The process start information containing the environment block to modify.</param>

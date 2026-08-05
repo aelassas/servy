@@ -6,7 +6,7 @@ using System.Text;
 namespace Servy.Core.Native
 {
     /// <summary>
-    /// Provides a comprehensive collection of Win32 API definitions, structures, and constants 
+    /// Provides a comprehensive collection of Win32 API definitions, structures, and constants
     /// for Windows Service management, process lifecycle control, and security rights.
     /// </summary>
     [ExcludeFromCodeCoverage]
@@ -79,7 +79,7 @@ namespace Servy.Core.Native
         public const int ERROR_INSUFFICIENT_BUFFER = 122;
 
         /// <summary>
-        /// Represents the Win32 error code indicating that a data block or process table length changed 
+        /// Represents the Win32 error code indicating that a data block or process table length changed
         /// between internal allocation queries (commonly thrown transiently by Toolhelp32 APIs).
         /// </summary>
         public const int ERROR_BAD_LENGTH = 24;
@@ -337,12 +337,12 @@ namespace Servy.Core.Native
             public bool IsValidHandleInfo;
 
             /// <summary>
-            /// Compares the current file identity against another to determine if the underlying 
+            /// Compares the current file identity against another to determine if the underlying
             /// file object on disk has been replaced (rotated) or truncated.
             /// </summary>
             /// <param name="other">The previously known file identity to compare against.</param>
             /// <returns>
-            /// <c>true</c> if the files are proven different or if identity is undeterminable; 
+            /// <c>true</c> if the files are proven different or if identity is undeterminable;
             /// <c>false</c> only if they are proven to be the same file object.
             /// </returns>
             public bool IsDifferentFrom(FILE_IDENTITY other)
@@ -367,12 +367,12 @@ namespace Servy.Core.Native
                 }
 
                 // 3. Fallback: Identity Undeterminable
-                // If we reach this point, both robust probes failed or yielded null data (e.g., due to 
+                // If we reach this point, both robust probes failed or yielded null data (e.g., due to
                 // exclusive file locks, antivirus interference, or I/O errors).
                 //
-                // SAFE DEFAULT: We return 'true' to signal a potential difference. This forces the 
-                // caller (like LogTailer) to break its inner loop and perform a "soft refresh" via 
-                // metadata-guarded re-opening. This prevents masking rotations on hostile file 
+                // SAFE DEFAULT: We return 'true' to signal a potential difference. This forces the
+                // caller (like LogTailer) to break its inner loop and perform a "soft refresh" via
+                // metadata-guarded re-opening. This prevents masking rotations on hostile file
                 // systems where tunneling hides metadata changes.
                 return true;
             }
@@ -524,22 +524,22 @@ namespace Servy.Core.Native
             IntPtr returnLength = default);
 
         /// <summary>
-        /// Parses a Unicode command-line string and returns an array of pointers to the command-line arguments, 
+        /// Parses a Unicode command-line string and returns an array of pointers to the command-line arguments,
         /// along with a count of such arguments, in a manner similar to standard C run-time argv/argc values.
         /// </summary>
         /// <param name="lpCmdLine">A pointer to a null-terminated Unicode string that contains the full command line.</param>
         /// <param name="pNumArgs">A pointer to an integer that receives the number of array elements returned.</param>
         /// <returns>
-        /// If the function succeeds, the return value is a pointer to an array of Unicode string pointers. 
+        /// If the function succeeds, the return value is a pointer to an array of Unicode string pointers.
         /// If the function fails, the return value is <see cref="IntPtr.Zero"/>.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// The memory allocated for the argument list must be freed by calling <see cref="LocalFree"/> 
+        /// The memory allocated for the argument list must be freed by calling <see cref="LocalFree"/>
         /// using the pointer returned by this function.
         /// </para>
         /// <para>
-        /// This method is essential for correctly resolving unquoted service paths that contain spaces 
+        /// This method is essential for correctly resolving unquoted service paths that contain spaces
         /// (e.g., "C:\Program Files\Servy\Servy.Service.exe"), as it mirrors the OS's own argument parsing logic.
         /// </para>
         /// </remarks>

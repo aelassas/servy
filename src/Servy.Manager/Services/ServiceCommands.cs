@@ -111,7 +111,7 @@ namespace Servy.Manager.Services
 
         /// <summary>
         /// Executes an asynchronous operation within a per-service lock.
-        /// Uses a persistent ConcurrentDictionary of SemaphoreSlim instances to guarantee 
+        /// Uses a persistent ConcurrentDictionary of SemaphoreSlim instances to guarantee
         /// absolute mutual exclusion per service name across the application lifecycle.
         /// </summary>
         private async Task<T> ExecuteLockedAsync<T>(string serviceName, Func<Task<T>> action, CancellationToken cancellationToken = default)
@@ -123,9 +123,9 @@ namespace Servy.Manager.Services
                 throw new ArgumentException("Service name cannot be null, empty, or whitespace.", nameof(serviceName));
 
             // Get or create the lock for this specific service.
-            // We intentionally DO NOT eagerly evict these semaphores when they become idle. 
-            // Evicting a semaphore while other threads might be concurrently calling GetOrAdd 
-            // introduces a race condition where multiple threads can acquire different 
+            // We intentionally DO NOT eagerly evict these semaphores when they become idle.
+            // Evicting a semaphore while other threads might be concurrently calling GetOrAdd
+            // introduces a race condition where multiple threads can acquire different
             // semaphore instances for the same service key, violating mutual exclusion.
             var sem = _serviceLocks.GetOrAdd(
                 serviceName,
@@ -179,7 +179,7 @@ namespace Servy.Manager.Services
 
                 var services = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-                // Filter out nulls resulting from malformed/orphaned DTOs 
+                // Filter out nulls resulting from malformed/orphaned DTOs
                 // to prevent NullReferenceExceptions during UI data binding.
                 return services.OfType<Service>().ToList();
             }
@@ -517,7 +517,7 @@ namespace Servy.Manager.Services
                         }
                         catch (ExternalException)
                         {
-                            // Generic Win32 failure or clipboard access denied by the OS. 
+                            // Generic Win32 failure or clipboard access denied by the OS.
                             // We treat this as a non-fatal UI error to prevent crashing the Manager.
                             return false;
                         }
@@ -604,29 +604,29 @@ namespace Servy.Manager.Services
         #region Private Helpers
 
         /// <summary>
-        /// Executes a service management operation within a per-service lock, managing background execution, 
+        /// Executes a service management operation within a per-service lock, managing background execution,
         /// UI state synchronization, and optional user notifications.
         /// </summary>
         /// <param name="service">The <see cref="Service"/> UI model to be updated upon successful operation.</param>
-        /// <param name="operation">An asynchronous delegate that performs the core domain logic using a 
+        /// <param name="operation">An asynchronous delegate that performs the core domain logic using a
         /// <see cref="Core.Domain.Service"/> instance.</param>
-        /// <param name="targetStatus">The <see cref="ServiceStatus"/> that the UI model should transition 
+        /// <param name="targetStatus">The <see cref="ServiceStatus"/> that the UI model should transition
         /// to if the operation succeeds (e.g., Running, Stopped).</param>
-        /// <param name="successMessage">The localized message string to display in a success dialog 
+        /// <param name="successMessage">The localized message string to display in a success dialog
         /// if <paramref name="showMessageBox"/> is <c>true</c>.</param>
-        /// <param name="checkDisabled">If <c>true</c>, verifies the service is not 'Disabled' before 
+        /// <param name="checkDisabled">If <c>true</c>, verifies the service is not 'Disabled' before
         /// invoking the operation.</param>
-        /// <param name="showMessageBox">Indicates whether to display success/error dialogs to the user 
+        /// <param name="showMessageBox">Indicates whether to display success/error dialogs to the user
         /// after execution.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// A task representing the asynchronous operation. The task result is <c>true</c> if the operation 
+        /// A task representing the asynchronous operation. The task result is <c>true</c> if the operation
         /// completed successfully and the service state was updated; otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// This method utilizes <see cref="ExecuteLockedAsync{T}"/> to prevent concurrent, conflicting 
-        /// operations on the same service (Head-of-Line blocking). The core operation is explicitly 
-        /// offloaded to <see cref="Task.Run"/> to keep the UI responsive during long-running service state 
+        /// This method utilizes <see cref="ExecuteLockedAsync{T}"/> to prevent concurrent, conflicting
+        /// operations on the same service (Head-of-Line blocking). The core operation is explicitly
+        /// offloaded to <see cref="Task.Run"/> to keep the UI responsive during long-running service state
         /// transitions.
         /// </remarks>
         private async Task<bool> ExecuteServiceCommandAsync(
@@ -710,7 +710,7 @@ namespace Servy.Manager.Services
         {
             var serviceDto = await _serviceRepository.GetByNameAsync(serviceName, decrypt: true, cancellationToken: cancellationToken);
 
-            // If the service is not in the repository, we must return null 
+            // If the service is not in the repository, we must return null
             // to allow callers to show the "Service Not Found" message.
             if (serviceDto == null)
             {
@@ -723,7 +723,7 @@ namespace Servy.Manager.Services
         }
 
         /// <summary>
-        /// Standardizes the service configuration export pipeline by retrieving the persistence-layer DTO 
+        /// Standardizes the service configuration export pipeline by retrieving the persistence-layer DTO
         /// and executing a format-specific serialization delegate.
         /// </summary>
         /// <param name="service">The UI model representing the service to be exported.</param>
@@ -734,9 +734,9 @@ namespace Servy.Manager.Services
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous export operation.</returns>
         /// <remarks>
-        /// Unlike the Desktop App variant, this method retrieves the <see cref="ServiceDto"/> directly 
-        /// from the <see cref="IServiceRepository"/> to ensure the exported file reflects the current 
-        /// configuration. Credentials are exported in decrypted (plaintext) form so the file remains 
+        /// Unlike the Desktop App variant, this method retrieves the <see cref="ServiceDto"/> directly
+        /// from the <see cref="IServiceRepository"/> to ensure the exported file reflects the current
+        /// configuration. Credentials are exported in decrypted (plaintext) form so the file remains
         /// portable across machines; the resulting file should be treated as sensitive.
         /// </remarks>
         private async Task ExportServiceConfigAsync(
@@ -780,7 +780,7 @@ namespace Servy.Manager.Services
         }
 
         /// <summary>
-        /// Standardizes the configuration import pipeline, enforcing a multi-stage validation gate 
+        /// Standardizes the configuration import pipeline, enforcing a multi-stage validation gate
         /// before persisting the configuration to the repository and refreshing the UI.
         /// </summary>
         /// <param name="getFilePath">A delegate that opens an open file dialog and returns the source path.</param>
@@ -906,7 +906,7 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Attempts to launch an external process.
         /// </summary>
-        /// <param name="psi">The <see cref="ProcessStartInfo"/> that contains the information used to start the process, 
+        /// <param name="psi">The <see cref="ProcessStartInfo"/> that contains the information used to start the process,
         /// including the file name and command-line arguments.</param>
         /// <returns>The active process instance; returns null if the creation fails.</returns>
         /// <remarks>

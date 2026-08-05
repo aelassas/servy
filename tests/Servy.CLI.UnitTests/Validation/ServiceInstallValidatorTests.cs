@@ -179,9 +179,9 @@ namespace Servy.CLI.UnitTests.Validation
         {
             // Arrange
             var opts = CreateValidOptions();
-            // Pass a corrupted value to a property name that doesn't exist on standard CommandLine attribute paths 
+            // Pass a corrupted value to a property name that doesn't exist on standard CommandLine attribute paths
             // if mapped via an imaginary field, or force-trigger fallback lookup code branches manually.
-            // Since we can't add fields dynamically, we use an option property configuration that fails 
+            // Since we can't add fields dynamically, we use an option property configuration that fails
             // but tests the 'GetOptionName' logic completely.
             opts.ServiceStartType = "Invalid";
 
@@ -198,7 +198,7 @@ namespace Servy.CLI.UnitTests.Validation
         public void GetOptionName_NonExistentPropertyName_ReturnsProvidedStringFallback()
         {
             // Arrange
-            // Since GetOptionName is private, we invoke it securely via reflection helper to test 
+            // Since GetOptionName is private, we invoke it securely via reflection helper to test
             // the early loop boundary: `if (prop == null) return propertyName;`
             const string propertyName = "GhostPropertyThatDoesNotExist";
 

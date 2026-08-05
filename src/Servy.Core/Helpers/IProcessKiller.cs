@@ -10,21 +10,21 @@
         /// </summary>
         /// <param name="parentPid">The numerical process identifier of the parent whose descendants should be terminated.</param>
         /// <remarks>
-        /// This entry point utilizes a global native process snapshot to map the hierarchy. 
-        /// 
-        /// Termination descent is strictly bounded by process liveliness: the implementation 
-        /// validates child lineage by comparing process start-times to mitigate the risk 
-        /// of terminating recycled PIDs. Consequently, if an intermediate bridge process 
-        /// has already exited, descendant processes in that branch are not reachable 
+        /// This entry point utilizes a global native process snapshot to map the hierarchy.
+        ///
+        /// Termination descent is strictly bounded by process liveliness: the implementation
+        /// validates child lineage by comparing process start-times to mitigate the risk
+        /// of terminating recycled PIDs. Consequently, if an intermediate bridge process
+        /// has already exited, descendant processes in that branch are not reachable
         /// for validation and will be skipped to maintain fail-safe integrity.
         ///
-        /// This method enumerates processes where <c>ParentProcessId</c> matches 
+        /// This method enumerates processes where <c>ParentProcessId</c> matches
         /// the given <paramref name="parentPid"/>.
-        /// 
+        ///
         /// It recursively calls itself to ensure that grandchildren and deeper
-        /// descendants are also terminated before finally killing the child itself, 
+        /// descendants are also terminated before finally killing the child itself,
         /// provided the ancestor lineage remains valid and reachable.
-        /// 
+        ///
         /// Exceptions such as access denied or processes that have already exited are
         /// caught and ignored to allow cleanup to continue for valid, reachable branches.
         /// </remarks>
@@ -37,7 +37,7 @@
         /// <param name="killParents">A boolean flag indicating whether the upward execution chain should also be terminated.</param>
         /// <returns>A boolean value indicating whether the termination sequence executed successfully without encountering critical failures.</returns>
         /// <remarks>
-        /// This method captures a snapshot of all running processes to ensure consistency 
+        /// This method captures a snapshot of all running processes to ensure consistency
         /// during the recursive tree walk. It handles the ".exe" extension automatically.
         /// </remarks>
         bool KillProcessTreeAndParents(string processName, bool killParents = true);

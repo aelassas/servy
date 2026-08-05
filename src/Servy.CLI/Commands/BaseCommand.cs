@@ -16,7 +16,7 @@ namespace Servy.CLI.Commands
     {
         /// <summary>
         /// Test Seam: Enables unit tests to bypass non-mockable static OS environment checks deterministically.
-        /// </summary>        
+        /// </summary>
         internal static bool BypassElevationCheck = false;
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Servy.CLI.Commands
         /// <param name="serviceManager">The <see cref="IServiceManager"/> instance used to query current service startup configuration.</param>
         /// <param name="serviceName">The unique name of the service to inspect.</param>
         /// <returns>
-        /// A <see cref="Func{CancellationToken, CommandResult}"/> that, when executed, returns a failed <see cref="CommandResult"/> 
+        /// A <see cref="Func{CancellationToken, CommandResult}"/> that, when executed, returns a failed <see cref="CommandResult"/>
         /// if the service is disabled; otherwise, returns <c>null</c> to signal the check passed.
         /// </returns>
         protected Func<CancellationToken, CommandResult?> NotDisabledPreCheck(IServiceManager serviceManager, string? serviceName) =>
@@ -36,7 +36,7 @@ namespace Servy.CLI.Commands
             };
 
         /// <summary>
-        /// Executes a synchronous command action with common error handling: <see cref="OperationCanceledException"/> 
+        /// Executes a synchronous command action with common error handling: <see cref="OperationCanceledException"/>
         /// is translated to a clean cancellation result, and all other exceptions are routed through <see cref="HandleException"/>.
         /// </summary>
         /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used for logging scopes.</param>
@@ -61,7 +61,7 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Executes an asynchronous command action with common error handling: <see cref="OperationCanceledException"/> 
+        /// Executes an asynchronous command action with common error handling: <see cref="OperationCanceledException"/>
         /// is translated to a clean cancellation result, and all other exceptions are routed through <see cref="HandleException"/>.
         /// </summary>
         /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used for logging scopes.</param>

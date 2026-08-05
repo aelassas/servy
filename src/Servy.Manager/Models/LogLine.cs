@@ -39,7 +39,7 @@
         public DateTime Timestamp { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the timestamp was synthetically generated 
+        /// Gets or sets a value indicating whether the timestamp was synthetically generated
         /// during history loading rather than parsed from the log stream.
         /// </summary>
         public bool IsSyntheticTime { get; set; }

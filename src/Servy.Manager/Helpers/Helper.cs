@@ -8,7 +8,7 @@ namespace Servy.Manager.Helpers
     internal static class Helper
     {
         /// <summary>
-        /// Safely attempts to cancel and dispose of a <see cref="CancellationTokenSource"/>, 
+        /// Safely attempts to cancel and dispose of a <see cref="CancellationTokenSource"/>,
         /// suppressing common lifecycle exceptions to ensure process-wide shutdown integrity.
         /// </summary>
         internal static void CancelAndDisposeSafely(CancellationTokenSource? cts)

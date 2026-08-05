@@ -161,7 +161,7 @@ namespace Servy.Core.Validation
 
                 uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
 
-                // Fail closed if the win32 character size probe returns 0. 
+                // Fail closed if the win32 character size probe returns 0.
                 // This prevents resolution errors from silently bypassing target checks.
                 if (requiredSize == 0)
                 {

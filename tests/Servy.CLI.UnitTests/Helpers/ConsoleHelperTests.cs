@@ -17,7 +17,7 @@ namespace Servy.CLI.UnitTests.Helpers
 
         /// <summary>
         /// Covers the branch where Console.IsOutputRedirected is true.
-        /// The loading animation task should exit early, and the safe line clearing block 
+        /// The loading animation task should exit early, and the safe line clearing block
         /// should skip the window calculations, avoiding any structural output.
         /// </summary>
         [Fact]
@@ -56,12 +56,12 @@ namespace Servy.CLI.UnitTests.Helpers
                     Assert.True(actionExecuted);
 
                     // If the implementation is correct, only the action's output should be here.
-                    // If the action is silent, it will be empty. 
+                    // If the action is silent, it will be empty.
                     // If the action DOES produce output, the helper shouldn't append animation frames.
                     var output = sw.ToString();
                     Assert.DoesNotContain("Testing Redirected...", output); // Ensure animation text is missing
 
-                    // Soft fallback: Do NOT use Assert.Empty(output) here because parallel tests 
+                    // Soft fallback: Do NOT use Assert.Empty(output) here because parallel tests
                     // writing to the global Console.Out will bleed into this StringWriter instance.
                 }
             }
@@ -106,10 +106,10 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the non-redirected branch where the animation runs. 
-        /// Because we cannot reliably toggle Console.IsOutputRedirected back to false if the test runner 
-        /// environment is already redirected (e.g., CI/CD builds or Test Explorer instances), this test uses 
-        /// a custom TextWriter wrapper that simulates an IOException on property access to force coverage 
+        /// Covers the non-redirected branch where the animation runs.
+        /// Because we cannot reliably toggle Console.IsOutputRedirected back to false if the test runner
+        /// environment is already redirected (e.g., CI/CD builds or Test Explorer instances), this test uses
+        /// a custom TextWriter wrapper that simulates an IOException on property access to force coverage
         /// of the deepest nested catch block.
         /// </summary>
         [Fact]
@@ -123,7 +123,7 @@ namespace Servy.CLI.UnitTests.Helpers
 
             try
             {
-                // Instantiating a TextWriter that forces an IOException upon attempting to check Console settings 
+                // Instantiating a TextWriter that forces an IOException upon attempting to check Console settings
                 // or write operations, simulating terminal detachment during cleanup execution.
                 using (var faultingWriter = new FaultingStringWriter())
                 {

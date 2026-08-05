@@ -60,9 +60,9 @@ namespace Servy.Core.Data
         /// </summary>
         /// <remarks>
         /// This method ensures the underlying connection is opened before starting the transaction.
-        /// If opening the connection or beginning the transaction fails, the connection is disposed 
+        /// If opening the connection or beginning the transaction fails, the connection is disposed
         /// before the exception propagates.
-        /// It provides compatibility between standard synchronous <see cref="IDbConnection"/> 
+        /// It provides compatibility between standard synchronous <see cref="IDbConnection"/>
         /// and modern asynchronous <see cref="System.Data.Common.DbConnection"/> implementations.
         /// </remarks>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>

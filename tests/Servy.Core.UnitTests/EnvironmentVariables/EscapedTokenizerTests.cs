@@ -145,7 +145,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         /// <summary>
-        /// Verifies the fix for #1114, ensuring literal newlines and carriage returns 
+        /// Verifies the fix for #1114, ensuring literal newlines and carriage returns
         /// preceded by an escape character have the escape backslash stripped.
         /// </summary>
         [Theory]
@@ -181,7 +181,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         /// <summary>
-        /// Ensures that trailing escape symbols at the absolute bounds of an input boundary string 
+        /// Ensures that trailing escape symbols at the absolute bounds of an input boundary string
         /// fail closed and preserve the structural symbol literally instead of truncating or throwing out-of-bounds exceptions.
         /// </summary>
         [Theory]
@@ -197,7 +197,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         /// <summary>
-        /// Validates that SplitByUnescapedDelimiters treats standard backslash-escaped 
+        /// Validates that SplitByUnescapedDelimiters treats standard backslash-escaped
         /// CR and LF control characters as part of the token value rather than splitting records on them.
         /// </summary>
         [Fact]
@@ -218,7 +218,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         /// <summary>
-        /// Validates IndexOfUnescapedChar boundary evaluation rules, ensuring that a target character 
+        /// Validates IndexOfUnescapedChar boundary evaluation rules, ensuring that a target character
         /// is ignored if it is preceded by an active escaping operator but detected normally otherwise.
         /// </summary>
         [Fact]

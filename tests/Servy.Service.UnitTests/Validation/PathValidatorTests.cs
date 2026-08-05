@@ -8,7 +8,7 @@ namespace Servy.Service.UnitTests.Validation
         [InlineData(@"C:\Valid\Path.txt", true)]
         [InlineData(@"..\Traversal.txt", false)] // Directory traversal
         [InlineData(null, false)]
-        [InlineData("", false)]                  
+        [InlineData("", false)]
         [InlineData("   ", false)]
         [InlineData(@"C:\Invalid|Char.txt", false)] // Invalid path chars
         public void IsValidPath_EvaluatesCorrectly(string? path, bool expected)

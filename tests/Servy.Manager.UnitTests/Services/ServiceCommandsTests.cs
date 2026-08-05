@@ -38,7 +38,7 @@ namespace Servy.Manager.UnitTests.Services
 
         public ServiceCommandsTests()
         {
-            // Injecting a Mock ServiceManager instead of a real one prevents test hangs 
+            // Injecting a Mock ServiceManager instead of a real one prevents test hangs
             // and isolates the ServiceCommands logic perfectly.
             _serviceManagerMock = new Mock<IServiceManager>();
             _serviceRepositoryMock = new Mock<IServiceRepository>();
@@ -550,7 +550,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 ProcessStartInfo? capturedPsi = null;
 
-                // INTERCEPTION SEAM: Capture the launch metadata via callback and return null 
+                // INTERCEPTION SEAM: Capture the launch metadata via callback and return null
                 // to safely complete the fire-and-forget execution block without triggering ShellExecute.
                 _processHelperMock
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))

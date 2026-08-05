@@ -142,16 +142,16 @@ namespace Servy.Service.CommandLine
         }
 
         /// <summary>
-        /// Maps the custom <see cref="ProcessPriority"/> domain enum to the 
+        /// Maps the custom <see cref="ProcessPriority"/> domain enum to the
         /// standard <see cref="ProcessPriorityClass"/> used by the system.
         /// </summary>
         /// <param name="p">The process priority level defined in the service configuration.</param>
         /// <returns>
-        /// The corresponding <see cref="ProcessPriorityClass"/>. 
+        /// The corresponding <see cref="ProcessPriorityClass"/>.
         /// Defaults to <see cref="ProcessPriorityClass.Normal"/> if the input is unrecognized.
         /// </returns>
         /// <remarks>
-        /// This manual mapping is used instead of <see cref="Enum.TryParse{TEnum}(string, out TEnum)"/> 
+        /// This manual mapping is used instead of <see cref="Enum.TryParse{TEnum}(string, out TEnum)"/>
         /// to eliminate string allocations and reflection overhead during service startup.
         /// </remarks>
         public static ProcessPriorityClass MapPriority(ProcessPriority p)

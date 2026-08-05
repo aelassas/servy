@@ -9,7 +9,7 @@ namespace Servy.CLI.UnitTests.Helpers
     [Verb("testverb", HelpText = "Test verb")]
     internal class TestOptions { }
 
-    // Enforce sequential execution down a single thread apartment channel 
+    // Enforce sequential execution down a single thread apartment channel
     // across the entire suite run pass to stop cross-thread Console static corruption.
     [Collection("SequentialConsoleTests")]
     public class HelperTests
@@ -17,7 +17,7 @@ namespace Servy.CLI.UnitTests.Helpers
         // Single SemaphoreSlim(1, 1) to gate access to the static Console object.
         private static readonly SemaphoreSlim _consoleSemaphore = new SemaphoreSlim(1, 1);
 
-        // Async coordination primitive sharing the same conceptual isolation boundary 
+        // Async coordination primitive sharing the same conceptual isolation boundary
         // to prevent thread pool yields from overlapping with active capturing blocks.
         private static readonly SemaphoreSlim _asyncConsoleLock = new SemaphoreSlim(1, 1);
 
@@ -81,7 +81,7 @@ namespace Servy.CLI.UnitTests.Helpers
                     Console.SetOut(swOut);
                     Console.SetError(swErr);
 
-                    // Await the action, which cleanly yields control to the thread pool 
+                    // Await the action, which cleanly yields control to the thread pool
                     // while the hijacked console remains correctly redirected.
                     await testAction();
 

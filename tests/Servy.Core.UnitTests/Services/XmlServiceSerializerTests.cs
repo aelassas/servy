@@ -68,7 +68,7 @@ namespace Servy.Core.UnitTests.Services
                 var expectedValue = prop.GetValue(expected);
                 var actualValue = prop.GetValue(actual);
 
-                // If the expected fixture value is null, it skips evaluation to prevent 
+                // If the expected fixture value is null, it skips evaluation to prevent
                 // breaking on values hydrated to system defaults during deserialization.
                 if (expectedValue == null)
                 {
@@ -170,7 +170,7 @@ namespace Servy.Core.UnitTests.Services
 
     /// <summary>
     /// Derived class designed to simulate an unexpected serialization type.
-    /// Serializing this runtime subtype through a standard base XmlSerializer(typeof(ServiceDto)) 
+    /// Serializing this runtime subtype through a standard base XmlSerializer(typeof(ServiceDto))
     /// throws an InvalidOperationException because it lacks explicit XmlInclude configuration declarations.
     /// </summary>
     public class InvalidServiceDtoMock : ServiceDto

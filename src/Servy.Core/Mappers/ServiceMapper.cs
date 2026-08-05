@@ -38,7 +38,7 @@ namespace Servy.Core.Mappers
                 // Validate Enum ranges before mapping from DTO using shared parser
                 StartupType = ConfigParser.ParseEnum(dto.StartupType, AppConfig.DefaultStartupType),
                 Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultProcessPriority),
-                
+
                 CpuAffinity = dto.CpuAffinity,
 
                 EnableConsoleUI = dto.EnableConsoleUI!.Value,

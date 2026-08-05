@@ -102,7 +102,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            // Act: All system filters are null. 
+            // Act: All system filters are null.
             // Note: If the service sets 'SourceName' by default, this will actually build a populated tag.
             // Asserting StartsWith("*") ensures it passes regardless of SourceName defaults.
             await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
@@ -373,7 +373,7 @@ namespace Servy.Core.UnitTests.Services
 
                 // Act & Assert
                 // CANCELLATION: Standardized the assertion to target the base type OperationCanceledException.
-                // This eliminates brittle exact-type constraints and mirrors the cancellation patterns 
+                // This eliminates brittle exact-type constraints and mirrors the cancellation patterns
                 // verified across sibling components like ServiceManager and DapperExecutor.
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
                     service.SearchAsync(null, null, null, null!, cts.Token));

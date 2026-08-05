@@ -229,7 +229,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.False(vm.IsConfiguratorEnabled);
 
                 // Act 1 (Control)
-                // Flip the mock value to true. If the view model filters correctly, raising an irrelevant 
+                // Flip the mock value to true. If the view model filters correctly, raising an irrelevant
                 // property will NOT trigger a re-read, and the VM state will stay 'false'.
                 _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(true);
                 _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs("OtherProperty"));
@@ -518,7 +518,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None)!;
                 await task2;
 
-                // Assert 2: The manager is queried for OS info, but execution safely short-circuits 
+                // Assert 2: The manager is queried for OS info, but execution safely short-circuits
                 // before pulling DTO snapshots out of the database repository layer.
                 _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -853,7 +853,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await Task.Run(() => vm.RemoveService("ToKeep"));
 
                     // 2. Yield and await a lower-priority operation on the local message pump.
-                    // This forces the pump to fully process the collection removal InvokeAsync action 
+                    // This forces the pump to fully process the collection removal InvokeAsync action
                     // queued up by RemoveService before dropping the frame execution loop.
                     await currentDispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
                 });

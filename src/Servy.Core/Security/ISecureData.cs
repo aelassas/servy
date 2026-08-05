@@ -22,12 +22,12 @@ namespace Servy.Core.Security
         /// Decrypts a ciphertext string by automatically detecting the encryption version prefix or formatting layout.
         /// </summary>
         /// <remarks>
-        /// Upstream callers (UI/CLI) must handle integrity failures explicitly to prevent processing tampered records 
+        /// Upstream callers (UI/CLI) must handle integrity failures explicitly to prevent processing tampered records
         /// or falling back to dangerous default states during a downgrade attack vector.
         /// </remarks>
         /// <param name="cipherText">The versioned ciphertext string (containing structural markers) or a raw legacy string.</param>
         /// <returns>
-        /// The decrypted original plain text on success, or the original <paramref name="cipherText"/> 
+        /// The decrypted original plain text on success, or the original <paramref name="cipherText"/>
         /// unchanged only when the input string contains no version prefix marker and does not conform to strict Base64 formatting.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="cipherText"/> is null.</exception>

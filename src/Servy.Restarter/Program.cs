@@ -80,7 +80,7 @@ namespace Servy.Restarter
                                                                   min: 1, max: AppConfig.MaxRestarterTimeoutSeconds);
 
                 // 4. PROMOTE / SCOPE the logger
-                // Using the instance logger ensures that 'serviceName' is prepended 
+                // Using the instance logger ensures that 'serviceName' is prepended
                 // and events are mirrored to the Windows Event Log.
                 scopedLogger = rootLogger.CreateScoped(serviceName);
 

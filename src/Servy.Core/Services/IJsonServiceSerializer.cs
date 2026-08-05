@@ -22,7 +22,7 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="dto">The service data transfer object to serialize.</param>
         /// <returns>
-        /// A formatted JSON string representation of the <paramref name="dto"/>, 
+        /// A formatted JSON string representation of the <paramref name="dto"/>,
         /// or <see langword="null"/> if the input is null or serialization fails.
         /// </returns>
         /// <remarks>

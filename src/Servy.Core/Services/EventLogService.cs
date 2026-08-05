@@ -27,7 +27,7 @@ namespace Servy.Core.Services
         /// The <see cref="IEventLogReader"/> used to read events from the Windows Event Viewer.
         /// </param>
         /// <param name="sourceName">
-        /// The optional event source name to filter by. If <see langword="null"/>, 
+        /// The optional event source name to filter by. If <see langword="null"/>,
         /// the service defaults to the value defined in <see cref="AppConfig.EventSource"/>.
         /// Pass an empty string to disable the provider filter and enable wildcard querying.
         /// </param>
@@ -73,7 +73,7 @@ namespace Servy.Core.Services
                 {
                     if (level.Value == EventLogLevel.Error)
                     {
-                        // Since ParseLevel maps both Windows Level 1 (Critical) and 2 (Error) 
+                        // Since ParseLevel maps both Windows Level 1 (Critical) and 2 (Error)
                         // to EventLogLevel.Error, the query must include both levels.
                         systemFilters.Add("(Level=1 or Level=2)");
                     }
@@ -148,13 +148,13 @@ namespace Servy.Core.Services
                 }
                 catch (EventLogException ex)
                 {
-                    // InvalidOperationException is appropriate when a required system service (Event Log) 
+                    // InvalidOperationException is appropriate when a required system service (Event Log)
                     // is not in the correct state to perform the operation.
                     throw new InvalidOperationException("Cannot access Windows Event Log. Ensure the 'Windows Event Log' service is running and the query is valid.", ex);
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    // SecurityException is the standard .NET way to signal that a call failed 
+                    // SecurityException is the standard .NET way to signal that a call failed
                     // due to insufficient permissions/privileges.
                     throw new SecurityException("Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).", ex);
                 }

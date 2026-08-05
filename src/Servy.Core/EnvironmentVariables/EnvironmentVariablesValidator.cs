@@ -8,7 +8,7 @@ namespace Servy.Core.EnvironmentVariables
     public static class EnvironmentVariablesValidator
     {
         /// <summary>
-        /// Validates the format of the environment variables input. Supports variables separated by unescaped semicolons or new lines. 
+        /// Validates the format of the environment variables input. Supports variables separated by unescaped semicolons or new lines.
         /// Checks that each variable contains at least one unescaped equals character, and that the variable key before the equals sign is not empty.
         /// </summary>
         /// <param name="environmentVariables">The raw environment variables string to validate.</param>
@@ -94,8 +94,8 @@ namespace Servy.Core.EnvironmentVariables
             // 1. Trim whitespace first to expose structural quotes
             var trimmedValue = rawValue.Trim();
 
-            // 2. Remove surrounding quotes ONLY. By doing this BEFORE unescaping, 
-            // we allow users to pass escaped quotes (e.g., \"hello\") that bypass this 
+            // 2. Remove surrounding quotes ONLY. By doing this BEFORE unescaping,
+            // we allow users to pass escaped quotes (e.g., \"hello\") that bypass this
             // structural strip and survive into the final value.
             if (trimmedValue.Length >= 2
                && trimmedValue[0] == '"'

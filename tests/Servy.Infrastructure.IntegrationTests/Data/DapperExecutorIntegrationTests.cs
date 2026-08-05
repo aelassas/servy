@@ -151,7 +151,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 if (_forceSyncTransactionPath)
                 {
                     // Hand execution flow back to the base framework layer.
-                    // The standard .NET base implementation routes directly down into 
+                    // The standard .NET base implementation routes directly down into
                     // the synchronous BeginDbTransaction method below automatically.
                     return base.BeginDbTransactionAsync(isolationLevel, cancellationToken);
                 }
@@ -430,7 +430,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // ==========================================================================================
             // Branch 2: Native Async Path
             // ------------------------------------------------------------------------------------------
-            // Exercises the natively async-overridden pathway where the database provider handles async tasks 
+            // Exercises the natively async-overridden pathway where the database provider handles async tasks
             // entirely in the unmanaged driver level without bouncing back onto synchronous fallback locks.
             // ==========================================================================================
             // Arrange
@@ -448,7 +448,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // ==========================================================================================
             // Branch 3: Concrete Provider Check
             // ------------------------------------------------------------------------------------------
-            // Uses the real SQLite connection object to test the high-performance operational layout 
+            // Uses the real SQLite connection object to test the high-performance operational layout
             // natively against a physical ADO.NET database engine driver configuration.
             // ==========================================================================================
             // Arrange

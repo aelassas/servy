@@ -177,7 +177,7 @@ If you have suggestions or issues or would like to contribute, feel free to [ope
 
 ## License
 
-Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
+Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for third-party software notices and licenses.
 
 ## Acknowledgments
 
@@ -196,4 +196,3 @@ Special thanks to everyone who tested Servy, reported issues, and suggested impr
     <img alt="JetBrains Open Source" src="https://aelassas.github.io/content/jetbrains.svg?v=3" width="54" height="51">
   </a>
 </p>
-

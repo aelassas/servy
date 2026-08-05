@@ -86,7 +86,7 @@ namespace Servy.UI.Helpers
         /// </summary>
         /// <param name="number">The number to format.</param>
         /// <returns>
-        /// A string containing the formatted number.  
+        /// A string containing the formatted number.
         /// For example: <c>1,234</c> or <c>1,000,000</c>.
         /// </returns>
         public static string FormatNumber(int number)
@@ -103,9 +103,9 @@ namespace Servy.UI.Helpers
         /// <param name="oneFormat">Template for one item (e.g. "Loaded 1 service in {0}").</param>
         /// <param name="manyFormat">Template for multiple items (e.g. "Loaded {0} services in {1}").</param>
         /// <returns>
-        /// A string such as:  
-        /// <c>No services in 500ms</c>,  
-        /// <c>1 service in 2s</c>,  
+        /// A string such as:
+        /// <c>No services in 500ms</c>,
+        /// <c>1 service in 2s</c>,
         /// <c>1,234 logs in 1m 20s</c>.
         /// </returns>
         public static string GetRowsInfo(

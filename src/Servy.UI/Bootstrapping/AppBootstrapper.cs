@@ -23,7 +23,7 @@ namespace Servy.UI.Bootstrapping
     /// Orchestrates the application lifecycle and initialization for Servy desktop applications.
     /// </summary>
     /// <remarks>
-    /// This class centralizes shared logic for Rendering Tier detection, unhandled exception 
+    /// This class centralizes shared logic for Rendering Tier detection, unhandled exception
     /// orchestration, configuration loading via JSON, embedded resource extraction, and target app availability monitoring.
     /// </remarks>
     [ExcludeFromCodeCoverage] // This class is inherently difficult to unit test due to its tight coupling with WPF application lifecycle and static dependencies.
@@ -251,7 +251,7 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Asynchronously initializes the application and handles any critical faults 
+        /// Asynchronously initializes the application and handles any critical faults
         /// that occur before the UI is ready.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
@@ -288,7 +288,7 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Asynchronously handles heavy initialization tasks such as database migrations, 
+        /// Asynchronously handles heavy initialization tasks such as database migrations,
         /// resource extraction, and window orchestration.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
@@ -485,7 +485,7 @@ namespace Servy.UI.Bootstrapping
 
                     // PHASE 4: Recovery
                     // If the code reaches this point, the parent directory was renamed or deleted.
-                    // We clean up the stale watcher, force a UI update to 'False', and let the 
+                    // We clean up the stale watcher, force a UI update to 'False', and let the
                     // outer loop drop us seamlessly back into Phase 1 to wait for it to return.
                     app.Dispatcher.Invoke(() =>
                     {
@@ -521,7 +521,7 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Safely detaches event handlers and disposes of the current availability watcher to prevent 
+        /// Safely detaches event handlers and disposes of the current availability watcher to prevent
         /// memory leaks and ensure a clean state before re-attachment or shutdown.
         /// </summary>
         private void CleanupAvailabilityWatcher()

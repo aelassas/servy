@@ -4,7 +4,7 @@ using System.Windows.Input;
 namespace Servy.UI.Commands
 {
     /// <summary>
-    /// An implementation of the <see cref="ICommand"/> interface that supports asynchronous operations 
+    /// An implementation of the <see cref="ICommand"/> interface that supports asynchronous operations
     /// and provides automatic UI state management via the WPF <see cref="CommandManager"/>.
     /// </summary>
     public class AsyncCommand : IAsyncCommand
@@ -42,7 +42,7 @@ namespace Servy.UI.Commands
         }
 
         /// <summary>
-        /// The standard entry point for WPF command execution. Dispatches to <see cref="ExecuteAsync"/> and 
+        /// The standard entry point for WPF command execution. Dispatches to <see cref="ExecuteAsync"/> and
         /// captures any exceptions to prevent dispatcher crashes.
         /// </summary>
         /// <param name="parameter">Data used by the command.</param>
@@ -64,7 +64,7 @@ namespace Servy.UI.Commands
         }
 
         /// <summary>
-        /// Executes the asynchronous logic associated with this command. 
+        /// Executes the asynchronous logic associated with this command.
         /// Manages the internal execution state to ensure re-entrancy protection.
         /// </summary>
         /// <param name="parameter">Data used by the command.</param>

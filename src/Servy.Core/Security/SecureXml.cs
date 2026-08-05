@@ -24,7 +24,7 @@ namespace Servy.Core.Security
         /// <param name="input">The <see cref="TextReader"/> containing the XML source.</param>
         /// <returns>A new <see cref="XmlReader"/> instance configured with restricted security settings.</returns>
         /// <remarks>
-        /// This reader is configured to strictly prohibit DTDs and block external resolvers, 
+        /// This reader is configured to strictly prohibit DTDs and block external resolvers,
         /// making it suitable for processing untrusted or externally sourced XML input.
         /// </remarks>
         public static XmlReader CreateReader(TextReader input) => XmlReader.Create(input, ReaderSettings);

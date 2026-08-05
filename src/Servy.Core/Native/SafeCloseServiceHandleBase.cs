@@ -7,14 +7,14 @@ namespace Servy.Core.Native
     /// Serves as an abstract base for safe handles released through <c>CloseServiceHandle</c>.
     /// </summary>
     /// <remarks>
-    /// Deriving from <see cref="SafeHandleZeroOrMinusOneIsInvalid"/> ensures the unmanaged handle 
+    /// Deriving from <see cref="SafeHandleZeroOrMinusOneIsInvalid"/> ensures the unmanaged handle
     /// is closed exactly once via <c>CloseServiceHandle</c>, even if the object is finalized or disposed multiple times.
     /// </remarks>
     [ExcludeFromCodeCoverage]
     public abstract class SafeCloseServiceHandleBase : SafeHandleZeroOrMinusOneIsInvalid
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SafeCloseServiceHandleBase"/> class, 
+        /// Initializes a new instance of the <see cref="SafeCloseServiceHandleBase"/> class,
         /// specifying that the handle is to be reliably released.
         /// </summary>
         protected SafeCloseServiceHandleBase() : base(ownsHandle: true) { }

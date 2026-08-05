@@ -6,17 +6,17 @@
     public interface IServyLogger : IDisposable
     {
         /// <summary>
-        /// Gets the optional prefix to be prepended to every log message 
+        /// Gets the optional prefix to be prepended to every log message
         /// emitted by this logger instance.
         /// </summary>
         string? Prefix { get; }
 
         /// <summary>
-        /// Creates a new <see cref="IServyLogger"/> instance that inherits the settings 
+        /// Creates a new <see cref="IServyLogger"/> instance that inherits the settings
         /// of the current logger but applies a specific prefix to all its messages.
         /// </summary>
         /// <remarks>
-        /// This is useful for identifying logs originating from a specific 
+        /// This is useful for identifying logs originating from a specific
         /// sub-component or background task.
         /// </remarks>
         /// <param name="prefix">The string to prepend to messages in the new scoped logger.</param>
@@ -27,7 +27,7 @@
         IServyLogger CreateScoped(string? prefix);
 
         /// <summary>
-        /// Sets the minimum log level to be recorded. 
+        /// Sets the minimum log level to be recorded.
         /// Messages below this level will be ignored.
         /// </summary>
         /// <param name="level">The new <see cref="LogLevel"/>.</param>

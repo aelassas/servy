@@ -76,8 +76,8 @@ namespace Servy.Core.IntegrationTests.Native
         public void Ensure_NonExistentAccountName_ThrowsInvalidOperationExceptionWithDetailedContext()
         {
             // Arrange
-            // On non-elevated or restricted environments like cloud CI workers, this test can safely execute 
-            // because resolving a non-existent fake string to a SID fails inside the framework NTAccount.Translate 
+            // On non-elevated or restricted environments like cloud CI workers, this test can safely execute
+            // because resolving a non-existent fake string to a SID fails inside the framework NTAccount.Translate
             // mapping loop before it ever touches the native LSA privilege modification routines.
             string fakeAccount = "MachineNameOrDomain\\GhostUser_" + Guid.NewGuid().ToString("N");
 
@@ -110,8 +110,8 @@ namespace Servy.Core.IntegrationTests.Native
             // 1. Maintain baseline telemetry assertions confirming no infrastructure policy execution crashes occurred
             Assert.Null(ex);
 
-            // 2. IDENTITY PATH TRANSLATION: Explicitly expand the shorthand '.' notation to MachineName 
-            // for the test assertion pool. This matches production expansion behavior and prevents .NET's 
+            // 2. IDENTITY PATH TRANSLATION: Explicitly expand the shorthand '.' notation to MachineName
+            // for the test assertion pool. This matches production expansion behavior and prevents .NET's
             // NTAccount.Translate from failing on the raw literal dot prefix.
             try
             {

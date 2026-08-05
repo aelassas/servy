@@ -18,7 +18,7 @@ namespace Servy.Core.Logging
             {
                 int processedCount = 0;
 
-                // Explicit count constraint evaluation at the gate prevents 
+                // Explicit count constraint evaluation at the gate prevents
                 // reading the (maxReadCount + 1)th record entirely.
                 while (processedCount < maxReadCount)
                 {
@@ -28,7 +28,7 @@ namespace Servy.Core.Logging
                         yield break;
                     }
 
-                    // Enforces immediate context disposal of the native EVT_HANDLE 
+                    // Enforces immediate context disposal of the native EVT_HANDLE
                     // as soon as the mapped data transfer object is yielded.
                     ServyEventLogEntry dto;
                     using (evt)
@@ -46,8 +46,8 @@ namespace Servy.Core.Logging
         /// Maps a native <see cref="EventRecord"/> to a managed <see cref="ServyEventLogEntry"/> DTO.
         /// </summary>
         /// <remarks>
-        /// This method must be called while the <paramref name="evt"/> object is still active 
-        /// and its parent <see cref="System.Diagnostics.Eventing.Reader.EventLogReader"/> has not been disposed, 
+        /// This method must be called while the <paramref name="evt"/> object is still active
+        /// and its parent <see cref="System.Diagnostics.Eventing.Reader.EventLogReader"/> has not been disposed,
         /// as <see cref="EventRecord.FormatDescription()"/> requires an active handle to the event metadata provider.
         /// </remarks>
         /// <param name="evt">The raw event record retrieved from the Windows Event Log.</param>
@@ -79,14 +79,14 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="level">The raw level value from the event record.</param>
         /// <returns>
-        /// The corresponding <see cref="EventLogLevel"/> value. 
+        /// The corresponding <see cref="EventLogLevel"/> value.
         /// Defaults to <see cref="EventLogLevel.Information"/> if the level is unknown.
         /// </returns>
         /// <remarks>
         /// Maps Windows Event Log levels into the application's <see cref="EventLogLevel"/> taxonomy.
         /// Note: Critical (level 1) is intentionally folded into <see cref="EventLogLevel.Error"/>
         /// because the consuming filter contract (see LogsViewModel.GetLogLevels) does not surface
-        /// a distinct Critical bucket. Verbose is folded into <see cref="EventLogLevel.Information"/> 
+        /// a distinct Critical bucket. Verbose is folded into <see cref="EventLogLevel.Information"/>
         /// to match the filter contract.
         /// </remarks>
         public static EventLogLevel ParseLevel(byte level)
@@ -106,7 +106,7 @@ namespace Servy.Core.Logging
                 case 5:
                     return EventLogLevel.Information; // Verbose - fold into Information to match the filter contract
                 default:
-                    // Log the unknown level at a debug level to assist in future triage 
+                    // Log the unknown level at a debug level to assist in future triage
                     // without flooding production logs.
                     Logger.Debug($"Unknown event log level '{level}' encountered; collapsing to Information.");
                     return EventLogLevel.Information;
@@ -121,8 +121,8 @@ namespace Servy.Core.Logging
         /// The converted <see cref="DateTimeOffset"/>; or <see cref="DateTimeOffset.MinValue"/> if the input is null.
         /// </returns>
         /// <remarks>
-        /// .evtx timestamps are persisted as UTC FILETIMEs. This method evaluates the incoming 
-        /// <see cref="DateTimeKind"/> to preserve correct offsets while preventing local-offset 
+        /// .evtx timestamps are persisted as UTC FILETIMEs. This method evaluates the incoming
+        /// <see cref="DateTimeKind"/> to preserve correct offsets while preventing local-offset
         /// arithmetic overflows for values approaching <see cref="DateTime.MinValue"/>.
         /// </remarks>
         internal static DateTimeOffset SafeToOffset(DateTime? raw)

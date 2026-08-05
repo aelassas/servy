@@ -45,7 +45,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Analyzes the current database state, applies necessary migrations, 
+        /// Analyzes the current database state, applies necessary migrations,
         /// and ensures all schema requirements match the current application version.
         /// </summary>
         /// <param name="connection">An open database connection to execute commands on.</param>
@@ -58,7 +58,7 @@ namespace Servy.Infrastructure.Data
             // --- INTENTIONAL ROBUSTNESS SAFETY CHECK ---
             // Scan and report legacy whitespace-padded rows on every initialization pass instead of dropping them.
             // Because unique indexes like 'idx_services_name_unique' permit 'foo' and ' foo ' to coexist under COLLATE UNICODE_NOCASE,
-            // lookups that automatically trim keys first will hit the clean row. This satisfies the fallback evaluation predicate 
+            // lookups that automatically trim keys first will hit the clean row. This satisfies the fallback evaluation predicate
             // of the read path, which causes the verbatim secondary check to never fire-leaving the padded legacy variant masked and unreachable.
             try
             {
@@ -76,7 +76,7 @@ namespace Servy.Infrastructure.Data
             }
             catch (Exception ex)
             {
-                // Explicitly check the master schema to distinguish between a benign first-boot 
+                // Explicitly check the master schema to distinguish between a benign first-boot
                 // initialization and a genuine runtime query failure.
                 if (!TableExists(connection, SqlConstants.ServicesTableName, transaction: null))
                 {
@@ -84,7 +84,7 @@ namespace Servy.Infrastructure.Data
                 }
                 else
                 {
-                    // Escalated to Warn because the table exists, meaning an infrastructure anomaly 
+                    // Escalated to Warn because the table exists, meaning an infrastructure anomaly
                     // (e.g., missing UNICODE_NOCASE collation, DB lock, corrupt file) silently disabled the detector.
                     Logger.Warn($"Legacy whitespace-padding anomaly scan failed to execute against the active {SqlConstants.ServicesTableName} table; zombie rows may go undetected this boot.", ex);
                 }
@@ -96,11 +96,11 @@ namespace Servy.Infrastructure.Data
 
             try
             {
-                // 1. Ensure the version tracking table exists. 
+                // 1. Ensure the version tracking table exists.
                 // The CHECK constraint guarantees only a single row (Id = 1) can ever exist.
                 connection.Execute(@"
                     CREATE TABLE IF NOT EXISTS SchemaInfo (
-                        Id INTEGER PRIMARY KEY CHECK (Id = 1), 
+                        Id INTEGER PRIMARY KEY CHECK (Id = 1),
                         Version INTEGER NOT NULL
                     );");
 
@@ -222,7 +222,7 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Final reconciliation step that ensures missing columns from the
-        /// Single Source of Truth (SqlConstants) are added to the schema. 
+        /// Single Source of Truth (SqlConstants) are added to the schema.
         /// Detects and logs type drift and orphan columns for manual review.
         /// </summary>
         /// <param name="connection">The active database connection.</param>
@@ -376,7 +376,7 @@ namespace Servy.Infrastructure.Data
         #region Migration Logic
 
         /// <summary>
-        /// Creates the Version 1 schema for a brand new database. 
+        /// Creates the Version 1 schema for a brand new database.
         /// Consolidates all columns into a single CREATE statement dynamically built from SqlConstants.
         /// </summary>
         /// <param name="connection">The active database connection.</param>
@@ -484,20 +484,20 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Applies the Version 2 schema migration, which primarily deals with renaming 
+        /// Applies the Version 2 schema migration, which primarily deals with renaming
         /// the ambiguous 'EnableRotation' column to 'EnableSizeRotation' for databases
         /// that were already cleanly tracking schema Version 1.
         /// </summary>
         private static void ApplyVersion2(DbConnection connection, DbTransaction transaction) => RenameColumnIfExists(connection, transaction, 2, "EnableRotation", "EnableSizeRotation");
 
         /// <summary>
-        /// Applies the Version 3 schema migration, adding the 'EnableConsoleUI' column 
+        /// Applies the Version 3 schema migration, adding the 'EnableConsoleUI' column
         /// to the 'Services' table to support allocating a console for interactive apps.
         /// </summary>
         private static void ApplyVersion3(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 3, "EnableConsoleUI");
 
         /// <summary>
-        /// Applies the Version 4 schema migration, removing strict NOT NULL constraints from 13 configuration 
+        /// Applies the Version 4 schema migration, removing strict NOT NULL constraints from 13 configuration
         /// columns to perfectly align the SQLite schema with the nullable definitions in ServiceDto.
         /// Uses the SQLite table-rebuild idiom.
         /// </summary>
@@ -543,10 +543,10 @@ namespace Servy.Infrastructure.Data
             // (Views referencing Services survive DROP TABLE and re-bind by name after the rename,
             //  so they need no snapshot; sqlite_master tbl_name never links views to base tables.)
             var dependents = connection.Query<(string Type, string Name, string Sql)>(
-                $@"SELECT type, name, sql FROM sqlite_master 
-                  WHERE tbl_name = '{SqlConstants.ServicesTableName}' 
-                    AND type IN ('index', 'trigger') 
-                    AND sql IS NOT NULL 
+                $@"SELECT type, name, sql FROM sqlite_master
+                  WHERE tbl_name = '{SqlConstants.ServicesTableName}'
+                    AND type IN ('index', 'trigger')
+                    AND sql IS NOT NULL
                     AND name <> 'idx_services_name_lower';",
                 transaction: transaction).ToList();
 
@@ -585,7 +585,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Applies the Version 5 schema migration, adding the 'RecoveryOnCleanExit' column 
+        /// Applies the Version 5 schema migration, adding the 'RecoveryOnCleanExit' column
         /// to the 'Services' table to support triggering recovery actions even on successful exits (Code 0).
         /// </summary>
         private static void ApplyVersion5(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 5, "RecoveryOnCleanExit");
@@ -649,7 +649,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Applies the Version 8 schema migration, adding the 'CpuAffinity' column to support logical CPUs 
+        /// Applies the Version 8 schema migration, adding the 'CpuAffinity' column to support logical CPUs
         /// the process may run on (e.g., '0-3,8' or '0xFF00').
         /// </summary>
         private static void ApplyVersion8(DbConnection connection, DbTransaction transaction)
@@ -714,7 +714,7 @@ namespace Servy.Infrastructure.Data
         #endregion
 
         /// <summary>
-        /// Infers the SQLite data type and constraints for a given column name by reading the cached 
+        /// Infers the SQLite data type and constraints for a given column name by reading the cached
         /// [SqlColumn] attributes from the ServiceDto class.
         /// </summary>
         /// <param name="columnName">The name of the column.</param>

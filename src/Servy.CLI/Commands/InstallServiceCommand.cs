@@ -52,7 +52,7 @@ namespace Servy.CLI.Commands
                     SecurityHelper.EnsureAdministrator();
                 }
 
-                // SECURITY: Read sensitive values from environment variables first, 
+                // SECURITY: Read sensitive values from environment variables first,
                 // falling back to command line options to prevent credential leakage.
                 opts.Password = GetSecureValue(opts.Password, AppConfig.PasswordEnvVarName);
                 opts.ProcessParameters = GetSecureValue(opts.ProcessParameters, AppConfig.ProcessParametersEnvVarName);

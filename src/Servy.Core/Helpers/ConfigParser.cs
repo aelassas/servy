@@ -9,14 +9,14 @@ namespace Servy.Core.Helpers
     /// Provides unified parsing and validation primitives for service configuration values.
     /// </summary>
     /// <remarks>
-    /// This utility ensures consistent fallback behavior and centralized warning logging across the 
-    /// UI, Manager, and repository mappers. It prevents silent configuration drift by explicitly 
+    /// This utility ensures consistent fallback behavior and centralized warning logging across the
+    /// UI, Manager, and repository mappers. It prevents silent configuration drift by explicitly
     /// logging when a default value is substituted due to invalid input.
     /// </remarks>
     public static class ConfigParser
     {
         /// <summary>
-        /// Attempts to parse a string into an integer. 
+        /// Attempts to parse a string into an integer.
         /// Logs a warning and returns the default value if the input is malformed.
         /// </summary>
         /// <param name="rawValue">The raw string value to be parsed.</param>
@@ -45,7 +45,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Attempts to parse a string into a boolean. 
+        /// Attempts to parse a string into a boolean.
         /// Supports standard .NET booleans alongside common config-file semantic variants ('1', '0', 'yes', 'no', 'on', 'off', 'y', 'n').
         /// Logs a warning and returns the default value if the input is malformed.
         /// </summary>
@@ -111,7 +111,7 @@ namespace Servy.Core.Helpers
         /// corresponds to a declared member, preventing invalid casts from reaching native layers.
         /// </para>
         /// <para>
-        /// For enumerations decorated with <see cref="FlagsAttribute"/>, it skips the strict lookup check to accommodate valid 
+        /// For enumerations decorated with <see cref="FlagsAttribute"/>, it skips the strict lookup check to accommodate valid
         /// bitwise combinations, while verifying that the input contains no unmapped or invalid high bits.
         /// </para>
         /// </remarks>
@@ -163,7 +163,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Converts the string representation of the name or numeric value of one or more 
+        /// Converts the string representation of the name or numeric value of one or more
         /// enumerated constants to an equivalent enumerated object.
         /// </summary>
         /// <typeparam name="TEnum">The target enum type to validate against.</typeparam>
@@ -174,8 +174,8 @@ namespace Servy.Core.Helpers
         /// </param>
         /// <returns>A validated member of <typeparamref name="TEnum"/>.</returns>
         /// <remarks>
-        /// This method goes beyond a simple TryParse by checking metadata definitions. For non-flags enums, it enforces 
-        /// strict verification via <see cref="Enum.IsDefined(Type, object)"/> to prevent raw numbers like "999" from slipping past. 
+        /// This method goes beyond a simple TryParse by checking metadata definitions. For non-flags enums, it enforces
+        /// strict verification via <see cref="Enum.IsDefined(Type, object)"/> to prevent raw numbers like "999" from slipping past.
         /// For <see cref="FlagsAttribute"/> enums, comma-separated combinations are parsed and honored correctly.
         /// </remarks>
         public static TEnum ParseEnum<TEnum>(

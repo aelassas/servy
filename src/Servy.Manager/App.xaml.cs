@@ -154,9 +154,9 @@ namespace Servy.Manager
         /// Initializes a new instance of the <see cref="App"/> class for the Servy Manager.
         /// </summary>
         /// <remarks>
-        /// This constructor sets up the <see cref="BootstrapperOptions"/> specifically for the monitoring 
-        /// and management interface. It configures the manager-specific log file, JSON settings, 
-        /// and extracts specialized UI parameters such as performance polling intervals and 
+        /// This constructor sets up the <see cref="BootstrapperOptions"/> specifically for the monitoring
+        /// and management interface. It configures the manager-specific log file, JSON settings,
+        /// and extracts specialized UI parameters such as performance polling intervals and
         /// console line limits from the configuration provider.
         /// </remarks>
         public App()
@@ -327,7 +327,7 @@ namespace Servy.Manager
 
         /// <summary>
         /// Called when the WPF application starts.
-        /// Loads configuration settings, initializes the database, and fire-and-forgets 
+        /// Loads configuration settings, initializes the database, and fire-and-forgets
         /// the asynchronous application initialization.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
@@ -352,7 +352,7 @@ namespace Servy.Manager
             _ = _bootstrapper.StartAvailabilityMonitorAsync(DesktopAppPublishPath, isAvailable => IsDesktopAppAvailable = isAvailable, this);
 
             // 3. Fire-and-forget initialization
-            // Use a dedicated async method instead of a chained ContinueWith 
+            // Use a dedicated async method instead of a chained ContinueWith
             // to ensure the startup lifecycle and any faults are correctly observed.
             _ = _bootstrapper.InitializeAppWithFaultHandlingAsync(this, e, Config.UiAppConfig.Caption);
         }
@@ -363,8 +363,8 @@ namespace Servy.Manager
         /// </summary>
         /// <param name="e">An <see cref="ExitEventArgs"/> that contains the event data.</param>
         /// <remarks>
-        /// This override ensures that <see cref="SecureData"/> (which may hold sensitive cryptographic 
-        /// material or file handles for AES keys) is explicitly disposed of, following the 
+        /// This override ensures that <see cref="SecureData"/> (which may hold sensitive cryptographic
+        /// material or file handles for AES keys) is explicitly disposed of, following the
         /// deterministic disposal pattern before the process exits.
         /// </remarks>
         protected override void OnExit(ExitEventArgs e)

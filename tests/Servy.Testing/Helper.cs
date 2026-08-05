@@ -1,4 +1,4 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using Servy.Core.Config;
 using Servy.Core.Native;
 using System.Diagnostics;
@@ -13,7 +13,7 @@ using System.Windows.Threading;
 namespace Servy.Testing
 {
     /// <summary>
-    /// Provides cross-cutting infrastructure utilities for the testing suite, 
+    /// Provides cross-cutting infrastructure utilities for the testing suite,
     /// including resource management, STA-thread execution scaffolding, and environment privilege validation.
     /// </summary>
     public static class Helper
@@ -83,8 +83,8 @@ namespace Servy.Testing
         /// </summary>
         /// <param name="stream">The embedded resource data stream to extract. If null, the operation returns immediately.</param>
         /// <remarks>
-        /// This method enforces pessimistic file existence checks and leverages atomic publishing via a temporary 
-        /// intermediate file to safely navigate file-locking races caused by real-time background scanners, 
+        /// This method enforces pessimistic file existence checks and leverages atomic publishing via a temporary
+        /// intermediate file to safely navigate file-locking races caused by real-time background scanners,
         /// security software, or parallel test execution threads on continuous integration (CI) agents.
         /// </remarks>
         private static void WriteResourceToDisk(Stream? stream)
@@ -97,7 +97,7 @@ namespace Servy.Testing
                 // Only write when it is not physically there; a lost race surfaces as ERROR_FILE_EXISTS below.
                 if (File.Exists(HandleExePath)) return;
 
-                // Write to a temporary file first to guarantee atomic publishing and prevent 
+                // Write to a temporary file first to guarantee atomic publishing and prevent
                 // corrupted/truncated binary execution if a run is aborted mid-write.
                 string tempPath = $"{HandleExePath}.{Guid.NewGuid():N}.tmp";
 
@@ -155,8 +155,8 @@ namespace Servy.Testing
         /// STA-thread-bound UI components, converters, or resource dictionaries during testing.
         /// </summary>
         /// <remarks>
-        /// This method instantiates the shared WPF <see cref="Application"/> on a dedicated, persistent 
-        /// background STA thread with an active <see cref="Dispatcher"/> pump. This prevents dead-dispatcher 
+        /// This method instantiates the shared WPF <see cref="Application"/> on a dedicated, persistent
+        /// background STA thread with an active <see cref="Dispatcher"/> pump. This prevents dead-dispatcher
         /// affinity issues when multiple isolated test runs execute across transient STA threads.
         /// </remarks>
         public static Application EnsureApplication()
@@ -173,7 +173,7 @@ namespace Servy.Testing
 
                             _persistentAppThread = new Thread(() =>
                             {
-                                // Explicitly force OnExplicitShutdown process-wide lifecycle behavior 
+                                // Explicitly force OnExplicitShutdown process-wide lifecycle behavior
                                 // to prevent transient test window closures from tearing down the shared test host.
                                 _ = new Application
                                 {
@@ -267,7 +267,7 @@ namespace Servy.Testing
                     var dispatcher = Dispatcher.CurrentDispatcher;
 
                     // Queue the test execution onto the STA thread's dispatcher.
-                    // This guarantees that Dispatcher.CurrentDispatcher inside the test 
+                    // This guarantees that Dispatcher.CurrentDispatcher inside the test
                     // resolves to THIS dispatcher, which has an active message pump.
                     dispatcher.InvokeAsync(async () =>
                     {
@@ -320,7 +320,7 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Proactively probes the system's LSA policy subsystem to determine if the current runner 
+        /// Proactively probes the system's LSA policy subsystem to determine if the current runner
         /// process has sufficient security tokens to perform policy-level operations.
         /// </summary>
         /// <returns>True if the process can open LSA policy with lookup permissions; otherwise, false.</returns>

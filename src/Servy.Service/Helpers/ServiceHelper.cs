@@ -18,7 +18,7 @@ namespace Servy.Service.Helpers
         #region Logging Security
 
         /// <summary>
-        /// A collection of keywords used to identify potentially sensitive information 
+        /// A collection of keywords used to identify potentially sensitive information
         /// in configuration keys or environment variable names.
         /// SYNC WITH: setup/taskschd/ServySecurity.ps1 ($sensitiveKeys)
         /// </summary>
@@ -55,7 +55,7 @@ namespace Servy.Service.Helpers
         };
 
         /// <summary>
-        /// Centralized regular expression sub-pattern representing the optimized case-insensitive 
+        /// Centralized regular expression sub-pattern representing the optimized case-insensitive
         /// word boundaries and alternation maps for sensitive credential keys.
         /// </summary>
         private static readonly string KeywordBoundaryPattern =
@@ -64,7 +64,7 @@ namespace Servy.Service.Helpers
             @"(?i)(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])";
 
         /// <summary>
-        /// A specialized regex for matching sensitive keys. 
+        /// A specialized regex for matching sensitive keys.
         /// Uses the same boundary logic as MaskingRegex to avoid false positives like 'MONKEY_TYPE'.
         /// </summary>
         private static readonly Regex KeyMatcherRegex = new Regex(
@@ -73,7 +73,7 @@ namespace Servy.Service.Helpers
             AppConfig.InputRegexTimeout);
 
         /// <summary>
-        /// A compiled regular expression designed to identify and mask sensitive credentials 
+        /// A compiled regular expression designed to identify and mask sensitive credentials
         /// within raw command-line argument strings.
         /// </summary>
         /// <remarks>
@@ -88,7 +88,7 @@ namespace Servy.Service.Helpers
              // Entire branch choice block is wrapped in an outer atomic group (?>...) to prevent catastrophic backtracking timeouts.
              @"(?>(?:" +
                  // BRANCH A: Explicit Separators (:, =, /)
-                 // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---") 
+                 // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---")
                  // as long as the next word isn't another CLI flag.
                  // Entire choice block is wrapped in an atomic group (?>...) to prevent catastrophic backtracking.
                  @"(?<sep>\s*[:=]\s*|/)" +
@@ -365,7 +365,7 @@ namespace Servy.Service.Helpers
             }
             finally
             {
-                // Ensure the old process wrapper is disposed to prevent 
+                // Ensure the old process wrapper is disposed to prevent
                 // handle leaks during repeated recovery cycles.
                 process?.Dispose();
             }
@@ -462,8 +462,8 @@ namespace Servy.Service.Helpers
                     UseShellExecute = false
                 }))
                 {
-                    // The using block ensures the native process handle is closed 
-                    // immediately after the process is launched, preventing a 
+                    // The using block ensures the native process handle is closed
+                    // immediately after the process is launched, preventing a
                     // handle leak in the calling application.
                     if (process == null)
                     {
@@ -517,7 +517,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <summary>
-        /// Evaluates a key-value pair and returns a masked string if the key matches 
+        /// Evaluates a key-value pair and returns a masked string if the key matches
         /// known sensitive patterns.
         /// </summary>
         /// <param name="key">The name of the variable or setting.</param>
@@ -544,7 +544,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <summary>
-        /// Uses a timed regular expression to identify and mask sensitive credentials 
+        /// Uses a timed regular expression to identify and mask sensitive credentials
         /// within a raw command-line argument string.
         /// </summary>
         /// <param name="args">The raw string of executable arguments.</param>

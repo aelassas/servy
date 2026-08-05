@@ -1,7 +1,7 @@
 ﻿namespace Servy.Core.Common
 {
     /// <summary>
-    /// Represents the result of an operation, providing a unified way to signal success 
+    /// Represents the result of an operation, providing a unified way to signal success
     /// or failure with mandatory error context on failure.
     /// </summary>
     public sealed class OperationResult

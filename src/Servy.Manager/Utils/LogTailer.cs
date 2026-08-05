@@ -15,13 +15,13 @@ namespace Servy.Manager.Utils
     /// <remarks>
     /// CreationTime Tunneling / Unreliable File System Metadata
     /// ------------------------------------------------------------------
-    /// On certain file systems (FAT32, Network Shares, NAS) or due to Windows 
-    /// "File System Tunneling," the CreationTime might not update if a file is 
-    /// deleted and recreated with the same name within the tunneling window 
-    /// (default 15s). 
+    /// On certain file systems (FAT32, Network Shares, NAS) or due to Windows
+    /// "File System Tunneling," the CreationTime might not update if a file is
+    /// deleted and recreated with the same name within the tunneling window
+    /// (default 15s).
     ///
     /// We use 'Length < lastPosition' as a secondary safety net for truncation.
-    /// However, if a rotation occurs and the new file immediately becomes larger 
+    /// However, if a rotation occurs and the new file immediately becomes larger
     /// than the old offset, a rotation might be missed on these platforms.
     /// </remarks>
     public class LogTailer : IDisposable
@@ -165,7 +165,7 @@ namespace Servy.Manager.Utils
                             else
                             {
                                 // 2. Identity Check: Did the file object on disk swap?
-                                // 3. Metadata Check: Even if the identity is the same (truncation), 
+                                // 3. Metadata Check: Even if the identity is the same (truncation),
                                 //    or handle info failed, check for size/time signals of rotation.
                                 if (currentIdentity.IsDifferentFrom(knownIdentity.Value) ||
                                     LooksRotated(info, lastCreationTime, lastPosition))
@@ -286,7 +286,7 @@ namespace Servy.Manager.Utils
                                             }
                                             catch (IOException)
                                             {
-                                                // File might be exclusively locked during a rename/rotation event. 
+                                                // File might be exclusively locked during a rename/rotation event.
                                                 // Ignore here, we will catch the rotation on the next pass.
                                             }
                                         }
@@ -298,7 +298,7 @@ namespace Servy.Manager.Utils
 
                                         // We successfully reached the EOF polling point without crashing.
                                         consecutiveFailures = 0;
-                                        // Signal to the test framework that the current stream buffer is drained 
+                                        // Signal to the test framework that the current stream buffer is drained
                                         // and the loop iteration is completing its pass.
                                         OnLoopCompleted?.Invoke();
                                         await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, linkedToken);
@@ -351,8 +351,8 @@ namespace Servy.Manager.Utils
         /// Reads the tail end of a file to provide historical context when the console is first opened.
         /// </summary>
         /// <remarks>
-        /// Historical lines are assigned synthetic timestamps based on the file's last write time 
-        /// with a 1-tick (100-nanosecond) backward offset per line. These lines are explicitly marked with 
+        /// Historical lines are assigned synthetic timestamps based on the file's last write time
+        /// with a 1-tick (100-nanosecond) backward offset per line. These lines are explicitly marked with
         /// <see cref="LogLine.IsSyntheticTime"/> to indicate the time is an estimate.
         /// </remarks>
         /// <param name="path">The file path.</param>
@@ -475,7 +475,7 @@ namespace Servy.Manager.Utils
                 OnNewLines = null;
                 OnLoopCompleted = null;
 
-                // 2. CRITICAL: Cancel the internal token to instantly kill the while-loop 
+                // 2. CRITICAL: Cancel the internal token to instantly kill the while-loop
                 // and release any active FileStreams or Task.Delays.
                 try
                 {

@@ -16,7 +16,7 @@ namespace Servy.Validation
         /// <param name="importMode">Import mode flag to skip credentials validation.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// A task that represents the asynchronous validation operation. 
+        /// A task that represents the asynchronous validation operation.
         /// The task result contains <see langword="true"/> if validation passed; otherwise, <see langword="false"/>.
         /// </returns>
         Task<bool> ValidateAsync(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = null, bool importMode = false, CancellationToken cancellationToken = default);

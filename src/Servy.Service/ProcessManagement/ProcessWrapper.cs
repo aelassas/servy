@@ -272,7 +272,7 @@ namespace Servy.Service.ProcessManagement
         {
             try
             {
-                // Force the underlying .NET wrapper to drop its cached state and 
+                // Force the underlying .NET wrapper to drop its cached state and
                 // query the Windows kernel directly for the true, real-time handle status.
                 process.Refresh();
 
@@ -569,19 +569,19 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <param name="process">The native process to which the signal will be sent.</param>
         /// <returns>
-        /// <see langword="true"/> if the signal was successfully generated; 
-        /// <see langword="false"/> if the process does not have a console or the signal could not be sent; 
+        /// <see langword="true"/> if the signal was successfully generated;
+        /// <see langword="false"/> if the process does not have a console or the signal could not be sent;
         /// <see langword="null"/> if the process has already exited.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method temporarily attaches the current process to the target's console using the Win32 
-        /// <c>AttachConsole</c> API. While attached, it uses <c>GenerateConsoleCtrlEvent</c> to broadcast 
+        /// This method temporarily attaches the current process to the target's console using the Win32
+        /// <c>AttachConsole</c> API. While attached, it uses <c>GenerateConsoleCtrlEvent</c> to broadcast
         /// the CTRL_C_EVENT to the console group.
         /// </para>
         /// <para>
-        /// <b>Safety:</b> To prevent the calling service from terminating itself when the signal is broadcast, 
-        /// the service's own Ctrl+C handler is suppressed using <c>SetConsoleCtrlHandler(null, true)</c> 
+        /// <b>Safety:</b> To prevent the calling service from terminating itself when the signal is broadcast,
+        /// the service's own Ctrl+C handler is suppressed using <c>SetConsoleCtrlHandler(null, true)</c>
         /// for the duration of the signal generation.
         /// </para>
         /// </remarks>
@@ -620,7 +620,7 @@ namespace Servy.Service.ProcessManagement
                 }
 
                 // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
-                // Passing 'null' as the handler and 'true' as the add flag tells the OS 
+                // Passing 'null' as the handler and 'true' as the add flag tells the OS
                 // to ignore CTRL_C_EVENT for this specific process.
                 if (!SetConsoleCtrlHandler(null, true))
                 {
@@ -632,7 +632,7 @@ namespace Servy.Service.ProcessManagement
 
                 try
                 {
-                    // CRITICAL: Yield to the OS to allow the handler registration 
+                    // CRITICAL: Yield to the OS to allow the handler registration
                     // and console attachment to propagate through conhost.exe before firing the event.
                     Thread.Sleep(AppConfig.ConsoleAttachYieldMs);
 

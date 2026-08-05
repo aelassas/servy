@@ -16,9 +16,9 @@ namespace Servy.Core.Helpers
         /// <param name="str">The multi-line input string to be normalized.</param>
         /// <returns>A single-line string with line breaks replaced by semicolons.</returns>
         /// <remarks>
-        /// Semicolons within the input string must be manually escaped with a backslash. 
+        /// Semicolons within the input string must be manually escaped with a backslash.
         /// Backslashes that appear immediately before a line break are dynamically evaluated based on parity;
-        /// only odd-length sequences are padded to prevent them from inadvertently escaping the semicolon delimiter 
+        /// only odd-length sequences are padded to prevent them from inadvertently escaping the semicolon delimiter
         /// during downstream tokenization.
         /// </remarks>
         public static string NormalizeString(string? str)
@@ -27,7 +27,7 @@ namespace Servy.Core.Helpers
                 return string.Empty;
 
             // Perform a parity-aware pass over the string sequence.
-            // Counting contiguous backslashes guarantees we only append a padding escape backslash 
+            // Counting contiguous backslashes guarantees we only append a padding escape backslash
             // if the existing backslash run has an odd parity when it intersects a line break or EOF.
             var sb = new StringBuilder(str.Length);
             int run = 0;
@@ -94,8 +94,8 @@ namespace Servy.Core.Helpers
         /// Escapes special characters in environment variable keys/values.
         /// </summary>
         /// <remarks>
-        /// Newline characters ('\n') and carriage returns ('\r') are strictly forbidden 
-        /// in environment variable values. Attempting to parse strings containing these 
+        /// Newline characters ('\n') and carriage returns ('\r') are strictly forbidden
+        /// in environment variable values. Attempting to parse strings containing these
         /// characters will result in a <see cref="FormatException"/>.
         /// </remarks>
         public static string Escape(string? value)

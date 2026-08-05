@@ -26,7 +26,7 @@ namespace Servy.Core.Native
         /// <exception cref="ArgumentException">Thrown if <paramref name="accountName"/> is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">
         /// Thrown if the account cannot be resolved to a SID, or if an LSA operation
-        /// (LsaOpenPolicy / LsaEnumerateAccountRights / LsaAddAccountRights) fails - 
+        /// (LsaOpenPolicy / LsaEnumerateAccountRights / LsaAddAccountRights) fails -
         /// e.g. access denied when the caller is not running elevated.
         /// </exception>
         public static void Ensure(string accountName)
@@ -42,7 +42,7 @@ namespace Servy.Core.Native
         /// <returns>A <see cref="SecurityIdentifier"/> representing the specified account.</returns>
         /// <exception cref="ArgumentException">Thrown if the account name is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">
-        /// Thrown if the account cannot be resolved to a SID, often due to a non-existent account 
+        /// Thrown if the account cannot be resolved to a SID, often due to a non-existent account
         /// or an unreachable Domain Controller.
         /// </exception>
         private static SecurityIdentifier AccountToSidOrThrow(string account)

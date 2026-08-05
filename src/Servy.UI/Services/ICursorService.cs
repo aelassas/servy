@@ -1,7 +1,7 @@
 ﻿namespace Servy.UI.Services
 {
     /// <summary>
-    /// Provides centralized management for the application's mouse cursor state, 
+    /// Provides centralized management for the application's mouse cursor state,
     /// abstracting away direct WPF Mouse.OverrideCursor dependencies for better testability.
     /// </summary>
     public interface ICursorService

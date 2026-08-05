@@ -572,7 +572,7 @@ namespace Servy.UnitTests.Services
         {
             // Arrange
             var sut = CreateSut();
-            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(returnedPath!);   
+            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(returnedPath!);
 
             // Act
             await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);

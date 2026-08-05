@@ -62,7 +62,7 @@ namespace Servy.Manager.Models
         }
 
         /// <summary>
-        /// Gets the absolute pack URI for the icon resource that matches the current Level. 
+        /// Gets the absolute pack URI for the icon resource that matches the current Level.
         /// Defaults to the Information icon for unrecognized levels.
         /// </summary>
         public string LevelIcon

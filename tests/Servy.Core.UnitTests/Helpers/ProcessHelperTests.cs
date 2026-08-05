@@ -152,7 +152,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ResolvePath_NonExistentPathWithLiteralPercentSegments_ResolvesSuccessfully()
         {
-            // Arrange: Tests Issue #2082 
+            // Arrange: Tests Issue #2082
             // A future log destination that contains literal '%' bounds and does not exist yet.
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string futurePath = Path.Combine(baseDir, "runs_%batch_id%", "stdout.log");
@@ -161,7 +161,7 @@ namespace Servy.Core.UnitTests.Helpers
             string? result = _processHelper.ResolvePath(futurePath);
 
             // Assert
-            // The method must not throw an exception on non-existent targets, 
+            // The method must not throw an exception on non-existent targets,
             // allowing the application to create directories dynamically later.
             string expected = Path.GetFullPath(futurePath);
             Assert.Equal(expected, result);

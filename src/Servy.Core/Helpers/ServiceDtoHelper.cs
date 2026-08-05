@@ -8,8 +8,8 @@ namespace Servy.Core.Helpers
     /// Provides utility methods for managing and augmenting <see cref="ServiceDto"/> objects.
     /// </summary>
     /// <remarks>
-    /// This helper is used during the deserialization of XML and JSON configurations 
-    /// to ensure that all required service parameters are populated with production-grade 
+    /// This helper is used during the deserialization of XML and JSON configurations
+    /// to ensure that all required service parameters are populated with production-grade
     /// defaults defined in <see cref="AppConfig"/>.
     /// </remarks>
     public static class ServiceDtoHelper
@@ -77,8 +77,8 @@ namespace Servy.Core.Helpers
             HydrateDefaults(dto);
 
             // POLICY: Global Identity Reset on Import
-            // To maintain architectural simplicity across all interfaces (UI, CLI, PS), 
-            // we do not support importing custom identities. All imported services 
+            // To maintain architectural simplicity across all interfaces (UI, CLI, PS),
+            // we do not support importing custom identities. All imported services
             // are forced to LocalSystem to ensure a valid, password-less baseline.
             // If you want to set a custom account you must set it manually after import.
             dto.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;

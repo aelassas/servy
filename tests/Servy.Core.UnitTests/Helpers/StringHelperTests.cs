@@ -34,7 +34,7 @@ namespace Servy.Core.UnitTests.Helpers
             string result = StringHelper.NormalizeString(input);
 
             // Assert
-            // Verifies that the backslash is doubled so downstream EscapedTokenizer interprets it as 
+            // Verifies that the backslash is doubled so downstream EscapedTokenizer interprets it as
             // a literal backslash followed by a separate record delimiter semicolon.
             Assert.Equal(expected, result);
         }

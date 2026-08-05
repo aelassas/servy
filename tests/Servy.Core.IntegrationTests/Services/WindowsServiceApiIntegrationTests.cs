@@ -45,7 +45,7 @@ namespace Servy.Core.IntegrationTests.Services
             // Materialize the collection to assert basic hydration
             var serviceList = services.ToList();
 
-            // Basic sanity check: Windows should always have at least one service 
+            // Basic sanity check: Windows should always have at least one service
             Assert.NotEmpty(serviceList);
             Assert.All(serviceList, s =>
             {

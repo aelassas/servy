@@ -153,7 +153,7 @@ namespace Servy.Manager.ViewModels
             // The default pass-through handles all 1:1 mapped properties (e.g., Description, Status, Pid).
             OnPropertyChanged(e.PropertyName);
 
-            // RE-EVALUATE COMMANDS: 
+            // RE-EVALUATE COMMANDS:
             // If status, PID or installation state changes, trigger a CanExecute re-check.
             // This ensures UI buttons (Start, Stop, etc.) update their enabled state immediately.
             if (e.PropertyName == nameof(Service.Status) || e.PropertyName == nameof(Service.IsInstalled) || e.PropertyName == nameof(Service.Pid))
@@ -308,8 +308,8 @@ namespace Servy.Manager.ViewModels
         /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
         /// </param>
         /// <remarks>
-        /// This method is critical for breaking the strong reference held by the <see cref="Service"/> model 
-        /// through the <see cref="Service.PropertyChanged"/> event. Without this unsubscription, 
+        /// This method is critical for breaking the strong reference held by the <see cref="Service"/> model
+        /// through the <see cref="Service.PropertyChanged"/> event. Without this unsubscription,
         /// the ViewModel would remain rooted in memory, leading to a memory leak.
         /// </remarks>
         protected virtual void Dispose(bool disposing)

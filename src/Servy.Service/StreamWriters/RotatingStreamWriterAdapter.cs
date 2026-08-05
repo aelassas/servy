@@ -45,12 +45,12 @@ namespace Servy.Service.StreamWriters
             bool useLocalTimeForRotation)
         {
             _inner = new RotatingStreamWriter(
-                path, 
-                enableSizeRotation, 
-                rotationSizeInBytes, 
-                enableDateRotation, 
-                dateRotationType, 
-                maxRotations, 
+                path,
+                enableSizeRotation,
+                rotationSizeInBytes,
+                enableDateRotation,
+                dateRotationType,
+                maxRotations,
                 useLocalTimeForRotation);
         }
 

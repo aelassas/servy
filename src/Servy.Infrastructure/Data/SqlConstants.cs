@@ -24,7 +24,7 @@
             "StartTimeout",
             "StopTimeout",
             "EnableConsoleUI",
-            
+
             // Logging Tab
             "StdoutPath",
             "StderrPath",
@@ -35,7 +35,7 @@
             "MaxRotations",
             "UseLocalTimeForRotation",
             "EnableDebugLogs",
-            
+
             // Recovery Tab
             "EnableHealthMonitoring",
             "HeartbeatInterval",
@@ -49,16 +49,16 @@
             "FailureProgramPath",
             "FailureProgramStartupDirectory",
             "FailureProgramParameters",
-            
+
             // Advanced Tab
             "EnvironmentVariables",
             "ServiceDependencies",
-            
+
             // LogOn Tab
             "RunAsLocalSystem",
             "UserAccount",
             "Password",
-            
+
             // Pre-Launch Tab
             "PreLaunchExecutablePath",
             "PreLaunchStartupDirectory",
@@ -69,24 +69,24 @@
             "PreLaunchTimeoutSeconds",
             "PreLaunchRetryAttempts",
             "PreLaunchIgnoreFailure",
-            
+
             // Post-Launch Tab
             "PostLaunchExecutablePath",
             "PostLaunchStartupDirectory",
             "PostLaunchParameters",
-            
+
             // Pre-Stop Tab
             "PreStopExecutablePath",
             "PreStopStartupDirectory",
             "PreStopParameters",
             "PreStopTimeoutSeconds",
             "PreStopLogAsError",
-            
+
             // Post-Stop Tab
             "PostStopExecutablePath",
             "PostStopStartupDirectory",
             "PostStopParameters",
-            
+
             // System / Active State
             "Pid",
             "ActiveStdoutPath",

@@ -112,7 +112,7 @@ namespace Servy.Service.UnitTests.Helpers
             ProcessHelper.ExpandAndAudit(emptyVars, rawArgs, _mockLogger.Object, prefix!);
 
             // Assert
-            // Verify that a null, empty, or whitespace prefix does not leave stray brackets 
+            // Verify that a null, empty, or whitespace prefix does not leave stray brackets
             // like "[] Arguments" or "null Arguments" inside the audited error context message string.
             _mockLogger.Verify(l => l.Warn(
                 It.Is<string>(msg => msg == "Unexpanded environment variable %VAR% in Arguments"),

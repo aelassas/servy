@@ -122,12 +122,12 @@ namespace Servy.UI.UnitTests.Commands
             var command = new AsyncCommand(_ => Task.CompletedTask);
 
             // Act
-            // Capture any potential exceptions thrown by environmental mismatches 
+            // Capture any potential exceptions thrown by environmental mismatches
             // or underlying CommandManager synchronization dependencies.
             var exception = Record.Exception(() => command.RaiseCanExecuteChanged());
 
             // Assert
-            // This verifies that the execution pipeline is completely safe to call 
+            // This verifies that the execution pipeline is completely safe to call
             // from standard threads, preventing regression crashes in background workers.
             Assert.Null(exception);
         }

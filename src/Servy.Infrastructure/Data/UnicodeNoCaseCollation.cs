@@ -8,9 +8,9 @@ namespace Servy.Infrastructure.Data
     /// by leveraging .NET's deterministic ordinal case-folding rules (<see cref="StringComparison.OrdinalIgnoreCase"/>).
     /// </summary>
     /// <remarks>
-    /// <b>CRITICAL DATABASE SAFETY NOTE:</b> This collation backs persistent disk-bound unique indices 
-    /// (e.g., <c>idx_services_name_unique</c>). It must prioritize strict binary case-folding over locale-specific or 
-    /// linguistic sorting logic. Using linguistic matches (like InvariantCultureIgnoreCase) breaks physical B-Tree ordering 
+    /// <b>CRITICAL DATABASE SAFETY NOTE:</b> This collation backs persistent disk-bound unique indices
+    /// (e.g., <c>idx_services_name_unique</c>). It must prioritize strict binary case-folding over locale-specific or
+    /// linguistic sorting logic. Using linguistic matches (like InvariantCultureIgnoreCase) breaks physical B-Tree ordering
     /// invariants across runtime transitions (e.g., .NET 5+'s ICU vs .NET 4.8's NLS layouts), leading to index corruption.
     /// </remarks>
     [SQLiteFunction(Name = "UNICODE_NOCASE", FuncType = FunctionType.Collation)]
@@ -51,7 +51,7 @@ namespace Servy.Infrastructure.Data
             if (param2 == null) return 1;
 
             // OrdinalIgnoreCase performs simple binary Unicode case folding.
-            // This guarantees an unchanging, total order regardless of whether the process executes under 
+            // This guarantees an unchanging, total order regardless of whether the process executes under
             // a .NET Framework NLS platform or a modern .NET 5+ ICU system deployment.
             return string.Compare(param1, param2, StringComparison.OrdinalIgnoreCase);
         }

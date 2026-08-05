@@ -21,20 +21,20 @@ namespace Servy.Core.Domain
     /// <list type="bullet">
     /// <item>
     /// <description>
-    /// <b>Pre-Launch (Synchronous):</b> By default, these are "Gatekeepers." They block service startup, 
+    /// <b>Pre-Launch (Synchronous):</b> By default, these are "Gatekeepers." They block service startup,
     /// support Stdout/Stderr capture, Retries, and Managed Timeouts.
     /// </description>
     /// </item>
     /// <item>
     /// <description>
-    /// <b>Pre-Launch (Asynchronous):</b> If <see cref="PreLaunchTimeoutSeconds"/> is set to 0, 
-    /// the hook transitions to fire-and-forget mode. It will not block startup, and supervisor 
+    /// <b>Pre-Launch (Asynchronous):</b> If <see cref="PreLaunchTimeoutSeconds"/> is set to 0,
+    /// the hook transitions to fire-and-forget mode. It will not block startup, and supervisor
     /// features (logging/retries) are disabled.
     /// </description>
     /// </item>
     /// <item>
     /// <description>
-    /// <b>Post-Launch (Asynchronous):</b> Always "Sidecars." These run in a fire-and-forget manner 
+    /// <b>Post-Launch (Asynchronous):</b> Always "Sidecars." These run in a fire-and-forget manner
     /// after the main process starts and do not support supervisor features.
     /// </description>
     /// </item>
@@ -77,7 +77,7 @@ namespace Servy.Core.Domain
         /// The <b>Display Name</b> of the service, shown in the Windows Services management console (<c>services.msc</c>).
         /// </summary>
         /// <remarks>
-        /// This name is human-readable, often includes prefixes for grouping, and can be changed 
+        /// This name is human-readable, often includes prefixes for grouping, and can be changed
         /// after the service has been installed.
         /// </remarks>
         public string DisplayName { get; set; } = string.Empty;
@@ -156,7 +156,7 @@ namespace Servy.Core.Domain
         public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>
-        /// Gets or sets the maximum number of rotated log files to keep. 
+        /// Gets or sets the maximum number of rotated log files to keep.
         /// Set to 0 for unlimited.
         /// </summary>
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
@@ -166,9 +166,9 @@ namespace Servy.Core.Domain
         /// </summary>
         /// <remarks>
         /// <para>Default is <c>false</c> (UTC).</para>
-        /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight). 
+        /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight).
         /// This is often preferred for manual log inspection but can be affected by Daylight Saving Time transitions.</para>
-        /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC). 
+        /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC).
         /// This ensures a consistent, 24-hour rotation interval regardless of time zone or DST changes.</para>
         /// </remarks>
         public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
@@ -489,17 +489,17 @@ namespace Servy.Core.Domain
         /// Installs the Windows service using the configured domain properties.
         /// </summary>
         /// <remarks>
-        /// In <c>DEBUG</c> builds, the service wrapper executable is resolved from the 
-        /// executing assembly directory. In <c>RELEASE</c> builds, it is resolved from 
+        /// In <c>DEBUG</c> builds, the service wrapper executable is resolved from the
+        /// executing assembly directory. In <c>RELEASE</c> builds, it is resolved from
         /// the <see cref="AppConfig.ProgramDataPath"/>.
         /// <para>
-        /// This method passes all service configuration (paths, parameters, startup 
-        /// settings, monitoring options, recovery actions, etc.) to the underlying 
+        /// This method passes all service configuration (paths, parameters, startup
+        /// settings, monitoring options, recovery actions, etc.) to the underlying
         /// <see cref="IServiceManager"/> implementation.
         /// </para>
         /// </remarks>
         /// <returns>
-        /// A task that represents the asynchronous install operation. The task result 
+        /// A task that represents the asynchronous install operation. The task result
         /// is <see cref="OperationResult"/> describing whether the install succeeded
         /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
@@ -507,11 +507,11 @@ namespace Servy.Core.Domain
         /// <param name="isCLI">Indicates if install is from the CLI.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <exception cref="ArgumentNullException">
-        /// Thrown if required properties such as <see cref="Name"/> or 
+        /// Thrown if required properties such as <see cref="Name"/> or
         /// <see cref="ExecutablePath"/> are null or empty.
         /// </exception>
         /// <exception cref="Win32Exception">
-        /// Thrown if the Service Control Manager cannot be accessed or the service 
+        /// Thrown if the Service Control Manager cannot be accessed or the service
         /// cannot be created/updated.
         /// </exception>
         public async Task<OperationResult> Install(string? wrapperExeDir = null, bool isCLI = false, CancellationToken cancellationToken = default)
@@ -607,7 +607,7 @@ namespace Servy.Core.Domain
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// A task that represents the asynchronous uninstall operation. The task result 
+        /// A task that represents the asynchronous uninstall operation. The task result
         /// is <see cref="OperationResult"/> describing whether the uninstall succeeded
         /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
@@ -615,7 +615,7 @@ namespace Servy.Core.Domain
         /// Thrown if <see cref="Name"/> is null or empty.
         /// </exception>
         /// <exception cref="Win32Exception">
-        /// Thrown if the Service Control Manager cannot be accessed or the service 
+        /// Thrown if the Service Control Manager cannot be accessed or the service
         /// cannot be removed.
         /// </exception>
         public async Task<OperationResult> Uninstall(CancellationToken cancellationToken = default)
