@@ -109,8 +109,14 @@ jobs:
 
               $tag = $Release.tag_name
 
-              $rawBody = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
-              $body = $rawBody -replace $dashPattern, '-'
+              # Normalize CRLF -> LF and strip trailing whitespace on each line
+              $rawBody = if ([string]::IsNullOrWhiteSpace($Release.body)) {
+                  "*No release notes provided.*"
+              } else {
+                  $normalized = $Release.body -replace "`r`n", "`n"
+                  (($normalized -split "`n") | ForEach-Object { $_.TrimEnd() }) -join "`n"
+              }
+              $body = $rawBody.Trim() -replace $dashPattern, '-'
 
               $bt = [char]96
 
@@ -155,6 +161,8 @@ jobs:
               $existing = ""
               if ([System.IO.File]::Exists($changelogPath)) {
                   $existing = [System.IO.File]::ReadAllText($changelogPath, $utf8NoBom)
+                  # Standardize existing line endings to LF
+                  $existing = $existing -replace "`r`n", "`n"
               }
 
               $tagLine = "**Tag:** [$bt$tag$bt](https://github.com/$repo/tree/$tag)"
@@ -165,7 +173,7 @@ jobs:
                   $prev = if ($releases.Count -gt 1) { $releases[1] } else { $null }
                   $entry = Get-ReleaseEntry -Release $latest -PrevRelease $prev
 
-                  if ($existing -match '(?s)^# Changelog\r?\n(.*)$') {
+                  if ($existing -match '(?s)^# Changelog\n(.*)$') {
                       $newLog = "# Changelog`n`n$entry" + $matches[1].TrimStart()
                   } else {
                       $newLog = "# Changelog`n`n$entry$existing"
