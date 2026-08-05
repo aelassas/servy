@@ -1,4 +1,6 @@
-This scoop manifest serves as a template for creating a scoop manifest for a project. It is not intended to be used directly, but rather as a starting point for creating a manifest.
+## Scoop manifest
+
+`servy.json` is the canonical Scoop manifest for Servy. `scoop.yml` updates it on each release and publishes it to the aelassas bucket and to Scoop Extras.
 
 ## Local test
 ```
