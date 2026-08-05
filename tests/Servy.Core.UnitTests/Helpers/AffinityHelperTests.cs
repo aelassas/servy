@@ -8,7 +8,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void ParseAffinity_NullOrWhiteSpace_ReturnsIntPtrZero(string? input)
         {
             // Act
@@ -19,12 +19,17 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("0x1", 0x1L)]
-        [InlineData("0X2", 0x2L)]
-        [InlineData("0xFF", 0xFFL)]
-        [InlineData(" 0x10 ", 0x10L)]
-        public void ParseAffinity_ValidHex_ReturnsExpectedBitmask(string input, long expectedMask)
+        [InlineData("0x1", 0x1L, 1)]
+        [InlineData("0X2", 0x2L, 2)]
+        [InlineData("0xFF", 0xFFL, 8)]
+        [InlineData(" 0x10 ", 0x10L, 5)]
+        public void ParseAffinity_ValidHex_ReturnsExpectedBitmask(string input, long expectedMask, int requiredCores)
         {
+            // Arrange
+            int maxCores = Math.Min(Environment.ProcessorCount, 64);
+            Assert.SkipWhen(maxCores < requiredCores,
+                $"Host has {maxCores} usable cores; this case needs {requiredCores}.");
+
             // Act
             IntPtr result = AffinityHelper.ParseAffinity(input);
 
@@ -56,7 +61,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData("0xG12")]
         [InlineData("0xXYZ")]
-        [InlineData("0x123456789ABCDEF0123")] // Exceeds long.MaxValue limits
+        [InlineData("0x123456789ABCDEF0123")] // Exceeds long limits
         public void ParseAffinity_InvalidHex_ThrowsArgumentException(string input)
         {
             // Act & Assert
@@ -64,6 +69,36 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Extract the static format prefix from the localized template
             string expectedPrefix = Strings.Msg_InvalidHexAffinityFormat.Split('{')[0];
+            Assert.Contains(expectedPrefix, ex.Message);
+        }
+
+        [Theory]
+        [InlineData("0x0")]                    // Zero mask
+        [InlineData("0xFFFFFFFFFFFFFFFF")]     // All bits set / overflow
+        public void ParseAffinity_HexOutOfBoundsOrZero_ThrowsArgumentOutOfRangeException(string input)
+        {
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
+
+            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
+            Assert.Contains(expectedPrefix, ex.Message);
+        }
+
+        [Fact]
+        public void ParseAffinity_HexExceedingHostCores_ThrowsArgumentOutOfRangeException()
+        {
+            // Arrange
+            int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64);
+            if (maxAllowedCores >= 64) return; // Skip if host has full 64 cores
+
+            // Mask that sets a bit beyond host max cores
+            long outOfBoundsMask = 1L << maxAllowedCores;
+            string input = $"0x{outOfBoundsMask:X}";
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
+
+            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
             Assert.Contains(expectedPrefix, ex.Message);
         }
 
@@ -111,7 +146,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null, 0)]
         [InlineData("", 0)]
-        [InlineData("   ", 0)]
+        [InlineData("    ", 0)]
         [InlineData("0", 1)]
         [InlineData("0x1", 1)]
         [InlineData("0,2,4", 5)]
@@ -135,6 +170,7 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Theory]
         [InlineData("0xINVALID")]
+        [InlineData("0x0")]
         [InlineData("abc")]
         [InlineData("9999")]
         public void ValidateAffinity_InvalidInput_ReturnsFalseAndPopulatesErrorMessage(string input)
