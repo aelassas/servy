@@ -7,13 +7,13 @@ namespace Servy.Testing
     /// Ensures CI-sensitive timeouts are tuned predictably in a single location.
     /// </summary>
     /// <remarks>
-    /// Members suffixed with <c>Ms</c> are expressed in milliseconds and members suffixed 
+    /// Members suffixed with <c>Ms</c> are expressed in milliseconds and members suffixed
     /// with <c>Seconds</c> are expressed in seconds; all other members are <see cref="TimeSpan"/> instances.
     /// </remarks>
     public static class TestTimeouts
     {
         /// <summary>
-        /// A generous upper bound (20 seconds) for async operations and wait conditions that must 
+        /// A generous upper bound (20 seconds) for async operations and wait conditions that must
         /// not flake when running on loaded or resource-constrained CI build agents.
         /// </summary>
         public static readonly TimeSpan CiGenerous = TimeSpan.FromSeconds(20);
@@ -22,20 +22,20 @@ namespace Servy.Testing
         /// How long (15 seconds) a spawned PowerShell leaf process in a process tree fixture stays alive.
         /// </summary>
         /// <remarks>
-        /// Must remain greater than or equal to <see cref="ChildTimeoutSeconds"/> to ensure the leaf process 
+        /// Must remain greater than or equal to <see cref="ChildTimeoutSeconds"/> to ensure the leaf process
         /// does not exit before process enumeration or tree stabilization checks complete.
         /// </remarks>
         public const int ChildSleepSeconds = 15;
 
         /// <summary>
-        /// How long (15 seconds) process search polling functions like <c>WaitForProcessName</c> wait 
+        /// How long (15 seconds) process search polling functions like <c>WaitForProcessName</c> wait
         /// for a named child process to appear before throwing a <see cref="TimeoutException"/>.
         /// </summary>
         /// <seealso cref="ChildSleepSeconds"/>
         public const int ChildTimeoutSeconds = 15;
 
         /// <summary>
-        /// Maximum duration (20 seconds) allocated for a process tree to fully spawn and stabilize 
+        /// Maximum duration (20 seconds) allocated for a process tree to fully spawn and stabilize
         /// during descendant process enumeration tests.
         /// </summary>
         public const int ProcessTreeTimeoutSeconds = 20;

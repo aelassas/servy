@@ -94,7 +94,7 @@ namespace Servy.Core.Helpers
                         }
 
                         cs.FlushFinalBlock();
-                        // The actual length might be slightly less than max if padding behaves differently, 
+                        // The actual length might be slightly less than max if padding behaves differently,
                         // though for CBC/PKCS7 it is deterministic.
                         actualCiphertextLength = (int)ms.Position;
                     }
@@ -136,7 +136,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Decrypts a string by detecting its version (v1 or v2). 
+        /// Decrypts a string by detecting its version (v1 or v2).
         /// Supports legacy unencrypted data by returning the input if no marker is found.
         /// </summary>
         /// <param name="cipherText">The encrypted string or legacy raw text.</param>
@@ -202,7 +202,7 @@ namespace Servy.Core.Helpers
                     using (var ms = new MemoryStream(cipherBytes))
                     using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                     using (var sr = new StreamReader(cs, Encoding.UTF8))
-                    { 
+                    {
                         return sr.ReadToEnd();
                     }
                 }

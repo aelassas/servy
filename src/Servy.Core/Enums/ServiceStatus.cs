@@ -7,7 +7,7 @@
     public enum ServiceStatus
     {
         /// <summary>
-        /// The status is not yet known or is being fetched. 
+        /// The status is not yet known or is being fetched.
         /// This is the CLR default (0).
         /// </summary>
         None = 0,

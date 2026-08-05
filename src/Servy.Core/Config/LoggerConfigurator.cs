@@ -6,7 +6,7 @@ using System.Collections.Specialized;
 namespace Servy.Core.Config
 {
     /// <summary>
-    /// Centralizes the initialization and configuration of the Servy logging subsystem 
+    /// Centralizes the initialization and configuration of the Servy logging subsystem
     /// to prevent configuration drift across the CLI, Restarter, Service, and Manager entry points.
     /// </summary>
     public static class LoggerConfigurator

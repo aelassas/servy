@@ -467,7 +467,7 @@ namespace Servy.Service.UnitTests
             // Assert
             Assert.StartsWith(expectedBase, result);
 
-            // The result length minus the expected base prefix length must equal 
+            // The result length minus the expected base prefix length must equal
             // exactly 6 characters (the length of our deterministic hex short hash).
             Assert.Equal(6, result.Length - expectedBase.Length);
         }
@@ -662,7 +662,7 @@ namespace Servy.Service.UnitTests
         }
 
         /// <summary>
-        /// DRY helper to initialize the base StartOptions and mocks required to get the 
+        /// DRY helper to initialize the base StartOptions and mocks required to get the
         /// Service through its initial ValidateAndLog and HandleLogWriters phases cleanly.
         /// </summary>
         private Mock<IServyLogger> SetupStandardServiceStart(StartOptions options)
@@ -865,7 +865,7 @@ namespace Servy.Service.UnitTests
             watch.Stop();
 
             // Assert
-            // The underlying method schedules execution on Task.Run, so the caller thread 
+            // The underlying method schedules execution on Task.Run, so the caller thread
             // must execute immediately (well under 1000 milliseconds) regardless of actual network response latency.
             Assert.True(watch.ElapsedMilliseconds < 1000, $"Method blocked the primary thread execution context for {watch.ElapsedMilliseconds}ms");
 
@@ -1114,7 +1114,7 @@ namespace Servy.Service.UnitTests
             _mockProcess.Setup(p => p.HasExited).Returns(true);
             _mockProcess.Setup(p => p.ExitCode).Returns(1);
 
-            // Wire up a TaskCompletionSource via Moq's Callback mechanism to signal completion 
+            // Wire up a TaskCompletionSource via Moq's Callback mechanism to signal completion
             // without using exceptions as control flow.
             var recoveryLoggedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 

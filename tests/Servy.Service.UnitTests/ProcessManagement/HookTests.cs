@@ -38,7 +38,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
         {
             // Arrange
             var hook = new Hook();
-            // We create a dummy process instance. 
+            // We create a dummy process instance.
             // We do not Start() it, as we only want to test the disposal logic.
             var process = new Process();
             hook.Process = process;

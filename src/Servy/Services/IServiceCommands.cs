@@ -15,7 +15,7 @@ namespace Servy.Services
         /// Orchestrates the installation of a new Windows service using the provided configuration.
         /// </summary>
         /// <param name="config">
-        /// The <see cref="ServiceConfiguration"/> containing all process paths, 
+        /// The <see cref="ServiceConfiguration"/> containing all process paths,
         /// startup parameters, and lifecycle hook settings.
         /// </param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
@@ -25,7 +25,7 @@ namespace Servy.Services
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method serves as the primary controller for the service installation workflow. 
+        /// This method serves as the primary controller for the service installation workflow.
         /// It performs several critical steps:
         /// <list type="bullet">
         /// <item><description>Locates and validates the Servy UI service wrapper executable.</description></item>
@@ -36,8 +36,8 @@ namespace Servy.Services
         /// </list>
         /// </para>
         /// <para>
-        /// <b>Security:</b> User credentials (account and password) are handled according to the 
-        /// <see cref="ServiceConfiguration.RunAsLocalSystem"/> flag. Credentials are encrypted 
+        /// <b>Security:</b> User credentials (account and password) are handled according to the
+        /// <see cref="ServiceConfiguration.RunAsLocalSystem"/> flag. Credentials are encrypted
         /// before being stored in the repository.
         /// </para>
         /// </remarks>

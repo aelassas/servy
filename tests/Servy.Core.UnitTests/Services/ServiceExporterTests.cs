@@ -181,7 +181,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("\"Name\": \"TestService\"", json);
             Assert.Contains("\"ExecutablePath\": \"C:\\\\service.exe\"", json);
 
-            // 2. Comprehensive validation: Ensure all properties matching dynamic conditional 
+            // 2. Comprehensive validation: Ensure all properties matching dynamic conditional
             // serialization rules (ShouldSerialize*) are completely omitted when null or unassigned.
             var keysToProveAbsent = new[]
             {
@@ -234,8 +234,8 @@ namespace Servy.Core.UnitTests.Services
                 "PostStopExecutablePath",
                 "PostStopStartupDirectory",
                 "PostStopParameters",
-                
-                // Hardened Security Bounds: Validate explicit exclusion of unmanaged internal properties 
+
+                // Hardened Security Bounds: Validate explicit exclusion of unmanaged internal properties
                 // and sensitive credentials that are decorated with [JsonIgnore] or skipped natively.
                 "Id",
                 "Pid",

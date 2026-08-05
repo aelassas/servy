@@ -152,7 +152,7 @@ namespace Servy.Core.Helpers
                                  $"Stdout: {output.Trim()}. Stderr: {error.Trim()}. " +
                                  "Handle detection is unreliable; aborting operation to prevent file corruption.");
 
-                    // Throwing an InvalidOperationException forces the caller (ResourceHelper) 
+                    // Throwing an InvalidOperationException forces the caller (ResourceHelper)
                     // to catch the error and return 'false', halting the file-replacement pipeline.
                     throw new InvalidOperationException($"Handle detection failed with exit code {process.ExitCode}.");
                 }

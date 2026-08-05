@@ -7,7 +7,7 @@ using System.Windows.Threading;
 namespace Servy.UI.Services
 {
     /// <summary>
-    /// Provides a WPF-specific implementation of <see cref="IUiDispatcher"/> 
+    /// Provides a WPF-specific implementation of <see cref="IUiDispatcher"/>
     /// using the <see cref="Dispatcher"/> to manage thread synchronization and yielding.
     /// </summary>
     [ExcludeFromCodeCoverage]
@@ -48,7 +48,7 @@ namespace Servy.UI.Services
 
         /// <inheritdoc />
         /// <remarks>
-        /// Uses <see cref="DispatcherPriority.Background"/> to ensure that the dispatcher 
+        /// Uses <see cref="DispatcherPriority.Background"/> to ensure that the dispatcher
         /// has finished processing layout and render passes before the calling task resumes.
         /// </remarks>
         public async Task YieldAsync()

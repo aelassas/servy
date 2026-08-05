@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Servy.Manager.Validation
 {
     /// <summary>
-    /// Implements service configuration validation for the Manager application, 
+    /// Implements service configuration validation for the Manager application,
     /// utilizing shared domain rules and displaying feedback via the UI.
     /// </summary>
     public class ServiceConfigurationValidator : IServiceConfigurationValidator
@@ -32,7 +32,7 @@ namespace Servy.Manager.Validation
 
         /// <inheritdoc />
         /// <remarks>
-        /// This implementation follows a fail-fast approach, showing only the first identified 
+        /// This implementation follows a fail-fast approach, showing only the first identified
         /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
         public async Task<bool> ValidateAsync(ServiceDto dto, bool importMode = false, CancellationToken cancellationToken = default)

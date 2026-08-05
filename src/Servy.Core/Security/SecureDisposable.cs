@@ -4,7 +4,7 @@ using System.Threading;
 namespace Servy.Core.Security
 {
     /// <summary>
-    /// Provides a centralized, thread-safe base class that implements an Interlocked-guarded 
+    /// Provides a centralized, thread-safe base class that implements an Interlocked-guarded
     /// disposable and finalizer pattern designed for purging sensitive cryptographic assets.
     /// </summary>
     public abstract class SecureDisposable : IDisposable
@@ -15,7 +15,7 @@ namespace Servy.Core.Security
         /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
         /// </summary>
         /// <remarks>
-        /// Utilizes <see cref="Volatile.Read(ref int)"/> to ensure the disposal state is accurately 
+        /// Utilizes <see cref="Volatile.Read(ref int)"/> to ensure the disposal state is accurately
         /// synchronized across CPU caches without the overhead of a full lock.
         /// </remarks>
         /// <exception cref="ObjectDisposedException">Thrown if the provider has been disposed.</exception>
@@ -26,7 +26,7 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// When overridden in a derived class, executes finalizer-safe, non-allocating memory 
+        /// When overridden in a derived class, executes finalizer-safe, non-allocating memory
         /// purging of highly sensitive cryptographic items.
         /// </summary>
         protected abstract void ZeroSensitiveData();
@@ -44,7 +44,7 @@ namespace Servy.Core.Security
         /// Finalizes an instance of the <see cref="SecureDisposable"/> class.
         /// </summary>
         /// <remarks>
-        /// The finalizer ensures that sensitive cryptographic material is zeroed out in memory 
+        /// The finalizer ensures that sensitive cryptographic material is zeroed out in memory
         /// even if the consumer fails to call explicit disposal routines.
         /// </remarks>
         ~SecureDisposable()

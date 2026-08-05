@@ -16,7 +16,7 @@ namespace Servy.Manager.Views
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="LogsView"/> class
-        /// and subscribes to <see cref="FrameworkElement.DataContextChanged"/> 
+        /// and subscribes to <see cref="FrameworkElement.DataContextChanged"/>
         /// to handle changes in the view model.
         /// </summary>
         public LogsView()
@@ -27,9 +27,9 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="FrameworkElement.DataContextChanged"/> event.  
-        /// Unsubscribes from the old <see cref="LogsViewModel"/> events and 
-        /// subscribes to the new one to ensure the view responds to 
+        /// Handles the <see cref="FrameworkElement.DataContextChanged"/> event.
+        /// Unsubscribes from the old <see cref="LogsViewModel"/> events and
+        /// subscribes to the new one to ensure the view responds to
         /// <see cref="LogsViewModel.ScrollLogsToTopRequested"/>.
         /// </summary>
         /// <param name="sender">The source of the event.</param>

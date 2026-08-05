@@ -25,8 +25,8 @@ namespace Servy.Core.Security
         #region Security & Synchronization Settings
 
         /// <summary>
-        /// The protection scope used for DPAPI operations. 
-        /// <see cref="DataProtectionScope.LocalMachine"/> is used to allow the service to access 
+        /// The protection scope used for DPAPI operations.
+        /// <see cref="DataProtectionScope.LocalMachine"/> is used to allow the service to access
         /// the keys regardless of the specific user account context (e.g., SYSTEM vs. Service Account).
         /// </summary>
         private static readonly DataProtectionScope ProtectionScope = DataProtectionScope.LocalMachine;
@@ -35,8 +35,8 @@ namespace Servy.Core.Security
         /// Caches the machine-unique entropy to optimize performance and ensure thread-safe initialization.
         /// </summary>
         /// <remarks>
-        /// The factory may run more than once under concurrent first access and only the published value is 
-        /// shared. Caching this value avoids redundant registry I/O operations and string-to-byte conversions 
+        /// The factory may run more than once under concurrent first access and only the published value is
+        /// shared. Caching this value avoids redundant registry I/O operations and string-to-byte conversions
         /// during subsequent calls to <see cref="GetKey"/> or <see cref="GetIV"/>.
         /// </remarks>
         private static readonly Lazy<byte[]> MachineEntropy = new Lazy<byte[]>(GetMachineEntropy, LazyThreadSafetyMode.PublicationOnly);
@@ -123,8 +123,8 @@ namespace Servy.Core.Security
             lock (_cacheLock)
             {
                 // 1. FAST-PATH: Synchronized Read
-                // We must hold the lock even for the fast-path read to prevent a TOCTOU race 
-                // condition with InvalidateCache, which explicitly calls CryptographicOperations.ZeroMemory 
+                // We must hold the lock even for the fast-path read to prevent a TOCTOU race
+                // condition with InvalidateCache, which explicitly calls CryptographicOperations.ZeroMemory
                 // on the backing array. If we read outside the lock, we risk cloning a zeroed array.
                 if (cacheField != null)
                 {
@@ -172,11 +172,11 @@ namespace Servy.Core.Security
         /// <remarks>
         /// <para>
         /// This method implements a dynamic entropy strategy to mitigate the risk of hardcoded secrets in the binary.
-        /// By utilizing the <c>MachineGuid</c> located at <c>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography</c>, 
+        /// By utilizing the <c>MachineGuid</c> located at <c>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography</c>,
         /// the resulting entropy is unique to the specific OS installation.
         /// </para>
         /// <para>
-        /// This ensures that even if an attacker gains access to the encrypted data and the application source code, 
+        /// This ensures that even if an attacker gains access to the encrypted data and the application source code,
         /// they cannot decrypt the material on a different machine, effectively making the protected files non-portable.
         /// </para>
         /// </remarks>
@@ -240,7 +240,7 @@ namespace Servy.Core.Security
             }
             catch (Exception ex)
             {
-                // Fail fast: We must not silently fall back to a per-session Local\ namespace, 
+                // Fail fast: We must not silently fall back to a per-session Local\ namespace,
                 // as doing so bypasses cross-session synchronization and risks key corruption.
                 Logger.Error($"CRITICAL: Failed to allocate global synchronization mutex '{mutexName}'. Cross-process execution aborted.", ex);
                 throw new System.Security.SecurityException($"Could not establish cross-session lock boundary: {ex.Message}", ex);
@@ -287,11 +287,11 @@ namespace Servy.Core.Security
         /// A decrypted byte array containing the raw keying material.
         /// </returns>
         /// <remarks>
-        /// This method implements a process-safe Double-Check Locking pattern using a global system mutex 
+        /// This method implements a process-safe Double-Check Locking pattern using a global system mutex
         /// to prevent multiple concurrent Servy executables from generating conflicting cryptographic keys.
         /// </remarks>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the data cannot be unprotected. This usually occurs if the file was created 
+        /// Thrown when the data cannot be unprotected. This usually occurs if the file was created
         /// on a different machine or under a different security context that DPAPI cannot resolve.
         /// </exception>
         private byte[] GetOrGenerate(string path, int length, string materialName)
@@ -346,7 +346,7 @@ namespace Servy.Core.Security
                     }
                 }
 
-                // Defensive check: Even though the throw above prevents this, 
+                // Defensive check: Even though the throw above prevents this,
                 // static analysis tools (and good practice) appreciate the explicit guard.
                 if (encrypted is null)
                 {
@@ -373,7 +373,7 @@ namespace Servy.Core.Security
                     try
                     {
                         // 3. Automatic Migration: Re-save with the new machine-unique entropy.
-                        // ROBUSTNESS: Ensure the upgrade save executes within the exact same global 
+                        // ROBUSTNESS: Ensure the upgrade save executes within the exact same global
                         // named mutex namespace as the generation loop. This prevents staging file (.tmp)
                         // naming collisions when multiple services attempt to migrate the same legacy file concurrently.
                         RunUnderMutex(path, () =>
@@ -445,8 +445,8 @@ namespace Servy.Core.Security
         /// <param name="data">The plaintext data to protect.</param>
         /// <remarks>
         /// <para>
-        /// <b>Architectural Warning:</b> This method must be executed within the boundaries of the <c>Global\</c> 
-        /// named mutex established by <see cref="RunUnderMutex"/>. 
+        /// <b>Architectural Warning:</b> This method must be executed within the boundaries of the <c>Global\</c>
+        /// named mutex established by <see cref="RunUnderMutex"/>.
         /// </para>
         /// </remarks>
         [ExcludeFromCodeCoverage]
@@ -545,9 +545,9 @@ namespace Servy.Core.Security
         /// <param name="type">The Windows <see cref="EventLogEntryType"/> (e.g., Error, Warning, or Information).</param>
         /// <param name="eventId">The specific numerical identifier for the event, typically derived from the Core taxonomy.</param>
         /// <remarks>
-        /// This method encapsulates the interaction with the Windows Event Log subsystem. It is designed to be 
-        /// "fail-silent" regarding the caller; if the Event Log service is unavailable, permissions are restricted, 
-        /// or the source is not registered, the exception is caught, logged to the primary file-based 
+        /// This method encapsulates the interaction with the Windows Event Log subsystem. It is designed to be
+        /// "fail-silent" regarding the caller; if the Event Log service is unavailable, permissions are restricted,
+        /// or the source is not registered, the exception is caught, logged to the primary file-based
         /// <see cref="Logger"/> at a Debug level, and execution continues.
         /// </remarks>
         private static void TryWriteServyEventLog(string formattedMessage, EventLogEntryType type, int eventId)

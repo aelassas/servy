@@ -391,7 +391,7 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Handles the <see cref="DispatcherTimer.Tick"/> event for refreshing services.
-        /// Uses an <see cref="Interlocked"/> re-entrancy flag (<see cref="_isRefreshingFlag"/>) so an in-progress 
+        /// Uses an <see cref="Interlocked"/> re-entrancy flag (<see cref="_isRefreshingFlag"/>) so an in-progress
         /// refresh causes subsequent ticks to return immediately; the timer itself is not stopped.
         /// </summary>
         private async void OnTick(object sender, EventArgs e)
@@ -844,7 +844,7 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // 5. Batch-Apply all UI updates to the UI thread in one go
-                // This prevents the "Collection modified" crash by ensuring 
+                // This prevents the "Collection modified" crash by ensuring
                 // property changes happen in a controlled, sequential batch.
                 if (!uiUpdates.IsEmpty)
                 {
@@ -976,7 +976,7 @@ namespace Servy.Manager.ViewModels
                 ServiceDto resultDto = null;
                 if (serviceDto != null)
                 {
-                    // 4. Sync PID to UI. Because we use targetPid, this correctly pushes 'null' 
+                    // 4. Sync PID to UI. Because we use targetPid, this correctly pushes 'null'
                     // to the UI if the service crashed, even if the DB is stuck on 7020.
                     if (service.Pid != targetPid)
                     {
@@ -1002,7 +1002,7 @@ namespace Servy.Manager.ViewModels
                             serviceDto.StartupType = (int)currentStartupType.Value;
                         }
 
-                        // Note: We are deliberately NOT modifying serviceDto.Pid here, 
+                        // Note: We are deliberately NOT modifying serviceDto.Pid here,
                         // leaving database writes exclusively to the wrapper.
                         resultDto = serviceDto;
                     }

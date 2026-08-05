@@ -31,7 +31,7 @@ namespace Servy.CLI.Validation
         }
 
         /// <summary>
-        /// Validates the provided <see cref="InstallServiceOptions"/> by mapping them to a domain DTO 
+        /// Validates the provided <see cref="InstallServiceOptions"/> by mapping them to a domain DTO
         /// and executing centralized validation rules.
         /// </summary>
         /// <param name="opts">The command-line options provided for the install command.</param>
@@ -79,7 +79,7 @@ namespace Servy.CLI.Validation
             dto = null;
             string internalError = null;
 
-            // By passing 'internalError' by ref to a static method, 
+            // By passing 'internalError' by ref to a static method,
             // the analyzer MUST assume it could be modified.
             var startupType = MapEnum<ServiceStartType>(opts.ServiceStartType, nameof(opts.ServiceStartType), ref internalError);
             var priority = MapEnum<ProcessPriority>(opts.ProcessPriority, nameof(opts.ProcessPriority), ref internalError);
@@ -197,7 +197,7 @@ namespace Servy.CLI.Validation
         /// <param name="error">A reference to an error string. If an error already exists, the method returns early. If parsing fails, this reference is updated with a formatted error message containing valid options.</param>
         /// <returns>The integer representation of the enum value if successful; otherwise, <see langword="null"/>.</returns>
         /// <remarks>
-        /// This method dynamically accounts for standard enumerations as well as bitmask combinations decorated with 
+        /// This method dynamically accounts for standard enumerations as well as bitmask combinations decorated with
         /// <see cref="FlagsAttribute"/>, ensuring unmapped bits are rejected without breaking composite flag parsing.
         /// </remarks>
         private static int? MapEnum<T>(string val, string propertyName, ref string error) where T : struct, Enum
@@ -211,8 +211,8 @@ namespace Servy.CLI.Validation
                 // Check if the enum is a bitmask [Flags] layout
                 if (enumType.IsDefined(typeof(FlagsAttribute), false))
                 {
-                    // If the string contains unmapped or anonymous bits, ToString() drops back 
-                    // to displaying a raw number. Comparing it against the normalized text 
+                    // If the string contains unmapped or anonymous bits, ToString() drops back
+                    // to displaying a raw number. Comparing it against the normalized text
                     // detects out-of-range flag corruption cleanly without allocations.
                     var underlyingValue = Convert.ChangeType(result, Enum.GetUnderlyingType(enumType)).ToString();
                     if (result.ToString() != underlyingValue)

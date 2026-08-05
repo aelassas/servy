@@ -7,18 +7,18 @@ using System.ComponentModel;
 namespace Servy.UI
 {
     /// <summary>
-    /// An <see cref="ObservableCollection{T}"/> extension that supports bulk operations without 
+    /// An <see cref="ObservableCollection{T}"/> extension that supports bulk operations without
     /// triggering a <see cref="INotifyCollectionChanged.CollectionChanged"/> event for every individual item.
     /// </summary>
     /// <typeparam name="T">The type of elements in the collection.</typeparam>
     /// <remarks>
     /// <para>
-    /// Thread Safety: To ensure UI consistency in WPF, bulk operations should ideally be performed 
+    /// Thread Safety: To ensure UI consistency in WPF, bulk operations should ideally be performed
     /// on the UI thread.
     /// </para>
     /// <para>
-    /// Performance: This class optimizes range removals and additions by manipulating the internal 
-    /// Items collection directly, bypassing per-item virtual method overhead, followed by a single 
+    /// Performance: This class optimizes range removals and additions by manipulating the internal
+    /// Items collection directly, bypassing per-item virtual method overhead, followed by a single
     /// <see cref="NotifyCollectionChangedAction.Reset"/> notification.
     /// </para>
     /// </remarks>
@@ -30,14 +30,14 @@ namespace Servy.UI
         public BulkObservableCollection() : base() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class 
+        /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class
         /// that contains elements copied from the specified collection.
         /// </summary>
         /// <param name="collection">The collection from which the elements are copied.</param>
         public BulkObservableCollection(IEnumerable<T> collection) : base(collection) { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class 
+        /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class
         /// that contains elements copied from the specified list.
         /// </summary>
         /// <param name="list">The list from which the elements are copied.</param>
@@ -48,7 +48,7 @@ namespace Servy.UI
         /// </summary>
         /// <param name="items">The collection of items to add. If null, no action is taken.</param>
         /// <remarks>
-        /// This method mutates the underlying list directly and raises a 
+        /// This method mutates the underlying list directly and raises a
         /// single <see cref="NotifyCollectionChangedAction.Reset"/> event upon completion.
         /// </remarks>
         public void AddRange(IEnumerable<T> items)
@@ -97,7 +97,7 @@ namespace Servy.UI
         }
 
         /// <summary>
-        /// Explicitly notifies active data-binding targets and UI listeners that the entire 
+        /// Explicitly notifies active data-binding targets and UI listeners that the entire
         /// collection has been reset, including its item count and indexer state.
         /// </summary>
         /// <remarks>

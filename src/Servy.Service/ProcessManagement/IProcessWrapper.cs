@@ -96,7 +96,7 @@ namespace Servy.Service.ProcessManagement
         /// Starts the process.
         /// </summary>
         /// <returns>
-        /// <c>true</c> if the process was successfully started; 
+        /// <c>true</c> if the process was successfully started;
         /// <c>false</c> if no new process resource is started (for example, if a process is reused).
         /// </returns>
         bool Start();
@@ -191,7 +191,7 @@ namespace Servy.Service.ProcessManagement
         /// Cancels the asynchronous read operation on the process's standard output stream.
         /// </summary>
         /// <remarks>
-        /// This should be called when the process has exited or when you no longer wish to 
+        /// This should be called when the process has exited or when you no longer wish to
         /// receive output events to free up underlying resources.
         /// </remarks>
         void CancelOutputRead();
@@ -200,7 +200,7 @@ namespace Servy.Service.ProcessManagement
         /// Cancels the asynchronous read operation on the process's standard error stream.
         /// </summary>
         /// <remarks>
-        /// This should be called when the process has exited or when you no longer wish to 
+        /// This should be called when the process has exited or when you no longer wish to
         /// receive error events to prevent resource leaks.
         /// </remarks>
         void CancelErrorRead();

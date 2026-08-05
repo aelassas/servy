@@ -501,7 +501,7 @@ namespace Servy.Service.UnitTests.Helpers
                 createdDummy = true;
             }
 
-            // Mock the process helper to return null. This guarantees we bypass the multi-minute 
+            // Mock the process helper to return null. This guarantees we bypass the multi-minute
             // constant timeout loop and safely test the start failure pathway without deleting production binaries.
             _mockProcessHelper
                 .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
@@ -828,7 +828,7 @@ namespace Servy.Service.UnitTests.Helpers
 
         private static string GetTargetRestarterDirectory()
         {
-            // ROBUSTNESS: In Release configurations, the SUT expects the restarter binary 
+            // ROBUSTNESS: In Release configurations, the SUT expects the restarter binary
             // to be located in AppConfig.ProgramDataPath. In Debug, it expects BaseDirectory.
             // We write the file directly where the compiled execution path expects it.
 #if DEBUG

@@ -4,7 +4,7 @@ namespace Servy.Core.Validation
 {
     /// <summary>
     /// Defines the contract for centralized validation logic of service configurations.
-    /// This interface ensures that service definitions meet domain requirements, 
+    /// This interface ensures that service definitions meet domain requirements,
     /// security constraints, and system-level path accessibility before persistence or deployment.
     /// </summary>
     public interface IServiceValidationRules
@@ -14,12 +14,12 @@ namespace Servy.Core.Validation
         /// </summary>
         /// <param name="dto">The service configuration data transfer object to validate. Can be null.</param>
         /// <param name="wrapperExePath">
-        /// Optional absolute path to the service wrapper executable. 
+        /// Optional absolute path to the service wrapper executable.
         /// If provided, the validator ensures the file exists on the physical disk.
         /// </param>
         /// <param name="confirmPassword">
-        /// Optional password confirmation string. If provided as a non-null string (including empty <c>""</c>), 
-        /// the validator enforces an exact match against <see cref="ServiceDto.Password"/>. Pass <c>null</c> 
+        /// Optional password confirmation string. If provided as a non-null string (including empty <c>""</c>),
+        /// the validator enforces an exact match against <see cref="ServiceDto.Password"/>. Pass <c>null</c>
         /// when invoking from contexts without a confirmation input field (e.g. CLI or background imports).
         /// </param>
         /// <param name="importMode">
@@ -27,8 +27,8 @@ namespace Servy.Core.Validation
         /// whose identity fields are reset to LocalSystem after deserialization).
         /// </param>
         /// <returns>
-        /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues). 
-        /// All structural validation failures - including string length-limit or boundary violations - are reported 
+        /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues).
+        /// All structural validation failures - including string length-limit or boundary violations - are reported
         /// as blocking errors; there is no separate warnings channel.
         /// </returns>
         /// <remarks>

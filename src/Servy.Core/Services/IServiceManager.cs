@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Servy.Core.Services
 {
     /// <summary>
-    /// Defines the contract for managing Windows services within Servy, 
+    /// Defines the contract for managing Windows services within Servy,
     /// including installation, uninstallation, starting, stopping, and restarting.
     /// Implementations handle low-level service control operations and configuration,
     /// including process monitoring, logging, and recovery options.
@@ -19,12 +19,12 @@ namespace Servy.Core.Services
     /// This interface deliberately mixes asynchronous and synchronous patterns:
     /// <list type="bullet">
     /// <item>
-    /// <description><b>Async Writes:</b> Lifecycle operations (Start, Stop, Install) are asynchronous 
+    /// <description><b>Async Writes:</b> Lifecycle operations (Start, Stop, Install) are asynchronous
     /// as they involve long-running process transitions.</description>
     /// </item>
     /// <item>
-    /// <description><b>Sync Reads:</b> State interrogation (Status, Exists) is synchronous because 
-    /// the underlying <see cref="System.ServiceProcess.ServiceController"/> and Win32 SCM APIs 
+    /// <description><b>Sync Reads:</b> State interrogation (Status, Exists) is synchronous because
+    /// the underlying <see cref="System.ServiceProcess.ServiceController"/> and Win32 SCM APIs
     /// are inherently blocking and execute quickly.</description>
     /// </item>
     /// </list>
@@ -95,7 +95,7 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The unique name of the service to interrogate.</param>
         /// <param name="cancellationToken">Optional cancellation token for the status query.</param>
         /// <returns>
-        /// A <see cref="ServiceControllerStatus"/> value representing the current status, 
+        /// A <see cref="ServiceControllerStatus"/> value representing the current status,
         /// or <c>null</c> if the service was not found or has been uninstalled.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
@@ -107,7 +107,7 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The unique internal name of the Windows service to check.</param>
         /// <param name="cancellationToken">Optional cancellation token for the installation check.</param>
         /// <returns>
-        /// <c>true</c> if a service with the specified name exists in the SCM; 
+        /// <c>true</c> if a service with the specified name exists in the SCM;
         /// otherwise, <c>false</c>.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>

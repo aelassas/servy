@@ -120,7 +120,7 @@ namespace Servy.Core.IntegrationTests.Logging
                 logger.SetLogLevel(targetLevel);
 
                 // Assert
-                // Symmetrical Verification: Extract the internal volatile tracking level state via reflection 
+                // Symmetrical Verification: Extract the internal volatile tracking level state via reflection
                 // to prove that the runtime configuration updates and filters boundaries accurately.
                 var actualLogLevelInt = TestReflection.GetField<int>(logger, "_currentLogLevel");
 
@@ -196,7 +196,7 @@ namespace Servy.Core.IntegrationTests.Logging
 
                             EventLogEntry foundEntry = null;
 
-                            // Introduce a polling loop with exponential backoff 
+                            // Introduce a polling loop with exponential backoff
                             // to account for asynchronous Event Log service disk-flushing delays
                             const int maxRetries = 10;
                             int retryCount = 0;
@@ -233,7 +233,7 @@ namespace Servy.Core.IntegrationTests.Logging
                     }
                     catch (Exception readEx) when (readEx is Win32Exception || readEx is SecurityException || readEx is UnauthorizedAccessException)
                     {
-                        // On constrained CI runners or custom event log channels, reading entries directly via EventLog.Entries 
+                        // On constrained CI runners or custom event log channels, reading entries directly via EventLog.Entries
                         // can throw Access Denied Win32Exception due to log file ACL restrictions even when write operations succeed.
                         Trace.WriteLine($"Warning: Could not read back EventLog entries due to security restrictions: {readEx.Message}");
                     }
@@ -255,7 +255,7 @@ namespace Servy.Core.IntegrationTests.Logging
             // Arrange
             if (!_isElevated) return;
 
-            // CRITICAL CONTRACT: Test the exception isolation boundaries directly on the 
+            // CRITICAL CONTRACT: Test the exception isolation boundaries directly on the
             // internal structural wrapper method by feeding it an illegal, un-creatable source layout configuration.
             string illegalLogName = "?:\x00//IllegalLogName";
             string illegalSource = "IllegalSource_\x00";
@@ -392,7 +392,7 @@ namespace Servy.Core.IntegrationTests.Logging
                 catch (Exception ex)
                 {
                     // Suppress locking errors if the EventLog service is slow to release handles during test teardown
-                    // Log the failure but don't crash the test runner. 
+                    // Log the failure but don't crash the test runner.
                     // In CI, we accept that registry cleanup might fail if the OS is busy.
                     Trace.WriteLine($"Warning: Failed to cleanup event source {source}: {ex.Message}");
                 }

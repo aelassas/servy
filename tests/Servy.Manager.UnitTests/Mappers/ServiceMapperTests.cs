@@ -74,7 +74,7 @@ namespace Servy.Manager.UnitTests.Mappers
             Assert.Null(result.CpuUsage);
             Assert.Null(result.RamUsage);
 
-            // Critical Contract Verification: Verify shallow mapping placeholder defaults are preserved 
+            // Critical Contract Verification: Verify shallow mapping placeholder defaults are preserved
             // to shield the UI synchronization thread from bulk Service Control Manager block overhead.
             Assert.Null(result.StartupType);
             Assert.Equal(ServiceStatus.None, result.Status);

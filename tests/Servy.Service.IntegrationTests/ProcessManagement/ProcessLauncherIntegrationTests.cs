@@ -149,7 +149,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             int heartbeats = 0;
 
-            // Inject a short sleep inside the command loop string to guarantee the process outlasts 
+            // Inject a short sleep inside the command loop string to guarantee the process outlasts
             // the 10ms chunk window, forcing the heartbeat callback to fire reliably.
             var options = CreateOptions(
                 "powershell.exe",
@@ -263,8 +263,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_WritersGenerationFails_CatchesExceptionAndLogsError()
         {
-            // Arrange 
-            // This format bypasses standard .NET path normalization validation 
+            // Arrange
+            // This format bypasses standard .NET path normalization validation
             // but guarantees an absolute failure when the file stream opens.
             string structuralFailurePath = @"\\?\C:\illegal|char.log";
 
@@ -283,7 +283,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     () => _logger.Errors.Any(m => m.Contains("Disabling stdout capture for")),
                     TimeSpan.FromSeconds(5));
 
-                // Assert 
+                // Assert
                 Assert.True(wrapper.HasExited);
                 Assert.True(logged, $"Expected 'Disabling stdout capture' error. Got: [{string.Join("; ", _logger.Errors)}]");
             }

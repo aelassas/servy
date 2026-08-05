@@ -27,7 +27,7 @@ namespace Servy.UI.Bootstrapping
     /// Orchestrates the application lifecycle and initialization for Servy desktop applications.
     /// </summary>
     /// <remarks>
-    /// This class centralizes shared logic for Rendering Tier detection, unhandled exception 
+    /// This class centralizes shared logic for Rendering Tier detection, unhandled exception
     /// orchestration, configuration loading via JSON, embedded resource extraction, and target app availability monitoring.
     /// </remarks>
     [ExcludeFromCodeCoverage] // This class is inherently difficult to unit test due to its tight coupling with WPF application lifecycle and static dependencies.
@@ -251,7 +251,7 @@ namespace Servy.UI.Bootstrapping
             _options.CustomConfigAction?.Invoke(config);
         }
         /// <summary>
-        /// Asynchronously initializes the application and handles any critical faults 
+        /// Asynchronously initializes the application and handles any critical faults
         /// that occur before the UI is ready.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
@@ -509,7 +509,7 @@ namespace Servy.UI.Bootstrapping
 
                     // PHASE 4: Recovery
                     // If the code reaches this point, the parent directory was renamed or deleted.
-                    // We clean up the stale watcher, force a UI update to 'False', and let the 
+                    // We clean up the stale watcher, force a UI update to 'False', and let the
                     // outer loop drop us seamlessly back into Phase 1 to wait for it to return.
                     app.Dispatcher.Invoke(() =>
                     {
@@ -545,7 +545,7 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Safely detaches event handlers and disposes of the current availability watcher to prevent 
+        /// Safely detaches event handlers and disposes of the current availability watcher to prevent
         /// memory leaks and ensure a clean state before re-attachment or shutdown.
         /// </summary>
         private void CleanupAvailabilityWatcher()
@@ -609,7 +609,7 @@ namespace Servy.UI.Bootstrapping
             }
             catch (Exception ex)
             {
-                // We use Warn here because failure to dispose at exit is rarely 
+                // We use Warn here because failure to dispose at exit is rarely
                 // fatal but should be noted for debugging resource leaks.
                 Logger.Warn($"{name} cleanup failed", ex);
             }

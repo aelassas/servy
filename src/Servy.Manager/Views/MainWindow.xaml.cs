@@ -94,7 +94,7 @@ namespace Servy.Manager.Views
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task Window_LoadedAsync(object sender, RoutedEventArgs e)
         {
-            // Trigger the global search command to populate the dashboard 
+            // Trigger the global search command to populate the dashboard
             // the moment the shell is ready for interaction.
             if (DataContext is MainViewModel vm)
             {
@@ -113,7 +113,7 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Asynchronously processes key down events for the search text box.
-        /// Executes the <see cref="MainViewModel.SearchCommand"/> specifically when the Enter key is pressed 
+        /// Executes the <see cref="MainViewModel.SearchCommand"/> specifically when the Enter key is pressed
         /// and the command is in a valid state to execute.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
@@ -121,7 +121,7 @@ namespace Servy.Manager.Views
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task SearchTextBox_KeyDownAsync(object sender, KeyEventArgs e)
         {
-            // Verify Enter key was pressed and the ViewModel is in a state where 
+            // Verify Enter key was pressed and the ViewModel is in a state where
             // a search can be safely initiated.
             if (e.Key == Key.Enter && DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
             {
@@ -227,7 +227,7 @@ namespace Servy.Manager.Views
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task Menu_ConfigClickAsync(object sender, RoutedEventArgs e)
         {
-            // Verify the ViewModel is correctly bound before attempting to 
+            // Verify the ViewModel is correctly bound before attempting to
             // launch the configuration modal or view.
             if (DataContext is MainViewModel vm)
             {
@@ -246,16 +246,16 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Asynchronously manages the lifecycle and state transitions when switching between application tabs.
-        /// Cancels background tasks or timers for inactive tabs and triggers context-specific searches or 
+        /// Cancels background tasks or timers for inactive tabs and triggers context-specific searches or
         /// data loading for the newly selected tab.
         /// </summary>
         /// <param name="sender">The <see cref="TabControl"/> that raised the event.</param>
         /// <param name="e">The <see cref="SelectionChangedEventArgs"/> instance containing event data.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>
-        /// This method ensures that high-resource operations (like real-time performance monitoring or 
-        /// log tailing) are throttled or stopped when the user navigates away from the respective tab. 
-        /// It uses the <see cref="SelectionChangedEventArgs.OriginalSource"/> check to ensure it only 
+        /// This method ensures that high-resource operations (like real-time performance monitoring or
+        /// log tailing) are throttled or stopped when the user navigates away from the respective tab.
+        /// It uses the <see cref="SelectionChangedEventArgs.OriginalSource"/> check to ensure it only
         /// reacts to the main TabControl and not nested elements.
         /// </remarks>
         private async Task MainTabControl_SelectionChangedAsync(object sender, SelectionChangedEventArgs e)
@@ -301,7 +301,7 @@ namespace Servy.Manager.Views
         /// Retrieves the <see cref="PerformanceViewModel"/> instance bound to the <see cref="PerformanceTab"/> content, if available.
         /// </summary>
         /// <returns>
-        /// The <see cref="PerformanceViewModel"/> instance if the <see cref="PerformanceTab"/> has content and its DataContext 
+        /// The <see cref="PerformanceViewModel"/> instance if the <see cref="PerformanceTab"/> has content and its DataContext
         /// is a <see cref="PerformanceViewModel"/>; otherwise, <c>null</c>.
         /// </returns>
         private PerformanceViewModel GetPerformanceVm()
@@ -320,7 +320,7 @@ namespace Servy.Manager.Views
         /// Retrieves the <see cref="DependenciesViewModel"/> instance bound to the <see cref="DependenciesTab"/> content, if available.
         /// </summary>
         /// <returns>
-        /// The <see cref="DependenciesViewModel"/> instance if the <see cref="DependenciesTab"/> has content and its DataContext 
+        /// The <see cref="DependenciesViewModel"/> instance if the <see cref="DependenciesTab"/> has content and its DataContext
         /// is a <see cref="DependenciesViewModel"/>; otherwise, <c>null</c>.
         /// </returns>
         private DependenciesViewModel GetDependenciesVm()
@@ -330,14 +330,14 @@ namespace Servy.Manager.Views
         /// Retrieves the <see cref="LogsViewModel"/> instance bound to the <see cref="LogsTab"/> content, if available.
         /// </summary>
         /// <returns>
-        /// The <see cref="LogsViewModel"/> instance if the <see cref="LogsTab"/> has content and its DataContext 
+        /// The <see cref="LogsViewModel"/> instance if the <see cref="LogsTab"/> has content and its DataContext
         /// is a <see cref="LogsViewModel"/>; otherwise, <c>null</c>.
         /// </returns>
         private LogsViewModel GetLogsVm()
             => LogsTab.Content is LogsView logsView ? logsView.DataContext as LogsViewModel : null;
 
         /// <summary>
-        /// Centralized teardown utility that deactivates background monitoring, timers, and searches 
+        /// Centralized teardown utility that deactivates background monitoring, timers, and searches
         /// across all tabs except for the explicitly specified active scope.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
@@ -377,7 +377,7 @@ namespace Servy.Manager.Views
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
         /// <param name="perfVm">
         /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
-        /// </param> 
+        /// </param>
         private Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel perfVm)
         {
             DeactivateAllExcept(vm, TabScope.Performance);
@@ -612,14 +612,14 @@ namespace Servy.Manager.Views
         /// <param name="callerName">The automatically captured member name of the calling UI event handler, used for context-aware error logging.</param>
         /// <remarks>
         /// <para>
-        /// This method returns <see cref="Task"/> but is invoked as fire-and-forget via 
-        /// <c>_ = RunAsync(...)</c> from synchronous UI event handlers. Because the 
-        /// returned task is discarded, exceptions would otherwise be observed only on 
-        /// finalizer/GC. The top-level try-catch inside <see cref="UiTaskRunner"/> ensures all failures are recorded by 
+        /// This method returns <see cref="Task"/> but is invoked as fire-and-forget via
+        /// <c>_ = RunAsync(...)</c> from synchronous UI event handlers. Because the
+        /// returned task is discarded, exceptions would otherwise be observed only on
+        /// finalizer/GC. The top-level try-catch inside <see cref="UiTaskRunner"/> ensures all failures are recorded by
         /// the <see cref="Logger"/> instead.
         /// </para>
         /// <para>
-        /// <b>Note:</b> Use this only for top-level event handlers where the caller does not 
+        /// <b>Note:</b> Use this only for top-level event handlers where the caller does not
         /// need to know when the operation completes.
         /// </para>
         /// </remarks>

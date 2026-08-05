@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace Servy.Manager.Converters
 {
     /// <summary>
-    /// Converts between <see cref="ServiceStatus"/> values and their localized string 
+    /// Converts between <see cref="ServiceStatus"/> values and their localized string
     /// representations defined in <see cref="Strings.resx"/>.
     /// </summary>
     public class StatusConverter : EnumLocalizedConverter<ServiceStatus>
@@ -38,7 +38,7 @@ namespace Servy.Manager.Converters
         /// <returns>The string representation or an empty string indicator.</returns>
         protected override string GetFallbackValue(object value)
         {
-            // Return the raw value or empty string to surface binding errors 
+            // Return the raw value or empty string to surface binding errors
             // rather than masquerading as 'Not Installed'.
             return value?.ToString() ?? string.Empty;
         }

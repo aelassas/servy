@@ -49,7 +49,7 @@ namespace Servy.CLI.Helpers
         }
 
         /// <summary>
-        /// Prints the message from a <see cref="CommandResult"/> to the console 
+        /// Prints the message from a <see cref="CommandResult"/> to the console
         /// and returns its defined exit code.
         /// </summary>
         /// <param name="result">The command result to process.</param>
@@ -86,7 +86,7 @@ namespace Servy.CLI.Helpers
         /// containing the exit code defined in the resulting <see cref="CommandResult"/>.
         /// </returns>
         /// <remarks>
-        /// Respects <see cref="CommandResult.ExitCode"/> and skips printing for null 
+        /// Respects <see cref="CommandResult.ExitCode"/> and skips printing for null
         /// or whitespace messages, matching the sync variant.
         /// </remarks>
         public static async Task<int> PrintAndReturnAsync(Task<CommandResult> task)

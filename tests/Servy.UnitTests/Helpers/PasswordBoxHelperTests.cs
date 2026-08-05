@@ -32,7 +32,7 @@ namespace Servy.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the branch where OnBoundPasswordChanged is called on a dependency 
+        /// Covers the branch where OnBoundPasswordChanged is called on a dependency
         /// object that is NOT a PasswordBox (should fail gracefully and do nothing).
         /// </summary>
         [Fact]
@@ -54,7 +54,7 @@ namespace Servy.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the branch where a ViewModel update pushes down a new password 
+        /// Covers the branch where a ViewModel update pushes down a new password
         /// while IsUpdating is false.
         /// </summary>
         [Fact]
@@ -75,7 +75,7 @@ namespace Servy.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the internal feedback-loop branch: when IsUpdating is true, 
+        /// Covers the internal feedback-loop branch: when IsUpdating is true,
         /// changes to BoundPasswordProperty must NOT alter the PasswordBox.Password property.
         /// </summary>
         [Fact]
@@ -101,7 +101,7 @@ namespace Servy.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the PasswordBox_PasswordChanged event branch where user input updates the control password, 
+        /// Covers the PasswordBox_PasswordChanged event branch where user input updates the control password,
         /// which correctly syncs the value back up to the attached property.
         /// </summary>
         [Fact]
@@ -126,7 +126,7 @@ namespace Servy.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the binding infrastructure branch where an active BindingExpression 
+        /// Covers the binding infrastructure branch where an active BindingExpression
         /// is evaluated and forced to execute an immediate UpdateSource().
         /// </summary>
         [Fact]

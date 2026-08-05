@@ -84,4 +84,4 @@ If you have suggestions, issues, or would like to contribute, feel free to [open
 
 ## License
 
-Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
+Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for third-party software notices and licenses.

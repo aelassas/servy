@@ -54,8 +54,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing parameters via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.ProcessParametersEnvVarName"/> environment 
+        /// Passing parameters via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.ProcessParametersEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -259,8 +259,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing parameters via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.FailureProgramParametersEnvVarName"/> environment 
+        /// Passing parameters via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.FailureProgramParametersEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -272,8 +272,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing environment variables via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.EnvironmentVariablesEnvVarName"/> environment 
+        /// Passing environment variables via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.EnvironmentVariablesEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -305,8 +305,8 @@ namespace Servy.CLI.Options
         /// Gets or sets the Windows service account password.
         /// </summary>
         /// <remarks>
-        /// Passing passwords via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.PasswordEnvVarName"/> environment 
+        /// Passing passwords via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.PasswordEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -332,8 +332,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing parameters via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.PreLaunchParametersEnvVarName"/> environment 
+        /// Passing parameters via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.PreLaunchParametersEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -345,8 +345,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing environment variables via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.PreLaunchEnvironmentVariablesEnvVarName"/> environment 
+        /// Passing environment variables via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.PreLaunchEnvironmentVariablesEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -408,8 +408,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing parameters via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.PostLaunchParametersEnvVarName"/> environment 
+        /// Passing parameters via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.PostLaunchParametersEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -418,7 +418,7 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets a value indicating whether debug logs are enabled.
-        /// When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. 
+        /// When enabled, environment variables and process parameters are recorded in the Servy.Service.log file.
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
         [Option("debug", HelpText = "Whether debug logs are enabled. When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.")]
@@ -459,8 +459,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing parameters via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.PreStopParametersEnvVarName"/> environment 
+        /// Passing parameters via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.PreStopParametersEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]
@@ -500,8 +500,8 @@ namespace Servy.CLI.Options
         /// Optional.
         /// </summary>
         /// <remarks>
-        /// Passing parameters via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the <see cref="AppConfig.PostStopParametersEnvVarName"/> environment 
+        /// Passing parameters via CLI flags is insecure as they are visible
+        /// in process listings and shell history. Use the <see cref="AppConfig.PostStopParametersEnvVarName"/> environment
         /// variable instead.
         /// </remarks>
         [Sensitive]

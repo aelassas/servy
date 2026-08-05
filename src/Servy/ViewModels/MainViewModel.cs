@@ -77,7 +77,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the name of the Windows service. 
+        /// Gets or sets the name of the Windows service.
         /// </summary>
         public string ServiceName
         {
@@ -86,7 +86,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the display name of the Windows service. 
+        /// Gets or sets the display name of the Windows service.
         /// </summary>
         public string ServiceDisplayName
         {
@@ -303,9 +303,9 @@ namespace Servy.ViewModels
         /// Gets or sets a value indicating whether log rotation should follow the local system time.
         /// </summary>
         /// <value>
-        /// <para>When <c>true</c>, logs rotate at local midnight (e.g., 00:00:00 according to the taskbar clock). 
+        /// <para>When <c>true</c>, logs rotate at local midnight (e.g., 00:00:00 according to the taskbar clock).
         /// This is generally more intuitive for users manually inspecting log files.</para>
-        /// <para>When <c>false</c>, logs rotate at UTC midnight. This provides a consistent 24-hour cycle 
+        /// <para>When <c>false</c>, logs rotate at UTC midnight. This provides a consistent 24-hour cycle
         /// that is unaffected by Daylight Saving Time transitions.</para>
         /// <para>This property updates the underlying configuration and notifies the UI of the change.</para>
         /// </value>
@@ -1025,7 +1025,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Compares the current property value with a new value. If they are different, updates 
+        /// Compares the current property value with a new value. If they are different, updates
         /// the property and raises the <see cref="PropertyChanged"/> event.
         /// </summary>
         /// <typeparam name="T">The type of the property.</typeparam>
@@ -1053,8 +1053,8 @@ namespace Servy.ViewModels
         /// <param name="dialogAction">A function that invokes the specific <see cref="IFileDialogService"/> method (e.g., OpenExecutable or OpenFolder).</param>
         /// <param name="propertySetter">An action that assigns the returned string to the target ViewModel property.</param>
         /// <remarks>
-        /// This helper encapsulates the common pattern of checking for null or empty strings 
-        /// before updating configuration properties, ensuring that user cancellation of a dialog 
+        /// This helper encapsulates the common pattern of checking for null or empty strings
+        /// before updating configuration properties, ensuring that user cancellation of a dialog
         /// does not overwrite existing valid paths.
         /// </remarks>
         private void BrowseAndAssign(Func<string, string> dialogAction, Action<string> propertySetter)
@@ -1414,9 +1414,9 @@ namespace Servy.ViewModels
         /// <param name="dto">The <see cref="ServiceDto"/> object containing the service configuration data to bind.</param>
         /// <remarks>
         /// This method maps all DTO fields to the corresponding ViewModel properties.
-        /// Some fields (such as environment variables and dependencies) are transformed into 
+        /// Some fields (such as environment variables and dependencies) are transformed into
         /// display-friendly formats using <c>FormatEnvironmentVariables</c> and <c>FormatServiceDependencies</c>.
-        /// 
+        ///
         /// For security purposes, only <see cref="Password"/> is restored from the DTO.
         /// <see cref="ConfirmPassword"/> is intentionally cleared so that any subsequent
         /// save action requires the user to re-type and re-confirm the password.
@@ -1497,7 +1497,7 @@ namespace Servy.ViewModels
         /// </returns>
         /// <remarks>
         /// This method performs the inverse operation of <see cref="BindServiceDtoToModel(ServiceDto)"/>.
-        /// It maps all ViewModel properties back into the DTO, utilizing <see cref="ConfigParser.ParseInt"/> 
+        /// It maps all ViewModel properties back into the DTO, utilizing <see cref="ConfigParser.ParseInt"/>
         /// to ensure malformed numeric inputs are logged as warnings before applying defaults.
         /// </remarks>
         public ServiceDto ModelToServiceDto()

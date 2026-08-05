@@ -18,7 +18,7 @@ using Xunit;
 namespace Servy.Testing
 {
     /// <summary>
-    /// Provides cross-cutting infrastructure utilities for the testing suite, 
+    /// Provides cross-cutting infrastructure utilities for the testing suite,
     /// including resource management, STA-thread execution scaffolding, and environment privilege validation.
     /// </summary>
     public static class Helper
@@ -64,7 +64,7 @@ namespace Servy.Testing
                     {
                         // Fallback: search by suffix matching if assembly namespace configurations shift dynamically
                         var actualName = assembly.GetManifestResourceNames()
-                            .FirstOrDefault(n => n.EndsWith(targetFileName, StringComparison.OrdinalIgnoreCase));   
+                            .FirstOrDefault(n => n.EndsWith(targetFileName, StringComparison.OrdinalIgnoreCase));
 
                         if (actualName == null)
                             throw new FileNotFoundException($"Embedded resource metadata mapping for '{targetFileName}' was not found in the manifest layout.");
@@ -76,7 +76,7 @@ namespace Servy.Testing
                     }
                     else
                     {
-                        // Primary target branch is now successfully executed and covered   
+                        // Primary target branch is now successfully executed and covered
                         WriteResourceToDisk(resourceStream);
                     }
                 }
@@ -88,8 +88,8 @@ namespace Servy.Testing
         /// </summary>
         /// <param name="stream">The embedded resource data stream to extract. If null, the operation returns immediately.</param>
         /// <remarks>
-        /// This method enforces pessimistic file existence checks and leverages atomic publishing via a temporary 
-        /// intermediate file to safely navigate file-locking races caused by real-time background scanners, 
+        /// This method enforces pessimistic file existence checks and leverages atomic publishing via a temporary
+        /// intermediate file to safely navigate file-locking races caused by real-time background scanners,
         /// security software, or parallel test execution threads on continuous integration (CI) agents.
         /// </remarks>
         private static void WriteResourceToDisk(Stream stream)
@@ -102,7 +102,7 @@ namespace Servy.Testing
                 // Only write when it is not physically there; a lost race surfaces as ERROR_FILE_EXISTS below.
                 if (File.Exists(HandleExePath)) return;
 
-                // Write to a temporary file first to guarantee atomic publishing and prevent 
+                // Write to a temporary file first to guarantee atomic publishing and prevent
                 // corrupted/truncated binary execution if a run is aborted mid-write.
                 string tempPath = $"{HandleExePath}.{Guid.NewGuid():N}.tmp";
 
@@ -127,7 +127,7 @@ namespace Servy.Testing
                     throw;
                 }
             }
-            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS: another runner published it first  
+            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS: another runner published it first
             {
                 // Lost the publish race - the file is there, which is the outcome we wanted.
             }
@@ -160,8 +160,8 @@ namespace Servy.Testing
         /// STA-thread-bound UI components, converters, or resource dictionaries during testing.
         /// </summary>
         /// <remarks>
-        /// This method instantiates the shared WPF <see cref="Application"/> on a dedicated, persistent 
-        /// background STA thread with an active <see cref="Dispatcher"/> pump. This prevents dead-dispatcher 
+        /// This method instantiates the shared WPF <see cref="Application"/> on a dedicated, persistent
+        /// background STA thread with an active <see cref="Dispatcher"/> pump. This prevents dead-dispatcher
         /// affinity issues when multiple isolated test runs execute across transient STA threads.
         /// </remarks>
         public static Application EnsureApplication()
@@ -178,7 +178,7 @@ namespace Servy.Testing
 
                             _persistentAppThread = new Thread(() =>
                             {
-                                // Explicitly force OnExplicitShutdown process-wide lifecycle behavior 
+                                // Explicitly force OnExplicitShutdown process-wide lifecycle behavior
                                 // to prevent transient test window closures from tearing down the shared test host.
                                 _ = new Application
                                 {
@@ -272,7 +272,7 @@ namespace Servy.Testing
                     var dispatcher = Dispatcher.CurrentDispatcher;
 
                     // Queue the test execution onto the STA thread's dispatcher.
-                    // This guarantees that Dispatcher.CurrentDispatcher inside the test 
+                    // This guarantees that Dispatcher.CurrentDispatcher inside the test
                     // resolves to THIS dispatcher, which has an active message pump.
                     dispatcher.InvokeAsync(async () =>
                     {
@@ -325,7 +325,7 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Proactively probes the system's LSA policy subsystem to determine if the current runner 
+        /// Proactively probes the system's LSA policy subsystem to determine if the current runner
         /// process has sufficient security tokens to perform policy-level operations.
         /// </summary>
         /// <returns>True if the process can open LSA policy with lookup permissions; otherwise, false.</returns>
@@ -408,7 +408,7 @@ namespace Servy.Testing
 
         /// <summary>
         /// Creates an NTFS file symbolic link pointing to a canonical reference target configuration.
-        /// File-level symbolic links typically require elevated execution tokens (Administrative privileges) 
+        /// File-level symbolic links typically require elevated execution tokens (Administrative privileges)
         /// or an active global Windows configuration enabling Developer Mode.
         /// </summary>
         /// <param name="symlinkFilePath">The target destination path where the new file symbolic link item will materialize.</param>
@@ -436,7 +436,7 @@ namespace Servy.Testing
 
                 if (process.ExitCode != 0)
                 {
-                    // If it fails because of permissions (common on non-admin environments), 
+                    // If it fails because of permissions (common on non-admin environments),
                     // throw a specific exception we can handle or skip gracefully in the unit test.
                     throw new UnauthorizedAccessException($"mklink failed with exit code {process.ExitCode}. This usually indicates the process lacks administrative privileges or Developer Mode is disabled.");
                 }

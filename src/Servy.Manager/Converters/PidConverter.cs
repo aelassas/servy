@@ -6,7 +6,7 @@ using System.Windows.Data;
 namespace Servy.Manager.Converters
 {
     /// <summary>
-    /// Converts a Process ID (PID) numerical value into a display-friendly string. 
+    /// Converts a Process ID (PID) numerical value into a display-friendly string.
     /// Handles null values by returning a predefined placeholder constant.
     /// </summary>
     public class PidConverter : IValueConverter

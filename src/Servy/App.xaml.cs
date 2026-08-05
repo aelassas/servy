@@ -127,8 +127,8 @@ namespace Servy
         /// Initializes a new instance of the <see cref="App"/> class.
         /// </summary>
         /// <remarks>
-        /// This constructor configures the <see cref="BootstrapperOptions"/> required for the shared 
-        /// <see cref="AppBootstrapper"/>. It sets up project-specific paths, localized strings, 
+        /// This constructor configures the <see cref="BootstrapperOptions"/> required for the shared
+        /// <see cref="AppBootstrapper"/>. It sets up project-specific paths, localized strings,
         /// and the factories responsible for instantiating the UI components and custom configuration logic.
         /// </remarks>
         public App()
@@ -249,7 +249,7 @@ namespace Servy
 
         /// <summary>
         /// Called when the WPF application starts.
-        /// Loads configuration settings, initializes the database, and fire-and-forgets 
+        /// Loads configuration settings, initializes the database, and fire-and-forgets
         /// the asynchronous application initialization.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
@@ -274,7 +274,7 @@ namespace Servy
             _ = _bootstrapper.StartAvailabilityMonitorAsync(ManagerAppPublishPath, isAvailable => IsManagerAppAvailable = isAvailable, this);
 
             // 3. Fire-and-forget initialization
-            // Use a dedicated async method instead of a chained ContinueWith 
+            // Use a dedicated async method instead of a chained ContinueWith
             // to ensure the startup lifecycle and any faults are correctly observed.
             _ = _bootstrapper.InitializeAppWithFaultHandlingAsync(this, e, Config.UiAppConfig.Caption);
         }
@@ -285,8 +285,8 @@ namespace Servy
         /// </summary>
         /// <param name="e">An <see cref="ExitEventArgs"/> that contains the event data.</param>
         /// <remarks>
-        /// This override ensures that <see cref="SecureData"/> (which may hold sensitive cryptographic 
-        /// material or file handles for AES keys) is explicitly disposed of, following the 
+        /// This override ensures that <see cref="SecureData"/> (which may hold sensitive cryptographic
+        /// material or file handles for AES keys) is explicitly disposed of, following the
         /// deterministic disposal pattern before the process exits.
         /// </remarks>
         protected override void OnExit(ExitEventArgs e)

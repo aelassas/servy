@@ -59,10 +59,10 @@ namespace Servy.Core.Data
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method iterates through the collection and executes individual upsert commands. 
+        /// This method iterates through the collection and executes individual upsert commands.
         /// </para>
         /// <para>
-        /// After the database write, the method attempts to synchronize the auto-incremented 
+        /// After the database write, the method attempts to synchronize the auto-incremented
         /// IDs back to the original <see cref="ServiceDto"/> objects in chunks.
         /// </para>
         /// </remarks>
@@ -125,12 +125,12 @@ namespace Servy.Core.Data
         /// <param name="name">The unique name of the service to query.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>
-        /// A <see cref="ServiceConsoleStateDto"/> containing the PID and active log paths; 
+        /// A <see cref="ServiceConsoleStateDto"/> containing the PID and active log paths;
         /// or <see langword="null"/> if the service is not found.
         /// </returns>
         /// <remarks>
         /// This method is optimized for high-frequency UI polling (e.g., in the Console tab).
-        /// It fetches only the columns necessary to determine if a service has restarted 
+        /// It fetches only the columns necessary to determine if a service has restarted
         /// or changed its active log targets, minimizing database I/O and memory allocations.
         /// </remarks>
         Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string name, CancellationToken cancellationToken = default);

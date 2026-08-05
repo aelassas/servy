@@ -49,7 +49,7 @@ namespace Servy.Core.Logging
         private static bool _useLocalTimeForRotation;
 
         /// <summary>
-        /// The maximum number of backup log files to keep. 
+        /// The maximum number of backup log files to keep.
         /// Set to 0 to allow an unlimited number of backup files.
         /// </summary>
         private static int _maxBackupLogFiles = AppConfig.LoggerDefaultMaxBackupLogFiles;
@@ -74,14 +74,14 @@ namespace Servy.Core.Logging
         };
 
         /// <summary>
-        /// Initializes the logger with a specific file name and sets up the rotating stream. 
+        /// Initializes the logger with a specific file name and sets up the rotating stream.
         /// This should be called once at the beginning of the application lifecycle.
         /// </summary>
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
         /// <param name="logLevel">The starting log level. Defaults to <see cref="LogLevel.Info"/>.</param>
         /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation. Defaults to 10MB.</param>
         /// <param name="dateRotationType">
-        /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation. 
+        /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation.
         /// Defaults to <see cref="DateRotationType.None"/>.
         /// </param>
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
@@ -107,19 +107,19 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This method is thread-safe and can be called at runtime to reconfigure logging parameters. 
-        /// If an active log writer already exists, or if a filename was previously established, it is automatically 
+        /// This method is thread-safe and can be called at runtime to reconfigure logging parameters.
+        /// If an active log writer already exists, or if a filename was previously established, it is automatically
         /// reinitialized to immediately apply the new rotation and retention settings.
         /// </para>
         /// <para>
-        /// Settings established here govern the behavior of the <c>InternalInitialize</c> process, which 
+        /// Settings established here govern the behavior of the <c>InternalInitialize</c> process, which
         /// manages the physical file handles and archive logic for the <see cref="Servy.Service"/>.
         /// </para>
         /// </remarks>
         /// <param name="logLevel">The minimum severity level required for an entry to be recorded. Defaults to <see cref="LogLevel.Info"/>.</param>
         /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation occurs. Defaults to 10MB.</param>
         /// <param name="dateRotationType">
-        /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation. 
+        /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation.
         /// Defaults to <see cref="DateRotationType.None"/>.
         /// </param>
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
@@ -168,7 +168,7 @@ namespace Servy.Core.Logging
                 long rotationSizeInBytes = AppConfig.ToBytes(_logRotationSizeMB);
 
                 // ROBUSTNESS: Instantiate the new stream writer in local space first.
-                // This keeps the old writer online and fully serviceable for incoming logs 
+                // This keeps the old writer online and fully serviceable for incoming logs
                 // until the new resource is ready, eliminating the volatile null race window.
                 var newWriter = new RotatingStreamWriter(
                     path: logPath,
@@ -180,7 +180,7 @@ namespace Servy.Core.Logging
                     useLocalTimeForRotation: _useLocalTimeForRotation
                 );
 
-                // ATOMIC SWAP: Capture the old writer context under lock, swap references, 
+                // ATOMIC SWAP: Capture the old writer context under lock, swap references,
                 // and then cleanly tear down the legacy handle.
                 var oldWriter = _writer;
                 _writer = newWriter;
@@ -279,27 +279,27 @@ namespace Servy.Core.Logging
         /// Updates the time context used for log rotation calculations at runtime.
         /// </summary>
         /// <param name="useLocalTimeForRotation">
-        /// <c>true</c> to rotate logs based on the server's local system time; 
+        /// <c>true</c> to rotate logs based on the server's local system time;
         /// <c>false</c> to use Coordinated Universal Time (UTC).
         /// </param>
         /// <remarks>
         /// <para>
-        /// Changing this value at runtime triggers a thread-safe update. If a log writer is currently 
-        /// active, it will be re-initialized to ensure subsequent rotation checks immediately 
+        /// Changing this value at runtime triggers a thread-safe update. If a log writer is currently
+        /// active, it will be re-initialized to ensure subsequent rotation checks immediately
         /// respect the new time context.
         /// </para>
         /// <para>
-        /// Note: Transitioning from UTC to Local (or vice versa) while a log file is open may result 
-        /// in a one-time rotation delay or premature rotation if the offset between the two time 
+        /// Note: Transitioning from UTC to Local (or vice versa) while a log file is open may result
+        /// in a one-time rotation delay or premature rotation if the offset between the two time
         /// standards crosses a rotation boundary (e.g., midnight).
         /// </para>
         /// <para>
-        /// <b>Architectural Warning:</b> This configuration couples two distinct behavioral domains: log file rotation policy 
-        /// and log line token rendering. Modifying this setting dynamically at runtime will instantly alter the time-base format 
-        /// of all subsequent entries appended to active logs. 
+        /// <b>Architectural Warning:</b> This configuration couples two distinct behavioral domains: log file rotation policy
+        /// and log line token rendering. Modifying this setting dynamically at runtime will instantly alter the time-base format
+        /// of all subsequent entries appended to active logs.
         /// </para>
         /// <para>
-        /// This format drift can negatively affect downstream log indexers, automated SIEM regex ingestion rules, and forensic 
+        /// This format drift can negatively affect downstream log indexers, automated SIEM regex ingestion rules, and forensic
         /// timeline reconstruction when troubleshooting across different infrastructure nodes.
         /// </para>
         /// </remarks>
@@ -321,7 +321,7 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Sets the minimum log level to be recorded. 
+        /// Sets the minimum log level to be recorded.
         /// Messages below this level will be ignored.
         /// </summary>
         /// <param name="level">The new <see cref="LogLevel"/>.</param>
@@ -350,11 +350,11 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional exception to include in the log entry. If provided, the exception is formatted and appended to the message.</param>
         /// <remarks>
         /// <para>
-        /// This method checks the current <see cref="LogLevel"/> before proceeding. The log is only written 
+        /// This method checks the current <see cref="LogLevel"/> before proceeding. The log is only written
         /// if the system is configured for <see cref="LogLevel.Info"/> or more verbose output.
         /// </para>
         /// <para>
-        /// When an exception is provided, it is processed via <c>FormatException</c> and appended to the 
+        /// When an exception is provided, it is processed via <c>FormatException</c> and appended to the
         /// message using the format: <c>{message} | Exception: {formattedException}</c>.
         /// </para>
         /// </remarks>
@@ -364,7 +364,7 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Logs a message at the WARN level. 
+        /// Logs a message at the WARN level.
         /// Use this for non-critical issues or unexpected states that do not halt execution.
         /// </summary>
         /// <param name="message">The warning message to log.</param>
@@ -587,7 +587,7 @@ namespace Servy.Core.Logging
                     sb.Length = target;
                     sb.Append(truncMarker);
 
-                    // Process until depth reaches 1 to explicitly close all outstanding open contexts 
+                    // Process until depth reaches 1 to explicitly close all outstanding open contexts
                     // and guarantee log scannability/regex parser safety during truncation events.
                     while (currentStructuralDepth > 1)
                     {
@@ -597,7 +597,7 @@ namespace Servy.Core.Logging
                     return sb.ToString();
                 }
 
-                // Push child exceptions onto the execution stack in reverse order to preserve 
+                // Push child exceptions onto the execution stack in reverse order to preserve
                 // canonical chronological sequence (Left-to-Right evaluation) during Pop phases.
                 if (current is AggregateException agg)
                 {
@@ -639,8 +639,8 @@ namespace Servy.Core.Logging
         /// Generates a standardized timestamp prefix for log entries based on the current rotation configuration.
         /// </summary>
         /// <remarks>
-        /// The prefix format is <c>[yyyy-MM-dd HH:mm:ss.fff{tz}]</c>. 
-        /// If <see cref="_useLocalTimeForRotation"/> is true, the local timezone offset is appended; 
+        /// The prefix format is <c>[yyyy-MM-dd HH:mm:ss.fff{tz}]</c>.
+        /// If <see cref="_useLocalTimeForRotation"/> is true, the local timezone offset is appended;
         /// otherwise, the UTC "Z" marker is used.
         /// </remarks>
         /// <returns>A formatted string containing the current high-precision timestamp and timezone indicator.</returns>

@@ -59,7 +59,7 @@
         public PathSecurityFailureKind FailureKind { get; }
 
         /// <summary>
-        /// Gets the validated path token containing the verified path string. 
+        /// Gets the validated path token containing the verified path string.
         /// Guaranteed to be non-null when <see cref="IsValid"/> is <c>true</c>; otherwise, <c>null</c>.
         /// </summary>
         public ValidatedPath ValidPath { get; }

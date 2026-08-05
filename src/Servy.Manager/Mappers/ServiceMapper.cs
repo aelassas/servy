@@ -18,12 +18,12 @@ namespace Servy.Manager.Mappers
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Performance Note:</b> This method performs a shallow mapping of static metadata only. 
-        /// Volatile OS-level states (Status, IsInstalled, StartupType) are initialized to placeholder 
+        /// <b>Performance Note:</b> This method performs a shallow mapping of static metadata only.
+        /// Volatile OS-level states (Status, IsInstalled, StartupType) are initialized to placeholder
         /// defaults to prevent blocking the UI thread with SCM queries during bulk mapping.
         /// </para>
         /// <para>
-        /// These "Pending" values are expected to be reconciled by the background 
+        /// These "Pending" values are expected to be reconciled by the background
         /// monitoring loop immediately following the initial load.
         /// </para>
         /// </remarks>
@@ -81,7 +81,7 @@ namespace Servy.Manager.Mappers
         /// </returns>
         /// <remarks>
         /// This method facilitates the mapping between UI/DTO service items and the WPF Service UI model.
-        /// It includes polymorphic handling: if the input is a <see cref="ConsoleService"/>, the 
+        /// It includes polymorphic handling: if the input is a <see cref="ConsoleService"/>, the
         /// <c>StdoutPath</c> and <c>StderrPath</c> properties are also preserved in the resulting model.
         /// </remarks>
         public static Service ToModel(ServiceItemBase item)

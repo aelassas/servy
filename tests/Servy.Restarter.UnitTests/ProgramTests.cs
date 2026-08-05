@@ -124,7 +124,7 @@ namespace Servy.Restarter.UnitTests
                 Program.Main(args);
 
                 // Assert
-                // The application successfully bypassed the corrupted token string and fell back 
+                // The application successfully bypassed the corrupted token string and fell back
                 // to standard timeout bounds. Because the service does not actually exist in the SCM,
                 // it detects ServiceNotFound, logs a warning, and sets ExitCode = 1.
                 Assert.Equal(1, Environment.ExitCode);
@@ -132,7 +132,7 @@ namespace Servy.Restarter.UnitTests
             }
             finally
             {
-                // Clean up the seeded service entry from the shared database context to prevent 
+                // Clean up the seeded service entry from the shared database context to prevent
                 // side-effects or collision state leaks on subsequent unit test runs.
                 using (var connection = new SQLiteConnection(connString))
                 {

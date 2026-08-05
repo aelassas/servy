@@ -39,7 +39,7 @@ namespace Servy.Core.DTOs
         /// The <b>Display Name</b> of the service, shown in the Windows Services management console (<c>services.msc</c>).
         /// </summary>
         /// <remarks>
-        /// This name is human-readable, often includes prefixes for grouping, and can be changed 
+        /// This name is human-readable, often includes prefixes for grouping, and can be changed
         /// after the service has been installed.
         /// </remarks>
         [SqlColumn("TEXT")]
@@ -132,7 +132,7 @@ namespace Servy.Core.DTOs
         public int? DateRotationType { get; set; }
 
         /// <summary>
-        /// Maximum number of rotated log files to keep. 
+        /// Maximum number of rotated log files to keep.
         /// Set to 0 for unlimited.
         /// </summary>
         [SqlColumn("INTEGER")]
@@ -143,9 +143,9 @@ namespace Servy.Core.DTOs
         /// </summary>
         /// <remarks>
         /// <para>Default is <c>false</c> (UTC).</para>
-        /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight). 
+        /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight).
         /// This is often preferred for manual log inspection but can be affected by Daylight Saving Time transitions.</para>
-        /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC). 
+        /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC).
         /// This ensures a consistent, 24-hour rotation interval regardless of time zone or DST changes.</para>
         /// </remarks>
         [SqlColumn("INTEGER")]
@@ -306,7 +306,7 @@ namespace Servy.Core.DTOs
         /// Maximum time in seconds to wait for the pre-launch executable to complete.
         /// </summary>
         /// <value>
-        /// The default is synchronous execution. Set to 0 to execute the pre-launch hook 
+        /// The default is synchronous execution. Set to 0 to execute the pre-launch hook
         /// asynchronously (fire-and-forget), which disables logging and retry support for the hook.
         /// </value>
         [SqlColumn("INTEGER")]
@@ -328,7 +328,7 @@ namespace Servy.Core.DTOs
         /// Optional path to an executable that runs after the service starts.
         /// </summary>
         /// <remarks>
-        /// Post-launch hooks always run asynchronously and do not support supervisor features 
+        /// Post-launch hooks always run asynchronously and do not support supervisor features
         /// (stdout capture, timeouts, or retries).
         /// </remarks>
         [ServicePath("post-launch executable path", isFile: true, errorResourceKey: nameof(Strings.Msg_InvalidPostLaunchPath))]
@@ -457,12 +457,12 @@ namespace Servy.Core.DTOs
         /// <returns>A new <see cref="ServiceDto"/> object with copied property values.</returns>
         /// <remarks>
         /// <para>
-        /// This method uses <c>MemberwiseClone</c> to perform a bitwise copy of the object's fields. 
-        /// For value types and strings, this effectively creates a copy of the data. 
+        /// This method uses <c>MemberwiseClone</c> to perform a bitwise copy of the object's fields.
+        /// For value types and strings, this effectively creates a copy of the data.
         /// </para>
         /// <para>
-        /// <b>Note:</b> If this DTO is expanded to include mutable reference types (like Lists or Classes), 
-        /// those objects will not be deeply cloned; the reference itself will be copied, leading 
+        /// <b>Note:</b> If this DTO is expanded to include mutable reference types (like Lists or Classes),
+        /// those objects will not be deeply cloned; the reference itself will be copied, leading
         /// to shared state between the original and the clone.
         /// </para>
         /// </remarks>

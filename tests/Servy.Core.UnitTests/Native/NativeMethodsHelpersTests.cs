@@ -104,15 +104,15 @@ namespace Servy.Core.UnitTests.Native
         public void ValidateCredentials_ValidLocalAccount_BadPassword_ThrowsException()
         {
             // Arrange
-            // ENVIRONMENT DEPENDENCY NOTE: Environment.UserName maps to the current executing identity. 
-            // If the host is domain-joined or running under a built-in system service account, resolving this 
-            // as a local machine account via '.\' can trigger translation or password-guard failures before 
+            // ENVIRONMENT DEPENDENCY NOTE: Environment.UserName maps to the current executing identity.
+            // If the host is domain-joined or running under a built-in system service account, resolving this
+            // as a local machine account via '.\' can trigger translation or password-guard failures before
             // LogonUser is reached. We capture any downstream structural failure context below.
             string currentUser = $".\\{Environment.UserName}";
             string badPassword = Guid.NewGuid().ToString(); // Guaranteed to be wrong
 
             // Act & Assert
-            // Depending on host configuration (Workstation vs. Domain vs. SYSTEM), this call path will fail with 
+            // Depending on host configuration (Workstation vs. Domain vs. SYSTEM), this call path will fail with
             // UnauthorizedAccessException/Win32Exception (bad password), SecurityException (unmapped local name),
             // or ArgumentException (system identity rule violation).
             var exception = Assert.ThrowsAny<Exception>(() => NativeMethodsHelpers.ValidateCredentials(currentUser, badPassword));
@@ -258,7 +258,7 @@ namespace Servy.Core.UnitTests.Native
             {
                 fs.Write(sharedPrefix, 0, sharedPrefix.Length);
 
-                // Append extra padding. Because this sits past the 4096-byte boundary, 
+                // Append extra padding. Because this sits past the 4096-byte boundary,
                 // the content read by the digest buffer remains completely identical to File 1.
                 byte[] extraPadding = new byte[1000];
                 for (int i = 0; i < extraPadding.Length; i++)
@@ -285,7 +285,7 @@ namespace Servy.Core.UnitTests.Native
             Assert.False(string.IsNullOrEmpty(digest1));
             Assert.False(string.IsNullOrEmpty(digest2));
 
-            // Under an identical 4096-byte prefix read, this assertion is guaranteed to fail 
+            // Under an identical 4096-byte prefix read, this assertion is guaranteed to fail
             // if the native length-domain separator logic is ever modified or removed.
             Assert.NotEqual(digest1, digest2);
         }

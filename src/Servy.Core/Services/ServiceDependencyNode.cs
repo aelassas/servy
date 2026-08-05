@@ -63,7 +63,7 @@ namespace Servy.Core.Services
         public ObservableCollection<ServiceDependencyNode> Dependencies { get; } = new ObservableCollection<ServiceDependencyNode>();
 
         /// <summary>
-        /// Gets a value indicating whether this node represents a circular dependency 
+        /// Gets a value indicating whether this node represents a circular dependency
         /// that has already appeared higher in the current branch of the tree.
         /// </summary>
         public bool IsCyclic { get; }
@@ -79,7 +79,7 @@ namespace Servy.Core.Services
         /// <param name="displayName">The friendly display name of the service.</param>
         /// <param name="isRunning">Indicates whether the service is currently in a running state.</param>
         /// <param name="isCyclic">
-        /// Set to <see langword="true"/> if this service creates a dependency loop; 
+        /// Set to <see langword="true"/> if this service creates a dependency loop;
         /// this prevents further recursive discovery of child dependencies.
         /// </param>
         public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false, bool isCyclic = false)

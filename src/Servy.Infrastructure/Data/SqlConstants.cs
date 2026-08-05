@@ -26,7 +26,7 @@ namespace Servy.Infrastructure.Data
             "StartTimeout",
             "StopTimeout",
             "EnableConsoleUI",
-            
+
             // Logging Tab
             "StdoutPath",
             "StderrPath",
@@ -37,7 +37,7 @@ namespace Servy.Infrastructure.Data
             "MaxRotations",
             "UseLocalTimeForRotation",
             "EnableDebugLogs",
-            
+
             // Recovery Tab
             "EnableHealthMonitoring",
             "HeartbeatInterval",
@@ -51,16 +51,16 @@ namespace Servy.Infrastructure.Data
             "FailureProgramPath",
             "FailureProgramStartupDirectory",
             "FailureProgramParameters",
-            
+
             // Advanced Tab
             "EnvironmentVariables",
             "ServiceDependencies",
-            
+
             // LogOn Tab
             "RunAsLocalSystem",
             "UserAccount",
             "Password",
-            
+
             // Pre-Launch Tab
             "PreLaunchExecutablePath",
             "PreLaunchStartupDirectory",
@@ -71,24 +71,24 @@ namespace Servy.Infrastructure.Data
             "PreLaunchTimeoutSeconds",
             "PreLaunchRetryAttempts",
             "PreLaunchIgnoreFailure",
-            
+
             // Post-Launch Tab
             "PostLaunchExecutablePath",
             "PostLaunchStartupDirectory",
             "PostLaunchParameters",
-            
+
             // Pre-Stop Tab
             "PreStopExecutablePath",
             "PreStopStartupDirectory",
             "PreStopParameters",
             "PreStopTimeoutSeconds",
             "PreStopLogAsError",
-            
+
             // Post-Stop Tab
             "PostStopExecutablePath",
             "PostStopStartupDirectory",
             "PostStopParameters",
-            
+
             // System / Active State
             "Pid",
             "ActiveStdoutPath",

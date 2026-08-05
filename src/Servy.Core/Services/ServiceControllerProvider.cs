@@ -6,7 +6,7 @@ using System.ServiceProcess;
 namespace Servy.Core.Services
 {
     /// <summary>
-    /// Concrete implementation of the service controller provider that fetches 
+    /// Concrete implementation of the service controller provider that fetches
     /// real services from the Windows Service Control Manager.
     /// </summary>
     public class ServiceControllerProvider : IServiceControllerProvider

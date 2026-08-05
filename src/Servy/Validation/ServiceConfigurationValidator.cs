@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Servy.Validation
 {
     /// <summary>
-    /// Provides UI-facing validation for service configurations by aggregating core validation rules 
+    /// Provides UI-facing validation for service configurations by aggregating core validation rules
     /// and displaying issues via a message box.
     /// </summary>
     public class ServiceConfigurationValidator : IServiceConfigurationValidator
@@ -32,7 +32,7 @@ namespace Servy.Validation
 
         /// <inheritdoc />
         /// <remarks>
-        /// This implementation follows a fail-fast approach, showing only the first identified 
+        /// This implementation follows a fail-fast approach, showing only the first identified
         /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
         public async Task<bool> ValidateAsync(ServiceDto dto, string wrapperExePath = null, string confirmPassword = null, bool importMode = false, CancellationToken cancellationToken = default)

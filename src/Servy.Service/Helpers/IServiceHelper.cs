@@ -52,26 +52,26 @@ namespace Servy.Service.Helpers
         StartOptions ParseOptions(IServiceRepository serviceRepository, string[] fullArgs);
 
         /// <summary>
-        /// Records the full initialization context, including raw command-line arguments and resolved 
+        /// Records the full initialization context, including raw command-line arguments and resolved
         /// <see cref="StartOptions"/>, to the diagnostic log and Windows Event Log.
         /// </summary>
         /// <param name="options">
-        /// The hydrated configuration object containing the executable paths, timeouts, 
+        /// The hydrated configuration object containing the executable paths, timeouts,
         /// and environment variables.
         /// </param>
         /// <param name="logger">
-        /// The scoped logger instance used for output. If <see langword="null"/>, diagnostic 
+        /// The scoped logger instance used for output. If <see langword="null"/>, diagnostic
         /// information will not be recorded.
         /// </param>
         /// <remarks>
         /// <para>
-        /// This method acts as the "black box" recorder for the service startup. It logs the 
+        /// This method acts as the "black box" recorder for the service startup. It logs the
         /// transition from raw CLI input to the internal state used by the process launcher.
         /// </para>
         /// <para>
-        /// <b>Security Note:</b> Sensitive properties within <paramref name="options"/> (such as 
-        /// passwords or encrypted environment variables) are expected to be obfuscated or 
-        /// handled securely by the <paramref name="logger"/> implementation to prevent 
+        /// <b>Security Note:</b> Sensitive properties within <paramref name="options"/> (such as
+        /// passwords or encrypted environment variables) are expected to be obfuscated or
+        /// handled securely by the <paramref name="logger"/> implementation to prevent
         /// plaintext exposure in log files.
         /// </para>
         /// </remarks>
@@ -81,7 +81,7 @@ namespace Servy.Service.Helpers
         /// Performs a comprehensive validation of the startup options and logs the results.
         /// </summary>
         /// <remarks>
-        /// This method logs the startup parameters (including sensitive data if debug logging is enabled) 
+        /// This method logs the startup parameters (including sensitive data if debug logging is enabled)
         /// and verifies that all critical paths and configurations are valid before the service starts.
         /// </remarks>
         /// <param name="options">The startup options to validate.</param>
@@ -153,14 +153,14 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="service">The service instance.</param>
         /// <param name="milliseconds">
-        /// The number of milliseconds to add to the service timeout. This value extends the default 
+        /// The number of milliseconds to add to the service timeout. This value extends the default
         /// SCM timeout for the current operation (e.g., OnStart or OnStop).
         /// </param>
         /// <param name="logger">Logger.</param>
         /// <remarks>
-        /// Use this method inside the SCM lifecycle callbacks (<c>OnStart</c>, <c>OnStop</c>, 
+        /// Use this method inside the SCM lifecycle callbacks (<c>OnStart</c>, <c>OnStop</c>,
         /// <c>OnPause</c>, <c>OnContinue</c>) when the operation may exceed the default SCM timeout.
-        /// Calling this method has no effect if the service is not running under the SCM (for example, 
+        /// Calling this method has no effect if the service is not running under the SCM (for example,
         /// during unit tests or console execution).
         /// </remarks>
         void RequestAdditionalTime(ServiceBase service, int milliseconds, IServyLogger logger);

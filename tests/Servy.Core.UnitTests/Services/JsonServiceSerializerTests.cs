@@ -102,7 +102,7 @@ namespace Servy.Core.UnitTests.Services
                 var expectedValue = prop.GetValue(expected);
                 var actualValue = prop.GetValue(actual);
 
-                // If the expected fixture value is null, it skips evaluation to prevent 
+                // If the expected fixture value is null, it skips evaluation to prevent
                 // breaking on values hydrated to system defaults during deserialization.
                 if (expectedValue == null)
                 {
@@ -112,7 +112,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(expectedValue, actualValue);
             }
 
-            // Assert baseline defaults here. Due to [JsonIgnore] decorations, 
+            // Assert baseline defaults here. Due to [JsonIgnore] decorations,
             // these properties never hit the serialized string payload loop during SerializeObject passes.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
@@ -190,7 +190,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("\n", json);
             Assert.Contains("  \"Name\":", json);
 
-            // SECURITY CONTRACT BOUNDARY: Verify that sensitive credentials are actively 
+            // SECURITY CONTRACT BOUNDARY: Verify that sensitive credentials are actively
             // stripped or omitted from the outbound file payload by UntrustedDataSettings rules.
             Assert.DoesNotContain("UserAccount", json);
             Assert.DoesNotContain("Password", json);

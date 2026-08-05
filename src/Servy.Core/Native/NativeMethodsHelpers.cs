@@ -43,7 +43,7 @@ namespace Servy.Core.Native
         };
 
         /// <summary>
-        /// Identifies well-known Windows groups or logon contexts that are NOT 
+        /// Identifies well-known Windows groups or logon contexts that are NOT
         /// valid runnable service accounts, despite being passwordless.
         /// </summary>
         private static readonly HashSet<string> ForbiddenGroupIdentities = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -93,7 +93,7 @@ namespace Servy.Core.Native
 
             // Logon Validation Guard for Built-in Accounts
             // These accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS.
-            // We short-circuit here to prevent Identity Resolution (Translate) from failing on 
+            // We short-circuit here to prevent Identity Resolution (Translate) from failing on
             // dot-prefixed formats like '.\NetworkService' which do not exist in the local SAM.
             if (isBuiltIn)
             {
@@ -104,7 +104,7 @@ namespace Servy.Core.Native
                 return;
             }
 
-            // Skip regex validation for known built-in identities to avoid false negatives 
+            // Skip regex validation for known built-in identities to avoid false negatives
             // on specialized formats.
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or NT AUTHORITY\\ServiceAccount.";
             if (!Regex.IsMatch(username, pattern, RegexOptions.IgnoreCase, AppConfig.InputRegexTimeout))
@@ -198,19 +198,19 @@ namespace Servy.Core.Native
         }
 
         /// <summary>
-        /// Atomically replaces a destination file with a source file, ensuring that the source's 
+        /// Atomically replaces a destination file with a source file, ensuring that the source's
         /// security descriptor (ACLs) and metadata are preserved at the destination.
         /// </summary>
         /// <param name="source">The path to the source file.</param>
         /// <param name="destination">The path to the destination file to replace.</param>
         /// <remarks>
         /// <para>
-        /// <b>Volume Constraint:</b> This operation is only atomic when both <paramref name="source"/> 
-        /// and <paramref name="destination"/> reside on the SAME volume. 
+        /// <b>Volume Constraint:</b> This operation is only atomic when both <paramref name="source"/>
+        /// and <paramref name="destination"/> reside on the SAME volume.
         /// </para>
         /// <para>
-        /// If the paths reside on different volumes, this method will throw an <see cref="IOException"/> 
-        /// instead of falling back to a non-atomic copy+delete operation. This prevents partial-state 
+        /// If the paths reside on different volumes, this method will throw an <see cref="IOException"/>
+        /// instead of falling back to a non-atomic copy+delete operation. This prevents partial-state
         /// windows during critical operations like key rotation or service configuration updates.
         /// </para>
         /// </remarks>
@@ -268,7 +268,7 @@ namespace Servy.Core.Native
             }
 
             // 2. Prefix-Digest Content Probe
-            // Note: We use a separate block to ensure that a handle-info failure 
+            // Note: We use a separate block to ensure that a handle-info failure
             // does not prevent a best-effort content check.
             try
             {

@@ -21,8 +21,8 @@ namespace Servy.Core.IO
     public class RotatingStreamWriter : IDisposable
     {
         /// <summary>
-        /// Validates the rotated filename segment. 
-        /// Updated to allow chained collision suffixes (e.g., .20260429_213213.(1).(2)) 
+        /// Validates the rotated filename segment.
+        /// Updated to allow chained collision suffixes (e.g., .20260429_213213.(1).(2))
         /// produced during high-frequency rotations within a single second.
         /// </summary>
         private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))*$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
@@ -55,7 +55,7 @@ namespace Servy.Core.IO
         private bool _rotationDisabled;
 
         /// <summary>
-        /// Indicates that a thread is currently moving the log file on disk. 
+        /// Indicates that a thread is currently moving the log file on disk.
         /// Other threads must wait to avoid opening a handle to a file that is about to be renamed.
         /// </summary>
         private bool _rotationInProgress;
@@ -132,11 +132,11 @@ namespace Servy.Core.IO
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Uses <see cref="FileMode.Append"/> to ensure that the file pointer is always positioned 
+        /// Uses <see cref="FileMode.Append"/> to ensure that the file pointer is always positioned
         /// at the true end-of-file, preventing "NULL holes" during concurrent access or process restarts.
         /// </para>
         /// <para>
-        /// The <see cref="StreamWriter"/> is configured with <see cref="StreamWriter.AutoFlush"/> enabled 
+        /// The <see cref="StreamWriter"/> is configured with <see cref="StreamWriter.AutoFlush"/> enabled
         /// and uses UTF-8 encoding without a Byte Order Mark (BOM) for compatibility with Unix-style log viewers.
         /// </para>
         /// </remarks>
@@ -189,7 +189,7 @@ namespace Servy.Core.IO
 
             lock (_lock)
             {
-                // Block other threads from writing or re-opening the file 
+                // Block other threads from writing or re-opening the file
                 // while the physical File.Move is taking place.
                 while (_rotationInProgress)
                 {
@@ -197,7 +197,7 @@ namespace Servy.Core.IO
                     // if PerformPhysicalRotation deadlocks or drops its PulseAll invocation.
                     if (!Monitor.Wait(_lock, AppConfig.LogRotationWaitTimeoutMs))
                     {
-                        // The rotation attempt timed out. We break out of the lock loop to prevent thread pool 
+                        // The rotation attempt timed out. We break out of the lock loop to prevent thread pool
                         // exhaustion across stdout/stderr worker streams.
                         Logger.Error(
                             $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms. " +
@@ -224,7 +224,7 @@ namespace Servy.Core.IO
                 {
                     writeAction(_writer);
 
-                    // AutoFlush is true in InitializeWriter, but explicit flush ensures 
+                    // AutoFlush is true in InitializeWriter, but explicit flush ensures
                     // the FileInfo.Length is accurate for the next CheckRotation call.
                     _writer.Flush();
                 }
@@ -284,7 +284,7 @@ namespace Servy.Core.IO
                     var thisWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
                         now, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
 
-                    // ROBUSTNESS: Ensure year-over-year transitions where both dates fall in ISO week 1 
+                    // ROBUSTNESS: Ensure year-over-year transitions where both dates fall in ISO week 1
                     // do not bypass rotation when a full calendar year has actually passed.
                     return (now.Date - _lastRotationDate.Date).TotalDays >= 7 || thisWeek != lastWeek;
 
@@ -329,7 +329,7 @@ namespace Servy.Core.IO
 
             if (_writer == null) return (null, null);
 
-            // If we recently failed a rotation due to an IO lock, bypass rotation checks 
+            // If we recently failed a rotation due to an IO lock, bypass rotation checks
             // until the short IO cooldown expires to prevent pipe stalling.
             if (now < _rotationCooldownUntil) return (null, null);
 
@@ -382,7 +382,7 @@ namespace Servy.Core.IO
             var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
             var rotatedPath = Path.Combine(directory, newFileName);
 
-            // Set the short IO cooldown immediately inside the lock so subsequent concurrent writes 
+            // Set the short IO cooldown immediately inside the lock so subsequent concurrent writes
             // don't try to rotate the detached file while the physical move is pending.
             _rotationCooldownUntil = now.AddMilliseconds(AppConfig.LogRotationCooldownMs);
 
@@ -427,7 +427,7 @@ namespace Servy.Core.IO
 
             do
             {
-                // Safety bound: Prevent the process from hanging or causing high I/O latency 
+                // Safety bound: Prevent the process from hanging or causing high I/O latency
                 // if the directory is pathologically full or locked.
                 if (count > AppConfig.RotatingStreamWriterMaxUniqueFilenameRetries)
                 {
@@ -465,7 +465,7 @@ namespace Servy.Core.IO
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(currentFullName) ?? string.Empty;
             string extension = Path.GetExtension(currentFullName) ?? string.Empty;
 
-            // Pre-calculate values outside the lambda so the analyzer doesn't 
+            // Pre-calculate values outside the lambda so the analyzer doesn't
             // have to track string nullability across scopes.
             int extensionLength = extension.Length;
             string prefix = fileNameWithoutExt + ".";

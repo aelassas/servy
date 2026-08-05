@@ -24,7 +24,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         /// <summary>
-        /// Shared helper to seed the SchemaInfo table utilizing the exact, production-grade 
+        /// Shared helper to seed the SchemaInfo table utilizing the exact, production-grade
         /// constraint definitions to prevent test configuration drift.
         /// </summary>
         private static void SeedSchemaInfo(DbConnection conn, int version)
@@ -221,7 +221,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Has 'RecoveryOnCleanExit' already (triggers AddColumn skip branch)
                 conn.Execute($@"
                     CREATE TABLE {SqlConstants.ServicesTableName} (
-                        Id INTEGER PRIMARY KEY, 
+                        Id INTEGER PRIMARY KEY,
                         EnableSizeRotation INTEGER,
                         RecoveryOnCleanExit INTEGER
                     );
@@ -543,7 +543,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Act - Run Initialize again
                 SQLiteDbInitializer.Initialize(conn);
 
-                // Assert 
+                // Assert
                 var finalColumns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
 
                 // The missing column should have been successfully restored

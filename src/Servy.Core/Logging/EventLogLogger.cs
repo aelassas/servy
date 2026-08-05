@@ -118,7 +118,7 @@ namespace Servy.Core.Logging
 
             if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
             {
-                // Debug logs are traditionally skipped for Event Log to avoid clutter, 
+                // Debug logs are traditionally skipped for Event Log to avoid clutter,
                 // but we always keep the File Log.
                 Logger.Debug(Format(message), ex);
             }
@@ -164,7 +164,7 @@ namespace Servy.Core.Logging
 
         /// <summary>
         /// Centralized parameterized log pipeline handler to eliminate code duplication across log severity variants.
-        /// Orchestrates the conditional flow between the Windows Event Log sink and the secondary file system logger, 
+        /// Orchestrates the conditional flow between the Windows Event Log sink and the secondary file system logger,
         /// while enforcing thread-local log level thresholds and standardized message formatting.
         /// </summary>
         /// <param name="targetLevel">The <see cref="LogLevel"/> required for this entry to be processed.</param>
@@ -284,7 +284,7 @@ namespace Servy.Core.Logging
             }
             catch (Exception ex)
             {
-                // If we fail to initialize (e.g. lack of admin rights), 
+                // If we fail to initialize (e.g. lack of admin rights),
                 // we fall back to file-only logging.
                 _isInitialized = false;
                 _isEventLogEnabled = false;
@@ -337,7 +337,7 @@ namespace Servy.Core.Logging
                 _parent = parent;
                 Prefix = prefix;
 
-                // Structural configuration properties are bound atomically directly from the parameter pass 
+                // Structural configuration properties are bound atomically directly from the parameter pass
                 // instead of performing multi-phase updates that cascade mutations back to the core parent layer.
                 _currentLogLevel = (int)level;
                 _isEventLogEnabled = isEventLogEnabled;
@@ -394,7 +394,7 @@ namespace Servy.Core.Logging
             public IServyLogger CreateScoped(string prefix) => CreateScopedInstance(prefix);
 
             /// <summary>
-            /// Factory method to construct a new scoped logger instance, ensuring proper prefix hierarchy 
+            /// Factory method to construct a new scoped logger instance, ensuring proper prefix hierarchy
             /// and inheriting current operational settings (log level, enabled status) from the current scope.
             /// </summary>
             /// <param name="prefix">The logging label for the new scope; will be sanitized for structural safety.</param>
@@ -416,7 +416,7 @@ namespace Servy.Core.Logging
                     ? $"[{sanitizedSegment}]"
                     : $"{Prefix} [{sanitizedSegment}]";
 
-                // Leverages explicit multi-argument constructor pass ensuring clean context inheritance 
+                // Leverages explicit multi-argument constructor pass ensuring clean context inheritance
                 // down to secondary nested downstream client contexts.
                 return new ScopedEventLogLogger(_parent, combined, (LogLevel)_currentLogLevel, _isEventLogEnabled);
             }

@@ -55,7 +55,7 @@ namespace Servy.Views
         /// This override ensures that when the main window is closed, all child processes
         /// spawned by the current process are terminated. This prevents orphaned processes
         /// from remaining in the system after the application exits.
-        /// 
+        ///
         /// The method retrieves the current process ID and passes it to
         /// <see cref="ProcessKiller.KillChildren(int)"/> to terminate all descendants.
         /// Any exceptions thrown during this cleanup are caught and logged for debugging.

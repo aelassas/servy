@@ -290,7 +290,7 @@ namespace Servy.Manager.UnitTests.Utils
                 var startPos = new FileInfo(_tempFilePath).Length;
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, startPos, DateTime.UtcNow, cts.Token);
 
-                // Wait for the background reader loop to fully complete its initial cycle 
+                // Wait for the background reader loop to fully complete its initial cycle
                 // and position its internal StreamReader handle directly at the EOF boundary.
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
                 await loopCompletedTcs.Task;
@@ -398,7 +398,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 // Act
                 // ROTATION OPERAND ISOLATION: Set lastPosition within the valid file length boundary (0 <= 30 bytes)
-                // to force operand #2 (info.Length < lastPosition) to evaluate as FALSE. 
+                // to force operand #2 (info.Length < lastPosition) to evaluate as FALSE.
                 // Pass a stale timestamp to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as TRUE.
                 var fileInfo = new FileInfo(_tempFilePath);
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, (long)fileInfo.Length, DateTime.UtcNow.AddDays(-1), cts.Token);
@@ -439,9 +439,9 @@ namespace Servy.Manager.UnitTests.Utils
                 tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
                 // Act
-                // ROTATION OPERAND ISOLATION: Query and pass the precise CreationTimeUtc metadata token 
+                // ROTATION OPERAND ISOLATION: Query and pass the precise CreationTimeUtc metadata token
                 // to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as FALSE.
-                // Pass a highly advanced past lastPosition (999999) that forces the metadata check branch 
+                // Pass a highly advanced past lastPosition (999999) that forces the metadata check branch
                 // (info.Length < lastPosition) to evaluate as TRUE to validate initial attach truncation logic.
                 var fileInfo = new FileInfo(_tempFilePath);
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 999999, fileInfo.CreationTimeUtc, cts.Token);

@@ -17,8 +17,8 @@ namespace Servy.Manager.ViewModels
     /// Abstract base class providing shared logic for searching and listing Windows services.
     /// </summary>
     /// <remarks>
-    /// This class consolidates common UI state management (Busy indicators, search button text) 
-    /// and ensures that asynchronous search operations are properly cancelled when a new 
+    /// This class consolidates common UI state management (Busy indicators, search button text)
+    /// and ensures that asynchronous search operations are properly cancelled when a new
     /// search is triggered, preventing race conditions in the UI.
     /// </remarks>
     public abstract class ServiceSearchViewModelBase : ViewModelBase, IDisposable
@@ -72,7 +72,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the text displayed on the search button, dynamically toggling 
+        /// Gets or sets the text displayed on the search button, dynamically toggling
         /// between 'Search' and 'Searching...' states.
         /// </summary>
         public string SearchButtonText
@@ -127,7 +127,7 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         /// <summary>
-        /// When implemented in a derived class, creates a view-specific service model 
+        /// When implemented in a derived class, creates a view-specific service model
         /// (e.g., ConsoleService, PerformanceService) from a raw Service entity.
         /// </summary>
         /// <param name="service">The raw service entity returned from the repository.</param>
@@ -172,7 +172,7 @@ namespace Servy.Manager.ViewModels
             CancellationToken token;
             try
             {
-                // RACING DISPOSE CHECK: Capture token safely. If a racing Dispose pulled this 
+                // RACING DISPOSE CHECK: Capture token safely. If a racing Dispose pulled this
                 // instance out from under us and processed it, this will throw an ObjectDisposedException.
                 token = newCts.Token;
 

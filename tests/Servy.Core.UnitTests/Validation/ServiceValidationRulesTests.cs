@@ -192,7 +192,7 @@ namespace Servy.Core.UnitTests.Validation
             // Arrange
             var dto = ServiceDtoFactory.CreateValidValidationBase();
 
-            // UNCONDITIONAL BOUNDS: Explicitly check various flag states to pin down 
+            // UNCONDITIONAL BOUNDS: Explicitly check various flag states to pin down
             // the invariant range validation contract of the core validation engine.
             dto.EnableHealthMonitoring = enableMonitoringState;
 

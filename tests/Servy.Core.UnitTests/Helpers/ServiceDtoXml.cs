@@ -5,7 +5,7 @@ using System.Xml.Serialization;
 namespace Servy.Core.UnitTests.Services
 {
     /// <summary>
-    /// Provides XML serialization utility methods specifically for <see cref="ServiceDto"/> object graphs 
+    /// Provides XML serialization utility methods specifically for <see cref="ServiceDto"/> object graphs
     /// within testing contexts.
     /// </summary>
     public static class ServiceDtoXml

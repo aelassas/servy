@@ -11,7 +11,7 @@ using Xunit;
 namespace Servy.Core.IntegrationTests.Config
 {
     /// <summary>
-    /// Tests to ensure that magic strings and configurations are synchronized 
+    /// Tests to ensure that magic strings and configurations are synchronized
     /// between the C# codebase and the external PowerShell CLI modules.
     /// </summary>
     public class PowerShellConfigSyncIntegrationTests

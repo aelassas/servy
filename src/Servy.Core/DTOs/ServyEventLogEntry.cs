@@ -17,7 +17,7 @@ namespace Servy.Core.DTOs
         /// Gets or sets the absolute date and time when the event was logged.
         /// </summary>
         /// <remarks>
-        /// Uses DateTimeOffset to ensure UTC timestamps from the Windows Event Log 
+        /// Uses DateTimeOffset to ensure UTC timestamps from the Windows Event Log
         /// are preserved and correctly localized in the UI.
         /// </remarks>
         public DateTimeOffset Time { get; set; }
@@ -31,7 +31,7 @@ namespace Servy.Core.DTOs
         /// Gets or sets the name of the software or component that published the event.
         /// </summary>
         /// <remarks>
-        /// This property is essential for distinguishing Servy-specific logs from generic 
+        /// This property is essential for distinguishing Servy-specific logs from generic
         /// system events when performing wildcard searches across the Application log.
         /// </remarks>
         public string ProviderName { get; set; } = string.Empty;

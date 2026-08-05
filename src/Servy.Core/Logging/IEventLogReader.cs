@@ -6,7 +6,7 @@ namespace Servy.Core.Logging
 {
     /// <summary>
     /// Defines an abstraction for reading events from the Windows Event Viewer.
-    /// This allows decoupling the <see cref="System.Diagnostics.Eventing.Reader.EventLogReader"/> implementation 
+    /// This allows decoupling the <see cref="System.Diagnostics.Eventing.Reader.EventLogReader"/> implementation
     /// from consumers, enabling easier unit testing and mocking.
     /// </summary>
     public interface IEventLogReader

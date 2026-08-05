@@ -16,12 +16,12 @@ using System.Windows.Threading;
 namespace Servy.UI.Design
 {
     /// <summary>
-    /// Provides a concrete <see cref="ProcessHelper"/> subtype used purely so the designer can instantiate a stand-in 
+    /// Provides a concrete <see cref="ProcessHelper"/> subtype used purely so the designer can instantiate a stand-in
     /// (the real metric methods are simply never invoked at design time).
     /// </summary>
     /// <remarks>
-    /// This class inherits from <see cref="ProcessHelper"/> to satisfy dependency requirements 
-    /// in ViewModels and validators without invoking real Windows process management logic 
+    /// This class inherits from <see cref="ProcessHelper"/> to satisfy dependency requirements
+    /// in ViewModels and validators without invoking real Windows process management logic
     /// during a design-time session.
     /// </remarks>
     public class DesignTimeProcessHelper : ProcessHelper
@@ -95,7 +95,7 @@ namespace Servy.UI.Design
     /// Provides a no-op implementation of <see cref="IServiceManager"/> for XAML design-time support.
     /// </summary>
     /// <remarks>
-    /// This implementation satisfies dependency requirements in ViewModels and commands without 
+    /// This implementation satisfies dependency requirements in ViewModels and commands without
     /// invoking real Service Control Manager (SCM) logic, ensuring stability in Visual Studio and Blend.
     /// </remarks>
     public class DesignTimeServiceManager : IServiceManager
@@ -157,7 +157,7 @@ namespace Servy.UI.Design
     /// Lightweight no-op implementation of IFileDialogService for XAML design-time support.
     /// </summary>
     /// <remarks>
-    /// This implementation returns null for all path-related queries to satisfy 
+    /// This implementation returns null for all path-related queries to satisfy
     /// ViewModel initialization without triggering native Windows dialogs or exceptions.
     /// </remarks>
     public class DesignTimeFileDialogService : IFileDialogService
@@ -221,8 +221,8 @@ namespace Servy.UI.Design
     /// Lightweight no-op implementation of <see cref="IUiDispatcher"/> for XAML design-time support.
     /// </summary>
     /// <remarks>
-    /// This implementation provides a safe way to bypass UI threading requirements during 
-    /// layout sessions, preventing the "Design-Time Trap" where constructors fail due 
+    /// This implementation provides a safe way to bypass UI threading requirements during
+    /// layout sessions, preventing the "Design-Time Trap" where constructors fail due
     /// to missing dispatcher contexts in the Visual Studio or Rider designer.
     /// </remarks>
     public class DesignTimeUiDispatcher : IUiDispatcher
@@ -233,7 +233,7 @@ namespace Servy.UI.Design
 
         public Task<T> InvokeAsync<T>(Func<T> callback)
         {
-            // Task.FromResult requires a value. 
+            // Task.FromResult requires a value.
             // Returning default(T) allows the caller to proceed without a NullReferenceException.
             return Task.FromResult(default(T));
         }

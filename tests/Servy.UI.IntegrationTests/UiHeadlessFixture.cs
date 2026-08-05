@@ -4,7 +4,7 @@ namespace Servy.UI.IntegrationTests
 {
     /// <summary>
     /// Manages process-global <see cref="UiHeadless"/> state for the UI test collection.
-    /// Ensures <see cref="UiHeadless.IsEnabled"/> is enabled during test execution 
+    /// Ensures <see cref="UiHeadless.IsEnabled"/> is enabled during test execution
     /// and safely restored to <c>false</c> upon collection teardown.
     /// </summary>
     public sealed class UiHeadlessFixture : IDisposable

@@ -57,7 +57,7 @@ namespace Servy.Core.Helpers
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <param name="cancellationToken">An optional token to monitor for cancellation requests during execution.</param>
         /// <returns>
-        /// True if the copy succeeded (or was not needed) AND all stopped services were successfully restarted; 
+        /// True if the copy succeeded (or was not needed) AND all stopped services were successfully restarted;
         /// otherwise, false.
         /// </returns>
         public async Task<bool> CopyEmbeddedResource(
@@ -163,12 +163,12 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>DANGER:</b> Unlike its asynchronous counterpart, this method forcefully terminates 
-        /// any processes holding a lock on the target file WITHOUT performing a graceful service 
+        /// <b>DANGER:</b> Unlike its asynchronous counterpart, this method forcefully terminates
+        /// any processes holding a lock on the target file WITHOUT performing a graceful service
         /// shutdown or restart. It completely circumvents the standard service lifecycle.
         /// </para>
         /// <para>
-        /// This should <b>only</b> be called by external bootstrapping utilities or during 
+        /// This should <b>only</b> be called by external bootstrapping utilities or during
         /// installation phases when it is guaranteed that no Servy services are actively running.
         /// </para>
         /// </remarks>
@@ -230,12 +230,12 @@ namespace Servy.Core.Helpers
         /// extensions, subfolders, and metadata used during copying.
         /// </param>
         /// <param name="stopServices">
-        /// If <c>true</c>, running Servy services will be stopped before copying and restarted afterward. 
+        /// If <c>true</c>, running Servy services will be stopped before copying and restarted afterward.
         /// Default is <c>true</c>.
         /// </param>
         /// <param name="cancellationToken">An optional token to monitor for cancellation requests during execution.</param>
         /// <returns>
-        /// <c>true</c> if all resources were copied successfully or did not need copying; 
+        /// <c>true</c> if all resources were copied successfully or did not need copying;
         /// otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
@@ -282,7 +282,7 @@ namespace Servy.Core.Helpers
 
                     // ROBUSTNESS: Pre-flight existence check.
                     // If a resource requires updating but doesn't exist in the assembly payload,
-                    // disqualify it immediately. This prevents the system from triggering a global 
+                    // disqualify it immediately. This prevents the system from triggering a global
                     // service stop for a file replacement it cannot fulfill.
                     if (resourceItem.ShouldCopy)
                     {
@@ -318,7 +318,7 @@ namespace Servy.Core.Helpers
 
                         try
                         {
-                            // ROBUSTNESS: Validate the embedded resource stream is physically accessible 
+                            // ROBUSTNESS: Validate the embedded resource stream is physically accessible
                             // BEFORE executing any destructive process termination logic.
                             Stream resourceStream = assembly.GetManifestResourceStream(resourceItem.ResourceName);
                             if (resourceStream == null)
@@ -385,21 +385,21 @@ namespace Servy.Core.Helpers
         /// Retrieves the last write time of the host process executable.
         /// </summary>
         /// <returns>
-        /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified, 
-        /// or <see cref="DateTime.MinValue"/> if the file cannot be accessed. The sentinel 
-        /// value causes <c>ShouldCopyResource</c> to leave any existing extraction untouched 
+        /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified,
+        /// or <see cref="DateTime.MinValue"/> if the file cannot be accessed. The sentinel
+        /// value causes <c>ShouldCopyResource</c> to leave any existing extraction untouched
         /// when the timestamp probe fails.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method uses the main module of the current process as a proxy for the 
-        /// "deployment timestamp." This is an acceptable proxy in the current single-exe 
-        /// distribution model of Servy, as it represents the last time the application 
+        /// This method uses the main module of the current process as a proxy for the
+        /// "deployment timestamp." This is an acceptable proxy in the current single-exe
+        /// distribution model of Servy, as it represents the last time the application
         /// artifacts were updated on the host machine.
         /// </para>
         /// <para>
-        /// Note: If resources are moved to a separate library assembly in the future, 
-        /// this method should be updated to query that specific assembly's file path 
+        /// Note: If resources are moved to a separate library assembly in the future,
+        /// this method should be updated to query that specific assembly's file path
         /// to ensure accurate re-extraction logic.
         /// </para>
         /// </remarks>

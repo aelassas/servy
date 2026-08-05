@@ -408,7 +408,7 @@ namespace Servy.Core.UnitTests.Domain
                     o.EnableHealthMonitoring == true &&
                     o.RecoveryAction == service.RecoveryAction &&
 
-                    // Symmetrical Hardening: Firmly assert that the fallback mechanism routes to 
+                    // Symmetrical Hardening: Firmly assert that the fallback mechanism routes to
                     // the default UI executable path and does not leak the alternative CLI variant.
                     !string.IsNullOrWhiteSpace(o.WrapperExePath) &&
                     o.WrapperExePath.Contains(AppConfig.ServyServiceUIExe) &&

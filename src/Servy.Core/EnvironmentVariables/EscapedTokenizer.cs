@@ -13,7 +13,7 @@ namespace Servy.Core.EnvironmentVariables
         /// Defines the standard characters used to separate individual environment variable records.
         /// </summary>
         /// <remarks>
-        /// These delimiters include the semicolon (standard for PATH-like variables) as well as 
+        /// These delimiters include the semicolon (standard for PATH-like variables) as well as
         /// carriage return and newline characters to support multi-line configuration.
         /// </remarks>
         internal static readonly char[] EnvVarRecordDelimiters = { ';', '\r', '\n' };

@@ -376,7 +376,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         /// <summary>
-        /// Extracts the process name safely, protecting the integration test evaluation loops 
+        /// Extracts the process name safely, protecting the integration test evaluation loops
         /// from throwing unhandled state exceptions if an ephemeral process exits mid-iteration.
         /// </summary>
         private static string GetSafeProcessName(Process p)

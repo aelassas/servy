@@ -33,7 +33,7 @@ namespace Servy.Manager.Views
         private bool _isFirstLoad = true;
 
         /// <summary>
-        /// Define a small tolerance for floating point comparisons 
+        /// Define a small tolerance for floating point comparisons
         /// </summary>
         private const double ScrollTolerance = 0.001;
 
@@ -63,11 +63,11 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles changes to the <see cref="FrameworkElement.DataContext"/>, detaching event handlers 
+        /// Handles changes to the <see cref="FrameworkElement.DataContext"/>, detaching event handlers
         /// from the previous <see cref="ConsoleViewModel"/> and attaching them to the new instance.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
-        /// <param name="e">Event arguments containing <see cref="DependencyPropertyChangedEventArgs.OldValue"/> 
+        /// <param name="e">Event arguments containing <see cref="DependencyPropertyChangedEventArgs.OldValue"/>
         /// and <see cref="DependencyPropertyChangedEventArgs.NewValue"/> used for clean event unsubscription and resubscription.</param>
         private void ConsoleView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -204,7 +204,7 @@ namespace Servy.Manager.Views
 
                 if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
                 {
-                    // Yield control back to the WPF dispatcher queue thread pump. 
+                    // Yield control back to the WPF dispatcher queue thread pump.
                     // This allows UI paint commands and input requests to flow normally while waiting to retry.
                     await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs);
                 }

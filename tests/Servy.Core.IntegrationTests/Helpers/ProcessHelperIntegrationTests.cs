@@ -11,7 +11,7 @@ using Xunit;
 namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
-    /// Integration tests for ProcessHelper. 
+    /// Integration tests for ProcessHelper.
     /// Verifies ProcessHelper process-metric and process-tree aggregation behavior.
     /// </summary>
     [Collection("ProcessIntegrationTests")]
@@ -54,12 +54,12 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                 // Assert 2
                 // Verify that the delta tracking engine successfully executed and updated its reference points.
-                // In highly throttled CI environments, CPU time tracking may occasionally report 0 if quantums match perfectly, 
+                // In highly throttled CI environments, CPU time tracking may occasionally report 0 if quantums match perfectly,
                 // but a successful calculation path is structurally proven if memory metrics persist alongside a non-negative payload.
                 Assert.True(secondCall.CpuUsage >= 0, "CPU calculation loop failed or threw an internal fallback error exception.");
                 Assert.True(secondCall.RamUsage > 0, "RAM metrics were lost or corrupted during consecutive sampling calls.");
 
-                // Structural State Validation: Force reflection to confirm that an active, populated cache state entry 
+                // Structural State Validation: Force reflection to confirm that an active, populated cache state entry
                 // is preserved inside the dictionary, proving the metric loop did not fall back into an error eviction path.
                 var prevCpuTimes = TestReflection.GetField<ConcurrentDictionary<int, CpuSample>>(_sut, "_prevCpuTimes");
                 if (prevCpuTimes != null)
@@ -106,7 +106,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             var metrics = _sut.GetProcessMetrics(targetPid);
 
             // Assert
-            // Both code paths must cleanly intercept the respective native exception type 
+            // Both code paths must cleanly intercept the respective native exception type
             // and fallback to a safe, neutral metric layout instead of blowing up.
             Assert.Equal(0, metrics.CpuUsage);
             Assert.Equal(0, metrics.RamUsage);

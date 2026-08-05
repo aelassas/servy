@@ -34,9 +34,9 @@ namespace Servy.Core.Helpers
         /// A predefined array of characters that are forbidden in Windows Service names.
         /// </summary>
         /// <remarks>
-        /// This set extends the basic Service Control Manager (SCM) restrictions to include characters 
-        /// that are invalid in Windows Registry key names and the Windows file system. Because a service name 
-        /// acts as a registry key under <c>HKLM\SYSTEM\CurrentControlSet\Services</c> and is often used 
+        /// This set extends the basic Service Control Manager (SCM) restrictions to include characters
+        /// that are invalid in Windows Registry key names and the Windows file system. Because a service name
+        /// acts as a registry key under <c>HKLM\SYSTEM\CurrentControlSet\Services</c> and is often used
         /// to generate log files or directories, prohibiting these characters prevents downstream systemic errors.
         /// </remarks>
         private static readonly char[] InvalidServiceChars = new[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
@@ -119,12 +119,12 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="p">The path string to evaluate.</param>
         /// <returns>
-        /// <c>true</c> if the path is rooted and contains a valid drive letter or UNC server/share definition; 
+        /// <c>true</c> if the path is rooted and contains a valid drive letter or UNC server/share definition;
         /// otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// This method improves upon <see cref="Path.IsPathRooted"/> by ensuring that paths 
-        /// starting with a directory separator (which are rooted but not absolute in Windows) 
+        /// This method improves upon <see cref="Path.IsPathRooted"/> by ensuring that paths
+        /// starting with a directory separator (which are rooted but not absolute in Windows)
         /// are correctly identified as non-absolute.
         /// </remarks>
         public static bool IsAbsolute(string p)
@@ -145,7 +145,7 @@ namespace Servy.Core.Helpers
         /// <param name="path">The full file path.</param>
         /// <returns>True if the directory exists or was created successfully; false otherwise.</returns>
         /// <remarks>
-        /// This method acts as a non-throwing variant of <see cref="EnsureDirectoryExists(string?)"/>, catching and 
+        /// This method acts as a non-throwing variant of <see cref="EnsureDirectoryExists(string?)"/>, catching and
         /// logging any filesystem access or authorization violations gracefully.
         /// </remarks>
         public static bool CreateParentDirectory(string path)
@@ -207,8 +207,8 @@ namespace Servy.Core.Helpers
         /// If <paramref name="input"/> is <see langword="null"/> or empty, returns an empty string.
         /// </returns>
         /// <remarks>
-        /// - Escapes all backslashes preceding a quote.  
-        /// - Doubles trailing backslashes before the closing quote.  
+        /// - Escapes all backslashes preceding a quote.
+        /// - Doubles trailing backslashes before the closing quote.
         /// - Replaces any null characters (<c>\0</c>) with the literal sequence <c>\\0</c>.
         /// </remarks>
         public static string EscapeArgs(string input) => EscapeCore(input, escapeQuotes: true);
@@ -238,7 +238,7 @@ namespace Servy.Core.Helpers
             // But we must also handle backslashes that precede a "
             // because \" is treated as a literal quote, and \\" is a literal backslash + quote.
             // The logic: 2n backslashes + " => n backslashes + literal "
-            // 2n+1 backslashes + " => n backslashes + literal " + escape next... 
+            // 2n+1 backslashes + " => n backslashes + literal " + escape next...
             var sb = new StringBuilder();
 
             int backslashCount = 0;
@@ -357,7 +357,7 @@ namespace Servy.Core.Helpers
         /// If the source does not exist, it is created under the Application log.
         /// </summary>
         /// <remarks>
-        /// This must be run with administrator privileges. 
+        /// This must be run with administrator privileges.
         /// Event Log sources are machine-wide and typically only need to be created once per machine.
         /// </remarks>
         [ExcludeFromCodeCoverage]
@@ -394,14 +394,14 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
-        /// This synchronous version is safe to call from UI threads as it avoids the sync-over-async deadlock risk 
+        /// This synchronous version is safe to call from UI threads as it avoids the sync-over-async deadlock risk
         /// associated with blocking on asynchronous tasks.
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>
         /// <param name="writeContent">An action that receives a <see cref="Stream"/> to write the actual file content.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <remarks>
-        /// On NTFS volumes, the final move operation is an atomic metadata update, ensuring the destination 
+        /// On NTFS volumes, the final move operation is an atomic metadata update, ensuring the destination
         /// file is never in a partially written state.
         /// </remarks>
         public static void WriteFileAtomic(string path, Action<Stream> writeContent, CancellationToken cancellationToken = default)
@@ -466,7 +466,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Internal core logic for atomic file writes. Centralizes directory creation, 
+        /// Internal core logic for atomic file writes. Centralizes directory creation,
         /// temp file management, and atomic moves for asynchronous callers.
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>
@@ -478,7 +478,7 @@ namespace Servy.Core.Helpers
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir))
             {
-                // Directory creation is synchronous in standard .NET, but keeping context 
+                // Directory creation is synchronous in standard .NET, but keeping context
                 // aware for potential future IO wrappers.
                 Directory.CreateDirectory(dir);
             }
@@ -539,11 +539,11 @@ namespace Servy.Core.Helpers
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method appends a 16-character hexadecimal string derived from a <see cref="Guid"/> to minimize 
+        /// This method appends a 16-character hexadecimal string derived from a <see cref="Guid"/> to minimize
         /// the path length footprint while maintaining sufficient uniqueness for atomic staging.
         /// </para>
         /// <para>
-        /// <b>Warning:</b> Callers must verify that the resulting string length does not exceed 
+        /// <b>Warning:</b> Callers must verify that the resulting string length does not exceed
         /// <see cref="AppConfig.WriteFileAtomicMaxPathLength"/> to avoid <see cref="PathTooLongException"/>.
         /// </para>
         /// </remarks>
@@ -580,7 +580,7 @@ namespace Servy.Core.Helpers
                 }
                 catch
                 {
-                    // Cleanup errors are swallowed to prevent masking the primary exception 
+                    // Cleanup errors are swallowed to prevent masking the primary exception
                     // that occurred during the file write or move process.
                 }
             }
@@ -606,7 +606,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="serviceName">The unique identifier proposed for the service.</param>
         /// <returns>
-        /// A tuple where the first item is a <c>bool</c> indicating if the name is valid, 
+        /// A tuple where the first item is a <c>bool</c> indicating if the name is valid,
         /// and the second item is a localized <c>string</c> containing the error message if validation fails.
         /// </returns>
         public static (bool, string) IsServiceNameValid(string serviceName)
@@ -617,7 +617,7 @@ namespace Servy.Core.Helpers
                 return (false, Strings.Msg_ValidationError);
 
             // 2. Invisible Padding Check
-            // Leading or trailing spaces are technically permitted by some lower-level Windows APIs, 
+            // Leading or trailing spaces are technically permitted by some lower-level Windows APIs,
             // but they cause massive confusion in CLI tools, PowerShell scripts, and visual management consoles.
             if (serviceName != serviceName.TrimEnd())
                 return (false, Strings.Msg_ServiceNameContainsTrailingWhitespace);
@@ -631,8 +631,8 @@ namespace Servy.Core.Helpers
             // 4. Structural Integrity Check
             // We reject the input if it contains:
             //  a) Forbidden file system/registry characters (InvalidServiceChars).
-            //  b) Unicode control, format, line separator, or paragraph separator characters 
-            //     (as defined in IsDisallowedNameChar) which can compromise display formatting 
+            //  b) Unicode control, format, line separator, or paragraph separator characters
+            //     (as defined in IsDisallowedNameChar) which can compromise display formatting
             //     or cause malformed output in console/CLI parsers.
             if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(IsDisallowedNameChar))
                 return (false, Strings.Msg_InvalidServiceName);
@@ -666,12 +666,12 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="path">The path string to normalize.</param>
         /// <returns>
-        /// A fully qualified absolute path without trailing separators; 
+        /// A fully qualified absolute path without trailing separators;
         /// or <see langword="null"/> if the input is <see langword="null"/>, empty, or consists only of white space.
         /// </returns>
         /// <remarks>
-        /// This method uses <see cref="Path.GetFullPath(string)"/> to resolve relative paths (e.g., "." or "..") 
-        /// based on the current working directory. It then trims any trailing <see cref="Path.DirectorySeparatorChar"/> 
+        /// This method uses <see cref="Path.GetFullPath(string)"/> to resolve relative paths (e.g., "." or "..")
+        /// based on the current working directory. It then trims any trailing <see cref="Path.DirectorySeparatorChar"/>
         /// to ensure consistent path comparison and storage in the database.
         /// </remarks>
         public static string NormalizePath(string path)
@@ -693,18 +693,18 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Recursively walks up the directory tree to determine if the specified path resides 
+        /// Recursively walks up the directory tree to determine if the specified path resides
         /// within any directory that is an NTFS reparse point (such as a junction point or symbolic link).
         /// </summary>
         /// <param name="fullPath">The fully canonicalized absolute path to evaluate.</param>
         /// <returns>
-        /// <c>true</c> if any ancestor directory in the path hierarchy is a reparse point; 
+        /// <c>true</c> if any ancestor directory in the path hierarchy is a reparse point;
         /// otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// This validation serves as an infiltration and exfiltration guard across the service 
-        /// ecosystem. It prevents path traversal and redirection bypasses by checking both 
-        /// the modern <see cref="DirectoryInfo.LinkTarget"/> property and the legacy 
+        /// This validation serves as an infiltration and exfiltration guard across the service
+        /// ecosystem. It prevents path traversal and redirection bypasses by checking both
+        /// the modern <see cref="DirectoryInfo.LinkTarget"/> property and the legacy
         /// <see cref="FileAttributes.ReparsePoint"/> bitmask flag.
         /// </remarks>
         public static bool HasAncestorReparsePoint(string fullPath)
@@ -716,7 +716,7 @@ namespace Servy.Core.Helpers
             var current = new DirectoryInfo(parentPath);
 
             // Continue walking upward even if the immediate parent does not exist yet.
-            // This ensures we don't bypass the check when evaluating paths inside 
+            // This ensures we don't bypass the check when evaluating paths inside
             // directories that are about to be created.
             while (current != null)
             {
@@ -737,12 +737,12 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="p">The path string to be normalized.</param>
         /// <returns>
-        /// A fully qualified path string with redundant separators and trailing slashes removed. 
+        /// A fully qualified path string with redundant separators and trailing slashes removed.
         /// Returns <see cref="string.Empty"/> if the input is null, empty, or whitespace.
         /// </returns>
         /// <remarks>
-        /// This method resolves relative path segments (e.g., '..'), normalizes directory separators 
-        /// to the current platform's standard, and strips any trailing directory separators 
+        /// This method resolves relative path segments (e.g., '..'), normalizes directory separators
+        /// to the current platform's standard, and strips any trailing directory separators
         /// to ensure a stable, uniform path format for comparison.
         /// </remarks>
         public static string Canonicalise(string p)
@@ -756,7 +756,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="c">The character to evaluate.</param>
         /// <returns>
-        /// <c>true</c> if the character falls under Unicode control, format, 
+        /// <c>true</c> if the character falls under Unicode control, format,
         /// line separator, or paragraph separator categories; otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>

@@ -186,8 +186,8 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier));
 
-            // Core logic verification: Check that the total ACL count evaluates cleanly to 
-            // exactly 2 rules (Local System and Administrators), verifying that duplicate 
+            // Core logic verification: Check that the total ACL count evaluates cleanly to
+            // exactly 2 rules (Local System and Administrators), verifying that duplicate
             // assignments or null objects are cleanly skipped.
             Assert.Equal(2, rules.Count);
         }

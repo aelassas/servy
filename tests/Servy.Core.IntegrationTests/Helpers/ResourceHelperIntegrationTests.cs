@@ -44,7 +44,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _tempDirectory = Path.Combine(Path.GetTempPath(), "ServyTests", Guid.NewGuid().ToString());
             Directory.CreateDirectory(_tempDirectory);
 
-            // Setup our fake assembly to point its location to our Temp Directory 
+            // Setup our fake assembly to point its location to our Temp Directory
             // (used by DEBUG preprocessor directive in ShouldCopyResource)
             _fakeAssembly = new FakeAssembly
             {
@@ -105,7 +105,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 .Setup(p => p.KillProcessesUsingFile(It.IsAny<string>()))
                 .Returns(true);
 
-            // Act 
+            // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
                 _fakeAssembly,
                 resourceNamespace,

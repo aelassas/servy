@@ -59,7 +59,7 @@ namespace Servy.Core.Security
                 _v2EncryptionKey = DeriveHkdf(masterKey, HkdfSalt, "V2_AES_ENCRYPTION");
                 _v2HmacKey = DeriveHkdf(masterKey, HkdfSalt, "V2_HMAC_AUTHENTICATION");
 
-                // Const-gated branch allows compiler to strip key cloning 
+                // Const-gated branch allows compiler to strip key cloning
                 // and eliminate unneeded DPAPI I/O when AllowLegacyV1Decryption is false.
                 if (AppConfig.AllowLegacyV1Decryption)
                 {
@@ -95,7 +95,7 @@ namespace Servy.Core.Security
         /// <item><description>Calculates an HMAC-SHA256 signature over both the IV and the resulting ciphertext to ensure integrity and authenticity.</description></item>
         /// <item><description>Packages the result into a versioned, Base64-encoded string prefixed with the service marker.</description></item>
         /// </list>
-        /// <para><b>Memory Management:</b> Uses chunked stream processing to avoid Large Object Heap (LOH) fragmentation and 
+        /// <para><b>Memory Management:</b> Uses chunked stream processing to avoid Large Object Heap (LOH) fragmentation and
         /// performs explicit <see cref="Array.Clear(Array, int, int)"/> on all sensitive buffers before the method returns.</para>
         /// </remarks>
         /// <param name="plainText">The sensitive string to be encrypted.</param>
@@ -189,14 +189,14 @@ namespace Servy.Core.Security
         /// <item><term>v1 (Gated):</term><description>Legacy AES-256-CBC with static IV (No authentication).</description></item>
         /// <item><term>Fallback (Gated):</term><description>Validates if the input is raw Base64; if so, attempts v1 decryption.</description></item>
         /// </list>
-        /// <b>Security Note on Downgrade Vectors:</b> Processing v1 or raw legacy ciphertexts introduces an attacker-controllable 
-        /// downgrade vector because these formats lack an HMAC integrity check. An attacker with write access to the configuration 
-        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is permanently disabled 
+        /// <b>Security Note on Downgrade Vectors:</b> Processing v1 or raw legacy ciphertexts introduces an attacker-controllable
+        /// downgrade vector because these formats lack an HMAC integrity check. An attacker with write access to the configuration
+        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is permanently disabled
         /// via <c>AppConfig.AllowLegacyV1Decryption</c> to safeguard production systems.
         /// </remarks>
         /// <param name="cipherText">The versioned ciphertext (with marker) or a raw legacy string.</param>
         /// <returns>
-        /// The decrypted plain text on success, or the original <paramref name="cipherText"/> 
+        /// The decrypted plain text on success, or the original <paramref name="cipherText"/>
         /// only when the input has no marker and does not look like Base64.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="cipherText"/> is null.</exception>
@@ -253,7 +253,7 @@ namespace Servy.Core.Security
                 }
                 catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
                 {
-                    // We log the failure and re-throw. Upstream callers (UI/CLI) must handle this failure 
+                    // We log the failure and re-throw. Upstream callers (UI/CLI) must handle this failure
                     // to prevent the use of tampered or corrupted credentials.
                     Logger.Error("Integrity failure for marked payload.", ex);
                     throw;
@@ -284,7 +284,7 @@ namespace Servy.Core.Security
             }
             catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
             {
-                // For unmarked strings, we preserve the defensive fallback to avoid breaking 
+                // For unmarked strings, we preserve the defensive fallback to avoid breaking
                 // fields that were never meant to be encrypted.
                 Logger.Warn($"Legacy fallback decryption failed for unmarked data: {ex.Message}. Returning as plaintext.");
                 return rawPayload;
@@ -300,12 +300,12 @@ namespace Servy.Core.Security
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Security Warning:</b> This method implements a legacy format that lacks an HMAC integrity check. 
+        /// <b>Security Warning:</b> This method implements a legacy format that lacks an HMAC integrity check.
         /// It is vulnerable to ciphertext manipulation and does not provide authentication.
         /// </para>
         /// <para>
-        /// This version utilizes a static Initialization Vector (IV), which reduces cryptographic variance 
-        /// compared to the random IV used in v2. It is maintained strictly for backward compatibility 
+        /// This version utilizes a static Initialization Vector (IV), which reduces cryptographic variance
+        /// compared to the random IV used in v2. It is maintained strictly for backward compatibility
         /// with data encrypted prior to the implementation of the authenticated v2 format.
         /// </para>
         /// </remarks>
@@ -337,12 +337,12 @@ namespace Servy.Core.Security
         /// Internal logic for v2 decryption. Validates the HMAC-SHA256 signature before attempting AES decryption.
         /// </summary>
         /// <remarks>
-        /// This follows the "Encrypt-then-MAC" (EtM) security best practice. 
+        /// This follows the "Encrypt-then-MAC" (EtM) security best practice.
         /// 1. The payload is decomposed into the IV, Ciphertext, and HMAC.
         /// 2. A new HMAC is computed over the IV and Ciphertext and compared against the provided HMAC in constant time.
         /// 3. If integrity is verified, the ciphertext is decrypted using AES-256-CBC.
         /// <para>
-        /// <b>Security Note:</b> Decryption only occurs if the HMAC is valid. This prevents "Padding Oracle" attacks 
+        /// <b>Security Note:</b> Decryption only occurs if the HMAC is valid. This prevents "Padding Oracle" attacks
         /// by treating any manipulation of the ciphertext as an integrity failure rather than a decryption error.
         /// </para>
         /// </remarks>
@@ -413,13 +413,13 @@ namespace Servy.Core.Security
         /// Implements HKDF-Extract-and-Expand (RFC 5869) to derive cryptographically strong sub-keys from a master key.
         /// </summary>
         /// <remarks>
-        /// This implementation provides key separation by ensuring that even if one derived key is compromised, 
-        /// the others remain secure. 
+        /// This implementation provides key separation by ensuring that even if one derived key is compromised,
+        /// the others remain secure.
         /// <para>
         /// 1. <b>Extract:</b> Mixes the Input Keying Material (IKM) with a salt to produce a fixed-length Pseudorandom Key (PRK).
         /// </para>
         /// <para>
-        /// 2. <b>Expand:</b> Uses the PRK and a context-specific 'info' string to generate the final output key. 
+        /// 2. <b>Expand:</b> Uses the PRK and a context-specific 'info' string to generate the final output key.
         /// This specific implementation is simplified for a single-iteration expansion (suitable for outputs ≤ 32 bytes).
         /// </para>
         /// </remarks>
@@ -466,19 +466,19 @@ namespace Servy.Core.Security
         /// <param name="a">The first byte array to compare (e.g., the expected HMAC).</param>
         /// <param name="b">The second byte array to compare (e.g., the provided HMAC).</param>
         /// <returns>
-        /// True if the arrays are non-null and identical in content; otherwise, false. 
+        /// True if the arrays are non-null and identical in content; otherwise, false.
         /// Note: Returns false if both are null to prevent null-bypass vulnerabilities.
         /// </returns>
         private static bool CryptographicEquals(byte[] a, byte[] b)
         {
-            // Fail closed: If either array is missing, or if lengths differ, they are not 'equal' 
-            // in a cryptographic sense. We return false for dual-nulls to ensure an explicit 
+            // Fail closed: If either array is missing, or if lengths differ, they are not 'equal'
+            // in a cryptographic sense. We return false for dual-nulls to ensure an explicit
             // signature is always required for authentication.
             if (a == null || b == null || a.Length != b.Length) return false;
 
             int diff = 0;
 
-            // Constant-time loop: We iterate through the entire length regardless of where 
+            // Constant-time loop: We iterate through the entire length regardless of where
             // a difference is found to prevent side-channel timing attacks.
             for (int i = 0; i < a.Length; i++) { diff |= a[i] ^ b[i]; }
 
@@ -495,7 +495,7 @@ namespace Servy.Core.Security
         /// <item><description>Characters belong exclusively to the Base64 alphabet (A-Z, a-z, 0-9, +, /).</description></item>
         /// <item><description>Padding ('=') only appears at the very end of the string.</description></item>
         /// </list>
-        /// It is used to quickly distinguish between encrypted markers and raw legacy text without triggering 
+        /// It is used to quickly distinguish between encrypted markers and raw legacy text without triggering
         /// expensive <see cref="System.FormatException"/> exceptions during decryption attempts.
         /// </remarks>
         /// <param name="value">The string to validate.</param>

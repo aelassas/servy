@@ -161,7 +161,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void Validate_VariableWithMultipleUnescapedEquals_ReturnsTrue()
         {
             // Arrange
-            // Semicolons are backslash-escaped so the validator handles the connection string 
+            // Semicolons are backslash-escaped so the validator handles the connection string
             // as a single environment variable context block under the 'CONN' key, matching the test name intent.
             var input = "CONN=Server=localhost\\;Database=Test\\;TOKEN=SGVsbG8==;";
 

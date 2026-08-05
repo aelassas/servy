@@ -19,7 +19,7 @@ namespace Servy.Core.Services
         private static readonly XmlSerializer Serializer = new XmlSerializer(typeof(ServiceDto));
 
         /// <summary>
-        /// Centralized XML settings to guarantee identical encoding (UTF-8 without BOM) 
+        /// Centralized XML settings to guarantee identical encoding (UTF-8 without BOM)
         /// and formatting across both in-memory strings and file streams.
         /// </summary>
         private static readonly XmlWriterSettings StandardXmlSettings = new XmlWriterSettings

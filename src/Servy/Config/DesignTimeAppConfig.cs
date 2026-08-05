@@ -3,7 +3,7 @@
 namespace Servy.Config
 {
     /// <summary>
-    /// A lightweight implementation of <see cref="IAppConfiguration"/> specifically for 
+    /// A lightweight implementation of <see cref="IAppConfiguration"/> specifically for
     /// the XAML designer to prevent constructor-chaining failures.
     /// </summary>
     public class DesignTimeAppConfig : IAppConfiguration

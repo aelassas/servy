@@ -3,7 +3,7 @@
 namespace Servy.Core.DTOs
 {
     /// <summary>
-    /// A lightweight projection of a service's running state, specifically optimized 
+    /// A lightweight projection of a service's running state, specifically optimized
     /// for high-frequency UI polling in the Console tab.
     /// </summary>
     public class ServiceConsoleStateDto : ICloneable

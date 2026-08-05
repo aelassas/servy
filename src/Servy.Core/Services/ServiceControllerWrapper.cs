@@ -101,7 +101,7 @@ namespace Servy.Core.Services
         /// Internal overload allowing dependency resolution factory injection for unit testing.
         /// </summary>
         /// <param name="serviceFactory">
-        /// Optional factory delegate used to construct child service wrappers. 
+        /// Optional factory delegate used to construct child service wrappers.
         /// If <c>null</c>, falls back to real SCM <see cref="ServiceControllerWrapper"/> instantiation.
         /// </param>
         /// <param name="cancellationToken">A token to observe while resolving dependencies.</param>
@@ -135,7 +135,7 @@ namespace Servy.Core.Services
         /// A hash set tracking the specific path from root to leaf to detect and prevent cyclic dependencies.
         /// </param>
         /// <param name="fullyExpanded">
-        /// A dictionary of service names to already fully expanded nodes, used to prevent 
+        /// A dictionary of service names to already fully expanded nodes, used to prevent
         /// redundant SCM queries and properly populate shared/diamond dependency paths.
         /// </param>
         /// <param name="serviceFactory">
@@ -143,7 +143,7 @@ namespace Servy.Core.Services
         /// </param>
         /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
         /// <returns>
-        /// A <see cref="ServiceDependencyNode"/> representing the service and its dependencies. 
+        /// A <see cref="ServiceDependencyNode"/> representing the service and its dependencies.
         /// If a cycle is detected, a placeholder node is returned.
         /// </returns>
         private static ServiceDependencyNode BuildDependencyTree(

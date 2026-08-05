@@ -39,13 +39,13 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <param name="parentPid">The Process ID of the parent.</param>
         /// <param name="parentStartTime">
-        /// The <see cref="DateTime"/> the parent process started. Used to validate 
-        /// that a child truly belongs to the current parent instance and not a 
+        /// The <see cref="DateTime"/> the parent process started. Used to validate
+        /// that a child truly belongs to the current parent instance and not a
         /// recycled PID from a previous process.
         /// </param>
         /// <returns>
-        /// A <see cref="List{Process}"/> containing the child processes. 
-        /// <br/><strong>Note:</strong> The caller assumes ownership of these objects and 
+        /// A <see cref="List{Process}"/> containing the child processes.
+        /// <br/><strong>Note:</strong> The caller assumes ownership of these objects and
         /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
         public static List<Process> GetChildren(int parentPid, DateTime parentStartTime)
@@ -84,7 +84,7 @@ namespace Servy.Service.ProcessManagement
         /// <param name="parentStartTime">The start time of the parent for PID reuse validation.</param>
         /// <returns>
         /// A flattened <see cref="List{Process}"/> containing the entire descendant tree.
-        /// <br/><strong>Note:</strong> The caller assumes full ownership of ALL returned objects and 
+        /// <br/><strong>Note:</strong> The caller assumes full ownership of ALL returned objects and
         /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
         public static List<Process> GetAllDescendants(int parentPid, DateTime parentStartTime)
@@ -142,7 +142,7 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <summary>
-        /// Attempts to securely resolve a child process by PID, applying strict lifetime validation 
+        /// Attempts to securely resolve a child process by PID, applying strict lifetime validation
         /// to ensure the PID hasn't been recycled by an unrelated process.
         /// </summary>
         /// <param name="childPid">The process ID of the candidate child.</param>

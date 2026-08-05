@@ -179,7 +179,7 @@ namespace Servy.Core.UnitTests.Security
 
             if (isBase64LegacyBranch)
             {
-                // Separate MemoryStream from the interlocking using chain to prevent premature disposal 
+                // Separate MemoryStream from the interlocking using chain to prevent premature disposal
                 // before its binary data can be extracted into the Base64 string encoder.
                 using (var ms = new MemoryStream())
                 {
@@ -288,7 +288,7 @@ namespace Servy.Core.UnitTests.Security
                 var tampered = "SERVY_ENC:v2:!!!NotBase64!!!";
 
                 // Act & Assert
-                // Invalid Base64 strings must always be caught and wrapped by the cryptographic 
+                // Invalid Base64 strings must always be caught and wrapped by the cryptographic
                 // provider to guarantee a deterministic SecureDataIntegrityException surface.
                 Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
             }
@@ -394,7 +394,7 @@ namespace Servy.Core.UnitTests.Security
             var secureData = new SecureData(mockProvider.Object);
 
             // To verify zeroing, we use Reflection to grab the internal byte arrays.
-            // This is necessary because the fields are private and we need to check 
+            // This is necessary because the fields are private and we need to check
             // the content of the memory after Dispose.
             var v1Key = TestReflection.GetField<byte[]>(secureData, "_v1MasterKey");
             var v1Iv = TestReflection.GetField<byte[]>(secureData, "_v1StaticIv");

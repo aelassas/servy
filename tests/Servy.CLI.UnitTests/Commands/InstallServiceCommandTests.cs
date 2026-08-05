@@ -226,7 +226,7 @@ namespace Servy.CLI.UnitTests.Commands
                 }
             }
 
-            // RELEASE BUILD SAFETY GUARD: Restore original, verified production binary 
+            // RELEASE BUILD SAFETY GUARD: Restore original, verified production binary
             // if a backup transaction was initialized during the arrangement phase.
             if (!string.IsNullOrEmpty(_backupPath) && File.Exists(_backupPath))
             {

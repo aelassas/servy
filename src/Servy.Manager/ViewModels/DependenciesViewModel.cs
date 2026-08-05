@@ -284,7 +284,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
+        /// Cleans up resources, cancels background tasks, and explicitly unsubscribes
         /// from timer events to prevent memory leaks.
         /// </summary>
         protected override void Dispose(bool disposing)

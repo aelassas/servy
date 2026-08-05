@@ -73,7 +73,7 @@ namespace Servy.CLI.UnitTests
             bool isReal = Program.IsRealConsole();
 
             // Assert
-            // When executing within headless test runners or CI pipelines, 
+            // When executing within headless test runners or CI pipelines,
             // Environment.UserInteractive or Console.IsOutputRedirected will naturally be false/redirected
             Assert.False(isReal);
         }
@@ -153,7 +153,7 @@ namespace Servy.CLI.UnitTests
 
             try
             {
-                // Access the internal test seam via reflection to explicitly force an un-redirected state scenario 
+                // Access the internal test seam via reflection to explicitly force an un-redirected state scenario
                 // to verify that the internal evaluation flag catches the runtime configuration bypass blocks.
                 var field = typeof(CLI.Helpers.ConsoleHelper).GetField("_isOutputRedirectedOverride", BindingFlags.Static | BindingFlags.NonPublic);
                 field?.SetValue(null, true); // Force out-of-bounds skip branch simulation

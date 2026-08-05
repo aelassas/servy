@@ -38,8 +38,8 @@ namespace Servy.Service.Helpers
     public static class EnvironmentVariableHelper
     {
         /// <summary>
-        /// A deterministic, reserved token used to temporarily protect '%%' escape sequences 
-        /// from being parsed during the fixed-point expansion loop. Uses the Unicode Replacement 
+        /// A deterministic, reserved token used to temporarily protect '%%' escape sequences
+        /// from being parsed during the fixed-point expansion loop. Uses the Unicode Replacement
         /// Character (\uFFFD) to guarantee no collisions with legitimate user input.
         /// </summary>
         internal const string PercentEscapeToken = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD";
@@ -69,20 +69,20 @@ namespace Servy.Service.Helpers
             "USERNAME", "USERPROFILE", "ALLUSERSPROFILE", "PROGRAMDATA", "PSMODULEPATH",
 
             // --- Runtime Injection & Hijack Vectors ---
-            
+
             // .NET & CLR Runtime Injection / Diagnostics (Legacy & Modern CoreCLR)
             "COR_ENABLE_PROFILING", "COR_PROFILER", "COR_PROFILER_PATH",
             "CORECLR_ENABLE_PROFILING", "CORECLR_PROFILER", "CORECLR_PROFILER_PATH",
             "DOTNET_STARTUP_HOOKS", "DOTNET_ROOT", "DOTNET_ROOT(x86)", "DOTNET_HOST_PATH",
             "DOTNET_BUNDLE_EXTRACT_BASE_DIR", "DOTNET_ADDITIONAL_DEPS", "DOTNET_SHARED_STORE",
-            
+
             // Modern Diagnostic Attach Surfaces
             "DOTNET_DiagnosticPorts",          "COMPlus_DiagnosticPorts",
             "DOTNET_EnableDiagnostics",        "COMPlus_EnableDiagnostics",
             "DOTNET_EnableDiagnostics_IPC",    "COMPlus_EnableDiagnostics_IPC",
             "DOTNET_EnableDiagnostics_Profiler","COMPlus_EnableDiagnostics_Profiler",
             "DOTNET_EnableEventPipe",          "COMPlus_EnableEventPipe",
-            
+
             // Runtime Custom Component Loading & Assembly Layout Adjustments
             "DOTNET_GCName",                   "COMPlus_GCName",
             "DOTNET_GCPath",                   "COMPlus_GCPath",
@@ -90,12 +90,12 @@ namespace Servy.Service.Helpers
             "DOTNET_LegacyTransform",          "COMPlus_LegacyTransform",
             "DOTNET_PerfMapEnabled",            "COMPlus_PerfMapEnabled",
             "DOTNET_ZapDisable",                "COMPlus_ZapDisable",
-            
+
             // MiniDump Storage Layout Targets (Prevents sensitive memory leakage redirection)
             "DOTNET_DbgEnableMiniDump",        "COMPlus_DbgEnableMiniDump",
             "DOTNET_DbgMiniDumpName",          "COMPlus_DbgMiniDumpName",
             "DOTNET_DbgMiniDumpType",          "COMPlus_DbgMiniDumpType",
-  
+
             // Java Injection - Covers direct java.exe (TOOL_OPTIONS) and common shell-wrapper launchers (OPTS)
             "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JAVA_OPTS", "JAVA_OPTIONS",
             "CATALINA_OPTS", "CATALINA_JAVA_OPTS",
@@ -104,21 +104,21 @@ namespace Servy.Service.Helpers
             "ANT_OPTS",
             "JBOSS_JAVA_OPTS", "WILDFLY_OPTS",
             "CLASSPATH", "JAVA_HOME", "JRE_HOME", "JDK_HOME",
-  
+
             // Node.js & NPM Injection - Covers direct runtime, npm config wrappers, and rogue CA injection
             "NODE_OPTIONS", "NODE_PATH", "NODE_EXTRA_CA_CERTS",
             "NPM_CONFIG_PREFIX", "NPM_CONFIG_USERCONFIG", "NPM_CONFIG_GLOBALCONFIG",
-  
+
             // Python Injection - Covers interpreters and package manager wrappers
             "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",
             "PYTHONIOENCODING", "PYTHONFAULTHANDLER", "PYTHONUSERBASE", "PYTHONEXECUTABLE",
-            
+
             // Ruby & Perl Injection
             "RUBYOPT", "RUBYLIB", "PERL5OPT", "PERL5LIB",
 
             // PHP Injection - Prevents loading malicious extensions or rogue php.ini files
             "PHPRC", "PHP_INI_SCAN_DIR",
-  
+
             // Global/Unix-like fallback (for MinGW/WSL/Cygwin contexts)
             "LD_PRELOAD", "LD_LIBRARY_PATH",
 
@@ -177,7 +177,7 @@ namespace Servy.Service.Helpers
                         continue;
                     }
 
-                    // Encode '%%' into a temporary token to prevent the expansion engine 
+                    // Encode '%%' into a temporary token to prevent the expansion engine
                     // from treating escaped percent signs as variable boundaries.
                     string sanitizedValue = envVar.Value?.Replace("%%", PercentEscapeToken);
                     result[envVar.Name] = sanitizedValue;
@@ -237,7 +237,7 @@ namespace Servy.Service.Helpers
             {
                 if (string.IsNullOrEmpty(result[key])) continue;
 
-                // Safely expand remaining real system placeholders (e.g. %ProgramData%) without touching 
+                // Safely expand remaining real system placeholders (e.g. %ProgramData%) without touching
                 // protected tokens. We use protectInjectedValues: true to shelter any nested percentage content.
                 string systemExpanded = ExpandWithDictionary(result[key], systemEnv, null, null, protectInjectedValues: true);
                 result[key] = Environment.ExpandEnvironmentVariables(systemExpanded);
@@ -271,7 +271,7 @@ namespace Servy.Service.Helpers
             string encodedInput = input.Replace("%%", PercentEscapeToken);
 
             // Since 'expandedEnv' is already resolved to a fixed point by the dictionary builder,
-            // only one pass is needed here. We pass 'protectInjectedValues: true' so that any literal 
+            // only one pass is needed here. We pass 'protectInjectedValues: true' so that any literal
             // '%' characters injected from the dictionary aren't accidentally re-expanded by the OS.
             string result = ExpandWithDictionary(encodedInput, expandedEnv, null, null, protectInjectedValues: true);
             result = Environment.ExpandEnvironmentVariables(result);
@@ -341,7 +341,7 @@ namespace Servy.Service.Helpers
                 string replacement = kvp.Value; // empty string is a valid replacement
 
                 // SELF-REFERENCE GUARD:
-                // If the replacement value contains the token itself (e.g., MY_PATH=%MY_PATH%;bin), 
+                // If the replacement value contains the token itself (e.g., MY_PATH=%MY_PATH%;bin),
                 // we must resolve it to prevent exponential string growth during multi-pass expansion.
                 // We substitute the current process's OS-level value of that variable for the token,
                 // mimicking standard Windows "PATH-append" semantics.
@@ -349,7 +349,7 @@ namespace Servy.Service.Helpers
                 {
                     string inheritedValue = Environment.GetEnvironmentVariable(kvp.Key);
 
-                    // If there is no inherited OS value to append to, leave the placeholder 
+                    // If there is no inherited OS value to append to, leave the placeholder
                     // intact so the user understands why the append operation did not occur.
                     if (string.IsNullOrEmpty(inheritedValue))
                     {
@@ -357,9 +357,9 @@ namespace Servy.Service.Helpers
                         continue;
                     }
 
-                    // If we are currently expanding the self-referential variable's OWN definition, 
+                    // If we are currently expanding the self-referential variable's OWN definition,
                     // we substitute only the inherited OS value to avoid double-appending the suffix.
-                    // If we are expanding a DIFFERENT variable or a raw string, we substitute the 
+                    // If we are expanding a DIFFERENT variable or a raw string, we substitute the
                     // fully resolved replacement. Note: MatchEvaluator prevents parser issues with '$' signs.
                     if (string.Equals(currentKey, kvp.Key, StringComparison.OrdinalIgnoreCase))
                     {
@@ -376,7 +376,7 @@ namespace Servy.Service.Helpers
                     }
                 }
 
-                // If requested, protect literal '%' in the replacement value, while selectively preserving 
+                // If requested, protect literal '%' in the replacement value, while selectively preserving
                 // genuine system placeholders (e.g. %ProgramData%) so they can expand in Step 4.
                 string safeReplacement = protectInjectedValues
                     ? ProtectNonSystemPercents(replacement, systemEnv)
@@ -401,7 +401,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <summary>
-        /// Truncates a string value to a specified maximum boundary limit, checking for and removing 
+        /// Truncates a string value to a specified maximum boundary limit, checking for and removing
         /// any partial or malformed <see cref="PercentEscapeToken"/> segments split during the cut operation.
         /// </summary>
         /// <param name="value">The expanded string payload currently requiring boundary verification.</param>
@@ -412,7 +412,7 @@ namespace Servy.Service.Helpers
             if (string.IsNullOrEmpty(value)) return string.Empty;
             if (value.Length <= maxLength) return value;
 
-            // We must check if the strict truncation boundary (maxLength) cuts directly through 
+            // We must check if the strict truncation boundary (maxLength) cuts directly through
             // a PercentEscapeToken. Since the token has a fixed length (PercentEscapeToken.Length),
             // we only need to inspect indices where a token could start and subsequently straddle the cut-line.
             int startBound = Math.Max(0, maxLength - PercentEscapeToken.Length + 1);
@@ -422,7 +422,7 @@ namespace Servy.Service.Helpers
                 // Ensure the remaining string is long enough to contain the full token for comparison
                 if (value.Length - i >= PercentEscapeToken.Length)
                 {
-                    // If a complete token starts at index 'i' (before maxLength) but requires 
+                    // If a complete token starts at index 'i' (before maxLength) but requires
                     // characters beyond 'maxLength' to finish, it straddles the boundary.
                     if (string.Compare(value, i, PercentEscapeToken, 0, PercentEscapeToken.Length, StringComparison.Ordinal) == 0)
                     {

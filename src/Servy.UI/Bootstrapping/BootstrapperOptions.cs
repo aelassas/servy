@@ -9,7 +9,7 @@ namespace Servy.UI.Bootstrapping
     /// Configuration options used to initialize the <see cref="AppBootstrapper"/>.
     /// </summary>
     /// <remarks>
-    /// This class allows project-specific settings (like resource namespaces, localized strings, 
+    /// This class allows project-specific settings (like resource namespaces, localized strings,
     /// and window factories) to be passed into the shared startup logic.
     /// </remarks>
     public class BootstrapperOptions
@@ -65,11 +65,11 @@ namespace Servy.UI.Bootstrapping
         #endregion
 
         /// <summary>
-        /// Gets or sets an action to extract project-specific settings from the 
+        /// Gets or sets an action to extract project-specific settings from the
         /// loaded <see cref="NameValueCollection"/>.
         /// </summary>
         /// <remarks>
-        /// This is called during the initialization sequence after the shared configuration 
+        /// This is called during the initialization sequence after the shared configuration
         /// (connection strings, log levels) has been processed.
         /// </remarks>
         public Action<NameValueCollection> CustomConfigAction { get; set; }

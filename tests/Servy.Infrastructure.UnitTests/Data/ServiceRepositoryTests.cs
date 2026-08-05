@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -485,8 +485,8 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task DeleteAsync_ByName_ReturnsZero()
         {
             // Arrange
-            // Explicitly configure no database behavior setup for ExecuteAsync here. 
-            // The method under test should hit an early-return string constraint check, 
+            // Explicitly configure no database behavior setup for ExecuteAsync here.
+            // The method under test should hit an early-return string constraint check,
             // meaning any Dapper routing constitutes a direct test failure.
             var repo = CreateRepository();
 
@@ -497,7 +497,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // 1. Verify that the method cleanly returned a neutral 0-row metric count
             Assert.Equal(0, rows);
 
-            // 2. Negative Verification: Explicitly prove that the empty-string guard clause 
+            // 2. Negative Verification: Explicitly prove that the empty-string guard clause
             // intercepted the execution path and never touch the underlying database layer.
             _mockDapper.Verify(d => d.ExecuteAsync(
                 It.IsAny<string>(),
@@ -765,7 +765,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var serviceName = "SqlVerifyService";
             var expectedDto = new ServiceConsoleStateDto();
 
-            // Maintain a broad setup so that Dapper returns a valid instance when called, 
+            // Maintain a broad setup so that Dapper returns a valid instance when called,
             // ensuring execution proceeds smoothly to the assertion phase.
             _mockDapper
                 .Setup(e => e.QuerySingleOrDefaultAsync<ServiceConsoleStateDto>(
@@ -871,7 +871,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Arrange
             var list = new List<ServiceDto> { CreateEncryptedServiceDto() };
 
-            // Enforce that a null/whitespace keyword routes explicitly 
+            // Enforce that a null/whitespace keyword routes explicitly
             // to the GetAllAsync SQL string pattern instead of matching any arbitrary query definition.
             string expectedGetAllSql = $"SELECT * FROM {SqlConstants.ServicesTableName} ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
 
@@ -1179,7 +1179,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [InlineData(true, true)]   // Covers Both State + Credentials branches
         [InlineData(true, false)]  // Covers State branch only
         [InlineData(false, true)]  // Covers Credentials branch only
-        [InlineData(false, false)] // Covers neither 
+        [InlineData(false, false)] // Covers neither
         public void ApplyRuntimeState_AllCombinationsAndBranches_Covered(bool preserveState, bool preserveCredentials)
         {
             // Arrange

@@ -17,7 +17,7 @@ namespace Servy.Core.UnitTests.Native
             // PROCESS_QUERY_LIMITED_INFORMATION (0x1000) is standard for querying state
             // and typically does not require administrative privileges for the current process.
             ProcessAccess access = ProcessAccess.QueryLimitedInformation;
-            
+
             // Act
             using (SafeWinProcessHandle handle = OpenProcess(access, false, currentPid))
             {

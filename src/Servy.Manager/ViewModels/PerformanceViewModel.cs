@@ -18,7 +18,7 @@ using System.Windows.Media;
 namespace Servy.Manager.ViewModels
 {
     /// <summary>
-    /// ViewModel responsible for monitoring and visualizing real-time performance data (CPU and RAM) 
+    /// ViewModel responsible for monitoring and visualizing real-time performance data (CPU and RAM)
     /// for selected Windows services.
     /// </summary>
     public class PerformanceViewModel : MonitoringViewModelBase
@@ -27,7 +27,7 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// The number of data points maintained in the performance history buffers.
-        /// A value of 101 ensures the graph line spans the entire horizontal width 
+        /// A value of 101 ensures the graph line spans the entire horizontal width
         /// of the UI control (0 to 100 on the X-axis) immediately upon initialization.
         /// </summary>
         private const int PerformanceHistoryCapacity = 101;
@@ -36,7 +36,7 @@ namespace Servy.Manager.ViewModels
         /// The scaling headroom multiplier applied above the observed metric peak footprint.
         /// </summary>
         /// <remarks>
-        /// This factor injects 20% vertical breathing room above the maximum data coordinate value 
+        /// This factor injects 20% vertical breathing room above the maximum data coordinate value
         /// in the chart's current window frame, preventing graph clipping at the top boundary.
         /// </remarks>
         private const double GraphScaleHeadroom = 1.2;
@@ -313,7 +313,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Processes new performance data and updates the point collections using an optimized 
+        /// Processes new performance data and updates the point collections using an optimized
         /// double-buffering approach to minimize GC allocations.
         /// </summary>
         /// <param name="newValue">The latest raw value captured from the process.</param>

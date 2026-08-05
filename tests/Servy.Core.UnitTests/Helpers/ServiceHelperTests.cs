@@ -56,7 +56,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void CalculateStartTimeout_WithTimeoutExactlyEqualToFloor_UsesFloorBaseline()
         {
             // Arrange
-            // Drive the evaluation input directly from the real infrastructure floor constant 
+            // Drive the evaluation input directly from the real infrastructure floor constant
             // to explicitly test the strict '>' boundary rule without relying on fragile magic-number assumptions.
             int exactFloorValue = AppConfig.DefaultServiceStartTimeoutSeconds;
             int preLaunchTimeoutSeconds = 0;
@@ -89,7 +89,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Verifies that any specified pre-launch executable hook timeout duration is additively 
+        /// Verifies that any specified pre-launch executable hook timeout duration is additively
         /// combined into the total returned timeout allocation.
         /// </summary>
         /// <param name="configuredTimeout">The incoming timeout configuration state.</param>
@@ -111,7 +111,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Verifies a complex integration scenario where a custom high timeout configuration 
+        /// Verifies a complex integration scenario where a custom high timeout configuration
         /// and a heavy pre-launch hook duration are evaluated together.
         /// </summary>
         [Fact]
@@ -146,7 +146,7 @@ namespace Servy.Core.UnitTests.Helpers
                 preLaunchRetryAttempts);
 
             // Assert
-            // The production calculation is evaluated strictly against a distinct, 
+            // The production calculation is evaluated strictly against a distinct,
             // independently declared closed-form value instead of mirroring an inline loop.
             Assert.Equal(expectedTimeout, actualTimeout);
         }

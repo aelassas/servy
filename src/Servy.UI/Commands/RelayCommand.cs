@@ -4,7 +4,7 @@ using System.Windows.Input;
 namespace Servy.UI.Commands
 {
     /// <summary>
-    /// A command whose sole purpose is to relay its functionality 
+    /// A command whose sole purpose is to relay its functionality
     /// to other objects by invoking delegates with a strongly typed parameter.
     /// </summary>
     /// <typeparam name="T">The type of the parameter.</typeparam>

@@ -427,24 +427,24 @@ namespace Servy.Services
         #region Private Helpers
 
         /// <summary>
-        /// Executes a unified service operation, providing a standardized pipeline for validation, 
+        /// Executes a unified service operation, providing a standardized pipeline for validation,
         /// state checking, exception handling, and user feedback.
         /// </summary>
         /// <param name="serviceName">The unique name of the Windows service to be operated on.</param>
-        /// <param name="operation">An asynchronous delegate representing the specific service manager 
+        /// <param name="operation">An asynchronous delegate representing the specific service manager
         /// action (e.g., Start, Stop, or Restart).</param>
-        /// <param name="successMessage">The localized message string to display in a success dialog 
+        /// <param name="successMessage">The localized message string to display in a success dialog
         /// if the operation completes successfully.</param>
-        /// <param name="checkDisabled">If <c>true</c>, the method will verify that the service is not 
+        /// <param name="checkDisabled">If <c>true</c>, the method will verify that the service is not
         /// in a 'Disabled' state before attempting the operation.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests during asynchronous operations.</param>
         /// <returns>
-        /// A task that represents the asynchronous operation. The task result is <c>true</c> 
-        /// if the service operation and all associated UI feedback completed successfully; 
+        /// A task that represents the asynchronous operation. The task result is <c>true</c>
+        /// if the service operation and all associated UI feedback completed successfully;
         /// otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// This method centralizes the boilerplate logic for service control, ensuring that 
+        /// This method centralizes the boilerplate logic for service control, ensuring that
         /// logging and error reporting remain consistent across all management commands.
         /// </remarks>
         private async Task<bool> ExecuteServiceCommandAsync(
@@ -522,7 +522,7 @@ namespace Servy.Services
         }
 
         /// <summary>
-        /// Standardizes the configuration export pipeline, handling path resolution, security validation, 
+        /// Standardizes the configuration export pipeline, handling path resolution, security validation,
         /// and formatted logging for both XML and JSON outputs.
         /// </summary>
         /// <param name="confirmPassword">The password provided by the user to authorize the export of sensitive configuration data.</param>
@@ -533,7 +533,7 @@ namespace Servy.Services
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous export operation.</returns>
         /// <remarks>
-        /// This method ensures that the domain model is mapped to a DTO and strictly validated before any file I/O occurs, 
+        /// This method ensures that the domain model is mapped to a DTO and strictly validated before any file I/O occurs,
         /// preventing the export of invalid or inconsistent configurations.
         /// </remarks>
         private async Task ExportConfigAsync(
@@ -579,11 +579,11 @@ namespace Servy.Services
         }
 
         /// <summary>
-        /// Standardizes the configuration import pipeline, enforcing security guards, format-specific validation, 
+        /// Standardizes the configuration import pipeline, enforcing security guards, format-specific validation,
         /// and model binding for incoming configuration files.
         /// </summary>
         /// <param name="getFilePath">A delegate that triggers a file open dialog and returns the selected source path.</param>
-        /// <param name="validateContent">A delegate that performs raw content validation (e.g., schema or syntax checks) 
+        /// <param name="validateContent">A delegate that performs raw content validation (e.g., schema or syntax checks)
         /// and returns a tuple indicating success and any associated error message.</param>
         /// <param name="deserialize">A delegate that converts the raw file content into a <see cref="ServiceDto"/>.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging.</param>

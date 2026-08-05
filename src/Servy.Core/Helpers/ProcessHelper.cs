@@ -37,7 +37,7 @@ namespace Servy.Core.Helpers
         private long _lastPruneTicks = DateTime.MinValue.Ticks;
 
         /// <summary>
-        /// Maintains a lightweight sync object for each PID to allow concurrent metrics gathering 
+        /// Maintains a lightweight sync object for each PID to allow concurrent metrics gathering
         /// for different processes, while serializing requests for the same process.
         /// </summary>
         private readonly ConcurrentDictionary<int, object> _pidLocks = new ConcurrentDictionary<int, object>();
@@ -52,12 +52,12 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="pid">The unique identifier of the process.</param>
         /// <returns>
-        /// A synchronization object that can be used with the <c>lock</c> statement 
+        /// A synchronization object that can be used with the <c>lock</c> statement
         /// to serialize access to the specified process's data.
         /// </returns>
         /// <remarks>
-        /// This provides fine-grained locking, allowing the Manager to gather metrics 
-        /// for multiple services in parallel while ensuring that concurrent requests 
+        /// This provides fine-grained locking, allowing the Manager to gather metrics
+        /// for multiple services in parallel while ensuring that concurrent requests
         /// for the same PID do not corrupt the CPU delta calculations.
         /// </remarks>
         private object GetLockForPid(int pid)
@@ -200,9 +200,9 @@ namespace Servy.Core.Helpers
                     {
                         _prevCpuTimes.TryRemove(pid, out _);
 
-                        // NOTE: We intentionally DO NOT remove from _pidLocks. 
-                        // Evicting lock objects creates a TOCTOU race where a concurrent GetProcessMetrics 
-                        // could allocate a new lock, resulting in two threads mutating _prevCpuTimes 
+                        // NOTE: We intentionally DO NOT remove from _pidLocks.
+                        // Evicting lock objects creates a TOCTOU race where a concurrent GetProcessMetrics
+                        // could allocate a new lock, resulting in two threads mutating _prevCpuTimes
                         // simultaneously. The dictionary is bounded by the OS PID limit, so memory growth is negligible.
                     }
                 }

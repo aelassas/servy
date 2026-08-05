@@ -1,9 +1,9 @@
-using Fody;
+﻿using Fody;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-// This attribute tells ConfigureAwait.Fody to apply .ConfigureAwait(false) 
+// This attribute tells ConfigureAwait.Fody to apply .ConfigureAwait(false)
 // to every await statement in this assembly automatically.
 [assembly: ConfigureAwait(false)]
 

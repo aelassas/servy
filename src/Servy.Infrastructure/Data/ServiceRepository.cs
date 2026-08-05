@@ -72,7 +72,7 @@ namespace Servy.Infrastructure.Data
             var encryptedService = CreateEncryptedClone(service);
 
             var sql = $@"
-                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns}) 
+                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns})
                 VALUES ({SqlConstants.InsertValues});
                 SELECT last_insert_rowid();";
 
@@ -132,7 +132,7 @@ namespace Servy.Infrastructure.Data
                 cancellationToken: cancellationToken);
 
             var sql = $@"
-                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns}) 
+                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns})
                 VALUES ({SqlConstants.InsertValues})
                 ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};
@@ -168,7 +168,7 @@ namespace Servy.Infrastructure.Data
                     {
                         if (!string.IsNullOrEmpty(row.Name))
                         {
-                            // CRITICAL: Decrypt the existing DB record back to plain text 
+                            // CRITICAL: Decrypt the existing DB record back to plain text
                             // so that ApplyRuntimeState passes clear values to CreateEncryptedClone
                             SafeDecrypt(row);
                             existingMap[row.Name] = row;
@@ -198,7 +198,7 @@ namespace Servy.Infrastructure.Data
             }
 
             var sql = $@"
-                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns}) 
+                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns})
                 VALUES ({SqlConstants.InsertValues})
                 ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};";
@@ -206,11 +206,11 @@ namespace Servy.Infrastructure.Data
             // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
             using (var tx = _dapper.BeginTransaction())
             {
-                // 3. Execute the batch upsert within the transaction scope 
+                // 3. Execute the batch upsert within the transaction scope
                 var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);
 
                 // 4. Sync IDs back to the original DTOs
-                // SQLite has a default limit of 999 parameters. For larger batches, 
+                // SQLite has a default limit of 999 parameters. For larger batches,
                 // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
                 for (int i = 0; i < serviceList.Count; i += AppConfig.DbBatchIdSyncChunkSize)
                 {
@@ -231,7 +231,7 @@ namespace Servy.Infrastructure.Data
                     {
                         if (string.IsNullOrEmpty(service.Name)) continue;
 
-                        // OrdinalIgnoreCase here handles the mapping between the 
+                        // OrdinalIgnoreCase here handles the mapping between the
                         // user's input (MyService) and the DB's stored casing (myservice).
                         if (idMap.TryGetValue(service.Name, out var id))
                         {
@@ -323,8 +323,8 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
             string sql = $@"
-                SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
-                FROM {SqlConstants.ServicesTableName} 
+                SELECT Pid, ActiveStdoutPath, ActiveStderrPath
+                FROM {SqlConstants.ServicesTableName}
                 WHERE Name = @Name COLLATE UNICODE_NOCASE
                 LIMIT 1;";
             var dto = await ResolveByNameAsync<ServiceConsoleStateDto>(sql, name, cancellationToken: cancellationToken);
@@ -353,9 +353,9 @@ namespace Servy.Infrastructure.Data
             // Optimized query layout configuration. SQLite executes 'LIKE' operations case-insensitively for standard ASCII
             // elements inherently by default configuration, but leveraging explicit ESCAPE patterns protects complex paths.
             var sql = $@"
-                SELECT * FROM {SqlConstants.ServicesTableName} 
-                WHERE Name       LIKE @Pattern ESCAPE '\' 
-                   OR Description LIKE @Pattern ESCAPE '\' 
+                SELECT * FROM {SqlConstants.ServicesTableName}
+                WHERE Name       LIKE @Pattern ESCAPE '\'
+                   OR Description LIKE @Pattern ESCAPE '\'
                 ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
 
             var escapedKeyword = keyword.Trim()
@@ -461,7 +461,7 @@ namespace Servy.Infrastructure.Data
         #region Private Helpers
 
         /// <summary>
-        /// Executes an asynchronous single-row retrieval query by a service name parameter, 
+        /// Executes an asynchronous single-row retrieval query by a service name parameter,
         /// funneling execution through the centralized legacy tracking fallback pipeline.
         /// </summary>
         /// <typeparam name="T">The expected return type of the database record or primitive scalar value.</typeparam>
@@ -469,7 +469,7 @@ namespace Servy.Infrastructure.Data
         /// <param name="name">The name of the service used to query the data store layer.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests during the asynchronous sequence.</param>
         /// <returns>
-        /// A task representing the asynchronous operation. The task result contains the retrieved 
+        /// A task representing the asynchronous operation. The task result contains the retrieved
         /// value of type <typeparamref name="T"/> if matched; otherwise, the default value of <typeparamref name="T"/>.
         /// </returns>
         private Task<T> ResolveByNameAsync<T>(string sql, string name, CancellationToken cancellationToken)
@@ -485,7 +485,7 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Orchestrates an asynchronous data store command using a unified legacy whitespace fallback execution pattern.
-        /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical 
+        /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical
         /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
         /// </summary>
         /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
@@ -516,7 +516,7 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Orchestrates a synchronous data store command using a unified legacy whitespace fallback execution pattern.
-        /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical 
+        /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical
         /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
         /// </summary>
         /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
@@ -624,17 +624,17 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Synchronizes transient, runtime-only operational fields from a verified database record 
+        /// Synchronizes transient, runtime-only operational fields from a verified database record
         /// into an incoming configuration instance before execution mutations.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Single Source of Truth (SSoT):</b> This utility acts as the centralized authority for tracking fields 
-        /// that are excluded from external export files (where <c>ShouldSerialize*() => false</c>). 
+        /// <b>Single Source of Truth (SSoT):</b> This utility acts as the centralized authority for tracking fields
+        /// that are excluded from external export files (where <c>ShouldSerialize*() => false</c>).
         /// </para>
         /// <para>
-        /// If these fields are omitted or unmapped during an entry import lifecycle, the persistence engine 
-        /// would inadvertently overwrite critical operational telemetry columns with <c>NULL</c> values, 
+        /// If these fields are omitted or unmapped during an entry import lifecycle, the persistence engine
+        /// would inadvertently overwrite critical operational telemetry columns with <c>NULL</c> values,
         /// decoupling the active running background processes from system instrumentation tracking hooks.
         /// </para>
         /// </remarks>
@@ -673,7 +673,7 @@ namespace Servy.Infrastructure.Data
         /// <exception cref="InvalidOperationException">Thrown when a specific field fails to encrypt.</exception>
         private ServiceDto CreateEncryptedClone(ServiceDto source)
         {
-            // Implemented explicit entrance argument null verification pattern matching code conventions 
+            // Implemented explicit entrance argument null verification pattern matching code conventions
             // to stop propagation bugs before causing deeply nested NullReferenceExceptions.
             if (source == null)
             {
@@ -696,7 +696,7 @@ namespace Servy.Infrastructure.Data
                     // 3. Log granular failure details to pinpoint the exact field causing the drift
                     Logger.Error($"Failed to encrypt field '{name}' for service '{source.Name}'.", ex);
 
-                    // 4. Rethrow a descriptive exception to prevent an unencrypted or half-encrypted 
+                    // 4. Rethrow a descriptive exception to prevent an unencrypted or half-encrypted
                     // DTO from being persisted to the database.
                     throw new InvalidOperationException($"Encryption failed for field '{name}' on service '{source.Name}'.", ex);
                 }

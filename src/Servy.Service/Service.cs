@@ -48,13 +48,13 @@ namespace Servy.Service
             Stop,
 
             /// <summary>
-            /// The system is preparing to shut down. This provides an early notification 
+            /// The system is preparing to shut down. This provides an early notification
             /// with an extended timeout window before the standard shutdown begins.
             /// </summary>
             PreShutdown,
 
             /// <summary>
-            /// The system is shutting down. This is the standard final notification 
+            /// The system is shutting down. This is the standard final notification
             /// and typically has a very short timeout window.
             /// </summary>
             Shutdown,
@@ -66,7 +66,7 @@ namespace Servy.Service
 
         /// <summary>
         /// The command-line argument used to signal that the service is running in a test context.
-        /// When this flag is present in the startup arguments, certain environment-specific 
+        /// When this flag is present in the startup arguments, certain environment-specific
         /// initializations (like Win32 handle reflection) are bypassed.
         /// </summary>
         public const string TestModeFlag = "servy_test";
@@ -154,8 +154,8 @@ namespace Servy.Service
         /// using the default production implementations for all dependencies.
         /// </summary>
         /// <remarks>
-        /// This constructor is intended for the Windows Service Control Manager (SCM). 
-        /// It performs full subsystem initialization, including logging, database connectivity, 
+        /// This constructor is intended for the Windows Service Control Manager (SCM).
+        /// It performs full subsystem initialization, including logging, database connectivity,
         /// and cryptographic setup.
         /// </remarks>
         public Service() : this(
@@ -228,8 +228,8 @@ namespace Servy.Service
         /// <param name="pathValidator">Path Validator.</param>
         /// <param name="processKiller">Helper used to terminate processes (and process trees) during teardown.</param>
         /// <remarks>
-        /// This is the primary <b>Production Constructor</b>. It automatically initializes the 
-        /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from 
+        /// This is the primary <b>Production Constructor</b>. It automatically initializes the
+        /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from
         /// <c>appsettings.json</c>, and initializes the <see cref="SecureData"/> and database systems.
         /// </remarks>
         public Service(
@@ -331,14 +331,14 @@ namespace Servy.Service
                 // Without Logger.Initialize in the constructor, this would be lost.
                 Logger.Error("Fatal error during service construction.", ex);
 
-                // If the environment exit code was successfully set to a custom error 
+                // If the environment exit code was successfully set to a custom error
                 // (like 13 from ProtectedKeyProvider), preserve it. Otherwise, set a generic service failure code.
                 if (Environment.ExitCode == 0)
                 {
                     Environment.ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                 }
 
-                // By explicitly calling Environment.Exit here, we guarantee the SCM registers 
+                // By explicitly calling Environment.Exit here, we guarantee the SCM registers
                 // the custom exit code immediately, completely preventing the 1053 timeout hang.
                 Environment.Exit(Environment.ExitCode);
             }
@@ -382,7 +382,7 @@ namespace Servy.Service
 
                 // PROMOTE LOGGER IMMEDIATELY
                 // Now every log from this point forward (including validation errors) is prefixed.
-                // DO NOT DISPOSE the root logger, as the scoped logger relies on its unmanaged resources 
+                // DO NOT DISPOSE the root logger, as the scoped logger relies on its unmanaged resources
                 // (EventLog handles, FileStreams) to function.
                 _logger = _logger?.CreateScoped(options.ServiceName);
 
@@ -440,7 +440,7 @@ namespace Servy.Service
                 var cts = new CancellationTokenSource();
 
                 // ROBUSTNESS: Capture the token structure immediately while the CTS instance is guaranteed alive.
-                // This shields the fire-and-forget task from throwing an ObjectDisposedException if a rapid 
+                // This shields the fire-and-forget task from throwing an ObjectDisposedException if a rapid
                 // recovery cycle or crash loop invokes Interlocked.Exchange and disposes 'cts' down the line.
                 var capturedToken = cts.Token;
 
@@ -489,8 +489,8 @@ namespace Servy.Service
                     // Capture the cancellation token tied to the service's current lifecycle
                     var token = _cancellationSource?.Token ?? CancellationToken.None;
 
-                    // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart() 
-                    // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite 
+                    // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart()
+                    // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite
                     // the state to include SERVICE_ACCEPT_PRESHUTDOWN, bypassing .NET's internal limitations.
                     _ = Task.Run(async () =>
                     {
@@ -550,8 +550,8 @@ namespace Servy.Service
 
         /// <summary>
         /// Initializes the path to the restart attempts file for the current service,
-        /// located under the %ProgramData%\Servy\recovery directory.  
-        /// The filename is unique per service based on its name to prevent conflicts  
+        /// located under the %ProgramData%\Servy\recovery directory.
+        /// The filename is unique per service based on its name to prevent conflicts
         /// when multiple services are managed by Servy on the same machine.
         /// </summary>
         /// <param name="options">The service startup options containing the service name.</param>
@@ -572,7 +572,7 @@ namespace Servy.Service
         /// <returns>A sanitized string safe for use as a filename.</returns>
         public static string MakeFilenameSafe(string name)
         {
-            // If null or empty, treat the base name as an underscore but still 
+            // If null or empty, treat the base name as an underscore but still
             // append the short hash to satisfy the unique signature layout requirement
             if (string.IsNullOrEmpty(name))
             {
@@ -638,12 +638,12 @@ namespace Servy.Service
         /// </summary>
         /// <param name="ct">A cancellation token to observe while waiting for the semaphore or performing I/O.</param>
         /// <returns>
-        /// The number of restart attempts recorded in the file. 
+        /// The number of restart attempts recorded in the file.
         /// Returns 0 if the file is missing, corrupt, or if an error occurs during retrieval.
         /// </returns>
         /// <remarks>
         /// This method uses an asynchronous semaphore to prevent race conditions during file access.
-        /// If the file content is invalid or unreadable, it automatically resets the file to "0" 
+        /// If the file content is invalid or unreadable, it automatically resets the file to "0"
         /// to maintain a clean recovery state for the managed process.
         /// </remarks>
         private int EnsureRestartAttemptsFile()
@@ -729,15 +729,15 @@ namespace Servy.Service
         /// <list type="number">
         /// <item>
         /// <description>
-        /// <b>Reboot Detection:</b> Compares the last write time of the restart file against the system boot time 
-        /// (calculated via <see cref="GetTickCount64"/>). If the file was modified before the current OS session, 
+        /// <b>Reboot Detection:</b> Compares the last write time of the restart file against the system boot time
+        /// (calculated via <see cref="GetTickCount64"/>). If the file was modified before the current OS session,
         /// the count is maintained because the service is likely starting due to a "Restart Computer" recovery action.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Stability Reset:</b> If within the same OS session, it resets the counter only if the time elapsed 
-        /// since the last failure exceeds a calculated threshold (heartbeat interval + failed check allowance + buffer). 
+        /// <b>Stability Reset:</b> If within the same OS session, it resets the counter only if the time elapsed
+        /// since the last failure exceeds a calculated threshold (heartbeat interval + failed check allowance + buffer).
         /// This ensures that stable runs clear the "punishment" history, while rapid crash loops continue to increment it.
         /// </description>
         /// </item>
@@ -751,14 +751,14 @@ namespace Servy.Service
 
             DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
 
-            // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter 
+            // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter
             // is mathematically protected against runtime overflow exceptions for ~292 million years.
             ulong uptimeMilliseconds = GetTickCount64();
             DateTime systemBootTimeUtc = DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
 
             // 1. Session Persistence Check
-            // If the file's last modification occurred before the current system boot, 
-            // the service is starting in a new OS session. We maintain the existing counter 
+            // If the file's last modification occurred before the current system boot,
+            // the service is starting in a new OS session. We maintain the existing counter
             // to ensure recovery quotas (like RestartComputer) are respected across reboots.
             if (lastWriteUtc < systemBootTimeUtc)
             {
@@ -813,27 +813,27 @@ namespace Servy.Service
         /// </summary>
         /// <param name="options">The service start options containing the pre-launch configuration.</param>
         /// <returns>
-        /// <c>true</c> if the pre-launch process completed successfully or was skipped; 
+        /// <c>true</c> if the pre-launch process completed successfully or was skipped;
         /// <c>false</c> if it failed and <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>false</c>.
         /// </returns>
         /// <remarks>
         /// <para>
         /// This method runs the configured pre-launch executable synchronously before the main service process.
-        /// It applies the specified working directory, command-line arguments, environment variables, and 
+        /// It applies the specified working directory, command-line arguments, environment variables, and
         /// optionally logs standard output and error to the provided file paths.
         /// </para>
         /// <para>
         /// The process is allowed to run for at least <see cref="AppConfig.MinPreLaunchTimeoutSeconds"/> seconds or
         /// <see cref="StartOptions.PreLaunchTimeoutInSeconds"/>, whichever is greater, per attempt.
-        /// If the process exits with a non-zero code or times out, it is retried up to 
+        /// If the process exits with a non-zero code or times out, it is retried up to
         /// <see cref="StartOptions.PreLaunchRetryAttempts"/> times.
         /// </para>
         /// <para>
-        /// If <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>true</c>, the service will continue starting 
+        /// If <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>true</c>, the service will continue starting
         /// even if all attempts fail. Otherwise, the service startup will be aborted.
         /// </para>
         /// <para>
-        /// If <see cref="StartOptions.PreLaunchTimeoutInSeconds"/> is set to 0, the pre-launch hook runs in fire-and-forget 
+        /// If <see cref="StartOptions.PreLaunchTimeoutInSeconds"/> is set to 0, the pre-launch hook runs in fire-and-forget
         /// mode and stdout/stderr redirection and retries are not available.
         /// </para>
         /// </remarks>
@@ -888,17 +888,17 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Converts a timeout value from seconds to milliseconds and clamps it to the maximum 
+        /// Converts a timeout value from seconds to milliseconds and clamps it to the maximum
         /// allowed value for a 32-bit signed integer.
         /// </summary>
         /// <param name="timeout">The timeout value in seconds.</param>
         /// <returns>
-        /// The timeout in milliseconds, or <see cref="int.MaxValue"/> if the 
+        /// The timeout in milliseconds, or <see cref="int.MaxValue"/> if the
         /// calculated value exceeds the capacity of a 32-bit signed integer.
         /// </returns>
         /// <remarks>
-        /// This method prevents <see cref="OverflowException"/> when converting long-running 
-        /// service timeouts. It ensures compatibility with underlying Win32 and .NET APIs 
+        /// This method prevents <see cref="OverflowException"/> when converting long-running
+        /// service timeouts. It ensures compatibility with underlying Win32 and .NET APIs
         /// that require an <see cref="int"/> millisecond value.
         /// </remarks>
         private int ClampTimeout(long timeout)
@@ -925,7 +925,7 @@ namespace Servy.Service
                 {
                     lock (_trackedHooks)
                     {
-                        // We track this so if the main service stops while the fire-and-forget 
+                        // We track this so if the main service stops while the fire-and-forget
                         // process is still running, we can kill the orphan.
                         _trackedHooks.Add(new Hook { OperationName = "pre-launch", Process = nativeProcess });
                     }
@@ -1048,12 +1048,12 @@ namespace Servy.Service
 
         /// <summary>
         /// Exposes the protected <see cref="OnStart(string[])"/> method for testing purposes.
-        /// Starts the service using the <see cref="TestModeFlag"/> to bypass environment-specific 
+        /// Starts the service using the <see cref="TestModeFlag"/> to bypass environment-specific
         /// initializations like Win32 service handle reflection.
         /// </summary>
         public void StartForTest()
         {
-            // Passing the TestModeFlag ensures that the service logic runs without 
+            // Passing the TestModeFlag ensures that the service logic runs without
             // attempting to hook into the Windows Service Control Manager.
             OnStart(new[] { TestModeFlag });
         }
@@ -1286,16 +1286,16 @@ namespace Servy.Service
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This operation runs entirely inside a fire-and-forget background task context. It is designed to be 
-        /// non-blocking and fail-silent to ensure that network latency, DNS failures, or remote proxy outages 
+        /// This operation runs entirely inside a fire-and-forget background task context. It is designed to be
+        /// non-blocking and fail-silent to ensure that network latency, DNS failures, or remote proxy outages
         /// never delay or destabilize the primary process supervision loop.
         /// </para>
         /// <para>
-        /// Outbound requests are managed using a short timeout threshold to prevent backing up thread pool workers 
+        /// Outbound requests are managed using a short timeout threshold to prevent backing up thread pool workers
         /// or exhausting available network socket allocations during persistent endpoint blackouts.
         /// </para>
         /// <para>
-        /// If a lifecycle suffix is provided but extended flags are disabled (<see cref="StartOptions.EnableHeartbeatUrlFlags"/> is false), 
+        /// If a lifecycle suffix is provided but extended flags are disabled (<see cref="StartOptions.EnableHeartbeatUrlFlags"/> is false),
         /// the method exits immediately without scheduling a background task or making a network request.
         /// </para>
         /// </remarks>
@@ -1346,7 +1346,7 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Cleans up the child process object if it fails to start, ensuring event handlers 
+        /// Cleans up the child process object if it fails to start, ensuring event handlers
         /// are detached and the object is disposed before it can cause secondary exceptions.
         /// </summary>
         private void CleanupFailedProcess()
@@ -1377,12 +1377,12 @@ namespace Servy.Service
         /// </summary>
         /// <remarks>
         /// This method launches an external program specified in the service options
-        /// after the wrapped process has successfully started.  
-        /// - If <see cref="_options"/> is <c>null</c> or no <c>PostLaunchExecutablePath</c> is set, the method does nothing.  
-        /// - Environment variables in arguments are expanded before execution.  
-        /// - The working directory defaults to the provided <c>PostLaunchWorkingDirectory</c>, 
-        ///   or falls back to the directory of the executable if not set.  
-        /// - The process is started in a fire-and-forget manner; no handle is kept or awaited.  
+        /// after the wrapped process has successfully started.
+        /// - If <see cref="_options"/> is <c>null</c> or no <c>PostLaunchExecutablePath</c> is set, the method does nothing.
+        /// - Environment variables in arguments are expanded before execution.
+        /// - The working directory defaults to the provided <c>PostLaunchWorkingDirectory</c>,
+        ///   or falls back to the directory of the executable if not set.
+        /// - The process is started in a fire-and-forget manner; no handle is kept or awaited.
         /// </remarks>
         /// <exception cref="System.ComponentModel.Win32Exception">
         /// Thrown if the executable cannot be started (e.g., file not found, access denied).
@@ -1401,23 +1401,23 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Executes a secondary process as a "fire-and-forget" hook, optionally tracking its lifecycle 
+        /// Executes a secondary process as a "fire-and-forget" hook, optionally tracking its lifecycle
         /// to ensure resources are cleaned up or managed appropriately.
         /// </summary>
         /// <param name="hookName">A descriptive name for the hook, used for logging and tracking purposes.</param>
         /// <param name="exePath">The file path to the executable to be launched. If null or empty, the hook execution is aborted.</param>
         /// <param name="rawArgs">The command-line arguments string to pass to the executable.</param>
         /// <param name="hookWorkingDir">
-        /// The directory in which the process should start. If null or whitespace, defaults to the 
+        /// The directory in which the process should start. If null or whitespace, defaults to the
         /// primary service working directory specified in <c>_options</c>.
         /// </param>
         /// <param name="track">
-        /// If <c>true</c>, the launched process is added to the internal <c>_trackedHooks</c> collection 
+        /// If <c>true</c>, the launched process is added to the internal <c>_trackedHooks</c> collection
         /// for management; otherwise, the process resources are disposed immediately after launch.
         /// </param>
         /// <remarks>
-        /// This method encapsulates process startup logic using <see cref="ProcessLauncher"/> and 
-        /// applies service-wide environment variables. Any exceptions during process creation or 
+        /// This method encapsulates process startup logic using <see cref="ProcessLauncher"/> and
+        /// applies service-wide environment variables. Any exceptions during process creation or
         /// environment validation are caught and logged silently to prevent service interruption.
         /// </remarks>
         private void RunFireAndForgetHook(
@@ -1460,7 +1460,7 @@ namespace Servy.Service
         /// - <c>FailureProgramPath</c>: the full path to the program to run.
         /// - <c>FailureProgramParameters</c>: the command-line arguments to pass.
         /// - <c>FailureProgramStartupDirectory</c>: the working directory for the program.
-        /// 
+        ///
         /// Exceptions thrown while attempting to start the failure program are caught
         /// and logged to avoid crashing the service.
         /// </remarks>
@@ -1560,8 +1560,8 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Event handler for the child process's Exited event. 
-        /// Evaluates the exit code and determines whether to perform a graceful shutdown 
+        /// Event handler for the child process's Exited event.
+        /// Evaluates the exit code and determines whether to perform a graceful shutdown
         /// or trigger the recovery sequence based on failure thresholds.
         /// </summary>
         /// <param name="sender">The source of the event (the child process).</param>
@@ -1755,9 +1755,9 @@ namespace Servy.Service
         /// Handles restart quota management, persistence of attempts, and execution of the recovery strategy.
         /// </summary>
         /// <remarks>
-        /// This method uses a "Gatekeeper" pattern via the <c>_isRecovering</c> flag to ensure that 
-        /// only one recovery action is executed at a time, even if multiple health checks fail 
-        /// simultaneously. The flag is reset in a <c>finally</c> block to guarantee that 
+        /// This method uses a "Gatekeeper" pattern via the <c>_isRecovering</c> flag to ensure that
+        /// only one recovery action is executed at a time, even if multiple health checks fail
+        /// simultaneously. The flag is reset in a <c>finally</c> block to guarantee that
         /// monitoring can resume regardless of whether the recovery succeeded or threw an exception.
         /// </remarks>
         private void InitiateRecovery()
@@ -1926,13 +1926,13 @@ namespace Servy.Service
 
         /// <summary>
         /// Periodically evaluates the health of the child process.
-        /// Increments failure counters if the process is missing or crashed, and triggers recovery logic 
+        /// Increments failure counters if the process is missing or crashed, and triggers recovery logic
         /// when the maximum failure threshold is reached.
         /// </summary>
         /// <param name="sender">The timer instance that triggered the health check.</param>
         /// <param name="e">Event data containing the time the check was triggered.</param>
         /// <remarks>
-        /// This method acts as an async void event handler for timer ticks and delegates execution to 
+        /// This method acts as an async void event handler for timer ticks and delegates execution to
         /// <see cref="CheckHealthCoreAsync"/>.
         /// </remarks>
         private async void CheckHealth(object sender, ElapsedEventArgs e)
@@ -2030,7 +2030,7 @@ namespace Servy.Service
             if (shouldStop) Stop();
 
             // InitiateRecovery will now find _isRecovering is already true.
-            // Ensure InitiateRecovery's internal guard allows it to run if 
+            // Ensure InitiateRecovery's internal guard allows it to run if
             // it's the one performing the recovery!
             if (needsRecovery) InitiateRecovery();
         }
@@ -2098,9 +2098,9 @@ namespace Servy.Service
 
                 Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
 
-                // 2. Wait in pulses. 
+                // 2. Wait in pulses.
                 // We increment the checkpoint each pulse to prove to the SCM that we haven't hung.
-                // This loop is guaranteed to terminate because the underlying teardown logic 
+                // This loop is guaranteed to terminate because the underlying teardown logic
                 // (SafeKillProcess) enforces an absolute, stopwatch-backed timeout limit.
                 bool teardownSucceeded = false;
                 try
@@ -2139,7 +2139,7 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Safely flushes and shuts down the loggers with a strict timeout 
+        /// Safely flushes and shuts down the loggers with a strict timeout
         /// to prevent OS-level RPC hangs during system shutdown.
         /// </summary>
         private void FlushAndShutdownLogger()
@@ -2221,7 +2221,7 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Called when the system is shutting down. 
+        /// Called when the system is shutting down.
         /// Mimics the Stop command to ensure child processes and hooks are cleaned up before the OS terminates the process.
         /// </summary>
         /// <remarks>
@@ -2291,13 +2291,13 @@ namespace Servy.Service
                 {
                     _logger?.Error($"Teardown error during {reason}.", ex);
 
-                    // Reset the tearing down flag so the service can attempt recovery 
+                    // Reset the tearing down flag so the service can attempt recovery
                     // if the child process exits or the SCM attempts another stop.
                     _isTearingDown = false;
                 }
                 finally
                 {
-                    // Only dispose of core resources and set _disposed = true 
+                    // Only dispose of core resources and set _disposed = true
                     // if the teardown actually succeeded.
                     if (performedCleanup)
                     {
@@ -2477,7 +2477,7 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Executes an optional pre-stop executable. 
+        /// Executes an optional pre-stop executable.
         /// Supports fire-and-forget or synchronous wait with SCM heartbeat pulses.
         /// </summary>
         /// <param name="options">The service configuration options.</param>
@@ -2636,7 +2636,7 @@ namespace Servy.Service
 
                 Task<bool?> stopTask = Task.Run(() =>
                 {
-                    // Send Ctrl+C to the root wrapper first. 
+                    // Send Ctrl+C to the root wrapper first.
                     // This natively broadcasts the signal to all console-sharing children (like Python).
                     _logger?.Info("Signaling main wrapper process (broadcasts to console group)...");
                     bool? mainExitedGracefully;
@@ -2649,7 +2649,7 @@ namespace Servy.Service
                         mainExitedGracefully = process.Stop(timeoutMs);
                     }
 
-                    // Clean up descendants afterward. 
+                    // Clean up descendants afterward.
                     // Thanks to native P/Invoke, we can still trace children even if the parent exited instantly.
                     _logger?.Info($"Initiating descendant cleanup for PID {parentPid}...");
                     process.StopDescendants(parentPid, parentStartTime, timeoutMs);
@@ -2766,8 +2766,8 @@ namespace Servy.Service
         /// Caller must hold lock(_trackedHooks).
         /// </summary>
         /// <remarks>
-        /// This method should be called during service shutdown or when a service recovery cycle 
-        /// requires a fresh state. It explicitly disposes of each <see cref="Hook"/> to prevent 
+        /// This method should be called during service shutdown or when a service recovery cycle
+        /// requires a fresh state. It explicitly disposes of each <see cref="Hook"/> to prevent
         /// native process handle leaks from Pre-Launch or Post-Launch operations.
         /// </remarks>
         private void CleanupTrackedHooks()
@@ -2790,13 +2790,13 @@ namespace Servy.Service
         /// Releases the unmanaged resources used by the <see cref="Service"/> and optionally releases the managed resources.
         /// </summary>
         /// <param name="disposing">
-        /// <c>true</c> to release both managed and unmanaged resources; 
+        /// <c>true</c> to release both managed and unmanaged resources;
         /// <c>false</c> to release only unmanaged resources.
         /// </param>
         /// <remarks>
-        /// This method follows the standard .NET Dispose pattern. It ensures that 
-        /// <see cref="ExecuteTeardown(TeardownReason)"/> is called to gracefully 
-        /// stop background processes and cleanup orchestration state before the 
+        /// This method follows the standard .NET Dispose pattern. It ensures that
+        /// <see cref="ExecuteTeardown(TeardownReason)"/> is called to gracefully
+        /// stop background processes and cleanup orchestration state before the
         /// object is destroyed.
         /// </remarks>
         protected override void Dispose(bool disposing)

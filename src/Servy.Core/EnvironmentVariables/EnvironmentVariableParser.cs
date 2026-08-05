@@ -9,7 +9,7 @@ namespace Servy.Core.EnvironmentVariables
     public static class EnvironmentVariableParser
     {
         /// <summary>
-        /// Parses a normalized environment variables string into a list of environment variable objects. 
+        /// Parses a normalized environment variables string into a list of environment variable objects.
         /// Supports escaping of equals signs and semicolons with a backslash, and supports both semicolon and newline delimiters.
         /// </summary>
         /// <remarks>

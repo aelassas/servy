@@ -3,7 +3,7 @@
 namespace System.Runtime.CompilerServices
 {
     /// <summary>
-    /// Polyfill for CallerArgumentExpressionAttribute to allow C# 10+ features 
+    /// Polyfill for CallerArgumentExpressionAttribute to allow C# 10+ features
     /// in .NET Framework 4.8.
     /// </summary>
     [ExcludeFromCodeCoverage]

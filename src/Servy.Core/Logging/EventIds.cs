@@ -4,7 +4,7 @@
     /// Centralizes Windows Event Log IDs used across the Servy ecosystem.
     /// </summary>
     /// <remarks>
-    /// This class ensures that both the core C# service and auxiliary PowerShell scripts 
+    /// This class ensures that both the core C# service and auxiliary PowerShell scripts
     /// use a consistent taxonomy, enabling reliable filtering for SIEM and monitoring tools.
     /// </remarks>
     public static class EventIds

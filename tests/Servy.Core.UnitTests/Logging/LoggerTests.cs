@@ -114,8 +114,8 @@ namespace Servy.Core.UnitTests.Logging
         public void Initialize_WhenFileNameIsInvalid_FailsSilentlyAndWritesToFallback()
         {
             // Arrange
-            // Passing an invalid character like a null terminator character sequence 
-            // forces Path.Combine to pass validation but crashes the underlying Win32 
+            // Passing an invalid character like a null terminator character sequence
+            // forces Path.Combine to pass validation but crashes the underlying Win32
             // CreateFile handle allocation with an ArgumentException.
             string illegalFileName = "Invalid\0Char.log";
 
@@ -278,7 +278,7 @@ namespace Servy.Core.UnitTests.Logging
                 string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
 
                 // Verify bracket matching directly on the isolated exception block.
-                // Since there is one level of inner exceptions nested here, the segment must end 
+                // Since there is one level of inner exceptions nested here, the segment must end
                 // with a single closed bracket matching the "[Inner -> " opening block.
                 Assert.EndsWith("]", exceptionSegment);
 
@@ -296,7 +296,7 @@ namespace Servy.Core.UnitTests.Logging
         public void FormatException_HardTruncatesMassiveExceptions_AvoidsSurrogatePairSplitting()
         {
             // Arrange
-            // DYNAMIC CAP BOUNDING: Derive payload constraints directly from AppConfig to prevent 
+            // DYNAMIC CAP BOUNDING: Derive payload constraints directly from AppConfig to prevent
             // regression breaks if exception truncation configuration thresholds fluctuate.
             // A heart emoji with variation selectors forms a valid multi-code-unit surrogate pair sequence.
             int charCount = (AppConfig.LoggerMaxFormattedExceptionLength / 2) + 1024;
@@ -396,7 +396,7 @@ namespace Servy.Core.UnitTests.Logging
             int exceptionMessageIndex = content.IndexOf("Reflection execution pass", StringComparison.Ordinal);
             string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
 
-            // Since there is exactly one level of nested loader exceptions, the segment must 
+            // Since there is exactly one level of nested loader exceptions, the segment must
             // end with a single closed bracket matching the "[Inner -> " opening context block.
             Assert.EndsWith("]", exceptionSegment);
         }
@@ -467,7 +467,7 @@ namespace Servy.Core.UnitTests.Logging
             // 2. The number of closing brackets must match the number of opened ones.
             Assert.Equal(openTokensCount, closeBracketsCount);
 
-            // 3. The structural brackets close out the entire string block 
+            // 3. The structural brackets close out the entire string block
             // after the final exception's stack trace context.
             Assert.EndsWith("]]]", exceptionSegment);
             Assert.Contains("Third inner level fault (at ", exceptionSegment);
@@ -521,7 +521,7 @@ namespace Servy.Core.UnitTests.Logging
             Assert.True(innerBracketCount < AppConfig.LoggerMaxInnerExceptionDepth,
                 $"Exception unroller processed more inner loops than allowed. Counted: {innerBracketCount}");
 
-            // The closing brackets will be exactly innerBracketCount because the 
+            // The closing brackets will be exactly innerBracketCount because the
             // structural depth 0 root exception correctly skips closing tags.
             Assert.Equal(innerBracketCount, closingBracketCount);
         }
@@ -597,7 +597,7 @@ namespace Servy.Core.UnitTests.Logging
             // Assert
             string[] lines = File.ReadAllLines(_fullLogPath);
 
-            // Extract the targeted indices explicitly using their message payloads 
+            // Extract the targeted indices explicitly using their message payloads
             // so background threads firing logs into the static entity won't disrupt verification.
             int utcIndex = Array.FindIndex(lines, l => l.Contains("Message UTC"));
             int localIndex = Array.FindIndex(lines, l => l.Contains("Message Local"));

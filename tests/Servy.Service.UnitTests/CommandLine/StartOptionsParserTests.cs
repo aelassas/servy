@@ -85,7 +85,7 @@ namespace Servy.Service.UnitTests.CommandLine
             string serviceName = "MissingService";
             string[] args = { "Servy.Service.exe", serviceName };
 
-            // Simply pass null directly. 
+            // Simply pass null directly.
             // Moq's static typing will resolve this to the Returns(ServiceDto) overload.
             _mockRepository
                 .Setup(r => r.GetByName(serviceName, true))
@@ -329,7 +329,7 @@ namespace Servy.Service.UnitTests.CommandLine
 
             var serviceDto = new ServiceDto
             {
-                // Passing an invalid environment format (missing variable payload values or malformed structural separators) 
+                // Passing an invalid environment format (missing variable payload values or malformed structural separators)
                 // ensures that the static EnvironmentVariableParser throws a FormatException.
                 EnvironmentVariables = "MALFORMED_VARIABLE_WITHOUT_EQUALS_SIGN_OR_VALUE_TOKEN_CONTEXT"
             };
@@ -339,7 +339,7 @@ namespace Servy.Service.UnitTests.CommandLine
             var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
 
             // Assert
-            // The catch (FormatException) block intercepts the parsing failure, outputs an error trace, 
+            // The catch (FormatException) block intercepts the parsing failure, outputs an error trace,
             // and returns an empty list, preventing the wrapper orchestration layout from crashing.
             Assert.NotNull(result.EnvironmentVariables);
             Assert.Empty(result.EnvironmentVariables);

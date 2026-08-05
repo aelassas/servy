@@ -353,8 +353,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var expectedTailingCts = new CancellationTokenSource();
                     var expectedLogFilterCts = new CancellationTokenSource();
 
-                    // Forcefully mock-inject active token sources into the private instance fields 
-                    // using TestReflection. This sidesteps lazy initialization mechanics and guarantees 
+                    // Forcefully mock-inject active token sources into the private instance fields
+                    // using TestReflection. This sidesteps lazy initialization mechanics and guarantees
                     // that the structural cleanup blocks inside Dispose are explicitly exercised.
                     TestReflection.SetField(vm, "_tailingCts", expectedTailingCts);
                     TestReflection.SetField(vm, "_logFilterCts", expectedLogFilterCts);
@@ -442,7 +442,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         Assert.NotEmpty(viewModel.RawLines);
                         Assert.Equal(2, viewModel.RawLines.Count);
 
-                        // The LogLine loaded via LogTailer preserves the entire trace line format. 
+                        // The LogLine loaded via LogTailer preserves the entire trace line format.
                         // Validate that the stable sort correctly placed the arrival elements chronologically by checking text content endings.
                         Assert.EndsWith("Line 2", viewModel.RawLines[0].Text);
                         Assert.EndsWith("Line 1", viewModel.RawLines[1].Text);
@@ -653,7 +653,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.False(vm.IsPaused);
 
                 // 2. Verify that the internal switch pipeline was actively re-triggered.
-                // Re-triggering the log-switching engine forces the view model to increment the session identifier 
+                // Re-triggering the log-switching engine forces the view model to increment the session identifier
                 // to completely sever past background async streams.
                 int postDeactivationSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 

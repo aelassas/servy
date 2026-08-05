@@ -65,12 +65,12 @@ namespace Servy.Manager.Converters
         /// <param name="parameter">Optional converter parameter; not used in this implementation.</param>
         /// <param name="culture">The culture information for the conversion; currently unused.</param>
         /// <returns>
-        /// A string representing the formatted system metric produced by specialized subclasses, 
+        /// A string representing the formatted system metric produced by specialized subclasses,
         /// or the <see cref="UnknownMetricUsage"/> placeholder if the value is null or an incompatible type.
         /// </returns>
         /// <remarks>
         /// This implementation utilizes C# pattern matching to provide a "fail-silent" guard.
-        /// If the bound property is a null nullable structure, the pattern match fails, 
+        /// If the bound property is a null nullable structure, the pattern match fails,
         /// safely returning the unknown placeholder instead of throwing a <see cref="NullReferenceException"/>.
         /// </remarks>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

@@ -3,7 +3,7 @@
 namespace Servy.Core.Helpers
 {
     /// <summary>
-    /// Represents an embedded resource and its associated metadata 
+    /// Represents an embedded resource and its associated metadata
     /// used for copying from the assembly to the target directory.
     /// </summary>
     [ExcludeFromCodeCoverage]
@@ -40,7 +40,7 @@ namespace Servy.Core.Helpers
         public string TargetPath { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the resource should be copied 
+        /// Gets or sets a value indicating whether the resource should be copied
         /// (true if the embedded resource is newer or the file is missing).
         /// </summary>
         public bool ShouldCopy { get; set; }

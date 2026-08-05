@@ -66,7 +66,7 @@ namespace Servy.Service.UnitTests
             // Act
             await service.InvokeCheckHealthAsync(null, null);
 
-            // Assert 
+            // Assert
             ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed (1/1)")), It.IsAny<Exception>()), Times.Once);
             ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains($"Performing recovery action '{RecoveryAction.RestartProcess}' (1/3)")), It.IsAny<Exception>()), Times.Once);
 

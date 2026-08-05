@@ -26,13 +26,13 @@ namespace Servy.Core.Native
     }
 
     /// <summary>
-    /// Provides centralized access to Toolhelp32 process snapshot generation, 
+    /// Provides centralized access to Toolhelp32 process snapshot generation,
     /// preventing DRY violations across the Core and Service assemblies.
     /// </summary>
     public static class Toolhelp32Snapshot
     {
         /// <summary>
-        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build both an in-memory 
+        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build both an in-memory
         /// parent-to-children relationship map and a complete snapshot map for upward traversal.
         /// </summary>
         /// <returns>A tuple containing the metadata snapshot map and the parent-to-child relationship map.</returns>

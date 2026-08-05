@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace Servy.UI.ViewModels
 {
     /// <summary>
-    /// Base class for all ViewModels, implementing <see cref="INotifyPropertyChanged"/> 
+    /// Base class for all ViewModels, implementing <see cref="INotifyPropertyChanged"/>
     /// to support two-way data binding in WPF.
     /// </summary>
     public abstract class ViewModelBase : INotifyPropertyChanged
@@ -22,7 +22,7 @@ namespace Servy.UI.ViewModels
         /// <typeparam name="T">Type of the property.</typeparam>
         /// <param name="field">Reference to a field with both get and set accessors.</param>
         /// <param name="value">Desired value for the property.</param>
-        /// <param name="propertyName">Name of the property used to notify listeners. 
+        /// <param name="propertyName">Name of the property used to notify listeners.
         /// This value is optional and can be provided automatically when invoked from compilers that support <see cref="CallerMemberNameAttribute"/>.</param>
         /// <returns>True if the value was changed, false if the existing value coincided with the desired value.</returns>
         protected bool Set<T>(ref T field, T value, [CallerMemberName] string propertyName = null)

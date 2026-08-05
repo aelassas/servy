@@ -12,7 +12,7 @@
         /// An array of <see cref="IServiceControllerWrapper"/> instances representing the services.
         /// </returns>
         /// <remarks>
-        /// This is typically a wrapper around the static <see cref="System.ServiceProcess.ServiceController.GetServices()"/> 
+        /// This is typically a wrapper around the static <see cref="System.ServiceProcess.ServiceController.GetServices()"/>
         /// method to enable unit testing and dependency injection.
         /// </remarks>
         IServiceControllerWrapper[] GetServices();
