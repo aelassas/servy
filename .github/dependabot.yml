@@ -1,21 +1,21 @@
-﻿version: 2
+version: 2
 updates:
   # 1. Monitor NuGet Packages for security only
   - package-ecosystem: "nuget"
     directory: "/"
+    # 'schedule' is required by the schema but has no effect while
+    # open-pull-requests-limit is 0: no version-update runs are performed.
+    # Security updates are configured in repository settings, not here.
     schedule:
-      interval: "daily"
-    open-pull-requests-limit: 10
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
+      interval: "weekly"
+    open-pull-requests-limit: 0 # Only security alerts, no automated version updates
 
   # 2. Monitor GitHub Actions for security only
   - package-ecosystem: "github-actions"
     directory: "/"
+    # 'schedule' is required by the schema but has no effect while
+    # open-pull-requests-limit is 0: no version-update runs are performed.
+    # Security updates are configured in repository settings, not here.
     schedule:
-      interval: "daily"
-    open-pull-requests-limit: 10
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
+      interval: "weekly"
+    open-pull-requests-limit: 0 # Only security alerts, no automated version updates
