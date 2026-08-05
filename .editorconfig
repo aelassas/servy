@@ -1,0 +1,26 @@
+# Top-most EditorConfig file
+root = true
+
+# All files
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# C# files
+[*.cs]
+indent_style = space
+indent_size = 4
+
+# MSBuild / Project Files
+[*.{csproj,fsproj,vbproj,props,targets,manifest}]
+indent_style = space
+indent_size = 2
+
+# PowerShell Scripts
+[*.{ps1,psm1,psd1}]
+indent_style = space
+indent_size = 4
