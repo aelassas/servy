@@ -351,7 +351,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(core): ServiceManager.cs - GetServiceDescription and GetServiceUser silently return null on Win32 errors other than ERROR_INSUFFICIENT_BUFFER (#1985)
 * fix(core): RotatingStreamWriter.cs - Monitor.Wait inside WriteInternal has no timeout; a stuck rotation hangs all writers indefinitely (#1988)
 * fix(core): Magic Win32 error codes 31, 233, 1326 used inline instead of Errors.cs constants (#1990)
-* fix(core): Logger.cs - FormatException sb.Length truncation can split UTF-16 surrogate pairs and corrupt log output (#1993)	
+* fix(core): Logger.cs - FormatException sb.Length truncation can split UTF-16 surrogate pairs and corrupt log output (#1993)
 * fix(core): Logger.cs - second Initialize() overload silently drops settings if called after Shutdown() (#1999)
 * fix(core): EventLogLogger.cs - nested CreateScoped produces double-bracketed prefix (e.g. '[[A] [B]] message') (#2000)
 * fix(core): ImportGuard.ValidatePathSecurity - Reserved-device-name check rejects valid filenames where 'CON'/'NUL'/etc. appears as a non-leading segment (e.g. 'prefix.NUL.json') (#2006)
@@ -593,7 +593,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(service): IServiceHelper.RestartProcess - XML doc references nonexistent terminateJobObject parameter; doc step 2 claims behavior that no longer exists (#2102)
 * fix(service): Service.cs Cleanup - stdout/stderr writer Dispose exception leaks the other writer and leaves fields non-null (#2104)
 * fix(service): Service.cs OnProcessExited - unconditional Warn 'Child process exit detected' fires even on configured clean exits (#2105)
-* fix(service): Service.cs MakeFilenameSafe - reserved-name '_' prefix causes collision with user-supplied '_<NAME>' service (#2118)	
+* fix(service): Service.cs MakeFilenameSafe - reserved-name '_' prefix causes collision with user-supplied '_<NAME>' service (#2118)
 * fix(service): Service.cs ConditionalResetRestartAttemptsAsync - Math.Max/Min clamp silently bypasses the 1-hour cap when detection window exceeds it (#2119)
 * fix(service): Service.cs OnCustomCommand - ExecuteTeardown return value discarded; SERVICE_STOPPED reported to SCM even when cleanup actually failed (#2120)
 * fix(service): ProcessWrapper.TryStopGracefullyOrKill - CloseMainWindow exception returns null (interpreted as 'already exited'), skipping the force-kill path even when the process is still running (#2129)
@@ -1844,7 +1844,7 @@ Servy 8.0 introduces many fixes across all components. The full release notes ar
 * fix(tests): DatabaseValidatorTests - Environment-dependent Assert.Fail masquerading as unit test (#747)
 * fix(psm1): [ValidateRange(1, 2147483647)] for -MaxRestartAttempts mismatches CLI limit of 100 (#703)
 * fix(psm1): PS 2.0 compat claimed in comments but no #Requires -Version directive (#721)
-* fix(notifications): force UTF8 encoding to fix NULL character bug 
+* fix(notifications): force UTF8 encoding to fix NULL character bug
 * fix(notifications): ensure timestamps are strictly increasing
 * fix(notifications): handle non-English OS when querying event log
 * fix(publish): publish-sc.ps1 / publish-fd.ps1 - Duplicate hardcoded Inno Setup and 7-Zip paths (#727)
@@ -2699,8 +2699,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.6...v6.7
 **Date:** 2026-02-14 | **Tag:** [`v6.6`](https://github.com/aelassas/servy/tree/v6.6)
 
 > [!IMPORTANT]
-> This version contains a critical bug in Servy Manager. 
-> It is not recommended for production use. Please use a different version instead. 
+> This version contains a critical bug in Servy Manager.
+> It is not recommended for production use. Please use a different version instead.
 > For maximum stability and security, always use the latest available version of Servy.
 
 * feat(manager): optimize background timer performance
