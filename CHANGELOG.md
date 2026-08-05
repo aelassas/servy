@@ -1,4 +1,4 @@
-# Changelog
+`CHANGELOG`
 
 ## [Servy 9.0](https://github.com/aelassas/servy/releases/tag/v9.0)
 
@@ -3928,4 +3928,3 @@ choco install -y servy
 * [servy-1.0-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net8.0-x64-installer.exe) - 138.14 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.0.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v1.0.tar.gz)
-

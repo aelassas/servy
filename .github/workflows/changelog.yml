@@ -148,7 +148,7 @@ jobs:
 
           if ($isReset) {
               Write-Host "Reset flag is true. Rebuilding full CHANGELOG.md..."
-              $fullLog = "# Changelog`n`n"
+              $fullLog = "``CHANGELOG```n`n"
               for ($i = 0; $i -lt $releases.Count; $i++) {
                   $prev = if ($i + 1 -lt $releases.Count) { $releases[$i+1] } else { $null }
                   $fullLog += Get-ReleaseEntry -Release $releases[$i] -PrevRelease $prev
