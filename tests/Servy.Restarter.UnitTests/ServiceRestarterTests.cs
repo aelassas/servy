@@ -67,9 +67,11 @@ namespace Servy.Restarter.UnitTests
             });
 
             // Act
-            _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+
             // 1. First Refresh happens inside the while loop to move from StopPending -> Stopped
             // 2. Second Refresh happens explicitly right before the Start phase check
             _mockController.Verify(c => c.Refresh(), Times.Exactly(2));
@@ -93,11 +95,10 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()))
                 .Throws<System.ServiceProcess.TimeoutException>();
 
-            // Act
+            // Act & Assert
             var ex = Assert.Throws<System.TimeoutException>(() =>
                 _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
 
-            // Assert
             Assert.Contains("did not reach Stopped within", ex.Message);
             Assert.IsType<System.ServiceProcess.TimeoutException>(ex.InnerException);
             _mockController.Verify(c => c.Stop(), Times.Once);
@@ -162,9 +163,10 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.Stop()).Throws<InvalidOperationException>();
 
             // Act
-            _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
+            Assert.Equal(RestartResult.Restarted, result);
             _mockController.Verify(c => c.Stop(), Times.Exactly(2)); // Primary check call + Fallback step execution call
             _mockController.Verify(c => c.Start(), Times.Once); // Continues cleanly to start phase
             _mockController.Verify(c => c.Dispose(), Times.Once);
@@ -186,11 +188,10 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Running, It.IsAny<TimeSpan>()))
                 .Throws<System.ServiceProcess.TimeoutException>();
 
-            // Act
+            // Act & Assert
             var ex = Assert.Throws<System.TimeoutException>(() =>
                 _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
 
-            // Assert
             Assert.Contains("did not reach Running within", ex.Message);
             Assert.IsType<System.ServiceProcess.TimeoutException>(ex.InnerException);
             _mockController.Verify(c => c.Start(), Times.Once);
@@ -246,9 +247,11 @@ namespace Servy.Restarter.UnitTests
             });
 
             // Act
-            _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+
             // Verifies the structural recovery path:
             // Call 1: Outer block (Throws Exception)
             // Call 2: Inner HandleTransitionalError block (Succeeds)
@@ -279,9 +282,11 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.Start()).Throws<InvalidOperationException>();
 
             // Act
-            _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+
             // Verify that only the single, outer lifecycle start command was issued.
             // If an off-by-one status check failure happens, the handler loop will execute a secondary retry pass.
             _mockController.Verify(c => c.Start(), Times.Once,
@@ -345,7 +350,7 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.Stop()).Throws<InvalidOperationException>();
             _mockController.Setup(c => c.Refresh()).Throws<InvalidOperationException>();
 
-            // Act
+            // Act & Assert
             // The catch (InvalidOperationException) block matches, remaining time runs down, and it exits via loop break
             var ex = Assert.Throws<System.TimeoutException>(() =>
                 _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterHandleTransitionalErrorTimeout));
@@ -362,16 +367,16 @@ namespace Servy.Restarter.UnitTests
         #region Disappearance Guard Tests
 
         [Fact]
-        public void RestartService_StatusThrowsInSettleLoop_ReturnsCleanlyWithoutStopOrStart()
+        public void RestartService_StatusThrowsInSettleLoop_ReturnsServiceNotFoundWithoutStopOrStart()
         {
             // Arrange
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
 
             // Act
-            var ex = Record.Exception(() => _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
-            Assert.Null(ex);
+            Assert.Equal(RestartResult.ServiceNotFound, result);
             _mockController.Verify(c => c.Stop(), Times.Never);
             _mockController.Verify(c => c.Start(), Times.Never);
             _mockController.Verify(c => c.Dispose(), Times.Once);
@@ -380,7 +385,7 @@ namespace Servy.Restarter.UnitTests
         [Theory]
         [InlineData(true)]  // Test InvalidOperationException path
         [InlineData(false)] // Test Win32Exception path
-        public void RestartService_RefreshThrowsInSettleLoop_ReturnsCleanlyWithoutStopOrStart(bool throwInvalidOperation)
+        public void RestartService_RefreshThrowsInSettleLoop_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
         {
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StopPending);
@@ -395,10 +400,10 @@ namespace Servy.Restarter.UnitTests
             }
 
             // Act
-            var ex = Record.Exception(() => _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
-            Assert.Null(ex);
+            Assert.Equal(RestartResult.ServiceNotFound, result);
             _mockController.Verify(c => c.Stop(), Times.Never);
             _mockController.Verify(c => c.Start(), Times.Never);
             _mockController.Verify(c => c.Dispose(), Times.Once);
@@ -407,7 +412,7 @@ namespace Servy.Restarter.UnitTests
         [Theory]
         [InlineData(true)]  // Test InvalidOperationException path
         [InlineData(false)] // Test Win32Exception path
-        public void RestartService_RefreshThrowsInStartPhase_ReturnsCleanlyWithoutStartCommand(bool throwInvalidOperation)
+        public void RestartService_RefreshThrowsInStartPhase_ReturnsServiceNotFoundWithoutStartCommand(bool throwInvalidOperation)
         {
             // Arrange
             // We bypass the Settle loop by returning Stopped instantly, which also skips the Stop phase.
@@ -425,10 +430,10 @@ namespace Servy.Restarter.UnitTests
             }
 
             // Act
-            var ex = Record.Exception(() => _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
-            Assert.Null(ex);
+            Assert.Equal(RestartResult.ServiceNotFound, result);
             _mockController.Verify(c => c.Start(), Times.Never);
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }

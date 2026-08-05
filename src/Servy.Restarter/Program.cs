@@ -76,8 +76,8 @@ namespace Servy.Restarter
 
                 // 3. Parse the restart timeout
                 var restartTimeout = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds",
-                                                  AppConfig.DefaultRestarterTimeoutSeconds,
-                                                  min: 1, max: AppConfig.MaxRestarterTimeoutSeconds);
+                                                                  AppConfig.DefaultRestarterTimeoutSeconds,
+                                                                  min: 1, max: AppConfig.MaxRestarterTimeoutSeconds);
 
                 // 4. PROMOTE / SCOPE the logger
                 // Using the instance logger ensures that 'serviceName' is prepended 
@@ -109,9 +109,17 @@ namespace Servy.Restarter
                 // 8. Execution
                 scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
-                restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
+                var result = restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
 
-                scopedLogger.Info($"Successfully restarted service '{serviceName}'.");
+                if (result == RestartResult.ServiceNotFound)
+                {
+                    scopedLogger.Warn($"Service '{serviceName}' no longer exists in the SCM; nothing to restart.");
+                    Environment.ExitCode = 1;
+                }
+                else
+                {
+                    scopedLogger.Info($"Successfully restarted service '{serviceName}'.");
+                }
             }
             catch (Exception ex)
             {
@@ -136,7 +144,6 @@ namespace Servy.Restarter
                 try { rootLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose root EventLogLogger.", ex); }
                 try { Logger.Shutdown(); } catch { /* nothing left to log with */ }
             }
-
         }
     }
 }

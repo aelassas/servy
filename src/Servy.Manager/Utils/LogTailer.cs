@@ -193,8 +193,8 @@ namespace Servy.Manager.Utils
                                         string? line;
                                         string? lastSuccessfullyReadLine = null;
 
-                                        // Capture our starting point position for this polling execution loop pass block
-                                        long streamStartOffset = fs.Position;
+                                        // Track offset of the last known fully terminated line
+                                        long lastTerminatedLineEndOffset = fs.Position;
 
                                         while ((line = await reader.ReadLineAsync(linkedToken)) != null)
                                         {
@@ -209,6 +209,7 @@ namespace Servy.Manager.Utils
 
                                             lastSuccessfullyReadLine = line;
                                             batch.Add(new LogLine(line, type));
+                                            lastTerminatedLineEndOffset = fs.Position;
 
                                             if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
@@ -218,7 +219,7 @@ namespace Servy.Manager.Utils
                                         }
 
                                         // --- EOF reached. A file not ending in '\n' means the writer was caught mid-flush;
-                                        //     check the trailing byte on disk rather than inferring from the reader's position.
+                                        //     check the trailing byte on disk rather than inferring from synchronous reader methods.
                                         if (lastSuccessfullyReadLine != null && fs.Length > 0)
                                         {
                                             if (!EndsWithNewline(fs))
@@ -232,9 +233,9 @@ namespace Servy.Manager.Utils
 
                                                 carryOverFragment = lastSuccessfullyReadLine;
 
-                                                // Roll back our persistent file offset indicator pointer to the beginning of this poll block pass.
+                                                // Roll back our persistent file offset indicator pointer to the end of the last fully terminated line.
                                                 // This ensures the next polling loop pass re-scans and captures the fully completed line cleanly.
-                                                lastPosition = streamStartOffset;
+                                                lastPosition = lastTerminatedLineEndOffset;
                                             }
                                             else
                                             {

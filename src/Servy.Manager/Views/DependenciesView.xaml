@@ -301,7 +301,7 @@
                                                 <Setter Property="Fill" Value="#E74C3C" />
                                                 <Setter Property="Visibility" Value="Visible" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                    <DataTrigger Binding="{Binding IsCyclic}" Value="True">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsRunning}" Value="True">
@@ -322,7 +322,7 @@
                                                 <Setter Property="Fill" Value="#F39C12" />
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                    <DataTrigger Binding="{Binding IsCyclic}" Value="True">
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
@@ -345,7 +345,7 @@
                                                         <Setter Property="ToolTip" Value="{x:Static resx:Strings.Tooltip_ServiceStopped}" />
                                                     </DataTrigger>
 
-                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                    <DataTrigger Binding="{Binding IsCyclic}" Value="True">
                                                         <Setter Property="FontStyle" Value="Normal" />
                                                         <Setter Property="Foreground" Value="#F39C12" />
                                                         <Setter Property="ToolTip" Value="{x:Static resx:Strings.Tooltip_Cycle}" />
@@ -367,13 +367,13 @@
                                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
                                                         <Setter Property="Foreground" Value="White" />
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                    <DataTrigger Binding="{Binding IsCyclic}" Value="True">
                                                         <Setter Property="Foreground" Value="#F39C12" />
                                                         <Setter Property="Opacity" Value="0.8" />
                                                     </DataTrigger>
                                                     <MultiDataTrigger>
                                                         <MultiDataTrigger.Conditions>
-                                                            <Condition Binding="{Binding IsCycle}" Value="True" />
+                                                            <Condition Binding="{Binding IsCyclic}" Value="True" />
                                                             <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True" />
                                                         </MultiDataTrigger.Conditions>
                                                         <Setter Property="Foreground" Value="White" />
