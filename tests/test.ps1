@@ -42,6 +42,13 @@ if (Test-Path $CoverageReportDir) {
 # The native filesystem globbing filter (*Tests.csproj) already naturally excludes 'Servy.Testing.csproj'.
 $RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj'
 
+if (-not $RawTestProjects) {
+    Write-Host "No '*Tests.csproj' projects found under $ScriptDir - nothing to test." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Discovered $($RawTestProjects.Count) test project(s)." -ForegroundColor Cyan
+
 # Run tests and collect coverage for each project
 foreach ($ProjFile in $RawTestProjects) {
     $Proj = $ProjFile.FullName

@@ -16,6 +16,15 @@
     <Product>Servy.Manager.UnitTests</Product>
   </PropertyGroup>
 
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1">
       <PrivateAssets>all</PrivateAssets>
@@ -36,13 +45,5 @@
     <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj" />
     <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Xunit" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
-  </PropertyGroup>
 
 </Project>

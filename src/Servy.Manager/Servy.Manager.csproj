@@ -53,17 +53,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
-    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
-    <ProjectReference Include="..\Servy.UI\Servy.UI.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="Resources\Icons\Error.png" />
     <Resource Include="Resources\Icons\Info.png" />
     <Resource Include="Resources\Icons\Warning.png" />
@@ -98,6 +87,17 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Servy.Manager.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
+    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
+    <ProjectReference Include="..\Servy.UI\Servy.UI.csproj" />
   </ItemGroup>
 
 </Project>

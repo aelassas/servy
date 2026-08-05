@@ -17,10 +17,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="NewFolder\**" />
-    <EmbeddedResource Remove="NewFolder\**" />
-    <None Remove="NewFolder\**" />
+    <Using Include="Xunit" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1">
@@ -40,10 +42,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
     <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Xunit" />
   </ItemGroup>
 
 </Project>

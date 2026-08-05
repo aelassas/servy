@@ -57,17 +57,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
-    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <InternalsVisibleTo Include="Servy.CLI.UnitTests" />
   </ItemGroup>
 
@@ -92,6 +81,18 @@
 
     <!-- Include project-specific preserves if the file exists in the project directory -->
     <TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
+    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
