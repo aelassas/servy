@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Testing;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -39,6 +39,7 @@ namespace Servy.Core.IntegrationTests.Config
         {
             // Arrange
             var psm1Path = Helper.GetServyPsm1Path();
+            Assert.True(File.Exists(psm1Path), $"Servy.psm1 file not found at path: {psm1Path}");
 
             // Act
             string scriptContent = File.ReadAllText(psm1Path);
@@ -62,6 +63,7 @@ namespace Servy.Core.IntegrationTests.Config
         {
             // Arrange
             var psm1Path = Helper.GetServyPsm1Path();
+            Assert.True(File.Exists(psm1Path), $"Servy.psm1 file not found at path: {psm1Path}");
             string scriptContent = File.ReadAllText(psm1Path);
 
             // Parse out EVERY string assignment matching the script environment variable nomenclature pattern

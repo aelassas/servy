@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Servy.CLI.Options;
 using Servy.Testing;
 using System.Reflection;
@@ -21,6 +21,7 @@ namespace Servy.CLI.IntegrationTests.Options
         {
             // Arrange
             var psm1Path = Helper.GetServyPsm1Path();
+            Assert.True(File.Exists(psm1Path), $"Servy.psm1 file not found at path: {psm1Path}");
             var psm1Content = File.ReadAllText(psm1Path);
 
             // Extract the elements inside the $sensitiveFields = @(...) block using Regex
