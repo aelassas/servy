@@ -167,7 +167,7 @@ namespace Servy.Core.Helpers
 
                 foreach (Match match in matches)
                 {
-                    if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
+                    if (int.TryParse(match.Groups["pid"].Value, out int pid))
                     {
                         processes.Add(new ProcessHandleInfo
                         {
