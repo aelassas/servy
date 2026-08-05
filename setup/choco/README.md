@@ -1,37 +1,34 @@
-## Local test
-```
+# Servy Chocolatey Package
+
+> **Note:** Packaging and publishing to Chocolatey is automatically handled by the [choco.yml](../../.github/workflows/choco.yml) GitHub Actions workflow whenever a new release is published.
+
+## Local Test
+
+```powershell
+cd setup/choco/servy
 choco pack
-choco install servy -s .
 choco install servy -s . -y
-choco uninstall servy -s .
-choco push servy.1.1.0.nupkg --source https://push.chocolatey.org/
-
-choco apikey --key="YOUR_API_KEY_HERE" --source="https://push.chocolatey.org/"
+choco uninstall servy -s . -y
 ```
 
-## Test
+### Manual Push (Emergency / Backup)
+
+```powershell
+choco apikey --key="YOUR_API_KEY_HERE" --source="https://community.chocolatey.org/api/v2/package"
+choco push servy.<version>.0.nupkg --source "https://community.chocolatey.org/api/v2/package"
 ```
+
+## Verify Published Package
+
+```powershell
 choco search servy
 choco install servy -y
 ```
 
-## local install
-```
-chocolateyinstall.ps1
+## Verification & Uninstallation Checking
 
-$ErrorActionPreference = 'Stop'
+To verify the installed registry entries for Servy:
 
-$packageName    = 'servy'
-$toolsDir       = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$installerType  = 'exe'
-# Use local file for testing
-$installerPath  = 'E:\dev\servy\src\setup\servy-1.9-x64-installer.exe'
-$silentArgs     = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
-
-Install-ChocolateyPackage $packageName $installerType $silentArgs $installerPath
-```
-
-## Regedit
 ```powershell
-Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "Servy*" } | Select-Object DisplayName, DisplayVersion, UninstallString | ft -AutoSize
+Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "Servy*" } | Select-Object DisplayName, DisplayVersion, UninstallString | Format-Table -AutoSize
 ```
