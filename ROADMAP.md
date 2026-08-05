@@ -25,7 +25,6 @@
 * [x] Add package manager support (WinGet, Chocolatey, Scoop) ([#9](https://github.com/aelassas/servy/issues/9))
 * [x] Add support for script or executable to run when the process fails to start
 * [x] Add Event ID to Info, Warning, and Error service logs
-* [x] Support using the same file for stdout and stderr ([#14](https://github.com/aelassas/servy/issues/14))
 * [x] Support Ctrl+C for command-line apps ([#20](https://github.com/aelassas/servy/issues/20))
 * [x] Add support for automatic delayed-start service startup type
 * [x] Upgrade to .NET 10 LTS
@@ -33,7 +32,7 @@
 * [x] Provide ARM64 binaries ([#2243](https://github.com/aelassas/servy/issues/2243))
 * [x] External Heartbeat Ping URL ([#2700](https://github.com/aelassas/servy/issues/2700))
 * [x] Allow configuring CPU affinity in service definitions ([#4436](https://github.com/aelassas/servy/issues/4436))
-* [ ] Add a REST API for management-only API for status, health metrics, and lifecycle control (start/stop/restart)
+* [ ] Add a management-only REST API for status, health metrics, and lifecycle control (start/stop/restart)
 * [ ] Add a web dashboard for remote service control and real-time performance graphs
 * [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
 * [ ] Add resource-based restart policies (e.g., trigger restart on RAM/CPU usage thresholds)
