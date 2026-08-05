@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -13,12 +13,7 @@
   <PropertyGroup>
     <AssemblyTitle>Servy.Service.IntegrationTests</AssemblyTitle>
     <AssemblyDescription>Servy.Service integration tests</AssemblyDescription>
-    <Company>Akram El Assas</Company>
     <Product>Servy.Service.IntegrationTests</Product>
-    <Version>9.1.0</Version>
-    <FileVersion>9.1.0.0</FileVersion>
-    <AssemblyVersion>9.1.0.0</AssemblyVersion>
-    <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

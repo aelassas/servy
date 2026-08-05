@@ -10,12 +10,7 @@
   <PropertyGroup>
     <AssemblyTitle>Servy.Core</AssemblyTitle>
     <AssemblyDescription>Shared functionality, utilities, and data models</AssemblyDescription>
-    <Company>Akram El Assas</Company>
     <Product>Servy.Core</Product>
-    <Version>9.1.0</Version>
-    <FileVersion>9.1.0.0</FileVersion>
-    <AssemblyVersion>9.1.0.0</AssemblyVersion>
-    <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,12 +28,12 @@
       <_Parameter2>$(TargetFramework)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
-  
+
   <ItemGroup>
     <InternalsVisibleTo Include="Servy.Core.UnitTests" />
     <InternalsVisibleTo Include="Servy.Core.IntegrationTests" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Compile Update="Resources\Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
@@ -46,7 +41,7 @@
       <AutoGen>True</AutoGen>
     </Compile>
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Update="Resources\Strings.resx">
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>

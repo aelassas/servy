@@ -1,13 +1,13 @@
 ﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
-    Updates the version of Servy across scripts, AppConfig, and project files.
+    Updates the version of Servy across scripts, AppConfig, and Directory.Build.props.
 
 .DESCRIPTION
     This script updates the version of Servy in multiple locations:
-    - setup\build-config.ps1   (Version hashtable key)
-    - All *.csproj files recursively   (<Version>, <FileVersion>, <AssemblyVersion>)
-    - src\Servy.CLI\Servy.psd1   (ModuleVersion)
+    - setup\build-config.ps1    (Version hashtable key)
+    - Directory.Build.props     (<Version>, <FileVersion>, <AssemblyVersion>)
+    - src\Servy.CLI\Servy.psd1  (ModuleVersion)
 
 .PARAMETER Version
     The new version to apply in 'Major.Minor' format (e.g., "8.0").
@@ -86,18 +86,21 @@ Update-FilesContent `
     -DryRun:$DryRun
 
 # -----------------------------
-# 2. Update all *.csproj files recursively
+# 2. Update Directory.Build.props
 # -----------------------------
-$csprojFiles = Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch $script:BuildArtifactExclusionRegex }
+$propsPath = Join-Path $baseDir "Directory.Build.props"
 
-$csprojEdits = @(
+$propsEdits = @(
     @{ Pattern = '(<Version(?:\s+[^>]*)?>)[^<]*(</Version>)';         Replacement = { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" } },
     @{ Pattern = '(<FileVersion(?:\s+[^>]*)?>)[^<]*(</FileVersion>)';     Replacement = { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" } },
     @{ Pattern = '(<AssemblyVersion(?:\s+[^>]*)?>)[^<]*(</AssemblyVersion>)'; Replacement = { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" } }
 )
 
-Update-FilesContent -Files $csprojFiles -Edits $csprojEdits -DryRun:$DryRun
+Update-FilesContent `
+    -Files @($propsPath) `
+    -Edits $propsEdits `
+    -ExpectMatch `
+    -DryRun:$DryRun
 
 # -----------------------------
 # 3. Update src\Servy.CLI\Servy.psd1

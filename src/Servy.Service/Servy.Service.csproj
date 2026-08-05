@@ -32,12 +32,7 @@
 	<PropertyGroup>
 		<AssemblyTitle>Servy.Service</AssemblyTitle>
 		<AssemblyDescription>Servy Wrapper Windows Service</AssemblyDescription>
-		<Company>Akram El Assas</Company>
-		<Product>Servy</Product>
-		<Version>9.1.0</Version>
-		<FileVersion>9.1.0.0</FileVersion>
-		<AssemblyVersion>9.1.0.0</AssemblyVersion>
-		<Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
+		<Product>Servy.Service</Product>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -65,11 +60,7 @@
 		<ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
 		<ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
 	</ItemGroup>
-
-	<!--<ItemGroup>
-    <FrameworkReference Include="Microsoft.NETCore.App" />
-  </ItemGroup>-->
-
+  
 	<ItemGroup>
 		<!-- Always include the shared base preserves -->
 		<TrimmerRootDescriptor Include="..\linker.shared.xml" />

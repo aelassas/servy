@@ -27,12 +27,7 @@
   <PropertyGroup>
     <AssemblyTitle>Servy.Manager</AssemblyTitle>
     <AssemblyDescription>A tool to manage services installed by Servy</AssemblyDescription>
-    <Company>Akram El Assas</Company>
     <Product>Servy.Manager</Product>
-    <Version>9.1.0</Version>
-    <FileVersion>9.1.0.0</FileVersion>
-    <AssemblyVersion>9.1.0.0</AssemblyVersion>
-    <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -99,12 +94,6 @@
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Servy.Manager.UnitTests</_Parameter1>
-    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>

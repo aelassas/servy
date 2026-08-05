@@ -13,12 +13,7 @@
   <PropertyGroup>
     <AssemblyTitle>Servy.CLI.UnitTests</AssemblyTitle>
     <AssemblyDescription>Servy.CLI unit tests</AssemblyDescription>
-    <Company>Akram El Assas</Company>
     <Product>Servy.CLI.UnitTests</Product>
-    <Version>9.1.0</Version>
-    <FileVersion>9.1.0.0</FileVersion>
-    <AssemblyVersion>9.1.0.0</AssemblyVersion>
-    <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -43,7 +38,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
-  
+
   <PropertyGroup>
     <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
   </PropertyGroup>

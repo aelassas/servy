@@ -32,13 +32,7 @@
   <PropertyGroup>
     <AssemblyTitle>Servy.CLI</AssemblyTitle>
     <AssemblyDescription>Servy Command Line Interface</AssemblyDescription>
-    <Company>Akram El Assas</Company>
     <Product>Servy.CLI</Product>
-    <Version>9.1.0</Version>
-    <FileVersion>9.1.0.0</FileVersion>
-    <AssemblyVersion>9.1.0.0</AssemblyVersion>
-    <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
-    <ApplicationIcon>servy.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -92,16 +86,12 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <!--<ItemGroup>
-    <FrameworkReference Include="Microsoft.NETCore.App" />
-  </ItemGroup>-->
-
   <ItemGroup>
     <!-- Always include the shared base preserves -->
     <TrimmerRootDescriptor Include="..\linker.shared.xml" />
 
     <!-- Include project-specific preserves if the file exists in the project directory -->
     <TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
-  </ItemGroup>  
-  
+  </ItemGroup>
+
 </Project>
