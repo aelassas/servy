@@ -1,4 +1,4 @@
-name: 'Setup Git Helpers'
+﻿name: 'Setup Git Helpers'
 description: 'Installs reusable git utility script macros to the runner temporary environment context.'
 
 runs:
@@ -39,8 +39,8 @@ runs:
                     return
                 }
                 catch {
-                    if ($i -eq ($MaxRetries - 1)) { 
-                        throw "Push operation failed critically after $MaxRetries attempts: $($_.Exception.Message)" 
+                    if ($i -eq ($MaxRetries - 1)) {
+                        throw "Push operation failed critically after $MaxRetries attempts: $($_.Exception.Message)"
                     }
                     Write-Warning "$($_.Exception.Message). Retrying tracking sequence branch synchronization in 5 seconds..."
                     Start-Sleep -Seconds 5

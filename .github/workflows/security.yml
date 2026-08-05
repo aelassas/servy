@@ -1,4 +1,4 @@
-# ===========================================
+﻿# ===========================================
 # GitHub Actions Workflow - Security Audit
 # -------------------------------------------
 # Performs security checks for the Servy project:
@@ -44,9 +44,9 @@ jobs:
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
         with:
-          max_retries: ${{ env.MAX_RETRIES }}          
+          max_retries: ${{ env.MAX_RETRIES }}
 
-      - name: Cache NuGet packages 
+      - name: Cache NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         with:
           path: ~/.nuget/packages
@@ -65,7 +65,7 @@ jobs:
 
           # Fetch structured analysis data directly via JSON serialization to avoid brittle string matching
           $rawJson = dotnet list Servy.sln package --vulnerable --include-transitive --format json
-          
+
           if ($LASTEXITCODE -ne 0) { throw "dotnet list package --vulnerable failed (exit $LASTEXITCODE)." }
 
           # Pass the raw array through the pipeline instead of using -InputObject.
@@ -110,7 +110,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads    
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
 
     # Elevate permissions specifically for CodeQL to write security results
     permissions:
@@ -120,7 +120,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
-        
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 #v4.35.1
         with:
@@ -130,7 +130,7 @@ jobs:
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
         with:
-          max_retries: ${{ env.MAX_RETRIES }}    
+          max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Check .NET version
         run: dotnet --version

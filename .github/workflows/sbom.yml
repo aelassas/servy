@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # SBOM Generation Workflow
 # ==============================================================================
 #
@@ -63,7 +63,7 @@ jobs:
           }
 
           Write-Host "Version format validated: $version"
-          
+
       # -----------------------------------------------------
       # Checkout repository
       # -----------------------------------------------------
@@ -76,7 +76,7 @@ jobs:
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
         with:
-          max_retries: ${{ env.MAX_RETRIES }}    
+          max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Install CycloneDX Tools
         uses: ./.github/actions/setup-cyclonedx

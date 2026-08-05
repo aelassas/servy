@@ -1,4 +1,4 @@
-# ===========================================
+﻿# ===========================================
 # GitHub Actions Workflow - Scoop
 # -------------------------------------------
 # Automates the update of Servy’s Scoop manifest.
@@ -40,7 +40,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write # Needed here to push commits back
-      
+
     env:
       RUN_EXTRAS_PR: ${{ github.event.inputs.run_extras_pr || 'false' }}
       MAX_RETRIES: 5
@@ -109,12 +109,12 @@ jobs:
           function Write-ScoopManifest {
               param($jsonObj, $jsonPath)
               if ($null -eq $jsonObj) { throw "jsonObj cannot be null" }
-              
+
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-              
+
               # Split lines correctly using regex
               $lines = [regex]::Split($jsonString, "\r?\n")
-              
+
               # Normalize indentation: pwsh 7's ConvertTo-Json uses a 2-space baseline; map it to 4-space indents.
               $lines = $lines | ForEach-Object {
                   [regex]::Replace($_, '^( +)', {
@@ -123,10 +123,10 @@ jobs:
                       ' ' * (4 * $level)
                   })
               }
-              
+
               # Join lines back together with a standardized Unix trailing newline
               $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-              
+
               # Write to file using BOM-less UTF-8 encoding
               $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
               [System.IO.File]::WriteAllText($jsonPath, $jsonString, $utf8NoBom)
@@ -191,16 +191,16 @@ jobs:
           # Commit and push back to aelassas/servy
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
           if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
             Invoke-Git add $manifestPath
-            
+
             # Guard against edge-case clean index after git add
             git diff --staged --quiet
             if ($LASTEXITCODE -ne 0) {
               Invoke-Git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
-              
+
               # Env vars are strings; -MaxRetries is [int]
               $maxRetries = [int]$env:MAX_RETRIES
               Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
@@ -220,26 +220,26 @@ jobs:
           . "$env:RUNNER_TEMP\ScoopUtils.ps1"
           Invoke-Git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
           Set-Location scoop-bucket
-            
+
           Invoke-Git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
-            
+
           $manifestPath = "servy.json"
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj = Update-ScoopManifestObject $jsonObj $env:TAG $env:VERSION $env:HASH_X64 $env:HASH_ARM64
-            
+
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Join-Path (Get-Location) $manifestPath)
 
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
           if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
             Invoke-Git add $manifestPath
-            
+
             git diff --staged --quiet
             if ($LASTEXITCODE -ne 0) {
               Invoke-Git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
-              
+
               # Env vars are strings; -MaxRetries is [int]
               $maxRetries = [int]$env:MAX_RETRIES
               Invoke-PushWithRetry -PullRef 'HEAD' -PushRef 'HEAD' -MaxRetries $maxRetries
@@ -269,12 +269,12 @@ jobs:
           $prJson = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state all --json number,state --limit 1
           if ($LASTEXITCODE -ne 0) { throw "gh pr list failed with exit code $LASTEXITCODE" }
           $existingPR = $prJson | ConvertFrom-Json
-          
+
           if ($existingPR.Count -gt 0) {
               if ($existingPR[0].state -eq "MERGED") {
                   Write-Host "A PR for version $env:VERSION has already been merged. Skipping entire branch processing block."
                   Add-Content -Path $env:GITHUB_ENV -Value "SKIP_PR_CREATE=true"
-                  return 
+                  return
               }
               elseif ($existingPR[0].state -eq "OPEN") {
                   Write-Host "A PR for version $env:VERSION is currently OPEN. Proceeding to force-push payload updates, but skip creation step."
@@ -285,9 +285,9 @@ jobs:
           Invoke-Git remote add upstream https://github.com/ScoopInstaller/Extras.git
           Invoke-Git fetch upstream master
           Invoke-Git checkout -B master upstream/master
-            
+
           Invoke-Git checkout -B $branchName
-            
+
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath
           $installerUrlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-portable.7z"
@@ -335,11 +335,11 @@ jobs:
               $jsonObj = Update-ScoopManifestObject $jsonObj $env:TAG $env:VERSION $env:HASH_X64 $env:HASH_ARM64
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
-            
+
               $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
               if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
                   Invoke-Git add $manifestPath
-                  
+
                   git diff --staged --quiet
                   if ($LASTEXITCODE -ne 0) {
                       Invoke-Git commit -m "servy: Update to version $env:VERSION"
@@ -350,7 +350,7 @@ jobs:
           }
           Invoke-Git push origin $branchName --force-with-lease
           if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
-          
+
       - name: Open Pull Request in ScoopInstaller/Extras
         if: env.RUN_EXTRAS_PR == 'true' && env.SKIP_PR_CREATE != 'true'
         shell: pwsh

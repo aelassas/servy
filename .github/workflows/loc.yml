@@ -1,4 +1,4 @@
-# ===============================================
+﻿# ===============================================
 # GitHub Actions Workflow - LoC
 # -----------------------------------------------
 # Calculates lines of code for:
@@ -88,7 +88,7 @@ jobs:
           # Use shields.io static badge generation with URL-encoded label
           # Percent-encode commas defensively so the badge message survives any URL handling verbatim
           ENCODED_TOTAL=$(echo "$TOTAL_COMMA" | sed 's/,/%2C/g')
-          
+
           URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${LOC_BADGE_COLOR}"
           echo "URL: ${URL}"
 

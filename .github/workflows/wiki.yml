@@ -1,4 +1,4 @@
-# ===============================================
+﻿# ===============================================
 # GitHub Actions Workflow - Wiki Maintenance
 # -----------------------------------------------
 # Enforces file naming standards in the GitHub Wiki.
@@ -39,7 +39,7 @@ jobs:
           # pipeline from failing the step when grep finds no matches (exit 1).
           # We then fail the build only if the captured list is non-empty.
           NON_ASCII_FILES=$(find . -path ./.git -prune -o -type f -print | grep -P '[^\x00-\x7F]' || true)
-          
+
           if [ -n "$NON_ASCII_FILES" ]; then
             echo "Error: The following wiki filenames contain non-ASCII characters:"
             echo "$NON_ASCII_FILES"

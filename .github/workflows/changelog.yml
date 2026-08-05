@@ -1,7 +1,7 @@
-# ==============================================================================
+﻿# ==============================================================================
 # GitHub Actions Workflow - Changelog Automation
 # ------------------------------------------------------------------------------
-# Automatically fetches release metadata from GitHub, constructs a formatted 
+# Automatically fetches release metadata from GitHub, constructs a formatted
 # CHANGELOG.md file, and commits the updates to the repository.
 #
 # Triggers:
@@ -40,7 +40,7 @@ jobs:
     timeout-minutes: 60
     # Logic: Only run if manually triggered OR if the automated upstream 'bump-version' run succeeded.
     if: >
-      github.event_name == 'workflow_dispatch' || 
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
 
     # Explicitly elevate for this job only to allow the push
@@ -91,7 +91,7 @@ jobs:
               param($Release, $PrevRelease)
 
               # Regex pattern matching Unicode hyphens, n-dashes, m-dashes, minus signs, and related dash symbols
-              # U+2010 (hyphen), U+2011 (non-breaking hyphen), U+2012 (figure dash), U+2013 (en dash), 
+              # U+2010 (hyphen), U+2011 (non-breaking hyphen), U+2012 (figure dash), U+2013 (en dash),
               # U+2014 (em dash), U+2015 (horizontal bar), U+2212 (minus sign), plus Unicode Dash Punctuation (\p{Pd})
               $dashPattern = '[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\p{Pd}]'
 
@@ -99,20 +99,20 @@ jobs:
               $title = $rawTitle -replace $dashPattern, '-'
 
               $url = $Release.html_url
-              
-              $date = if (![string]::IsNullOrWhiteSpace($Release.published_at)) { 
+
+              $date = if (![string]::IsNullOrWhiteSpace($Release.published_at)) {
                   [DateTime]::Parse($Release.published_at, [Globalization.CultureInfo]::InvariantCulture,
                     [Globalization.DateTimeStyles]::AdjustToUniversal).ToString("yyyy-MM-dd")
-              } else { 
-                  "Pending" 
+              } else {
+                  "Pending"
               }
-              
+
               $tag = $Release.tag_name
 
               $rawBody = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
               $body = $rawBody -replace $dashPattern, '-'
 
-              $bt = [char]96 
+              $bt = [char]96
 
               $md = "## [$title]($url)`n`n"
               $md += "**Date:** $date | **Tag:** [$bt$tag$bt](https://github.com/$repo/tree/$tag)`n`n"
@@ -151,7 +151,7 @@ jobs:
           } else {
               $latest = $releases[0]
               $tag = $latest.tag_name
-              
+
               $existing = ""
               if ([System.IO.File]::Exists($changelogPath)) {
                   $existing = [System.IO.File]::ReadAllText($changelogPath, $utf8NoBom)
@@ -181,7 +181,7 @@ jobs:
           Invoke-Git config core.autocrlf false
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Scope the check to CHANGELOG.md so unrelated working-tree changes don't trigger a commit
           $hasChanges = (Invoke-Git status --porcelain CHANGELOG.md) -join "`n"
           if ([string]::IsNullOrWhiteSpace($hasChanges)) {

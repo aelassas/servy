@@ -1,4 +1,4 @@
-version: 2
+﻿version: 2
 updates:
   # 1. Monitor NuGet Packages for security only
   - package-ecosystem: "nuget"

@@ -1,8 +1,8 @@
-# ==========================================================================================
+﻿# ==========================================================================================
 # GitHub Actions Workflow - Test Matrix
 # ------------------------------------------------------------------------------------------
-# Runs comprehensive test suites for all Servy projects natively across both x64 and 
-# ARM64 platforms. Only the x64 execution node generates, compiles, and submits 
+# Runs comprehensive test suites for all Servy projects natively across both x64 and
+# ARM64 platforms. Only the x64 execution node generates, compiles, and submits
 # aggregated Cobertura coverage data to Codecov and Coveralls metrics platforms.
 # ==========================================================================================
 
@@ -46,7 +46,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
-                  
+
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
         with:
@@ -69,12 +69,12 @@ jobs:
           foreach ($projFile in $RawTestProjects) {
               $projPath = $projFile.FullName
               $projName = $projFile.BaseName
-              
+
               # Derive the category segment (e.g. 'Core', 'UI') from the project folder name for the results path
               $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
-              
+
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
-              
+
               $dotnetArgs = @(
                   'test', $projPath,
                   '--configuration', 'Debug',
@@ -85,7 +85,7 @@ jobs:
                   '--collect', 'XPlat Code Coverage',
                   '--results-directory', "./TestResults/$subDirName/$projName"
               )
-              
+
               $dotnetArgs += @(
                   '--',
                   'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura',
@@ -94,14 +94,14 @@ jobs:
               )
 
               & dotnet @dotnetArgs
-              
-              if ($LASTEXITCODE -ne 0) { 
-                  $failed = $true 
+
+              if ($LASTEXITCODE -ne 0) {
+                  $failed = $true
                   Write-Host "::error::Tests failed for project: $projName"
               }
           }
 
-          if ($failed) { 
+          if ($failed) {
               Write-Error "One or more test projects failed. Review the logs above."
           }
 
@@ -166,7 +166,7 @@ jobs:
                   return "filename=`"$origPath`""
               }
           })
-          
+
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Out-File -FilePath $normalizedFile -Encoding utf8
 
@@ -183,10 +183,10 @@ jobs:
         run: |
           # Create the directory just in case
           mkdir -p ~/.gnupg
-          
+
           # Use gpg --batch to skip interactive prompts, and try a secondary, robust keyserver
           gpg --batch --keyserver hkps://keyserver.ubuntu.com --recv-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
-          
+
           # Verify the import
           gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
 
@@ -196,7 +196,7 @@ jobs:
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
         if: ${{ matrix.upload_coverage == true }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}          
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: TestResults/fixed/coverage.cobertura.xml
           flags: aggregated_ci
           name: codecov-coverage-report
