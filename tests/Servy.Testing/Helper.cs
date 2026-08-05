@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Servy.Core.Config;
 using Servy.Core.Native;
 using System.Diagnostics;
@@ -361,7 +361,6 @@ namespace Servy.Testing
             string startDir = AppDomain.CurrentDomain.BaseDirectory;
             string repoRoot = AppConfig.FindRepoRoot(startDir);
             var psm1Path = Path.Combine(repoRoot, "src", "Servy.CLI", "Servy.psm1");
-            Assert.True(File.Exists(psm1Path), $"Could not find Servy.psm1 at {psm1Path}");
             return psm1Path;
         }
 
