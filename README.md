@@ -28,16 +28,19 @@ See [NOTES.md](NOTES.md) for details.
 Download the latest release from [GitHub](https://github.com/aelassas/servy/releases/latest) or install via a package manager:
 
 **WinGet**
+
 ```powershell
 winget install servy
 ```
 
 **Chocolatey**
+
 ```powershell
 choco install -y servy
 ```
 
 **Scoop**
+
 ```powershell
 scoop bucket add extras
 scoop install servy
