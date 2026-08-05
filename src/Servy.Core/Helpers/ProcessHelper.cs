@@ -111,10 +111,7 @@ namespace Servy.Core.Helpers
                 int current = queue.Dequeue();
 
                 // Retrieve the parent's validated start time for downstream comparison
-                if (!processStartTimes.TryGetValue(current, out var currentParentStartTime))
-                {
-                    continue;
-                }
+                var currentParentStartTime = processStartTimes[current];
 
                 if (parentToChildren.TryGetValue(current, out var children))
                 {
