@@ -491,8 +491,8 @@ begin
     else
         NewPath := NormalizedFolder;
 
-    // Write the new system PATH
-    if not RegWriteStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
+    // Write the new system PATH preserving REG_EXPAND_SZ type
+    if not RegWriteExpandStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
     begin
       MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
       Exit;
@@ -541,9 +541,9 @@ begin
             StringChangeEx(FileLines[J], '{SERVY_INSTALL_PATH}', InstallPath, True);
           end;
           
-          // SaveStringsToFile writes a standard UTF-8/ANSI file. 
+          // SaveStringsToUTF8File writes a standard UTF-8 file. 
           // Because we updated the header to UTF-8, Task Scheduler will read it perfectly.
-          SaveStringsToFile(FilesToFix[I], FileLines, False);
+          SaveStringsToUTF8File(FilesToFix[I], FileLines, False);
         end;
       end;
     end;
@@ -581,7 +581,7 @@ begin
 
       NewPath := Parts.DelimitedText;
 
-      RegWriteStringValue(
+      RegWriteExpandStringValue(
         HKLM64,
         'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
         'Path',
