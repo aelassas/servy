@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <linker>
-	<!-- Data Transfer Objects used by Dapper, JSON, and XML serializers via reflection -->
-	<assembly fullname="Servy.Core">
-		<type fullname="Servy.Core.DTOs.*" preserve="all" />
-	</assembly>
+  <!-- Data Transfer Objects used by Dapper, JSON, and XML serializers via reflection -->
+  <assembly fullname="Servy.Core">
+    <type fullname="Servy.Core.DTOs.*" preserve="all" />
+  </assembly>
 
-	<!-- Reflection-based JSON configuration and state serialization -->
-	<assembly fullname="Newtonsoft.Json" preserve="all" />
+  <!-- Reflection-based JSON configuration and state serialization -->
+  <assembly fullname="Newtonsoft.Json" preserve="all" />
 
-	<!-- Reflection-based XML configuration import/export (XmlSerializer) -->
-	<assembly fullname="System.Xml.XmlSerializer" preserve="all" />
+  <!-- Reflection-based XML configuration import/export (XmlSerializer) -->
+  <assembly fullname="System.Xml.XmlSerializer" preserve="all" />
 
-	<!-- Dynamic ORM materialization of ServiceDto records -->
-	<assembly fullname="Dapper" preserve="all" />
+  <!-- Dynamic ORM materialization of ServiceDto records -->
+  <assembly fullname="Dapper" preserve="all" />
 
-	<!-- ADO.NET provider resolved dynamically at runtime by SQLite connection strings -->
-	<assembly fullname="System.Data.SQLite" preserve="all" />
+  <!-- ADO.NET provider resolved dynamically at runtime by SQLite connection strings -->
+  <assembly fullname="System.Data.SQLite" preserve="all" />
 
-	<!-- Windows Security, ACL, and Principal marshalling used for service elevation & access control -->
-	<assembly fullname="System.Security.Principal.Windows" preserve="all" />
-	<assembly fullname="System.Security.AccessControl" preserve="all" />
-	<assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />
+  <!-- Windows Security, ACL, and Principal marshalling used for service elevation & access control -->
+  <assembly fullname="System.Security.Principal.Windows" preserve="all" />
+  <assembly fullname="System.Security.AccessControl" preserve="all" />
+  <assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />
 
-	<!-- Native file system, drive inspection, and directory watching P/Invoke dependencies -->
-	<assembly fullname="System.IO.FileSystem" preserve="all" />
-	<assembly fullname="System.IO.FileSystem.DriveInfo" preserve="all" />
-	<assembly fullname="System.IO.FileSystem.Primitives" preserve="all" />
+  <!-- Native file system, drive inspection, and directory watching P/Invoke dependencies -->
+  <assembly fullname="System.IO.FileSystem" preserve="all" />
+  <assembly fullname="System.IO.FileSystem.DriveInfo" preserve="all" />
+  <assembly fullname="System.IO.FileSystem.Primitives" preserve="all" />
 
-	<!-- Immutable lookup tables: reserved device names, well-known service accounts -->
-	<assembly fullname="System.Collections.Immutable" preserve="all" />
+  <!-- Immutable lookup tables: reserved device names, well-known service accounts -->
+  <assembly fullname="System.Collections.Immutable" preserve="all" />
 </linker>

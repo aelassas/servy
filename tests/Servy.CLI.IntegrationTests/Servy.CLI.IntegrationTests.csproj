@@ -12,7 +12,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.CLI.IntegrationTests</AssemblyTitle>
-    <AssemblyDescription>Servy.CLI unit tests</AssemblyDescription>
+    <AssemblyDescription>Servy.CLI integration tests</AssemblyDescription>
     <Product>Servy.CLI.IntegrationTests</Product>
   </PropertyGroup>
 
