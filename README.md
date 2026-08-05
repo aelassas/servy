@@ -3,27 +3,6 @@
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/net48?label=coverage)](https://app.codecov.io/gh/aelassas/servy/tree/net48)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
-<!--
-[![codecov](https://codecov.io/gh/aelassas/servy/branch/net48/graph/badge.svg?token=26WZX2V4BG)](https://app.codecov.io/gh/aelassas/servy/tree/net48)
-[![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/net48?label=coverage)](https://app.codecov.io/gh/aelassas/servy/tree/net48)
-[![coveralls](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=net48)](https://coveralls.io/github/aelassas/servy?branch=net48)
-
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/aelassas/servy/pulls)
-[![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
--->
-
-<!--
-<p align="center">
-  <img src="https://servy-win.github.io/servy-tiny.png?v=4" alt="Servy">
-  ⭐ Don't forget to give us a star on GitHub. It costs nothing but means a lot and helps the project grow!
-</p>
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=biHq17j4RbI" target="_blank">
-    <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube" />
-  </a>
-</p>
--->
-
 # Servy
  
 ## .NET Framework 4.8 Version
@@ -47,9 +26,6 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
 ## Features
-<!--
-When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro, all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
--->
 
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
@@ -59,20 +35,20 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, CPU affinity, working directory, environment variables, and dependencies
-* Environment variable expansion supported in parameters, process paths and startup directories
+* Environment variable expansion supported in parameters, process paths, and startup directories
 * Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
-* Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
-* Run post-launch hook after the application starts successfully
-* Run pre-stop and post-stop hooks before the application stops and after the application stops
+* Run pre-launch hooks before starting the service, with retries, timeout, logging and failure handling
+* Run post-launch hooks after the application starts successfully
+* Run pre-stop and post-stop hooks before and after the application stops
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
 * Supports `Ctrl+C` propagation to descendant processes of the wrapped process
-* Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
+* Prevent orphaned/zombie processes with improved lifecycle management while ensuring resource cleanup
 * Health checks and automatic service recovery
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
 * Export/Import service configurations for easy backups and automation
 * Service Event Notification alerts on service failures via Windows notifications and email
-* Compatible with Windows 7 SP1 to 11 (x64/ARM64) and Windows Server editions
+* Compatible with Windows 7 SP1 through 11 (x64/ARM64) and Windows Server editions
 
 ## Support & Contributing
 
