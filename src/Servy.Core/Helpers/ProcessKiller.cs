@@ -43,7 +43,10 @@ namespace Servy.Core.Helpers
 
             // Virtualization & Container Hosts
             "vmcompute",      // Hyper-V Host Compute Service (Orchestrates VMs)
-            "vmms"            // Hyper-V Virtual Machine Management Service
+            "vmms",           // Hyper-V Virtual Machine Management Service
+            "vmwp",           // Virtual Machine Worker Process (one per running VM; killing it hard-stops the VM)
+            "vmmem",          // VM/WSL2 memory accounting pseudo-process
+            "vmmemWSL"        // WSL2 variant of vmmem on newer Windows 11 builds
         };
 
         /// <summary>
