@@ -21,7 +21,7 @@ namespace Servy.Core.Helpers
         /// <returns>An <see cref="IntPtr"/> bitmask representing the CPU affinity mask.</returns>
         /// <exception cref="ArgumentException">Thrown when a token or hex format is invalid.</exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// Thrown when core indices specified in ranges or individual values exceed allowed processor bounds (0 to Math.Min(Environment.ProcessorCount, 64) - 1).
+        /// Thrown when core indices or hexadecimal masks exceed allowed processor bounds (0 to Math.Min(Environment.ProcessorCount, 64) - 1).
         /// </exception>
         public static IntPtr ParseAffinity(string affinityInput)
         {
@@ -31,13 +31,24 @@ namespace Servy.Core.Helpers
             long mask = 0;
             string cleaned = affinityInput.Trim();
 
+            int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64); // Windows IntPtr limit per group is 64
+            long allowedMask = maxAllowedCores == 64 ? -1L : (1L << maxAllowedCores) - 1;
+
             // 1. Hexadecimal format (e.g., "0xFF00" or "0XFF00")
             if (cleaned.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
             {
                 if (long.TryParse(cleaned.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out mask))
                 {
+                    if (mask == 0 || (mask & ~allowedMask) != 0)
+                    {
+                        throw new ArgumentOutOfRangeException(
+                            nameof(affinityInput),
+                            string.Format(Strings.Msg_CoreIndexRangeOutOfBounds, cleaned, maxAllowedCores - 1));
+                    }
+
                     return new IntPtr(mask);
                 }
+
                 throw new ArgumentException(
                     string.Format(Strings.Msg_InvalidHexAffinityFormat, affinityInput),
                     nameof(affinityInput));
@@ -45,7 +56,6 @@ namespace Servy.Core.Helpers
 
             // 2. Comma-separated list with ranges (e.g., "0-3,8,10-12")
             string[] parts = cleaned.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64); // Windows IntPtr limit per group is 64
 
             foreach (var part in parts)
             {
@@ -57,7 +67,7 @@ namespace Servy.Core.Helpers
                         int.TryParse(range[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int start) &&
                         int.TryParse(range[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int end))
                     {
-                        if (start < 0 || end >= maxAllowedCores || start > end)
+                        if (end >= maxAllowedCores || start > end)
                         {
                             throw new ArgumentOutOfRangeException(
                                 nameof(affinityInput),
@@ -73,7 +83,7 @@ namespace Servy.Core.Helpers
                 }
                 else if (int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int core))
                 {
-                    if (core < 0 || core >= maxAllowedCores)
+                    if (core >= maxAllowedCores)
                     {
                         throw new ArgumentOutOfRangeException(
                             nameof(affinityInput),
