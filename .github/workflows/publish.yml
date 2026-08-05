@@ -1,4 +1,4 @@
-# ==========================================================================================
+﻿# ==========================================================================================
 # Servy Publish Workflow (.NET Framework 4.8)
 # ------------------------------------------------------------------------------------------
 # Builds all Servy components using .NET Framework 4.8, signs all executables using SignPath,
@@ -27,7 +27,7 @@ jobs:
       FRAMEWORK: net48
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
       MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
-      
+
       # Binary Version & Checksum Pins
       INNO_SETUP_VERSION: "6.6.1"
       INNO_SETUP_HASH: "d243ce440c02705530699554fb9612b9b2bd7a2a90629cdb7f41e66f5faeb91f"
@@ -78,7 +78,7 @@ jobs:
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
         with:
-          max_retries: ${{ env.MAX_RETRIES }}        
+          max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Install CycloneDX Tools
         uses: ./.github/actions/setup-cyclonedx
@@ -88,14 +88,14 @@ jobs:
         run: |
           # 1. Define version and paths
           $version = $env:INNO_SETUP_VERSION
-          
+
           # Convert "6.6.1" to "6_6_1" for the URL directory
-          $urlVersion = $version.Replace(".", "_") 
+          $urlVersion = $version.Replace(".", "_")
           $url = "https://github.com/jrsoftware/issrc/releases/download/is-$urlVersion/innosetup-$version.exe"
           $installer = "innosetup.exe"
-          
+
           Write-Host "Staging Inno Setup v$version download configuration..."
-          
+
           # DRY UNIFICATION: Outsource loop payload mechanics to our central action infrastructure
           Add-Content -Path $env:GITHUB_ENV -Value "INNO_URL=$url"
           Add-Content -Path $env:GITHUB_ENV -Value "INNO_OUT=$installer"
@@ -113,21 +113,21 @@ jobs:
         run: |
           $installer = "innosetup.exe"
           $expectedHash = $env:INNO_SETUP_HASH
-          
+
           # --- SECURITY CHECK 1: SHA256 PINNING ---
           Write-Host "Verifying SHA256 checksum of Inno Setup..."
           $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
-          
+
           if ($actualHash -ne $expectedHash) {
               throw "Security Breach: Inno Setup hash mismatch! Expected: $expectedHash, Got: $actualHash"
           }
           Write-Host "Checksum verified successfully."
-          
+
           # --- SECURITY CHECK 2: AUTHENTICODE ---
           Write-Host "Verifying Authenticode signature of Inno Setup..."
           $sig = Get-AuthenticodeSignature $installer
-          if ($sig.Status -ne 'Valid') { 
-              throw "Inno Setup signature check failed: $($sig.Status). The file may be compromised." 
+          if ($sig.Status -ne 'Valid') {
+              throw "Inno Setup signature check failed: $($sig.Status). The file may be compromised."
           }
           Write-Host "Signature verified successfully."
 
@@ -143,9 +143,9 @@ jobs:
           $fileVersion = $version.Replace(".", "") # Converts "26.01" to "2601"
           $url = "https://github.com/ip7z/7zip/releases/download/$version/7z$fileVersion-x64.exe"
           $installer = "7z_setup.exe"
-          
+
           Write-Host "Staging 7-Zip v$version download configuration..."
-          
+
           # Staged environment variable names updated to avoid numerical-starting parsing bugs
           Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_URL=$url"
           Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_OUT=$installer"
@@ -222,7 +222,7 @@ jobs:
           Write-Host "Using vstest.console.exe at: $vsTest"
 
           # Find all test assemblies using recursive search for resilience
-          $testDlls = Get-ChildItem -Path "tests" -Include "*.UnitTests.dll","*.IntegrationTests.dll" -Recurse | 
+          $testDlls = Get-ChildItem -Path "tests" -Include "*.UnitTests.dll","*.IntegrationTests.dll" -Recurse |
             Where-Object { $_.FullName -like "*\bin\*$env:BUILD_CONFIG\*" }
 
           # Print matched assemblies for verification
@@ -249,7 +249,7 @@ jobs:
                   throw "Unit tests failed in $($dll.FullName)"
               }
           }
-  
+
       # -----------------------------------------------------
       # Build and Publish SBOM
       # -----------------------------------------------------
@@ -536,13 +536,13 @@ jobs:
           $signPathName = "servy-net48-x64-installer.exe"
           $unsignedDir = "unsigned_installer_staging"
           $signPathTarget = "$unsignedDir/$signPathName"
-          
+
           if (-not (Test-Path $originalPath)) { throw "Unsigned installer not found: $originalPath" }
-          
+
           # Isolate into a clean directory to prevent path confusion
           New-Item -ItemType Directory -Force -Path $unsignedDir | Out-Null
           Move-Item -Path $originalPath -Destination $signPathTarget -Force
-          
+
           # Export explicit paths for downstream steps
           Add-Content -Path $env:GITHUB_ENV -Value "UNSIGNED_INSTALLER_PATH=$signPathTarget"
           Add-Content -Path $env:GITHUB_ENV -Value "SIGNED_INSTALLER_DIR=signed/installer"
@@ -575,12 +575,12 @@ jobs:
           $targetDir = "release_installer_staging"
           # Re-inject the framework tag into the final release name
           $targetPath = "$targetDir/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
-          
+
           if (-not (Test-Path $source)) { throw "Signed installer not found: $source" }
-          
+
           New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
           Move-Item -Path $source -Destination $targetPath -Force
-          
+
           # Export the final artifact path
           Add-Content -Path $env:GITHUB_ENV -Value "FINAL_INSTALLER_PATH=$targetPath"
 
@@ -611,7 +611,7 @@ jobs:
 
           # CLI
           Copy-Item (Join-Path $cli '*') $pkg -Recurse -Force
-          
+
           # Rename Servy.CLI.exe to servy-cli.exe
           $sourceExe  = Join-Path $pkg "Servy.CLI.exe"
           $targetName = "servy-cli.exe"
@@ -626,7 +626,7 @@ jobs:
           Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
           Copy-Item "src/Servy.CLI/Servy.psd1" $pkg -Force
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
-          
+
           # Remove *.pdb, *.config, *.xml files
           $exts = @("*.pdb", "*.config", "*.xml")
           foreach ($ext in $exts) {
@@ -639,10 +639,10 @@ jobs:
           if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
 
           Get-ChildItem -Path $sourcePath -Recurse -File |
-              Where-Object { 
-                  $_.Name -notin @('smtp-cred.xml') -and 
-                  $_.Extension -notin @('.dat','.log') -and 
-                  $_.Name -notin @('temp.ps1') -and 
+              Where-Object {
+                  $_.Name -notin @('smtp-cred.xml') -and
+                  $_.Extension -notin @('.dat','.log') -and
+                  $_.Name -notin @('temp.ps1') -and
                   $_.Name -notlike '*.test.ps1'
               } |
               ForEach-Object {
@@ -653,7 +653,7 @@ jobs:
 
                   # Ensure the subfolder exists in the package before copying the file
                   if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-                  
+
                   Copy-Item -Path $_.FullName -Destination $target -Force
               }
 
@@ -711,7 +711,7 @@ jobs:
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           sha256: true
-          file_globs: | 
+          file_globs: |
             servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-portable.7z
 
       - name: Check VT Status

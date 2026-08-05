@@ -1,8 +1,8 @@
-# ==============================================================================
+﻿# ==============================================================================
 # Composite Action - Setup and Verify CycloneDX Tools
 # ------------------------------------------------------------------------------
 # Purpose:
-#    Downloads, hash-verifies, and securely isolates both the CycloneDX CLI 
+#    Downloads, hash-verifies, and securely isolates both the CycloneDX CLI
 #    and the CycloneDX .NET tool within single-pass workflow runners.
 # ==============================================================================
 
@@ -56,7 +56,7 @@ runs:
         # --- SECURITY CHECK: SHA256 PINNING ---
         Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
         $actualHash = (Get-FileHash $outPath -Algorithm SHA256).Hash
-        
+
         if ($actualHash -ne $cliHash) {
             throw "Security Breach: CycloneDX CLI hash mismatch! Expected: $cliHash, Got: $actualHash"
         }
@@ -98,7 +98,7 @@ runs:
             throw "Security Breach: CycloneDX .NET Tool hash mismatch! Expected: $toolHash, Got: $actualToolHash"
         }
         Write-Host "Tool package checksum verified successfully."
-        
+
         # --- ISOLATION: Enforce local source only ---
         $nugetConfig = @"
         <?xml version="1.0" encoding="utf-8"?>

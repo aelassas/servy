@@ -1,7 +1,7 @@
-# ==============================================================================
+﻿# ==============================================================================
 # GitHub Composite Action - Setup Custom .NET
 # ------------------------------------------------------------------------------
-# Security: Enforces strict Authenticode signature validation and cryptographic 
+# Security: Enforces strict Authenticode signature validation and cryptographic
 # organizational attribute matching to prevent supply-chain vulnerabilities.
 # ==============================================================================
 name: 'Setup Custom .NET'
@@ -19,7 +19,7 @@ runs:
   using: "composite"
   steps:
     - name: Install .NET SDK
-      shell: pwsh      
+      shell: pwsh
       env:
         DOTNET_VERSION: ${{ inputs.version }}
         INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
@@ -41,23 +41,23 @@ runs:
           }
           Start-Sleep -Seconds 3
         }
-        
+
         # 2. SECURITY CHECK: Verify Microsoft Signature
         Write-Host "Verifying Authenticode signature of dotnet-install.ps1..."
         $sig = Get-AuthenticodeSignature $installerPath
-        
+
         if ($sig.Status -ne 'Valid') {
           throw "dotnet-install.ps1 signature check failed: $($sig.Status). The file may be compromised or unsigned."
         }
-        
+
         # Use structured X500 distinguished name parsing to isolate the organization attribute
         # directly, preventing unanchored string injection or DN-aliasing exploits.
         $cert = $sig.SignerCertificate
         $x500Name = New-Object System.Security.Cryptography.X509Certificates.X500DistinguishedName($cert.SubjectName)
-        
+
         # Extract RDN components cleanly using the .NET crypto API format
         $decodedSubject = $x500Name.Format($true) # Returns newline-delimited RDN entries
-        
+
         # Validate that 'O=Microsoft Corporation' exists exactly as an independent structural attribute line
         $isMatch = $false
         foreach ($line in ($decodedSubject -split "`n")) {
@@ -71,7 +71,7 @@ runs:
           throw "Security Exception: dotnet-install.ps1 signature organization attribute mismatch. Expected exact 'O=Microsoft Corporation' token field mapping."
         }
         Write-Host "Signature verified successfully."
-        
+
         # 3. Installation
         if (!(Test-Path $installDir)) {
           New-Item -ItemType Directory -Force -Path $installDir | Out-Null
@@ -85,7 +85,7 @@ runs:
         if ($LASTEXITCODE -ne 0) {
           throw "dotnet-install.ps1 failed with exit code $LASTEXITCODE"
         }
-        
+
         # 4. Finalize Environment
         $dotnet = Join-Path $installDir "dotnet.exe"
         if (!(Test-Path $dotnet)) {

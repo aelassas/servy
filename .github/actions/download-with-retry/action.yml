@@ -1,4 +1,4 @@
-# ==========================================================================================
+﻿# ==========================================================================================
 # Shared Composite Action - Resilient Download with Backoff Retry
 # ------------------------------------------------------------------------------------------
 # Centralizes network asset collection loops across the pipeline ecosystem.
@@ -39,7 +39,7 @@ runs:
         $out     = [Environment]::ExpandEnvironmentVariables($env:INPUT_OUTPUT_PATH)
         $asset   = $env:INPUT_ASSET_NAME
         $retries = [int]$env:INPUT_MAX_RETRIES
-        
+
         # Ensure destination directory exists prior to initiating download stream
         $parentDir = Split-Path -Path $out -Parent
         if ($parentDir -and -not (Test-Path -Path $parentDir)) {

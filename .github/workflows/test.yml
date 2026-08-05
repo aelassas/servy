@@ -1,4 +1,4 @@
-# ==========================================================================================
+﻿# ==========================================================================================
 # GitHub Actions Workflow - Test (net48)
 # ------------------------------------------------------------------------------------------
 # Builds the Servy solution targeting .NET Framework 4.8,
@@ -26,8 +26,8 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3                 
-          
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce #v2
 
@@ -55,7 +55,7 @@ jobs:
         run: dotnet tool install --global coverlet.console --version 3.2.0
 
       - name: Add dotnet tools to PATH
-        run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"  
+        run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"
         shell: pwsh
 
       - name: Run all tests with coverage (Debug)
@@ -68,12 +68,12 @@ jobs:
 
           foreach ($projFile in $RawTestProjects) {
               $projName = $projFile.BaseName
-              
+
               # Re-map our parent folder tracking keys to dynamically support the Net48 project structures
               $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
-              
+
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
-              
+
               $dllPath = "tests\$projName\bin\x64\Debug\$projName.dll"
               if (-Not (Test-Path $dllPath)) {
                   Write-Host "::error::Test DLL not found: $dllPath"
@@ -81,12 +81,12 @@ jobs:
                   continue
               }
 
-              # Build target arguments for vstest.console.exe              
+              # Build target arguments for vstest.console.exe
               $targetArgs = "`"$dllPath`" /Blame:`"CollectDump;CrashDumpType=full`""
-              
-              # Include the project name in the file so integration tests don't overwrite unit tests              
+
+              # Include the project name in the file so integration tests don't overwrite unit tests
               $outPath = "$subDirName\$projName.coverage.cobertura.xml"
-              
+
               # Use vswhere to find the latest installed vstest.console.exe dynamically
               $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
 
@@ -104,7 +104,7 @@ jobs:
 
               Write-Host "Using vstest.console.exe at: $vsTest"
 
-              # Define common exclusions 
+              # Define common exclusions
               $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/*.Designer.cs", "**/obj/**/*")
 
               # 1. Initialize the arguments array with base arguments
@@ -134,14 +134,14 @@ jobs:
 
               # 4. Execute using the splatting operator (@)
               & coverlet @coverletArgs
-                  
-              if ($LASTEXITCODE -ne 0) { 
-                  $failed = $true 
+
+              if ($LASTEXITCODE -ne 0) {
+                  $failed = $true
                   Write-Host "::error::Tests failed for project: $projName"
               }
           }
 
-          if ($failed) { 
+          if ($failed) {
               Write-Error "::error::One or more test projects failed. Review the logs above."
               exit 1
           }
@@ -190,7 +190,7 @@ jobs:
 
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
-              
+
               $vsTestArgs = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx", "/Blame:CollectDump;CrashDumpType=full")
 
               & $vsTest @vsTestArgs
@@ -227,13 +227,13 @@ jobs:
       - name: Merge coverage reports
         shell: pwsh
         run: |
-          # Find all newly generated cobertura files dynamically          
-          # Updated the filter to match the new unique filenames          
+          # Find all newly generated cobertura files dynamically
+          # Updated the filter to match the new unique filenames
           $reports = Get-ChildItem -Path . -Recurse -Filter "*coverage.cobertura.xml" | Where-Object { $_.FullName -notmatch "CoverageMerged" }
           if ($reports.Count -eq 0) { Write-Error "No coverage files found!" }
-          
+
           $reportPaths = $reports.FullName -join ";"
-          
+
           # Add wildcard assembly filters to physically strip test assemblies from the merged XML,
           # and include file-level exclusions to eliminate any residual XAML markup layout records.
           reportgenerator `
@@ -249,7 +249,7 @@ jobs:
         run: |
           $fixedDir = "CoverageMerged\fixed"
           if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
-        
+
           $mergedFile = "CoverageMerged\Cobertura.xml"
           if (-Not (Test-Path $mergedFile)) { Write-Error "$mergedFile not found" }
 
@@ -257,8 +257,8 @@ jobs:
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
-              
-              # Dynamic match for ALL Servy projects              
+
+              # Dynamic match for ALL Servy projects
               if ($origPath -match 'src/(Servy[^/]*)/(.*)') {
                   return "filename=`"src/$($matches[1])/$($matches[2])`""
               }
@@ -266,7 +266,7 @@ jobs:
                   return "filename=`"$origPath`""
               }
           })
-          
+
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $normalizedFile -Encoding utf8
 
@@ -276,10 +276,10 @@ jobs:
         run: |
           # Create the directory just in case
           mkdir -p ~/.gnupg
-          
+
           # Use gpg --batch to skip interactive prompts, and try a secondary, robust keyserver
           gpg --batch --keyserver hkps://keyserver.ubuntu.com --recv-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
-          
+
           # Verify the import
           gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
 
@@ -288,7 +288,7 @@ jobs:
         continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}  
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: CoverageMerged/fixed/coverage.cobertura.xml
           flags: aggregated_ci
           name: codecov-coverage-report

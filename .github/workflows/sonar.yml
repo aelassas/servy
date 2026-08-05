@@ -1,4 +1,4 @@
-# --------------------------------------------------------------------------
+﻿# --------------------------------------------------------------------------
 # SonarCloud Analysis Workflow for Servy (.NET Framework 4.8 build)
 # Description: Performs static code analysis and security scanning using MSBuild.
 # Author: Akram El Assas
@@ -22,7 +22,7 @@ jobs:
     name: Build and analyze
     runs-on: windows-latest
     timeout-minutes: 60
-    
+
     env:
       SONAR_SCANNER_VERSION: "11.2.1"
       MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
@@ -32,8 +32,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
         with:
-          fetch-depth: 0 
-          
+          fetch-depth: 0
+
       # 2. Setup Java (Required by SonarCloud)
       - name: Set up JDK 17
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 #v5.6.0
@@ -45,7 +45,7 @@ jobs:
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
         with:
-          max_retries: ${{ env.MAX_RETRIES }}              
+          max_retries: ${{ env.MAX_RETRIES }}
 
       # 4. Add MSBuild and NuGet to the PATH
       - name: Setup MSBuild
@@ -97,13 +97,13 @@ jobs:
             /o:"aelassas" `
             /d:sonar.token="$env:SONAR_TOKEN" `
             /d:sonar.host.url="https://sonarcloud.io"
-          
+
           if ($LASTEXITCODE -ne 0) { throw "sonarscanner begin failed (exit $LASTEXITCODE)" }
 
           # Using MSBuild for .NET 4.8
           msbuild /p:Configuration=Release /p:Platform=x64
           $buildExit = $LASTEXITCODE
-          
+
           & "$scannerDir\dotnet-sonarscanner" end /d:sonar.token="$env:SONAR_TOKEN"
           $endExit = $LASTEXITCODE
 
