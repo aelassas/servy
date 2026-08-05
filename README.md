@@ -3,46 +3,6 @@
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=7)](https://codecov.io/gh/aelassas/servy)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
-<!--
-[![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) 
-[![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml)
-[![Build Status](https://aelassas.visualstudio.com/servy/_apis/build/status%2Faelassas.servy?branchName=main)](https://aelassas.visualstudio.com/servy/_build/latest?definitionId=4&branchName=main) 
-[![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) 
-[![codecov](https://codecov.io/gh/aelassas/servy/graph/badge.svg?token=26WZX2V4BG)](https://codecov.io/gh/aelassas/servy)
-[![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=7)](https://codecov.io/gh/aelassas/servy)
-[![coveralls](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
-
-[![security](https://github.com/aelassas/servy/actions/workflows/security.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/security.yml)
-[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/release.yml)
-
-[![scoop](https://github.com/aelassas/servy/actions/workflows/scoop.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/scoop.yml)
-[![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
-
-[![sonar](https://img.shields.io/sonar/quality_gate/aelassas_servy?server=https%3A%2F%2Fsonarcloud.io&label=sonar)](https://sonarcloud.io/summary/new_code?id=aelassas_servy)
-[![winget](https://github.com/aelassas/servy/actions/workflows/winget.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/winget.yml)
-[![choco](https://github.com/aelassas/servy/actions/workflows/choco.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/choco.yml)
-[![bump-version](https://github.com/aelassas/servy/actions/workflows/bump-version.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/bump-version.yml)
-
-[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/aelassas/servy/total)](https://github.com/aelassas/servy/releases)
-[![GitHub Release](https://img.shields.io/github/v/release/aelassas/servy)](https://github.com/aelassas/servy/releases/latest)
-[![License](https://img.shields.io/github/license/aelassas/servy)](https://github.com/aelassas/servy/blob/main/LICENSE.txt)
-
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/aelassas/servy/pulls)
-[![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
--->
-
-<!--
-<p align="center">
-  <img src="https://servy-win.github.io/servy-tiny.png?v=4" alt="Servy">
-  ⭐ Don't forget to give us a star on GitHub. It costs nothing but means a lot and helps the project grow!
-</p>
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=biHq17j4RbI" target="_blank">
-    <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube">
-  </a>
-</p>
--->
-
 # Servy
 
 Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
@@ -112,7 +72,7 @@ servy-cli start --name="MyService"
 
 Or from an **elevated** Command Prompt:
 
-```
+```cmd
 sc.exe start MyService
 ```
 
@@ -142,7 +102,7 @@ Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examp
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
 * Run pre-launch hooks before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hooks after the application starts successfully
-* Run pre-stop and post-stop hooks before the application stops and after the application stops
+* Run pre-stop and post-stop hooks before and after the application stops
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
 * Supports `Ctrl+C` propagation to descendant processes of the wrapped process
 * Prevent orphaned/zombie processes with improved lifecycle management while ensuring resource cleanup
