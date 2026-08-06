@@ -40,7 +40,7 @@ jobs:
       contents: write # Needed here to push commits back
     env:
       MAX_RETRIES: 5
-      SKIP_CHOCO_PUSH: ${{ github.event.inputs.skip_push || false }}
+      SKIP_CHOCO_PUSH: ${{ inputs.skip_push == true }}
 
     steps:
       - name: Checkout repo
