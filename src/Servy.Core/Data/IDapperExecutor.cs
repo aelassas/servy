@@ -1,6 +1,7 @@
-﻿using Dapper;
+using Dapper;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,7 +10,7 @@ namespace Servy.Core.Data
     /// <summary>
     /// Abstraction for executing database operations using Dapper.
     /// This allows mocking database calls in unit tests without directly
-    /// mocking <see cref="System.Data.DbConnection"/> extension methods.
+    /// mocking <see cref="DbConnection"/> extension methods.
     /// </summary>
     public interface IDapperExecutor
     {

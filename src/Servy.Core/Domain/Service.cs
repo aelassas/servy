@@ -1,4 +1,4 @@
-﻿using Servy.Core.Common;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Services;
@@ -493,9 +493,10 @@ namespace Servy.Core.Domain
         /// Installs the Windows service using the configured domain properties.
         /// </summary>
         /// <remarks>
-        /// In <c>DEBUG</c> builds, the service wrapper executable is resolved from the
-        /// executing assembly directory. In <c>RELEASE</c> builds, it is resolved from
-        /// the <see cref="AppConfig.ProgramDataPath"/>.
+        /// In <c>DEBUG</c> builds, the service wrapper executable is resolved
+        /// from <paramref name="wrapperExeDir"/> when provided, falling back to.
+        /// In <c>RELEASE</c> builds, it is resolved from the
+        /// <see cref="AppConfig.ProgramDataPath"/>.
         /// <para>
         /// This method passes all service configuration (paths, parameters, startup
         /// settings, monitoring options, recovery actions, etc.) to the underlying
