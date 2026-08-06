@@ -1,4 +1,4 @@
-﻿using Servy.Config;
+using Servy.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -837,6 +837,11 @@ namespace Servy.ViewModels
         /// </summary>
         public ICommand BrowsePostStopStartupDirectoryCommand { get; }
 
+        /// <summary>
+        /// Command to show recovery action help.
+        /// </summary>
+        public IAsyncCommand ShowRecoveryActionHelpCommand { get; }
+
         #endregion
 
         #region Constructors
@@ -908,6 +913,8 @@ namespace Servy.ViewModels
             OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
+
+            ShowRecoveryActionHelpCommand = new AsyncCommand(ShowRecoveryActionHelpAsync, name: nameof(ShowRecoveryActionHelpCommand));
 
             ClearFormCommand = new AsyncCommand(ClearFormAsync, _ => !IsBusy, name: nameof(ClearFormCommand));
 
@@ -1373,6 +1380,14 @@ namespace Servy.ViewModels
                     Helper.GetBuiltWithFramework(),
                     DateTime.Now.Year),
                 UiAppConfig.Caption);
+        }
+
+        /// <summary>
+        /// Displays a message box with information about recovery actions.
+        /// </summary>
+        private async Task ShowRecoveryActionHelpAsync(object? parameter)
+        {
+            await _messageBoxService.ShowInfoAsync(Strings.Info_RecoveryAction, UiAppConfig.Caption);
         }
 
         #endregion

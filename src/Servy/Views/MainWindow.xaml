@@ -527,7 +527,7 @@
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_RecoveryAction}" Margin="0,5,10,5"/>
             <ComboBox Grid.Row="3" 
-                                  Grid.Column="1" Grid.ColumnSpan="2"
+                                  Grid.Column="1"
                                   Margin="0,5"
                                   ItemsSource="{Binding RecoveryActions, UpdateSourceTrigger=PropertyChanged}"
                                   DisplayMemberPath="DisplayName"
@@ -537,6 +537,26 @@
                                   AutomationProperties.Name="{x:Static resx:Strings.Label_RecoveryAction}"
                                   AutomationProperties.AutomationId="ComboBoxRecoveryAction"
                                   AutomationProperties.HelpText="Select the action to take when the service fails health checks."/>
+            <Button Grid.Row="3" Grid.Column="2" Command="{Binding ShowRecoveryActionHelpCommand}"
+                        Margin="6,0,0,0"
+                        Padding="0"
+                        Width="16" Height="16"
+                        Cursor="Hand"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        HorizontalAlignment="Left"
+                        ToolTip="{x:Static resx:Strings.Label_RecoveryAction}"
+                        AutomationProperties.Name="{x:Static resx:Strings.Label_RecoveryAction}">
+              <Button.Template>
+                <ControlTemplate TargetType="Button">
+                  <Border Background="Transparent">
+                    <Path Data="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,16.5H13V18.5H11V16.5M12,6.5A3.5,3.5 0 0,0 8.5,10H10.5A1.5,1.5 0 0,1 12,8.5A1.5,1.5 0 0,1 13.5,10C13.5,11.5 11.25,11.25 11.25,13.5H12.75C12.75,12 15,11.75 15,10A3.5,3.5 0 0,0 12,6.5Z"
+                                      Fill="#0078D4"
+                                      Stretch="Uniform"/>
+                  </Border>
+                </ControlTemplate>
+              </Button.Template>
+            </Button>
 
             <CheckBox Grid.Row="4" Grid.Column="1"
                                   Content="{x:Static resx:Strings.Label_RecoveryOnCleanExit}"

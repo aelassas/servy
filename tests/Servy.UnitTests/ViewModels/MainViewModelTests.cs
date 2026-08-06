@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -597,6 +597,13 @@ namespace Servy.UnitTests.ViewModels
                     text.Contains(DateTime.Now.Year.ToString())
                 ),
                 UiAppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task ShowRecoveryActionHelpAsync_Calls_MessageBoxService()
+        {
+            await _viewModel.ShowRecoveryActionHelpCommand.ExecuteAsync(null);
+            _messageBoxService.Verify(m => m.ShowInfoAsync(Strings.Info_RecoveryAction, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
