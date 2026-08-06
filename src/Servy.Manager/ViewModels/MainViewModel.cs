@@ -1,4 +1,4 @@
-﻿using Servy.Core.Data;
+using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
@@ -69,6 +69,11 @@ namespace Servy.Manager.ViewModels
         /// Get the dependencies view model.
         /// </summary>
         public DependenciesViewModel DependenciesVM { get; }
+
+        /// <summary>
+        /// Get the logs view model.
+        /// </summary>
+        public LogsViewModel LogsVM { get; }
 
         /// <summary>
         /// Gets or sets the search text used for filtering or querying services.
@@ -247,6 +252,7 @@ namespace Servy.Manager.ViewModels
             PerformanceViewModel performanceVM,
             ConsoleViewModel consoleVM,
             DependenciesViewModel dependenciesVM,
+            LogsViewModel logsVM,
             IAppConfiguration appConfig,
             ICursorService cursorService,
             IProcessHelper processHelper,
@@ -268,6 +274,7 @@ namespace Servy.Manager.ViewModels
             PerformanceVM = performanceVM ?? throw new ArgumentNullException(nameof(performanceVM));
             ConsoleVM = consoleVM ?? throw new ArgumentNullException(nameof(consoleVM));
             DependenciesVM = dependenciesVM ?? throw new ArgumentNullException(nameof(dependenciesVM));
+            LogsVM = logsVM ?? throw new ArgumentNullException(nameof(logsVM));
             ServiceCommands = _serviceCommands;
 
             ServicesView = new ListCollectionView(_services);
@@ -305,6 +312,7 @@ namespace Servy.Manager.ViewModels
             new PerformanceViewModel(),                   // Design-time PerformanceVM
             new ConsoleViewModel(),                       // Design-time ConsoleVM
             new DependenciesViewModel(),                  // Design-time DependenciesVM
+            new LogsViewModel(),                          // Design-time LogsVM
             new DesignTimeAppConfig(),                    // AppConfig placeholder
             new UI.Design.DesignTimeCursorService(),      // CursorService placeholder
             new UI.Design.DesignTimeProcessHelper(),      // ProcessHelper placeholder

@@ -531,9 +531,9 @@
         <views:DependenciesView DataContext="{Binding DependenciesVM}" />
       </TabItem>
 
-      <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}"
-                     AutomationProperties.Name="Logs Tab" AutomationProperties.AutomationId="LogsTab" AutomationProperties.HelpText="Displays a list of system events and diagnostic records for the service.">
-        <views:LogsView />
+      <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}" VirtualizingStackPanel.IsVirtualizing="False"
+               AutomationProperties.Name="Logs Tab" AutomationProperties.AutomationId="LogsTab" AutomationProperties.HelpText="Displays a list of system events and diagnostic records for the service.">
+        <views:LogsView DataContext="{Binding LogsVM}" />
       </TabItem>
 
     </TabControl>
