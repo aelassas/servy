@@ -199,6 +199,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-git-helpers", "setup-
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.IntegrationTests", "tests\Servy.CLI.IntegrationTests\Servy.CLI.IntegrationTests.csproj", "{840AE4B4-22C9-4943-AE94-16F9A2695537}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "winget", "winget", "{F59B094D-9ABF-4617-AD00-3F789DC14E4C}"
+	ProjectSection(SolutionItems) = preProject
+		setup\winget\README.md = setup\winget\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -336,6 +341,7 @@ Global
 		{DC8F9FE8-87F3-45D1-B7A7-A87A4D2C82CE} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 		{9ECF4CFF-05CD-43DA-9751-191FBE4A3B5C} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 		{840AE4B4-22C9-4943-AE94-16F9A2695537} = {50795869-2933-430F-98BD-956C414ABBE4}
+		{F59B094D-9ABF-4617-AD00-3F789DC14E4C} = {11479D8F-D8B6-4AD7-BC82-A423FCC30779}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}
