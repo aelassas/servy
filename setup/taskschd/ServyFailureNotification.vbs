@@ -1,11 +1,12 @@
 Option Explicit
 
-Dim fso, shell, scriptDir, ps1Path
+Dim fso, shell, scriptDir, ps1Path, command, exitCode
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
 ' Resolve the directory where this .vbs is located
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+
 ' Build the path to the sibling .ps1 file
 ps1Path = fso.BuildPath(scriptDir, "ServyFailureNotification.ps1")
 
@@ -17,11 +18,9 @@ End If
 
 ' Execute PowerShell hidden (-WindowStyle Hidden) and bypass policy
 ' We use triple-quotes to handle potential spaces in the install path
-Dim exitCode
-Dim command
 command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1Path & """"
 
-' Now call it as a function with parentheses
+' Execute the command and capture the exit code
 exitCode = shell.Run(command, 0, True)
 
 WScript.Quit exitCode

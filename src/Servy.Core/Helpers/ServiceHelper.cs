@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using Servy.Core.Native;
@@ -369,14 +369,15 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="wrapperExes">The set of executable filenames to search for (e.g., "Servy.Service.exe").</param>
         /// <returns>A list containing the names of all currently running services that match any of the specified executables.</returns>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExes"/> is null or empty.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when an unexpected error occurs while querying the SCM or Registry.</exception>
         /// <remarks>
         /// This method bypasses <see cref="ServiceController.ServicesDependedOn"/> (and related
         /// SCM round-trips) to prevent COM timeout issues in large-scale deployments.
-        /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables,
-        /// and safely parses out executable paths that contain quotes or command-line arguments.
+        /// It reads each service's binary path via the native <c>QueryServiceConfig</c> API,
+        /// expands environment variables, and safely parses out executable paths that contain
+        /// quotes or command-line arguments.
         /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown when an unexpected error occurs while querying the SCM.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExes"/> is null or empty.</exception>
         [ExcludeFromCodeCoverage]
         private List<string> GetRunningServices(HashSet<string> wrapperExes)
         {

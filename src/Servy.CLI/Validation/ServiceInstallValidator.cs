@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -213,7 +213,7 @@ namespace Servy.CLI.Validation
                 {
                     // If the string contains unmapped or anonymous bits, ToString() drops back
                     // to displaying a raw number. Comparing it against the normalized text
-                    // detects out-of-range flag corruption cleanly without allocations.
+                    // detects out-of-range flag corruption.
                     var underlyingValue = Convert.ChangeType(result, Enum.GetUnderlyingType(enumType)).ToString();
                     if (result.ToString() != underlyingValue)
                     {

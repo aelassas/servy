@@ -1,13 +1,13 @@
 Option Explicit
 
-Dim fso, shell, scriptDir, ps1Path, exitCode, cmd
+Dim fso, shell, scriptDir, ps1Path, command, exitCode
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
-' Resolve the directory
+' Resolve the directory where this .vbs is located
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 
-' Build the path
+' Build the path to the sibling .ps1 file
 ps1Path = fso.BuildPath(scriptDir, "ServyFailureEmail.ps1")
 
 ' Verify the file exists before attempting to run it
@@ -16,11 +16,11 @@ If Not fso.FileExists(ps1Path) Then
     WScript.Quit 1
 End If
 
-' Build the command string
-' We use the & chr(34) & sequence for quotes to be absolutely clear
-cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File " & chr(34) & ps1Path & chr(34)
+' Execute PowerShell hidden (-WindowStyle Hidden) and bypass policy
+' We use triple-quotes to handle potential spaces in the install path
+command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1Path & """"
 
-' Execute the command with parentheses because we are assigning to exitCode
-exitCode = shell.Run(cmd, 0, True)
+' Execute the command and capture the exit code
+exitCode = shell.Run(command, 0, True)
 
 WScript.Quit exitCode
