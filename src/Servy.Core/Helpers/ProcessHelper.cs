@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using System.Collections.Concurrent;
@@ -85,7 +85,7 @@ namespace Servy.Core.Helpers
             }
             catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException || ex is Win32Exception)
             {
-                Logger.Warn($"GetProcessTree: Root process {rootPid} is no longer running. Returning empty tree boundary.");
+                Logger.Warn($"GetProcessTree: Root process {rootPid} is no longer running. Returning root-only tree.");
                 return tree;
             }
 

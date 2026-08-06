@@ -59,12 +59,12 @@ $scriptDir = $PSScriptRoot
 # Assumes this script is in setup/, making source projects sibling directories
 $sourceDir = Join-Path $scriptDir "..\src\$ProjectName"
 
-# Prevent Resolve-Path errors on clean environments
+# Fail fast if the project directory is missing (clean checkout, wrong -ProjectName)
 if (-not (Test-Path $sourceDir)) {
     throw "CRITICAL: Project directory not found at $sourceDir"
 }
 
-# Ensure the target resources folder exists, but resolve its full path first
+# Ensure the target resources folder exists
 if (-not (Test-Path $TargetResourcesFolder)) {
     Write-Host "Creating missing resources folder: $TargetResourcesFolder" -ForegroundColor Gray
     New-Item -ItemType Directory -Path $TargetResourcesFolder -Force | Out-Null

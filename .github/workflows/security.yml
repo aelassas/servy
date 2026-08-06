@@ -1,4 +1,4 @@
-﻿# ===========================================
+# ===========================================
 # GitHub Actions Workflow - Security Audit
 # -------------------------------------------
 # Performs security checks for the Servy project:
@@ -60,7 +60,7 @@ jobs:
       - name: Scan for vulnerable packages
         shell: pwsh
         run: |
-          # Keep CLI messages in English so log output (and the human-readable rerun below) is consistent
+          # Keep CLI messages in English so failure output in the log is consistent across runners
           $env:DOTNET_CLI_UI_LANGUAGE = 'en'
 
           # Fetch structured analysis data directly via JSON serialization to avoid brittle string matching
