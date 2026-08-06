@@ -1,4 +1,4 @@
-﻿# ==========================================================================================
+# ==========================================================================================
 # Servy Publish Workflow (.NET)
 # ------------------------------------------------------------------------------------------
 # Builds all Servy components using the modern .NET SDK, signs all executables using SignPath,
@@ -104,7 +104,7 @@ jobs:
 
           Write-Host "Staging Inno Setup v$version download configuration..."
 
-          # DRY UNIFICATION: Outsource loop payload mechanics to our central action infrastructure
+          # Stage the URL/output-path pair for the shared download-with-retry action
           Add-Content -Path $env:GITHUB_ENV -Value "INNO_URL=$url"
           Add-Content -Path $env:GITHUB_ENV -Value "INNO_OUT=$installer"
 
@@ -154,7 +154,7 @@ jobs:
 
           Write-Host "Staging 7-Zip v$version download configuration..."
 
-          # Staged environment variable names updated to avoid numerical-starting parsing bugs
+          # SEVENZ_ prefix (not 7Z_): env names starting with a digit can't be read back as $env:7Z_...
           Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_URL=$url"
           Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_OUT=$installer"
 

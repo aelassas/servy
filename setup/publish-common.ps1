@@ -84,7 +84,6 @@ function Build-Installer {
         }
         catch {
             # Treat any non-zero exit as potentially transient for the first few retries.
-            # This avoids the complex and unreliable string-parsing logic.
             if ($currentAttempt -lt $MaxRetry) {
                 # Transient failure: pause to let the AV file lock release before retrying.
                 Write-Warning "Inno Setup failed (likely AV lock). Waiting $($RetryDelaySeconds)s before retry..."
@@ -179,9 +178,8 @@ function New-PortablePackage {
     # Compress the folder including its top-level directory entry, so extraction
     # preserves the staging directory name as a wrapper.
     
-    # ROBUSTNESS: Use the call operator (&) instead of Start-Process -ArgumentList
-    # to guarantee that parameters containing spaces (like OutputZip and PackageFolder) 
-    # are correctly quoted by the PowerShell parser before native execution.
+    # ROBUSTNESS: Call operator (&) lets the PowerShell parser quote space-containing paths
+    # (OutputZip, PackageFolder) correctly for the native 7z invocation.
     & $SevenZipExe a -t7z -m0=lzma2 -mx=9 -mfb=273 -md=128m -ms=on $OutputZip $PackageFolder
     $exitCode = $LASTEXITCODE
 

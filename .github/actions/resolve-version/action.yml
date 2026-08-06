@@ -1,9 +1,9 @@
-﻿# =========================================================================
+# =========================================================================
 # GitHub Actions Composite Action - Resolve Version
 # -------------------------------------------------------------------------
 # Deduplicates and centralizes the tag-resolution and semantic version
 # parsing logic across all automated release distribution paths.
-# Outputs standardized TAG and VERSION environment metrics.
+# Outputs standardized TAG and VERSION variables via GITHUB_ENV.
 # =========================================================================
 
 name: 'Resolve Version'
@@ -38,7 +38,8 @@ runs:
         } elseif ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME) {
             $tag = $env:GITHUB_REF_NAME                          # Fallback for tag push
         } else {
-            # Fallback block integration matching bump-version requirements
+            # No tag from any event context: fall back to the latest published release
+            # (lets workflow_dispatch runs without a tag input resolve a real version).
             Write-Host "No event tag found. Querying GitHub API for latest release..."
             $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
             $url = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/latest"

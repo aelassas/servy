@@ -1,5 +1,5 @@
-﻿name: 'Setup Git Helpers'
-description: 'Installs reusable git utility script macros to the runner temporary environment context.'
+name: 'Setup Git Helpers'
+description: 'Writes shared git helper functions (Invoke-Git, Invoke-PushWithRetry) to a script in RUNNER_TEMP for later steps to dot-source.'
 
 runs:
   using: 'composite'
@@ -20,14 +20,14 @@ runs:
             }
         }
 
-        # Helper: standardized push with automated rebase-autostash fallback recovery loops
+        # Helper: pull --rebase then push, retried up to $MaxRetries times for push races.
         function Invoke-PushWithRetry {
             param([string]$PullRef, [string]$PushRef, [int]$MaxRetries = 5)
             for ($i = 0; $i -lt $MaxRetries; $i++) {
                 try {
                     git rebase --abort 2>$null
                     git merge  --abort 2>$null
-                    Write-Host "Attempting synchronized push sequence (Attempt $($i + 1))..."
+                    Write-Host "Pull-rebase-push attempt $($i + 1) of $MaxRetries..."
 
                     git pull --rebase=merges --autostash origin $PullRef
                     if ($LASTEXITCODE -ne 0) { throw "git pull failed with exit code $LASTEXITCODE" }
@@ -42,7 +42,7 @@ runs:
                     if ($i -eq ($MaxRetries - 1)) {
                         throw "Push operation failed critically after $MaxRetries attempts: $($_.Exception.Message)"
                     }
-                    Write-Warning "$($_.Exception.Message). Retrying tracking sequence branch synchronization in 5 seconds..."
+                    Write-Warning "$($_.Exception.Message). Retrying pull-rebase-push in 5 seconds..."
                     Start-Sleep -Seconds 5
                 }
             }
