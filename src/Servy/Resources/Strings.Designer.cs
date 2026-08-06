@@ -511,7 +511,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enable date-based Rotation.
+        ///   Looks up a localized string similar to Enable date-based rotation.
         /// </summary>
         public static string Label_EnableDateRotation {
             get {
@@ -520,7 +520,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enable Debug Logs.
+        ///   Looks up a localized string similar to Enable debug logs.
         /// </summary>
         public static string Label_EnableDebugLogs {
             get {
@@ -547,7 +547,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enable size-based Rotation.
+        ///   Looks up a localized string similar to Enable size-based rotation.
         /// </summary>
         public static string Label_EnableSizeRotation {
             get {
@@ -934,7 +934,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use local time for log rotation (Default: UTC).
+        ///   Looks up a localized string similar to Use local time for log rotation (default: UTC).
         /// </summary>
         public static string Label_UseLocalTimeForRotation {
             get {

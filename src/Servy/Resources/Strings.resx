@@ -214,7 +214,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Stderr File Path</value>
   </data>
   <data name="Label_EnableSizeRotation" xml:space="preserve">
-    <value>Enable size-based Rotation</value>
+    <value>Enable size-based rotation</value>
   </data>
   <data name="Label_RotationSize" xml:space="preserve">
     <value>Rotation Size</value>
@@ -223,7 +223,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Megabytes (MB)</value>
   </data>
   <data name="Label_EnableDateRotation" xml:space="preserve">
-    <value>Enable date-based Rotation</value>
+    <value>Enable date-based rotation</value>
   </data>
   <data name="Label_DateRotationType" xml:space="preserve">
     <value>Date Rotation Interval</value>
@@ -244,7 +244,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>When both size-based and date-based rotation are enabled, size rotation takes precedence.</value>
   </data>
   <data name="Label_UseLocalTimeForRotation" xml:space="preserve">
-    <value>Use local time for log rotation (Default: UTC)</value>
+    <value>Use local time for log rotation (default: UTC)</value>
   </data>
 
   <data name="Label_MaxRotations" xml:space="preserve">
@@ -490,7 +490,7 @@ If the service is disabled and marked for deletion, the installation will fail u
 
   <!-- Debug-Logs -->
   <data name="Label_EnableDebugLogs" xml:space="preserve">
-    <value>Enable Debug Logs</value>
+    <value>Enable debug logs</value>
   </data>
   <data name="Info_EnableDebugLogs" xml:space="preserve">
     <value>When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.</value>
