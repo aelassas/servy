@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -27,8 +27,7 @@
     <value>Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965.</value>
   </data>
 
-  <!--Splash
-  screen-->
+  <!-- Splash screen -->
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy Manager...</value>
   </data>
@@ -75,7 +74,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     </value>
   </data>
 
-  <!--Tabs-->
+  <!-- Tabs -->
   <data name="Label_ServicesTab" xml:space="preserve">
     <value>Services</value>
   </data>
@@ -142,7 +141,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>This service is stopped</value>
   </data>
 
-
   <!-- Search -->
   <data name="Button_Search" xml:space="preserve">
     <value>Search</value>
@@ -155,12 +153,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Label_F5_Shortcut_Logs" xml:space="preserve">
     <value>Press F5 to refresh logs</value>
-  </data>
-  <data name="Footer_ServiceRowText" xml:space="preserve">
-    <value>service</value>
-  </data>
-  <data name="Footer_LogRowText" xml:space="preserve">
-    <value>log</value>
   </data>
 
   <!-- Services DataGrid -->
@@ -180,7 +172,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Log On As</value>
   </data>
 
-  <!--Status-->
+  <!-- Status -->
   <data name="Status_Stopped" xml:space="preserve">
     <value>Stopped</value>
   </data>
@@ -210,7 +202,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Fetching...</value>
   </data>
 
-  <!--Actions-->
+  <!-- Actions -->
   <data name="Button_Start" xml:space="preserve">
     <value>Start</value>
   </data>
@@ -361,8 +353,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Servy Desktop App not found.</value>
   </data>
 
-  <!--Logs
-  View-->
+  <!-- Logs View -->
   <data name="Label_Level" xml:space="preserve">
     <value>Level:</value>
   </data>
@@ -406,7 +397,7 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>The specified service is disabled.</value>
   </data>
 
-  <!--PID-->
+  <!-- PID -->
   <data name="Column_Pid" xml:space="preserve">
     <value>PID</value>
   </data>
@@ -420,7 +411,7 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Failed to copy PID to clipboard.</value>
   </data>
 
-  <!--CPU/RAM-->
+  <!-- CPU/RAM -->
   <data name="Column_CPU" xml:space="preserve">
     <value>CPU</value>
   </data>
@@ -428,8 +419,7 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>RAM</value>
   </data>
 
-  <!--Performand
-  tab-->
+  <!-- Performance tab -->
   <data name="Column_Service" xml:space="preserve">
     <value>Service</value>
   </data>
@@ -443,7 +433,7 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>RAM</value>
   </data>
 
-  <!--Miscellaneous-->
+  <!-- Miscellaneous -->
   <data name="Msg_InvalidServiceName" xml:space="preserve">
     <value>Invalid service name.</value>
   </data>

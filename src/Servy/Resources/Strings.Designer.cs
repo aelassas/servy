@@ -1414,5 +1414,14 @@ namespace Servy.Resources {
                 return ResourceManager.GetString("Text_About", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recovery Action Help.
+        /// </summary>
+        public static string Tooltip_RecoveryActionHelp {
+            get {
+                return ResourceManager.GetString("Tooltip_RecoveryActionHelp", resourceCulture);
+            }
+        }
     }
 }
