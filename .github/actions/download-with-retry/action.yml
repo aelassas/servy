@@ -1,4 +1,4 @@
-﻿# ==========================================================================================
+# ==========================================================================================
 # Shared Composite Action - Resilient Download with Backoff Retry
 # ------------------------------------------------------------------------------------------
 # Centralizes network asset collection loops across the pipeline ecosystem.
@@ -35,7 +35,7 @@ runs:
         INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
       run: |
         $url     = $env:INPUT_URL
-        # Expand any literal environment variable expressions (e.g. $env:USERPROFILE) passed in output_path
+        # Expand any literal environment variable expressions (e.g. %USERPROFILE%) passed in output_path
         $out     = [Environment]::ExpandEnvironmentVariables($env:INPUT_OUTPUT_PATH)
         $asset   = $env:INPUT_ASSET_NAME
         $retries = [int]$env:INPUT_MAX_RETRIES

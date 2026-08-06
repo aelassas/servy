@@ -1,4 +1,4 @@
-﻿# ===========================================
+# ===========================================
 # GitHub Actions Workflow - Bump Version
 # -------------------------------------------
 # Automatically bumps the Servy version number
@@ -79,7 +79,7 @@ jobs:
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
 
-          # Configure user identity globally for the current loop runner context
+          # Configure commit identity for this checkout (repo-local; both branch iterations reuse it)
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
 

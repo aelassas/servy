@@ -27,7 +27,7 @@ try {
     New-Item -Path (Join-Path $sourcePath "SubFolder") -ItemType Directory -Force | Out-Null
 
     Write-Host "==========================================================" -ForegroundColor Cyan
-    Write-Host " Initializing Hardened Copy Publish Filtering Tests" -ForegroundColor Cyan
+    Write-Host "Testing publish.yml taskschd copy-exclusion filter..."      -ForegroundColor Cyan
     Write-Host "==========================================================" -ForegroundColor Cyan
 
     # Define mock test matrix data pairs [Relative Path, Should Copy]
@@ -78,7 +78,7 @@ try {
     # ---------------------------------------------------------------------
     # EVALUATE RESULTS & EXCLUSION MATRIX
     # ---------------------------------------------------------------------
-    Write-Host "`nEvaluating structural test conditions..." -ForegroundColor Cyan
+    Write-Host "`nChecking copied vs. excluded files..." -ForegroundColor Cyan
     Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
 
     $Passed = 0
@@ -115,9 +115,9 @@ try {
     # ---------------------------------------------------------------------
     Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
     if ($Failed -eq 0) {
-        Write-Host "ALL $Passed PIPELINE FILTERS PASSED COMPLIANCE CHECKS!" -ForegroundColor Green
+        Write-Host "All $Passed checks passed." -ForegroundColor Green
     } else {
-        Write-Host "EXCLUSION FAILURES DETECTED: $Passed Passed, $Failed Failed." -ForegroundColor Red
+        Write-Host "$Failed of $($Passed + $Failed) checks failed." -ForegroundColor Red
     }
 
     Write-Host "==========================================================" -ForegroundColor Cyan
