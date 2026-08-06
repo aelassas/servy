@@ -1,4 +1,4 @@
-﻿using Servy.Core.Common;
+using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -241,4 +241,14 @@ namespace Servy.UI.Design
         public Task YieldAsync() => Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Lightweight no-op implementation of <see cref="IEventLogService"/> for XAML design-time support.
+    /// </summary>
+    public class DesignTimeEventLogService : IEventLogService
+    {
+        public Task<IEnumerable<ServyEventLogEntry>> SearchAsync(EventLogLevel? level, DateTime? startDate, DateTime? endDate, string keyword, CancellationToken token = default)
+        {
+            return Task.FromResult(Enumerable.Empty<ServyEventLogEntry>());
+        }
+    }
 }

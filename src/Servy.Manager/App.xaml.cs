@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -243,6 +243,7 @@ namespace Servy.Manager
                         new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService, processHelper, uiDispatcher),
                         new ConsoleViewModel(ServiceRepository, serviceCommands, this, cursorService, uiDispatcher),
                         new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService, uiDispatcher, messageBoxService),
+                        new LogsViewModel(this, eventLogService, cursorService, messageBoxService),
                         this,
                         cursorService,
                         processHelper

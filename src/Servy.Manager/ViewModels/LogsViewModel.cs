@@ -6,6 +6,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.UI;
 using Servy.UI.Commands;
+using Servy.UI.Design;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
@@ -213,6 +214,17 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Constructors
+
+        /// <summary>
+        /// Design-Time constructor.
+        /// </summary>
+        public LogsViewModel() : this(
+            appConfig: new DesignTimeAppConfig(),
+            eventLogService: new DesignTimeEventLogService(),
+            cursorService: new DesignTimeCursorService(),
+            messageBoxService: new DesignTimeMessageBoxService())
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LogsViewModel"/> class.

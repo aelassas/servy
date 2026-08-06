@@ -1,4 +1,4 @@
-﻿using Servy.Core.Helpers;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
@@ -70,10 +70,6 @@ namespace Servy.Manager.Views
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             DataContext = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
-
-            // Map standalone ViewModels to their respective Views
-            var logsView = new LogsView { DataContext = logsViewModel };
-            LogsTab.Content = logsView;
         }
 
         /// <summary>

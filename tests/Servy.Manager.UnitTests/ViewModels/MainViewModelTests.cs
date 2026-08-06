@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -45,6 +45,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<PerformanceViewModel> _performanceViewModelMock;
         private readonly Mock<ConsoleViewModel> _consoleViewModelMock;
         private readonly Mock<DependenciesViewModel> _dependenciesViewModelMock;
+        private readonly Mock<IEventLogService> _eventLogServiceMock;
+        private readonly Mock<LogsViewModel> _logsViewModelMock;
 
         public MainViewModelTests()
         {
@@ -92,6 +94,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _cursorServiceMock.Object,
                 uiDispatcherMock.Object,
                 _messageBoxServiceMock.Object);
+
+            _eventLogServiceMock = new Mock<IEventLogService>();
+
+            _logsViewModelMock = new Mock<LogsViewModel>(
+                _appConfigMock.Object,
+                _eventLogServiceMock.Object,
+                _cursorServiceMock.Object,
+                _messageBoxServiceMock.Object);
         }
 
         private MainViewModel CreateViewModel(Dispatcher dispatcher = null)
@@ -107,6 +117,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _performanceViewModelMock.Object,
                 _consoleViewModelMock.Object,
                 _dependenciesViewModelMock.Object,
+                _logsViewModelMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
                 _processHelperMock.Object,
@@ -165,9 +176,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         [InlineData(5, "performanceVM")]
         [InlineData(6, "consoleVM")]
         [InlineData(7, "dependenciesVM")]
-        [InlineData(8, "appConfig")]
-        [InlineData(9, "cursorService")]
-        [InlineData(10, "processHelper")]
+        [InlineData(8, "logsVM")]
+        [InlineData(9, "appConfig")]
+        [InlineData(10, "cursorService")]
+        [InlineData(11, "processHelper")]
         public void Constructor_NullGuards_ThrowsArgumentNullException(int nullParamIndex, string expectedParamName)
         {
             // Arrange & Act & Assert
@@ -182,9 +194,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     nullParamIndex == 5 ? null : _performanceViewModelMock.Object,
                     nullParamIndex == 6 ? null : _consoleViewModelMock.Object,
                     nullParamIndex == 7 ? null : _dependenciesViewModelMock.Object,
-                    nullParamIndex == 8 ? null : _appConfigMock.Object,
-                    nullParamIndex == 9 ? null : _cursorServiceMock.Object,
-                    nullParamIndex == 10 ? null : _processHelperMock.Object,
+                    nullParamIndex == 8 ? null : _logsViewModelMock.Object,
+                    nullParamIndex == 9 ? null : _appConfigMock.Object,
+                    nullParamIndex == 10 ? null : _cursorServiceMock.Object,
+                    nullParamIndex == 11 ? null : _processHelperMock.Object,
                     Dispatcher.CurrentDispatcher));
 
                 Assert.Equal(expectedParamName, ex.ParamName);
@@ -1491,6 +1504,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     mockPerformance.Object,
                     mockConsole.Object,
                     mockDependencies.Object,
+                    _logsViewModelMock.Object,
                     _appConfigMock.Object,
                     _cursorServiceMock.Object,
                     _processHelperMock.Object,
