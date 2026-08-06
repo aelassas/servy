@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
@@ -206,12 +206,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public IAsyncCommand SearchCommand { get; }
 
-        /// <summary>
-        /// Command triggered when a log row is clicked in the UI.
-        /// Updates the <see cref="SelectedLog"/>.
-        /// </summary>
-        public ICommand RowClickCommand { get; }
-
         #endregion
 
         #region Constructors
@@ -238,7 +232,6 @@ namespace Servy.Manager.ViewModels
 
             LogsView = new ListCollectionView(_logs);
             SearchCommand = new AsyncCommand(Search, name: nameof(SearchCommand));
-            RowClickCommand = new RelayCommand<object>(OnRowClick);
         }
 
         #endregion
@@ -291,19 +284,6 @@ namespace Servy.Manager.ViewModels
         {
             Logger.Error($"Failed to search logs.", ex);
             await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
-        }
-
-        /// <summary>
-        /// Handles row click events in the Logs DataGrid.
-        /// Updates the <see cref="SelectedLog"/>.
-        /// </summary>
-        /// <param name="parameter">The clicked row's bound model.</param>
-        private void OnRowClick(object? parameter)
-        {
-            if (parameter is LogEntryModel model)
-            {
-                SelectedLog = model;
-            }
         }
 
         /// <summary>

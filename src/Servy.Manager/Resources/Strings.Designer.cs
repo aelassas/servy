@@ -439,15 +439,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to log.
-        /// </summary>
-        public static string Footer_LogRowText {
-            get {
-                return ResourceManager.GetString("Footer_LogRowText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Loaded {0} services in {1}.
         /// </summary>
         public static string Footer_Service_Many {
@@ -471,15 +462,6 @@ namespace Servy.Manager.Resources {
         public static string Footer_Service_One {
             get {
                 return ResourceManager.GetString("Footer_Service_One", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to service.
-        /// </summary>
-        public static string Footer_ServiceRowText {
-            get {
-                return ResourceManager.GetString("Footer_ServiceRowText", resourceCulture);
             }
         }
         

@@ -545,7 +545,8 @@
                         Background="Transparent"
                         BorderThickness="0"
                         HorizontalAlignment="Left"
-                        ToolTip="{x:Static resx:Strings.Label_RecoveryAction}"
+                        VerticalAlignment="Center"
+                        ToolTip="{x:Static resx:Strings.Tooltip_RecoveryActionHelp}"
                         AutomationProperties.Name="{x:Static resx:Strings.Label_RecoveryAction}">
               <Button.Template>
                 <ControlTemplate TargetType="Button">

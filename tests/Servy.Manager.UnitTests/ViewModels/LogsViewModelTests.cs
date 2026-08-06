@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -82,7 +82,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.NotNull(vm.LogsView);
                 Assert.NotNull(vm.SearchCommand);
-                Assert.NotNull(vm.RowClickCommand);
                 Assert.False(vm.IsBusy);
                 Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
                 Assert.NotNull(vm.FromDate);
@@ -268,45 +267,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Contains(EventLogLevel.Error, levels);
             Assert.Contains(EventLogLevel.Information, levels);
             Assert.Contains(EventLogLevel.Warning, levels);
-        }
-
-        #endregion
-
-        #region Row Click Validation Tests
-
-        [Fact]
-        public void RowClickCommand_ShouldSetSelectedLog()
-        {
-            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
-            using (var vm = CreateViewModel())
-            {
-                // Arrange
-                var log = new LogEntryModel { Message = "test" };
-
-                // Act
-                vm.RowClickCommand.Execute(log);
-
-                // Assert
-                Assert.Equal("test", vm.SelectedLog?.Message);
-                Assert.Equal("test", vm.SelectedLogMessage);
-            }
-        }
-
-        [Fact]
-        public void RowClickCommand_InvalidParameterObject_BypassesStateMutation()
-        {
-            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
-            using (var vm = CreateViewModel())
-            {
-                // Arrange
-                vm.SelectedLog = null;
-
-                // Act
-                vm.RowClickCommand.Execute(new List<string> { "Malformed context entry payload mapping" });
-
-                // Assert
-                Assert.Null(vm.SelectedLog);
-            }
         }
 
         #endregion

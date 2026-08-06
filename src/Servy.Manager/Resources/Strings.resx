@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -153,12 +153,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Label_F5_Shortcut_Logs" xml:space="preserve">
     <value>Press F5 to refresh logs</value>
-  </data>
-  <data name="Footer_ServiceRowText" xml:space="preserve">
-    <value>service</value>
-  </data>
-  <data name="Footer_LogRowText" xml:space="preserve">
-    <value>log</value>
   </data>
 
   <!-- Services DataGrid -->
