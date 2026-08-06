@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
@@ -1435,8 +1435,8 @@ namespace Servy.Service
         /// after the wrapped process has successfully started.
         /// - If <see cref="_options"/> is <c>null</c> or no <c>PostLaunchExecutablePath</c> is set, the method does nothing.
         /// - Environment variables in arguments are expanded before execution.
-        /// - The working directory defaults to the provided <c>PostLaunchWorkingDirectory</c>,
-        ///   or falls back to the directory of the executable if not set.
+        /// - The working directory defaults to <c>PostLaunchStartupDirectory</c>,
+        ///   or falls back to the main service's working directory if not set.
         /// - The process is started in a fire-and-forget manner; no handle is kept or awaited.
         /// </remarks>
         /// <exception cref="System.ComponentModel.Win32Exception">
