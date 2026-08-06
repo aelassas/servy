@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -27,8 +27,7 @@
     <value>Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965.</value>
   </data>
 
-  <!--Splash
-  screen-->
+  <!-- Splash screen -->
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy...</value>
   </data>
@@ -147,7 +146,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>* Required fields</value>
   </data>
 
-
   <data name="Dialog_SelectStdoutFile" xml:space="preserve">
     <value>Select standard output file</value>
   </data>
@@ -195,8 +193,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Real Time (use with caution)</value>
   </data>
 
-  <!--Cpu
-  Affinity-->
+  <!-- Cpu Affinity -->
   <data name="Label_CpuAffinity" xml:space="preserve">
     <value>Cpu Affinity</value>
   </data>
@@ -204,7 +201,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>
   </data>
 
-  <!--EnableConsoleUI-->
+  <!-- EnableConsoleUI-->
   <data name="Label_EnableConsoleUI" xml:space="preserve">
     <value>Enable Console UI (for interactive console apps; disables stdout/stderr redirection)</value>
   </data>
@@ -291,9 +288,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="RecoveryAction_RestartComputer" xml:space="preserve">
     <value>Restart Computer</value>
-  </data>
-  <data name="Info_RecoveryAction" xml:space="preserve">
-    <value>Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts.</value>
   </data>
 
   <data name="Label_RecoveryOnCleanExit" xml:space="preserve">
@@ -475,7 +469,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>The specified service is disabled.</value>
   </data>
 
-  <!--Post-Launch-->
+  <!-- Post-Launch -->
   <data name="Label_PostLaunchTab" xml:space="preserve">
     <value>Post-Launch</value>
   </data>
@@ -488,7 +482,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
 
-  <!--Debug-Logs-->
+  <!-- Debug-Logs -->
   <data name="Label_EnableDebugLogs" xml:space="preserve">
     <value>Enable Debug Logs</value>
   </data>
@@ -496,8 +490,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.</value>
   </data>
 
-  <!--Start/Stop
-  timeouts-->
+  <!-- Start/Stop timeouts -->
   <data name="Label_StartTimeout" xml:space="preserve">
     <value>Start Timeout</value>
   </data>
@@ -537,10 +530,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
 
-  <!--Miscellaneous-->
-  <data name="Msg_ServiceNameError" xml:space="preserve">
-    <value>A service name is required to perform this action.</value>
-  </data>
+  <!-- Miscellaneous -->
   <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
     <value>Service wrapper executable not found.</value>
   </data>

@@ -376,15 +376,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts..
-        /// </summary>
-        public static string Info_RecoveryAction {
-            get {
-                return ResourceManager.GetString("Info_RecoveryAction", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Run recovery action even if the process exits successfully..
         /// </summary>
         public static string Info_RecoveryOnCleanExit {
@@ -1166,15 +1157,6 @@ namespace Servy.Resources {
         public static string Msg_ServiceInstalled {
             get {
                 return ResourceManager.GetString("Msg_ServiceInstalled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A service name is required to perform this action..
-        /// </summary>
-        public static string Msg_ServiceNameError {
-            get {
-                return ResourceManager.GetString("Msg_ServiceNameError", resourceCulture);
             }
         }
         
