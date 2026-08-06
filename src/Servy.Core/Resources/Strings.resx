@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -48,7 +48,7 @@
     <value>The specified stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidRotationSize" xml:space="preserve">
-    <value>Rotation size must be a number of Megabytes (MB) between {0} and {1}.</value>
+    <value>Rotation size must be a number of megabytes (MB) between {0} and {1}.</value>
   </data>
   <data name="Msg_InvalidMaxRotations" xml:space="preserve">
     <value>Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations.</value>
@@ -60,13 +60,13 @@
     <value>Heartbeat interval must be a number of seconds between {0} and {1}.</value>
   </data>
   <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
-    <value>Max Failed Checks must be a number between {0} and {1}.</value>
+    <value>Max failed checks must be a number between {0} and {1}.</value>
   </data>
   <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
-    <value>Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
+    <value>Max restart attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
   </data>
   <data name="Msg_InvalidHeartbeatUrl" xml:space="preserve">
-    <value>The provided heartbeat monitoring URL must be a well-formed absolute HTTP or HTTPS URL address.</value>
+    <value>The provided heartbeat monitoring URL must be a well-formed absolute HTTP or HTTPS URL.</value>
   </data>
   <data name="Msg_ServiceInstalled" xml:space="preserve">
     <value>Service was installed successfully.</value>
@@ -197,7 +197,7 @@
     <value>{0} deserialization resulted in an empty service definition.</value>
   </data>
   <data name="Msg_ImportFileNotFound" xml:space="preserve">
-    <value>[Import] File not found: {0}</value>
+    <value>File not found: {0}</value>
   </data>
   <data name="Msg_InvalidServiceDependencyName" xml:space="preserve">
     <value>Invalid service name '{0}'. Only letters, digits, hyphens, underscores, spaces, and dollar signs ($) are allowed.</value>

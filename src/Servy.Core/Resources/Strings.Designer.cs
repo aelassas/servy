@@ -259,7 +259,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to [Import] File not found: {0}.
+        ///   Looks up a localized string similar to File not found: {0}.
         /// </summary>
         public static string Msg_ImportFileNotFound {
             get {
@@ -403,7 +403,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The provided heartbeat monitoring URL must be a well-formed absolute HTTP or HTTPS URL address..
+        ///   Looks up a localized string similar to The provided heartbeat monitoring URL must be a well-formed absolute HTTP or HTTPS URL..
         /// </summary>
         public static string Msg_InvalidHeartbeatUrl {
             get {
@@ -430,7 +430,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Max Failed Checks must be a number between {0} and {1}..
+        ///   Looks up a localized string similar to Max failed checks must be a number between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidMaxFailedChecks {
             get {
@@ -439,7 +439,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts..
+        ///   Looks up a localized string similar to Max restart attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts..
         /// </summary>
         public static string Msg_InvalidMaxRestartAttempts {
             get {
@@ -592,7 +592,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Rotation size must be a number of Megabytes (MB) between {0} and {1}..
+        ///   Looks up a localized string similar to Rotation size must be a number of megabytes (MB) between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidRotationSize {
             get {
