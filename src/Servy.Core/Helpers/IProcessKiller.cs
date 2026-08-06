@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Helpers
+namespace Servy.Core.Helpers
 {
     /// <summary>
     /// Defines the contract for terminating processes, process trees, and releasing file locks.
@@ -56,9 +56,9 @@
         /// <param name="filePath">The absolute path of the targeted file currently constrained by an active lock.</param>
         /// <returns>A boolean value indicating whether the lock release operation resolved and executed without encountering critical errors.</returns>
         /// <remarks>
-        /// This method requires the Sysinternals handle64.exe utility, which Servy extracts to its
-        /// ProgramData vault during install (or to the application base directory in DEBUG builds).
-        /// The actual lookup is performed by <see cref="Config.AppConfig.GetHandleExePath"/>.
+        /// This method requires the Sysinternals handle utility (handle64.exe),
+        /// which Servy extracts to its ProgramData vault during install (or to the application base
+        /// directory in DEBUG builds). The actual lookup is performed by <see cref="Config.AppConfig.GetHandleExePath"/>.
         /// </remarks>
         bool KillProcessesUsingFile(string filePath);
     }

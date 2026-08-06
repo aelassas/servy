@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
@@ -695,7 +695,7 @@ namespace Servy.Core.Config
         /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output,
         /// such as when a single large file is associated with thousands of owners or handles.
         /// </remarks>
-        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(1);
+        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(InputRegexTimeoutMs);
 
         /// <summary>
         /// Specifies the maximum duration, in milliseconds, allowed for standard output and error streams
