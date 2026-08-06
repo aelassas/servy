@@ -74,13 +74,14 @@
         'Import-ServyServiceConfig'
     )
 
-    AliasesToExport = @('Show-ServyVersion', 'Show-ServyHelp')
-
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport   = @()
 
     # Variables to export from this module
     VariablesToExport = @()
+
+    # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+    AliasesToExport   = @('Show-ServyVersion', 'Show-ServyHelp')
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -122,7 +123,7 @@
     } # End of PrivateData hashtable
 
     # HelpInfo URI of this module
-    HelpInfoURI = 'https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module'
+    HelpInfoURI       = 'https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module'
 
     # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
     # DefaultCommandPrefix = ''
