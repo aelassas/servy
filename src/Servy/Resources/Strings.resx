@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -289,9 +289,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="RecoveryAction_RestartComputer" xml:space="preserve">
     <value>Restart Computer</value>
   </data>
-  <data name="Info_RecoveryAction" xml:space="preserve">
-    <value>Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts.</value>
-  </data>
 
   <data name="Label_RecoveryOnCleanExit" xml:space="preserve">
     <value>Recovery even on successful exit</value>
@@ -534,9 +531,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <!-- Miscellaneous -->
-  <data name="Msg_ServiceNameError" xml:space="preserve">
-    <value>A service name is required to perform this action.</value>
-  </data>
   <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
     <value>Service wrapper executable not found.</value>
   </data>

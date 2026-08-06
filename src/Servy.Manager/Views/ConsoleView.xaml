@@ -1,4 +1,4 @@
-﻿<views:ServiceSearchUserControl
+<views:ServiceSearchUserControl
     x:Class="Servy.Manager.Views.ConsoleView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -17,18 +17,17 @@
     AutomationProperties.AutomationId="ConsoleViewRoot"
     AutomationProperties.HelpText="Displays real-time standard output and error logs for the selected service.">
 
-    <views:ServiceSearchUserControl.Resources>
-        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
-    </views:ServiceSearchUserControl.Resources>
+  <views:ServiceSearchUserControl.Resources>
+    <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+  </views:ServiceSearchUserControl.Resources>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300" />
-            <ColumnDefinition Width="4*" />
-        </Grid.ColumnDefinitions>
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="300" />
+      <ColumnDefinition Width="4*" />
+    </Grid.ColumnDefinitions>
 
-        <controls:ServiceListControl
+    <controls:ServiceListControl
             Grid.Column="0"
             Services="{Binding Services}"
             SelectedService="{Binding SelectedService}"
@@ -40,47 +39,47 @@
             AutomationProperties.AutomationId="ConsoleServiceList"
             AutomationProperties.HelpText="Select a service to view its console output." />
 
-        <Grid Grid.Column="1" Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+    <Grid Grid.Column="1" Margin="10">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+      <Grid Grid.Row="0">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="10" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
-                <StackPanel
+        <StackPanel
                     Orientation="Horizontal"
                     Grid.Row="0"
                     Grid.Column="0"
                     Margin="0,0,0,6"
                     VerticalAlignment="Center">
 
-                    <Border
+          <Border
                         Background="#F0F7FA"
                         CornerRadius="2"
                         Padding="4,0,0,0"
                         HorizontalAlignment="Left">
 
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
+            <StackPanel Orientation="Horizontal">
+              <TextBlock
                                 Text="{x:Static resx:Strings.Label_Pid}"
                                 Foreground="#1B7F9F"
                                 FontSize="11"
                                 VerticalAlignment="Center"
                                 Margin="0,0,5,0" />
 
-                            <TextBlock
+              <TextBlock
                                 Text="{Binding Pid}"
                                 Foreground="#1B7F9F"
                                 FontWeight="Bold"
@@ -89,7 +88,7 @@
                                 AutomationProperties.Name="Process ID"
                                 AutomationProperties.AutomationId="ConsolePidValue" />
 
-                            <Button
+              <Button
                                 Command="{Binding CopyPidCommand}"
                                 Margin="5,0,0,0"
                                 Padding="4"
@@ -102,35 +101,35 @@
                                 AutomationProperties.AutomationId="ConsoleCopyPidButton"
                                 AutomationProperties.HelpText="Copies the service process ID to the clipboard.">
 
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Opacity" Value="0.5" />
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Opacity" Value="1.0" />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
+                <Button.Style>
+                  <Style TargetType="Button">
+                    <Setter Property="Opacity" Value="0.5" />
+                    <Style.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Opacity" Value="1.0" />
+                      </Trigger>
+                    </Style.Triggers>
+                  </Style>
+                </Button.Style>
 
-                                <Path
+                <Path
                                     Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
                                     Fill="#1B7F9F"
                                     Stretch="Uniform"
                                     Width="12"
                                     Height="12" />
-                            </Button>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Border>
+        </StackPanel>
 
-                <StackPanel
+        <StackPanel
                     Orientation="Horizontal"
                     Grid.Row="0"
                     Grid.Column="2"
                     VerticalAlignment="Center">
 
-                    <Button
+          <Button
                         Command="{Binding ClearSelectionCommand}"
                         Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
                         Margin="0,0,0,6"
@@ -143,39 +142,39 @@
                         AutomationProperties.AutomationId="ResumeScrollButton"
                         AutomationProperties.HelpText="Resumes automatic scrolling to the latest log entry.">
 
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="#1B7F9F" />
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border
+            <Button.Style>
+              <Style TargetType="Button">
+                <Setter Property="Background" Value="#1B7F9F" />
+                <Setter Property="Template">
+                  <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                      <Border
                                                 x:Name="border"
                                                 Background="{TemplateBinding Background}"
                                                 BorderThickness="0"
                                                 CornerRadius="3"
                                                 Padding="{TemplateBinding Padding}">
 
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Border>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
 
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="border" Property="Background" Value="#25A2C9" />
-                                                </Trigger>
-                                                <Trigger Property="IsPressed" Value="True">
-                                                    <Setter TargetName="border" Property="Background" Value="#146078" />
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                </StackPanel>
+                      <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                          <Setter TargetName="border" Property="Background" Value="#25A2C9" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                          <Setter TargetName="border" Property="Background" Value="#146078" />
+                        </Trigger>
+                      </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                  </Setter.Value>
+                </Setter>
+              </Style>
+            </Button.Style>
+          </Button>
+        </StackPanel>
 
-                <TextBlock
+        <TextBlock
                     Grid.Row="0"
                     Grid.Column="4"
                     Text="{x:Static resx:Strings.Console_Info}"
@@ -185,23 +184,23 @@
                     HorizontalAlignment="Right"
                     Margin="0,0,0,6"
                     AutomationProperties.Name="Console Instructions" />
-            </Grid>
+      </Grid>
 
-            <Grid Grid.Row="1" Background="#121212">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+      <Grid Grid.Row="1" Background="#121212">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-                <Border Background="#2D2D2D" Padding="5">
-                    <DockPanel>
-                        <TextBlock
+        <Border Background="#2D2D2D" Padding="5">
+          <DockPanel>
+            <TextBlock
                             Text="🔍 Filter:"
                             Foreground="Gray"
                             VerticalAlignment="Center"
                             Margin="5,0" />
 
-                        <TextBox
+            <TextBox
                             Text="{Binding ConsoleSearchText, UpdateSourceTrigger=PropertyChanged}"
                             Background="#3C3C3C"
                             Foreground="White"
@@ -210,10 +209,10 @@
                             AutomationProperties.Name="Log Filter"
                             AutomationProperties.AutomationId="ConsoleFilterTextBox"
                             AutomationProperties.HelpText="Enter text to filter the visible log lines." />
-                    </DockPanel>
-                </Border>
+          </DockPanel>
+        </Border>
 
-                <ListBox
+        <ListBox
                     x:Name="LogList"
                     Grid.Row="1"
                     ItemsSource="{Binding VisibleLines}"
@@ -232,68 +231,68 @@
                     AutomationProperties.AutomationId="ConsoleLogList"
                     AutomationProperties.HelpText="Displays scrolling log output. Use context menu to copy selected lines.">
 
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="Foreground" Value="#DDDDDD" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0" />
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+          <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem">
+              <Setter Property="Background" Value="Transparent" />
+              <Setter Property="Foreground" Value="#DDDDDD" />
+              <Setter Property="Padding" Value="0" />
+              <Setter Property="Margin" Value="0" />
+              <Setter Property="HorizontalContentAlignment" Value="Stretch" />
 
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border Background="{TemplateBinding Background}">
-                                            <ContentPresenter />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
+              <Setter Property="Template">
+                <Setter.Value>
+                  <ControlTemplate TargetType="ListBoxItem">
+                    <Border Background="{TemplateBinding Background}">
+                      <ContentPresenter />
+                    </Border>
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
 
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.StdErr}">
-                                    <Setter Property="Background" Value="#600000" />
-                                    <Setter Property="Foreground" Value="White" />
-                                </DataTrigger>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.StdErr}">
+                  <Setter Property="Background" Value="#600000" />
+                  <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
 
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#264F78" />
-                                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                  <Setter Property="Background" Value="#264F78" />
+                </Trigger>
 
-                                <MultiTrigger>
-                                    <MultiTrigger.Conditions>
-                                        <Condition Property="IsMouseOver" Value="True" />
-                                        <Condition Property="IsSelected" Value="False" />
-                                    </MultiTrigger.Conditions>
-                                    <Setter Property="Background" Value="#1E1E1E" />
-                                </MultiTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
+                <MultiTrigger>
+                  <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True" />
+                    <Condition Property="IsSelected" Value="False" />
+                  </MultiTrigger.Conditions>
+                  <Setter Property="Background" Value="#1E1E1E" />
+                </MultiTrigger>
+              </Style.Triggers>
+            </Style>
+          </ListBox.ItemContainerStyle>
 
-                    <ListBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem
+          <ListBox.ContextMenu>
+            <ContextMenu>
+              <MenuItem
                                 Header="{x:Static resx:Strings.Label_Copy}"
                                 Click="CopyMenuItem_Click"
                                 AutomationProperties.Name="Copy Selection"
                                 AutomationProperties.AutomationId="CopyLogMenuItem" />
-                        </ContextMenu>
-                    </ListBox.ContextMenu>
+            </ContextMenu>
+          </ListBox.ContextMenu>
 
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock
                                 Text="{Binding Text}"
                                 FontFamily="Consolas"
                                 FontSize="12"
                                 TextWrapping="Wrap"
                                 Padding="4,0"
                                 Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Grid>
-        </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
     </Grid>
+  </Grid>
 </views:ServiceSearchUserControl>

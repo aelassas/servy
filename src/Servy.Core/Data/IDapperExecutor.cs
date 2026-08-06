@@ -14,12 +14,18 @@ namespace Servy.Core.Data
         /// <summary>
         /// Begins a database transaction. The caller is responsible for committing and disposing the transaction.
         /// </summary>
+        /// <remarks>
+        /// Provided as part of the public API surface for synchronous transaction scenarios.
+        /// </remarks>
         /// <returns>An <see cref="IDbTransaction"/> that orchestrates the connection lifecycle.</returns>
         IDbTransaction BeginTransaction();
 
         /// <summary>
         /// Executes a SQL command synchronously that returns a scalar value.
         /// </summary>
+        /// <remarks>
+        /// Provided as part of the public API surface for synchronous execution scenarios.
+        /// </remarks>
         /// <typeparam name="T">The type of the scalar result.</typeparam>
         /// <param name="sql">The SQL query or command statement.</param>
         /// <param name="param">Optional parameters for the SQL command.</param>
@@ -39,6 +45,9 @@ namespace Servy.Core.Data
         /// <summary>
         /// Executes a query synchronously that returns a collection of entities.
         /// </summary>
+        /// <remarks>
+        /// Provided as part of the public API surface for synchronous querying scenarios.
+        /// </remarks>
         /// <typeparam name="T">The type of entity returned by the query.</typeparam>
         /// <param name="sql">The SQL query statement.</param>
         /// <param name="param">Optional parameters for the SQL query.</param>
@@ -132,6 +141,9 @@ namespace Servy.Core.Data
         /// <summary>
         /// Executes a query asynchronously and returns the first row, or a default value if the sequence contains no elements.
         /// </summary>
+        /// <remarks>
+        /// Provided as part of the public API surface for asynchronous first-or-default querying scenarios.
+        /// </remarks>
         /// <typeparam name="T">The type of entity returned by the query.</typeparam>
         /// <param name="sql">The SQL query statement.</param>
         /// <param name="param">Optional parameters for the SQL query.</param>
