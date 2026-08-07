@@ -147,10 +147,11 @@ jobs:
 
           $isReset = ($env:IS_RESET -eq 'true')
           $bt = [char]96
+          $header = "${bt}CHANGELOG${bt}"
 
           if ($isReset) {
               Write-Host "Reset flag is true. Rebuilding full CHANGELOG.md..."
-              $fullLog = "``CHANGELOG```n`n"
+              $fullLog = "$header`n`n"
               for ($i = 0; $i -lt $releases.Count; $i++) {
                   $prev = if ($i + 1 -lt $releases.Count) { $releases[$i+1] } else { $null }
                   $fullLog += Get-ReleaseEntry -Release $releases[$i] -PrevRelease $prev
@@ -175,10 +176,11 @@ jobs:
                   $prev = if ($releases.Count -gt 1) { $releases[1] } else { $null }
                   $entry = Get-ReleaseEntry -Release $latest -PrevRelease $prev
 
-                  if ($existing -match '(?s)^# Changelog\n(.*)$') {
-                      $newLog = "# Changelog`n`n$entry" + $matches[1].TrimStart()
+                  $headerPattern = '(?s)^' + [regex]::Escape($header) + '\n(.*)$'
+                  if ($existing -match $headerPattern) {
+                      $newLog = "$header`n`n$entry" + $matches[1].TrimStart()
                   } else {
-                      $newLog = "# Changelog`n`n$entry$existing"
+                      $newLog = "$header`n`n$entry$existing"
                   }
                   [System.IO.File]::WriteAllText($changelogPath, $newLog, $utf8NoBom)
               }
