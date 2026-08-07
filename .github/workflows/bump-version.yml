@@ -15,6 +15,8 @@ on:
     workflows: ["choco"]    # must match the `name:` in choco.yml
     types:
       - completed
+    branches:
+      - main
 
   workflow_dispatch:
     inputs:
@@ -38,11 +40,9 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
-      # 1. Checkout the repository with full history to allow pushing commits
+      # 1. Checkout the repository
       - name: Checkout repo
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
-        with:
-          fetch-depth: 0
 
       # 1a. Write shared git helper to disk for use in subsequent steps
       - name: Initialize Git Script Helpers

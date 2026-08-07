@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # GitHub Actions Workflow - Changelog Automation
 # ------------------------------------------------------------------------------
 # Automatically fetches release metadata from GitHub, constructs a formatted
@@ -17,6 +17,8 @@ on:
     workflows: ["bump-version"]    # must match the `name:` in bump-version.yml
     types:
       - completed
+    branches:
+      - main
 
   workflow_dispatch:
     inputs:
