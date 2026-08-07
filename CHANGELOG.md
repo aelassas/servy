@@ -1,5 +1,41 @@
 `CHANGELOG`
 
+# [Servy 9.1](https://github.com/aelassas/servy/releases/tag/v9.1)
+
+**Date:** 2026-08-07 | **Tag:** [`v9.1`](https://github.com/aelassas/servy/tree/v9.1)
+
+* feat(desktop): add recovery action help button (#4828)
+* fix(cli): Servy.CLI.dll flagged by ESET Server Security (#5024)
+* fix(core): AffinityHelper.cs - hex affinity masks skip the processor-bounds check the range/list forms enforce; invalid masks pass validation and silently fail at runtime (#4788)
+* fix(core): AffinityHelper.cs - both 'start < 0' and 'core < 0' guards are provably unreachable: the '-' split consumes every minus sign before parsing (#4789)
+* fix(core): HandleHelper.cs - 'match.Success' is always true for matches enumerated from Regex.Matches; the term is provably constant (#4792)
+* fix(core): ProcessHelper.cs - GetProcessTree's TryGetValue-miss continue is provably unreachable: both enqueue sites record the start time first (#4794)
+* fix(core): ProcessKiller.cs - CriticalSystemProcesses protects the Hyper-V management services but not the per-VM worker processes (vmwp, vmmem) (#4799)
+* fix(restarter): Servy.Restarter Program.cs - logs 'Successfully restarted service' and exits 0 when the service does not exist in the SCM (void RestartService hides its vanished-service clean returns) (#4893)
+* fix(desktop,manager): app.manifest (Servy + Manager) - no DPI-awareness declaration; both WPF apps blur on mixed-DPI monitor setups (#4842)
+* fix(manager): DependenciesView.xaml - five DataTriggers bind 'IsCycle' but the model property is 'IsCyclic', so all cycle visuals are dead (#4816)
+* fix(manager): LogTailer.cs - flush-torn handling still leaks a truncated line through the threshold flush and replays published lines on exception-reopen (residual of #4084/#3302) (#4867)
+* fix(setup/servy.iss): SetupAppRunningError says '%n%Please', so the dialog renders a literal '%' and loses the blank line (#4778)
+* fix(setup/servy.iss): task XMLs declare UTF-8 but are saved with ANSI SaveStringsToFile; a non-ASCII install path corrupts them (#4780)
+* fix(license): handle64.exe / handle64a.exe - Sysinternals binaries committed and redistributed in four projects with no attribution, version record, or redistribution license (#4756)
+* ci(security.yml): .gitleaks.toml - allowlist-only config without [extend] replaces the default ruleset, so the CI secret scan runs with zero rules (#4749)
+* fix: various code quality, robustness and inconsistency issues
+* docs: fix various issues in the documentation (wiki)
+
+## Downloads
+* [servy-9.1-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-arm64-installer.exe) - 76.21 MB
+* [servy-9.1-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-arm64-portable.7z) - 77.56 MB
+* [servy-9.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-net48-sbom.xml) - 0.03 MB
+* [servy-9.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-net48-x64-installer.exe) - 4.34 MB
+* [servy-9.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-net48-x64-portable.7z) - 2.08 MB
+* [servy-9.1-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-sbom.xml) - 0.04 MB
+* [servy-9.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-x64-installer.exe) - 82.25 MB
+* [servy-9.1-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-x64-portable.7z) - 80.12 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.1.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.1.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.0...v9.1
+
 # [Servy 9.0](https://github.com/aelassas/servy/releases/tag/v9.0)
 
 **Date:** 2026-08-04 | **Tag:** [`v9.0`](https://github.com/aelassas/servy/tree/v9.0)
