@@ -1,6 +1,6 @@
-`CHANGELOG`
+# Changelog
 
-# [Servy 9.1](https://github.com/aelassas/servy/releases/tag/v9.1)
+## [Servy 9.1](https://github.com/aelassas/servy/releases/tag/v9.1)
 
 **Date:** 2026-08-07 | **Tag:** [`v9.1`](https://github.com/aelassas/servy/tree/v9.1)
 
@@ -22,7 +22,7 @@
 * fix: various code quality, robustness and inconsistency issues
 * docs: fix various issues in the documentation (wiki)
 
-## Downloads
+### Downloads
 * [servy-9.1-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-arm64-installer.exe) - 76.21 MB
 * [servy-9.1-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-arm64-portable.7z) - 77.56 MB
 * [servy-9.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-net48-sbom.xml) - 0.03 MB
@@ -36,7 +36,7 @@
 
 Compare changes: https://github.com/aelassas/servy/compare/v9.0...v9.1
 
-# [Servy 9.0](https://github.com/aelassas/servy/releases/tag/v9.0)
+## [Servy 9.0](https://github.com/aelassas/servy/releases/tag/v9.0)
 
 **Date:** 2026-08-04 | **Tag:** [`v9.0`](https://github.com/aelassas/servy/tree/v9.0)
 
@@ -63,7 +63,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.0...v9.1
 * ci(download-with-retry/action.yml): output_path is run through ExpandString, which evaluates $(...) subexpressions as code; no caller uses the environment-variable expansion it was added for (#4657)
 * fix: various robustness, security, inconsistency, and code quality issues (check GitHub Issues for more details)
 
-## Downloads
+### Downloads
 * [servy-9.0-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-arm64-installer.exe) - 76.19 MB
 * [servy-9.0-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-arm64-portable.7z) - 77.53 MB
 * [servy-9.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-net48-sbom.xml) - 0.03 MB
@@ -77,7 +77,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.0...v9.1
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.9...v9.0
 
-# [Servy 8.9](https://github.com/aelassas/servy/releases/tag/v8.9)
+## [Servy 8.9](https://github.com/aelassas/servy/releases/tag/v8.9)
 
 **Date:** 2026-07-30 | **Tag:** [`v8.9`](https://github.com/aelassas/servy/tree/v8.9)
 
@@ -102,7 +102,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.9...v9.0
 * ci: scoop.yml - step env re-maps HASH/VERSION to themselves; sibling Extras step proves the mapping is unnecessary (#4191)
 * ci: bump-version.ps1 - no -DryRun preview mode, unlike sibling bump-runtime.ps1 (#4202)
 
-## Downloads
+### Downloads
 * [servy-8.9-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-arm64-installer.exe) - 76.19 MB
 * [servy-8.9-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-arm64-portable.7z) - 77.51 MB
 * [servy-8.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-net48-sbom.xml) - 0.03 MB
@@ -116,7 +116,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.9...v9.0
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.8...v8.9
 
-# [Servy 8.8](https://github.com/aelassas/servy/releases/tag/v8.8)
+## [Servy 8.8](https://github.com/aelassas/servy/releases/tag/v8.8)
 
 **Date:** 2026-07-29 | **Tag:** [`v8.8`](https://github.com/aelassas/servy/tree/v8.8)
 
@@ -145,7 +145,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.8...v8.9
 * chore(deps): update dependencies
 * other fixes: check GitHub Issues for details.
 
-## Downloads
+### Downloads
 * [servy-8.8-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-arm64-installer.exe) - 76.22 MB
 * [servy-8.8-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-arm64-portable.7z) - 77.62 MB
 * [servy-8.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-net48-sbom.xml) - 0.03 MB
@@ -159,7 +159,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.8...v8.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.7...v8.8
 
-# [Servy 8.7](https://github.com/aelassas/servy/releases/tag/v8.7)
+## [Servy 8.7](https://github.com/aelassas/servy/releases/tag/v8.7)
 
 **Date:** 2026-07-21 | **Tag:** [`v8.7`](https://github.com/aelassas/servy/tree/v8.7)
 
@@ -169,7 +169,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.7...v8.8
 * fix(service): move state cleanup inside the lock boundary to eliminate telemetry snapshot sync races
 * fix(ui): BulkObservableCollectionTests.cs - TrimToSize_NonListImplementation_UsesManualLoop never reaches the manual-loop branch: every ObservableCollection ctor copies into a List<T> (#3129)
 
-## Downloads
+### Downloads
 * [servy-8.7-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-arm64-installer.exe) - 76.23 MB
 * [servy-8.7-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-arm64-portable.7z) - 77.58 MB
 * [servy-8.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-net48-sbom.xml) - 0.03 MB
@@ -183,7 +183,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.7...v8.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.6...v8.7
 
-# [Servy 8.6](https://github.com/aelassas/servy/releases/tag/v8.6)
+## [Servy 8.6](https://github.com/aelassas/servy/releases/tag/v8.6)
 
 **Date:** 2026-07-12 | **Tag:** [`v8.6`](https://github.com/aelassas/servy/tree/v8.6)
 
@@ -192,7 +192,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.6...v8.7
 * fix(manager): prevent tab switching from prematurely freezing search commands
 * chore(deps): update dependencies
 
-## Downloads
+### Downloads
 * [servy-8.6-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-arm64-installer.exe) - 76.02 MB
 * [servy-8.6-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-arm64-portable.7z) - 77.4 MB
 * [servy-8.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-net48-sbom.xml) - 0.03 MB
@@ -206,13 +206,13 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.6...v8.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.5...v8.6
 
-# [Servy 8.5](https://github.com/aelassas/servy/releases/tag/v8.5)
+## [Servy 8.5](https://github.com/aelassas/servy/releases/tag/v8.5)
 
 **Date:** 2026-06-28 | **Tag:** [`v8.5`](https://github.com/aelassas/servy/tree/v8.5)
 
 Servy 8.5 focuses on stability, security, and maintainability, with a large number of fixes across all components and full native support for ARM64. The full changelog is available below.
 
-## Full Changelog
+### Full Changelog
 <details>
   <summary>Click to expand release notes!</summary>
 
@@ -1036,7 +1036,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 
 </details>
 
-## Downloads
+### Downloads
 * [servy-8.5-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.5/servy-8.5-arm64-installer.exe) - 76.04 MB
 * [servy-8.5-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.5/servy-8.5-arm64-portable.7z) - 77.43 MB
 * [servy-8.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.5/servy-8.5-net48-sbom.xml) - 0.03 MB
@@ -1050,7 +1050,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.4...v8.5
 
-# [Servy 8.4](https://github.com/aelassas/servy/releases/tag/v8.4)
+## [Servy 8.4](https://github.com/aelassas/servy/releases/tag/v8.4)
 
 **Date:** 2026-05-11 | **Tag:** [`v8.4`](https://github.com/aelassas/servy/tree/v8.4)
 
@@ -1617,7 +1617,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 
 </details>
 
-## Downloads
+### Downloads
 * [servy-8.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-sbom.xml) - 0.02 MB
 * [servy-8.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-x64-installer.exe) - 4.1 MB
 * [servy-8.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-x64-portable.7z) - 1.84 MB
@@ -1629,7 +1629,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.3...v8.4
 
-# [Servy 8.3](https://github.com/aelassas/servy/releases/tag/v8.3)
+## [Servy 8.3](https://github.com/aelassas/servy/releases/tag/v8.3)
 
 **Date:** 2026-04-27 | **Tag:** [`v8.3`](https://github.com/aelassas/servy/tree/v8.3)
 
@@ -1724,7 +1724,7 @@ Servy 8.3 improves the UI experience and includes many fixes. The full changelog
 
 </details>
 
-## Downloads
+### Downloads
 * [servy-8.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.3/servy-8.3-net48-sbom.xml) - 0.02 MB
 * [servy-8.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.3/servy-8.3-net48-x64-installer.exe) - 4.07 MB
 * [servy-8.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.3/servy-8.3-net48-x64-portable.7z) - 1.82 MB
@@ -1736,7 +1736,7 @@ Servy 8.3 improves the UI experience and includes many fixes. The full changelog
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.2...v8.3
 
-# [Servy 8.2](https://github.com/aelassas/servy/releases/tag/v8.2)
+## [Servy 8.2](https://github.com/aelassas/servy/releases/tag/v8.2)
 
 **Date:** 2026-04-24 | **Tag:** [`v8.2`](https://github.com/aelassas/servy/tree/v8.2)
 
@@ -1750,7 +1750,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.2...v8.3
 * ci(global.json): rollForward: latestPatch weakens build reproducibility (#790)
 * ci(publish): CycloneDX CLI, Inno Setup, and 7-Zip installers downloaded and executed without integrity verification (#793)
 
-## Downloads
+### Downloads
 * [servy-8.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-net48-sbom.xml) - 0.02 MB
 * [servy-8.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-net48-x64-installer.exe) - 4.02 MB
 * [servy-8.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-net48-x64-portable.7z) - 1.76 MB
@@ -1762,7 +1762,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.2...v8.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.1...v8.2
 
-# [Servy 8.1](https://github.com/aelassas/servy/releases/tag/v8.1)
+## [Servy 8.1](https://github.com/aelassas/servy/releases/tag/v8.1)
 
 **Date:** 2026-04-22 | **Tag:** [`v8.1`](https://github.com/aelassas/servy/tree/v8.1)
 
@@ -1809,7 +1809,7 @@ Servy 8.1 introduces many fixes across main components. The full release notes a
 
 </details>
 
-## Downloads
+### Downloads
 * [servy-8.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.1/servy-8.1-net48-sbom.xml) - 0.02 MB
 * [servy-8.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.1/servy-8.1-net48-x64-installer.exe) - 4.02 MB
 * [servy-8.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.1/servy-8.1-net48-x64-portable.7z) - 1.76 MB
@@ -1821,7 +1821,7 @@ Servy 8.1 introduces many fixes across main components. The full release notes a
 
 Compare changes: https://github.com/aelassas/servy/compare/v8.0...v8.1
 
-# [Servy 8.0](https://github.com/aelassas/servy/releases/tag/v8.0)
+## [Servy 8.0](https://github.com/aelassas/servy/releases/tag/v8.0)
 
 **Date:** 2026-04-20 | **Tag:** [`v8.0`](https://github.com/aelassas/servy/tree/v8.0)
 
@@ -1889,7 +1889,7 @@ Servy 8.0 introduces many fixes across all components. The full release notes ar
 * ci(azure-pipelines): orphaned legacy CI alongside GitHub Actions, no tests/coverage/sign (#752)
 </details>
 
-## Downloads
+### Downloads
 * [servy-8.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-net48-sbom.xml) - 0.02 MB
 * [servy-8.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-net48-x64-installer.exe) - 4.02 MB
 * [servy-8.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-net48-x64-portable.7z) - 1.76 MB
@@ -1901,7 +1901,7 @@ Servy 8.0 introduces many fixes across all components. The full release notes ar
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.9...v8.0
 
-# [Servy 7.9](https://github.com/aelassas/servy/releases/tag/v7.9)
+## [Servy 7.9](https://github.com/aelassas/servy/releases/tag/v7.9)
 
 **Date:** 2026-04-16 | **Tag:** [`v7.9`](https://github.com/aelassas/servy/tree/v7.9)
 
@@ -2411,7 +2411,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * chore(deps): update dependencies
 </details>
 
-## Downloads
+### Downloads
 * [servy-7.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-net48-sbom.xml) - 0.02 MB
 * [servy-7.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-net48-x64-installer.exe) - 4.02 MB
 * [servy-7.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-net48-x64-portable.7z) - 1.76 MB
@@ -2423,7 +2423,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.8...v7.9
 
-# [Servy 7.8](https://github.com/aelassas/servy/releases/tag/v7.8)
+## [Servy 7.8](https://github.com/aelassas/servy/releases/tag/v7.8)
 
 **Date:** 2026-04-04 | **Tag:** [`v7.8`](https://github.com/aelassas/servy/tree/v7.8)
 
@@ -2445,7 +2445,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.8...v7.9
 * fix(psm1): Import-ServyServiceConfig: missing -Name parameter unlike Export-ServyServiceConfig (#59)
 * perf(core): accelerate startup by replacing WMI with fast SCM/Registry queries (#48)
 
-## Downloads
+### Downloads
 * [servy-7.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.8/servy-7.8-net48-sbom.xml) - 0.02 MB
 * [servy-7.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.8/servy-7.8-net48-x64-installer.exe) - 3.98 MB
 * [servy-7.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.8/servy-7.8-net48-x64-portable.7z) - 1.71 MB
@@ -2457,7 +2457,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.8...v7.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.7...v7.8
 
-# [Servy 7.7](https://github.com/aelassas/servy/releases/tag/v7.7)
+## [Servy 7.7](https://github.com/aelassas/servy/releases/tag/v7.7)
 
 **Date:** 2026-04-03 | **Tag:** [`v7.7`](https://github.com/aelassas/servy/tree/v7.7)
 
@@ -2466,7 +2466,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.7...v7.8
 * docs(wiki): improve [Advanced Configuration](https://github.com/aelassas/servy/wiki/Advanced-Configuration) documentation
 * chore(announcement): launch new [Servy website](https://servy-win.github.io/) with refreshed branding, security audits, and 100% code coverage
 
-## Downloads
+### Downloads
 * [servy-7.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-net48-sbom.xml) - 0.02 MB
 * [servy-7.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-net48-x64-portable.7z) - 1.71 MB
@@ -2478,7 +2478,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.7...v7.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.6...v7.7
 
-# [Servy 7.6](https://github.com/aelassas/servy/releases/tag/v7.6)
+## [Servy 7.6](https://github.com/aelassas/servy/releases/tag/v7.6)
 
 **Date:** 2026-04-02 | **Tag:** [`v7.6`](https://github.com/aelassas/servy/tree/v7.6)
 
@@ -2503,7 +2503,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.6...v7.7
 * fix(net48): rename `Servy.Restarter.exe` to `Servy.Restarter.Net48.exe` to avoid conflict with the .NET 10.0 build
 * ci(publish): update publish workflow to handle the new `Servy.Restarter.Net48.exe` filename for the .NET Framework 4.8 build
 
-## Downloads
+### Downloads
 * [servy-7.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.6/servy-7.6-net48-sbom.xml) - 0.02 MB
 * [servy-7.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.6/servy-7.6-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.6/servy-7.6-net48-x64-portable.7z) - 1.71 MB
@@ -2515,7 +2515,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.6...v7.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.5...v7.6
 
-# [Servy 7.5](https://github.com/aelassas/servy/releases/tag/v7.5)
+## [Servy 7.5](https://github.com/aelassas/servy/releases/tag/v7.5)
 
 **Date:** 2026-03-31 | **Tag:** [`v7.5`](https://github.com/aelassas/servy/tree/v7.5)
 
@@ -2528,7 +2528,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.5...v7.6
 * fix(core): ensure reliable resource extraction on the first run after installation
 * fix(cli): ensure logger is initialized before use in CLI
 
-## Downloads
+### Downloads
 * [servy-7.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-sbom.xml) - 0.02 MB
 * [servy-7.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-x64-portable.7z) - 1.71 MB
@@ -2540,7 +2540,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.5...v7.6
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.4...v7.5
 
-# [Servy 7.4](https://github.com/aelassas/servy/releases/tag/v7.4)
+## [Servy 7.4](https://github.com/aelassas/servy/releases/tag/v7.4)
 
 **Date:** 2026-03-30 | **Tag:** [`v7.4`](https://github.com/aelassas/servy/tree/v7.4)
 
@@ -2563,7 +2563,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.4...v7.5
 * fix(manager): move performance metrics off the UI thread
 * ci(publish): migrate 7zip download to GitHub releases and fix install path
 
-## Downloads
+### Downloads
 * [servy-7.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-sbom.xml) - 0.02 MB
 * [servy-7.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-x64-portable.7z) - 1.71 MB
@@ -2575,14 +2575,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.4...v7.5
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.3...v7.4
 
-# [Servy 7.3](https://github.com/aelassas/servy/releases/tag/v7.3)
+## [Servy 7.3](https://github.com/aelassas/servy/releases/tag/v7.3)
 
 **Date:** 2026-03-26 | **Tag:** [`v7.3`](https://github.com/aelassas/servy/tree/v7.3)
 
 * fix(core): use local time instead of UTC for log rotation (#47)
 * fix(core): correct log cleanup logic (#47)
 
-## Downloads
+### Downloads
 * [servy-7.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-sbom.xml) - 0.02 MB
 * [servy-7.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-x64-portable.7z) - 1.71 MB
@@ -2594,7 +2594,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.3...v7.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.2...v7.3
 
-# [Servy 7.2](https://github.com/aelassas/servy/releases/tag/v7.2)
+## [Servy 7.2](https://github.com/aelassas/servy/releases/tag/v7.2)
 
 **Date:** 2026-03-26 | **Tag:** [`v7.2`](https://github.com/aelassas/servy/tree/v7.2)
 
@@ -2603,7 +2603,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.2...v7.3
 * feat(core): update log cleanup logic (#47)
 * ci(publish): fix VirusTotal 502 timeouts
 
-## Downloads
+### Downloads
 * [servy-7.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-net48-sbom.xml) - 0.02 MB
 * [servy-7.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-net48-x64-portable.7z) - 1.71 MB
@@ -2615,7 +2615,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.2...v7.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.1...v7.2
 
-# [Servy 7.1](https://github.com/aelassas/servy/releases/tag/v7.1)
+## [Servy 7.1](https://github.com/aelassas/servy/releases/tag/v7.1)
 
 **Date:** 2026-03-25 | **Tag:** [`v7.1`](https://github.com/aelassas/servy/tree/v7.1)
 
@@ -2627,7 +2627,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.1...v7.2
 * ci(publish): fix VirusTotal 502 timeouts
 * chore(deps): update dependencies
 
-## Downloads
+### Downloads
 * [servy-7.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-net48-sbom.xml) - 0.02 MB
 * [servy-7.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-net48-x64-portable.7z) - 1.71 MB
@@ -2639,7 +2639,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.1...v7.2
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.0...v7.1
 
-# [Servy 7.0](https://github.com/aelassas/servy/releases/tag/v7.0)
+## [Servy 7.0](https://github.com/aelassas/servy/releases/tag/v7.0)
 
 **Date:** 2026-03-14 | **Tag:** [`v7.0`](https://github.com/aelassas/servy/tree/v7.0)
 
@@ -2647,7 +2647,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.0...v7.1
 * fix(desktop): fix manager app detection when launched from CLI
 * fix(manager): fix desktop app detection when launched from CLI
 
-## Downloads
+### Downloads
 * [servy-7.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-net48-sbom.xml) - 0.02 MB
 * [servy-7.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-net48-x64-installer.exe) - 3.97 MB
 * [servy-7.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-net48-x64-portable.7z) - 1.71 MB
@@ -2659,7 +2659,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.0...v7.1
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.9...v7.0
 
-# [Servy 6.9](https://github.com/aelassas/servy/releases/tag/v6.9)
+## [Servy 6.9](https://github.com/aelassas/servy/releases/tag/v6.9)
 
 **Date:** 2026-03-13 | **Tag:** [`v6.9`](https://github.com/aelassas/servy/tree/v6.9)
 
@@ -2669,7 +2669,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.9...v7.0
 * fix(installer): remove Servy Manager launcher from post-install window
 * chore(deps): update dependencies
 
-## Downloads
+### Downloads
 * [servy-6.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-net48-sbom.xml) - 0.02 MB
 * [servy-6.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-net48-x64-installer.exe) - 3.96 MB
 * [servy-6.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-net48-x64-portable.7z) - 1.71 MB
@@ -2681,7 +2681,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.9...v7.0
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.8...v6.9
 
-# [Servy 6.8](https://github.com/aelassas/servy/releases/tag/v6.8)
+## [Servy 6.8](https://github.com/aelassas/servy/releases/tag/v6.8)
 
 **Date:** 2026-02-26 | **Tag:** [`v6.8`](https://github.com/aelassas/servy/tree/v6.8)
 
@@ -2695,7 +2695,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.8...v6.9
 * chore(deps): update dependencies
 * docs(wiki): add Kopia service sample to [Examples & Recipes docs](https://github.com/aelassas/servy/wiki/Examples-&-Recipes#run-kopia-as-a-service) (#41)
 
-## Downloads
+### Downloads
 * [servy-6.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-sbom.xml) - 0.02 MB
 * [servy-6.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-x64-installer.exe) - 3.95 MB
 * [servy-6.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-x64-portable.7z) - 1.7 MB
@@ -2707,14 +2707,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.8...v6.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.7...v6.8
 
-# [Servy 6.7](https://github.com/aelassas/servy/releases/tag/v6.7)
+## [Servy 6.7](https://github.com/aelassas/servy/releases/tag/v6.7)
 
 **Date:** 2026-02-15 | **Tag:** [`v6.7`](https://github.com/aelassas/servy/tree/v6.7)
 
 * fix(manager): restore decryption on refresh to fix field values
 * fix(ci): resolve coverlet runtime issue on `net48` branch
 
-## Downloads
+### Downloads
 * [servy-6.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-sbom.xml) - 0.02 MB
 * [servy-6.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-x64-installer.exe) - 3.96 MB
 * [servy-6.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-x64-portable.7z) - 1.7 MB
@@ -2726,7 +2726,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.7...v6.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.6...v6.7
 
-# [Servy 6.6](https://github.com/aelassas/servy/releases/tag/v6.6)
+## [Servy 6.6](https://github.com/aelassas/servy/releases/tag/v6.6)
 
 **Date:** 2026-02-14 | **Tag:** [`v6.6`](https://github.com/aelassas/servy/tree/v6.6)
 
@@ -2741,7 +2741,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.6...v6.7
 * fix(apps): ensure full application shutdown on main window close
 * docs(wiki): update CLI and PowerShell docs
 
-## Downloads
+### Downloads
 * [servy-6.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-sbom.xml) - 0.02 MB
 * [servy-6.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-x64-installer.exe) - 3.96 MB
 * [servy-6.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-x64-portable.7z) - 1.7 MB
@@ -2753,7 +2753,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.6...v6.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.5...v6.6
 
-# [Servy 6.5](https://github.com/aelassas/servy/releases/tag/v6.5)
+## [Servy 6.5](https://github.com/aelassas/servy/releases/tag/v6.5)
 
 **Date:** 2026-02-13 | **Tag:** [`v6.5`](https://github.com/aelassas/servy/tree/v6.5)
 
@@ -2764,7 +2764,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.5...v6.6
 * chore(deps): update dependencies
 * docs(wiki): update documentation
 
-## Downloads
+### Downloads
 * [servy-6.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-sbom.xml) - 0.02 MB
 * [servy-6.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-x64-installer.exe) - 3.96 MB
 * [servy-6.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-x64-portable.7z) - 1.7 MB
@@ -2776,7 +2776,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.5...v6.6
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.4...v6.5
 
-# [Servy 6.4](https://github.com/aelassas/servy/releases/tag/v6.4)
+## [Servy 6.4](https://github.com/aelassas/servy/releases/tag/v6.4)
 
 **Date:** 2026-02-09 | **Tag:** [`v6.4`](https://github.com/aelassas/servy/tree/v6.4)
 
@@ -2784,7 +2784,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.4...v6.5
 * chore(setup): normalize the publish scripts and CI workflow
 * docs(wiki): update and enhance the [documentation](https://github.com/aelassas/servy/wiki)
 
-## Downloads
+### Downloads
 * [servy-6.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-sbom.xml) - 0.01 MB
 * [servy-6.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-x64-installer.exe) - 3.94 MB
 * [servy-6.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-x64-portable.7z) - 1.7 MB
@@ -2796,7 +2796,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.4...v6.5
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.3...v6.4
 
-# [Servy 6.3](https://github.com/aelassas/servy/releases/tag/v6.3)
+## [Servy 6.3](https://github.com/aelassas/servy/releases/tag/v6.3)
 
 **Date:** 2026-02-06 | **Tag:** [`v6.3`](https://github.com/aelassas/servy/tree/v6.3)
 
@@ -2813,7 +2813,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.3...v6.4
 * fix(service): implement thread-safe access to restart attempts file
 * feat(setup): add "Launch Servy Manager" option after setup completes
 
-## Downloads
+### Downloads
 * [servy-6.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-sbom.xml) - 0.01 MB
 * [servy-6.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-x64-installer.exe) - 3.96 MB
 * [servy-6.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-x64-portable.7z) - 1.7 MB
@@ -2825,7 +2825,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.3...v6.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.2...v6.3
 
-# [Servy 6.2](https://github.com/aelassas/servy/releases/tag/v6.2)
+## [Servy 6.2](https://github.com/aelassas/servy/releases/tag/v6.2)
 
 **Date:** 2026-02-04 | **Tag:** [`v6.2`](https://github.com/aelassas/servy/tree/v6.2)
 
@@ -2836,7 +2836,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.2...v6.3
 * feat(manager): add dynamic tooltips for service status and cycle warnings
 * feat(manager): sort service tree nodes alphabetically by display name
 
-## Downloads
+### Downloads
 * [servy-6.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-sbom.xml) - 0.01 MB
 * [servy-6.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-x64-installer.exe) - 3.96 MB
 * [servy-6.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-x64-portable.7z) - 1.7 MB
@@ -2848,7 +2848,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.2...v6.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.1...v6.2
 
-# [Servy 6.1](https://github.com/aelassas/servy/releases/tag/v6.1)
+## [Servy 6.1](https://github.com/aelassas/servy/releases/tag/v6.1)
 
 **Date:** 2026-02-03 | **Tag:** [`v6.1`](https://github.com/aelassas/servy/tree/v6.1)
 
@@ -2857,7 +2857,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.1...v6.2
 * refactor(manager): move UI constants to Servy.UI for reuse
 * chore(psm1): replace backticks with splatting in PowerShell samples
 
-## Downloads
+### Downloads
 * [servy-6.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-sbom.xml) - 0.01 MB
 * [servy-6.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-x64-installer.exe) - 3.96 MB
 * [servy-6.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-x64-portable.7z) - 1.7 MB
@@ -2869,7 +2869,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.1...v6.2
 
 Compare changes: https://github.com/aelassas/servy/compare/v6.0...v6.1
 
-# [Servy 6.0](https://github.com/aelassas/servy/releases/tag/v6.0)
+## [Servy 6.0](https://github.com/aelassas/servy/releases/tag/v6.0)
 
 **Date:** 2026-02-01 | **Tag:** [`v6.0`](https://github.com/aelassas/servy/tree/v6.0)
 
@@ -2881,7 +2881,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.0...v6.1
 * chore(ci): add LoC badges for prod, tests, and total code
 * docs(wiki): add Pre-Stop & Post-Stop Actions docs
 
-## Downloads
+### Downloads
 * [servy-6.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-net48-sbom.xml) - 0.01 MB
 * [servy-6.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-net48-x64-installer.exe) - 3.95 MB
 * [servy-6.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-net48-x64-portable.7z) - 1.69 MB
@@ -2893,7 +2893,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.0...v6.1
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.9...v6.0
 
-# [Servy 5.9](https://github.com/aelassas/servy/releases/tag/v5.9)
+## [Servy 5.9](https://github.com/aelassas/servy/releases/tag/v5.9)
 
 **Date:** 2026-01-30 | **Tag:** [`v5.9`](https://github.com/aelassas/servy/tree/v5.9)
 
@@ -2904,7 +2904,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.9...v6.0
 * chore(tests): upgrade to xUnit v3
 * chore(tests): remove deprecated xUnit packages
 
-## Downloads
+### Downloads
 * [servy-5.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-net48-sbom.xml) - 0.01 MB
 * [servy-5.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-net48-x64-installer.exe) - 3.95 MB
 * [servy-5.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-net48-x64-portable.7z) - 1.69 MB
@@ -2916,14 +2916,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.9...v6.0
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.8...v5.9
 
-# [Servy 5.8](https://github.com/aelassas/servy/releases/tag/v5.8)
+## [Servy 5.8](https://github.com/aelassas/servy/releases/tag/v5.8)
 
 **Date:** 2026-01-25 | **Tag:** [`v5.8`](https://github.com/aelassas/servy/tree/v5.8)
 
 * fix(service): implement resilient recursive process tree termination
 * fix(service): prevent orphaned child processes when parent is force-killed
 
-## Downloads
+### Downloads
 * [servy-5.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-net48-sbom.xml) - 0.01 MB
 * [servy-5.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-net48-x64-installer.exe) - 3.93 MB
 * [servy-5.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-net48-x64-portable.7z) - 1.68 MB
@@ -2935,7 +2935,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.8...v5.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.7...v5.8
 
-# [Servy 5.7](https://github.com/aelassas/servy/releases/tag/v5.7)
+## [Servy 5.7](https://github.com/aelassas/servy/releases/tag/v5.7)
 
 **Date:** 2026-01-24 | **Tag:** [`v5.7`](https://github.com/aelassas/servy/tree/v5.7)
 
@@ -2946,7 +2946,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.7...v5.8
 * fix(service): improve process stop logic for complex process trees
 * fix(service): align restart recovery with configured stop timeout
 
-## Downloads
+### Downloads
 * [servy-5.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-net48-sbom.xml) - 0.01 MB
 * [servy-5.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-net48-x64-installer.exe) - 3.93 MB
 * [servy-5.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-net48-x64-portable.7z) - 1.68 MB
@@ -2958,7 +2958,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.7...v5.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.6...v5.7
 
-# [Servy 5.6](https://github.com/aelassas/servy/releases/tag/v5.6)
+## [Servy 5.6](https://github.com/aelassas/servy/releases/tag/v5.6)
 
 **Date:** 2026-01-22 | **Tag:** [`v5.6`](https://github.com/aelassas/servy/tree/v5.6)
 
@@ -2967,7 +2967,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.6...v5.7
 * fix(service): keep SCM responsive by requesting additional time in short pulses during stop
 * fix(service): improve startup options validation for process paths and startup directories
 
-## Downloads
+### Downloads
 * [servy-5.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-net48-sbom.xml) - 0.01 MB
 * [servy-5.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-net48-x64-installer.exe) - 3.93 MB
 * [servy-5.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-net48-x64-portable.7z) - 1.68 MB
@@ -2979,7 +2979,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.6...v5.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.5...v5.6
 
-# [Servy 5.5](https://github.com/aelassas/servy/releases/tag/v5.5)
+## [Servy 5.5](https://github.com/aelassas/servy/releases/tag/v5.5)
 
 **Date:** 2026-01-21 | **Tag:** [`v5.5`](https://github.com/aelassas/servy/tree/v5.5)
 
@@ -2990,7 +2990,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.5...v5.6
 * docs(wiki): update CLI commands and examples in multiple wiki pages
 * docs(wiki): expand FAQ with more questions and answers
 
-## Downloads
+### Downloads
 * [servy-5.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-net48-sbom.xml) - 0.01 MB
 * [servy-5.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-net48-x64-installer.exe) - 3.93 MB
 * [servy-5.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-net48-x64-portable.7z) - 1.68 MB
@@ -3002,7 +3002,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.5...v5.6
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.4...v5.5
 
-# [Servy 5.4](https://github.com/aelassas/servy/releases/tag/v5.4)
+## [Servy 5.4](https://github.com/aelassas/servy/releases/tag/v5.4)
 
 **Date:** 2026-01-20 | **Tag:** [`v5.4`](https://github.com/aelassas/servy/tree/v5.4)
 
@@ -3014,7 +3014,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.4...v5.5
 * docs(psm1): update PowerShell module docs
 * docs(wiki): expand FAQ with more questions and answers
 
-## Downloads
+### Downloads
 * [servy-5.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-net48-sbom.xml) - 0.01 MB
 * [servy-5.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-net48-x64-installer.exe) - 3.92 MB
 * [servy-5.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-net48-x64-portable.7z) - 1.67 MB
@@ -3026,7 +3026,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.4...v5.5
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.3...v5.4
 
-# [Servy 5.3](https://github.com/aelassas/servy/releases/tag/v5.3)
+## [Servy 5.3](https://github.com/aelassas/servy/releases/tag/v5.3)
 
 **Date:** 2026-01-14 | **Tag:** [`v5.3`](https://github.com/aelassas/servy/tree/v5.3)
 
@@ -3045,7 +3045,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.3...v5.4
 * docs(psm1): clarify module usage for installed and portable Servy versions (#31)
 * docs(wiki): update Export/Import and PowerShell docs
 
-## Downloads
+### Downloads
 * [servy-5.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-net48-sbom.xml) - 0.01 MB
 * [servy-5.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-net48-x64-installer.exe) - 3.93 MB
 * [servy-5.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-net48-x64-portable.7z) - 1.67 MB
@@ -3057,7 +3057,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.3...v5.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.2...v5.3
 
-# [Servy 5.2](https://github.com/aelassas/servy/releases/tag/v5.2)
+## [Servy 5.2](https://github.com/aelassas/servy/releases/tag/v5.2)
 
 **Date:** 2026-01-13 | **Tag:** [`v5.2`](https://github.com/aelassas/servy/tree/v5.2)
 
@@ -3067,7 +3067,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.2...v5.3
 * fix(manager): set minimum window width to 940px to prevent layout clipping
 * fix(manager): correct PID badge padding and layout in Performance tab
 
-## Downloads
+### Downloads
 * [servy-5.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.2/servy-5.2-net48-sbom.xml) - 0.01 MB
 * [servy-5.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.2/servy-5.2-net48-x64-installer.exe) - 3.93 MB
 * [servy-5.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.2/servy-5.2-net48-x64-portable.7z) - 1.67 MB
@@ -3079,7 +3079,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.2...v5.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.1...v5.2
 
-# [Servy 5.1](https://github.com/aelassas/servy/releases/tag/v5.1)
+## [Servy 5.1](https://github.com/aelassas/servy/releases/tag/v5.1)
 
 **Date:** 2026-01-12 | **Tag:** [`v5.1`](https://github.com/aelassas/servy/tree/v5.1)
 
@@ -3092,7 +3092,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.1...v5.2
 * docs(manager): finalize graph interaction model to match Windows Task Manager standards
 * chore(installer): fix false positive virus scan detections (Windows Defender, Deep Instinct, ClamAV)
 
-## Downloads
+### Downloads
 * [servy-5.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.1/servy-5.1-net48-sbom.xml) - 0.01 MB
 * [servy-5.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.1/servy-5.1-net48-x64-installer.exe) - 3.93 MB
 * [servy-5.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.1/servy-5.1-net48-x64-portable.7z) - 1.67 MB
@@ -3104,7 +3104,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.1...v5.2
 
 Compare changes: https://github.com/aelassas/servy/compare/v5.0...v5.1
 
-# [Servy 5.0](https://github.com/aelassas/servy/releases/tag/v5.0)
+## [Servy 5.0](https://github.com/aelassas/servy/releases/tag/v5.0)
 
 **Date:** 2026-01-11 | **Tag:** [`v5.0`](https://github.com/aelassas/servy/tree/v5.0)
 
@@ -3116,7 +3116,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.0...v5.1
 * fix(manager): correct hover background color for logs grid
 * chore(installer): fix false positive virus scan detections (Windows Defender, ClamAV)
 
-## Downloads
+### Downloads
 * [servy-5.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.0/servy-5.0-net48-sbom.xml) - 0.01 MB
 * [servy-5.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.0/servy-5.0-net48-x64-installer.exe) - 3.92 MB
 * [servy-5.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.0/servy-5.0-net48-x64-portable.7z) - 1.67 MB
@@ -3128,7 +3128,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.0...v5.1
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.9...v5.0
 
-# [Servy 4.9](https://github.com/aelassas/servy/releases/tag/v4.9)
+## [Servy 4.9](https://github.com/aelassas/servy/releases/tag/v4.9)
 
 **Date:** 2026-01-10 | **Tag:** [`v4.9`](https://github.com/aelassas/servy/tree/v4.9)
 
@@ -3142,7 +3142,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.9...v5.0
 * fix(manager): keep the UI thread smooth during CPU and RAM graph updates
 * fix(manager): prevent timer re-entry and zombie restarts during monitoring
 
-## Downloads
+### Downloads
 * [servy-4.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.9/servy-4.9-net48-sbom.xml) - 0.01 MB
 * [servy-4.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.9/servy-4.9-net48-x64-installer.exe) - 3.93 MB
 * [servy-4.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.9/servy-4.9-net48-x64-portable.7z) - 1.67 MB
@@ -3154,7 +3154,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.9...v5.0
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.8...v4.9
 
-# [Servy 4.8](https://github.com/aelassas/servy/releases/tag/v4.8)
+## [Servy 4.8](https://github.com/aelassas/servy/releases/tag/v4.8)
 
 **Date:** 2026-01-08 | **Tag:** [`v4.8`](https://github.com/aelassas/servy/tree/v4.8)
 
@@ -3162,7 +3162,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.8...v4.9
 * feat(manager): optimize real-time CPU and RAM metric collection in Services tab
 * docs(wiki): update FAQ, CLI, PowerShell and Export/Import docs
 
-## Downloads
+### Downloads
 * [servy-4.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-net48-sbom.xml) - 0.01 MB
 * [servy-4.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-net48-x64-installer.exe) - 3.9 MB
 * [servy-4.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-net48-x64-portable.7z) - 1.67 MB
@@ -3174,7 +3174,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.8...v4.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.7...v4.8
 
-# [Servy 4.7](https://github.com/aelassas/servy/releases/tag/v4.7)
+## [Servy 4.7](https://github.com/aelassas/servy/releases/tag/v4.7)
 
 **Date:** 2026-01-07 | **Tag:** [`v4.7`](https://github.com/aelassas/servy/tree/v4.7)
 
@@ -3188,7 +3188,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.7...v4.8
 * fix(manager): add logging to performance tab in case of search failure
 * refactor(manager): decouple CPU and RAM graphs grid logic from View Model to View
 
-## Downloads
+### Downloads
 * [servy-4.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.7/servy-4.7-net48-sbom.xml) - 0.01 MB
 * [servy-4.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.7/servy-4.7-net48-x64-installer.exe) - 3.91 MB
 * [servy-4.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.7/servy-4.7-net48-x64-portable.7z) - 1.67 MB
@@ -3200,7 +3200,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.7...v4.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.6...v4.7
 
-# [Servy 4.6](https://github.com/aelassas/servy/releases/tag/v4.6)
+## [Servy 4.6](https://github.com/aelassas/servy/releases/tag/v4.6)
 
 **Date:** 2026-01-06 | **Tag:** [`v4.6`](https://github.com/aelassas/servy/tree/v4.6)
 
@@ -3209,7 +3209,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.6...v4.7
 * feat(manager): add padding to services list for better readability in performance tab
 * fix(tests): prevent multiple WPF Application instances across STA unit tests
 
-## Downloads
+### Downloads
 * [servy-4.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.6/servy-4.6-net48-sbom.xml) - 0.01 MB
 * [servy-4.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.6/servy-4.6-net48-x64-installer.exe) - 3.91 MB
 * [servy-4.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.6/servy-4.6-net48-x64-portable.7z) - 1.67 MB
@@ -3221,7 +3221,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.6...v4.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.5...v4.6
 
-# [Servy 4.5](https://github.com/aelassas/servy/releases/tag/v4.5)
+## [Servy 4.5](https://github.com/aelassas/servy/releases/tag/v4.5)
 
 **Date:** 2026-01-05 | **Tag:** [`v4.5`](https://github.com/aelassas/servy/tree/v4.5)
 
@@ -3234,7 +3234,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.5...v4.6
 * docs(wiki): expand Troubleshooting section with additional use cases
 * docs(wiki): expand FAQ with more frequently asked questions
 
-## Downloads
+### Downloads
 * [servy-4.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.5/servy-4.5-net48-sbom.xml) - 0.01 MB
 * [servy-4.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.5/servy-4.5-net48-x64-installer.exe) - 3.91 MB
 * [servy-4.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.5/servy-4.5-net48-x64-portable.7z) - 1.67 MB
@@ -3246,7 +3246,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.5...v4.6
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.4...v4.5
 
-# [Servy 4.4](https://github.com/aelassas/servy/releases/tag/v4.4)
+## [Servy 4.4](https://github.com/aelassas/servy/releases/tag/v4.4)
 
 **Date:** 2026-01-01 | **Tag:** [`v4.4`](https://github.com/aelassas/servy/tree/v4.4)
 
@@ -3258,7 +3258,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.4...v4.5
 * docs(wiki): update Usage, CLI and Troubleshooting documentation
 * docs(wiki): expand FAQ with more frequently asked questions
 
-## Downloads
+### Downloads
 * [servy-4.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-net48-sbom.xml) - 0.01 MB
 * [servy-4.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-net48-x64-installer.exe) - 3.68 MB
 * [servy-4.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-net48-x64-portable.7z) - 1.66 MB
@@ -3270,7 +3270,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.4...v4.5
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.3...v4.4
 
-# [Servy 4.3](https://github.com/aelassas/servy/releases/tag/v4.3)
+## [Servy 4.3](https://github.com/aelassas/servy/releases/tag/v4.3)
 
 **Date:** 2025-12-19 | **Tag:** [`v4.3`](https://github.com/aelassas/servy/tree/v4.3)
 
@@ -3278,7 +3278,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.3...v4.4
 * fix(sbom): exclude test projects from SBOMs
 * fix(sbom): add Servy version to SBOMs
 
-## Downloads
+### Downloads
 * [servy-4.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.3/servy-4.3-net48-sbom.xml) - 0.01 MB
 * [servy-4.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.3/servy-4.3-net48-x64-installer.exe) - 3.69 MB
 * [servy-4.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.3/servy-4.3-net48-x64-portable.7z) - 1.66 MB
@@ -3290,7 +3290,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.3...v4.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.2...v4.3
 
-# [Servy 4.2](https://github.com/aelassas/servy/releases/tag/v4.2)
+## [Servy 4.2](https://github.com/aelassas/servy/releases/tag/v4.2)
 
 **Date:** 2025-12-17 | **Tag:** [`v4.2`](https://github.com/aelassas/servy/tree/v4.2)
 
@@ -3298,7 +3298,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.2...v4.3
 * fix(core): move process parameters retrieval from binary path to database
 * chore: include SBOMs in release artifacts for provenance
 
-## Downloads
+### Downloads
 * [servy-4.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-net48-sbom.xml) - 0.03 MB
 * [servy-4.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-net48-x64-installer.exe) - 4.48 MB
 * [servy-4.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-net48-x64-portable.7z) - 2.38 MB
@@ -3310,14 +3310,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.2...v4.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.1...v4.2
 
-# [Servy 4.1](https://github.com/aelassas/servy/releases/tag/v4.1)
+## [Servy 4.1](https://github.com/aelassas/servy/releases/tag/v4.1)
 
 **Date:** 2025-12-16 | **Tag:** [`v4.1`](https://github.com/aelassas/servy/tree/v4.1)
 
 * fix(core): resolve SCM limit for extremely large environment variables (#29)
 * fix(core): encrypt environment variables for maximum security
 
-## Downloads
+### Downloads
 * [servy-4.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-net48-x64-installer.exe) - 4.48 MB
 * [servy-4.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-net48-x64-portable.7z) - 2.38 MB
 * [servy-4.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-x64-installer.exe) - 82.1 MB
@@ -3327,7 +3327,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.1...v4.2
 
 Compare changes: https://github.com/aelassas/servy/compare/v4.0...v4.1
 
-# [Servy 4.0](https://github.com/aelassas/servy/releases/tag/v4.0)
+## [Servy 4.0](https://github.com/aelassas/servy/releases/tag/v4.0)
 
 **Date:** 2025-12-15 | **Tag:** [`v4.0`](https://github.com/aelassas/servy/tree/v4.0)
 
@@ -3346,7 +3346,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.0...v4.1
 * fix(setup): grant write access to `%ProgramData%\Servy` for Local Service and Network Service accounts
 * ci: automate code signing with SignPath and GitHub Actions
 
-## Downloads
+### Downloads
 * [servy-4.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.0/servy-4.0-net48-x64-installer.exe) - 4.48 MB
 * [servy-4.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.0/servy-4.0-net48-x64-portable.7z) - 2.38 MB
 * [servy-4.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.0/servy-4.0-x64-installer.exe) - 82.05 MB
@@ -3356,7 +3356,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.0...v4.1
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.9...v4.0
 
-# [Servy 3.9](https://github.com/aelassas/servy/releases/tag/v3.9)
+## [Servy 3.9](https://github.com/aelassas/servy/releases/tag/v3.9)
 
 **Date:** 2025-11-27 | **Tag:** [`v3.9`](https://github.com/aelassas/servy/tree/v3.9)
 
@@ -3364,7 +3364,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.9...v4.0
 * ci(choco): update Chocolatey workflow to use the new API
 * chore(setup): update build script to keep console window open after failure
 
-## Downloads
+### Downloads
 * [servy-3.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.9/servy-3.9-net48-x64-installer.exe) - 4.46 MB
 * [servy-3.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v3.9/servy-3.9-net48-x64-portable.7z) - 2.37 MB
 * [servy-3.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.9/servy-3.9-x64-installer.exe) - 81.98 MB
@@ -3374,7 +3374,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.9...v4.0
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.8...v3.9
 
-# [Servy 3.8](https://github.com/aelassas/servy/releases/tag/v3.8)
+## [Servy 3.8](https://github.com/aelassas/servy/releases/tag/v3.8)
 
 **Date:** 2025-11-26 | **Tag:** [`v3.8`](https://github.com/aelassas/servy/tree/v3.8)
 
@@ -3385,7 +3385,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.8...v3.9
 * refactor(core): general code improvements and optimizations
 * chore(setup): refactor build scripts for consistency and maintainability
 
-## Downloads
+### Downloads
 * [servy-3.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.8/servy-3.8-net48-x64-installer.exe) - 4.46 MB
 * [servy-3.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v3.8/servy-3.8-net48-x64-portable.7z) - 2.37 MB
 * [servy-3.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.8/servy-3.8-x64-installer.exe) - 116.47 MB
@@ -3395,7 +3395,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.8...v3.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.7...v3.8
 
-# [Servy 3.7](https://github.com/aelassas/servy/releases/tag/v3.7)
+## [Servy 3.7](https://github.com/aelassas/servy/releases/tag/v3.7)
 
 **Date:** 2025-11-19 | **Tag:** [`v3.7`](https://github.com/aelassas/servy/tree/v3.7)
 
@@ -3403,7 +3403,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.7...v3.8
 * chore(desktop): update service display name info text
 * refactor(core): general code improvements and optimizations
 
-## Downloads
+### Downloads
 * [servy-3.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.7/servy-3.7-net48-x64-installer.exe) - 4.48 MB
 * [servy-3.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v3.7/servy-3.7-net48-x64-portable.7z) - 2.38 MB
 * [servy-3.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.7/servy-3.7-x64-installer.exe) - 145.98 MB
@@ -3413,7 +3413,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.7...v3.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.6...v3.7
 
-# [Servy 3.6](https://github.com/aelassas/servy/releases/tag/v3.6)
+## [Servy 3.6](https://github.com/aelassas/servy/releases/tag/v3.6)
 
 **Date:** 2025-11-18 | **Tag:** [`v3.6`](https://github.com/aelassas/servy/tree/v3.6)
 
@@ -3424,7 +3424,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.6...v3.7
 * chore(about): refine about info text for Servy and Servy Manager
 * chore(psm): correct `Add-Arg` function description
 
-## Downloads
+### Downloads
 * [servy-3.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.6/servy-3.6-net48-x64-installer.exe) - 4.47 MB
 * [servy-3.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v3.6/servy-3.6-net48-x64-portable.7z) - 2.38 MB
 * [servy-3.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.6/servy-3.6-x64-installer.exe) - 146.01 MB
@@ -3434,7 +3434,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.6...v3.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.5...v3.6
 
-# [Servy 3.5](https://github.com/aelassas/servy/releases/tag/v3.5)
+## [Servy 3.5](https://github.com/aelassas/servy/releases/tag/v3.5)
 
 **Date:** 2025-11-16 | **Tag:** [`v3.5`](https://github.com/aelassas/servy/tree/v3.5)
 
@@ -3442,7 +3442,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.5...v3.6
 * chore(deps): update dependencies
 * docs(wiki): add more samples to [examples & recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes)
 
-## Downloads
+### Downloads
 * [servy-3.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.5/servy-3.5-net48-x64-installer.exe) - 4.47 MB
 * [servy-3.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v3.5/servy-3.5-net48-x64-portable.7z) - 2.38 MB
 * [servy-3.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.5/servy-3.5-x64-installer.exe) - 145.94 MB
@@ -3452,14 +3452,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.5...v3.6
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.4...v3.5
 
-# [Servy 3.4](https://github.com/aelassas/servy/releases/tag/v3.4)
+## [Servy 3.4](https://github.com/aelassas/servy/releases/tag/v3.4)
 
 **Date:** 2025-11-13 | **Tag:** [`v3.4`](https://github.com/aelassas/servy/tree/v3.4)
 
 * fix(psm): improve argument parsing and handling of optional parameters
 * docs(wiki): add more samples to [examples & recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes)
 
-## Downloads
+### Downloads
 * [servy-3.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.4/servy-3.4-net48-x64-installer.exe) - 17.15 MB
 * [servy-3.4-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.4/servy-3.4-net48-x64-portable.zip) - 10.53 MB
 * [servy-3.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.4/servy-3.4-x64-installer.exe) - 145.96 MB
@@ -3469,7 +3469,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.4...v3.5
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.3...v3.4
 
-# [Servy 3.3](https://github.com/aelassas/servy/releases/tag/v3.3)
+## [Servy 3.3](https://github.com/aelassas/servy/releases/tag/v3.3)
 
 **Date:** 2025-11-12 | **Tag:** [`v3.3`](https://github.com/aelassas/servy/tree/v3.3)
 
@@ -3479,7 +3479,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.3...v3.4
 * fix(service): improve service restart wait handling and logging
 * docs(wiki): update documentation
 
-## Downloads
+### Downloads
 * [servy-3.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.3/servy-3.3-net48-x64-installer.exe) - 17.15 MB
 * [servy-3.3-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.3/servy-3.3-net48-x64-portable.zip) - 10.52 MB
 * [servy-3.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.3/servy-3.3-x64-installer.exe) - 145.93 MB
@@ -3489,7 +3489,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.3...v3.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.2...v3.3
 
-# [Servy 3.2](https://github.com/aelassas/servy/releases/tag/v3.2)
+## [Servy 3.2](https://github.com/aelassas/servy/releases/tag/v3.2)
 
 **Date:** 2025-11-10 | **Tag:** [`v3.2`](https://github.com/aelassas/servy/tree/v3.2)
 
@@ -3497,7 +3497,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.2...v3.3
 * chore: update info message about service account permissions (#23)
 * chore: add info message about recovery permissions (#23)
 
-## Downloads
+### Downloads
 * [servy-3.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.2/servy-3.2-net48-x64-installer.exe) - 17.15 MB
 * [servy-3.2-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.2/servy-3.2-net48-x64-portable.zip) - 10.52 MB
 * [servy-3.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.2/servy-3.2-x64-installer.exe) - 135.87 MB
@@ -3507,13 +3507,13 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.2...v3.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.1...v3.2
 
-# [Servy 3.1](https://github.com/aelassas/servy/releases/tag/v3.1)
+## [Servy 3.1](https://github.com/aelassas/servy/releases/tag/v3.1)
 
 **Date:** 2025-11-09 | **Tag:** [`v3.1`](https://github.com/aelassas/servy/tree/v3.1)
 
 * fix(core): support NetworkService, LocalService, and passwordless accounts (#23)
 
-## Downloads
+### Downloads
 * [servy-3.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.1/servy-3.1-net48-x64-installer.exe) - 17.15 MB
 * [servy-3.1-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.1/servy-3.1-net48-x64-portable.zip) - 10.52 MB
 * [servy-3.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.1/servy-3.1-x64-installer.exe) - 137.21 MB
@@ -3523,7 +3523,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.1...v3.2
 
 Compare changes: https://github.com/aelassas/servy/compare/v3.0...v3.1
 
-# [Servy 3.0](https://github.com/aelassas/servy/releases/tag/v3.0)
+## [Servy 3.0](https://github.com/aelassas/servy/releases/tag/v3.0)
 
 **Date:** 2025-11-08 | **Tag:** [`v3.0`](https://github.com/aelassas/servy/tree/v3.0)
 
@@ -3535,7 +3535,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.0...v3.1
 * fix(manager): validate credentials when importing a service
 * chore: add [project manifest](https://github.com/aelassas/servy/blob/main/MANIFEST.md)
 
-## Downloads
+### Downloads
 * [servy-3.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-net48-x64-installer.exe) - 17.15 MB
 * [servy-3.0-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-net48-x64-portable.zip) - 10.52 MB
 * [servy-3.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-x64-installer.exe) - 137.2 MB
@@ -3545,13 +3545,13 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.0...v3.1
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.9...v3.0
 
-# [Servy 2.9](https://github.com/aelassas/servy/releases/tag/v2.9)
+## [Servy 2.9](https://github.com/aelassas/servy/releases/tag/v2.9)
 
 **Date:** 2025-10-30 | **Tag:** [`v2.9`](https://github.com/aelassas/servy/tree/v2.9)
 
 * fix(service): stdout/stderr pipes lost after sending Ctrl+C signal to child process (#20)
 
-## Downloads
+### Downloads
 * [servy-2.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.9-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-x64-installer.exe) - 137.21 MB
@@ -3561,14 +3561,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.9...v3.0
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.8...v2.9
 
-# [Servy 2.8](https://github.com/aelassas/servy/releases/tag/v2.8)
+## [Servy 2.8](https://github.com/aelassas/servy/releases/tag/v2.8)
 
 **Date:** 2025-10-27 | **Tag:** [`v2.8`](https://github.com/aelassas/servy/tree/v2.8)
 
 * fix(core): escape environment variables correctly when formatting after import
 * fix(restarter): publish script command fix
 
-## Downloads
+### Downloads
 * [servy-2.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.8-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-x64-installer.exe) - 137.19 MB
@@ -3578,13 +3578,13 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.8...v2.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.7...v2.8
 
-# [Servy 2.7](https://github.com/aelassas/servy/releases/tag/v2.7)
+## [Servy 2.7](https://github.com/aelassas/servy/releases/tag/v2.7)
 
 **Date:** 2025-10-26 | **Tag:** [`v2.7`](https://github.com/aelassas/servy/tree/v2.7)
 
 * chore(winget,chocolatey): update manifests
 
-## Downloads
+### Downloads
 * [servy-2.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.7-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-x64-installer.exe) - 137.18 MB
@@ -3594,7 +3594,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.7...v2.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.6...v2.7
 
-# [Servy 2.6](https://github.com/aelassas/servy/releases/tag/v2.6)
+## [Servy 2.6](https://github.com/aelassas/servy/releases/tag/v2.6)
 
 **Date:** 2025-10-25 | **Tag:** [`v2.6`](https://github.com/aelassas/servy/tree/v2.6)
 
@@ -3602,7 +3602,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.6...v2.7
 * fix(manager): ensure service list is sorted correctly
 * fix(service): remove unnecessary logs
 
-## Downloads
+### Downloads
 * [servy-2.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.6-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-x64-installer.exe) - 137.19 MB
@@ -3612,14 +3612,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.6...v2.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.5...v2.6
 
-# [Servy 2.5](https://github.com/aelassas/servy/releases/tag/v2.5)
+## [Servy 2.5](https://github.com/aelassas/servy/releases/tag/v2.5)
 
 **Date:** 2025-10-23 | **Tag:** [`v2.5`](https://github.com/aelassas/servy/tree/v2.5)
 
 * fix(service): correctly display non-ASCII characters in `stdout/stderr` (#20)
 * fix(recovery): allow graceful restart
 
-## Downloads
+### Downloads
 * [servy-2.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-net48-x64-installer.exe) - 17.14 MB
 * [servy-2.5-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-x64-installer.exe) - 137.18 MB
@@ -3629,7 +3629,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.5...v2.6
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.4...v2.5
 
-# [Servy 2.4](https://github.com/aelassas/servy/releases/tag/v2.4)
+## [Servy 2.4](https://github.com/aelassas/servy/releases/tag/v2.4)
 
 **Date:** 2025-10-21 | **Tag:** [`v2.4`](https://github.com/aelassas/servy/tree/v2.4)
 
@@ -3641,7 +3641,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.4...v2.5
 * ci(release): add [release](https://github.com/aelassas/servy/blob/main/.github/workflows/release.yml) workflow
 * refactor: general refactoring and code cleanup
 
-## Downloads
+### Downloads
 * [servy-2.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-net48-x64-installer.exe) - 17.13 MB
 * [servy-2.4-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-net48-x64-portable.zip) - 10.51 MB
 * [servy-2.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-x64-installer.exe) - 137.2 MB
@@ -3651,7 +3651,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.4...v2.5
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.3...v2.4
 
-# [Servy 2.3](https://github.com/aelassas/servy/releases/tag/v2.3)
+## [Servy 2.3](https://github.com/aelassas/servy/releases/tag/v2.3)
 
 **Date:** 2025-10-13 | **Tag:** [`v2.3`](https://github.com/aelassas/servy/tree/v2.3)
 
@@ -3662,7 +3662,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.3...v2.4
 * docs(psm1): update documentation and examples for PowerShell module
 * chore: resolve false positives in SecureAge and Gridinsoft
 
-## Downloads
+### Downloads
 * [servy-2.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.3/servy-2.3-net48-x64-installer.exe) - 17.21 MB
 * [servy-2.3-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.3/servy-2.3-net48-x64-portable.zip) - 10.53 MB
 * [servy-2.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.3/servy-2.3-x64-installer.exe) - 137.15 MB
@@ -3672,7 +3672,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.3...v2.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.2...v2.3
 
-# [Servy 2.2](https://github.com/aelassas/servy/releases/tag/v2.2)
+## [Servy 2.2](https://github.com/aelassas/servy/releases/tag/v2.2)
 
 **Date:** 2025-10-09 | **Tag:** [`v2.2`](https://github.com/aelassas/servy/tree/v2.2)
 
@@ -3681,7 +3681,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.2...v2.3
 * fix(service): service install not working when Windows is installed on a drive letter other than `C:` #16
 * fix(service): reorganize and clean up startup parameters log
 
-## Downloads
+### Downloads
 * [servy-2.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.2/servy-2.2-net48-x64-installer.exe) - 17.22 MB
 * [servy-2.2-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.2/servy-2.2-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.2/servy-2.2-x64-installer.exe) - 137.21 MB
@@ -3691,7 +3691,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.2...v2.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.1...v2.2
 
-# [Servy 2.1](https://github.com/aelassas/servy/releases/tag/v2.1)
+## [Servy 2.1](https://github.com/aelassas/servy/releases/tag/v2.1)
 
 **Date:** 2025-10-09 | **Tag:** [`v2.1`](https://github.com/aelassas/servy/tree/v2.1)
 
@@ -3699,7 +3699,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.1...v2.2
 * fix(clients): load `appsettings.json` from project root in debug and exe directory in release #16
 * fix(configurator): export XML and JSON not working when password is supplied
 
-## Downloads
+### Downloads
 * [servy-2.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.1/servy-2.1-net48-x64-installer.exe) - 17.22 MB
 * [servy-2.1-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.1/servy-2.1-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.1/servy-2.1-x64-installer.exe) - 137.21 MB
@@ -3709,7 +3709,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.1...v2.2
 
 Compare changes: https://github.com/aelassas/servy/compare/v2.0...v2.1
 
-# [Servy 2.0](https://github.com/aelassas/servy/releases/tag/v2.0)
+## [Servy 2.0](https://github.com/aelassas/servy/releases/tag/v2.0)
 
 **Date:** 2025-10-07 | **Tag:** [`v2.0`](https://github.com/aelassas/servy/tree/v2.0)
 
@@ -3718,7 +3718,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.0...v2.1
 * fix(service): avoid stopping services when copying `Servy.Restarter.exe` from resources
 * fix(service): add missing log for post-launch options
 
-## Downloads
+### Downloads
 * [servy-2.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.0/servy-2.0-net48-x64-installer.exe) - 17.22 MB
 * [servy-2.0-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.0/servy-2.0-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.0/servy-2.0-x64-installer.exe) - 137.21 MB
@@ -3728,7 +3728,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.0...v2.1
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.9...v2.0
 
-# [Servy 1.9](https://github.com/aelassas/servy/releases/tag/v1.9)
+## [Servy 1.9](https://github.com/aelassas/servy/releases/tag/v1.9)
 
 **Date:** 2025-10-04 | **Tag:** [`v1.9`](https://github.com/aelassas/servy/tree/v1.9)
 
@@ -3736,7 +3736,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.9...v2.0
 * chore(release): add generic installer
 * chore: update dependencies
 
-## Downloads
+### Downloads
 * [servy-1.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.9/servy-1.9-net48-x64-installer.exe) - 17.22 MB
 * [servy-1.9-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v1.9/servy-1.9-net48-x64-portable.zip) - 10.52 MB
 * [servy-1.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.9/servy-1.9-x64-installer.exe) - 137.15 MB
@@ -3746,7 +3746,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.9...v2.0
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.8...v1.9
 
-# [Servy 1.8](https://github.com/aelassas/servy/releases/tag/v1.8)
+## [Servy 1.8](https://github.com/aelassas/servy/releases/tag/v1.8)
 
 **Date:** 2025-10-01 | **Tag:** [`v1.8`](https://github.com/aelassas/servy/tree/v1.8)
 
@@ -3761,7 +3761,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.8...v1.9
 * chore(installer): fix false positives in VirusTotal, Microsoft Defender, SecureAge, and Zillya
 * chore(installer): add Servy to Scoop `extras` bucket
 
-## Downloads
+### Downloads
 * [servy-1.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.8/servy-1.8-net48-x64-installer.exe) - 17.22 MB
 * [servy-1.8-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.8/servy-1.8-net8.0-x64-installer.exe) - 137.16 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.8.zip)
@@ -3769,7 +3769,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.8...v1.9
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.7...v1.8
 
-# [Servy 1.7](https://github.com/aelassas/servy/releases/tag/v1.7)
+## [Servy 1.7](https://github.com/aelassas/servy/releases/tag/v1.7)
 
 **Date:** 2025-09-29 | **Tag:** [`v1.7`](https://github.com/aelassas/servy/tree/v1.7)
 
@@ -3785,7 +3785,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.7...v1.8
 * fix(cli): correct help text for `--preLaunchEnv` argument in `install` command
 * chore: update dependencies
 
-## Downloads
+### Downloads
 * [servy-1.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.7/servy-1.7-net48-x64-installer.exe) - 4.44 MB
 * [servy-1.7-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.7/servy-1.7-net8.0-x64-installer.exe) - 137.21 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.7.zip)
@@ -3793,7 +3793,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.7...v1.8
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.6...v1.7
 
-# [Servy 1.6](https://github.com/aelassas/servy/releases/tag/v1.6)
+## [Servy 1.6](https://github.com/aelassas/servy/releases/tag/v1.6)
 
 **Date:** 2025-09-23 | **Tag:** [`v1.6`](https://github.com/aelassas/servy/tree/v1.6)
 
@@ -3802,7 +3802,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.6...v1.7
 * fix(configurator): increase tab height for better visibility
 * fix(installer): adjust LZMA dictionary size to 64MB to reduce memory usage during install
 
-## Downloads
+### Downloads
 * [servy-1.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.6/servy-1.6-net48-x64-installer.exe) - 4.18 MB
 * [servy-1.6-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.6/servy-1.6-net8.0-x64-installer.exe) - 137.3 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.6.zip)
@@ -3810,14 +3810,14 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.6...v1.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.5...v1.6
 
-# [Servy 1.5](https://github.com/aelassas/servy/releases/tag/v1.5)
+## [Servy 1.5](https://github.com/aelassas/servy/releases/tag/v1.5)
 
 **Date:** 2025-09-20 | **Tag:** [`v1.5`](https://github.com/aelassas/servy/tree/v1.5)
 
 * fix(installer): resolve false positives from VirusTotal and Microsoft Defender
 * fix(installer): increase LZMA dictionary size to 128MB
 
-## Downloads
+### Downloads
 * [servy-1.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.5/servy-1.5-net48-x64-installer.exe) - 4.18 MB
 * [servy-1.5-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.5/servy-1.5-net8.0-x64-installer.exe) - 104.58 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.5.zip)
@@ -3825,7 +3825,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.5...v1.6
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.4...v1.5
 
-# [Servy 1.4](https://github.com/aelassas/servy/releases/tag/v1.4)
+## [Servy 1.4](https://github.com/aelassas/servy/releases/tag/v1.4)
 
 **Date:** 2025-09-18 | **Tag:** [`v1.4`](https://github.com/aelassas/servy/tree/v1.4)
 
@@ -3833,7 +3833,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.4...v1.5
 * fix(cli): rotation size calculation
 * fix(configurator): make failure program path optional instead of required
 
-## Downloads
+### Downloads
 * [servy-1.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.4/servy-1.4-net48-x64-installer.exe) - 4.18 MB
 * [servy-1.4-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.4/servy-1.4-net8.0-x64-installer.exe) - 137.32 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.4.zip)
@@ -3841,7 +3841,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.4...v1.5
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.3...v1.4
 
-# [Servy 1.3](https://github.com/aelassas/servy/releases/tag/v1.3)
+## [Servy 1.3](https://github.com/aelassas/servy/releases/tag/v1.3)
 
 **Date:** 2025-09-18 | **Tag:** [`v1.3`](https://github.com/aelassas/servy/tree/v1.3)
 
@@ -3853,7 +3853,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.3...v1.4
 * fix(configurator): correct confirm password validation
 * chore: update dependencies
 
-## Downloads
+### Downloads
 * [servy-1.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.3/servy-1.3-net48-x64-installer.exe) - 4.18 MB
 * [servy-1.3-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.3/servy-1.3-net8.0-x64-installer.exe) - 137.29 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.3.zip)
@@ -3861,7 +3861,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.3...v1.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.2...v1.3
 
-# [Servy 1.2](https://github.com/aelassas/servy/releases/tag/v1.2)
+## [Servy 1.2](https://github.com/aelassas/servy/releases/tag/v1.2)
 
 **Date:** 2025-09-15 | **Tag:** [`v1.2`](https://github.com/aelassas/servy/tree/v1.2)
 
@@ -3875,7 +3875,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.2...v1.3
 * fix(manager): prevent columns from shrinking below min width in services grid
 * fix(installer): missing icons
 
-## Downloads
+### Downloads
 * [servy-1.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.2/servy-1.2-net48-x64-installer.exe) - 4.05 MB
 * [servy-1.2-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.2/servy-1.2-net8.0-x64-installer.exe) - 145.2 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.2.zip)
@@ -3883,7 +3883,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.2...v1.3
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.1...v1.2
 
-# [Servy 1.1](https://github.com/aelassas/servy/releases/tag/v1.1)
+## [Servy 1.1](https://github.com/aelassas/servy/releases/tag/v1.1)
 
 **Date:** 2025-09-11 | **Tag:** [`v1.1`](https://github.com/aelassas/servy/tree/v1.1)
 
@@ -3892,7 +3892,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.1...v1.2
 * fix(installer): missing icons on silent install
 * chore: update dependencies
 
-## Downloads
+### Downloads
 * [servy-1.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.1/servy-1.1-net48-x64-installer.exe) - 4.05 MB
 * [servy-1.1-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.1/servy-1.1-net8.0-x64-installer.exe) - 137.28 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.1.zip)
@@ -3900,7 +3900,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.1...v1.2
 
 Compare changes: https://github.com/aelassas/servy/compare/v1.0...v1.1
 
-# [Servy 1.0](https://github.com/aelassas/servy/releases/tag/v1.0)
+## [Servy 1.0](https://github.com/aelassas/servy/releases/tag/v1.0)
 
 **Date:** 2025-09-06 | **Tag:** [`v1.0`](https://github.com/aelassas/servy/tree/v1.0)
 
@@ -3955,7 +3955,7 @@ winget install servy
 choco install -y servy
 ```
 
-## Downloads
+### Downloads
 * [servy-1.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net48-x64-installer.exe) - 3.99 MB
 * [servy-1.0-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net8.0-x64-installer.exe) - 138.14 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.0.zip)
