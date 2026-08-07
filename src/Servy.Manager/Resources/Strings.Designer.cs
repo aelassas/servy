@@ -61,6 +61,1356 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays application information and copyright details..
+        /// </summary>
+        public static string Automation_AboutMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_AboutMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Actions Column.
+        /// </summary>
+        public static string Automation_ActionsColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_ActionsColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checks if a newer version of Servy is available..
+        /// </summary>
+        public static string Automation_CheckUpdatesMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckUpdatesMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opens the configuration app for the selected service..
+        /// </summary>
+        public static string Automation_ConfigMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConfigMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copies the service process ID to the clipboard..
+        /// </summary>
+        public static string Automation_ConsoleCopyPidButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleCopyPidButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter text to filter the visible log lines..
+        /// </summary>
+        public static string Automation_ConsoleFilterTextBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleFilterTextBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log Filter.
+        /// </summary>
+        public static string Automation_ConsoleFilterTextBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleFilterTextBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Instructions on how to configure stdout and stderr redirection for live console output..
+        /// </summary>
+        public static string Automation_ConsoleInstructions_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleInstructions_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Console Instructions.
+        /// </summary>
+        public static string Automation_ConsoleInstructions_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleInstructions_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays scrolling log output. Use context menu to copy selected lines..
+        /// </summary>
+        public static string Automation_ConsoleLogList_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleLogList_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log Terminal.
+        /// </summary>
+        public static string Automation_ConsoleLogList_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleLogList_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The process identifier (PID) of the monitored service..
+        /// </summary>
+        public static string Automation_ConsolePidValue_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsolePidValue_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Process ID.
+        /// </summary>
+        public static string Automation_ConsolePidValue_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConsolePidValue_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select a service to view its console output..
+        /// </summary>
+        public static string Automation_ConsoleServiceList_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleServiceList_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Selector.
+        /// </summary>
+        public static string Automation_ConsoleServiceList_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleServiceList_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the real-time standard output and error logs for the selected service..
+        /// </summary>
+        public static string Automation_ConsoleTab_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleTab_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Console Tab.
+        /// </summary>
+        public static string Automation_ConsoleTab_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleTab_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays real-time standard output and error logs for the selected service..
+        /// </summary>
+        public static string Automation_ConsoleViewRoot_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleViewRoot_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Console Output View.
+        /// </summary>
+        public static string Automation_ConsoleViewRoot_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConsoleViewRoot_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copies selected console log lines to the clipboard..
+        /// </summary>
+        public static string Automation_CopyLogMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CopyLogMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copy Selection.
+        /// </summary>
+        public static string Automation_CopyLogMenuItem_Name {
+            get {
+                return ResourceManager.GetString("Automation_CopyLogMenuItem_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copies the Process ID to the clipboard..
+        /// </summary>
+        public static string Automation_CopyPidButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CopyPidButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The current CPU usage of the service..
+        /// </summary>
+        public static string Automation_CpuColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CpuColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to CPU Column.
+        /// </summary>
+        public static string Automation_CpuColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_CpuColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Historical view of CPU percentage usage..
+        /// </summary>
+        public static string Automation_CpuGraphGrid_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CpuGraphGrid_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to CPU Usage Graph.
+        /// </summary>
+        public static string Automation_CpuGraphGrid_Name {
+            get {
+                return ResourceManager.GetString("Automation_CpuGraphGrid_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the real-time percentage of CPU utilized by the service process..
+        /// </summary>
+        public static string Automation_CpuUsageLabel_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CpuUsageLabel_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current CPU Usage.
+        /// </summary>
+        public static string Automation_CpuUsageLabel_Name {
+            get {
+                return ResourceManager.GetString("Automation_CpuUsageLabel_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Collapses all branches in the dependency tree..
+        /// </summary>
+        public static string Automation_DependenciesCollapseAllButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesCollapseAllButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copies the process ID to the clipboard..
+        /// </summary>
+        public static string Automation_DependenciesCopyPidButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesCopyPidButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Expands all branches in the dependency tree..
+        /// </summary>
+        public static string Automation_DependenciesExpandAllButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesExpandAllButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Information on the service dependency tree mechanism via Windows Service Control Manager..
+        /// </summary>
+        public static string Automation_DependenciesLegendInfo_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesLegendInfo_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dependency Legend Information.
+        /// </summary>
+        public static string Automation_DependenciesLegendInfo_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesLegendInfo_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The process identifier (PID) of the selected service..
+        /// </summary>
+        public static string Automation_DependenciesPidValue_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesPidValue_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Process ID.
+        /// </summary>
+        public static string Automation_DependenciesPidValue_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesPidValue_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reloads the dependency tree for the selected service..
+        /// </summary>
+        public static string Automation_DependenciesRefreshButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesRefreshButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Search and select a service to view its dependencies..
+        /// </summary>
+        public static string Automation_DependenciesServiceList_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesServiceList_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Selection List.
+        /// </summary>
+        public static string Automation_DependenciesServiceList_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesServiceList_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indicates that pressing F5 refreshes the dependency tree..
+        /// </summary>
+        public static string Automation_DependenciesShortcutInfo_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesShortcutInfo_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shortcut Information.
+        /// </summary>
+        public static string Automation_DependenciesShortcutInfo_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesShortcutInfo_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shows the service dependencies tree and status hierarchy..
+        /// </summary>
+        public static string Automation_DependenciesTab_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesTab_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dependencies Tab.
+        /// </summary>
+        public static string Automation_DependenciesTab_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesTab_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays recursive dependencies for the selected service..
+        /// </summary>
+        public static string Automation_DependenciesTreeView_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesTreeView_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dependency Hierarchy Tree.
+        /// </summary>
+        public static string Automation_DependenciesTreeView_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesTreeView_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Explains the status color indicators for tree nodes: green for running, red for stopped, orange for cycle..
+        /// </summary>
+        public static string Automation_DependenciesUsageInfo_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesUsageInfo_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Usage Information.
+        /// </summary>
+        public static string Automation_DependenciesUsageInfo_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesUsageInfo_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the service list and their hierarchical dependencies..
+        /// </summary>
+        public static string Automation_DependenciesViewRoot_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesViewRoot_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dependencies View.
+        /// </summary>
+        public static string Automation_DependenciesViewRoot_Name {
+            get {
+                return ResourceManager.GetString("Automation_DependenciesViewRoot_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The description of the service..
+        /// </summary>
+        public static string Automation_DescriptionColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DescriptionColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Description Column.
+        /// </summary>
+        public static string Automation_DescriptionColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_DescriptionColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opens the official Servy documentation..
+        /// </summary>
+        public static string Automation_DocMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DocMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opens a menu containing documentation and update options..
+        /// </summary>
+        public static string Automation_HelpMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_HelpMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Imports a service configuration from a JSON file..
+        /// </summary>
+        public static string Automation_ImportJsonMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ImportJsonMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opens a menu to import service configurations..
+        /// </summary>
+        public static string Automation_ImportMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ImportMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Imports a service configuration from an XML file..
+        /// </summary>
+        public static string Automation_ImportXmlMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ImportXmlMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays full message text and details for the selected log entry..
+        /// </summary>
+        public static string Automation_LogDetailsTextBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogDetailsTextBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log Entry Details.
+        /// </summary>
+        public static string Automation_LogDetailsTextBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogDetailsTextBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The user account the service is running as..
+        /// </summary>
+        public static string Automation_LogOnAsColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogOnAsColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Session Column.
+        /// </summary>
+        public static string Automation_LogOnAsColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogOnAsColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the filtered list of diagnostic log entries..
+        /// </summary>
+        public static string Automation_LogsDataGrid_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsDataGrid_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to System Logs.
+        /// </summary>
+        public static string Automation_LogsDataGrid_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsDataGrid_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shows total count and query execution duration for current logs filter..
+        /// </summary>
+        public static string Automation_LogsFooterText_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsFooterText_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select the start date to filter log entries from..
+        /// </summary>
+        public static string Automation_LogsFromDatePicker_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsFromDatePicker_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Filter from date.
+        /// </summary>
+        public static string Automation_LogsFromDatePicker_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsFromDatePicker_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Drag to adjust the balance between log list and log message details pane..
+        /// </summary>
+        public static string Automation_LogsGridSplitter_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsGridSplitter_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log Details Resizer.
+        /// </summary>
+        public static string Automation_LogsGridSplitter_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsGridSplitter_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter a keyword to search within log messages..
+        /// </summary>
+        public static string Automation_LogsKeywordTextBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsKeywordTextBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Filter by Keyword.
+        /// </summary>
+        public static string Automation_LogsKeywordTextBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsKeywordTextBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Level Column.
+        /// </summary>
+        public static string Automation_LogsLevelColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsLevelColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select a log severity level to filter the displayed log entries..
+        /// </summary>
+        public static string Automation_LogsLevelComboBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsLevelComboBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Filter by Level.
+        /// </summary>
+        public static string Automation_LogsLevelComboBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsLevelComboBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log Level Icon.
+        /// </summary>
+        public static string Automation_LogsLevelIcon_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsLevelIcon_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message Column.
+        /// </summary>
+        public static string Automation_LogsMessageColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsMessageColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Executes the log search with current level, date, and keyword filters..
+        /// </summary>
+        public static string Automation_LogsSearchButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsSearchButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indicates that pressing F5 refreshes logs..
+        /// </summary>
+        public static string Automation_LogsShortcutInfo_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsShortcutInfo_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shortcut Information.
+        /// </summary>
+        public static string Automation_LogsShortcutInfo_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsShortcutInfo_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays a list of system events and diagnostic records for the service..
+        /// </summary>
+        public static string Automation_LogsTab_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsTab_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Logs Tab.
+        /// </summary>
+        public static string Automation_LogsTab_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsTab_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Time Column.
+        /// </summary>
+        public static string Automation_LogsTimeColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsTimeColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select the end date to filter log entries up to..
+        /// </summary>
+        public static string Automation_LogsToDatePicker_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsToDatePicker_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Filter to date.
+        /// </summary>
+        public static string Automation_LogsToDatePicker_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsToDatePicker_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays a list of system events and diagnostic records for services..
+        /// </summary>
+        public static string Automation_LogsViewRoot_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsViewRoot_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Logs View.
+        /// </summary>
+        public static string Automation_LogsViewRoot_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsViewRoot_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the total number of services loaded and execution time..
+        /// </summary>
+        public static string Automation_MainFooterText_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MainFooterText_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provides options to import configuration, configure settings, and access help..
+        /// </summary>
+        public static string Automation_MainMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MainMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Main Menu.
+        /// </summary>
+        public static string Automation_MainMenu_Name {
+            get {
+                return ResourceManager.GetString("Automation_MainMenu_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indicates that pressing F5 refreshes the service list..
+        /// </summary>
+        public static string Automation_MainShortcutInfo_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MainShortcutInfo_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the main list of managed services..
+        /// </summary>
+        public static string Automation_MainTab_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MainTab_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Services Tab.
+        /// </summary>
+        public static string Automation_MainTab_Name {
+            get {
+                return ResourceManager.GetString("Automation_MainTab_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Allows switching between Services, Performance, Console, Dependencies, and Logs views..
+        /// </summary>
+        public static string Automation_MainTabControl_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MainTabControl_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Main Navigation Tabs.
+        /// </summary>
+        public static string Automation_MainTabControl_Name {
+            get {
+                return ResourceManager.GetString("Automation_MainTabControl_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The main interface for the Servy service manager, used to configure service parameters and monitor execution..
+        /// </summary>
+        public static string Automation_MainWindow_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MainWindow_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Servy Manager Window.
+        /// </summary>
+        public static string Automation_MainWindow_Name {
+            get {
+                return ResourceManager.GetString("Automation_MainWindow_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opens a menu with additional actions for the current service..
+        /// </summary>
+        public static string Automation_MoreActionsButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MoreActionsButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Placeholder for the More Actions menu header..
+        /// </summary>
+        public static string Automation_MoreActionsHeaderButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MoreActionsHeaderButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to More Actions Header Placeholder.
+        /// </summary>
+        public static string Automation_MoreActionsHeaderButton_Name {
+            get {
+                return ResourceManager.GetString("Automation_MoreActionsHeaderButton_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The name of the service..
+        /// </summary>
+        public static string Automation_NameColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_NameColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Name Column.
+        /// </summary>
+        public static string Automation_NameColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_NameColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select a service from the list to view its performance data..
+        /// </summary>
+        public static string Automation_PerformanceServiceList_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_PerformanceServiceList_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Selector.
+        /// </summary>
+        public static string Automation_PerformanceServiceList_Name {
+            get {
+                return ResourceManager.GetString("Automation_PerformanceServiceList_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays real-time CPU and memory usage statistics for the running service..
+        /// </summary>
+        public static string Automation_PerformanceTab_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_PerformanceTab_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Performance Tab.
+        /// </summary>
+        public static string Automation_PerformanceTab_Name {
+            get {
+                return ResourceManager.GetString("Automation_PerformanceTab_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays resource usage statistics for the selected process..
+        /// </summary>
+        public static string Automation_PerformanceView_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_PerformanceView_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Performance Monitor View.
+        /// </summary>
+        public static string Automation_PerformanceView_Name {
+            get {
+                return ResourceManager.GetString("Automation_PerformanceView_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The process identifier (PID) of the running service..
+        /// </summary>
+        public static string Automation_PidColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_PidColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PID Column.
+        /// </summary>
+        public static string Automation_PidColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_PidColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the Process ID of the currently selected service process..
+        /// </summary>
+        public static string Automation_PidValue_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_PidValue_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Process ID.
+        /// </summary>
+        public static string Automation_PidValue_Name {
+            get {
+                return ResourceManager.GetString("Automation_PidValue_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The current RAM usage of the service..
+        /// </summary>
+        public static string Automation_RamColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RamColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to RAM Column.
+        /// </summary>
+        public static string Automation_RamColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_RamColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Historical view of memory usage..
+        /// </summary>
+        public static string Automation_RamGraphGrid_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RamGraphGrid_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to RAM Usage Graph.
+        /// </summary>
+        public static string Automation_RamGraphGrid_Name {
+            get {
+                return ResourceManager.GetString("Automation_RamGraphGrid_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the real-time memory usage of the service process..
+        /// </summary>
+        public static string Automation_RamUsageLabel_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RamUsageLabel_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current RAM Usage.
+        /// </summary>
+        public static string Automation_RamUsageLabel_Name {
+            get {
+                return ResourceManager.GetString("Automation_RamUsageLabel_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restarts all selected services..
+        /// </summary>
+        public static string Automation_RestartSelectedButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RestartSelectedButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restarts the current service..
+        /// </summary>
+        public static string Automation_RestartServiceButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RestartServiceButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restart Service.
+        /// </summary>
+        public static string Automation_RestartServiceButton_Name {
+            get {
+                return ResourceManager.GetString("Automation_RestartServiceButton_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resumes automatic scrolling to the latest log entry..
+        /// </summary>
+        public static string Automation_ResumeScrollButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ResumeScrollButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resume Scrolling.
+        /// </summary>
+        public static string Automation_ResumeScrollButton_Name {
+            get {
+                return ResourceManager.GetString("Automation_ResumeScrollButton_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opens the configuration app for this service..
+        /// </summary>
+        public static string Automation_RowConfigMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RowConfigMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure Service.
+        /// </summary>
+        public static string Automation_RowConfigMenuItem_Name {
+            get {
+                return ResourceManager.GetString("Automation_RowConfigMenuItem_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copies the current Process ID of the service to the clipboard..
+        /// </summary>
+        public static string Automation_RowCopyPidMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RowCopyPidMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exports the current service configuration to a JSON file..
+        /// </summary>
+        public static string Automation_RowExportJsonMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RowExportJsonMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exports the current service configuration to an XML file..
+        /// </summary>
+        public static string Automation_RowExportXmlMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RowExportXmlMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installs the service configuration to the system..
+        /// </summary>
+        public static string Automation_RowInstallMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RowInstallMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Install Service.
+        /// </summary>
+        public static string Automation_RowInstallMenuItem_Name {
+            get {
+                return ResourceManager.GetString("Automation_RowInstallMenuItem_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Removes the service from the Servy Manager list..
+        /// </summary>
+        public static string Automation_RowRemoveMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RowRemoveMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove Service.
+        /// </summary>
+        public static string Automation_RowRemoveMenuItem_Name {
+            get {
+                return ResourceManager.GetString("Automation_RowRemoveMenuItem_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstalls the service from the system..
+        /// </summary>
+        public static string Automation_RowUninstallMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RowUninstallMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstall Service.
+        /// </summary>
+        public static string Automation_RowUninstallMenuItem_Name {
+            get {
+                return ResourceManager.GetString("Automation_RowUninstallMenuItem_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Execute service search..
+        /// </summary>
+        public static string Automation_SearchButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_SearchButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type a keyword to filter the services list..
+        /// </summary>
+        public static string Automation_SearchTextBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_SearchTextBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Search Services.
+        /// </summary>
+        public static string Automation_SearchTextBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_SearchTextBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select All Services Column.
+        /// </summary>
+        public static string Automation_SelectAllColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_SelectAllColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selects or deselects all services in the list..
+        /// </summary>
+        public static string Automation_SelectAllServicesCheckBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_SelectAllServicesCheckBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select All Services.
+        /// </summary>
+        public static string Automation_SelectAllServicesCheckBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_SelectAllServicesCheckBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select this service for bulk actions..
+        /// </summary>
+        public static string Automation_SelectServiceCheckBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_SelectServiceCheckBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select Service.
+        /// </summary>
+        public static string Automation_SelectServiceCheckBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_SelectServiceCheckBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List of managed services..
+        /// </summary>
+        public static string Automation_ServicesDataGrid_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ServicesDataGrid_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Services List.
+        /// </summary>
+        public static string Automation_ServicesDataGrid_Name {
+            get {
+                return ResourceManager.GetString("Automation_ServicesDataGrid_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starts all selected services..
+        /// </summary>
+        public static string Automation_StartSelectedButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_StartSelectedButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starts the current service..
+        /// </summary>
+        public static string Automation_StartServiceButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_StartServiceButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start Service.
+        /// </summary>
+        public static string Automation_StartServiceButton_Name {
+            get {
+                return ResourceManager.GetString("Automation_StartServiceButton_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The configured startup type for the service..
+        /// </summary>
+        public static string Automation_StartupTypeColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_StartupTypeColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Startup Type Column.
+        /// </summary>
+        public static string Automation_StartupTypeColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_StartupTypeColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The current status of the service..
+        /// </summary>
+        public static string Automation_StatusColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_StatusColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Status Column.
+        /// </summary>
+        public static string Automation_StatusColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_StatusColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stops all selected services..
+        /// </summary>
+        public static string Automation_StopSelectedButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_StopSelectedButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stops the current service..
+        /// </summary>
+        public static string Automation_StopServiceButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_StopServiceButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stop Service.
+        /// </summary>
+        public static string Automation_StopServiceButton_Name {
+            get {
+                return ResourceManager.GetString("Automation_StopServiceButton_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Collapse All.
         /// </summary>
         public static string Button_CollapseAll {

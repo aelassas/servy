@@ -464,4 +464,543 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Failed to load service dependency tree.</value>
   </data>
 
+  <!-- Automation Properties -->
+  <data name="Automation_MainWindow_Name" xml:space="preserve">
+    <value>Servy Manager Window</value>
+  </data>
+  <data name="Automation_MainWindow_HelpText" xml:space="preserve">
+    <value>The main interface for the Servy service manager, used to configure service parameters and monitor execution.</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>Main Menu</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>Provides options to import configuration, configure settings, and access help.</value>
+  </data>
+
+  <data name="Automation_ImportMenu_HelpText" xml:space="preserve">
+    <value>Opens a menu to import service configurations.</value>
+  </data>
+  <data name="Automation_ImportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>Imports a service configuration from an XML file.</value>
+  </data>
+  <data name="Automation_ImportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>Imports a service configuration from a JSON file.</value>
+  </data>
+
+  <data name="Automation_ConfigMenu_HelpText" xml:space="preserve">
+    <value>Opens the configuration app for the selected service.</value>
+  </data>
+
+  <data name="Automation_HelpMenu_HelpText" xml:space="preserve">
+    <value>Opens a menu containing documentation and update options.</value>
+  </data>
+  <data name="Automation_DocMenuItem_HelpText" xml:space="preserve">
+    <value>Opens the official Servy documentation.</value>
+  </data>
+  <data name="Automation_CheckUpdatesMenuItem_HelpText" xml:space="preserve">
+    <value>Checks if a newer version of Servy is available.</value>
+  </data>
+  <data name="Automation_AboutMenuItem_HelpText" xml:space="preserve">
+    <value>Displays application information and copyright details.</value>
+  </data>
+
+  <data name="Automation_MainTabControl_Name" xml:space="preserve">
+    <value>Main Navigation Tabs</value>
+  </data>
+  <data name="Automation_MainTabControl_HelpText" xml:space="preserve">
+    <value>Allows switching between Services, Performance, Console, Dependencies, and Logs views.</value>
+  </data>
+
+  <data name="Automation_MainTab_Name" xml:space="preserve">
+    <value>Services Tab</value>
+  </data>
+  <data name="Automation_MainTab_HelpText" xml:space="preserve">
+    <value>Displays the main list of managed services.</value>
+  </data>
+
+  <data name="Automation_SearchTextBox_Name" xml:space="preserve">
+    <value>Search Services</value>
+  </data>
+  <data name="Automation_SearchTextBox_HelpText" xml:space="preserve">
+    <value>Type a keyword to filter the services list.</value>
+  </data>
+
+  <data name="Automation_SearchButton_HelpText" xml:space="preserve">
+    <value>Execute service search.</value>
+  </data>
+
+  <data name="Automation_ServicesDataGrid_Name" xml:space="preserve">
+    <value>Services List</value>
+  </data>
+  <data name="Automation_ServicesDataGrid_HelpText" xml:space="preserve">
+    <value>List of managed services.</value>
+  </data>
+
+  <data name="Automation_SelectAllColumnHeader_Name" xml:space="preserve">
+    <value>Select All Services Column</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_Name" xml:space="preserve">
+    <value>Select All Services</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_HelpText" xml:space="preserve">
+    <value>Selects or deselects all services in the list.</value>
+  </data>
+
+  <data name="Automation_SelectServiceCheckBox_Name" xml:space="preserve">
+    <value>Select Service</value>
+  </data>
+  <data name="Automation_SelectServiceCheckBox_HelpText" xml:space="preserve">
+    <value>Select this service for bulk actions.</value>
+  </data>
+
+  <data name="Automation_NameColumnHeader_Name" xml:space="preserve">
+    <value>Name Column</value>
+  </data>
+  <data name="Automation_NameColumnCell_HelpText" xml:space="preserve">
+    <value>The name of the service.</value>
+  </data>
+
+  <data name="Automation_DescriptionColumnHeader_Name" xml:space="preserve">
+    <value>Description Column</value>
+  </data>
+  <data name="Automation_DescriptionColumnCell_HelpText" xml:space="preserve">
+    <value>The description of the service.</value>
+  </data>
+
+  <data name="Automation_StatusColumnHeader_Name" xml:space="preserve">
+    <value>Status Column</value>
+  </data>
+  <data name="Automation_StatusColumnCell_HelpText" xml:space="preserve">
+    <value>The current status of the service.</value>
+  </data>
+
+  <data name="Automation_StartupTypeColumnHeader_Name" xml:space="preserve">
+    <value>Startup Type Column</value>
+  </data>
+  <data name="Automation_StartupTypeColumnCell_HelpText" xml:space="preserve">
+    <value>The configured startup type for the service.</value>
+  </data>
+
+  <data name="Automation_LogOnAsColumnHeader_Name" xml:space="preserve">
+    <value>User Session Column</value>
+  </data>
+  <data name="Automation_LogOnAsColumnCell_HelpText" xml:space="preserve">
+    <value>The user account the service is running as.</value>
+  </data>
+
+  <data name="Automation_PidColumnHeader_Name" xml:space="preserve">
+    <value>PID Column</value>
+  </data>
+  <data name="Automation_PidColumnCell_HelpText" xml:space="preserve">
+    <value>The process identifier (PID) of the running service.</value>
+  </data>
+
+  <data name="Automation_CpuColumnHeader_Name" xml:space="preserve">
+    <value>CPU Column</value>
+  </data>
+  <data name="Automation_CpuColumnCell_HelpText" xml:space="preserve">
+    <value>The current CPU usage of the service.</value>
+  </data>
+
+  <data name="Automation_RamColumnHeader_Name" xml:space="preserve">
+    <value>RAM Column</value>
+  </data>
+  <data name="Automation_RamColumnCell_HelpText" xml:space="preserve">
+    <value>The current RAM usage of the service.</value>
+  </data>
+
+  <data name="Automation_ActionsColumnHeader_Name" xml:space="preserve">
+    <value>Actions Column</value>
+  </data>
+
+  <data name="Automation_StartSelectedButton_HelpText" xml:space="preserve">
+    <value>Starts all selected services.</value>
+  </data>
+
+  <data name="Automation_StopSelectedButton_HelpText" xml:space="preserve">
+    <value>Stops all selected services.</value>
+  </data>
+
+  <data name="Automation_RestartSelectedButton_HelpText" xml:space="preserve">
+    <value>Restarts all selected services.</value>
+  </data>
+
+  <data name="Automation_MoreActionsHeaderButton_Name" xml:space="preserve">
+    <value>More Actions Header Placeholder</value>
+  </data>
+  <data name="Automation_MoreActionsHeaderButton_HelpText" xml:space="preserve">
+    <value>Placeholder for the More Actions menu header.</value>
+  </data>
+
+  <data name="Automation_StartServiceButton_Name" xml:space="preserve">
+    <value>Start Service</value>
+  </data>
+  <data name="Automation_StartServiceButton_HelpText" xml:space="preserve">
+    <value>Starts the current service.</value>
+  </data>
+
+  <data name="Automation_StopServiceButton_Name" xml:space="preserve">
+    <value>Stop Service</value>
+  </data>
+  <data name="Automation_StopServiceButton_HelpText" xml:space="preserve">
+    <value>Stops the current service.</value>
+  </data>
+
+  <data name="Automation_RestartServiceButton_Name" xml:space="preserve">
+    <value>Restart Service</value>
+  </data>
+  <data name="Automation_RestartServiceButton_HelpText" xml:space="preserve">
+    <value>Restarts the current service.</value>
+  </data>
+
+  <data name="Automation_MoreActionsButton_HelpText" xml:space="preserve">
+    <value>Opens a menu with additional actions for the current service.</value>
+  </data>
+
+  <data name="Automation_RowInstallMenuItem_Name" xml:space="preserve">
+    <value>Install Service</value>
+  </data>
+  <data name="Automation_RowInstallMenuItem_HelpText" xml:space="preserve">
+    <value>Installs the service configuration to the system.</value>
+  </data>
+
+  <data name="Automation_RowUninstallMenuItem_Name" xml:space="preserve">
+    <value>Uninstall Service</value>
+  </data>
+  <data name="Automation_RowUninstallMenuItem_HelpText" xml:space="preserve">
+    <value>Uninstalls the service from the system.</value>
+  </data>
+
+  <data name="Automation_RowRemoveMenuItem_Name" xml:space="preserve">
+    <value>Remove Service</value>
+  </data>
+  <data name="Automation_RowRemoveMenuItem_HelpText" xml:space="preserve">
+    <value>Removes the service from the Servy Manager list.</value>
+  </data>
+
+  <data name="Automation_RowConfigMenuItem_Name" xml:space="preserve">
+    <value>Configure Service</value>
+  </data>
+  <data name="Automation_RowConfigMenuItem_HelpText" xml:space="preserve">
+    <value>Opens the configuration app for this service.</value>
+  </data>
+
+  <data name="Automation_RowExportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>Exports the current service configuration to an XML file.</value>
+  </data>
+
+  <data name="Automation_RowExportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>Exports the current service configuration to a JSON file.</value>
+  </data>
+
+  <data name="Automation_RowCopyPidMenuItem_HelpText" xml:space="preserve">
+    <value>Copies the current Process ID of the service to the clipboard.</value>
+  </data>
+
+  <data name="Automation_PerformanceTab_Name" xml:space="preserve">
+    <value>Performance Tab</value>
+  </data>
+  <data name="Automation_PerformanceTab_HelpText" xml:space="preserve">
+    <value>Displays real-time CPU and memory usage statistics for the running service.</value>
+  </data>
+
+  <data name="Automation_ConsoleTab_Name" xml:space="preserve">
+    <value>Console Tab</value>
+  </data>
+  <data name="Automation_ConsoleTab_HelpText" xml:space="preserve">
+    <value>Displays the real-time standard output and error logs for the selected service.</value>
+  </data>
+
+  <data name="Automation_DependenciesTab_Name" xml:space="preserve">
+    <value>Dependencies Tab</value>
+  </data>
+  <data name="Automation_DependenciesTab_HelpText" xml:space="preserve">
+    <value>Shows the service dependencies tree and status hierarchy.</value>
+  </data>
+
+  <data name="Automation_LogsTab_Name" xml:space="preserve">
+    <value>Logs Tab</value>
+  </data>
+  <data name="Automation_LogsTab_HelpText" xml:space="preserve">
+    <value>Displays a list of system events and diagnostic records for the service.</value>
+  </data>
+
+  <data name="Automation_MainFooterText_HelpText" xml:space="preserve">
+    <value>Displays the total number of services loaded and execution time.</value>
+  </data>
+
+  <data name="Automation_MainShortcutInfo_HelpText" xml:space="preserve">
+    <value>Indicates that pressing F5 refreshes the service list.</value>
+  </data>
+
+  <!-- Performance View Specific Automation Properties -->
+  <data name="Automation_PerformanceView_Name" xml:space="preserve">
+    <value>Performance Monitor View</value>
+  </data>
+  <data name="Automation_PerformanceView_HelpText" xml:space="preserve">
+    <value>Displays resource usage statistics for the selected process.</value>
+  </data>
+
+  <data name="Automation_PerformanceServiceList_Name" xml:space="preserve">
+    <value>Service Selector</value>
+  </data>
+  <data name="Automation_PerformanceServiceList_HelpText" xml:space="preserve">
+    <value>Select a service from the list to view its performance data.</value>
+  </data>
+
+  <data name="Automation_PidValue_Name" xml:space="preserve">
+    <value>Process ID</value>
+  </data>
+  <data name="Automation_PidValue_HelpText" xml:space="preserve">
+    <value>Displays the Process ID of the currently selected service process.</value>
+  </data>
+
+  <data name="Automation_CopyPidButton_HelpText" xml:space="preserve">
+    <value>Copies the Process ID to the clipboard.</value>
+  </data>
+
+  <data name="Automation_CpuGraphGrid_Name" xml:space="preserve">
+    <value>CPU Usage Graph</value>
+  </data>
+  <data name="Automation_CpuGraphGrid_HelpText" xml:space="preserve">
+    <value>Historical view of CPU percentage usage.</value>
+  </data>
+
+  <data name="Automation_CpuUsageLabel_Name" xml:space="preserve">
+    <value>Current CPU Usage</value>
+  </data>
+  <data name="Automation_CpuUsageLabel_HelpText" xml:space="preserve">
+    <value>Displays the real-time percentage of CPU utilized by the service process.</value>
+  </data>
+
+  <data name="Automation_RamGraphGrid_Name" xml:space="preserve">
+    <value>RAM Usage Graph</value>
+  </data>
+  <data name="Automation_RamGraphGrid_HelpText" xml:space="preserve">
+    <value>Historical view of memory usage.</value>
+  </data>
+
+  <data name="Automation_RamUsageLabel_Name" xml:space="preserve">
+    <value>Current RAM Usage</value>
+  </data>
+  <data name="Automation_RamUsageLabel_HelpText" xml:space="preserve">
+    <value>Displays the real-time memory usage of the service process.</value>
+  </data>
+
+  <!-- Console View Specific Automation Properties -->
+  <data name="Automation_ConsoleViewRoot_Name" xml:space="preserve">
+    <value>Console Output View</value>
+  </data>
+  <data name="Automation_ConsoleViewRoot_HelpText" xml:space="preserve">
+    <value>Displays real-time standard output and error logs for the selected service.</value>
+  </data>
+
+  <data name="Automation_ConsoleServiceList_Name" xml:space="preserve">
+    <value>Service Selector</value>
+  </data>
+  <data name="Automation_ConsoleServiceList_HelpText" xml:space="preserve">
+    <value>Select a service to view its console output.</value>
+  </data>
+
+  <data name="Automation_ConsolePidValue_Name" xml:space="preserve">
+    <value>Process ID</value>
+  </data>
+  <data name="Automation_ConsolePidValue_HelpText" xml:space="preserve">
+    <value>The process identifier (PID) of the monitored service.</value>
+  </data>
+
+  <data name="Automation_ConsoleCopyPidButton_HelpText" xml:space="preserve">
+    <value>Copies the service process ID to the clipboard.</value>
+  </data>
+
+  <data name="Automation_ResumeScrollButton_Name" xml:space="preserve">
+    <value>Resume Scrolling</value>
+  </data>
+  <data name="Automation_ResumeScrollButton_HelpText" xml:space="preserve">
+    <value>Resumes automatic scrolling to the latest log entry.</value>
+  </data>
+
+  <data name="Automation_ConsoleInstructions_Name" xml:space="preserve">
+    <value>Console Instructions</value>
+  </data>
+  <data name="Automation_ConsoleInstructions_HelpText" xml:space="preserve">
+    <value>Instructions on how to configure stdout and stderr redirection for live console output.</value>
+  </data>
+
+  <data name="Automation_ConsoleFilterTextBox_Name" xml:space="preserve">
+    <value>Log Filter</value>
+  </data>
+  <data name="Automation_ConsoleFilterTextBox_HelpText" xml:space="preserve">
+    <value>Enter text to filter the visible log lines.</value>
+  </data>
+
+  <data name="Automation_ConsoleLogList_Name" xml:space="preserve">
+    <value>Log Terminal</value>
+  </data>
+  <data name="Automation_ConsoleLogList_HelpText" xml:space="preserve">
+    <value>Displays scrolling log output. Use context menu to copy selected lines.</value>
+  </data>
+
+  <data name="Automation_CopyLogMenuItem_Name" xml:space="preserve">
+    <value>Copy Selection</value>
+  </data>
+  <data name="Automation_CopyLogMenuItem_HelpText" xml:space="preserve">
+    <value>Copies selected console log lines to the clipboard.</value>
+  </data>
+
+  <!-- Dependencies View Specific Automation Properties -->
+  <data name="Automation_DependenciesViewRoot_Name" xml:space="preserve">
+    <value>Dependencies View</value>
+  </data>
+  <data name="Automation_DependenciesViewRoot_HelpText" xml:space="preserve">
+    <value>Displays the service list and their hierarchical dependencies.</value>
+  </data>
+
+  <data name="Automation_DependenciesServiceList_Name" xml:space="preserve">
+    <value>Service Selection List</value>
+  </data>
+  <data name="Automation_DependenciesServiceList_HelpText" xml:space="preserve">
+    <value>Search and select a service to view its dependencies.</value>
+  </data>
+
+  <data name="Automation_DependenciesPidValue_Name" xml:space="preserve">
+    <value>Process ID</value>
+  </data>
+  <data name="Automation_DependenciesPidValue_HelpText" xml:space="preserve">
+    <value>The process identifier (PID) of the selected service.</value>
+  </data>
+
+  <data name="Automation_DependenciesCopyPidButton_HelpText" xml:space="preserve">
+    <value>Copies the process ID to the clipboard.</value>
+  </data>
+
+  <data name="Automation_DependenciesRefreshButton_HelpText" xml:space="preserve">
+    <value>Reloads the dependency tree for the selected service.</value>
+  </data>
+
+  <data name="Automation_DependenciesExpandAllButton_HelpText" xml:space="preserve">
+    <value>Expands all branches in the dependency tree.</value>
+  </data>
+
+  <data name="Automation_DependenciesCollapseAllButton_HelpText" xml:space="preserve">
+    <value>Collapses all branches in the dependency tree.</value>
+  </data>
+
+  <data name="Automation_DependenciesLegendInfo_Name" xml:space="preserve">
+    <value>Dependency Legend Information</value>
+  </data>
+  <data name="Automation_DependenciesLegendInfo_HelpText" xml:space="preserve">
+    <value>Information on the service dependency tree mechanism via Windows Service Control Manager.</value>
+  </data>
+
+  <data name="Automation_DependenciesTreeView_Name" xml:space="preserve">
+    <value>Dependency Hierarchy Tree</value>
+  </data>
+  <data name="Automation_DependenciesTreeView_HelpText" xml:space="preserve">
+    <value>Displays recursive dependencies for the selected service.</value>
+  </data>
+
+  <data name="Automation_DependenciesUsageInfo_Name" xml:space="preserve">
+    <value>Usage Information</value>
+  </data>
+  <data name="Automation_DependenciesUsageInfo_HelpText" xml:space="preserve">
+    <value>Explains the status color indicators for tree nodes: green for running, red for stopped, orange for cycle.</value>
+  </data>
+
+  <data name="Automation_DependenciesShortcutInfo_Name" xml:space="preserve">
+    <value>Shortcut Information</value>
+  </data>
+  <data name="Automation_DependenciesShortcutInfo_HelpText" xml:space="preserve">
+    <value>Indicates that pressing F5 refreshes the dependency tree.</value>
+  </data>
+
+  <!-- Logs View Specific Automation Properties -->
+  <data name="Automation_LogsViewRoot_Name" xml:space="preserve">
+    <value>Logs View</value>
+  </data>
+  <data name="Automation_LogsViewRoot_HelpText" xml:space="preserve">
+    <value>Displays a list of system events and diagnostic records for services.</value>
+  </data>
+
+  <data name="Automation_LogsLevelComboBox_Name" xml:space="preserve">
+    <value>Filter by Level</value>
+  </data>
+  <data name="Automation_LogsLevelComboBox_HelpText" xml:space="preserve">
+    <value>Select a log severity level to filter the displayed log entries.</value>
+  </data>
+
+  <data name="Automation_LogsFromDatePicker_Name" xml:space="preserve">
+    <value>Filter from date</value>
+  </data>
+  <data name="Automation_LogsFromDatePicker_HelpText" xml:space="preserve">
+    <value>Select the start date to filter log entries from.</value>
+  </data>
+
+  <data name="Automation_LogsToDatePicker_Name" xml:space="preserve">
+    <value>Filter to date</value>
+  </data>
+  <data name="Automation_LogsToDatePicker_HelpText" xml:space="preserve">
+    <value>Select the end date to filter log entries up to.</value>
+  </data>
+
+  <data name="Automation_LogsKeywordTextBox_Name" xml:space="preserve">
+    <value>Filter by Keyword</value>
+  </data>
+  <data name="Automation_LogsKeywordTextBox_HelpText" xml:space="preserve">
+    <value>Enter a keyword to search within log messages.</value>
+  </data>
+
+  <data name="Automation_LogsSearchButton_HelpText" xml:space="preserve">
+    <value>Executes the log search with current level, date, and keyword filters.</value>
+  </data>
+
+  <data name="Automation_LogsDataGrid_Name" xml:space="preserve">
+    <value>System Logs</value>
+  </data>
+  <data name="Automation_LogsDataGrid_HelpText" xml:space="preserve">
+    <value>Displays the filtered list of diagnostic log entries.</value>
+  </data>
+
+  <data name="Automation_LogsTimeColumnHeader_Name" xml:space="preserve">
+    <value>Time Column</value>
+  </data>
+
+  <data name="Automation_LogsLevelColumnHeader_Name" xml:space="preserve">
+    <value>Level Column</value>
+  </data>
+
+  <data name="Automation_LogsLevelIcon_Name" xml:space="preserve">
+    <value>Log Level Icon</value>
+  </data>
+
+  <data name="Automation_LogsMessageColumnHeader_Name" xml:space="preserve">
+    <value>Message Column</value>
+  </data>
+
+  <data name="Automation_LogsGridSplitter_Name" xml:space="preserve">
+    <value>Log Details Resizer</value>
+  </data>
+  <data name="Automation_LogsGridSplitter_HelpText" xml:space="preserve">
+    <value>Drag to adjust the balance between log list and log message details pane.</value>
+  </data>
+
+  <data name="Automation_LogDetailsTextBox_Name" xml:space="preserve">
+    <value>Log Entry Details</value>
+  </data>
+  <data name="Automation_LogDetailsTextBox_HelpText" xml:space="preserve">
+    <value>Displays full message text and details for the selected log entry.</value>
+  </data>
+
+  <data name="Automation_LogsFooterText_HelpText" xml:space="preserve">
+    <value>Shows total count and query execution duration for current logs filter.</value>
+  </data>
+
+  <data name="Automation_LogsShortcutInfo_Name" xml:space="preserve">
+    <value>Shortcut Information</value>
+  </data>
+  <data name="Automation_LogsShortcutInfo_HelpText" xml:space="preserve">
+    <value>Indicates that pressing F5 refreshes logs.</value>
+  </data>
 </root>
