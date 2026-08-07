@@ -1635,7 +1635,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.3...v8.4
 
 Servy 8.3 improves the UI experience and includes many fixes. The full changelog is available below.
 
-## Full Changelog
+### Full Changelog
 <details>
   <summary>Click to expand release notes!</summary>
 
@@ -1768,7 +1768,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.1...v8.2
 
 Servy 8.1 introduces many fixes across main components. The full release notes are available in the expandable section below.
 
-## Full Changelog
+### Full Changelog
 <details>
   <summary>Click to expand release notes!</summary>
 
@@ -1827,7 +1827,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.0...v8.1
 
 Servy 8.0 introduces many fixes across all components. The full release notes are available in the expandable section below.
 
-## Full Changelog
+### Full Changelog
 <details>
   <summary>Click to expand release notes!</summary>
 
@@ -1907,7 +1907,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.9...v8.0
 
 Servy 7.9 introduces a [hardened security infrastructure](https://github.com/aelassas/servy/wiki/Security), significant performance optimizations, and a wealth of new features. It's packed with an extensive list of improvements, and the full release notes are available in the expandable section below.
 
-## Full Changelog
+### Full Changelog
 <details>
   <summary>Click to expand release notes!</summary>
 
