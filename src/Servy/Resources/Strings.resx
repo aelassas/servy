@@ -360,7 +360,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Confirm Password</value>
   </data>
   <data name="Msg_PasswordsDontMatch" xml:space="preserve">
-    <value>Passwords don&apos;t match.</value>
+    <value>Passwords don't match.</value>
   </data>
 
   <!-- Pre-Launch -->
@@ -464,7 +464,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
 
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
-  <value>A service with this name already exists. Would you like to replace it?
+    <value>A service with this name already exists. Would you like to replace it?
 
 If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
   </data>
@@ -542,5 +542,577 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
   <data name="Msg_ManagerAppLaunchFailed" xml:space="preserve">
     <value>Failed to launch the Manager application.</value>
+  </data>
+
+  <!-- Automation Properties -->
+  <data name="Automation_ConfigMainWindow_Name" xml:space="preserve">
+    <value>Servy Configuration Window</value>
+  </data>
+  <data name="Automation_ConfigMainWindow_HelpText" xml:space="preserve">
+    <value>Main window for creating and configuring a Servy Windows service.</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>Main Menu</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>Application menu for exporting, importing, and help options.</value>
+  </data>
+
+  <data name="Automation_MenuExport_HelpText" xml:space="preserve">
+    <value>Export service configuration menu.</value>
+  </data>
+  <data name="Automation_MenuExportXml_HelpText" xml:space="preserve">
+    <value>Export configuration to an XML file.</value>
+  </data>
+  <data name="Automation_MenuExportJson_HelpText" xml:space="preserve">
+    <value>Export configuration to a JSON file.</value>
+  </data>
+
+  <data name="Automation_MenuImport_HelpText" xml:space="preserve">
+    <value>Import service configuration menu.</value>
+  </data>
+  <data name="Automation_MenuImportXml_HelpText" xml:space="preserve">
+    <value>Import configuration from an XML file.</value>
+  </data>
+  <data name="Automation_MenuImportJson_HelpText" xml:space="preserve">
+    <value>Import configuration from a JSON file.</value>
+  </data>
+
+  <data name="Automation_MenuManager_HelpText" xml:space="preserve">
+    <value>Open the Servy Manager application.</value>
+  </data>
+  <data name="Automation_MenuClearAll_HelpText" xml:space="preserve">
+    <value>Clear all fields in the configuration form.</value>
+  </data>
+
+  <data name="Automation_MenuHelp_HelpText" xml:space="preserve">
+    <value>Help and documentation menu.</value>
+  </data>
+  <data name="Automation_MenuDoc_HelpText" xml:space="preserve">
+    <value>Open the official Servy documentation.</value>
+  </data>
+  <data name="Automation_MenuCheckUpdates_HelpText" xml:space="preserve">
+    <value>Check online for application updates.</value>
+  </data>
+  <data name="Automation_MenuAbout_HelpText" xml:space="preserve">
+    <value>Show information about the Servy application.</value>
+  </data>
+
+  <data name="Automation_ConfigurationTabControl_Name" xml:space="preserve">
+    <value>Configuration Tabs</value>
+  </data>
+  <data name="Automation_ConfigurationTabControl_HelpText" xml:space="preserve">
+    <value>Navigate between different configuration sections for the service.</value>
+  </data>
+
+  <data name="Automation_TabItemMain_HelpText" xml:space="preserve">
+    <value>General configuration options for the service.</value>
+  </data>
+
+  <data name="Automation_TextBoxServiceName_Name" xml:space="preserve">
+    <value>Service Name</value>
+  </data>
+  <data name="Automation_TextBoxServiceName_HelpText" xml:space="preserve">
+    <value>Enter the system name of the service.</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_Name" xml:space="preserve">
+    <value>Service Display Name</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_HelpText" xml:space="preserve">
+    <value>Enter the display name of the service.</value>
+  </data>
+  <data name="Automation_TextBoxServiceDescription_Name" xml:space="preserve">
+    <value>Service Description</value>
+  </data>
+  <data name="Automation_TextBoxServiceDescription_HelpText" xml:space="preserve">
+    <value>Enter the description of the service.</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_Name" xml:space="preserve">
+    <value>Process Path</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_HelpText" xml:space="preserve">
+    <value>Enter the executable path for the service.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseProcessPath_Name" xml:space="preserve">
+    <value>Browse Process Path</value>
+  </data>
+  <data name="Automation_ButtonBrowseProcessPath_HelpText" xml:space="preserve">
+    <value>Browse to select the executable process path.</value>
+  </data>
+
+  <data name="Automation_TextBoxStartupDirectory_Name" xml:space="preserve">
+    <value>Startup Directory</value>
+  </data>
+  <data name="Automation_TextBoxStartupDirectory_HelpText" xml:space="preserve">
+    <value>Enter the startup working directory.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStartupDirectory_Name" xml:space="preserve">
+    <value>Browse Startup Directory</value>
+  </data>
+  <data name="Automation_ButtonBrowseStartupDirectory_HelpText" xml:space="preserve">
+    <value>Browse to select the startup directory.</value>
+  </data>
+
+  <data name="Automation_TextBoxProcessParameters_Name" xml:space="preserve">
+    <value>Process Parameters</value>
+  </data>
+  <data name="Automation_TextBoxProcessParameters_HelpText" xml:space="preserve">
+    <value>Enter the command line parameters for the process.</value>
+  </data>
+  <data name="Automation_ComboBoxStartupType_HelpText" xml:space="preserve">
+    <value>Select the service startup type.</value>
+  </data>
+  <data name="Automation_ComboBoxProcessPriority_HelpText" xml:space="preserve">
+    <value>Select the process priority level.</value>
+  </data>
+  <data name="Automation_TextBoxCpuAffinity_Name" xml:space="preserve">
+    <value>Cpu Affinity</value>
+  </data>
+  <data name="Automation_TextBoxCpuAffinity_HelpText" xml:space="preserve">
+    <value>Enter the logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>
+  </data>
+  <data name="Automation_TextBoxStartTimeout_Name" xml:space="preserve">
+    <value>Start Timeout</value>
+  </data>
+  <data name="Automation_TextBoxStartTimeout_HelpText" xml:space="preserve">
+    <value>Enter the timeout in seconds for starting the service.</value>
+  </data>
+  <data name="Automation_TextBoxStopTimeout_Name" xml:space="preserve">
+    <value>Stop Timeout</value>
+  </data>
+  <data name="Automation_TextBoxStopTimeout_HelpText" xml:space="preserve">
+    <value>Enter the timeout in seconds for stopping the service.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableConsoleUI_HelpText" xml:space="preserve">
+    <value>Check to enable console UI support.</value>
+  </data>
+
+  <data name="Automation_TabItemLogging_HelpText" xml:space="preserve">
+    <value>Configure standard output and error logging settings.</value>
+  </data>
+
+  <data name="Automation_TextBoxStdoutPath_Name" xml:space="preserve">
+    <value>Stdout File Path</value>
+  </data>
+  <data name="Automation_TextBoxStdoutPath_HelpText" xml:space="preserve">
+    <value>Enter the path for the standard output log file.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStdout_Name" xml:space="preserve">
+    <value>Browse Standard Output Path</value>
+  </data>
+  <data name="Automation_ButtonBrowseStdout_HelpText" xml:space="preserve">
+    <value>Browse to select the standard output log file.</value>
+  </data>
+
+  <data name="Automation_TextBoxStderrPath_Name" xml:space="preserve">
+    <value>Stderr File Path</value>
+  </data>
+  <data name="Automation_TextBoxStderrPath_HelpText" xml:space="preserve">
+    <value>Enter the path for the standard error log file.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStderr_Name" xml:space="preserve">
+    <value>Browse Standard Error Path</value>
+  </data>
+  <data name="Automation_ButtonBrowseStderr_HelpText" xml:space="preserve">
+    <value>Browse to select the standard error log file.</value>
+  </data>
+
+  <data name="Automation_CheckBoxEnableSizeRotation_HelpText" xml:space="preserve">
+    <value>Check to enable log rotation based on file size.</value>
+  </data>
+  <data name="Automation_TextBoxRotationSize_Name" xml:space="preserve">
+    <value>Rotation Size</value>
+  </data>
+  <data name="Automation_TextBoxRotationSize_HelpText" xml:space="preserve">
+    <value>Enter the maximum log file size before rotation.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDateRotation_HelpText" xml:space="preserve">
+    <value>Check to enable log rotation based on dates.</value>
+  </data>
+  <data name="Automation_ComboBoxDateRotationType_HelpText" xml:space="preserve">
+    <value>Select the interval for date-based log rotation.</value>
+  </data>
+  <data name="Automation_TextBoxMaxRotations_Name" xml:space="preserve">
+    <value>Max Rotations</value>
+  </data>
+  <data name="Automation_TextBoxMaxRotations_HelpText" xml:space="preserve">
+    <value>Enter the maximum number of rotated logs to keep.</value>
+  </data>
+  <data name="Automation_CheckBoxUseLocalTimeForRotation_HelpText" xml:space="preserve">
+    <value>Check to use local time instead of UTC for log rotations.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDebugLogs_HelpText" xml:space="preserve">
+    <value>Check to enable diagnostic debug logging.</value>
+  </data>
+
+  <data name="Automation_TabItemRecovery_HelpText" xml:space="preserve">
+    <value>Configure automated health checks and recovery actions.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHealthMonitoring_HelpText" xml:space="preserve">
+    <value>Check to enable background health monitoring for this service.</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatInterval_Name" xml:space="preserve">
+    <value>Heartbeat Interval</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatInterval_HelpText" xml:space="preserve">
+    <value>Enter the health check heartbeat interval in seconds.</value>
+  </data>
+  <data name="Automation_TextBoxMaxFailedChecks_Name" xml:space="preserve">
+    <value>Max Failed Checks</value>
+  </data>
+  <data name="Automation_TextBoxMaxFailedChecks_HelpText" xml:space="preserve">
+    <value>Enter the maximum number of failed checks before triggering recovery.</value>
+  </data>
+  <data name="Automation_ComboBoxRecoveryAction_HelpText" xml:space="preserve">
+    <value>Select the action to take when the service fails health checks.</value>
+  </data>
+  <data name="Automation_ButtonRecoveryActionHelp_HelpText" xml:space="preserve">
+    <value>Shows help information for recovery actions.</value>
+  </data>
+  <data name="Automation_CheckBoxRecoveryOnCleanExit_HelpText" xml:space="preserve">
+    <value>Check to run recovery action even if the process exits successfully.</value>
+  </data>
+  <data name="Automation_TextBoxMaxRestartAttempts_Name" xml:space="preserve">
+    <value>Max Restart Attempts</value>
+  </data>
+  <data name="Automation_TextBoxMaxRestartAttempts_HelpText" xml:space="preserve">
+    <value>Enter the maximum number of restart attempts.</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrl_Name" xml:space="preserve">
+    <value>Heartbeat Url</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatUrl_HelpText" xml:space="preserve">
+    <value>Enter the URL for the heartbeat endpoint.</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_Name" xml:space="preserve">
+    <value>Heartbeat URL Timeout</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText" xml:space="preserve">
+    <value>Enter the health check heartbeat URL timeout in seconds.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHeartbeatUrlFlags_HelpText" xml:space="preserve">
+    <value>Check to enable heartbeat URL flags (/start, /fail).</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramPath_Name" xml:space="preserve">
+    <value>Failure Program Path</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramPath_HelpText" xml:space="preserve">
+    <value>Enter the path to the executable to run upon failure.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramPath_Name" xml:space="preserve">
+    <value>Browse Failure Program Path</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramPath_HelpText" xml:space="preserve">
+    <value>Browse to select the failure program executable.</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramStartupDir_Name" xml:space="preserve">
+    <value>Failure Program Startup Directory</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramStartupDir_HelpText" xml:space="preserve">
+    <value>Enter the startup directory for the failure program.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramDir_Name" xml:space="preserve">
+    <value>Browse Failure Program Startup Directory</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramDir_HelpText" xml:space="preserve">
+    <value>Browse to select the failure program startup directory.</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramParams_Name" xml:space="preserve">
+    <value>Failure Program Parameters</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramParams_HelpText" xml:space="preserve">
+    <value>Enter command line parameters for the failure program.</value>
+  </data>
+
+  <data name="Automation_TabItemAdvanced_HelpText" xml:space="preserve">
+    <value>Configure environment variables and service dependencies.</value>
+  </data>
+  <data name="Automation_TextBoxEnvVars_Name" xml:space="preserve">
+    <value>Environment Variables</value>
+  </data>
+  <data name="Automation_TextBoxEnvVars_HelpText" xml:space="preserve">
+    <value>Enter environment variables for the service.</value>
+  </data>
+  <data name="Automation_TextBoxServiceDependencies_Name" xml:space="preserve">
+    <value>Service Dependencies</value>
+  </data>
+  <data name="Automation_TextBoxServiceDependencies_HelpText" xml:space="preserve">
+    <value>Enter Windows service dependencies.</value>
+  </data>
+
+  <data name="Automation_TabItemLogOn_HelpText" xml:space="preserve">
+    <value>Configure the user account context for the service.</value>
+  </data>
+  <data name="Automation_RadioButtonLocalSystem_HelpText" xml:space="preserve">
+    <value>Run the service as the built-in Local System account.</value>
+  </data>
+  <data name="Automation_RadioButtonUserAccount_HelpText" xml:space="preserve">
+    <value>Run the service under a specific user account.</value>
+  </data>
+
+  <data name="Automation_TextBoxUserAccount_Name" xml:space="preserve">
+    <value>User Account Name</value>
+  </data>
+  <data name="Automation_TextBoxUserAccount_HelpText" xml:space="preserve">
+    <value>Enter the username for the service account.</value>
+  </data>
+
+  <data name="Automation_PasswordBoxUser_HelpText" xml:space="preserve">
+    <value>Enter the password for the service account.</value>
+  </data>
+  <data name="Automation_PasswordBoxConfirm_HelpText" xml:space="preserve">
+    <value>Confirm the password for the service account.</value>
+  </data>
+
+  <data name="Automation_TabItemPreLaunch_HelpText" xml:space="preserve">
+    <value>Configure a script or process to run before the service starts.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchProcessPath_Name" xml:space="preserve">
+    <value>Pre-Launch Process Path</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchProcessPath_HelpText" xml:space="preserve">
+    <value>Enter the pre-launch executable path.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchProcessPath_Name" xml:space="preserve">
+    <value>Browse Pre-Launch Process Path</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchProcessPath_HelpText" xml:space="preserve">
+    <value>Browse to select the pre-launch executable.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStartupDir_Name" xml:space="preserve">
+    <value>Pre-Launch Startup Directory</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStartupDir_HelpText" xml:space="preserve">
+    <value>Enter the startup directory for the pre-launch process.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStartupDir_Name" xml:space="preserve">
+    <value>Browse Pre-Launch Startup Directory</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStartupDir_HelpText" xml:space="preserve">
+    <value>Browse to select the pre-launch startup directory.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchParams_Name" xml:space="preserve">
+    <value>Pre-Launch Process Parameters</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchParams_HelpText" xml:space="preserve">
+    <value>Enter command line parameters for the pre-launch process.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchEnvVars_Name" xml:space="preserve">
+    <value>Pre-Launch Environment Variables</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchEnvVars_HelpText" xml:space="preserve">
+    <value>Enter environment variables for the pre-launch process.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStdout_Name" xml:space="preserve">
+    <value>Pre-Launch Standard Output Path</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStdout_HelpText" xml:space="preserve">
+    <value>Enter the path for the pre-launch standard output log.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStdout_Name" xml:space="preserve">
+    <value>Browse Pre-Launch Standard Output Path</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStdout_HelpText" xml:space="preserve">
+    <value>Browse to select the pre-launch standard output log file.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStderr_Name" xml:space="preserve">
+    <value>Pre-Launch Standard Error Path</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStderr_HelpText" xml:space="preserve">
+    <value>Enter the path for the pre-launch standard error log.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStderr_Name" xml:space="preserve">
+    <value>Browse Pre-Launch Standard Error Path</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStderr_HelpText" xml:space="preserve">
+    <value>Browse to select the pre-launch standard error log file.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchTimeout_Name" xml:space="preserve">
+    <value>Pre-Launch Timeout</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchTimeout_HelpText" xml:space="preserve">
+    <value>Enter the pre-launch timeout in seconds.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchRetries_Name" xml:space="preserve">
+    <value>Pre-Launch Retry Attempts</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchRetries_HelpText" xml:space="preserve">
+    <value>Enter the number of retry attempts for the pre-launch process.</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreLaunchIgnoreFailure_HelpText" xml:space="preserve">
+    <value>Check to start the service even if the pre-launch process fails.</value>
+  </data>
+
+  <data name="Automation_TabItemPostLaunch_HelpText" xml:space="preserve">
+    <value>Configure a script or process to run after the service successfully starts.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchPath_Name" xml:space="preserve">
+    <value>Post-Launch Process Path</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchPath_HelpText" xml:space="preserve">
+    <value>Enter the post-launch executable path.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchPath_Name" xml:space="preserve">
+    <value>Browse Post-Launch Process Path</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchPath_HelpText" xml:space="preserve">
+    <value>Browse to select the post-launch executable.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchDir_Name" xml:space="preserve">
+    <value>Post-Launch Startup Directory</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchDir_HelpText" xml:space="preserve">
+    <value>Enter the startup directory for the post-launch process.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchDir_Name" xml:space="preserve">
+    <value>Browse Post-Launch Startup Directory</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchDir_HelpText" xml:space="preserve">
+    <value>Browse to select the post-launch startup directory.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchParams_Name" xml:space="preserve">
+    <value>Post-Launch Process Parameters</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchParams_HelpText" xml:space="preserve">
+    <value>Enter command line parameters for the post-launch process.</value>
+  </data>
+
+  <data name="Automation_TabItemPreStop_HelpText" xml:space="preserve">
+    <value>Configure a script or process to run before the service stops.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopPath_Name" xml:space="preserve">
+    <value>Pre-Stop Process Path</value>
+  </data>
+  <data name="Automation_TextBoxPreStopPath_HelpText" xml:space="preserve">
+    <value>Enter the pre-stop executable path.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopPath_Name" xml:space="preserve">
+    <value>Browse Pre-Stop Process Path</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopPath_HelpText" xml:space="preserve">
+    <value>Browse to select the pre-stop executable.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopDir_Name" xml:space="preserve">
+    <value>Pre-Stop Startup Directory</value>
+  </data>
+  <data name="Automation_TextBoxPreStopDir_HelpText" xml:space="preserve">
+    <value>Enter the startup directory for the pre-stop process.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopDir_Name" xml:space="preserve">
+    <value>Browse Pre-Stop Startup Directory</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopDir_HelpText" xml:space="preserve">
+    <value>Browse to select the pre-stop startup directory.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopParams_Name" xml:space="preserve">
+    <value>Pre-Stop Process Parameters</value>
+  </data>
+  <data name="Automation_TextBoxPreStopParams_HelpText" xml:space="preserve">
+    <value>Enter command line parameters for the pre-stop process.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopTimeout_Name" xml:space="preserve">
+    <value>Pre-Stop Timeout</value>
+  </data>
+  <data name="Automation_TextBoxPreStopTimeout_HelpText" xml:space="preserve">
+    <value>Enter the pre-stop timeout in seconds.</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreStopLogAsError_HelpText" xml:space="preserve">
+    <value>Check to log pre-stop process failures as errors.</value>
+  </data>
+
+  <data name="Automation_TabItemPostStop_HelpText" xml:space="preserve">
+    <value>Configure a script or process to run after the service stops.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopPath_Name" xml:space="preserve">
+    <value>Post-Stop Process Path</value>
+  </data>
+  <data name="Automation_TextBoxPostStopPath_HelpText" xml:space="preserve">
+    <value>Enter the post-stop executable path.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopPath_Name" xml:space="preserve">
+    <value>Browse Post-Stop Process Path</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopPath_HelpText" xml:space="preserve">
+    <value>Browse to select the post-stop executable.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopDir_Name" xml:space="preserve">
+    <value>Post-Stop Startup Directory</value>
+  </data>
+  <data name="Automation_TextBoxPostStopDir_HelpText" xml:space="preserve">
+    <value>Enter the startup directory for the post-stop process.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopDir_Name" xml:space="preserve">
+    <value>Browse Post-Stop Startup Directory</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopDir_HelpText" xml:space="preserve">
+    <value>Browse to select the post-stop startup directory.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopParams_Name" xml:space="preserve">
+    <value>Post-Stop Process Parameters</value>
+  </data>
+  <data name="Automation_TextBoxPostStopParams_HelpText" xml:space="preserve">
+    <value>Enter command line parameters for the post-stop process.</value>
+  </data>
+
+  <data name="Automation_RequiredFieldsNote_Name" xml:space="preserve">
+    <value>Required Fields Note</value>
+  </data>
+
+  <data name="Automation_ButtonInstall_HelpText" xml:space="preserve">
+    <value>Installs the configured service.</value>
+  </data>
+  <data name="Automation_ButtonUninstall_HelpText" xml:space="preserve">
+    <value>Uninstalls the configured service.</value>
+  </data>
+  <data name="Automation_ButtonStart_HelpText" xml:space="preserve">
+    <value>Starts the configured service.</value>
+  </data>
+  <data name="Automation_ButtonStop_HelpText" xml:space="preserve">
+    <value>Stops the configured service.</value>
+  </data>
+  <data name="Automation_ButtonRestart_HelpText" xml:space="preserve">
+    <value>Restarts the configured service.</value>
   </data>
 </root>

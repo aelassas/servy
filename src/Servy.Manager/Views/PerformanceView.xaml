@@ -1,19 +1,19 @@
 <views:ServiceSearchUserControl x:Class="Servy.Manager.Views.PerformanceView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d"
-             xmlns:local="clr-namespace:Servy.Manager"
-             xmlns:resx="clr-namespace:Servy.Manager.Resources"
-             xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
-             xmlns:views="clr-namespace:Servy.Manager.Views"
-             xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
-             xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
-             Loaded="UserControl_Loaded"
-             AutomationProperties.Name="Performance Monitor View"
-             AutomationProperties.AutomationId="PerformanceView"
-             AutomationProperties.HelpText="Displays resource usage statistics for the selected process.">
+                                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                                xmlns:local="clr-namespace:Servy.Manager"
+                                xmlns:resx="clr-namespace:Servy.Manager.Resources"
+                                xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
+                                xmlns:views="clr-namespace:Servy.Manager.Views"
+                                xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
+                                xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
+                                mc:Ignorable="d"
+                                Loaded="UserControl_Loaded"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_PerformanceView_Name}"
+                                AutomationProperties.AutomationId="PerformanceView"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PerformanceView_HelpText}">
 
   <Grid>
     <Grid.ColumnDefinitions>
@@ -21,17 +21,16 @@
       <ColumnDefinition Width="4*" />
     </Grid.ColumnDefinitions>
 
-    <controls:ServiceListControl
-            Grid.Column="0"
-            Services="{Binding Services}"
-            SelectedService="{Binding SelectedService}"
-            SearchText="{Binding SearchText}"
-            SearchButtonText="{Binding SearchButtonText}"
-            SearchCommand="{Binding SearchCommand}"
-            IsBusy="{Binding IsBusy}"
-            AutomationProperties.Name="Service Selector"
-            AutomationProperties.AutomationId="PerformanceServiceList"
-            AutomationProperties.HelpText="Select a service from the list to view its performance data." />
+    <controls:ServiceListControl Grid.Column="0"
+                                     Services="{Binding Services}"
+                                     SelectedService="{Binding SelectedService}"
+                                     SearchText="{Binding SearchText}"
+                                     SearchButtonText="{Binding SearchButtonText}"
+                                     SearchCommand="{Binding SearchCommand}"
+                                     IsBusy="{Binding IsBusy}"
+                                     AutomationProperties.Name="{x:Static resx:Strings.Automation_PerformanceServiceList_Name}"
+                                     AutomationProperties.AutomationId="PerformanceServiceList"
+                                     AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PerformanceServiceList_HelpText}" />
 
     <Grid Grid.Column="1" Margin="10">
       <Grid.RowDefinitions>
@@ -40,21 +39,30 @@
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
-      <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,6" VerticalAlignment="Center">
-        <Border Background="#F0F7FA" CornerRadius="2" Padding="4,0,0,0" HorizontalAlignment="Left">
+      <StackPanel Grid.Row="0"
+                        Orientation="Horizontal"
+                        Margin="0,0,0,6"
+                        VerticalAlignment="Center">
+        <Border Background="#F0F7FA"
+                        CornerRadius="2"
+                        Padding="4,0,0,0"
+                        HorizontalAlignment="Left">
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="{x:Static resx:Strings.Label_Pid}" 
-                                   Foreground="#1B7F9F" 
-                                   FontSize="11" 
+            <TextBlock Text="{x:Static resx:Strings.Label_Pid}"
+                                   Foreground="#1B7F9F"
+                                   FontSize="11"
                                    VerticalAlignment="Center"
-                                   Margin="0,0,5,0"/>
-            <TextBlock Text="{Binding Pid}" 
-                                   Foreground="#1B7F9F" 
-                                   FontWeight="Bold" 
+                                   Margin="0,0,5,0"
+                                   AutomationProperties.Name="{x:Static resx:Strings.Label_Pid}" />
+
+            <TextBlock Text="{Binding Pid}"
+                                   Foreground="#1B7F9F"
+                                   FontWeight="Bold"
                                    FontSize="12"
                                    VerticalAlignment="Center"
-                                   AutomationProperties.Name="Process ID"
-                                   AutomationProperties.AutomationId="PidValue" />
+                                   AutomationProperties.Name="{x:Static resx:Strings.Automation_PidValue_Name}"
+                                   AutomationProperties.AutomationId="PidValue"
+                                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PidValue_HelpText}" />
 
             <Button Command="{Binding CopyPidCommand}"
                                 Margin="5,0,0,0"
@@ -64,9 +72,9 @@
                                 Cursor="Hand"
                                 ToolTip="{x:Static resx:Strings.Button_CopyPid}"
                                 FocusVisualStyle="{x:Null}"
-                                AutomationProperties.Name="Copy PID"
+                                AutomationProperties.Name="{x:Static resx:Strings.Button_CopyPid}"
                                 AutomationProperties.AutomationId="CopyPidButton"
-                                AutomationProperties.HelpText="Copies the Process ID to the clipboard.">
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CopyPidButton_HelpText}">
               <Button.Style>
                 <Style TargetType="Button">
                   <Setter Property="Opacity" Value="0.5" />
@@ -77,24 +85,33 @@
                   </Style.Triggers>
                 </Style>
               </Button.Style>
-              <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" 
-                                  Fill="#1B7F9F" 
-                                  Stretch="Uniform" 
-                                  Width="12" Height="12" />
+              <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                                  Fill="#1B7F9F"
+                                  Stretch="Uniform"
+                                  Width="12"
+                                  Height="12" />
             </Button>
           </StackPanel>
         </Border>
       </StackPanel>
 
-      <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
-        <Grid AutomationProperties.Name="CPU Usage Graph"
+      <Border Grid.Row="1"
+                    Background="#FFFFFF"
+                    BorderBrush="#757575"
+                    BorderThickness="1"
+                    Margin="0,0,0,5">
+        <Grid AutomationProperties.Name="{x:Static resx:Strings.Automation_CpuGraphGrid_Name}"
                       AutomationProperties.AutomationId="CpuGraphGrid"
-                      AutomationProperties.HelpText="Historical view of CPU percentage usage.">
+                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CpuGraphGrid_HelpText}">
           <Viewbox Stretch="Fill" HorizontalAlignment="Left">
-            <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}" IsHitTestVisible="False">
-
+            <Canvas Width="{Binding GraphWidth}"
+                                Height="{Binding GraphHeight}"
+                                IsHitTestVisible="False">
               <Canvas.Background>
-                <DrawingBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute" Stretch="None">
+                <DrawingBrush TileMode="Tile"
+                                              Viewport="0,0,40,20"
+                                              ViewportUnits="Absolute"
+                                              Stretch="None">
                   <DrawingBrush.Drawing>
                     <GeometryDrawing>
                       <GeometryDrawing.Geometry>
@@ -111,84 +128,102 @@
                 </DrawingBrush>
               </Canvas.Background>
 
-              <Polygon Points="{Binding CpuFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" />
+              <Polygon Points="{Binding CpuFillPoints}"
+                                     Fill="#80C3ECFA"
+                                     StrokeThickness="0" />
 
-              <Polyline Points="{Binding CpuPointCollection}" Stroke="#1B7F9F" StrokeThickness="1" />
+              <Polyline Points="{Binding CpuPointCollection}"
+                                      Stroke="#1B7F9F"
+                                      StrokeThickness="1" />
             </Canvas>
           </Viewbox>
 
-          <TextBlock 
-                        Text="{x:Static resx:Strings.Label_CPU}" 
-                        Margin="10" VerticalAlignment="Top" 
-                        HorizontalAlignment="Left" 
-                        Foreground="#1B7F9F" 
-                        FontSize="14" 
-                        IsHitTestVisible="False" />
-          <TextBlock 
-                        Text="{Binding CpuUsage}" 
-                        Margin="10" 
-                        VerticalAlignment="Top" 
-                        HorizontalAlignment="Right" 
-                        Foreground="#1B7F9F" 
-                        FontSize="14" 
-                        IsHitTestVisible="False"
-                        AutomationProperties.Name="Current CPU Usage"
-                        AutomationProperties.AutomationId="CpuUsageLabel" />
-        </Grid>
-      </Border>
-
-      <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
-        <Grid AutomationProperties.Name="RAM Usage Graph"
-                      AutomationProperties.AutomationId="RamGraphGrid"
-                      AutomationProperties.HelpText="Historical view of memory usage.">
-          <Viewbox Stretch="Fill" HorizontalAlignment="Left">
-            <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}" IsHitTestVisible="False">
-
-              <Canvas.Background>
-                <DrawingBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute" Stretch="None">
-                  <DrawingBrush.Drawing>
-                    <GeometryDrawing>
-                      <GeometryDrawing.Geometry>
-                        <GeometryGroup>
-                          <LineGeometry StartPoint="0,20" EndPoint="40,20" />
-                          <LineGeometry StartPoint="40,0" EndPoint="40,20" />
-                        </GeometryGroup>
-                      </GeometryDrawing.Geometry>
-                      <GeometryDrawing.Pen>
-                        <Pen Brush="#EBEBEB" Thickness="1" />
-                      </GeometryDrawing.Pen>
-                    </GeometryDrawing>
-                  </DrawingBrush.Drawing>
-                </DrawingBrush>
-              </Canvas.Background>
-
-              <Polygon Points="{Binding RamFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" />
-
-              <Polyline Points="{Binding RamPointCollection}" Stroke="#1B7F9F" StrokeThickness="1" />
-            </Canvas>
-          </Viewbox>
-
-          <TextBlock Text="{x:Static resx:Strings.Label_RAM}" 
-                               Margin="10" 
-                               VerticalAlignment="Top" 
-                               HorizontalAlignment="Left" 
-                               Foreground="#1B7F9F" 
-                               FontSize="14" 
-                               IsHitTestVisible="False" />
-
-          <TextBlock Text="{Binding RamUsage}" 
-                               Margin="10" 
-                               VerticalAlignment="Top" 
-                               HorizontalAlignment="Right" 
-                               Foreground="#1B7F9F" 
-                               FontSize="14" 
+          <TextBlock Text="{x:Static resx:Strings.Label_CPU}"
+                               Margin="10"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Left"
+                               Foreground="#1B7F9F"
+                               FontSize="14"
                                IsHitTestVisible="False"
-                               AutomationProperties.Name="Current RAM Usage"
-                               AutomationProperties.AutomationId="RamUsageLabel" />
+                               AutomationProperties.Name="{x:Static resx:Strings.Label_CPU}" />
+
+          <TextBlock Text="{Binding CpuUsage}"
+                               Margin="10"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Right"
+                               Foreground="#1B7F9F"
+                               FontSize="14"
+                               IsHitTestVisible="False"
+                               AutomationProperties.Name="{x:Static resx:Strings.Automation_CpuUsageLabel_Name}"
+                               AutomationProperties.AutomationId="CpuUsageLabel"
+                               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CpuUsageLabel_HelpText}" />
         </Grid>
       </Border>
 
-    </Grid>
+      <Border Grid.Row="2"
+                    Background="#FFFFFF"
+                    BorderBrush="#757575"
+                    BorderThickness="1"
+                    Margin="0,0,0,5">
+        <Grid AutomationProperties.Name="{x:Static resx:Strings.Automation_RamGraphGrid_Name}"
+                      AutomationProperties.AutomationId="RamGraphGrid"
+                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RamGraphGrid_HelpText}">
+          <Viewbox Stretch="Fill" HorizontalAlignment="Left">
+            <Canvas Width="{Binding GraphWidth}"
+                                Height="{Binding GraphHeight}"
+                                IsHitTestVisible="False">
+              <Canvas.Background>
+                <DrawingBrush TileMode="Tile"
+                                              Viewport="0,0,40,20"
+                                              ViewportUnits="Absolute"
+                                              Stretch="None">
+                  <DrawingBrush.Drawing>
+                    <GeometryDrawing>
+                      <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                          <LineGeometry StartPoint="0,20" EndPoint="40,20" />
+                          <LineGeometry StartPoint="40,0" EndPoint="40,20" />
+                        </GeometryGroup>
+                      </GeometryDrawing.Geometry>
+                      <GeometryDrawing.Pen>
+                        <Pen Brush="#EBEBEB" Thickness="1" />
+                      </GeometryDrawing.Pen>
+                    </GeometryDrawing>
+                  </DrawingBrush.Drawing>
+                </DrawingBrush>
+              </Canvas.Background>
 
+              <Polygon Points="{Binding RamFillPoints}"
+                                     Fill="#80C3ECFA"
+                                     StrokeThickness="0" />
+
+              <Polyline Points="{Binding RamPointCollection}"
+                                      Stroke="#1B7F9F"
+                                      StrokeThickness="1" />
+            </Canvas>
+          </Viewbox>
+
+          <TextBlock Text="{x:Static resx:Strings.Label_RAM}"
+                               Margin="10"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Left"
+                               Foreground="#1B7F9F"
+                               FontSize="14"
+                               IsHitTestVisible="False"
+                               AutomationProperties.Name="{x:Static resx:Strings.Label_RAM}" />
+
+          <TextBlock Text="{Binding RamUsage}"
+                               Margin="10"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Right"
+                               Foreground="#1B7F9F"
+                               FontSize="14"
+                               IsHitTestVisible="False"
+                               AutomationProperties.Name="{x:Static resx:Strings.Automation_RamUsageLabel_Name}"
+                               AutomationProperties.AutomationId="RamUsageLabel"
+                               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RamUsageLabel_HelpText}" />
+        </Grid>
+      </Border>
+    </Grid>
   </Grid>
 </views:ServiceSearchUserControl>

@@ -61,6 +61,1518 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Browse to select the failure program startup directory..
+        /// </summary>
+        public static string Automation_ButtonBrowseFailureProgramDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Failure Program Startup Directory.
+        /// </summary>
+        public static string Automation_ButtonBrowseFailureProgramDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the failure program executable..
+        /// </summary>
+        public static string Automation_ButtonBrowseFailureProgramPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Failure Program Path.
+        /// </summary>
+        public static string Automation_ButtonBrowseFailureProgramPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the post-launch startup directory..
+        /// </summary>
+        public static string Automation_ButtonBrowsePostLaunchDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostLaunchDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Post-Launch Startup Directory.
+        /// </summary>
+        public static string Automation_ButtonBrowsePostLaunchDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostLaunchDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the post-launch executable..
+        /// </summary>
+        public static string Automation_ButtonBrowsePostLaunchPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostLaunchPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Post-Launch Process Path.
+        /// </summary>
+        public static string Automation_ButtonBrowsePostLaunchPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostLaunchPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the post-stop startup directory..
+        /// </summary>
+        public static string Automation_ButtonBrowsePostStopDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostStopDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Post-Stop Startup Directory.
+        /// </summary>
+        public static string Automation_ButtonBrowsePostStopDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostStopDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the post-stop executable..
+        /// </summary>
+        public static string Automation_ButtonBrowsePostStopPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostStopPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Post-Stop Process Path.
+        /// </summary>
+        public static string Automation_ButtonBrowsePostStopPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePostStopPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the pre-launch executable..
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchProcessPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchProcessPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Pre-Launch Process Path.
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchProcessPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchProcessPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the pre-launch startup directory..
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchStartupDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStartupDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Pre-Launch Startup Directory.
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchStartupDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStartupDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the pre-launch standard error log file..
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchStderr_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStderr_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Pre-Launch Standard Error Path.
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchStderr_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStderr_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the pre-launch standard output log file..
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchStdout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStdout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Pre-Launch Standard Output Path.
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchStdout_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStdout_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the pre-stop startup directory..
+        /// </summary>
+        public static string Automation_ButtonBrowsePreStopDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreStopDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Pre-Stop Startup Directory.
+        /// </summary>
+        public static string Automation_ButtonBrowsePreStopDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreStopDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the pre-stop executable..
+        /// </summary>
+        public static string Automation_ButtonBrowsePreStopPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreStopPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Pre-Stop Process Path.
+        /// </summary>
+        public static string Automation_ButtonBrowsePreStopPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreStopPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the executable process path..
+        /// </summary>
+        public static string Automation_ButtonBrowseProcessPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseProcessPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Process Path.
+        /// </summary>
+        public static string Automation_ButtonBrowseProcessPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseProcessPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the startup directory..
+        /// </summary>
+        public static string Automation_ButtonBrowseStartupDirectory_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseStartupDirectory_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Startup Directory.
+        /// </summary>
+        public static string Automation_ButtonBrowseStartupDirectory_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseStartupDirectory_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the standard error log file..
+        /// </summary>
+        public static string Automation_ButtonBrowseStderr_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseStderr_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Standard Error Path.
+        /// </summary>
+        public static string Automation_ButtonBrowseStderr_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseStderr_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the standard output log file..
+        /// </summary>
+        public static string Automation_ButtonBrowseStdout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseStdout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Standard Output Path.
+        /// </summary>
+        public static string Automation_ButtonBrowseStdout_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseStdout_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installs the configured service..
+        /// </summary>
+        public static string Automation_ButtonInstall_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonInstall_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shows help information for recovery actions..
+        /// </summary>
+        public static string Automation_ButtonRecoveryActionHelp_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonRecoveryActionHelp_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restarts the configured service..
+        /// </summary>
+        public static string Automation_ButtonRestart_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonRestart_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starts the configured service..
+        /// </summary>
+        public static string Automation_ButtonStart_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonStart_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stops the configured service..
+        /// </summary>
+        public static string Automation_ButtonStop_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonStop_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstalls the configured service..
+        /// </summary>
+        public static string Automation_ButtonUninstall_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonUninstall_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to enable console UI support..
+        /// </summary>
+        public static string Automation_CheckBoxEnableConsoleUI_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxEnableConsoleUI_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to enable log rotation based on dates..
+        /// </summary>
+        public static string Automation_CheckBoxEnableDateRotation_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxEnableDateRotation_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to enable diagnostic debug logging..
+        /// </summary>
+        public static string Automation_CheckBoxEnableDebugLogs_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxEnableDebugLogs_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to enable background health monitoring for this service..
+        /// </summary>
+        public static string Automation_CheckBoxEnableHealthMonitoring_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxEnableHealthMonitoring_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to enable heartbeat URL flags (/start, /fail)..
+        /// </summary>
+        public static string Automation_CheckBoxEnableHeartbeatUrlFlags_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxEnableHeartbeatUrlFlags_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to enable log rotation based on file size..
+        /// </summary>
+        public static string Automation_CheckBoxEnableSizeRotation_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxEnableSizeRotation_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to start the service even if the pre-launch process fails..
+        /// </summary>
+        public static string Automation_CheckBoxPreLaunchIgnoreFailure_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxPreLaunchIgnoreFailure_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to log pre-stop process failures as errors..
+        /// </summary>
+        public static string Automation_CheckBoxPreStopLogAsError_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxPreStopLogAsError_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to run recovery action even if the process exits successfully..
+        /// </summary>
+        public static string Automation_CheckBoxRecoveryOnCleanExit_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxRecoveryOnCleanExit_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check to use local time instead of UTC for log rotations..
+        /// </summary>
+        public static string Automation_CheckBoxUseLocalTimeForRotation_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxUseLocalTimeForRotation_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select the interval for date-based log rotation..
+        /// </summary>
+        public static string Automation_ComboBoxDateRotationType_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ComboBoxDateRotationType_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select the process priority level..
+        /// </summary>
+        public static string Automation_ComboBoxProcessPriority_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ComboBoxProcessPriority_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select the action to take when the service fails health checks..
+        /// </summary>
+        public static string Automation_ComboBoxRecoveryAction_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ComboBoxRecoveryAction_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select the service startup type..
+        /// </summary>
+        public static string Automation_ComboBoxStartupType_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ComboBoxStartupType_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Main window for creating and configuring a Servy Windows service..
+        /// </summary>
+        public static string Automation_ConfigMainWindow_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConfigMainWindow_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Servy Configuration Window.
+        /// </summary>
+        public static string Automation_ConfigMainWindow_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConfigMainWindow_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Navigate between different configuration sections for the service..
+        /// </summary>
+        public static string Automation_ConfigurationTabControl_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ConfigurationTabControl_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration Tabs.
+        /// </summary>
+        public static string Automation_ConfigurationTabControl_Name {
+            get {
+                return ResourceManager.GetString("Automation_ConfigurationTabControl_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Application menu for exporting, importing, and help options..
+        /// </summary>
+        public static string Automation_MainMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MainMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Main Menu.
+        /// </summary>
+        public static string Automation_MainMenu_Name {
+            get {
+                return ResourceManager.GetString("Automation_MainMenu_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show information about the Servy application..
+        /// </summary>
+        public static string Automation_MenuAbout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuAbout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check online for application updates..
+        /// </summary>
+        public static string Automation_MenuCheckUpdates_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuCheckUpdates_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Clear all fields in the configuration form..
+        /// </summary>
+        public static string Automation_MenuClearAll_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuClearAll_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open the official Servy documentation..
+        /// </summary>
+        public static string Automation_MenuDoc_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuDoc_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export service configuration menu..
+        /// </summary>
+        public static string Automation_MenuExport_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuExport_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export configuration to a JSON file..
+        /// </summary>
+        public static string Automation_MenuExportJson_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuExportJson_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export configuration to an XML file..
+        /// </summary>
+        public static string Automation_MenuExportXml_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuExportXml_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Help and documentation menu..
+        /// </summary>
+        public static string Automation_MenuHelp_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuHelp_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import service configuration menu..
+        /// </summary>
+        public static string Automation_MenuImport_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuImport_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import configuration from a JSON file..
+        /// </summary>
+        public static string Automation_MenuImportJson_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuImportJson_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import configuration from an XML file..
+        /// </summary>
+        public static string Automation_MenuImportXml_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuImportXml_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open the Servy Manager application..
+        /// </summary>
+        public static string Automation_MenuManager_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_MenuManager_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm the password for the service account..
+        /// </summary>
+        public static string Automation_PasswordBoxConfirm_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_PasswordBoxConfirm_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the password for the service account..
+        /// </summary>
+        public static string Automation_PasswordBoxUser_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_PasswordBoxUser_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Run the service as the built-in Local System account..
+        /// </summary>
+        public static string Automation_RadioButtonLocalSystem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RadioButtonLocalSystem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Run the service under a specific user account..
+        /// </summary>
+        public static string Automation_RadioButtonUserAccount_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_RadioButtonUserAccount_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Required Fields Note.
+        /// </summary>
+        public static string Automation_RequiredFieldsNote_Name {
+            get {
+                return ResourceManager.GetString("Automation_RequiredFieldsNote_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure environment variables and service dependencies..
+        /// </summary>
+        public static string Automation_TabItemAdvanced_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemAdvanced_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure standard output and error logging settings..
+        /// </summary>
+        public static string Automation_TabItemLogging_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemLogging_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure the user account context for the service..
+        /// </summary>
+        public static string Automation_TabItemLogOn_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemLogOn_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to General configuration options for the service..
+        /// </summary>
+        public static string Automation_TabItemMain_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemMain_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure a script or process to run after the service successfully starts..
+        /// </summary>
+        public static string Automation_TabItemPostLaunch_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemPostLaunch_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure a script or process to run after the service stops..
+        /// </summary>
+        public static string Automation_TabItemPostStop_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemPostStop_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure a script or process to run before the service starts..
+        /// </summary>
+        public static string Automation_TabItemPreLaunch_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemPreLaunch_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure a script or process to run before the service stops..
+        /// </summary>
+        public static string Automation_TabItemPreStop_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemPreStop_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure automated health checks and recovery actions..
+        /// </summary>
+        public static string Automation_TabItemRecovery_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TabItemRecovery_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the logical CPUs the process may run on (e.g., &apos;0-3,8&apos; or &apos;0xFF00&apos;)..
+        /// </summary>
+        public static string Automation_TextBoxCpuAffinity_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxCpuAffinity_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cpu Affinity.
+        /// </summary>
+        public static string Automation_TextBoxCpuAffinity_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxCpuAffinity_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter environment variables for the service..
+        /// </summary>
+        public static string Automation_TextBoxEnvVars_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxEnvVars_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Environment Variables.
+        /// </summary>
+        public static string Automation_TextBoxEnvVars_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxEnvVars_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter command line parameters for the failure program..
+        /// </summary>
+        public static string Automation_TextBoxFailureProgramParams_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxFailureProgramParams_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failure Program Parameters.
+        /// </summary>
+        public static string Automation_TextBoxFailureProgramParams_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxFailureProgramParams_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the path to the executable to run upon failure..
+        /// </summary>
+        public static string Automation_TextBoxFailureProgramPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxFailureProgramPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failure Program Path.
+        /// </summary>
+        public static string Automation_TextBoxFailureProgramPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxFailureProgramPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the startup directory for the failure program..
+        /// </summary>
+        public static string Automation_TextBoxFailureProgramStartupDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxFailureProgramStartupDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failure Program Startup Directory.
+        /// </summary>
+        public static string Automation_TextBoxFailureProgramStartupDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxFailureProgramStartupDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the health check heartbeat interval in seconds..
+        /// </summary>
+        public static string Automation_TextBoxHeartbeatInterval_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxHeartbeatInterval_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heartbeat Interval.
+        /// </summary>
+        public static string Automation_TextBoxHeartbeatInterval_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxHeartbeatInterval_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the URL for the heartbeat endpoint..
+        /// </summary>
+        public static string Automation_TextBoxHeartbeatUrl_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxHeartbeatUrl_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heartbeat Url.
+        /// </summary>
+        public static string Automation_TextBoxHeartbeatUrl_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxHeartbeatUrl_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the health check heartbeat URL timeout in seconds..
+        /// </summary>
+        public static string Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heartbeat URL Timeout.
+        /// </summary>
+        public static string Automation_TextBoxHeartbeatUrlTimeoutSeconds_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxHeartbeatUrlTimeoutSeconds_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the maximum number of failed checks before triggering recovery..
+        /// </summary>
+        public static string Automation_TextBoxMaxFailedChecks_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxMaxFailedChecks_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max Failed Checks.
+        /// </summary>
+        public static string Automation_TextBoxMaxFailedChecks_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxMaxFailedChecks_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the maximum number of restart attempts..
+        /// </summary>
+        public static string Automation_TextBoxMaxRestartAttempts_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxMaxRestartAttempts_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max Restart Attempts.
+        /// </summary>
+        public static string Automation_TextBoxMaxRestartAttempts_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxMaxRestartAttempts_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the maximum number of rotated logs to keep..
+        /// </summary>
+        public static string Automation_TextBoxMaxRotations_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxMaxRotations_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max Rotations.
+        /// </summary>
+        public static string Automation_TextBoxMaxRotations_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxMaxRotations_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the startup directory for the post-launch process..
+        /// </summary>
+        public static string Automation_TextBoxPostLaunchDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostLaunchDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Launch Startup Directory.
+        /// </summary>
+        public static string Automation_TextBoxPostLaunchDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostLaunchDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter command line parameters for the post-launch process..
+        /// </summary>
+        public static string Automation_TextBoxPostLaunchParams_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostLaunchParams_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Launch Process Parameters.
+        /// </summary>
+        public static string Automation_TextBoxPostLaunchParams_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostLaunchParams_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the post-launch executable path..
+        /// </summary>
+        public static string Automation_TextBoxPostLaunchPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostLaunchPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Launch Process Path.
+        /// </summary>
+        public static string Automation_TextBoxPostLaunchPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostLaunchPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the startup directory for the post-stop process..
+        /// </summary>
+        public static string Automation_TextBoxPostStopDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostStopDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Stop Startup Directory.
+        /// </summary>
+        public static string Automation_TextBoxPostStopDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostStopDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter command line parameters for the post-stop process..
+        /// </summary>
+        public static string Automation_TextBoxPostStopParams_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostStopParams_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Stop Process Parameters.
+        /// </summary>
+        public static string Automation_TextBoxPostStopParams_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostStopParams_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the post-stop executable path..
+        /// </summary>
+        public static string Automation_TextBoxPostStopPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostStopPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Stop Process Path.
+        /// </summary>
+        public static string Automation_TextBoxPostStopPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPostStopPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter environment variables for the pre-launch process..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchEnvVars_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchEnvVars_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Environment Variables.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchEnvVars_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchEnvVars_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter command line parameters for the pre-launch process..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchParams_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchParams_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Process Parameters.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchParams_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchParams_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the pre-launch executable path..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchProcessPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchProcessPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Process Path.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchProcessPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchProcessPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the number of retry attempts for the pre-launch process..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchRetries_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchRetries_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Retry Attempts.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchRetries_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchRetries_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the startup directory for the pre-launch process..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchStartupDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchStartupDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Startup Directory.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchStartupDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchStartupDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the path for the pre-launch standard error log..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchStderr_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchStderr_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Standard Error Path.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchStderr_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchStderr_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the path for the pre-launch standard output log..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchStdout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchStdout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Standard Output Path.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchStdout_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchStdout_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the pre-launch timeout in seconds..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchTimeout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchTimeout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Timeout.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchTimeout_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchTimeout_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the startup directory for the pre-stop process..
+        /// </summary>
+        public static string Automation_TextBoxPreStopDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Stop Startup Directory.
+        /// </summary>
+        public static string Automation_TextBoxPreStopDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter command line parameters for the pre-stop process..
+        /// </summary>
+        public static string Automation_TextBoxPreStopParams_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopParams_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Stop Process Parameters.
+        /// </summary>
+        public static string Automation_TextBoxPreStopParams_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopParams_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the pre-stop executable path..
+        /// </summary>
+        public static string Automation_TextBoxPreStopPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Stop Process Path.
+        /// </summary>
+        public static string Automation_TextBoxPreStopPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the pre-stop timeout in seconds..
+        /// </summary>
+        public static string Automation_TextBoxPreStopTimeout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopTimeout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Stop Timeout.
+        /// </summary>
+        public static string Automation_TextBoxPreStopTimeout_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreStopTimeout_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the command line parameters for the process..
+        /// </summary>
+        public static string Automation_TextBoxProcessParameters_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxProcessParameters_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Process Parameters.
+        /// </summary>
+        public static string Automation_TextBoxProcessParameters_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxProcessParameters_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the executable path for the service..
+        /// </summary>
+        public static string Automation_TextBoxProcessPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxProcessPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Process Path.
+        /// </summary>
+        public static string Automation_TextBoxProcessPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxProcessPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the maximum log file size before rotation..
+        /// </summary>
+        public static string Automation_TextBoxRotationSize_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxRotationSize_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rotation Size.
+        /// </summary>
+        public static string Automation_TextBoxRotationSize_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxRotationSize_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter Windows service dependencies..
+        /// </summary>
+        public static string Automation_TextBoxServiceDependencies_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceDependencies_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Dependencies.
+        /// </summary>
+        public static string Automation_TextBoxServiceDependencies_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceDependencies_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the description of the service..
+        /// </summary>
+        public static string Automation_TextBoxServiceDescription_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceDescription_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Description.
+        /// </summary>
+        public static string Automation_TextBoxServiceDescription_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceDescription_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the display name of the service..
+        /// </summary>
+        public static string Automation_TextBoxServiceDisplayName_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceDisplayName_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Display Name.
+        /// </summary>
+        public static string Automation_TextBoxServiceDisplayName_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceDisplayName_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the system name of the service..
+        /// </summary>
+        public static string Automation_TextBoxServiceName_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceName_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Name.
+        /// </summary>
+        public static string Automation_TextBoxServiceName_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxServiceName_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the timeout in seconds for starting the service..
+        /// </summary>
+        public static string Automation_TextBoxStartTimeout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStartTimeout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start Timeout.
+        /// </summary>
+        public static string Automation_TextBoxStartTimeout_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStartTimeout_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the startup working directory..
+        /// </summary>
+        public static string Automation_TextBoxStartupDirectory_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStartupDirectory_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Startup Directory.
+        /// </summary>
+        public static string Automation_TextBoxStartupDirectory_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStartupDirectory_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the path for the standard error log file..
+        /// </summary>
+        public static string Automation_TextBoxStderrPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStderrPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stderr File Path.
+        /// </summary>
+        public static string Automation_TextBoxStderrPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStderrPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the path for the standard output log file..
+        /// </summary>
+        public static string Automation_TextBoxStdoutPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStdoutPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stdout File Path.
+        /// </summary>
+        public static string Automation_TextBoxStdoutPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStdoutPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the timeout in seconds for stopping the service..
+        /// </summary>
+        public static string Automation_TextBoxStopTimeout_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStopTimeout_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stop Timeout.
+        /// </summary>
+        public static string Automation_TextBoxStopTimeout_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxStopTimeout_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter the username for the service account..
+        /// </summary>
+        public static string Automation_TextBoxUserAccount_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxUserAccount_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Account Name.
+        /// </summary>
+        public static string Automation_TextBoxUserAccount_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxUserAccount_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Browse.
         /// </summary>
         public static string Button_Browse {
