@@ -122,10 +122,10 @@ jobs:
 
               $bt = [char]96
 
-              $md = "# [$title]($url)`n`n"
+              $md = "## [$title]($url)`n`n"
               $md += "**Date:** $date | **Tag:** [$bt$tag$bt](https://github.com/$repo/tree/$tag)`n`n"
               $md += "$body`n`n"
-              $md += "## Downloads`n"
+              $md += "### Downloads`n"
 
               foreach ($asset in $Release.assets) {
                   $aName = $asset.name -replace $dashPattern, '-'
