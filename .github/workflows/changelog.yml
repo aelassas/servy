@@ -147,7 +147,7 @@ jobs:
 
           $isReset = ($env:IS_RESET -eq 'true')
           $bt = [char]96
-          $header = "${bt}CHANGELOG${bt}"
+          $header = "# CHANGELOG"
 
           if ($isReset) {
               Write-Host "Reset flag is true. Rebuilding full CHANGELOG.md..."
