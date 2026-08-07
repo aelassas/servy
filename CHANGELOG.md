@@ -1,4 +1,4 @@
-# Changelog
+`CHANGELOG`
 
 # [Servy 9.1](https://github.com/aelassas/servy/releases/tag/v9.1)
 
@@ -35,8 +35,6 @@
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.1.tar.gz)
 
 Compare changes: https://github.com/aelassas/servy/compare/v9.0...v9.1
-
-`CHANGELOG`
 
 # [Servy 9.0](https://github.com/aelassas/servy/releases/tag/v9.0)
 
