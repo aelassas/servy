@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,7 +12,7 @@
     <SelfContained>false</SelfContained>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
     <InvariantGlobalization>true</InvariantGlobalization>
     <StripSymbols>true</StripSymbols>
 
@@ -33,6 +33,7 @@
     <AssemblyTitle>Servy.CLI</AssemblyTitle>
     <AssemblyDescription>Servy Command Line Interface</AssemblyDescription>
     <Product>Servy.CLI</Product>
+    <ApplicationIcon>servy.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
