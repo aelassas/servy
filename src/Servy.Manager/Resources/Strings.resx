@@ -1003,4 +1003,23 @@ If the service is disabled and marked for deletion, installation will fail until
   <data name="Automation_LogsShortcutInfo_HelpText" xml:space="preserve">
     <value>Indicates that pressing F5 refreshes logs.</value>
   </data>
+
+  <data name="Automation_ServiceListControl_Name" xml:space="preserve">
+    <value>Service List Control</value>
+  </data>
+  <data name="Automation_ServiceListControl_HelpText" xml:space="preserve">
+    <value>Displays a searchable list of managed services. Use the search field to filter by service name.</value>
+  </data>
+  <data name="Automation_SidebarSearchTextBox_Name" xml:space="preserve">
+    <value>Search Services</value>
+  </data>
+  <data name="Automation_SidebarSearchTextBox_HelpText" xml:space="preserve">
+    <value>Type a keyword to search services</value>
+  </data>
+  <data name="Automation_SidebarServicesDataGrid_Name" xml:space="preserve">
+    <value>Services List</value>
+  </data>
+  <data name="Automation_ServiceNameHeader_Name" xml:space="preserve">
+    <value>Service Name Header</value>
+  </data>
 </root>

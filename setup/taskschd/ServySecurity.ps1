@@ -130,6 +130,6 @@ function Protect-SensitiveString {
     } catch [System.Text.RegularExpressions.RegexMatchTimeoutException] {
         # Safety: a malformed/oversized payload triggered the ReDoS guard.
         # Fail closed: redact the whole payload rather than crash the caller.
-        return '********'
+        return '[MASKED DUE TO TIMEOUT]'
     }
 }

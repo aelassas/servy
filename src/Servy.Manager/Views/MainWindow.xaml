@@ -158,10 +158,10 @@
                               AutomationProperties.AutomationId="ServicesDataGrid"
                               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ServicesDataGrid_HelpText}">
             <DataGrid.Resources>
-              <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7" />
-              <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7" />
-              <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
-              <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White" />
+              <StaticResource x:Key="{x:Static SystemColors.HighlightBrushKey}" ResourceKey="SelectionHighlightBrush" />
+              <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" ResourceKey="SelectionInactiveHighlightBrush" />
+              <StaticResource x:Key="{x:Static SystemColors.HighlightTextBrushKey}" ResourceKey="SelectionHighlightTextBrush" />
+              <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" ResourceKey="SelectionInactiveHighlightTextBrush" />
             </DataGrid.Resources>
 
             <DataGrid.ColumnHeaderStyle>

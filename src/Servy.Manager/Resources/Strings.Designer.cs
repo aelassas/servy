@@ -1303,6 +1303,33 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays a searchable list of managed services. Use the search field to filter by service name..
+        /// </summary>
+        public static string Automation_ServiceListControl_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ServiceListControl_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service List Control.
+        /// </summary>
+        public static string Automation_ServiceListControl_Name {
+            get {
+                return ResourceManager.GetString("Automation_ServiceListControl_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service Name Header.
+        /// </summary>
+        public static string Automation_ServiceNameHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_ServiceNameHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to List of managed services..
         /// </summary>
         public static string Automation_ServicesDataGrid_HelpText {
@@ -1317,6 +1344,33 @@ namespace Servy.Manager.Resources {
         public static string Automation_ServicesDataGrid_Name {
             get {
                 return ResourceManager.GetString("Automation_ServicesDataGrid_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type a keyword to search services.
+        /// </summary>
+        public static string Automation_SidebarSearchTextBox_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_SidebarSearchTextBox_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Search Services.
+        /// </summary>
+        public static string Automation_SidebarSearchTextBox_Name {
+            get {
+                return ResourceManager.GetString("Automation_SidebarSearchTextBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Services List.
+        /// </summary>
+        public static string Automation_SidebarServicesDataGrid_Name {
+            get {
+                return ResourceManager.GetString("Automation_SidebarServicesDataGrid_Name", resourceCulture);
             }
         }
         

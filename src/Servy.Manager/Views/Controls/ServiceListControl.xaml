@@ -1,152 +1,140 @@
-﻿<UserControl
-    x:Class="Servy.Manager.Views.Controls.ServiceListControl"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:resx="clr-namespace:Servy.Manager.Resources"
-    xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
-    AutomationProperties.Name="Service List Control"
-    AutomationProperties.AutomationId="ServiceListControl"
-    AutomationProperties.HelpText="Displays a searchable list of managed services. Use the search field to filter by service name.">
+<UserControl x:Class="Servy.Manager.Views.Controls.ServiceListControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
+             xmlns:resx="clr-namespace:Servy.Manager.Resources"
+             AutomationProperties.AutomationId="ServiceListControl"
+             AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ServiceListControl_HelpText}"
+             AutomationProperties.Name="{x:Static resx:Strings.Automation_ServiceListControl_Name}">
 
-    <UserControl.Resources>
-        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-    </UserControl.Resources>
+  <UserControl.Resources>
+    <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+  </UserControl.Resources>
 
-    <Border Margin="10">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+  <Border Margin="10">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
 
-            <DockPanel
-                Margin="6"
-                Focusable="True"
-                FocusVisualStyle="{x:Null}">
+      <DockPanel Margin="6"
+                       FocusVisualStyle="{x:Null}"
+                       Focusable="True">
+        <TextBox Width="164"
+                         Height="24"
+                         Margin="0,0,6,0"
+                         VerticalContentAlignment="Center"
+                         AutomationProperties.AutomationId="SidebarSearchTextBox"
+                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarSearchTextBox_HelpText}"
+                         AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarSearchTextBox_Name}"
+                         KeyDown="SearchTextBox_KeyDown"
+                         Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
-                    Width="164"
-                    Height="24"
-                    Margin="0,0,6,0"
-                    VerticalContentAlignment="Center"
-                    Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
-                    KeyDown="SearchTextBox_KeyDown"
-                    AutomationProperties.Name="Search Services"
-                    AutomationProperties.HelpText="Type a keyword to search services"
-                    AutomationProperties.AutomationId="SidebarSearchTextBox" />
+        <Button Width="92"
+                        Height="24"
+                        AutomationProperties.AutomationId="SidebarSearchButton"
+                        AutomationProperties.Name="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Content="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        IsEnabled="{Binding IsBusy, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBooleanConverter}}" />
+      </DockPanel>
 
-                <Button
-                    Width="92"
-                    Height="24"
-                    Content="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    IsEnabled="{Binding IsBusy, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBooleanConverter}}"
-                    AutomationProperties.Name="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    AutomationProperties.AutomationId="SidebarSearchButton" />
-            </DockPanel>
+      <DataGrid Grid.Row="1"
+                      AutoGenerateColumns="False"
+                      AutomationProperties.AutomationId="SidebarServicesDataGrid"
+                      AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarServicesDataGrid_Name}"
+                      Background="Transparent"
+                      BorderBrush="#757575"
+                      BorderThickness="1"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserReorderColumns="False"
+                      CanUserResizeRows="False"
+                      CanUserSortColumns="True"
+                      EnableColumnVirtualization="True"
+                      EnableRowVirtualization="True"
+                      FocusVisualStyle="{x:Null}"
+                      GridLinesVisibility="None"
+                      HeadersVisibility="Column"
+                      IsReadOnly="True"
+                      IsSynchronizedWithCurrentItem="False"
+                      ItemsSource="{Binding Services, RelativeSource={RelativeSource AncestorType=UserControl}, IsAsync=True}"
+                      ScrollViewer.CanContentScroll="True"
+                      SelectedItem="{Binding SelectedService, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                      VirtualizingStackPanel.IsVirtualizing="True"
+                      VirtualizingStackPanel.ScrollUnit="Pixel"
+                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+        <DataGrid.Resources>
+          <StaticResource x:Key="{x:Static SystemColors.HighlightBrushKey}" ResourceKey="SelectionHighlightBrush" />
+          <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" ResourceKey="SelectionInactiveHighlightBrush" />
+          <StaticResource x:Key="{x:Static SystemColors.HighlightTextBrushKey}" ResourceKey="SelectionHighlightTextBrush" />
+          <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" ResourceKey="SelectionInactiveHighlightTextBrush" />
 
-            <DataGrid
-                Grid.Row="1"
-                ItemsSource="{Binding Services, RelativeSource={RelativeSource AncestorType=UserControl}, IsAsync=True}"
-                SelectedItem="{Binding SelectedService, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                IsSynchronizedWithCurrentItem="False"
-                CanUserReorderColumns="False"
-                CanUserSortColumns="True"
-                VirtualizingStackPanel.IsVirtualizing="True"
-                VirtualizingStackPanel.VirtualizationMode="Recycling"
-                VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                VirtualizingStackPanel.ScrollUnit="Pixel"
-                ScrollViewer.CanContentScroll="True"
-                EnableRowVirtualization="True"
-                EnableColumnVirtualization="True"
-                AutoGenerateColumns="False"
-                CanUserAddRows="False"
-                CanUserDeleteRows="False"
-                CanUserResizeRows="False"
-                IsReadOnly="True"
-                SelectionUnit="FullRow"
-                SelectionMode="Single"
-                GridLinesVisibility="None"
-                HeadersVisibility="Column"
-                Background="Transparent"
-                BorderThickness="1"
-                BorderBrush="#757575"
-                FocusVisualStyle="{x:Null}"
-                AutomationProperties.Name="Services List"
-                AutomationProperties.AutomationId="SidebarServicesDataGrid">
+          <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Padding" Value="10,7" />
+          </Style>
 
-                <DataGrid.Resources>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7" />
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7" />
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White" />
+          <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Style.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#F5F5F5" />
+              </Trigger>
+            </Style.Triggers>
+          </Style>
 
-                    <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Padding" Value="10,7" />
-                    </Style>
+          <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                  <Border Padding="0" Background="{TemplateBinding Background}">
+                    <ContentPresenter VerticalAlignment="Center" />
+                  </Border>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter Property="BorderThickness" Value="0" />
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </DataGrid.Resources>
 
-                    <Style TargetType="DataGridRow">
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="SnapsToDevicePixels" Value="True" />
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#F5F5F5" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
+        <DataGrid.Columns>
+          <DataGridTemplateColumn Width="*"
+                                            CanUserReorder="False"
+                                            CanUserResize="False"
+                                            SortMemberPath="Name">
+            <DataGridTemplateColumn.Header>
+              <TextBlock AutomationProperties.Name="{x:Static resx:Strings.Automation_ServiceNameHeader_Name}"
+                                       FontWeight="SemiBold"
+                                       Text="{x:Static resx:Strings.Column_Service}" />
+            </DataGridTemplateColumn.Header>
 
-                    <Style TargetType="DataGridCell">
-                        <Setter Property="BorderThickness" Value="0" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="DataGridCell">
-                                    <Border Background="{TemplateBinding Background}" Padding="0">
-                                        <ContentPresenter VerticalAlignment="Center" />
-                                    </Border>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                        <Style.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="BorderThickness" Value="0" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.Resources>
-
-                <DataGrid.Columns>
-                    <DataGridTemplateColumn
-                        Width="*"
-                        SortMemberPath="Name"
-                        CanUserReorder="False"
-                        CanUserResize="False">
-
-                        <DataGridTemplateColumn.Header>
-                            <TextBlock
-                                Text="{x:Static resx:Strings.Column_Service}"
-                                FontWeight="SemiBold"
-                                AutomationProperties.Name="Service Name Header" />
-                        </DataGridTemplateColumn.Header>
-
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Border
-                                    Background="Transparent"
-                                    BorderBrush="#F0F0F0"
-                                    BorderThickness="0,0,0,1"
-                                    Padding="10,6">
-                                    <TextBlock
-                                        Text="{Binding Name}"
-                                        VerticalAlignment="Center"
-                                        TextTrimming="CharacterEllipsis"
-                                        AutomationProperties.Name="{Binding Name}" />
-                                </Border>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Grid>
-    </Border>
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <Border Padding="10,6"
+                                        Background="Transparent"
+                                        BorderBrush="#F0F0F0"
+                                        BorderThickness="0,0,0,1">
+                  <TextBlock VerticalAlignment="Center"
+                                               AutomationProperties.Name="{Binding Name}"
+                                               Text="{Binding Name}"
+                                               TextTrimming="CharacterEllipsis" />
+                </Border>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+    </Grid>
+  </Border>
 </UserControl>

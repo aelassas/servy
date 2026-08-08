@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using System.ComponentModel;
@@ -29,21 +29,21 @@ namespace Servy.Core.Helpers
             // Core Legacy Processes
             "system", "idle", "csrss", "lsass", "wininit", "services",
             "winlogon", "smss", "svchost", "explorer", "runtimebroker",
-            "dwm", "fontdrvhost", "audiodg", "MsMpEng", "MsSense", "LsaIso",
-            "WUDFHost", "wmiprvse", "conhost", "taskhostw", "sihost",
+            "dwm", "fontdrvhost", "audiodg", "msmpeng", "mssense", "lsaiso",
+            "wudfhost", "wmiprvse", "conhost", "taskhostw", "sihost",
             "ctfmon", "dllhost", "searchindexer", "searchhost",
 
             // Modern Win10/11+ Pseudo-System Processes
-            "Registry",
-            "MemCompression",
-            "Secure System",
+            "registry",
+            "memcompression",
+            "secure system",
 
             // Virtualization & Container Hosts
             "vmcompute",      // Hyper-V Host Compute Service (Orchestrates VMs)
             "vmms",           // Hyper-V Virtual Machine Management Service
             "vmwp",           // Virtual Machine Worker Process (one per running VM; killing it hard-stops the VM)
             "vmmem",          // VM/WSL2 memory accounting pseudo-process
-            "vmmemWSL"        // WSL2 variant of vmmem on newer Windows 11 builds
+            "vmmemwsl"        // WSL2 variant of vmmem on newer Windows 11 builds
         };
 
         /// <summary>
