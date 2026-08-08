@@ -66,8 +66,8 @@ namespace Servy.Core.Mappers
 
                 MaxRestartAttempts = dto.MaxRestartAttempts.Value,
                 HeartbeatUrl = dto.HeartbeatUrl,
-                HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds,
-                EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags,
+                HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds.Value,
+                EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags.Value,
                 FailureProgramPath = dto.FailureProgramPath,
                 FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory,
                 FailureProgramParameters = dto.FailureProgramParameters,

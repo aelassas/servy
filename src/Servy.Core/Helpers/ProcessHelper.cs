@@ -250,7 +250,6 @@ namespace Servy.Core.Helpers
                         if (deltaTime > 0 && deltaCpu >= 0)
                         {
                             cpu = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
-                            cpu = Math.Round(cpu, 1, MidpointRounding.AwayFromZero);
                         }
 
                         UpdateCpuSample(pid, now, totalTime);

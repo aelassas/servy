@@ -50,6 +50,8 @@ namespace Servy.Core.Helpers
             dto.MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts;
             dto.RecoveryAction = dto.RecoveryAction ?? (int)AppConfig.DefaultRecoveryAction;
             dto.RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit;
+            dto.HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
+            dto.EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags;
 
             // Lifecycle Hooks (Pre-Launch)
             dto.PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
