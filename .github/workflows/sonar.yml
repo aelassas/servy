@@ -1,8 +1,9 @@
-﻿# --------------------------------------------------------------------------
-# SonarCloud Analysis Workflow for Servy
-# Description: Performs static code analysis and security scanning.
-# Author: Akram El Assas
-# --------------------------------------------------------------------------
+﻿# ===========================================
+# GitHub Actions Workflow - Sonar
+# -------------------------------------------
+# Performs SonarCloud static code analysis
+# and security scanning for the Servy solution.
+# ===========================================
 
 name: sonar
 on:

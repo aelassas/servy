@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
@@ -178,7 +178,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
+            Assert.Equal(Core.Resources.Strings.Msg_ServiceNameRequired, result.Message);
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
+            Assert.Equal(Core.Resources.Strings.Msg_ServiceNotFound, result.Message);
         }
 
         #endregion

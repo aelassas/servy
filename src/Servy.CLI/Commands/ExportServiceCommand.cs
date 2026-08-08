@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Enums;
+using Servy.CLI.Enums;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -45,7 +45,7 @@ namespace Servy.CLI.Commands
             {
 
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
+                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNameRequired);
 
                 // Validate configuration file type
                 if (!Helpers.Helper.TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
@@ -60,7 +60,7 @@ namespace Servy.CLI.Commands
                 var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, cancellationToken: cancellationToken);
 
                 if (exists == null)
-                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
+                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
 
                 string content;
                 string typeLabel = configFileType.ToString().ToUpperInvariant();

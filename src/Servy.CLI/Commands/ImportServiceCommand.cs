@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Enums;
+using Servy.CLI.Enums;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -236,7 +236,7 @@ namespace Servy.CLI.Commands
                 }
 
                 return CommandResult.Fail(string.Format(
-                    Strings.Msg_InvalidPathInConfig,
+                    Core.Resources.Strings.Msg_InvalidPathInConfig,
                     violation.Attribute.Label));
             }
 

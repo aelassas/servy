@@ -56,9 +56,11 @@ jobs:
 
       - name: Build Servy projects (Release ${{ matrix.arch }})
         shell: pwsh
+        env:
+          MATRIX_RUNTIME: ${{ matrix.runtime }}        
         run: |
           $config = "Release"
-          $runtime = "${{ matrix.runtime }}"
+          $runtime = $env:MATRIX_RUNTIME
 
           $projects = @(
             "src\Servy.Restarter\Servy.Restarter.csproj",

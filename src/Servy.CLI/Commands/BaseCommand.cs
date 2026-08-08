@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Helpers;
+using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.Core.Common;
@@ -114,7 +114,7 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync(commandName, action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(serviceName))
-                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
+                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNameRequired);
 
                 if (!BypassElevationCheck)
                 {
@@ -124,7 +124,7 @@ namespace Servy.CLI.Commands
                 var exists = serviceManager.IsServiceInstalled(serviceName, cancellationToken: cancellationToken);
                 if (!exists)
                 {
-                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
+                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
                 }
 
                 if (preCheck != null)

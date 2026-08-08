@@ -339,10 +339,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Service was restarted successfully.</value>
   </data>
 
-  <data name="Msg_ServiceNotFound" xml:space="preserve">
-    <value>Service not found.</value>
-  </data>
-
   <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
     <value>Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered.</value>
   </data>
@@ -440,7 +436,7 @@ If the service is disabled and marked for deletion, installation will fail until
 
   <!-- Miscellaneous -->
   <data name="Msg_InvalidServiceName" xml:space="preserve">
-    <value>Invalid service name.</value>
+    <value>Service name contains invalid characters. Avoid using '\', '/', ':', '*', '?', '"', '&lt;', '&gt;', '|'.</value>
   </data>
 
   <!-- Service Footer Templates -->
