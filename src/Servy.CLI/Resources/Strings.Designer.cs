@@ -88,6 +88,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Configuration file type is required (XML or JSON)..
+        /// </summary>
+        public static string Msg_ConfigFileTypeRequired {
+            get {
+                return ResourceManager.GetString("Msg_ConfigFileTypeRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to export configuration for service &apos;{0}&apos;.
         /// </summary>
         public static string Msg_ExportServiceAction {
@@ -219,15 +228,6 @@ namespace Servy.CLI.Resources {
         public static string Msg_InstallSuccess {
             get {
                 return ResourceManager.GetString("Msg_InstallSuccess", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Configuration file type is required (XML or JSON)..
-        /// </summary>
-        public static string Msg_InvalidConfigFileType {
-            get {
-                return ResourceManager.GetString("Msg_InvalidConfigFileType", resourceCulture);
             }
         }
         

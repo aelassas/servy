@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.Helpers;
 using System;
 using System.Collections.Generic;
@@ -387,7 +387,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange (Static execution pipeline framework proxy metrics context)
 
             // Act
-            DateTime result = _resourceHelper.GetHostProcessLastWriteTimeUTC();
+            DateTime result = _resourceHelper.GetHostProcessLastWriteTimeUtc();
 
             // Assert
             Assert.True(result > DateTime.MinValue);

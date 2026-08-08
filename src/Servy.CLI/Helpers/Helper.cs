@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Servy.CLI.Enums;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
@@ -110,7 +110,7 @@ namespace Servy.CLI.Helpers
             if (string.IsNullOrEmpty(trimmed))
             {
                 fileType = default;
-                error = Strings.Msg_InvalidConfigFileType;
+                error = Strings.Msg_ConfigFileTypeRequired;
                 return false;
             }
 
