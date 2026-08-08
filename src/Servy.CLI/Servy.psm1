@@ -1257,7 +1257,7 @@ function Install-ServyService {
       "--maxFailedChecks"            = "MaxFailedChecks"
       "--recoveryAction"             = "RecoveryAction"
       "--maxRestartAttempts"         = "MaxRestartAttempts"
-      "--heartbeatUrl" 		          = "HeartbeatUrl"
+      "--heartbeatUrl"               = "HeartbeatUrl"
       "--heartbeatUrlTimeoutSeconds" = "HeartbeatUrlTimeoutSeconds"
       "--failureProgramPath"         = "FailureProgramPath"
       "--failureProgramStartupDir"   = "FailureProgramStartupDir"
@@ -1362,20 +1362,8 @@ function Install-ServyService {
       $plainPassword = $null
 
       # Clear sensitive environment variables from the hashtable structure
-      foreach ($key in @(
-        $script:ServyPasswordEnvVar,
-        $script:ServyProcessParametersEnvVar,
-        $script:ServyEnvironmentVariablesEnvVar,
-        $script:ServyFailureProgramParametersEnvVar,
-        $script:ServyPreLaunchParametersEnvVar,
-        $script:ServyPreLaunchEnvironmentVariablesEnvVar,
-        $script:ServyPostLaunchParametersEnvVar,
-        $script:ServyPreStopParametersEnvVar,
-        $script:ServyPostStopParametersEnvVar
-      )) {
-          if ($secureEnv.ContainsKey($key)) {
-              $secureEnv[$key] = $null
-          }
+      foreach ($key in @($secureEnv.Keys)) {
+          $secureEnv[$key] = $null
       }
   }
 }
