@@ -59,7 +59,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\"." + SecurityWarningPrefix + AppConfig.ProcessParametersEnvVarName + SecurityWarningSuffixParams)]
+        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"--data %ProgramData%\\MyApp --bin %MY_VAR%\\bin\"." + SecurityWarningPrefix + AppConfig.ProcessParametersEnvVarName + SecurityWarningSuffixParams)]
         public string? ProcessParameters { get; set; }
 
         /// <summary>

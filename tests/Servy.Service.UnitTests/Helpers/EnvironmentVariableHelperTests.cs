@@ -320,6 +320,36 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal(expectedString, result);
         }
 
+        [Fact]
+        public void ExpandEnvironmentVariables_InjectedLiteralPercentContent_DoesNotTriggerOsReExpansion()
+        {
+            // Arrange: Tests Issue #2300
+            // We set up a custom variable that evaluates to a literal '%'.
+            // When referenced inside another variable surrounding a real system variable keyword,
+            // the resulting literal token sequence (e.g., %SystemRoot%) must NOT be expanded
+            // by the Step 4 OS-level execution layer.
+            string systemRootValue = Environment.GetEnvironmentVariable("SystemRoot")!;
+            Assert.False(string.IsNullOrEmpty(systemRootValue), "Precondition failed: SystemRoot OS variable is not set.");
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "PERCENT", Value = "%" },
+                new EnvironmentVariable { Name = "LITERAL_MSG", Value = "%PERCENT%SystemRoot%PERCENT%" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            string resultValue = expanded["LITERAL_MSG"]!;
+
+            // SSoT Parity Validation: The dictionary-builder must match the string-overload behavior.
+            // The literal string text '%SystemRoot%' should remain completely intact as a user literal,
+            // instead of aggressively expanding into the machine's actual system directory path (e.g., C:\Windows).
+            Assert.Equal("%SystemRoot%", resultValue);
+            Assert.NotEqual(systemRootValue, resultValue);
+        }
+
         #endregion
 
         #region Self-Referencing and Cycle Paths
@@ -426,33 +456,6 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal("prefix_%C%_suffix", expanded["A"]);
             Assert.Equal("prefix_foo_%A%", expanded["B"]);
             Assert.Equal("foo_%B%_suffix", expanded["C"]);
-        }
-
-        #endregion
-
-        #region Size Limitations and Guard Paths
-
-        [Fact]
-        public void ExpandEnvironmentVariables_ExceedingMaxExpandedLength_TruncatesString()
-        {
-            // Arrange
-            int maxLen = AppConfig.MaxEnvVarExpandedLength;
-
-            // We create a base variable that is just under half the max length.
-            // Referencing it twice in OVERFLOW will cause the inline expansion to breach the limit.
-            string largePayload = new string('A', (maxLen / 2) + 100);
-
-            var vars = new List<EnvironmentVariable>
-            {
-                new EnvironmentVariable { Name = "LARGE_BASE", Value = largePayload },
-                new EnvironmentVariable { Name = "OVERFLOW_VAR", Value = "%LARGE_BASE%_%LARGE_BASE%" }
-            };
-
-            // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
-
-            // Assert
-            Assert.Equal(maxLen, expanded["OVERFLOW_VAR"]?.Length);
         }
 
         #endregion
@@ -595,6 +598,29 @@ namespace Servy.Service.UnitTests.Helpers
         #region Size Limitations and Truncation Sentinel Guard Paths
 
         [Fact]
+        public void ExpandEnvironmentVariables_ExceedingMaxExpandedLength_TruncatesString()
+        {
+            // Arrange
+            int maxLen = AppConfig.MaxEnvVarExpandedLength;
+
+            // We create a base variable that is just under half the max length.
+            // Referencing it twice in OVERFLOW will cause the inline expansion to breach the limit.
+            string largePayload = new string('A', (maxLen / 2) + 100);
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "LARGE_BASE", Value = largePayload },
+                new EnvironmentVariable { Name = "OVERFLOW_VAR", Value = "%LARGE_BASE%_%LARGE_BASE%" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.Equal(maxLen, expanded["OVERFLOW_VAR"]?.Length);
+        }
+
+        [Fact]
         public void ExpandEnvironmentVariables_TruncationLandsExactlyOnTokenEnd_PreservesIntactToken()
         {
             // Arrange: Tests Issue #2273 (Outer guard validation)
@@ -686,40 +712,6 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.True(resultValue.All(c => c == 'C'), "The output string must contain only sanitized baseline padding values.");
             Assert.DoesNotContain("\uFFFD", resultValue, StringComparison.Ordinal);
             Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
-        }
-
-        #endregion
-
-        #region Injected Literal Percent
-
-        [Fact]
-        public void ExpandEnvironmentVariables_InjectedLiteralPercentContent_DoesNotTriggerOsReExpansion()
-        {
-            // Arrange: Tests Issue #2300
-            // We set up a custom variable that evaluates to a literal '%'.
-            // When referenced inside another variable surrounding a real system variable keyword,
-            // the resulting literal token sequence (e.g., %SystemRoot%) must NOT be expanded
-            // by the Step 4 OS-level execution layer.
-            string systemRootValue = Environment.GetEnvironmentVariable("SystemRoot")!;
-            Assert.False(string.IsNullOrEmpty(systemRootValue), "Precondition failed: SystemRoot OS variable is not set.");
-
-            var vars = new List<EnvironmentVariable>
-            {
-                new EnvironmentVariable { Name = "PERCENT", Value = "%" },
-                new EnvironmentVariable { Name = "LITERAL_MSG", Value = "%PERCENT%SystemRoot%PERCENT%" }
-            };
-
-            // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
-
-            // Assert
-            string resultValue = expanded["LITERAL_MSG"]!;
-
-            // SSoT Parity Validation: The dictionary-builder must match the string-overload behavior.
-            // The literal string text '%SystemRoot%' should remain completely intact as a user literal,
-            // instead of aggressively expanding into the machine's actual system directory path (e.g., C:\Windows).
-            Assert.Equal("%SystemRoot%", resultValue);
-            Assert.NotEqual(systemRootValue, resultValue);
         }
 
         #endregion

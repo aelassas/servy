@@ -256,7 +256,7 @@ namespace Servy.Manager.Services
                 }
 
                 // Pass false to skip splash screen
-                psi.Arguments = $"\"false\" {Core.Helpers.Helper.Quote(service.Name)}{forceFlag}";
+                psi.Arguments = $"\"false\" {Helper.Quote(service.Name)}{forceFlag}";
 
                 using (StartProcess(psi)) { }
             }
