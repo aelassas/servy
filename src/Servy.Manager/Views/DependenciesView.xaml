@@ -417,15 +417,15 @@
                 <Setter Property="Padding" Value="2" />
                 <Style.Resources>
                   <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7" />
-                  <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#E5E5E5" />
+                  <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7" />
+                  <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
+                  <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White" />
                 </Style.Resources>
               </Style>
             </TreeView.Resources>
 
             <TreeView.ItemContainerStyle>
-              <Style TargetType="TreeViewItem" BasedOn="{StaticResource BaseTreeViewItemStyle}">
-                <Setter Property="ItemContainerStyle" Value="{StaticResource BaseTreeViewItemStyle}" />
-              </Style>
+              <Style TargetType="TreeViewItem" BasedOn="{StaticResource BaseTreeViewItemStyle}" />
             </TreeView.ItemContainerStyle>
           </TreeView>
         </Border>
