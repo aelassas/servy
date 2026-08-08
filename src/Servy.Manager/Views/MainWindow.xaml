@@ -121,10 +121,13 @@
                                  Margin="0,0,5,0"
                                  VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 KeyDown="SearchTextBox_KeyDown"
                                  AutomationProperties.Name="{x:Static resx:Strings.Automation_SearchTextBox_Name}"
                                  AutomationProperties.AutomationId="SearchTextBox"
-                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SearchTextBox_HelpText}" />
+                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SearchTextBox_HelpText}">
+              <TextBox.InputBindings>
+                <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+              </TextBox.InputBindings>
+            </TextBox>
 
             <Button Grid.Column="1"
                                 Content="{Binding SearchButtonText, UpdateSourceTrigger=PropertyChanged}"

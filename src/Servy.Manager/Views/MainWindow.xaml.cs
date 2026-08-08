@@ -99,33 +99,6 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the KeyDown event of the search text box.
-        /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous key processing.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The event data containing the key that was pressed.</param>
-        private void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
-            => _ = RunAsync(() => SearchTextBox_KeyDownAsync(sender, e));
-
-        /// <summary>
-        /// Asynchronously processes key down events for the search text box.
-        /// Executes the <see cref="MainViewModel.SearchCommand"/> specifically when the Enter key is pressed
-        /// and the command is in a valid state to execute.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The event data containing the key that was pressed.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        private async Task SearchTextBox_KeyDownAsync(object sender, KeyEventArgs e)
-        {
-            // Verify Enter key was pressed and the ViewModel is in a state where
-            // a search can be safely initiated.
-            if (e.Key == Key.Enter && DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
-            {
-                await vm.SearchCommand.ExecuteAsync(null);
-            }
-        }
-
-        /// <summary>
         /// Handles PreviewMouseLeftButtonDown for row action buttons (Start, Stop, Restart).
         /// Executes the associated command manually.
         /// </summary>

@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # GitHub Composite Action - Setup Custom .NET
 # ------------------------------------------------------------------------------
 # Security: Enforces strict Authenticode signature validation and cryptographic
@@ -6,41 +6,36 @@
 # ==============================================================================
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
+
 inputs:
   version:
     description: '.NET SDK version to install (e.g., 10.0.102). Pinning ensures reproducible builds.'
     required: true
     default: '10.0.300'
   max_retries:
-    description: 'Maximum number of download attempts for dotnet-install.ps1'
+    description: 'Number of retries after the initial attempt'
     required: false
-    default: '5'
+    default: '4'
+
 runs:
   using: "composite"
   steps:
+    - name: Download dotnet-install.ps1
+      uses: ./.github/actions/download-with-retry
+      with:
+        url: 'https://dot.net/v1/dotnet-install.ps1'
+        output_path: '${{ runner.temp }}/dotnet-install.ps1'
+        asset_name: 'dotnet-install.ps1'
+        max_retries: ${{ inputs.max_retries }}
+
     - name: Install .NET SDK
       shell: pwsh
       env:
         DOTNET_VERSION: ${{ inputs.version }}
-        INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
       run: |
-        $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
         # Relocate the temporary script to the runner's temp directory to prevent workspace pollution
         $installerPath = Join-Path $env:RUNNER_TEMP "dotnet-install.ps1"
-
-        # 1. Download with retries
-        $maxRetries = [int]$env:INPUT_MAX_RETRIES
-        for ($i = 0; $i -lt $maxRetries; $i++) {
-          # Use --fail to force exit code 22 on HTTP 400+, allowing the retry loop to capture transient server errors.
-          curl.exe -fL $url -o $installerPath
-
-          if ($LASTEXITCODE -eq 0) { break }
-          if ($i -eq ($maxRetries - 1)) {
-            throw "Failed to download dotnet-install.ps1 after $maxRetries attempts"
-          }
-          Start-Sleep -Seconds 3
-        }
 
         # 2. SECURITY CHECK: Verify Microsoft Signature
         Write-Host "Verifying Authenticode signature of dotnet-install.ps1..."
@@ -57,7 +52,6 @@ runs:
 
         # Extract RDN components cleanly using the .NET crypto API format
         $decodedSubject = $x500Name.Format($true) # Returns newline-delimited RDN entries
-
         # Validate that 'O=Microsoft Corporation' exists exactly as an independent structural attribute line
         $isMatch = $false
         foreach ($line in ($decodedSubject -split "`n")) {

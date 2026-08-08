@@ -30,7 +30,7 @@ $script:ServyMaxBufferChars = 1048576
 
 # Shared validation pattern for KEY=VALUE;KEY=VALUE environment-variable strings
 # Uses Atomic Groups (?>...) to prevent Catastrophic Backtracking (ReDoS) on overlapping escape branches.
-$script:EnvVarValidationPattern = '^([^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))(; ?[^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?$'
+$script:EnvVarValidationPattern = '^\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*)(;\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?\s*$'
 
 # Specifies the name of the environment variables used to securely pass data from the CLI.
 # Using environment variables prevents sensitive credentials and parameters from being exposed in plain text 

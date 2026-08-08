@@ -1,4 +1,4 @@
-﻿using Servy.Manager.Models;
+using Servy.Manager.Models;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -137,28 +137,5 @@ namespace Servy.Manager.Views.Controls
                 nameof(SearchCommand),
                 typeof(ICommand),
                 typeof(ServiceListControl));
-
-        /// <summary>
-        /// Handles key presses on the search input box.
-        /// Triggers the search command when the Enter key is pressed.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">Key event data.</param>
-        private void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter)
-            {
-                return;
-            }
-
-            // Prevent the TextBox from beeping or propagating the key event
-            e.Handled = true;
-
-            // Execute the bound search command if available
-            if (SearchCommand?.CanExecute(null) == true)
-            {
-                SearchCommand.Execute(null);
-            }
-        }
     }
 }
