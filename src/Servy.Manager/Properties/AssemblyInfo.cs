@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -53,3 +54,4 @@ using System.Windows;
 [assembly: AssemblyFileVersion("9.2.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.Manager.UnitTests")]
+[assembly: NeutralResourcesLanguage("en", UltimateResourceFallbackLocation.MainAssembly)]

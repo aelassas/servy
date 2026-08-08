@@ -1,5 +1,6 @@
 using Fody;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -39,3 +40,4 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Servy.Core.UnitTests")]
 [assembly: InternalsVisibleTo("Servy.Core.IntegrationTests")]
+[assembly: NeutralResourcesLanguage("en", UltimateResourceFallbackLocation.MainAssembly)]

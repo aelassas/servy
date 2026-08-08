@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Resources;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -48,3 +49,4 @@ using System.Windows;
 //
 [assembly: AssemblyVersion("9.2.0.0")]
 [assembly: AssemblyFileVersion("9.2.0.0")]
+[assembly: NeutralResourcesLanguage("en", UltimateResourceFallbackLocation.MainAssembly)]
