@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.IntegrationTests.Helpers
+namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
     /// Shared abstract base class managing the thread-safe extraction and registration

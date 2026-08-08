@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Newtonsoft.Json;
 using Servy.Core.Config;
 using Servy.Core.DTOs;

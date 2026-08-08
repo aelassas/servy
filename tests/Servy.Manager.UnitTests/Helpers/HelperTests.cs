@@ -1,4 +1,4 @@
-﻿using Servy.Manager.Helpers;
+using Servy.Manager.Helpers;
 
 namespace Servy.Manager.UnitTests.Helpers
 {

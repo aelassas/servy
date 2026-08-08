@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Resources;
+using Servy.CLI.Resources;
 
 namespace Servy.CLI.Helpers
 {

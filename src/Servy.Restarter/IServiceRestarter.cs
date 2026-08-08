@@ -1,4 +1,4 @@
-﻿namespace Servy.Restarter
+namespace Servy.Restarter
 {
     /// <summary>
     /// Interface for service restart operations.

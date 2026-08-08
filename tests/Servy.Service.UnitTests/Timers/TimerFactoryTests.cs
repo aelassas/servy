@@ -1,4 +1,4 @@
-﻿using Servy.Service.Timers;
+using Servy.Service.Timers;
 using Servy.Testing;
 
 namespace Servy.Service.UnitTests.Timers

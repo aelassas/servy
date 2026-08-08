@@ -1,4 +1,4 @@
-﻿using Servy.Services;
+using Servy.Services;
 
 namespace Servy.Design
 {

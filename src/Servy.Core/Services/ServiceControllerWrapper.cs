@@ -1,4 +1,4 @@
-﻿using Servy.Core.Logging;
+using Servy.Core.Logging;
 using Servy.Core.Resources;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;

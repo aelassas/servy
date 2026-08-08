@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.UI.ViewModels; // Inheriting from the centralized UI ViewModel base
 
 namespace Servy.Manager.Models

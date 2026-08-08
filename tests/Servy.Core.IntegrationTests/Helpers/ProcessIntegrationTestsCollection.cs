@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.IntegrationTests.Helpers
+namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
     /// ProcessIntegrationTestsCollection is a collection definition for integration tests that involve process management.

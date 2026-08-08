@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Moq.Protected;
 using Servy.Core.Data;
 using Servy.Infrastructure.Helpers;

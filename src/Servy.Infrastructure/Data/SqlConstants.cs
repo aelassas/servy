@@ -1,4 +1,4 @@
-﻿namespace Servy.Infrastructure.Data
+namespace Servy.Infrastructure.Data
 {
     /// <summary>
     /// Centralized source of truth for all Service table operations.

@@ -1,4 +1,4 @@
-﻿using Servy.Core.Common;
+using Servy.Core.Common;
 using Servy.Core.DTOs;
 
 namespace Servy.Core.Data

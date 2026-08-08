@@ -1,4 +1,4 @@
-﻿namespace Servy.ViewModels
+namespace Servy.ViewModels
 {
     /// <summary>
     /// Represents a generic item used to encapsulate an enumeration value alongside its localized text representation for UI binding.

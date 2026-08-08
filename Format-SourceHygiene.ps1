@@ -116,8 +116,10 @@ foreach ($file in $filesToScan) {
         if ($DryRun) {
             Write-Host "Would format ($reason): $relativePath" -ForegroundColor Yellow
         } else {
-            # Set-Content automatically appends a trailing newline when writing string arrays
-            Set-Content -Path $filePath -Value $trimmedLines -Encoding UTF8
+            # UTF8Encoding($false) = no BOM, on both Windows PowerShell 5.1 and PowerShell 7+
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            $content   = ($trimmedLines -join "`n") + "`n"
+            [System.IO.File]::WriteAllText($filePath, $content, $utf8NoBom)
             Write-Host "Formatted ($reason): $relativePath" -ForegroundColor Gray
         }
     }

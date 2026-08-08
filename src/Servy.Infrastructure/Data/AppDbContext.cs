@@ -1,4 +1,4 @@
-﻿using Servy.Core.Data;
+using Servy.Core.Data;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics.CodeAnalysis;

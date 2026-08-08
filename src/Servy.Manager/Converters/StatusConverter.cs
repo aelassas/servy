@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.Manager.Resources;
 
 namespace Servy.Manager.Converters

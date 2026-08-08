@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Options;

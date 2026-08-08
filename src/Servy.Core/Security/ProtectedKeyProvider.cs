@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.Collections.Concurrent;

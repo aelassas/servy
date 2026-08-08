@@ -1,4 +1,4 @@
-﻿using Servy.Core.Logging;
+using Servy.Core.Logging;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Principal;

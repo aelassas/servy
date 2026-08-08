@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Enums
+namespace Servy.Core.Enums
 {
     /// <summary>
     /// Represents the severity level of an event log entry.

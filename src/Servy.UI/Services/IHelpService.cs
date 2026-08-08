@@ -1,4 +1,4 @@
-﻿namespace Servy.UI.Services
+namespace Servy.UI.Services
 {
     /// <summary>
     /// Provides methods to show help-related UI elements and perform update checks.

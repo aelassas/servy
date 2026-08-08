@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Servy.Core.Config;
 using Servy.Core.Native;
 using System.Diagnostics;

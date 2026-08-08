@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 
 namespace Servy.Core.UnitTests.Helpers

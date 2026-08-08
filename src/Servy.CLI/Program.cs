@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Servy.CLI.Commands;
 using Servy.CLI.Helpers;

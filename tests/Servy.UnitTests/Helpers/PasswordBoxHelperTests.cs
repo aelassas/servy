@@ -1,4 +1,4 @@
-﻿using Servy.Helpers;
+using Servy.Helpers;
 using Servy.Testing;
 using System.Windows;
 using System.Windows.Controls;

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.IO;

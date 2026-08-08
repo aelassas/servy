@@ -1,4 +1,4 @@
-﻿using Servy.Core.Native;
+using Servy.Core.Native;
 using Servy.Testing;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.InteropServices;

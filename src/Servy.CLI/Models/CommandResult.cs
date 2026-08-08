@@ -1,4 +1,4 @@
-﻿namespace Servy.CLI.Models
+namespace Servy.CLI.Models
 {
     /// <summary>
     /// Represents the result of a command execution, including success status, message, and exit code.

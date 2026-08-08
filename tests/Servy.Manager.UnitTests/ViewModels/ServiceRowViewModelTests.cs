@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.Enums;
 using Servy.Manager.Models;
 using Servy.Manager.Services;

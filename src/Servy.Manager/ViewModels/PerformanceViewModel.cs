@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Manager.Config;

@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Helpers
+namespace Servy.Core.Helpers
 {
     /// <summary>
     /// Provides abstractions to query, start, and stop Servy services.

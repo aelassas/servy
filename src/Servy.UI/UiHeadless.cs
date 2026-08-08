@@ -1,4 +1,4 @@
-﻿namespace Servy.UI
+namespace Servy.UI
 {
     /// <summary>
     /// Process-global flag that switches the UI layer into headless mode.

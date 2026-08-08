@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.Service.StreamWriters;
 
 namespace Servy.Service.UnitTests.StreamWriters

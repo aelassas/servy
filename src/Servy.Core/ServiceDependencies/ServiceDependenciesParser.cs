@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.ServiceDependencies
+namespace Servy.Core.ServiceDependencies
 {
     /// <summary>
     /// Provides methods to parse and format Windows service dependency strings

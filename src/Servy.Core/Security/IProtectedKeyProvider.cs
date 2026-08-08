@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Security
+namespace Servy.Core.Security
 {
     /// <summary>
     /// Provides access to the AES encryption key and initialization vector (IV)

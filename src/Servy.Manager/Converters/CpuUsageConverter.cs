@@ -1,4 +1,4 @@
-﻿namespace Servy.Manager.Converters
+namespace Servy.Manager.Converters
 {
     /// <summary>
     /// Converts a CPU usage to a string in percentage.

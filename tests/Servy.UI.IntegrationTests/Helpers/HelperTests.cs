@@ -1,4 +1,4 @@
-﻿using Servy.Testing;
+using Servy.Testing;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;

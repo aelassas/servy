@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Text.RegularExpressions;

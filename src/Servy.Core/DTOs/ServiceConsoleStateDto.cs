@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.DTOs
+namespace Servy.Core.DTOs
 {
     /// <summary>
     /// A lightweight projection of a service's running state, specifically optimized

@@ -1,4 +1,4 @@
-﻿using Servy.Manager.Design;
+using Servy.Manager.Design;
 using Servy.Manager.Models;
 
 namespace Servy.Manager.UnitTests.Design

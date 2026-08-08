@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 
 namespace Servy.Core.Services

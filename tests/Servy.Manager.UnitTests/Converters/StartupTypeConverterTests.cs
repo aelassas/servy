@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
 using System.Globalization;

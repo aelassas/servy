@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.DTOs;
 using Servy.Core.Validation;
 using Servy.Manager.Config;

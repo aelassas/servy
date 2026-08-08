@@ -1,4 +1,4 @@
-﻿namespace Servy.UI.IntegrationTests
+namespace Servy.UI.IntegrationTests
 {
     [CollectionDefinition("UiSta", DisableParallelization = true)]
     public class UiStaCollection : ICollectionFixture<UiHeadlessFixture>

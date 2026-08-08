@@ -1,4 +1,4 @@
-﻿using Servy.Core.Native;
+using Servy.Core.Native;
 using System.Diagnostics.CodeAnalysis;
 using static Servy.Core.Native.NativeMethods;
 

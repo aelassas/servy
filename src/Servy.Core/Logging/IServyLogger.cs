@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Logging
+namespace Servy.Core.Logging
 {
     /// <summary>
     /// Defines methods for logging informational, warning, and error messages.

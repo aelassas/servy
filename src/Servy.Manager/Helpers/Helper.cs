@@ -1,4 +1,4 @@
-﻿using Servy.Core.Logging;
+using Servy.Core.Logging;
 
 namespace Servy.Manager.Helpers
 {

@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.ExceptionServices;
 
 namespace Servy.Testing

@@ -1,4 +1,4 @@
-﻿using System.Windows.Threading;
+using System.Windows.Threading;
 
 namespace Servy.UI.Services
 {

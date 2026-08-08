@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Logging
+namespace Servy.Core.Logging
 {
     /// <summary>
     /// Defines the severity levels for log entries.

@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 

@@ -1,4 +1,4 @@
-﻿using Servy.Core.Resources;
+using Servy.Core.Resources;
 using System.Globalization;
 
 namespace Servy.Core.Helpers

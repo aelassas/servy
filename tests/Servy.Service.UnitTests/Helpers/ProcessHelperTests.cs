@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Core.RegexWrapper;

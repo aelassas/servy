@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;

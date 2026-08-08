@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.IO;
 using Servy.Core.Security;

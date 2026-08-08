@@ -1,4 +1,4 @@
-﻿namespace Servy.Manager.Models
+namespace Servy.Manager.Models
 {
     /// <summary>
     /// Defines the source stream of a log entry.

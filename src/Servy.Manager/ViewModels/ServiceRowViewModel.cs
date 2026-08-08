@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Services;

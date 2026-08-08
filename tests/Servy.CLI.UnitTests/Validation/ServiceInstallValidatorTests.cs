@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.CLI.Validation;

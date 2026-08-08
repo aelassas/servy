@@ -1,4 +1,4 @@
-﻿using Servy.Service.CommandLine;
+using Servy.Service.CommandLine;
 
 namespace Servy.Service.UnitTests.CommandLine
 {

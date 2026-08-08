@@ -1,4 +1,4 @@
-﻿using Servy.Config;
+using Servy.Config;
 using System.ComponentModel;
 using AppConfig = Servy.Core.Config.AppConfig;
 

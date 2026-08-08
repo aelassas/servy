@@ -1,4 +1,4 @@
-﻿# ==========================================================================================
+# ==========================================================================================
 # GitHub Actions Workflow - Build Matrix
 # ------------------------------------------------------------------------------------------
 # Builds and validates the Servy .NET solution across both x64 and ARM64 target platforms
@@ -57,7 +57,7 @@ jobs:
       - name: Build Servy projects (Release ${{ matrix.arch }})
         shell: pwsh
         env:
-          MATRIX_RUNTIME: ${{ matrix.runtime }}        
+          MATRIX_RUNTIME: ${{ matrix.runtime }}
         run: |
           $config = "Release"
           $runtime = $env:MATRIX_RUNTIME

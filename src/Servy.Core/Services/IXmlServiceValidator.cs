@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Services
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Defines a contract for validating XML service configuration strings before they are

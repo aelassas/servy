@@ -1,4 +1,4 @@
-﻿using Servy.Core.Common;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -1329,18 +1329,54 @@ namespace Servy.Core.Services
 
         /// <summary>
         /// Maps a <see cref="ServiceStartType"/> to its corresponding Windows Service Control Manager (SCM)
-        /// constant value for the <c>CreateService</c> API.
+        /// constant value for the <c>CreateService</c> and <c>ChangeServiceConfig</c> APIs.
         /// </summary>
         /// <remarks>
-        /// The SCM does not have a native "Delayed Start" type; instead, the delayed property is
-        /// managed as a separate configuration change after service creation. This helper
-        /// coerces <see cref="ServiceStartType.AutomaticDelayedStart"/> to <see cref="ServiceStartType.Automatic"/>
-        /// to ensure the service is created with the correct base start mode.
+        /// The SCM API expects specific Win32 start type constants (1=System, 2=Automatic, 3=Manual, 4=Disabled).
+        /// Two members in <see cref="ServiceStartType"/> do not have direct Win32 SCM start type anchors:
+        /// <list type="bullet">
+        ///   <item>
+        ///     <see cref="ServiceStartType.Unknown"/> (0): Internal default/uninitialized sentinel. In the Win32 API,
+        ///     0 represents <c>SERVICE_BOOT_START</c> (reserved for boot-driver loading). Passing 0 for a Win32 service
+        ///     fails with <c>ERROR_INVALID_PARAMETER</c>. This method throws an exception if invoked with <c>Unknown</c>.
+        ///   </item>
+        ///   <item>
+        ///     <see cref="ServiceStartType.AutomaticDelayedStart"/> (5): Managed as a separate configuration flag after creation.
+        ///     This helper coerces <see cref="ServiceStartType.AutomaticDelayedStart"/> to <see cref="ServiceStartType.Automatic"/>
+        ///     for the base SCM creation call.
+        ///   </item>
+        /// </list>
         /// </remarks>
         /// <param name="t">The <see cref="ServiceStartType"/> requested by the configuration.</param>
         /// <returns>The unsigned integer representation compatible with the Windows API.</returns>
-        private static uint ToScmStartType(ServiceStartType t) =>
-            (uint)(t == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : t);
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="t"/> is <see cref="ServiceStartType.Unknown"/> or an undefined value.</exception>
+        private static uint ToScmStartType(ServiceStartType t)
+        {
+            switch (t)
+            {
+                case ServiceStartType.AutomaticDelayedStart:
+                case ServiceStartType.Automatic:
+                    return (uint)ServiceStartType.Automatic;
+
+                case ServiceStartType.Manual:
+                    return (uint)ServiceStartType.Manual;
+
+                case ServiceStartType.Disabled:
+                    return (uint)ServiceStartType.Disabled;
+
+                case ServiceStartType.Unknown:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(t),
+                        t,
+                        "Service start type could not be determined or is uninitialized (0 maps to Win32 SERVICE_BOOT_START, which is invalid for user-mode services).");
+
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(t),
+                        t,
+                        $"Undefined service start type value: {(int)t}.");
+            }
+        }
 
         #endregion
     }

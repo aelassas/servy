@@ -1,4 +1,4 @@
-﻿using Servy.UI.Commands;
+using Servy.UI.Commands;
 
 namespace Servy.UI.UnitTests.Commands
 {

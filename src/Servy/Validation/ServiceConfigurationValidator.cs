@@ -1,4 +1,4 @@
-﻿using Servy.Config;
+using Servy.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Validation;
 using Servy.UI.Services;

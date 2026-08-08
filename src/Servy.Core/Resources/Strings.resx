@@ -218,7 +218,7 @@
     <value>The environment variable key '{0}' contains illegal characters.</value>
   </data>
   <data name="Msg_EnvironmentVariableValueInvalidChars" xml:space="preserve">
-    <value>The environment variable value '{0}' contains illegal characters.</value>
+    <value>The value of environment variable '{0}' contains illegal characters.</value>
   </data>
 
   <data name="FileFilter_Executable" xml:space="preserve">

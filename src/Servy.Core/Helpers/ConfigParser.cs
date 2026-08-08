@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Servy.Core.Logging;
 using System.Globalization;
 using System.Runtime.CompilerServices;

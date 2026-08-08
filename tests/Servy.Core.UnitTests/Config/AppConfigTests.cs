@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using System.Runtime.InteropServices;
 
 namespace Servy.Core.UnitTests.Config

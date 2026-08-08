@@ -214,7 +214,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The environment variable value &apos;{0}&apos; contains illegal characters..
+        ///   Looks up a localized string similar to The value of environment variable &apos;{0}&apos; contains illegal characters..
         /// </summary>
         public static string Msg_EnvironmentVariableValueInvalidChars {
             get {

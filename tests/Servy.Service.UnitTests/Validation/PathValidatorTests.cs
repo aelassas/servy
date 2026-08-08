@@ -1,4 +1,4 @@
-﻿using Servy.Service.Validation;
+using Servy.Service.Validation;
 
 namespace Servy.Service.UnitTests.Validation
 {

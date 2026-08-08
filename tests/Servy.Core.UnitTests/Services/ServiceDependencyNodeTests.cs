@@ -1,4 +1,4 @@
-﻿using Servy.Core.Services;
+using Servy.Core.Services;
 
 namespace Servy.Core.UnitTests.Services
 {

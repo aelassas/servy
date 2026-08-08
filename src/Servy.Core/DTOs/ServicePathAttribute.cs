@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.DTOs
+namespace Servy.Core.DTOs
 {
     /// <summary>
     /// Specifies that a property represents an existing system path (an executable file or startup directory)

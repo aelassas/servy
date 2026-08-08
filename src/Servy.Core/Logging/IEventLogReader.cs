@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using System.Diagnostics.Eventing.Reader;
 
 namespace Servy.Core.Logging

@@ -1,4 +1,4 @@
-﻿namespace Servy.Restarter.UnitTests
+namespace Servy.Restarter.UnitTests
 {
     // This attribute defines the synchronization boundary name.
     // xUnit will NEVER run tests within the same collection concurrently.

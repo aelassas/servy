@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Utils;
 using Servy.Testing;

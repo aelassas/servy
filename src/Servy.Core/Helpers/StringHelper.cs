@@ -1,4 +1,4 @@
-﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.EnvironmentVariables;
 using System.Text;
 
 namespace Servy.Core.Helpers

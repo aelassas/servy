@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.IntegrationTests
+namespace Servy.Core.IntegrationTests
 {
     [CollectionDefinition("CoreOsIntegration", DisableParallelization = true)]
     public class CoreOsIntegrationCollection

@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.EnvironmentVariables
+namespace Servy.Core.EnvironmentVariables
 {
     /// <summary>
     /// Specifies the structural failure kind encountered during environment variable record processing.

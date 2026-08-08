@@ -1,4 +1,4 @@
-﻿namespace Servy.Service.Timers
+namespace Servy.Service.Timers
 {
     /// <summary>
     /// Concrete factory that creates <see cref="ITimer"/> instances

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;

@@ -1,4 +1,4 @@
-﻿using Servy.Core.Resources;
+using Servy.Core.Resources;
 using Servy.Testing;
 using System.Reflection;
 using System.Reflection.Emit;

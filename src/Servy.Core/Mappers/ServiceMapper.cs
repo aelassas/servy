@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;

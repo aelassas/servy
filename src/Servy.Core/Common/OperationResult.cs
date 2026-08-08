@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Common
+namespace Servy.Core.Common
 {
     /// <summary>
     /// Represents the result of an operation, providing a unified way to signal success

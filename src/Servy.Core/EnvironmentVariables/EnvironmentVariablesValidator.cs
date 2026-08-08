@@ -1,4 +1,4 @@
-﻿using Servy.Core.Resources;
+using Servy.Core.Resources;
 
 namespace Servy.Core.EnvironmentVariables
 {
@@ -117,7 +117,7 @@ namespace Servy.Core.EnvironmentVariables
 
             if (value.Contains("\0"))
             {
-                errorMessage = string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, value);
+                errorMessage = string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, key);
                 resultKind = EnvVarValidationResultKind.GeneralFailure;
                 return false;
             }

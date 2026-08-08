@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Security
+namespace Servy.Core.Security
 {
     /// <summary>
     /// Provides a centralized, thread-safe base class that implements an Interlocked-guarded

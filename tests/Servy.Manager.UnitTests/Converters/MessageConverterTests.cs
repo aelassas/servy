@@ -1,4 +1,4 @@
-﻿using Servy.Manager.Converters;
+using Servy.Manager.Converters;
 using System.Globalization;
 using System.Windows.Data;
 

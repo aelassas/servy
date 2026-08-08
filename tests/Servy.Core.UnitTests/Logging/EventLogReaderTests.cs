@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using System.Diagnostics.Eventing.Reader;
 using System.Security.Principal;
 using EventLogReader = Servy.Core.Logging.EventLogReader;

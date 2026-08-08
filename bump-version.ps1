@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.0
+#Requires -Version 5.0
 <#
 .SYNOPSIS
     Updates the version of Servy across scripts, AppConfig, and Directory.Build.props.

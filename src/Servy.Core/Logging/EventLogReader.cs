@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Eventing.Reader;

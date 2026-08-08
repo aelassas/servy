@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using System.Xml.Serialization;
 
 namespace Servy.Core.UnitTests.Helpers

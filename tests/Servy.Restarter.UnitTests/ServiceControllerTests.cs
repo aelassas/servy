@@ -1,4 +1,4 @@
-﻿using Servy.Testing;
+using Servy.Testing;
 
 namespace Servy.Restarter.UnitTests
 {

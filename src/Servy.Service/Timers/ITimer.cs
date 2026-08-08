@@ -1,4 +1,4 @@
-﻿using System.Timers;
+using System.Timers;
 
 namespace Servy.Service.Timers
 {

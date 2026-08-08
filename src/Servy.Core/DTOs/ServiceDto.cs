@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.Xml.Serialization;
 using Servy.Core.Config;
 using Servy.Core.Resources;

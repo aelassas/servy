@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Servy.Core.Config;
 
 namespace Servy.Core.Security

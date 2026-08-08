@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;

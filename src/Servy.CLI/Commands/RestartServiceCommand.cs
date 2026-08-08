@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Models;
+using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Services;

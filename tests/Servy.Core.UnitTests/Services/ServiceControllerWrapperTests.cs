@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.Resources;
 using Servy.Core.Services;
 using System.ComponentModel;

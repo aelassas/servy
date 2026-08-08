@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Moq;
 using Servy.Core.Config;
 using Servy.Core.Data;

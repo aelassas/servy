@@ -1,4 +1,4 @@
-﻿namespace Servy.UI.IntegrationTests
+namespace Servy.UI.IntegrationTests
 {
     /// <summary>
     /// Manages process-global <see cref="UiHeadless"/> state for the UI test collection.

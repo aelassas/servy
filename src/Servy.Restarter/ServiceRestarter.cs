@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.ServiceProcess;

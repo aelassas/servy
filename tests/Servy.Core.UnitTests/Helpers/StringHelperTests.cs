@@ -1,4 +1,4 @@
-﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 
 namespace Servy.Core.UnitTests.Helpers

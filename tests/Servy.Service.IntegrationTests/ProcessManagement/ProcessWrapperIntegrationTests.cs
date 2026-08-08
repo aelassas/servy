@@ -1,4 +1,4 @@
-﻿using Servy.Core.Native;
+using Servy.Core.Native;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System.Diagnostics;

@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.DTOs
+namespace Servy.Core.DTOs
 {
     /// <summary>
     /// Defines the SQLite column affinity and constraints for a mapped property.

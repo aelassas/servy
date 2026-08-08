@@ -1,4 +1,4 @@
-﻿namespace Servy.CLI.Options
+namespace Servy.CLI.Options
 {
     /// <summary>
     /// Indicates that a command-line option contains sensitive information

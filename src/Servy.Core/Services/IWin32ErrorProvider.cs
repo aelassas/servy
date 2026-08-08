@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Services
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides access to the last Win32 error code.

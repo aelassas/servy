@@ -1,4 +1,4 @@
-﻿using Servy.Core.Data;
+using Servy.Core.Data;
 using System.Data.Common;
 
 namespace Servy.Infrastructure.Helpers

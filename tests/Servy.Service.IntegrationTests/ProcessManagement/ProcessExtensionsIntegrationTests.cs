@@ -1,4 +1,4 @@
-﻿using Servy.Service.ProcessManagement;
+using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;

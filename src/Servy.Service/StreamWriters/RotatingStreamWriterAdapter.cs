@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.Core.IO;
 
 namespace Servy.Service.StreamWriters

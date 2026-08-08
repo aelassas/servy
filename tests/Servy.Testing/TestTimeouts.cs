@@ -1,4 +1,4 @@
-﻿namespace Servy.Testing
+namespace Servy.Testing
 {
     /// <summary>
     /// Centralised timing budgets and timeout constraints shared across the test suite.

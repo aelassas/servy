@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.EnvironmentVariables
+namespace Servy.Core.EnvironmentVariables
 {
     /// <summary>
     /// Provides methods to parse environment variables strings with escaping support.

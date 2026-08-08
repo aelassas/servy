@@ -1,4 +1,4 @@
-﻿namespace Servy.Service.CommandLine
+namespace Servy.Service.CommandLine
 {
     /// <inheritdoc cref="ICommandLineProvider"/>
     public class CommandLineProvider : ICommandLineProvider

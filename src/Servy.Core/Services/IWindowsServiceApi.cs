@@ -1,4 +1,4 @@
-﻿using Servy.Core.Native;
+using Servy.Core.Native;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services

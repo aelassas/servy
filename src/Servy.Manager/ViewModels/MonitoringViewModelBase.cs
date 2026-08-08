@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Manager.Mappers;
 using Servy.Manager.Models;

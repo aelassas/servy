@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.EnvironmentVariables
+namespace Servy.Core.EnvironmentVariables
 {
     /// <summary>
     /// Represents a single environment variable with a name and value.
