@@ -4,12 +4,12 @@
     Masks sensitive credentials and keys in a given text string.
 
 .DESCRIPTION
-    Uses a lookaround-based regular expression to identify and mask sensitive 
-    configuration keys or environment variable names without destroying the 
-    surrounding text or original separators. 
-    
-    Maintained in strict parity with the Servy.Service C# MaskingRegex implementation 
-    (src/Servy.Service/Helpers/ServiceHelper.cs) to ensure logs and email notifications 
+    Uses a lookaround-based regular expression to identify and mask sensitive
+    configuration keys or environment variable names without destroying the
+    surrounding text or original separators.
+
+    Maintained in strict parity with the Servy.Service C# MaskingRegex implementation
+    (src/Servy.Service/Helpers/ServiceHelper.cs) to ensure logs and email notifications
     have identical redaction behavior.
 
 .PARAMETER Text
@@ -33,7 +33,7 @@ function Protect-SensitiveString {
         [Parameter(Mandatory=$false)]
         [string]$Text
     )
-    
+
     if ([string]::IsNullOrWhiteSpace($Text)) { return $Text }
 
     # A collection of keywords used to identify potentially sensitive information.
@@ -70,7 +70,7 @@ function Protect-SensitiveString {
     )
 
     $keyPattern = [string]::Join('|', ($sensitiveKeys | ForEach-Object { [regex]::Escape($_) }))
-    
+
     # Constructed via concatenation to avoid multi-line here-string whitespace issues.
     # Branch B (space separator) consumes multi-word unquoted values up to the next
     # command-flag delimiter (-x / /x). To maintain architecture safety constraints,
@@ -106,7 +106,7 @@ function Protect-SensitiveString {
     # Use MatchEvaluator to conditionally extract the matched separator group (A or B)
     $evaluator = [System.Text.RegularExpressions.MatchEvaluator] {
         param($m)
-        
+
         $key = $m.Groups["key"].Value
         $sep = $m.Groups["sep"].Value
         $val = $m.Groups["val"].Value

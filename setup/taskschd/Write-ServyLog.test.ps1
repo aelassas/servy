@@ -27,16 +27,16 @@ Write-Host "Target Log Path: $TestLogPath" -ForegroundColor DarkGray
 # Definition block passed directly down into the isolated background processes
 $WorkerScript = {
     param([string]$LogScript, [string]$FilePath, [int]$MaxSize, [int]$WorkerId, [int]$WritesCount)
-    
+
     # Dot-source the logging mechanism inside the unique worker thread scope
     . $LogScript
-    
+
     # Rapidly blast messages to stress test locking and trigger rotation races
     $rng = [System.Random]::new()
     for ($i = 1; $i -le $WritesCount; $i++) {
         $Msg = "Worker {0:D2} | Payload Sequence {1:D3} | Testing Mutex Integrity" -f $WorkerId, $i
         Write-ServyLog -FilePath $FilePath -Message $Msg -MaxSizeBytes $MaxSize -MaxBackupFiles 0
-        
+
         # Micro-sleep to vary execution interleaving slightly
         [System.Threading.Thread]::Sleep($rng.Next(1, 5))
     }

@@ -1,8 +1,11 @@
+using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
 using System;
 using System.IO;
+using System.Linq;
+using System.Xml.Serialization;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Services
@@ -14,6 +17,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var service = ServiceDtoFactory.CreateSampleExport();
+            PopulateIgnoredProperties(service);
 
             // Act
             var xml = ServiceExporter.ExportXml(service);
@@ -45,11 +49,19 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("<PreLaunchExecutablePath>pre.exe</PreLaunchExecutablePath>", xml);
             Assert.Contains("<PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>", xml);
 
-            // Security Bounds Hardening: Ensure credential nodes and literal values are omitted via [XmlIgnore]
+            // Security Bounds Hardening: Ensure credential values are omitted
             Assert.DoesNotContain("pass", xml, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("user", xml, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("<Password>", xml);
-            Assert.DoesNotContain("<UserAccount>", xml);
+
+            // Dynamic Attribute-Driven Security Check: Validate every [XmlIgnore] property is strictly omitted
+            var xmlIgnoredProps = typeof(ServiceDto).GetProperties()
+                .Where(p => p.IsDefined(typeof(XmlIgnoreAttribute), inherit: true))
+                .Select(p => p.Name);
+
+            foreach (var propName in xmlIgnoredProps)
+            {
+                Assert.DoesNotContain($"<{propName}>", xml);
+            }
         }
 
         [Fact]
@@ -57,6 +69,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var service = ServiceDtoFactory.CreateSampleExport();
+            PopulateIgnoredProperties(service);
             var tempFile = Path.GetTempFileName();
 
             // Act & Assert
@@ -77,12 +90,20 @@ namespace Servy.Core.UnitTests.Services
                 // Security Bounds Hardening: Ensure file output on disk is strictly stripped of secrets
                 Assert.DoesNotContain("pass", content, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("user", content, StringComparison.OrdinalIgnoreCase);
-                Assert.DoesNotContain("<Password>", content);
-                Assert.DoesNotContain("<UserAccount>", content);
+
+                // Dynamic Attribute-Driven Security Check: Validate every [XmlIgnore] property is strictly omitted
+                var xmlIgnoredProps = typeof(ServiceDto).GetProperties()
+                    .Where(p => p.IsDefined(typeof(XmlIgnoreAttribute), inherit: true))
+                    .Select(p => p.Name);
+
+                foreach (var propName in xmlIgnoredProps)
+                {
+                    Assert.DoesNotContain($"<{propName}>", content);
+                }
             }
             finally
             {
-                File.Delete(tempFile);
+                if (File.Exists(tempFile)) File.Delete(tempFile);
             }
         }
 
@@ -91,6 +112,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var service = ServiceDtoFactory.CreateSampleExport();
+            PopulateIgnoredProperties(service);
 
             // Act
             var json = ServiceExporter.ExportJson(service);
@@ -122,11 +144,19 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("\"PreLaunchExecutablePath\": \"pre.exe\"", json);
             Assert.Contains("\"PreLaunchTimeoutSeconds\": 30", json);
 
-            // Security Bounds Hardening: Ensure credential keys and literal values are omitted via [JsonIgnore]
+            // Security Bounds Hardening: Ensure credential values are omitted
             Assert.DoesNotContain("pass", json, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("user", json, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("\"Password\"", json);
-            Assert.DoesNotContain("\"UserAccount\"", json);
+
+            // Dynamic Attribute-Driven Security Check: Validate every [JsonIgnore] property is strictly omitted
+            var jsonIgnoredProps = typeof(ServiceDto).GetProperties()
+                .Where(p => p.IsDefined(typeof(JsonIgnoreAttribute), inherit: true))
+                .Select(p => p.Name);
+
+            foreach (var propName in jsonIgnoredProps)
+            {
+                Assert.DoesNotContain($"\"{propName}\"", json);
+            }
         }
 
         [Fact]
@@ -134,6 +164,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var service = ServiceDtoFactory.CreateSampleExport();
+            PopulateIgnoredProperties(service);
             var tempFile = Path.GetTempFileName();
 
             // Act & Assert
@@ -153,12 +184,20 @@ namespace Servy.Core.UnitTests.Services
                 // Security Bounds Hardening: Ensure file output on disk is strictly stripped of secrets
                 Assert.DoesNotContain("pass", content, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("user", content, StringComparison.OrdinalIgnoreCase);
-                Assert.DoesNotContain("\"Password\"", content);
-                Assert.DoesNotContain("\"UserAccount\"", content);
+
+                // Dynamic Attribute-Driven Security Check: Validate every [JsonIgnore] property is strictly omitted
+                var jsonIgnoredProps = typeof(ServiceDto).GetProperties()
+                    .Where(p => p.IsDefined(typeof(JsonIgnoreAttribute), inherit: true))
+                    .Select(p => p.Name);
+
+                foreach (var propName in jsonIgnoredProps)
+                {
+                    Assert.DoesNotContain($"\"{propName}\"", content);
+                }
             }
             finally
             {
-                File.Delete(tempFile);
+                if (File.Exists(tempFile)) File.Delete(tempFile);
             }
         }
 
@@ -253,6 +292,31 @@ namespace Servy.Core.UnitTests.Services
                 Assert.DoesNotContain($"\"{key}\"", json);
             }
         }
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Populates internal, unmanaged, and sensitive properties on a <see cref="ServiceDto"/> instance with non-null test values.
+        /// </summary>
+        /// <remarks>
+        /// Populating these properties ensures that export serialization tests verify explicit attribute-based exclusion 
+        /// (<see cref="Newtonsoft.Json.JsonIgnoreAttribute"/> and <see cref="System.Xml.Serialization.XmlIgnoreAttribute"/>) 
+        /// rather than null-value suppression.
+        /// </remarks>
+        /// <param name="service">The <see cref="ServiceDto"/> instance to populate.</param>
+        private static void PopulateIgnoredProperties(ServiceDto service)
+        {
+            service.Id = 1;
+            service.Pid = 1234;
+            service.RunAsLocalSystem = true;
+            service.UserAccount = "user";
+            service.Password = "pass";
+            service.PreviousStopTimeout = 10;
+            service.ActiveStdoutPath = @"C:\logs\stdout.log";
+            service.ActiveStderrPath = @"C:\logs\stderr.log";
+        }
+
+        #endregion
 
         #region Null-DTO Contract Fallback Tests
 

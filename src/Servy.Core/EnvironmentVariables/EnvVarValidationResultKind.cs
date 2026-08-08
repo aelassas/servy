@@ -14,7 +14,11 @@ namespace Servy.Core.EnvironmentVariables
         /// <summary>The variable record contains an empty or whitespace-only key identifier.</summary>
         EmptyKey = 2,
 
-        /// <summary>The variable record value carries unescaped literal newline characters.</summary>
+        /// <summary>
+        /// The record's key or value contains a literal newline character after unescaping.
+        /// Raw newlines are record separators and never reach this state; an escaped
+        /// newline sequence does.
+        /// </summary>
         ForbiddenNewline = 3,
 
         /// <summary>A generic or unmapped validation failure occurred.</summary>

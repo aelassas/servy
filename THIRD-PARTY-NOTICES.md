@@ -17,5 +17,5 @@ This repository includes third-party software components subject to their respec
 | `handle64.exe` | x64 | 5.0 | `24bafcc570cc9bbb6b6e6652a57a519e0464e3996891aaba6f55299cce20b04f` |
 
 ### License Terms & Notice
-Sysinternals Handle is copyright © Microsoft Corporation. All rights reserved.  
+Sysinternals Handle is copyright © Microsoft Corporation. All rights reserved.
 Usage of Sysinternals utilities is subject to the Sysinternals Software License Terms available at [https://learn.microsoft.com/sysinternals/license-terms](https://learn.microsoft.com/sysinternals/license-terms).

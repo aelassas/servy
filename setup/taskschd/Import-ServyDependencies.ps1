@@ -4,7 +4,7 @@
     Centralized macro runner to validate and import script dependencies into the caller's active scope.
 
 .DESCRIPTION
-    Loops through required assets, checks filesystem paths, writes warning errors to the 
+    Loops through required assets, checks filesystem paths, writes warning errors to the
     Windows Application Event Log on failure, and handles dot-sourcing or module imports dynamically.
 
 .NOTES
@@ -30,7 +30,7 @@ foreach ($dep in $RequiredDependencies) {
 
     if (-not (Test-Path $depPath)) {
         $errorMsg = "Servy Notification Error: Required dependency not found at '$depPath'. Please ensure the file exists in the script directory."
-        
+
         # 1. Attempt to log to Event Log for administrator visibility
         try {
             # Best-effort: the 'Servy' event source may not be registered, so guard with try/catch.

@@ -112,10 +112,10 @@ foreach ($file in $files) {
     try {
         # Read content using .NET to preserve raw text structure and line endings
         $content = [System.IO.File]::ReadAllText($file.FullName)
-        
+
         # Write back as UTF-8 without BOM
         [System.IO.File]::WriteAllText($file.FullName, $content, $utf8NoBom)
-        
+
         Write-Host "Converted: $($file.FullName)" -ForegroundColor Green
         $convertedCount++
     }

@@ -33,7 +33,7 @@ function Get-FileEncoding {
         $fs.Dispose()
     }
 
-    # 2. Inspect the buffer. 
+    # 2. Inspect the buffer.
     # Logic: Check longer BOMs first to avoid misclassification.
 
     # UTF-32 LE (FF FE 00 00)

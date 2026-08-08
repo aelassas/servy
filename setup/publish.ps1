@@ -33,11 +33,11 @@ try {
     $servyDir              = Join-Path $rootDir "src\Servy"
     $cliDir                = Join-Path $rootDir "src\Servy.CLI"
     $managerDir            = Join-Path $rootDir "src\Servy.Manager"
-    
+
     $buildOutputDir        = Join-Path $servyDir "bin\$platform\$buildConfig"
     $cliBuildOutputDir     = Join-Path $cliDir "bin\$platform\$buildConfig"
     $managerBuildOutputDir = Join-Path $managerDir "bin\$platform\$buildConfig"
-    
+
     # Resolver for the code signing sub-script
     $signPath              = Join-Path $scriptDir "signpath.ps1"
 
@@ -45,9 +45,9 @@ try {
     $outputZip              = "$packageFolder.7z"
 
     # === Tool Discovery ===
-    <# 
-    Attempts to resolve required external binaries (Inno Setup and 7-Zip) 
-    using the tools-config helper. 
+    <#
+    Attempts to resolve required external binaries (Inno Setup and 7-Zip)
+    using the tools-config helper.
     #>
     try {
         . (Join-Path $scriptDir "tools-config.ps1")
@@ -62,7 +62,7 @@ try {
             "C:\Program Files\7-Zip\7z.exe",
             "C:\Program Files (x86)\7-Zip\7z.exe"
         )
-    
+
         Write-Host "Tools resolved successfully." -ForegroundColor Green
     }
     catch {
@@ -86,7 +86,7 @@ try {
 
     # === BUILD PROJECTS ===
     Write-Host "--- Restoring & Building Projects ---" -ForegroundColor Cyan
-    
+
     # Restore NuGet packages for the entire solution
     nuget restore (Join-Path $rootDir "Servy.sln")
     Assert-LastExitCode "NuGet restore failed"
@@ -169,7 +169,7 @@ try {
         if (Test-Path $taskSource) {
             $taskDest = Join-Path $packageFolder "taskschd"
             [void](New-Item -Path $taskDest -ItemType Directory -Force)
-            
+
             Get-ChildItem -Path $taskSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log','*.test.ps1' |
                 Copy-Item -Destination {
                     Join-Path $taskDest $_.FullName.Substring($taskSource.Length).TrimStart('\')
@@ -177,8 +177,8 @@ try {
 
             # SECURITY AUDIT: Ensure no sensitive files leaked into the portable package
             $leaks = Get-ChildItem -Path $taskDest -Recurse -Include 'smtp-cred.xml','*.dat','*.log'
-            if ($leaks) { 
-                throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')" 
+            if ($leaks) {
+                throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"
             }
         }
 
@@ -230,7 +230,7 @@ catch {
 }
 finally {
     # ROBUSTNESS: Detect if running in a non-interactive environment (CI pipeline, automated task).
-    # If [Environment]::UserInteractive evaluates to false or no physical window is attached, 
+    # If [Environment]::UserInteractive evaluates to false or no physical window is attached,
     # bypass the ReadKey sequence entirely to prevent the process from hanging indefinitely.
     $isInteractive = [Environment]::UserInteractive -and ($Host.Name -like '*Console*')
 

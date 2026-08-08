@@ -13,9 +13,9 @@
         - Wait for completion
         - Download the signed artifact
         - Replace the original file with the signed version
-        
-    SECURITY: The script prioritizes the SIGNPATH_API_TOKEN environment variable. 
-    If falling back to a configuration file, ensure the file has restricted 
+
+    SECURITY: The script prioritizes the SIGNPATH_API_TOKEN environment variable.
+    If falling back to a configuration file, ensure the file has restricted
     filesystem ACLs to prevent unauthorized read access.
 
 .PARAMETER Path
@@ -98,7 +98,7 @@ Write-Host "SIGN=true detected. Proceeding with code signing."
 # ----------------------------------------------------------
 # ENSURE SIGNPATH MODULE EXISTS & LOAD CORRECT VERSION
 # ----------------------------------------------------------
-$availableModule = Get-Module -ListAvailable -Name SignPath | 
+$availableModule = Get-Module -ListAvailable -Name SignPath |
                    Where-Object { $_.Version -eq $RequiredSignPathVersion }
 
 if (-not $availableModule) {
@@ -150,7 +150,7 @@ $artifactConfigurationSlug = $config["ARTIFACT_CONFIGURATION_SLUG"]  # optional
 $apiToken = $env:SIGNPATH_API_TOKEN
 if ([string]::IsNullOrWhiteSpace($apiToken)) {
     $apiToken = $config["API_TOKEN"]
-    
+
     if (-not [string]::IsNullOrWhiteSpace($apiToken)) {
         Write-Warning "SECURITY: Using API_TOKEN from plaintext config file ($configPath)."
         Write-Warning "Ensure this file has strict ACLs applied (read/write only for the build user) and is excluded from source control."
@@ -246,5 +246,5 @@ try {
 }
 catch {
     throw "Failed to replace the original file: $_"
-    
+
 }

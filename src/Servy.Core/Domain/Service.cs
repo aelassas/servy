@@ -108,11 +108,13 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets the startup type of the service (e.g., Automatic, Manual).
+        /// Default is <see cref="AppConfig.DefaultStartupType"/>.
         /// </summary>
         public ServiceStartType StartupType { get; set; } = AppConfig.DefaultStartupType;
 
         /// <summary>
         /// Gets or sets the process priority for the service.
+        /// Default is <see cref="AppConfig.DefaultProcessPriority"/>.
         /// </summary>
         public ProcessPriority Priority { get; set; } = AppConfig.DefaultProcessPriority;
 
@@ -124,6 +126,7 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
+        /// Default is <see cref="AppConfig.DefaultEnableConsoleUI"/>.
         /// </summary>
         public bool EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
 
@@ -139,29 +142,34 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
-        /// Default is false.
+        /// Default is <see cref="AppConfig.DefaultEnableSizeRotation"/>.
         /// </summary>
         public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableSizeRotation;
 
         /// <summary>
         /// Gets or sets the rotation size in Megabytes (MB) for log files.
+        /// Values below 1 are raised to 1 MB on install; 0 does not mean "unlimited" here
+        /// (unlike <see cref="MaxRotations"/>).
+        /// Default is <see cref="AppConfig.DefaultRotationSizeMB"/>.
         /// </summary>
         public int RotationSize { get; set; } = AppConfig.DefaultRotationSizeMB;
 
         /// <summary>
         /// Gets or sets a value indicating whether date-based log rotation is enabled.
-        /// Default is false.
+        /// Default is <see cref="AppConfig.DefaultEnableDateRotation"/>.
         /// </summary>
         public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
 
         /// <summary>
         /// Gets or sets the date-based log rotation interval.
+        /// Default is <see cref="AppConfig.DefaultDateRotationType"/>.
         /// </summary>
         public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.
         /// Set to 0 for unlimited.
+        /// Default is <see cref="AppConfig.DefaultMaxRotations"/>.
         /// </summary>
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
 
@@ -169,7 +177,7 @@ namespace Servy.Core.Domain
         /// Gets or sets a value indicating whether to use local system time for log rotation.
         /// </summary>
         /// <remarks>
-        /// <para>Default is <c>false</c> (UTC).</para>
+        /// <para>Default is <see cref="AppConfig.DefaultUseLocalTimeForRotation"/> (UTC).</para>
         /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight).
         /// This is often preferred for manual log inspection but can be affected by Daylight Saving Time transitions.</para>
         /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC).
@@ -179,35 +187,37 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
-        /// Default is false.
+        /// Default is <see cref="AppConfig.DefaultEnableHealthMonitoring"/>.
         /// </summary>
         public bool EnableHealthMonitoring { get; set; } = AppConfig.DefaultEnableHealthMonitoring;
 
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds for health monitoring.
-        /// Default is 30 seconds.
+        /// Default is <see cref="AppConfig.DefaultHeartbeatInterval"/> seconds.
         /// </summary>
         public int HeartbeatInterval { get; set; } = AppConfig.DefaultHeartbeatInterval;
 
         /// <summary>
         /// Gets or sets the maximum number of failed health checks before taking recovery action.
-        /// Default is 3.
+        /// Default is <see cref="AppConfig.DefaultMaxFailedChecks"/>.
         /// </summary>
         public int MaxFailedChecks { get; set; } = AppConfig.DefaultMaxFailedChecks;
 
         /// <summary>
         /// Gets or sets the recovery action to take when the service fails.
+        /// Default is <see cref="AppConfig.DefaultRecoveryAction"/>.
         /// </summary>
         public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
 
         /// <summary>
         /// Gets or sets a flag to run recovery action even if the process exits successfully.
+        /// Default is <see cref="AppConfig.DefaultRecoveryOnCleanExit"/>.
         /// </summary>
         public bool RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
 
         /// <summary>
         /// Gets or sets the maximum number of automatic restart attempts.
-        /// Default is 3.
+        /// Default is <see cref="AppConfig.DefaultMaxRestartAttempts"/>.
         /// </summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
@@ -258,7 +268,7 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets a value indicating whether the service should run as LocalSystem.
-        /// Default is true.
+        /// Default is <see cref="AppConfig.DefaultRunAsLocalSystem"/>.
         /// </summary>
         public bool RunAsLocalSystem { get; set; } = AppConfig.DefaultRunAsLocalSystem;
 
@@ -304,19 +314,19 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets the timeout in seconds for the pre-launch process.
-        /// Default is 30 seconds.
+        /// Default is <see cref="AppConfig.DefaultPreLaunchTimeoutSeconds"/> seconds.
         /// </summary>
         public int PreLaunchTimeoutSeconds { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets the number of retry attempts for the pre-launch process.
-        /// Default is 0.
+        /// Default is <see cref="AppConfig.DefaultPreLaunchRetryAttempts"/>.
         /// </summary>
         public int PreLaunchRetryAttempts { get; set; } = AppConfig.DefaultPreLaunchRetryAttempts;
 
         /// <summary>
         /// Gets or sets a value indicating whether to ignore failures of the pre-launch process.
-        /// Default is false.
+        /// Default is <see cref="AppConfig.DefaultPreLaunchIgnoreFailure"/>.
         /// </summary>
         public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
 
@@ -341,16 +351,19 @@ namespace Servy.Core.Domain
         /// log file at <c>%ProgramData%\Servy\logs\Servy.Service.log</c>. Sensitive data is
         /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
         /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// Default is <see cref="AppConfig.DefaultEnableDebugLogs"/>.
         /// </summary>
         public bool EnableDebugLogs { get; set; } = AppConfig.DefaultEnableDebugLogs;
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// Default is <see cref="AppConfig.DefaultStartTimeout"/> seconds.
         /// </summary>
         public int StartTimeout { get; set; } = AppConfig.DefaultStartTimeout;
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to exit.
+        /// Default is <see cref="AppConfig.DefaultStopTimeout"/> seconds.
         /// </summary>
         public int StopTimeout { get; set; } = AppConfig.DefaultStopTimeout;
 
@@ -383,11 +396,13 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets the maximum time in seconds to wait for the pre-stop executable to complete.
+        /// Default is <see cref="AppConfig.DefaultPreStopTimeoutSeconds"/> seconds.
         /// </summary>
         public int PreStopTimeoutSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets a value indicating whether to log pre-stop failure as error.
+        /// Default is <see cref="AppConfig.DefaultPreStopLogAsError"/>.
         /// </summary>
         public bool PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
 
@@ -493,10 +508,10 @@ namespace Servy.Core.Domain
         /// Installs the Windows service using the configured domain properties.
         /// </summary>
         /// <remarks>
-        /// In <c>DEBUG</c> builds, the service wrapper executable is resolved
-        /// from <paramref name="wrapperExeDir"/> when provided, falling back to.
-        /// In <c>RELEASE</c> builds, it is resolved from the
-        /// <see cref="AppConfig.ProgramDataPath"/>.
+        /// In <c>DEBUG</c> builds, the service wrapper executable is resolved from
+        /// <paramref name="wrapperExeDir"/> when provided, falling back to
+        /// <see cref="AppConfig.ProgramDataPath"/>. In <c>RELEASE</c> builds it is always
+        /// resolved from <see cref="AppConfig.ProgramDataPath"/> and the parameter is ignored.
         /// <para>
         /// This method passes all service configuration (paths, parameters, startup
         /// settings, monitoring options, recovery actions, etc.) to the underlying

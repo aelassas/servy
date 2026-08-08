@@ -4,11 +4,11 @@
     Retrieves recent error events from the 'Servy' event source.
 
 .DESCRIPTION
-    Queries the Windows Application log for errors produced by Servy. It uses 
+    Queries the Windows Application log for errors produced by Servy. It uses
     high-performance hashtable filtering to minimize CPU impact on the host system.
 
 .PARAMETER LastProcessed
-    The timestamp of the last processed event. Only events strictly newer 
+    The timestamp of the last processed event. Only events strictly newer
     than this timestamp will be returned.
 
 .PARAMETER EventLogErrorId
@@ -18,11 +18,11 @@
 .NOTES
     Author      : Akram El Assas
     Project     : Servy
-    
+
     Requirements:
       - PowerShell 5.1 or later.
       - Windows 7 SP1 / Windows Server 2008 R2 or newer (required by PowerShell 5.1).
-      - Note: This script is NOT compatible with Windows XP or Server 2003 
+      - Note: This script is NOT compatible with Windows XP or Server 2003
         due to the dependency on the Get-WinEvent cmdlet.
 
 .LINK
@@ -71,7 +71,7 @@ function Get-ServyLastErrors {
         Level = 2  # Error
     }
     $errors = @()
-    
+
     try {
         # "Filter Left" - let the Event Log service handle the time filtering natively
         if ($LastProcessed) {
@@ -79,7 +79,7 @@ function Get-ServyLastErrors {
             # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
             $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
         } else {
-            # First run: fetch a wider window to allow the pre-filter to skip feedback 
+            # First run: fetch a wider window to allow the pre-filter to skip feedback
             # logs and still find a genuine service crash behind them.
             $errors = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 20 -ErrorAction Stop)
         }
@@ -88,7 +88,7 @@ function Get-ServyLastErrors {
         # Language-agnostic check: relies on the internal Error ID rather than translated text
         if ($_.FullyQualifiedErrorId -match "NoMatchingEventsFound") {
             # This is a standard state, not an error
-            return @() 
+            return @()
         }
 
         $errorMsg = "Servy Notification Error: Failed to query Windows event log for Servy errors: $_"
@@ -100,7 +100,7 @@ function Get-ServyLastErrors {
             # Fallback B: Try the local file log
             $logPath = Join-Path $scriptHome "Get-ServyLastErrors.log"
             $loggerScript = Join-Path $scriptHome "Write-ServyLog.ps1"
-            
+
             if (Test-Path $loggerScript) {
                 . $loggerScript
                 Write-ServyLog -FilePath $logPath -Message $errorMsg

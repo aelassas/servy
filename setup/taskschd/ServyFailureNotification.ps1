@@ -4,9 +4,9 @@
     Displays Windows toast notifications for the latest Servy error events.
 
 .DESCRIPTION
-    This script leverages modern Windows Runtime (WinRT) APIs to provide 
+    This script leverages modern Windows Runtime (WinRT) APIs to provide
     interactive desktop alerts for service failures.
-    
+
     This script:
       1. Filters the Windows Application event log for errors related to 'Servy'.
       2. Retrieves all new errors since the last execution using a timestamp file.
@@ -17,7 +17,7 @@
     Author      : Akram El Assas
     Project     : Servy
     Repository  : https://github.com/aelassas/servy
-    
+
     Requirements:
       - PowerShell 5.1 or later (Required for WinRT).
       - Windows 10 (Build 10240+) or Windows 11.
@@ -69,12 +69,12 @@ function Show-Notification {
     $ServiceName = Protect-SensitiveString -Text $ServiceName
 
     $ToastTitle = "Servy - $ServiceName"
-    
+
     try {
         # Load WinRT assemblies
         [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
         [void][Windows.UI.Notifications.NotificationSetting, Windows.UI.Notifications, ContentType = WindowsRuntime]
-        
+
         $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent(
             [Windows.UI.Notifications.ToastTemplateType]::ToastText02
         )
@@ -123,10 +123,10 @@ function Show-Notification {
             if ($notifier.Setting -ne [Windows.UI.Notifications.NotificationSetting]::Enabled) {
                 $settingState = $notifier.Setting.ToString()
                 Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Skipping watermark advance." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-                
+
                 # ROBUSTNESS: Treat platform-level notification suppression as a terminal delivery result.
-                # Returning 'PermanentFailure' ensures the watermark is updated and the queue 
-                # continues processing, avoiding head-of-line blocking loops while notifications 
+                # Returning 'PermanentFailure' ensures the watermark is updated and the queue
+                # continues processing, avoiding head-of-line blocking loops while notifications
                 # remain unavailable (e.g., Focus Assist or DND enabled).
                 return 'PermanentFailure'
             }
@@ -139,8 +139,8 @@ function Show-Notification {
         $failCode  = [ref]([int]0)
 
         # Event Handlers (Async Error Capture)
-        # ROBUSTNESS: WinRT fires the toast failure asynchronously on an external threadpool thread that 
-        # lacks a PowerShell runspace. Avoid calling any cmdlets inside the scriptblock handler to 
+        # ROBUSTNESS: WinRT fires the toast failure asynchronously on an external threadpool thread that
+        # lacks a PowerShell runspace. Avoid calling any cmdlets inside the scriptblock handler to
         # prevent RunspaceAvailability exceptions; capture primitive types across the boundary instead.
         $null = $toast.add_Failed({
             param($evtSender, $evtArgs)
@@ -149,7 +149,7 @@ function Show-Notification {
         })
 
         $notifier.Show($toast)
-        
+
         # ROBUSTNESS: Block execution and loop to await synchronous platform failures.
         # WinRT reports delivery failure asynchronously; poll up to 2s for the add_Failed
         # callback so a late-firing failure is captured before the watermark advances.
@@ -199,7 +199,7 @@ foreach ($evt in $eventsToProcess) {
                                         -TimeCreated $evt.TimeCreated `
                                         -ScriptDir $scriptDir `
                                         -FallbackLogFile $fallbackLogFile
-    
+
     # Advance the event queue timestamp pointer for either clear success or permanent, unfixable configuration blocks.
     # Only break the processing loop without modifying the index watermark on clear TransientFailure states.
     switch ($deliveryStatus) {
@@ -211,6 +211,6 @@ foreach ($evt in $eventsToProcess) {
         Write-Host "Notification failed due to a transient condition. Halting queue processing for retry."
         break
     }
-    
+
     Start-Sleep -Milliseconds $InterToastDelayMs
 }

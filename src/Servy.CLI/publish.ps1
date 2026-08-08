@@ -101,7 +101,7 @@ if ($BuildConfiguration -eq "Release") {
     }
 }
 
-if ($Pause) { 
+if ($Pause) {
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

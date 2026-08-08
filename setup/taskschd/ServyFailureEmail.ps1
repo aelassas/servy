@@ -4,8 +4,8 @@
     Monitors Servy error events in the Windows Application log and sends notification emails.
 
 .DESCRIPTION
-    This script performs a targeted audit of the Windows Application event log to identify 
-    failures within services managed by Servy. It provides an automated alerting mechanism 
+    This script performs a targeted audit of the Windows Application event log to identify
+    failures within services managed by Servy. It provides an automated alerting mechanism
     for administrators by:
       1. Filtering the Application log specifically for 'Servy' error sources.
       2. Tracking the last processed event via a local timestamp file to prevent duplicate alerts.
@@ -17,8 +17,8 @@
     Author      : Akram El Assas
     Project     : Servy
     Repository  : https://github.com/aelassas/servy
-    
-    No parameters are required. SMTP settings (Server, Port, From, To) are loaded 
+
+    No parameters are required. SMTP settings (Server, Port, From, To) are loaded
     from 'smtp-config.xml'. Credentials are managed via 'smtp-cred.xml'.
 
     Requirements:
@@ -28,7 +28,7 @@
     Setup (Secure Credentials):
       To avoid hardcoding passwords, this script requires an encrypted XML credential file.
       Run the following command as the user account that will execute the Scheduled Task:
-      
+
       $cred = Get-Credential
       $cred | Export-Clixml (Join-Path "C:\Path\To\Servy" "smtp-cred.xml")
 
@@ -98,8 +98,8 @@ function Send-NotificationEmail {
         Dispatches a sanitised HTML notification email via SMTP.
 
     .DESCRIPTION
-        This function handles the low-level SMTP transport. It expects a pre-sanitised Body 
-        that has already been passed through the sensitive string masker and HTML encoder. 
+        This function handles the low-level SMTP transport. It expects a pre-sanitised Body
+        that has already been passed through the sensitive string masker and HTML encoder.
         It returns a status string indicating Success, PermanentFailure, or TransientFailure.
 
     .PARAMETER Subject
@@ -113,7 +113,7 @@ function Send-NotificationEmail {
 
     .PARAMETER ScriptDir
         The directory context for reading credential files and routing fallback logs.
-        
+
     .PARAMETER FallbackLogFile
         The log file string to route fallback errors towards.
 
@@ -130,12 +130,12 @@ function Send-NotificationEmail {
         [string]$PlaceholderDomain = "example.com"
     )
 
-    # Masking is now performed by the caller before HTML encoding. 
-    # This ensures the regex tail (?:"[^"]*"|'[^']*'|\S+) matches full quoted strings 
+    # Masking is now performed by the caller before HTML encoding.
+    # This ensures the regex tail (?:"[^"]*"|'[^']*'|\S+) matches full quoted strings
     # before quotes are converted to &quot; or &#39;.
 
     # --- HARDENED CONFIGURATION ACCESS ---
-    
+
     # 1. Check root structure passed via parameters
     $configRoot = $Config.SmtpConfig
     if ($null -eq $configRoot) {
@@ -150,13 +150,13 @@ function Send-NotificationEmail {
     $rawPort    = ([string]$configRoot.Port).Trim()
     $rawUseSsl  = ([string]$configRoot.UseSsl).Trim()
     $rawTimeout = ([string]$configRoot.TimeoutMs).Trim()
-    
+
     # 2. Safe Port Resolution (Prevents [int]$null becoming 0)
     $portRef = 0
     $smtpPort = if ([int]::TryParse($rawPort, [ref]$portRef)) { $portRef } else { 0 }
-    
+
     # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
-    # Casts to string and trims whitespace to prevent parsing errors. 
+    # Casts to string and trims whitespace to prevent parsing errors.
     # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
     $useSsl = if ($rawUseSsl -match '^(?i)(false|0)$') { $false } else { $true }
 
@@ -168,7 +168,7 @@ function Send-NotificationEmail {
     $emailRegex = '^[^@\s]+@[^@\s]+\.[^@\s]+$' # Single address format; comma/semicolon multi-recipient lists are split and validated below
 
     # --- VALIDATION GATE (Permanent Failures) ---
-    
+
     # Check for missing essential fields
     if ([string]::IsNullOrWhiteSpace($smtpServer) -or [string]::IsNullOrWhiteSpace($from) -or [string]::IsNullOrWhiteSpace($to)) {
         Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration. Missing Server, From, or To." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
@@ -262,17 +262,17 @@ function Send-NotificationEmail {
         # SMTP-level errors: Apply granular classification based on RFC 5321 codes.
         # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
         $status = $_.Exception.StatusCode
-        
+
         # 4xx replies are transient per RFC 5321; TransactionFailed (554) is also
         # retried because some servers use it for greylisting-style rejections.
         $isTransient = ($status -ge 400 -and $status -lt 500) `
             -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed
-        
+
         $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"
-        
+
         # Record to fallback logs (disk and Application Event Log) before deciding exit status.
-        Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile    
-        
+        Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+
         # Return status determines if the watermark advances.
         # TransientFailure: Queue processing halts to wait for system recovery.
         # PermanentFailure: Event processed (watermark advances) to prevent head-of-line blocking.
@@ -288,7 +288,7 @@ function Send-NotificationEmail {
         Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
         return 'TransientFailure'
     } catch {
-        # ROBUSTNESS: Treat unrecognized structural errors (e.g. ArgumentException on CRLF header injection) 
+        # ROBUSTNESS: Treat unrecognized structural errors (e.g. ArgumentException on CRLF header injection)
         # as permanent failures to ensure a corrupted log payload cannot block the entire pipeline execution loop.
         $errorMsg = "ServyFailureEmail: Unexpected permanent script failure to $to. Type: $($_.Exception.GetType().FullName). Error: $($_.Exception.Message)"
         Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
@@ -322,13 +322,13 @@ foreach ($evt in $eventsToProcess) {
 
     # 1. MASKING (Stage 1: Plain Text)
     # We mask the raw strings before any HTML encoding occurs.
-    # This ensures the regex successfully captures PASSWORD="my secret token" 
+    # This ensures the regex successfully captures PASSWORD="my secret token"
     # before it becomes PASSWORD=&quot;my secret token&quot;
     $maskedLogText = Protect-SensitiveString -Text $parsed.LogText
     $maskedServiceName = Protect-SensitiveString -Text $parsed.ServiceName
 
     # 2. ENCODING (Stage 2: Markup Preparation)
-    # Now that secrets are replaced with asterisks, we can safely convert 
+    # Now that secrets are replaced with asterisks, we can safely convert
     # any remaining metacharacters to HTML entities.
     $safeLogText = ConvertTo-HtmlSafe -Text $maskedLogText
     $safeServiceName = ConvertTo-HtmlSafe -Text $maskedServiceName
@@ -337,20 +337,20 @@ foreach ($evt in $eventsToProcess) {
     # Scrub the subject using the raw service name (masker handles this internally)
     $subject = "Servy - $($parsed.ServiceName) Failure"
     $subject = Protect-SensitiveString -Text $subject
-    
+
     # ROBUSTNESS: Sanitise the subject string value of CR/LF injection characters
     # explicitly to block .NET ArgumentException errors at the MailMessage property setter stage.
     $subject = $subject -replace "[\r\n]", ' '
 
     # Build the HTML body using the safe, pre-masked segments
-    $body = "A failure has been detected in service '$safeServiceName'." + 
+    $body = "A failure has been detected in service '$safeServiceName'." +
             [Environment]::NewLine + "Details: $safeLogText"
-    
+
     # Basic HTML formatting (newlines to breaks)
     $htmlBody = $body -replace "`r?`n", "<br>"
-      
+
     $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -Config $SmtpConfig -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile -PlaceholderDomain $DefaultPlaceholderDomain
-    
+
     switch ($sendStatus) {
         'Success' {
             Write-Host "Email Notification sent for '$($parsed.ServiceName)'."
@@ -363,7 +363,7 @@ foreach ($evt in $eventsToProcess) {
             Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
         }
         'TransientFailure' {
-            # Network drop, timeout, or SMTP temp-fail. DO NOT advance the watermark. 
+            # Network drop, timeout, or SMTP temp-fail. DO NOT advance the watermark.
             # We break the loop immediately; if SMTP is down, subsequent events in this batch will fail too.
             Write-Host "Transient failure sending email for '$($parsed.ServiceName)'. Halting processing to preserve event queue." -ForegroundColor Red
         }

@@ -109,7 +109,7 @@ if ($BuildConfiguration -eq "Release") {
 
 Write-Host "Build completed for Servy.Service in $BuildConfiguration mode."
 
-if ($Pause) { 
+if ($Pause) {
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

@@ -4,7 +4,7 @@
     Unit tests for $script:EnvVarValidationPattern in Servy.psm1.
 
 .DESCRIPTION
-    Tests valid and invalid environment variable string formats against 
+    Tests valid and invalid environment variable string formats against
     $script:EnvVarValidationPattern, including edge cases like spaces in keys,
     leading/trailing whitespace, multi-space separators, and escaped characters.
 

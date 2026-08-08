@@ -43,14 +43,14 @@
       <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,6" VerticalAlignment="Center">
         <Border Background="#F0F7FA" CornerRadius="2" Padding="4,0,0,0" HorizontalAlignment="Left">
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="{x:Static resx:Strings.Label_Pid}" 
-                                   Foreground="#1B7F9F" 
-                                   FontSize="11" 
+            <TextBlock Text="{x:Static resx:Strings.Label_Pid}"
+                                   Foreground="#1B7F9F"
+                                   FontSize="11"
                                    VerticalAlignment="Center"
                                    Margin="0,0,5,0"/>
-            <TextBlock Text="{Binding Pid}" 
-                                   Foreground="#1B7F9F" 
-                                   FontWeight="Bold" 
+            <TextBlock Text="{Binding Pid}"
+                                   Foreground="#1B7F9F"
+                                   FontWeight="Bold"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    AutomationProperties.Name="Process ID"
@@ -77,9 +77,9 @@
                   </Style.Triggers>
                 </Style>
               </Button.Style>
-              <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" 
-                                  Fill="#1B7F9F" 
-                                  Stretch="Uniform" 
+              <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                                  Fill="#1B7F9F"
+                                  Stretch="Uniform"
                                   Width="12" Height="12" />
             </Button>
           </StackPanel>
@@ -117,20 +117,20 @@
             </Canvas>
           </Viewbox>
 
-          <TextBlock 
-                        Text="{x:Static resx:Strings.Label_CPU}" 
-                        Margin="10" VerticalAlignment="Top" 
-                        HorizontalAlignment="Left" 
-                        Foreground="#1B7F9F" 
-                        FontSize="14" 
+          <TextBlock
+                        Text="{x:Static resx:Strings.Label_CPU}"
+                        Margin="10" VerticalAlignment="Top"
+                        HorizontalAlignment="Left"
+                        Foreground="#1B7F9F"
+                        FontSize="14"
                         IsHitTestVisible="False" />
-          <TextBlock 
-                        Text="{Binding CpuUsage}" 
-                        Margin="10" 
-                        VerticalAlignment="Top" 
-                        HorizontalAlignment="Right" 
-                        Foreground="#1B7F9F" 
-                        FontSize="14" 
+          <TextBlock
+                        Text="{Binding CpuUsage}"
+                        Margin="10"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Right"
+                        Foreground="#1B7F9F"
+                        FontSize="14"
                         IsHitTestVisible="False"
                         AutomationProperties.Name="Current CPU Usage"
                         AutomationProperties.AutomationId="CpuUsageLabel" />
@@ -168,20 +168,20 @@
             </Canvas>
           </Viewbox>
 
-          <TextBlock Text="{x:Static resx:Strings.Label_RAM}" 
-                               Margin="10" 
-                               VerticalAlignment="Top" 
-                               HorizontalAlignment="Left" 
-                               Foreground="#1B7F9F" 
-                               FontSize="14" 
+          <TextBlock Text="{x:Static resx:Strings.Label_RAM}"
+                               Margin="10"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Left"
+                               Foreground="#1B7F9F"
+                               FontSize="14"
                                IsHitTestVisible="False" />
 
-          <TextBlock Text="{Binding RamUsage}" 
-                               Margin="10" 
-                               VerticalAlignment="Top" 
-                               HorizontalAlignment="Right" 
-                               Foreground="#1B7F9F" 
-                               FontSize="14" 
+          <TextBlock Text="{Binding RamUsage}"
+                               Margin="10"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Right"
+                               Foreground="#1B7F9F"
+                               FontSize="14"
                                IsHitTestVisible="False"
                                AutomationProperties.Name="Current RAM Usage"
                                AutomationProperties.AutomationId="RamUsageLabel" />

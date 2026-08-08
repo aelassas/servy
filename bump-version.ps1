@@ -70,7 +70,7 @@ function Update-FileContent {
     <#
     .SYNOPSIS
         Safely updates file content while preserving the original encoding and validating matches.
-    
+
     .DESCRIPTION
         This helper reads the file using detected encoding, verifies that the target regex pattern exists,
         and performs a capture-group aware replacement before writing back to disk.
@@ -80,12 +80,12 @@ function Update-FileContent {
         [string]$Pattern,
         [string]$Replacement
     )
-    
+
     try {
         if (Test-Path $Path) {
             $encoding = Get-FileEncoding $Path
             $content = [System.IO.File]::ReadAllText($Path, $encoding)
-        
+
             # Count matches before attempting replacement
             $regexMatches = [regex]::Matches($content, $Pattern)
             if ($regexMatches.Count -eq 0) {
@@ -94,12 +94,12 @@ function Update-FileContent {
                 $script:HadFailure = $true
                 return
             }
-        
+
             # Perform replacement
-            $newContent = [regex]::Replace($content, $Pattern, { 
-                param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
+            $newContent = [regex]::Replace($content, $Pattern, {
+                param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)"
             })
-        
+
             if (-not $DryRun) {
                 [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
                 Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
@@ -132,7 +132,7 @@ Update-FileContent `
 # -------------------------------------------------------------
 Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction SilentlyContinue | ForEach-Object {
     $path = $_.FullName
-    
+
     try {
         # Detect encoding first to prevent corruption
         $encoding = Get-FileEncoding $path
@@ -146,13 +146,13 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
             $replacementValue = ""
 
             switch ($tag) {
-                "AssemblyVersion" { 
-                    $replacementValue = $fileVersion 
-                    break 
+                "AssemblyVersion" {
+                    $replacementValue = $fileVersion
+                    break
                 }
-                "AssemblyFileVersion" { 
-                    $replacementValue = $fileVersion 
-                    break 
+                "AssemblyFileVersion" {
+                    $replacementValue = $fileVersion
+                    break
                 }
             }
 
@@ -162,8 +162,8 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
 
             if ($regexMatches.Count -gt 0) {
                 $totalReplacements += $regexMatches.Count
-                $content = [regex]::Replace($content, $pattern, { 
-                    param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)" 
+                $content = [regex]::Replace($content, $pattern, {
+                    param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)"
                 }, "IgnoreCase")
             }
         }
