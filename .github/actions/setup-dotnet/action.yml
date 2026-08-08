@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # GitHub Composite Action - Setup Custom .NET
 # ------------------------------------------------------------------------------
 # Security: Enforces strict Authenticode signature validation and cryptographic
@@ -9,38 +9,27 @@ description: 'Installs a specific .NET SDK version using the dotnet-install scri
 
 inputs:
   max_retries:
-    description: 'Maximum number of download attempts for dotnet-install.ps1'
+    description: 'Number of retries after the initial attempt'
     required: false
-    default: '5'
+    default: '4'
 
 runs:
   using: "composite"
   steps:
+    - name: Download dotnet-install.ps1
+      uses: ./.github/actions/download-with-retry
+      with:
+        url: 'https://dot.net/v1/dotnet-install.ps1'
+        output_path: '${{ runner.temp }}/dotnet-install.ps1'
+        asset_name: 'dotnet-install.ps1'
+        max_retries: ${{ inputs.max_retries }}
+
     - name: Install .NET SDK
       shell: pwsh
-      env:
-        INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
       run: |
-        $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
         # Relocate the temporary script to the runner's temp directory to prevent workspace pollution
         $installerPath = Join-Path $env:RUNNER_TEMP "dotnet-install.ps1"
-
-        $maxRetries = [int]$env:INPUT_MAX_RETRIES
-        for ($i = 0; $i -lt $maxRetries; $i++) {
-          # Use --fail to force exit code 22 on HTTP 400+, allowing the retry loop to capture transient server errors.
-          curl.exe -fL $url -o $installerPath
-
-          if ($LASTEXITCODE -eq 0) {
-            break
-          }
-
-          if ($i -eq ($maxRetries - 1)) {
-            throw "Failed to download dotnet-install.ps1 after $maxRetries attempts"
-          }
-
-          Start-Sleep -Seconds 3
-        }
 
         # --- SECURITY CHECK ---
         Write-Host "Verifying Authenticode signature of dotnet-install.ps1..."

@@ -28,8 +28,11 @@
                          AutomationProperties.AutomationId="SidebarSearchTextBox"
                          AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarSearchTextBox_HelpText}"
                          AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarSearchTextBox_Name}"
-                         KeyDown="SearchTextBox_KeyDown"
-                         Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}" />
+                         Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}">
+          <TextBox.InputBindings>
+            <KeyBinding Key="Enter" Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+          </TextBox.InputBindings>
+        </TextBox>
 
         <Button Width="92"
                         Height="24"
