@@ -912,10 +912,10 @@
 
             <TextBlock Grid.Row="11"
                        Grid.Column="1"
-                       Grid.ColumnSpan="3"
+                       Grid.ColumnSpan="2"
                        Text="{x:Static resx:Strings.Info_FailureProgram}"
                        FontStyle="Normal"
-                       Foreground="Black"
+                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,5" />
 
@@ -1243,10 +1243,10 @@
 
             <TextBlock Grid.Row="0"
                        Grid.Column="1"
-                       Grid.ColumnSpan="3"
+                       Grid.ColumnSpan="2"
                        Text="{x:Static resx:Strings.Info_PreLaunch}"
                        FontStyle="Normal"
-                       Foreground="Black"
+                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                        TextWrapping="Wrap"
                        Margin="5,0,0,5" />
 
@@ -1528,10 +1528,10 @@
 
             <TextBlock Grid.Row="0"
                        Grid.Column="1"
-                       Grid.ColumnSpan="3"
+                       Grid.ColumnSpan="2"
                        Text="{x:Static resx:Strings.Info_PostLaunch}"
                        FontStyle="Normal"
-                       Foreground="Black"
+                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                        TextWrapping="Wrap"
                        Margin="5,0,0,5" />
 
@@ -1670,10 +1670,10 @@
 
             <TextBlock Grid.Row="0"
                        Grid.Column="1"
-                       Grid.ColumnSpan="3"
+                       Grid.ColumnSpan="2"
                        Text="{x:Static resx:Strings.Info_PreStop}"
                        FontStyle="Normal"
-                       Foreground="Black"
+                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                        TextWrapping="Wrap"
                        Margin="5,0,0,5" />
 
@@ -1847,10 +1847,10 @@
 
             <TextBlock Grid.Row="0"
                        Grid.Column="1"
-                       Grid.ColumnSpan="3"
+                       Grid.ColumnSpan="2"
                        Text="{x:Static resx:Strings.Info_PostStop}"
                        FontStyle="Normal"
-                       Foreground="Black"
+                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                        TextWrapping="Wrap"
                        Margin="5,0,0,5" />
 

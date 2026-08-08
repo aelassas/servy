@@ -433,6 +433,11 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>RAM</value>
   </data>
 
+  <!-- Console Tab -->
+  <data name="Label_ConsoleFilter" xml:space="preserve">
+    <value>🔍 Filter:</value>
+  </data>
+
   <!-- Miscellaneous -->
   <data name="Msg_InvalidServiceName" xml:space="preserve">
     <value>Invalid service name.</value>
