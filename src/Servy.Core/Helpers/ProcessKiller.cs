@@ -84,8 +84,7 @@ namespace Servy.Core.Helpers
         /// <inheritdoc />
         public void KillChildren(int parentPid)
         {
-            int selfPid;
-            using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
+            int selfPid = GetCurrentPid();
 
             DateTime parentStartTime = DateTime.MinValue;
             try
@@ -201,8 +200,7 @@ namespace Servy.Core.Helpers
                 // Internal normalization for consistent LINQ comparison (Process.ProcessName is extension-less)
                 string normalizedName = StripExe(processName);
 
-                int selfPid;
-                using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
+                int selfPid = GetCurrentPid();
 
                 var (completeSnapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
                 var protectedPids = GetAncestorPids(completeSnapshot);
@@ -306,8 +304,7 @@ namespace Servy.Core.Helpers
                         return false;
                     }
 
-                    int selfPid;
-                    using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
+                    int selfPid = GetCurrentPid();
 
                     // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
                     // Aligned with the string overload to use SafeStartTime wrapper to prevent Win32Exception
@@ -432,7 +429,7 @@ namespace Servy.Core.Helpers
                     }
 
                     // Surgical Kill by PID
-                    if (!KillProcessTreeAndParents(procInfo.ProcessId))
+                    if (!KillProcessTreeAndParents(procInfo.ProcessId, killParents: false))
                     {
                         Logger.Error($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}).");
                         success = false;
@@ -455,6 +452,15 @@ namespace Servy.Core.Helpers
         #endregion
 
         #region Helper Methods
+
+        /// <summary>
+        /// Retrieves the process ID of the currently executing process safely within a managed handle context.
+        /// </summary>
+        /// <returns>The unique process identifier of the current process.</returns>
+        private static int GetCurrentPid()
+        {
+            using (var current = Process.GetCurrentProcess()) return current.Id;
+        }
 
         /// <summary>
         /// Removes the ".exe" extension from the specified file name, if present.
@@ -591,8 +597,7 @@ namespace Servy.Core.Helpers
             var ancestors = new HashSet<int>();
             try
             {
-                int currentPid;
-                using (var current = Process.GetCurrentProcess()) { currentPid = current.Id; }
+                int currentPid = GetCurrentPid();
 
                 ancestors.Add(currentPid);
                 int currentSearchPid = currentPid;

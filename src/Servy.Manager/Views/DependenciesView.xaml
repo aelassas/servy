@@ -77,10 +77,6 @@
       </Grid.RowDefinitions>
 
       <Grid Grid.Row="0">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="Auto" />
@@ -90,8 +86,7 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0"
-                    Grid.Column="0"
+        <StackPanel Grid.Column="0"
                     Orientation="Horizontal"
                     Margin="0,0,6,6"
                     VerticalAlignment="Center">
@@ -146,8 +141,7 @@
           </Border>
         </StackPanel>
 
-        <StackPanel Grid.Row="0"
-                    Grid.Column="1"
+        <StackPanel Grid.Column="1"
                     Orientation="Horizontal"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center">
@@ -172,8 +166,7 @@
           </Button>
         </StackPanel>
 
-        <StackPanel Grid.Row="0"
-                    Grid.Column="2"
+        <StackPanel Grid.Column="2"
                     Orientation="Horizontal"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center">
@@ -189,8 +182,7 @@
           </Button>
         </StackPanel>
 
-        <StackPanel Grid.Row="0"
-                    Grid.Column="3"
+        <StackPanel Grid.Column="3"
                     Orientation="Horizontal"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center">
@@ -206,8 +198,7 @@
           </Button>
         </StackPanel>
 
-        <TextBlock Grid.Row="0"
-                   Grid.Column="4"
+        <TextBlock Grid.Column="4"
                    Text="{x:Static resx:Strings.Dependencies_Info}"
                    FontSize="11"
                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
@@ -248,7 +239,6 @@
                     <Path.Style>
                       <Style TargetType="Path">
                         <Setter Property="Fill" Value="#E74C3C" />
-                        <Setter Property="Visibility" Value="Visible" />
                         <Style.Triggers>
                           <DataTrigger Binding="{Binding IsCyclic}" Value="True">
                             <Setter Property="Visibility" Value="Collapsed" />
@@ -301,7 +291,6 @@
                           </DataTrigger>
 
                           <DataTrigger Binding="{Binding IsCyclic}" Value="True">
-                            <Setter Property="FontStyle" Value="Normal" />
                             <Setter Property="Foreground" Value="#F39C12" />
                             <Setter Property="ToolTip" Value="{x:Static resx:Strings.Tooltip_Cycle}" />
                           </DataTrigger>
@@ -369,21 +358,17 @@
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
 
-          <TextBlock Grid.Row="0"
-                     Grid.Column="1"
+          <TextBlock Grid.Column="1"
                      Margin="10,3,0,0"
                      Text="{x:Static resx:Strings.Label_Dependencies_Gear_Info}"
-                     FontStyle="Normal"
                      Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                      TextWrapping="Wrap"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_DependenciesUsageInfo_Name}"
                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesUsageInfo_HelpText}" />
 
-          <TextBlock Grid.Row="0"
-                     Grid.Column="2"
+          <TextBlock Grid.Column="2"
                      Margin="10,3,0,0"
                      Text="{x:Static resx:Strings.Label_F5_Shortcut_Dependencies}"
-                     FontStyle="Normal"
                      Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                      TextWrapping="Wrap"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_DependenciesShortcutInfo_Name}"

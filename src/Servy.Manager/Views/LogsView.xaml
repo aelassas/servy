@@ -238,26 +238,23 @@
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
 
-      <TextBlock Grid.Row="0"
-                       Grid.Column="0"
-                       Margin="0,5,0,0"
-                       Text="{Binding FooterText}"
-                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                       FontSize="12"
-                       TextWrapping="Wrap"
-                       HorizontalAlignment="Left"
-                       AutomationProperties.Name="{Binding FooterText}"
-                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsFooterText_HelpText}" />
+      <TextBlock Grid.Column="0"
+                 Margin="0,5,0,0"
+                 Text="{Binding FooterText}"
+                 Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                 FontSize="12"
+                 TextWrapping="Wrap"
+                 HorizontalAlignment="Left"
+                 AutomationProperties.Name="{Binding FooterText}"
+                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsFooterText_HelpText}" />
 
-      <TextBlock Grid.Row="0"
-                       Grid.Column="2"
-                       Margin="10,3,0,0"
-                       Text="{x:Static resx:Strings.Label_F5_Shortcut_Logs}"
-                       FontStyle="Normal"
-                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                       TextWrapping="Wrap"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsShortcutInfo_Name}"
-                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsShortcutInfo_HelpText}" />
+      <TextBlock Grid.Column="2"
+                 Margin="10,3,0,0"
+                 Text="{x:Static resx:Strings.Label_F5_Shortcut_Logs}"
+                 Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                 TextWrapping="Wrap"
+                 AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsShortcutInfo_Name}"
+                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsShortcutInfo_HelpText}" />
     </Grid>
   </Grid>
 </UserControl>

@@ -229,7 +229,7 @@ namespace Servy.Core.Helpers
         {
             string value = configuration[key];
 
-            if (int.TryParse(value, out var parsedValue))
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedValue))
             {
                 if (parsedValue >= min && parsedValue <= max)
                 {
