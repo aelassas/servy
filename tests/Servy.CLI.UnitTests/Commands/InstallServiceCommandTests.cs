@@ -128,7 +128,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Strings.Msg_WrapperNotFound, result.Message);
+            Assert.Equal(string.Format(Strings.Msg_WrapperNotFound, _wrapperExePath), result.Message);
         }
 
         [Fact]

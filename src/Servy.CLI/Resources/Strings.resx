@@ -26,7 +26,7 @@
     <value>Invalid executable path: {0}. Ensure the file exists and is accessible.</value>
   </data>
   <data name="Msg_WrapperNotFound" xml:space="preserve">
-    <value>Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.CLI.exe. Ensure Servy is properly installed.</value>
+    <value>Wrapper executable not found at: {0}. Ensure Servy is properly installed.</value>
   </data>
   <data name="Msg_PathRequired" xml:space="preserve">
     <value>File path is required.</value>

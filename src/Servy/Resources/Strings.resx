@@ -195,7 +195,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
 
   <!-- Cpu Affinity -->
   <data name="Label_CpuAffinity" xml:space="preserve">
-    <value>Cpu Affinity</value>
+    <value>CPU Affinity</value>
   </data>
   <data name="Info_CpuAffinity" xml:space="preserve">
     <value>Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>

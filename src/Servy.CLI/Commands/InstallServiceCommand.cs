@@ -73,7 +73,7 @@ namespace Servy.CLI.Commands
                 var wrapperExePath = AppConfig.GetServyCLIServicePath();
 
                 if (!File.Exists(wrapperExePath))
-                    return CommandResult.Fail(Strings.Msg_WrapperNotFound);
+                    return CommandResult.Fail(string.Format(Strings.Msg_WrapperNotFound, wrapperExePath));
 
                 // Parse enums safely with defaults
                 var startupType = ConfigParser.ParseEnum(opts.ServiceStartType, AppConfig.DefaultStartupType);
