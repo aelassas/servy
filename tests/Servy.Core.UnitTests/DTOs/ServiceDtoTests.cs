@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using System;
 using System.Collections.Generic;

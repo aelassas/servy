@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using Servy.Models;
 using System.Threading;
 using System.Threading.Tasks;

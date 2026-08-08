@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.UI.Constants;

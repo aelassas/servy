@@ -1,4 +1,4 @@
-﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using System.Collections.Generic;
@@ -262,7 +262,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Assert
             Assert.False(isValid);
             Assert.NotEmpty(errorMessages);
-            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, "VAL\0ATTACK"), errorMessages[0]);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, "KEY"), errorMessages[0]);
         }
 
         #region Key Formatting and Security Robustness Rule Tests

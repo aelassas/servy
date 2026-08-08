@@ -1,4 +1,4 @@
-﻿using Servy.Core.Security;
+using Servy.Core.Security;
 using System;
 using System.IO;
 using System.Security.Cryptography;

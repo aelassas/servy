@@ -1,4 +1,4 @@
-﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using System;
 using System.Collections.Generic;

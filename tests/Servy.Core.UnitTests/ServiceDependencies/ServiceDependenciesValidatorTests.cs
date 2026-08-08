@@ -1,4 +1,4 @@
-﻿using Servy.Core.ServiceDependencies;
+using Servy.Core.ServiceDependencies;
 using Xunit;
 
 namespace Servy.Core.UnitTests.ServiceDependencies

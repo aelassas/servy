@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Models;
+using Servy.CLI.Models;
 using Servy.CLI.Options;
 
 namespace Servy.CLI.Validation

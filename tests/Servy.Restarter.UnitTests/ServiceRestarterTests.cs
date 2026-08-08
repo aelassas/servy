@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Testing;
 using System;
 using System.ComponentModel;

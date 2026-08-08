@@ -1,4 +1,4 @@
-﻿using Servy.Core.Data;
+using Servy.Core.Data;
 using System;
 using System.Data.Common;
 

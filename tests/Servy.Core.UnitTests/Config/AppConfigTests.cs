@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;

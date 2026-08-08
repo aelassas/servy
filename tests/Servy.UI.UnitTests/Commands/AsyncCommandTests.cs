@@ -1,4 +1,4 @@
-﻿using Servy.UI.Commands;
+using Servy.UI.Commands;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

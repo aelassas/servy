@@ -1,4 +1,4 @@
-﻿namespace Servy.Manager.Models
+namespace Servy.Manager.Models
 {
     /// <summary>
     /// Represents a Windows service being tracked for performance metrics.

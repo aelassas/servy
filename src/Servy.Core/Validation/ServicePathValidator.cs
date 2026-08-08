@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;

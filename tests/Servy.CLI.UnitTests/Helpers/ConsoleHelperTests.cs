@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Helpers;
+using Servy.CLI.Helpers;
 using Servy.Testing;
 using System;
 using System.IO;

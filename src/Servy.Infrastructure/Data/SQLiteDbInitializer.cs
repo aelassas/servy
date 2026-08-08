@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using System;

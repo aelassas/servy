@@ -1,4 +1,4 @@
-﻿using Servy.Service.CommandLine;
+using Servy.Service.CommandLine;
 using System;
 using Xunit;
 

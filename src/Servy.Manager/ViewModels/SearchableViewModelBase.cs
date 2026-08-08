@@ -1,4 +1,4 @@
-﻿using Servy.Core.Logging;
+using Servy.Core.Logging;
 using Servy.Manager.Resources;
 using Servy.UI.Services;
 using Servy.UI.ViewModels;

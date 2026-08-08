@@ -1,4 +1,4 @@
-﻿using Servy.Manager.Design;
+using Servy.Manager.Design;
 using Servy.Manager.Models;
 using System.Threading.Tasks;
 using Xunit;

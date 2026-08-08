@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Servy.CLI.Options;
 using Servy.Testing;
 using System;

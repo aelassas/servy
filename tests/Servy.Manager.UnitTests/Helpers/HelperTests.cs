@@ -1,4 +1,4 @@
-﻿using Servy.Manager.Helpers;
+using Servy.Manager.Helpers;
 using System;
 using System.Threading;
 using Xunit;

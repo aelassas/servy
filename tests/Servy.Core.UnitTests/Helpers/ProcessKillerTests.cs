@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.Helpers;
 using Servy.Testing;
 using System;

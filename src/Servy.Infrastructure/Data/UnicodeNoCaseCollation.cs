@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data.SQLite;
 
 namespace Servy.Infrastructure.Data

@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32.SafeHandles;
+using Microsoft.Win32.SafeHandles;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Core.Native

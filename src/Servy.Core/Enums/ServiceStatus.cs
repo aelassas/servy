@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Enums
+namespace Servy.Core.Enums
 {
     /// <summary>
     /// Represents the current status of a Windows service.

@@ -1,4 +1,4 @@
-﻿using Servy.Manager.ViewModels;
+using Servy.Manager.ViewModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;

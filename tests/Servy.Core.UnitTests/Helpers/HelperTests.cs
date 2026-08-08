@@ -1,4 +1,4 @@
-﻿using Servy.Core.Resources;
+using Servy.Core.Resources;
 using System;
 using System.IO;
 using System.Text;

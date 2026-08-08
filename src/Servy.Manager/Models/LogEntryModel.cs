@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using Servy.UI.ViewModels;
 using System; // Inheriting from the centralized UI ViewModel base
 

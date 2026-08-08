@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Servy.CLI.Commands;
 using Servy.CLI.Helpers;
 using Servy.CLI.Models;

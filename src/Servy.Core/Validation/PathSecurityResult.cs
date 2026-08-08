@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Validation
+namespace Servy.Core.Validation
 {
     /// <summary>
     /// Specifies the high-level classification category of a path validation failure.

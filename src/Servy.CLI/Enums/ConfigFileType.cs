@@ -1,4 +1,4 @@
-﻿namespace Servy.CLI.Enums
+namespace Servy.CLI.Enums
 {
     /// <summary>
     /// Configuration file types.

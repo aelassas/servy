@@ -1,4 +1,4 @@
-﻿using Servy.Core.Logging;
+using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using System;
 using System.Configuration;

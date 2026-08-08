@@ -1,4 +1,4 @@
-﻿using Servy.Core;
+using Servy.Core;
 
 namespace Servy.ViewModels
 {

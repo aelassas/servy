@@ -1,4 +1,4 @@
-﻿using Servy.Testing;
+using Servy.Testing;
 using Servy.UI.Services;
 using System;
 using System.Threading.Tasks;

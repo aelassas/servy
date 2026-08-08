@@ -1,4 +1,4 @@
-﻿namespace Servy.Restarter
+namespace Servy.Restarter
 {
     /// <summary>
     /// Represents the outcome of a service restart operation.

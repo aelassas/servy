@@ -1,4 +1,4 @@
-﻿using Servy.Service.Timers;
+using Servy.Service.Timers;
 using Servy.Testing;
 using System;
 using System.Threading;

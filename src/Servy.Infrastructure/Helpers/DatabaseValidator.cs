@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using System;
 
 namespace Servy.Infrastructure.Helpers

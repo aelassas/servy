@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Domain;

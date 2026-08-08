@@ -1,4 +1,4 @@
-﻿using Servy.Core.DTOs;
+using Servy.Core.DTOs;
 using System.Linq;
 using System.Reflection;
 using System.Xml.Serialization;

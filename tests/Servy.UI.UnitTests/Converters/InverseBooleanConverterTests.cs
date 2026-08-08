@@ -1,4 +1,4 @@
-﻿using Servy.UI.Converters;
+using Servy.UI.Converters;
 using System.Globalization;
 using System.Windows.Data;
 using Xunit;

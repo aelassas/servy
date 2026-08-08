@@ -1,4 +1,4 @@
-﻿using Servy.Design;
+using Servy.Design;
 using Servy.Models;
 using System.Threading;
 using System.Threading.Tasks;

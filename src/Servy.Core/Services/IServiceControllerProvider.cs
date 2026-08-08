@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Services
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides an abstraction for retrieving a collection of Windows services.

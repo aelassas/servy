@@ -1,4 +1,4 @@
-﻿namespace Servy.UI.Services
+namespace Servy.UI.Services
 {
     /// <summary>
     /// Provides centralized management for the application's mouse cursor state,

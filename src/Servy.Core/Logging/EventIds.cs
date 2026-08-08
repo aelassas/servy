@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Logging
+namespace Servy.Core.Logging
 {
     /// <summary>
     /// Centralizes Windows Event Log IDs used across the Servy ecosystem.

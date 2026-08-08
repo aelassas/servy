@@ -1,4 +1,4 @@
-﻿using Servy.Core.Common;
+using Servy.Core.Common;
 using Servy.Core.DTOs;
 using System.Collections.Generic;
 using System.Threading;

@@ -1,4 +1,4 @@
-﻿namespace Servy.Manager.Models
+namespace Servy.Manager.Models
 {
     /// <summary>
     /// Base type for all service models displayed in the UI.

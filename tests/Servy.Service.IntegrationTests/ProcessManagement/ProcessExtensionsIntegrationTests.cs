@@ -1,4 +1,4 @@
-﻿using Servy.Service.Helpers;
+using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System;

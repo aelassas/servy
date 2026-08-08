@@ -1,4 +1,4 @@
-﻿using Servy.Core.Resources;
+using Servy.Core.Resources;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.UI.Services

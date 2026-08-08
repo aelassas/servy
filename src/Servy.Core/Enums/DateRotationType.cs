@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Enums
+namespace Servy.Core.Enums
 {
     /// <summary>
     /// Defines the supported date-based log rotation intervals.

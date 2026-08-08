@@ -1,4 +1,4 @@
-﻿using Servy.Core.Logging;
+using Servy.Core.Logging;
 using System.Diagnostics;
 
 namespace Servy.Service.ProcessManagement

@@ -1,4 +1,4 @@
-﻿using Servy.Manager.Models;
+using Servy.Manager.Models;
 using Servy.Manager.Services;
 using System.Collections.Generic;
 using System.Threading;

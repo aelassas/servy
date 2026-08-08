@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Timers;
 using Timer = System.Timers.Timer;
 

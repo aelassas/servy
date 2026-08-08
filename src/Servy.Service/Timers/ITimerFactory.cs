@@ -1,4 +1,4 @@
-﻿namespace Servy.Service.Timers
+namespace Servy.Service.Timers
 {
     /// <summary>
     /// Factory interface to create <see cref="ITimer"/> instances.

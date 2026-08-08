@@ -1,4 +1,4 @@
-﻿namespace Servy.UI.Constants
+namespace Servy.UI.Constants
 {
     /// <summary>
     /// Common constants used throughout the UI layer.

@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Servy.Core.Config;
 
 namespace Servy.CLI.Options

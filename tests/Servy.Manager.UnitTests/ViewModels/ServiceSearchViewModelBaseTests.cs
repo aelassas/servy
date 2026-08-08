@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;

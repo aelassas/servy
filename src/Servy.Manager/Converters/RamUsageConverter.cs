@@ -1,4 +1,4 @@
-﻿namespace Servy.Manager.Converters
+namespace Servy.Manager.Converters
 {
     /// <summary>
     /// Converts a RAM usage to a string.

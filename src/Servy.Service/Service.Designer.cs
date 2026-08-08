@@ -1,4 +1,4 @@
-﻿namespace Servy.Service
+namespace Servy.Service
 {
     partial class Service
     {

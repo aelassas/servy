@@ -1,4 +1,4 @@
-﻿using Servy.Core.Native;
+using Servy.Core.Native;
 using System;
 using System.Diagnostics;
 using Xunit;

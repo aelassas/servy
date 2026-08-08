@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Infrastructure.Helpers;
 using System;
 using Xunit;

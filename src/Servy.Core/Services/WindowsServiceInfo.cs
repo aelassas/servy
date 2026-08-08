@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Services
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Represents information about a Windows service, including its service name

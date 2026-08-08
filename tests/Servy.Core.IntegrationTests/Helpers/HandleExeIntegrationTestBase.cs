@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Xunit;
 
 namespace Servy.Core.IntegrationTests.Helpers

@@ -1,4 +1,4 @@
-﻿using Servy.Core.Helpers;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Specialized;

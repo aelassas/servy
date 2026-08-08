@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ServiceProcess;
 
 namespace Servy.Restarter

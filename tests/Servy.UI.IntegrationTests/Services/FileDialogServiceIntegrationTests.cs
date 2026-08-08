@@ -1,4 +1,4 @@
-﻿using Servy.UI.Services;
+using Servy.UI.Services;
 using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services

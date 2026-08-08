@@ -1,4 +1,4 @@
-﻿using Servy.Core.Enums;
+using Servy.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;

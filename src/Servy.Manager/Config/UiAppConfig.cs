@@ -1,4 +1,4 @@
-﻿namespace Servy.Manager.Config
+namespace Servy.Manager.Config
 {
     /// <summary>
     /// Provides application-wide configuration.

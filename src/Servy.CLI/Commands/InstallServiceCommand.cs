@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Helpers;
+using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.CLI.Validation;

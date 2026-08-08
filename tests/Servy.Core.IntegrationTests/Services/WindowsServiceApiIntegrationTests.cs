@@ -1,4 +1,4 @@
-﻿using Servy.Core.Services;
+using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

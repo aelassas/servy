@@ -1,4 +1,4 @@
-﻿namespace Servy.UI.Services
+namespace Servy.UI.Services
 {
     /// <summary>
     /// Provides an abstraction for file and folder dialog operations.

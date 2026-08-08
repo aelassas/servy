@@ -1,4 +1,4 @@
-﻿namespace Servy.Manager.Models
+namespace Servy.Manager.Models
 {
     /// <summary>
     /// Specifies the type of performance metric being monitored or visualized.

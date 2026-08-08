@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System;

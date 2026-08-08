@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Resources;
+using Servy.CLI.Resources;
 using System;
 using System.IO;
 using System.Threading;

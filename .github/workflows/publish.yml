@@ -61,7 +61,7 @@ jobs:
       - name: Set VERSION env
         shell: pwsh
         env:
-          RESOLVED_VERSION: ${{ steps.get_version.outputs.version }}        
+          RESOLVED_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$env:RESOLVED_VERSION"
 
