@@ -13,7 +13,6 @@
         Width="300" Height="150"
         Background="White"
         Cursor="Wait"
-        AllowsTransparency="True"
         Topmost="True">
     <Grid>
         <Border BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"

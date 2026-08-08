@@ -301,19 +301,15 @@ namespace Servy.UI.Bootstrapping
 
             if (positionalArgs.Count > 0)
             {
-                if (string.Equals(positionalArgs[0], AppConfig.SkipSplashArgument, StringComparison.OrdinalIgnoreCase))
-                {
-                    showSplash = false;
-                    if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
-                }
-                else if (bool.TryParse(positionalArgs[0], out var parsed))
+                // The first positional argument controls splash screen visibility ("true"/"false").
+                if (bool.TryParse(positionalArgs[0], out var parsed))
                 {
                     showSplash = parsed;
                     if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
                 }
                 else
                 {
-                    // First arg isn't a splash flag - assume it is the service name.
+                    // Positional argument is not a boolean flag, treat it directly as the target service name
                     serviceName = positionalArgs[0];
                 }
             }
