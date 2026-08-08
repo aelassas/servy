@@ -126,7 +126,7 @@ Name: "{commonappdata}\Servy"
 ; Name: "{group}\Servy Manager"; Filename: "{app}\Servy.Manager.exe"; IconFilename: "{app}\servy.ico"; WorkingDir: "{app}"
 
 Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Components: install_main_app
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Components: install_main_app 
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Components: install_main_app
 
 Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
 Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
@@ -162,11 +162,11 @@ var
   CurrentUserName: String;
 begin
   CurrentUserName := GetUserNameString();
-  
+
   // Replicate C# logic: currentUserSid != systemSid
-  // We don't check for 'adminSid' here because a User SID is never equal 
+  // We don't check for 'adminSid' here because a User SID is never equal
   // to the Administrators Group SID.
-  Result := (CompareText(CurrentUserName, 'SYSTEM') <> 0) and 
+  Result := (CompareText(CurrentUserName, 'SYSTEM') <> 0) and
             (CurrentUserName <> '');
 end;
 
@@ -181,7 +181,7 @@ Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidde
 [Code]
 // -----------------------------------------------------
 // At least one component is required
-// ----------------------------------------------------- 
+// -----------------------------------------------------
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
@@ -200,9 +200,9 @@ end;
 
 // -----------------------------------------------------
 // Pre-Install actions:
-//  - Check if a version is already installed 
+//  - Check if a version is already installed
 //  - Prepare install
-// ----------------------------------------------------- 
+// -----------------------------------------------------
 function GetUninstallString(): String;
 var
   sUnInstPath, sUnInstallString: String;
@@ -233,12 +233,12 @@ begin
   Result := (GetUninstallString() <> '');
 end;
 
-function BoolToStr(Value: Boolean): String; 
+function BoolToStr(Value: Boolean): String;
 begin
-  if Value then 
+  if Value then
   begin
     Result := 'True';
-  end 
+  end
   else
   begin
     Result := 'False';
@@ -257,7 +257,7 @@ begin
   if sUnInstallString <> '' then
   begin
     sUnInstallString := RemoveQuotes(sUnInstallString);
-    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then 
+    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then
       Result := 3
     else
       Result := 2;
@@ -274,7 +274,7 @@ var
 begin
   sVersionString := '';
   sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-  
+
   if not RegQueryStringValue(HKLM64, sUnInstPath, 'DisplayVersion', sVersionString) then
   begin
     RegQueryStringValue(HKCU, sUnInstPath, 'DisplayVersion', sVersionString);
@@ -283,13 +283,13 @@ begin
   if sVersionString = '' then
   begin
     sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-  
+
     if not RegQueryStringValue(HKLM32, sUnInstPath, 'DisplayVersion', sVersionString) then
     begin
       RegQueryStringValue(HKCU, sUnInstPath, 'DisplayVersion', sVersionString);
     end;
   end;
-  
+
   Result := sVersionString;
 end;
 
@@ -329,7 +329,7 @@ var
 begin
   Result := True;
   sInstalledVersion := GetInstalledVersion();
- 
+
   if IsUpgrade() and (sInstalledVersion <> '') then
   begin
     Log('InitializeSetup.InstalledVersion: ' + sInstalledVersion);
@@ -337,10 +337,10 @@ begin
     myAppVersion :=  NumericVersion(ExpandConstant('{#MyAppVersion}'));
     message := '';
 
-    if installedVersion < myAppVersion  then 
-    begin 
+    if installedVersion < myAppVersion  then
+    begin
       message := 'An older version of Servy is already installed. Would you like to upgrade to this newer version?';
-    end 
+    end
     else if installedVersion > myAppVersion then
     begin
       message := 'A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?';
@@ -365,8 +365,8 @@ begin
     begin
       Result := False;
     end;
-  end;  
-  
+  end;
+
   // Uninstall key path
   UninstKey := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
 
@@ -403,7 +403,7 @@ begin
       Exit;
     end;
   end;
-  Result := '';  
+  Result := '';
 end;
 
 // -----------------------------------------------------
@@ -411,7 +411,7 @@ end;
 //  - Add Servy to PATH if related task selected
 //  - Refresh icon cache after install
 //  - Replace XML Placeholders for Task Scheduler paths
-// -----------------------------------------------------  
+// -----------------------------------------------------
 // Declare Windows API function for refreshing icon cache
 procedure SHChangeNotify(wEventId, uFlags: LongWord; dwItem1, dwItem2: LongWord); external 'SHChangeNotify@shell32.dll stdcall';
 
@@ -443,15 +443,15 @@ begin
     ResultCode
   );
 end;
-  
+
 // Removes trailing backslash
 function NormalizeFolder(const S: string): string;
 begin
   Result := S;
   if (Length(Result) > 0) and (Result[Length(Result)] = '\') then
     SetLength(Result, Length(Result) - 1);
-end;  
-  
+end;
+
 procedure AddToPath(const Folder: string);
 var
   OldPath, NewPath, NormalizedFolder: string;
@@ -462,7 +462,7 @@ begin
 
   // Only add if it's not already there
   NormalizedFolder := NormalizeFolder(Folder);
-  
+
   // Append semicolons to both sides for reliable checking against other entries (e.g., 'C:\A' vs 'C:\A B')
   if Pos(';' + LowerCase(NormalizedFolder) + ';', ';' + LowerCase(OldPath) + ';') = 0 then
   begin
@@ -503,7 +503,7 @@ begin
       AddToPath(InstallDir);
       RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 1);
     end;
-    
+
     // 3. Resolve Hardcoded Paths in Task Scheduler XMLs
     InstallPath := ExpandConstant('{app}');
     FilesToFix[0] := InstallPath + '\taskschd\ServyFailureNotification.xml';
@@ -520,8 +520,8 @@ begin
             // Perform the replacement on the decoded Unicode string
             StringChangeEx(FileLines[J], '{SERVY_INSTALL_PATH}', InstallPath, True);
           end;
-          
-          // SaveStringsToUTF8File writes a standard UTF-8 file. 
+
+          // SaveStringsToUTF8File writes a standard UTF-8 file.
           // Because we updated the header to UTF-8, Task Scheduler will read it perfectly.
           SaveStringsToUTF8File(FilesToFix[I], FileLines, False);
         end;
@@ -533,7 +533,7 @@ end;
 // -----------------------------------------------------
 // Uninstall actions:
 //  - Remove Servy from PATH if necessary
-// ----------------------------------------------------- 
+// -----------------------------------------------------
 procedure RemoveFromPath(const Folder: string);
 var
   OldPath, NewPath: string;
@@ -567,7 +567,7 @@ begin
         'Path',
         NewPath
       );
-      
+
       RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 0);
 
       RefreshEnvironment();

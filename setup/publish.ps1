@@ -29,7 +29,7 @@
 # publish.ps1
 # Main setup bundle script for building the self-contained installer.
 param(
-    [string]$Tfm     = "", 
+    [string]$Tfm     = "",
     [string]$Version = ""
 )
 
@@ -106,7 +106,7 @@ catch {
 }
 finally {
     # ROBUSTNESS: Detect if running in a non-interactive environment (CI pipeline, automated task).
-    # If [Environment]::UserInteractive evaluates to false or no physical window is attached, 
+    # If [Environment]::UserInteractive evaluates to false or no physical window is attached,
     # bypass the ReadKey sequence entirely to prevent the process from hanging indefinitely.
     $isInteractive = [Environment]::UserInteractive -and ($Host.Name -like '*Console*')
 

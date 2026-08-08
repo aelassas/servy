@@ -58,10 +58,10 @@ try {
     if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
 
     Get-ChildItem -Path $sourcePath -Recurse -File |
-        Where-Object { 
-            $_.Name -notin @('smtp-cred.xml') -and 
-            $_.Extension -notin @('.dat','.log') -and 
-            $_.Name -notin @('temp.ps1') -and 
+        Where-Object {
+            $_.Name -notin @('smtp-cred.xml') -and
+            $_.Extension -notin @('.dat','.log') -and
+            $_.Name -notin @('temp.ps1') -and
             $_.Name -notlike '*.test.ps1'
         } |
         ForEach-Object {
@@ -71,7 +71,7 @@ try {
             $parent = Split-Path $target -Parent
 
             if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-         
+
             Copy-Item -Path $_.FullName -Destination $target -Force
         }
 

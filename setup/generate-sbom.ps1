@@ -9,7 +9,7 @@
 param (
     [Parameter(Mandatory=$true)]
     [string]$BaseVersion,
-    
+
     [Parameter(Mandatory=$true)]
     [string]$OutputFile
 )

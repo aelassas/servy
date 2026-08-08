@@ -38,7 +38,7 @@ Invoke-StandardPublish `
     -Runtime $Runtime `
     -BuildConfiguration $BuildConfiguration
 
-if ($Pause) { 
+if ($Pause) {
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

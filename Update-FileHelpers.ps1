@@ -4,7 +4,7 @@
     Shared helper routines for encoding-preserving file update operations.
 
 .DESCRIPTION
-    Provides unified file update logic (Update-FilesContent), shared build artifact 
+    Provides unified file update logic (Update-FilesContent), shared build artifact
     exclusion patterns, and bootstraps Get-FileEncoding.ps1 for versioning scripts.
 #>
 
@@ -27,7 +27,7 @@ function Update-FilesContent {
         Safely updates file content using regex patterns while preserving original file encoding.
 
     .DESCRIPTION
-        Iterates over the provided files and applies regex replacements while preserving byte-order marks 
+        Iterates over the provided files and applies regex replacements while preserving byte-order marks
         and original file encodings via Get-FileEncoding.
 
     .NOTES

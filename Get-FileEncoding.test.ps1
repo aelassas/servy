@@ -4,7 +4,7 @@
     Unit tests for Get-FileEncoding.ps1.
 
 .DESCRIPTION
-    Creates temporary files with known Encodings/BOMs and validates that 
+    Creates temporary files with known Encodings/BOMs and validates that
     Get-FileEncoding correctly detects them and enforces throwOnInvalidBytes=true.
 #>
 

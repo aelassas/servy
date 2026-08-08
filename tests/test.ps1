@@ -53,9 +53,9 @@ Write-Host "Discovered $($RawTestProjects.Count) test project(s)." -ForegroundCo
 foreach ($ProjFile in $RawTestProjects) {
     $Proj = $ProjFile.FullName
     $ProjName = $ProjFile.BaseName
-    
+
     Write-Host "Running tests for $($Proj)..." -ForegroundColor Cyan
-    
+
     # Build the 'dotnet test' arguments for this project
     $dotnetArgs = @(
         'test', $Proj,

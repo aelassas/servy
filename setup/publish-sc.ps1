@@ -86,7 +86,7 @@ try {
         "C:\Program Files\7-Zip\7z.exe",
         "C:\Program Files (x86)\7-Zip\7z.exe"
     )
-    
+
     Write-Host "Tools resolved successfully." -ForegroundColor Green
 }
 catch {
@@ -101,9 +101,9 @@ $projects = @($servyDir, $cliDir, $managerDir)
 foreach ($project in $projects) {
     $projectName = Split-Path $project -Leaf
     Write-Host "--- Publishing $projectName ---" -ForegroundColor Cyan
-    
+
     $publishScript = Join-Path $project "publish.ps1"
-    
+
     if (Test-Path $publishScript) {
         & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm -Runtime $Runtime
         Assert-LastExitCode "$publishScript failed"
@@ -129,7 +129,7 @@ Build-Installer -InnoCompiler $innoCompiler -IssFile $issFile -Version $Version 
 if (Test-Path $installerPath) {
     # Resolve the absolute path for the signer
     $resolvedInstaller = (Resolve-Path $installerPath).Path
-    
+
     # Validate the signing script exists before trying to execute it
     if (Test-Path $signPath) {
         $resolvedSigner = (Resolve-Path $signPath).Path

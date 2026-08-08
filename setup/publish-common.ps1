@@ -59,24 +59,24 @@ function Build-Installer {
         [int]$MaxRetry = 3,
         [int]$RetryDelaySeconds = 2
     )
-    
+
     Write-Host "--- Building Installer ---" -ForegroundColor Cyan
-    
+
     $currentAttempt = 0
     $success = $false
 
     while (-not $success -and $currentAttempt -lt $MaxRetry) {
         try {
             $currentAttempt++
-            if ($currentAttempt -gt 1) { 
-                Write-Host "Inno Setup retry attempt $currentAttempt..." -ForegroundColor Yellow 
+            if ($currentAttempt -gt 1) {
+                Write-Host "Inno Setup retry attempt $currentAttempt..." -ForegroundColor Yellow
             }
 
             & $InnoCompiler $IssFile "/DMyAppVersion=$Version" "/DArch=$Arch"
 
             # MUST check exit code manually to trigger the 'catch' block
-            if ($LASTEXITCODE -eq 0) { 
-                $success = $true 
+            if ($LASTEXITCODE -eq 0) {
+                $success = $true
                 Write-Host "Installer built successfully." -ForegroundColor Green
             } else {
                 throw "ISCC.exe failed with exit code $LASTEXITCODE"
@@ -118,7 +118,7 @@ function Copy-CommonArtifacts {
         [Parameter(Mandatory=$true)][string]$CliDir,
         [Parameter(Mandatory=$true)][string]$DestFolder
     )
-    
+
     # 1. Include Task Scheduler hooks
     $excludedPatterns = @('smtp-cred.xml', '*.dat', '*.log', '*.test.ps1', 'temp.ps1')
 
@@ -135,8 +135,8 @@ function Copy-CommonArtifacts {
 
         # Post-copy verification to ensure no sensitive files leaked into the package
         $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include $excludedPatterns
-        if ($leaks) { 
-            throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')" 
+        if ($leaks) {
+            throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"
         }
     }
 
@@ -174,10 +174,10 @@ function New-PortablePackage {
         [Parameter(Mandatory=$true)][string]$OutputZip,
         [Parameter(Mandatory=$true)][string]$PackageFolder
     )
-    
+
     # Compress the folder including its top-level directory entry, so extraction
     # preserves the staging directory name as a wrapper.
-    
+
     # ROBUSTNESS: Call operator (&) lets the PowerShell parser quote space-containing paths
     # (OutputZip, PackageFolder) correctly for the native 7z invocation.
     & $SevenZipExe a -t7z -m0=lzma2 -mx=9 -mfb=273 -md=128m -ms=on $OutputZip $PackageFolder

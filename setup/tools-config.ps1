@@ -43,14 +43,14 @@ function Resolve-Tool {
 
     # 2. Check System PATH (Application only - avoid alias/function/script shadowing)
     $cmd = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($cmd) { 
+    if ($cmd) {
         return $cmd.Source   # Source is the canonical path property for Application commands
     }
 
     # 3. Check Fallbacks
     if ($Fallbacks) {
-        foreach ($p in $Fallbacks) { 
-            if (Test-Path $p) { return $p } 
+        foreach ($p in $Fallbacks) {
+            if (Test-Path $p) { return $p }
         }
     }
 

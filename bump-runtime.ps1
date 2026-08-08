@@ -4,7 +4,7 @@
     Updates .NET runtime target version across scripts, workflow, and project files.
 
 .DESCRIPTION
-    This script recursively updates `netX.Y` target framework versions 
+    This script recursively updates `netX.Y` target framework versions
     inside:
     - PowerShell scripts (*.ps1)
     - Inno Setup files (*.iss)
@@ -12,7 +12,7 @@
     - .github/workflows/publish.yml
     - global.json
 
-    Note: AppConfig.cs is intentionally not targeted because it derives the TFM 
+    Note: AppConfig.cs is intentionally not targeted because it derives the TFM
     dynamically at runtime via assembly metadata (BuiltWithFramework).
 
     Use -DryRun to preview changes without modifying anything.
@@ -106,7 +106,7 @@ $globalJsonFile = Join-Path $baseDir "global.json"
 if (Test-Path $globalJsonFile) {
     $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
     $globalJsonReplacement = "`${1}$Version.$SdkPatch"
-    
+
     Update-FilesContent -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun -ExpectMatch
 }
 
@@ -131,7 +131,7 @@ if ($script:HadFailure) {
         Write-Host "`nDry run complete with errors. No files were modified." -ForegroundColor Yellow
     } else {
         Write-Host ".NET runtime migration to v$Version completed with errors." -ForegroundColor Red
-    } 
+    }
     exit 1
 }
 

@@ -24,7 +24,7 @@ $testCases = @(
     @{ Name = "Branch A: Colon Separator"; Input = "API_KEY: my-secret-token"; Expected = "API_KEY: ********" }
     @{ Name = "Branch A: Forward Slash Separator"; Input = "API_KEY/my-secret-token"; Expected = "API_KEY/********" }
     @{ Name = "Branch B: Space Separator"; Input = "myapp.exe --password mysecret"; Expected = "myapp.exe --password ********" }
-    
+
     # Standardized expectation to match the engine's targeted keyword redaction architecture
     @{ Name = "Branch B: Space Separator Multi-Word Value"; Input = "CONNSTR my server address password"; Expected = "CONNSTR my server address ********" }
 
@@ -42,7 +42,7 @@ $failedCount = 0
 
 foreach ($case in $testCases) {
     $actual = Protect-SensitiveString -Text $case.Input
-    
+
     if ($actual -eq $case.Expected) {
         Write-Host "[PASS] " -ForegroundColor Green -NoNewline
         Write-Host "$($case.Name)" -ForegroundColor Gray

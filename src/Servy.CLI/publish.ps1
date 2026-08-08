@@ -1,13 +1,13 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Builds and publishes the Servy.CLI application (Release, self-contained) and 
+    Builds and publishes the Servy.CLI application (Release, self-contained) and
     optionally signs the output executable using SignPath.
 
 .DESCRIPTION
     This script performs the following steps:
       1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration).
-      2. Builds and publishes Servy.CLI as a self-contained, single-file executable 
+      2. Builds and publishes Servy.CLI as a self-contained, single-file executable
          for win-x64.
       3. Signs the generated executable via the SignPath signing pipeline.
       4. Emits standard build/progress messages used across Servy build tooling.

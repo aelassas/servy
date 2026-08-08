@@ -1,13 +1,17 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Enforces whitespace hygiene (trailing whitespace removal and final newline insertion) across C# sources and GitHub CI files.
+    Enforces whitespace hygiene (trailing whitespace removal and final newline insertion) across repository source files.
 
 .DESCRIPTION
-    Scans C# source files under 'src' and 'tests' directories (excluding obj/ folders and generated files like *.g.cs, *.g.i.cs, *.Designer.cs)
-    as well as YAML workflow/action files under '.github', enforcing two EditorConfig rules:
+    Scans source code, project configurations, PowerShell scripts, YAML workflows, and markdown files
+    across the repository (excluding build outputs like bin/obj, version control folders, and generated files like *.g.cs, *.g.i.cs, *.Designer.cs),
+    enforcing two EditorConfig rules:
     1. Trims trailing whitespace from all lines (trim_trailing_whitespace = true).
     2. Ensures every file ends with a trailing newline (insert_final_newline = true).
+
+    Note: .resx files are explicitly excluded because trailing whitespace within XML <value> elements
+    can be meaningful string content.
 
 .PARAMETER DryRun
     If specified, previews the files that violate whitespace hygiene rules without modifying them on disk.
@@ -15,7 +19,7 @@
 .EXAMPLE
     .\Format-SourceHygiene.ps1
 
-Formats all C# source files and GitHub CI YAML files in-place.
+Formats all applicable repository files in-place.
 
 .EXAMPLE
     .\Format-SourceHygiene.ps1 -DryRun
@@ -35,17 +39,6 @@ $ErrorActionPreference = "Stop"
 
 $baseDir = $PSScriptRoot
 
-# Evaluate targets individually to preserve compatibility with Windows PowerShell 5.1
-$targetDirs = @('src', 'tests', '.github') | ForEach-Object {
-    $dir = Join-Path $baseDir $_
-    if (Test-Path $dir) { $dir }
-}
-
-if (-not $targetDirs) {
-    Write-Host "No 'src', 'tests', or '.github' directories found under $baseDir." -ForegroundColor Yellow
-    exit 0
-}
-
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing files violating whitespace hygiene..." -ForegroundColor Yellow
 } else {
@@ -58,24 +51,33 @@ $trimmedOnlyCount = 0
 $newlineOnlyCount = 0
 $bothCount = 0
 
-# Collect .cs files from src/tests and .yml/.yaml files from .github, excluding obj/ and generated files
-$filesToScan = Get-ChildItem -Path $targetDirs -Recurse -File -ErrorAction SilentlyContinue |
+# Extensions governed by .editorconfig whitespace rules
+# NOTE: .resx files are deliberately omitted because trailing spaces inside XML <value> elements
+# represent localized string data rather than code formatting.
+$textExtensions = @(
+    '.cs', '.yml', '.yaml', '.ps1', '.psm1', '.psd1',
+    '.csproj', '.props', '.targets', '.xaml',
+    '.md', '.iss', '.manifest', '.json', '.sln'
+)
+
+# Collect repository text files excluding build output, version control, and generated files
+$filesToScan = Get-ChildItem -Path $baseDir -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object {
         $relativePath = $_.FullName.Replace($baseDir, '')
-        
-        # Exclude obj/ directory
-        if ($relativePath -match '[\\/]obj[\\/]') {
+
+        # Exclude build output, version control, and third-party dependency folders
+        if ($relativePath -match '[\\/](obj|bin|\.git|\.vs|packages|node_modules|coveragereport)[\\/]') {
             return $false
         }
 
-        # Match target file extensions and exclude generated code
+        # Match target file extensions and exclude generated C# code
         if ($_.Extension -eq '.cs') {
             return ($_.Name -notlike '*.Designer.cs') -and
                    ($_.Name -notlike '*.g.cs') -and
                    ($_.Name -notlike '*.g.i.cs')
         }
-        
-        return $_.Extension -in @('.yml', '.yaml')
+
+        return $_.Extension -in $textExtensions
     }
 
 foreach ($file in $filesToScan) {

@@ -42,5 +42,5 @@
     <ProjectReference Include="..\..\src\Servy.CLI\Servy.CLI.csproj" />
     <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
-  
+
 </Project>

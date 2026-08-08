@@ -21,7 +21,7 @@
 # Execution Settings
 # ----------------------------------------------------------------
 # Maximum time (in seconds) to wait for a CLI command to complete.
-# This prevents the script from hanging indefinitely if the CLI blocks 
+# This prevents the script from hanging indefinitely if the CLI blocks
 # on I/O or network calls. Default is 10 minutes.
 $script:ServyTimeoutSeconds = 600
 
@@ -33,7 +33,7 @@ $script:ServyMaxBufferChars = 1048576
 $script:EnvVarValidationPattern = '^\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*)(;\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?\s*$'
 
 # Specifies the name of the environment variables used to securely pass data from the CLI.
-# Using environment variables prevents sensitive credentials and parameters from being exposed in plain text 
+# Using environment variables prevents sensitive credentials and parameters from being exposed in plain text
 # within command-line history, logs, or system process lists.
 #
 # SYNC WITH: src/Servy.Core/Config/AppConfig.cs
@@ -161,13 +161,13 @@ function Add-Arg {
 function Resolve-SecureParameter {
   <#
     .SYNOPSIS
-        Resolves a sensitive plain-text parameter by checking explicit CLI inputs first, 
+        Resolves a sensitive plain-text parameter by checking explicit CLI inputs first,
         then falling back to the system environment variables.
 
     .DESCRIPTION
-        This function safely extracts sensitive configuration parameters (like connection strings 
-        or pre-launch variables) by prioritizing explicit user input via $PSBoundParameters. 
-        If the parameter was omitted from the command line, it gracefully falls back to checking 
+        This function safely extracts sensitive configuration parameters (like connection strings
+        or pre-launch variables) by prioritizing explicit user input via $PSBoundParameters.
+        If the parameter was omitted from the command line, it gracefully falls back to checking
         the active process environment dictionary to ensure existing variables aren't ignored.
   #>
   param(
@@ -176,7 +176,7 @@ function Resolve-SecureParameter {
       [string] $EnvVarName,
       [System.Collections.IDictionary] $BoundParams
   )
-  
+
   if ($BoundParams.ContainsKey($ParamName)) {
       $TargetEnv[$EnvVarName] = $BoundParams[$ParamName]
   } else {
@@ -193,9 +193,9 @@ function Format-SecureLogMessage {
         Masks sensitive command-line arguments in log text.
 
     .DESCRIPTION
-        This function parses raw stderr or stdout strings from the Servy CLI and scrubs 
-        the values of known sensitive parameters. This prevents credentials, connection 
-        strings, and environment variables from leaking into the persistent PowerShell 
+        This function parses raw stderr or stdout strings from the Servy CLI and scrubs
+        the values of known sensitive parameters. This prevents credentials, connection
+        strings, and environment variables from leaking into the persistent PowerShell
         session $Error variable or local log files.
 
     .PARAMETER Text
@@ -217,7 +217,7 @@ function Format-SecureLogMessage {
   # Define all CLI parameters that may contain sensitive data or injected variables
   # WARNING: This list must be kept in sync with the CLI sensitive options.
   # Any C# option property ending in *Params, *Env, *envVars or starting with password*
-  # MUST be decorated with the [Sensitive] attribute and listed here. 
+  # MUST be decorated with the [Sensitive] attribute and listed here.
   # This is enforced by unit tests in Servy.CLI.UnitTests.
   $sensitiveFields = @(
     "params",
@@ -236,9 +236,9 @@ function Format-SecureLogMessage {
   # (?i)                               : Case-insensitive evaluation
   # (--(?:password|envVars|...)[=\s]+) : Group $1 -> Matches the sensitive flag (e.g., --password= or --preLaunchEnv )
   $fieldsRegex = $sensitiveFields -join '|'
-  
+
   # ROBUSTNESS: PowerShell 2.0 cannot implicitly cast a ScriptBlock to a MatchEvaluator.
-  # To guarantee backwards compatibility across legacy server environments, the scrubbing 
+  # To guarantee backwards compatibility across legacy server environments, the scrubbing
   # process is split into three discrete string-replacement passes.
 
   # 1. Double-quoted values (safely matching escaped internal quotes: \")
@@ -312,7 +312,7 @@ function Invoke-ServyCli {
 
   if ($script:ServyTimeoutSeconds -lt 1) {
     throw "ServyTimeoutSeconds must be >= 1 (current: $($script:ServyTimeoutSeconds))"
-  }  
+  }
 
   # Build argument list
   $finalArgs = @()
@@ -344,7 +344,7 @@ function Invoke-ServyCli {
         MaxChars  = $script:ServyMaxBufferChars
         Truncated = $false
     }
-    
+
     $stderrBuffer = @{
         Lines     = New-Object System.Collections.ArrayList
         CharCount = 0
@@ -359,9 +359,9 @@ function Invoke-ServyCli {
             throw "Servy CLI was not found at any of the probed locations (local module folder, Program Files, system PATH). Install Servy or add servy-cli.exe to PATH, then re-import the module."
         }
     }
-    
-    # Using .NET Process class is the most robust way in PS 2.0 to pass 
-    # complex raw argument strings WHILE retaining pipeline output capture. 
+
+    # Using .NET Process class is the most robust way in PS 2.0 to pass
+    # complex raw argument strings WHILE retaining pipeline output capture.
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ServyCliPath
     $psi.Arguments = $argString
@@ -385,13 +385,13 @@ function Invoke-ServyCli {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
 
-    # 2. Register events WITH -Action blocks. 
+    # 2. Register events WITH -Action blocks.
     # This securely consumes the output in the background preventing console duplication.
     $outEvent = Register-ObjectEvent -InputObject $process `
       -EventName "OutputDataReceived" `
       -MessageData $stdoutBuffer `
       -Action {
-          if ($null -ne $EventArgs.Data) { 
+          if ($null -ne $EventArgs.Data) {
               $buf = $Event.MessageData
               if ($buf.CharCount -lt $buf.MaxChars) {
                   [void]$buf.Lines.Add($EventArgs.Data)
@@ -408,7 +408,7 @@ function Invoke-ServyCli {
       -EventName "ErrorDataReceived" `
       -MessageData $stderrBuffer `
       -Action {
-          if ($null -ne $EventArgs.Data) { 
+          if ($null -ne $EventArgs.Data) {
               $buf = $Event.MessageData
               if ($buf.CharCount -lt $buf.MaxChars) {
                   [void]$buf.Lines.Add($EventArgs.Data)
@@ -460,7 +460,7 @@ function Invoke-ServyCli {
         $killed = $process.HasExited
         if ($killed) { [void]$process.WaitForExit() }
       }
-      catch { 
+      catch {
         Write-Warning "Failed to kill process: $_"
       }
 
@@ -470,7 +470,7 @@ function Invoke-ServyCli {
           throw "Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
       }
     } else {
-      # CRITICAL: Since the process is confirmed dead, a parameterless WaitForExit() 
+      # CRITICAL: Since the process is confirmed dead, a parameterless WaitForExit()
       # safely blocks just long enough to guarantee all async streams are flushed entirely.
       [void]$process.WaitForExit()
       # Give the PS engine a tiny window to process the final flushed -Action events
@@ -483,7 +483,7 @@ function Invoke-ServyCli {
     $exitCode = $process.ExitCode
 
     # 6. Emit results
-    if (-not [string]::IsNullOrEmpty($stdout)) { 
+    if (-not [string]::IsNullOrEmpty($stdout)) {
         $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
         Write-Output $scrubbedStdout
     }
@@ -495,7 +495,7 @@ function Invoke-ServyCli {
   }
   catch {
     $partialOutput = ""
-    
+
     # SAFETY NET: If the script aborted before normal collection,
     # pull directly from the buffers.
     if ($null -ne $stdoutBuffer -and $stdoutBuffer.Lines.Count -gt 0) {
@@ -506,15 +506,15 @@ function Invoke-ServyCli {
     }
 
     # SECURITY: Scrub stdout and stderr in the generic catch block
-    if (-not [string]::IsNullOrEmpty($stdout)) { 
+    if (-not [string]::IsNullOrEmpty($stdout)) {
       $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
-      $partialOutput += " Stdout: $scrubbedStdout" 
+      $partialOutput += " Stdout: $scrubbedStdout"
     }
-    if (-not [string]::IsNullOrEmpty($stderr)) { 
+    if (-not [string]::IsNullOrEmpty($stderr)) {
       $scrubbedStderr = Format-SecureLogMessage -Text $stderr.TrimEnd()
-      $partialOutput += " Stderr: $scrubbedStderr" 
+      $partialOutput += " Stderr: $scrubbedStderr"
     }
-    
+
     throw "$($ErrorContext): $($_.Exception.Message)`n$partialOutput".TrimEnd()
   }
   finally {
@@ -522,7 +522,7 @@ function Invoke-ServyCli {
       try { $process.CancelOutputRead() } catch {}
       try { $process.CancelErrorRead() } catch {}
       try { [void]$process.WaitForExit($script:ServyDrainTimeoutMs) } catch {}  # let in-flight events drain
-    }    
+    }
 
     # CRITICAL: Clean up events gracefully
     if ($outEvent) {
@@ -533,7 +533,7 @@ function Invoke-ServyCli {
       Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
       Remove-Job -Id $errorEvent.Id -Force -ErrorAction SilentlyContinue
     }
-    
+
     if ($null -ne $process) {
       $process.Dispose()
     }
@@ -543,7 +543,7 @@ function Invoke-ServyCli {
     # SECURITY: Scrub stderr before pushing to the session-persistent exit code exception
     $scrubbedStderrFinal = Format-SecureLogMessage -Text $stderr
     $errorMessage = if ($null -ne $scrubbedStderrFinal -and $scrubbedStderrFinal.Trim() -ne "") { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
-    
+
     throw "$($ErrorContext): Servy CLI exited with code $exitCode. Details: $errorMessage"
   }
 }
@@ -586,8 +586,8 @@ function Invoke-ServyServiceCommand {
         Executes a specific service management command via the Servy CLI.
 
     .DESCRIPTION
-        Wraps the Servy CLI to perform actions such as start, stop, or restart on a 
-        specified service. It handles argument construction and provides context 
+        Wraps the Servy CLI to perform actions such as start, stop, or restart on a
+        specified service. It handles argument construction and provides context
         for error reporting.
 
     .PARAMETER Command
@@ -640,8 +640,8 @@ function Set-ServyConfig {
         Configures module-level execution settings for the Servy CLI.
 
     .DESCRIPTION
-        Updates internal module variables such as the execution timeout and 
-        the output buffer limit. This is useful for tuning the module for 
+        Updates internal module variables such as the execution timeout and
+        the output buffer limit. This is useful for tuning the module for
         resource-constrained environments or exceptionally long-running operations.
 
     .PARAMETER TimeoutSeconds
@@ -666,12 +666,12 @@ function Set-ServyConfig {
 
   # Update the script-scoped variables only if the parameters were explicitly provided.
   # This pattern allows a user to update one setting without accidentally resetting the other.
-  if ($PSBoundParameters.ContainsKey('TimeoutSeconds')) { 
-      $script:ServyTimeoutSeconds = $TimeoutSeconds 
+  if ($PSBoundParameters.ContainsKey('TimeoutSeconds')) {
+      $script:ServyTimeoutSeconds = $TimeoutSeconds
   }
 
-  if ($PSBoundParameters.ContainsKey('MaxBufferChars')) { 
-      $script:ServyMaxBufferChars = $MaxBufferChars 
+  if ($PSBoundParameters.ContainsKey('MaxBufferChars')) {
+      $script:ServyMaxBufferChars = $MaxBufferChars
   }
 }
 
@@ -720,7 +720,7 @@ function Get-ServyHelp {
 
     .EXAMPLE
         Get-ServyHelp -Command "install"
-        # Displays help for the install command.        
+        # Displays help for the install command.
     #>
   [CmdletBinding()]
   param(
@@ -752,8 +752,8 @@ function Install-ServyService {
         recovery actions, environment variables, dependencies, service account credentials,
         and optional pre-launch and post-launch executables.
 
-        The Post-launch executable operates in a fire-and-forget mode, meaning it does not support 
-        the full range of configuration options such as stdout/stderr redirection or retry attempts 
+        The Post-launch executable operates in a fire-and-forget mode, meaning it does not support
+        the full range of configuration options such as stdout/stderr redirection or retry attempts
         that are available for the Pre-launch executable.
 
     .PARAMETER Quiet
@@ -764,7 +764,7 @@ function Install-ServyService {
 
     .PARAMETER DisplayName
         The display name of the service to install. Optional.
-        The human-readable name shown in the Windows Services console (services.msc). 
+        The human-readable name shown in the Windows Services console (services.msc).
         If left empty, the service name will be used instead. The Display Name can be changed later.
 
     .PARAMETER Path
@@ -798,7 +798,7 @@ function Install-ServyService {
         File path for capturing standard error logs. Optional.
 
     .PARAMETER StartTimeout
-        Timeout in seconds to wait for the process to start successfully before considering the startup as failed. 
+        Timeout in seconds to wait for the process to start successfully before considering the startup as failed.
         Must be >= 1 second. Optional.
         Defaults to 10 seconds.
 
@@ -830,10 +830,10 @@ function Install-ServyService {
         Maximum rotated log files to keep. 0 for unlimited. Optional.
 
     .PARAMETER UseLocalTimeForRotation
-        If this switch is present, log rotation will be calculated using the server's local time (e.g., rotating at local midnight). 
+        If this switch is present, log rotation will be calculated using the server's local time (e.g., rotating at local midnight).
         This is often preferred for manual log review and local troubleshooting.
 
-        If this switch is omitted, the default behavior is to use Coordinated Universal Time (UTC). 
+        If this switch is omitted, the default behavior is to use Coordinated Universal Time (UTC).
         This ensures a consistent, 24-hour rotation cycle that is unaffected by Daylight Saving Time transitions.
 
     .PARAMETER EnableHealth
@@ -903,9 +903,9 @@ function Install-ServyService {
         File path for capturing pre-launch stderr. Optional.
 
     .PARAMETER PreLaunchTimeout
-        Timeout (seconds) for the pre-launch executable. Must be >= 0. 
-        Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, 
-        the hook is started and the service is launched immediately without waiting for completion. 
+        Timeout (seconds) for the pre-launch executable. Must be >= 0.
+        Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0,
+        the hook is started and the service is launched immediately without waiting for completion.
         Use this only for tasks that do not affect the service's ability to start or run correctly.
         Stdout/Stderr redirection and retries are not available in fire-and-forget mode.
         Optional.
@@ -929,7 +929,7 @@ function Install-ServyService {
         Switch to enable debug logs. Optional.
         When enabled, environment variables and process parameters are recorded in the Servy.Service.log file.
         Not recommended for production environments, as these logs may contain sensitive information.
-        
+
     .PARAMETER PreStopPath
         Path to a pre-stop executable or script. Optional.
 
@@ -940,7 +940,7 @@ function Install-ServyService {
         Additional parameters for the pre-stop executable. Optional.
 
     .PARAMETER PreStopTimeout
-        Timeout (seconds) for the pre-stop executable. Must be >= 0. Optional.        
+        Timeout (seconds) for the pre-stop executable. Must be >= 0. Optional.
         Set to 0 for fire and forget.
 
     .PARAMETER PreStopLogAsError
@@ -978,13 +978,13 @@ function Install-ServyService {
         DEVELOPER NOTE: Parameter Naming Convention
         New value-bearing parameters must be added to the $paramMapping table (CLI-flag => PS-parameter-name).
         Switches are handled in the flags block; sensitive values via Resolve-SecureParameter.
-        
-        Example: 
+
+        Example:
         CLI Flag: "--startupDir" -> PS Parameter: "$StartupDir"
-        
-        If a CLI flag is added that does not match the PS parameter name (ignoring casing 
+
+        If a CLI flag is added that does not match the PS parameter name (ignoring casing
         and leading dashes), the $PSBoundParameters.ContainsKey() check
-        will fail, and the argument will not be passed to the executable.            
+        will fail, and the argument will not be passed to the executable.
     #>
   [CmdletBinding()]
   param(
@@ -1013,9 +1013,9 @@ function Install-ServyService {
       })]
     [string] $Path,
 
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-        else { throw "Startup directory not found: $_" } 
+        else { throw "Startup directory not found: $_" }
       })]
     [string] $StartupDir,
 
@@ -1098,15 +1098,15 @@ function Install-ServyService {
 
     [switch] $EnableHeartbeatUrlFlags,
 
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-        else { throw "Failure program executable not found: $_" } 
+        else { throw "Failure program executable not found: $_" }
       })]
     [string] $FailureProgramPath,
 
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-        else { throw "Failure program startup directory not found: $_" } 
+        else { throw "Failure program startup directory not found: $_" }
       })]
     [string] $FailureProgramStartupDir,
 
@@ -1132,15 +1132,15 @@ function Install-ServyService {
     [System.Security.SecureString]$Password,
 
     # Pre-launch
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-        else { throw "Pre-launch executable not found: $_" } 
+        else { throw "Pre-launch executable not found: $_" }
       })]
     [string] $PreLaunchPath,
 
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-        else { throw "Pre-launch startup directory not found: $_" } 
+        else { throw "Pre-launch startup directory not found: $_" }
       })]
     [string] $PreLaunchStartupDir,
 
@@ -1174,15 +1174,15 @@ function Install-ServyService {
     [switch] $PreLaunchIgnoreFailure,
 
     # Post-launch
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-        else { throw "Post-launch executable not found: $_" } 
+        else { throw "Post-launch executable not found: $_" }
       })]
     [string] $PostLaunchPath,
 
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-        else { throw "Post-launch startup directory not found: $_" } 
+        else { throw "Post-launch startup directory not found: $_" }
       })]
     [string] $PostLaunchStartupDir,
 
@@ -1193,15 +1193,15 @@ function Install-ServyService {
     [switch] $EnableDebugLogs,
 
     # Pre-stop
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-        else { throw "Pre-stop executable not found: $_" } 
+        else { throw "Pre-stop executable not found: $_" }
       })]
     [string] $PreStopPath,
 
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-        else { throw "Pre-stop startup directory not found: $_" } 
+        else { throw "Pre-stop startup directory not found: $_" }
       })]
     [string] $PreStopStartupDir,
 
@@ -1214,15 +1214,15 @@ function Install-ServyService {
     [switch] $PreStopLogAsError,
 
     # Post-stop
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-        else { throw "Post-stop executable not found: $_" } 
+        else { throw "Post-stop executable not found: $_" }
       })]
     [string] $PostStopPath,
 
-    [ValidateScript({ 
+    [ValidateScript({
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-        else { throw "Post-stop startup directory not found: $_" } 
+        else { throw "Post-stop startup directory not found: $_" }
       })]
     [string] $PostStopStartupDir,
 
@@ -1235,7 +1235,7 @@ function Install-ServyService {
   $argsList = @()
 
   # 1. Explicit Parameter Mapping: CLI Flag => PowerShell Parameter Name
-  # NOTE: Non-password sensitive parameters have been removed from the mapping and are 
+  # NOTE: Non-password sensitive parameters have been removed from the mapping and are
   # handled exclusively via environment variables to ensure memory safety and avoid CLI argument leaks.
   $paramMapping = @{
       "--name"                       = "Name"
@@ -1308,7 +1308,7 @@ function Install-ServyService {
   $secureEnv = @{}
 
   # Safely inject the plain text string sensitive parameters into the environment array using the shared helper.
-  # This guarantees that explicit parameters are used if provided, but if omitted, pre-existing environment 
+  # This guarantees that explicit parameters are used if provided, but if omitted, pre-existing environment
   # variables are not ignored.
   Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'Params' -EnvVarName $script:ServyProcessParametersEnvVar -BoundParams $PSBoundParameters
   Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'EnvVars' -EnvVarName $script:ServyEnvironmentVariablesEnvVar -BoundParams $PSBoundParameters
@@ -1328,7 +1328,7 @@ function Install-ServyService {
       try {
           # Unmanaged BSTR -> Managed String
           $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
-          
+
           if ($null -ne $plainPassword -and $plainPassword.Length -gt 0) {
               $secureEnv[$script:ServyPasswordEnvVar] = $plainPassword
           }
@@ -1344,7 +1344,7 @@ function Install-ServyService {
       }
   }
   else {
-      # Fallback: manually grab the session's env var 
+      # Fallback: manually grab the session's env var
       $envValue = [System.Environment]::GetEnvironmentVariable($script:ServyPasswordEnvVar, 'Process')
       if (-not [string]::IsNullOrEmpty($envValue)) {
           $secureEnv[$script:ServyPasswordEnvVar] = $envValue
@@ -1360,17 +1360,17 @@ function Install-ServyService {
       # NOTE: managed strings are immutable and cannot be deterministically scrubbed;
       # copies of the plain-text password may persist in the heap until collected.
       $plainPassword = $null
-      
+
       # Clear sensitive environment variables from the hashtable structure
       foreach ($key in @(
-        $script:ServyPasswordEnvVar, 
-        $script:ServyProcessParametersEnvVar, 
-        $script:ServyEnvironmentVariablesEnvVar, 
-        $script:ServyFailureProgramParametersEnvVar, 
-        $script:ServyPreLaunchParametersEnvVar, 
-        $script:ServyPreLaunchEnvironmentVariablesEnvVar, 
-        $script:ServyPostLaunchParametersEnvVar, 
-        $script:ServyPreStopParametersEnvVar, 
+        $script:ServyPasswordEnvVar,
+        $script:ServyProcessParametersEnvVar,
+        $script:ServyEnvironmentVariablesEnvVar,
+        $script:ServyFailureProgramParametersEnvVar,
+        $script:ServyPreLaunchParametersEnvVar,
+        $script:ServyPreLaunchEnvironmentVariablesEnvVar,
+        $script:ServyPostLaunchParametersEnvVar,
+        $script:ServyPreStopParametersEnvVar,
         $script:ServyPostStopParametersEnvVar
       )) {
           if ($secureEnv.ContainsKey($key)) {
@@ -1386,7 +1386,7 @@ function Uninstall-ServyService {
         Uninstalls a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `uninstall` command. 
+        Wraps the Servy CLI `uninstall` command.
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -1543,14 +1543,14 @@ function Export-ServyServiceConfig {
         Suppress the spinner and run the CLI in non-interactive mode. Optional.
 
     .PARAMETER Name
-        The unique internal name of the service to export. This name is used to 
+        The unique internal name of the service to export. This name is used to
         locate the record in the database. (Required)
 
     .PARAMETER ConfigFileType
         The format of the export file. Valid values are 'xml' or 'json'. (Required)
 
     .PARAMETER Path
-        The full destination path where the configuration file will be saved. 
+        The full destination path where the configuration file will be saved.
         The parent directory must exist and be writable. (Required)
 
     .EXAMPLE
@@ -1558,7 +1558,7 @@ function Export-ServyServiceConfig {
         # Exports the configuration of 'MyService' to a JSON file at the specified path.
 
     .NOTES
-        The function calls Assert-Administrator to ensure the session has the 
+        The function calls Assert-Administrator to ensure the session has the
         necessary permissions to access the Servy ProgramData directory.
     #>
     [CmdletBinding()]
@@ -1602,8 +1602,8 @@ function Import-ServyServiceConfig {
 
     .DESCRIPTION
         Wraps the Servy CLI `import` command to import a service configuration file
-        (XML or JSON) into Servy's database. If the service already exists, it 
-        will be updated. Requires Administrator privileges to write to the 
+        (XML or JSON) into Servy's database. If the service already exists, it
+        will be updated. Requires Administrator privileges to write to the
         service database and potentially modify Windows services.
 
     .PARAMETER Quiet
@@ -1613,11 +1613,11 @@ function Import-ServyServiceConfig {
         The configuration file type being imported. Valid values are 'xml' or 'json'. (Required)
 
     .PARAMETER Path
-        The full path of the source configuration file to import. The file 
+        The full path of the source configuration file to import. The file
         must exist and be readable. (Required)
 
     .PARAMETER Install
-        If specified, the service will be automatically installed (or updated in the SCM) 
+        If specified, the service will be automatically installed (or updated in the SCM)
         immediately after the database import. Optional.
 
     .EXAMPLE
@@ -1657,7 +1657,7 @@ function Import-ServyServiceConfig {
 }
 
 # PS 2.0 Compatible Alias declaration
-# We MUST use Export-ModuleMember in PS 2.0 to ensure 
+# We MUST use Export-ModuleMember in PS 2.0 to ensure
 # the aliases actually leave the module scope.
 
 # 1. Define all public functions

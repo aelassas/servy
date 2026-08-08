@@ -4,7 +4,7 @@
     Shared build and publish utilities for Servy projects.
 
 .DESCRIPTION
-    Provides standard functions to check exit codes, retry unreliable commands, 
+    Provides standard functions to check exit codes, retry unreliable commands,
     and invoke project publishing, ensuring DRY compliance across all project scripts.
 #>
 $ErrorActionPreference = "Stop"
@@ -40,7 +40,7 @@ function Invoke-WithRetry {
 
         # Reset exit code before execution
         $global:LASTEXITCODE = 0
-        
+
         & $Command
 
         if ($global:LASTEXITCODE -eq 0) {
@@ -72,7 +72,7 @@ function Invoke-StandardPublish {
     # Step 0: Publish resources if script exists
     $resSuffix = if ($BuildConfiguration -eq "Debug") { "debug" } else { "release" }
     $publishResScript = Join-Path $ProjectDir "publish-res-$resSuffix.ps1"
-    
+
     if (Test-Path $publishResScript) {
         Write-Host "=== Running publish-res-$resSuffix.ps1 ===" -ForegroundColor Cyan
         & $publishResScript -Tfm $Tfm -Runtime $Runtime

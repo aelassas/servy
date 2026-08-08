@@ -61,16 +61,16 @@ function Write-FallbackError {
         Logs an error to the Windows Application Event Log, with a local file fallback.
     #>
     param(
-        [string]$Message, 
+        [string]$Message,
         [string]$ScriptDir,
         [string]$FallbackFileName = "ServyNotificationFallback.log"
     )
-    
+
     # Console visibility: Write-Warning is captured by transcripts and visible in interactive shells.
     # Unlike Write-Host, it is not stripped in non-interactive Task Scheduler contexts.
     Write-Warning "Servy Notification Error: $Message"
 
-    # Disk logging: Record to a physical file first. 
+    # Disk logging: Record to a physical file first.
     # This acts as the primary audit trail for non-interactive background tasks.
     if ($ScriptDir) {
         $logFile = Join-Path $ScriptDir $FallbackFileName
@@ -84,7 +84,7 @@ function Write-FallbackError {
     # System visibility: Attempt to notify the Windows Application Event Log.
     try {
         # -EntryType is Warning.
-        # This keeps it viewable in the Event Viewer while preventing the EventTrigger task 
+        # This keeps it viewable in the Event Viewer while preventing the EventTrigger task
         # subscription (which strictly isolates Level 2) from entering a zero-backoff recursive loop.
         # Best-effort write; if the 'Servy' source is unregistered this throws and we fall through to the catch
         Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR `
@@ -105,7 +105,7 @@ function Read-Watermark {
         try {
             $raw = (Get-Content $TimestampFile -Raw -ErrorAction Stop)
             $lastProcessed = ConvertFrom-WatermarkString -Value $raw
-        } catch { 
+        } catch {
             Write-Warning "Could not parse timestamp file; treating as first run - will only show the most recent event."
         }
     }
@@ -175,7 +175,7 @@ function Update-Watermark {
             # 2. Atomic CAS Write Phase: Write to staging space, then commit atomically
             if ($shouldWrite) {
                 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-                
+
                 # Write to isolated temporary storage file first
                 $fs = [System.IO.File]::Open($tempFile, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
                 $writer = New-Object System.IO.StreamWriter($fs, $utf8NoBom, 1024, $true)
@@ -185,10 +185,10 @@ function Update-Watermark {
                 $fs.Dispose()
                 $fs = $null
 
-                # Commit changes atomically. 
+                # Commit changes atomically.
                 if (Test-Path $tempFile) {
                     # PATH CONFORMANCE: Convert all paths to explicit absolute forms.
-                    # Instead of $null, we provide a valid, conforming backup path string ($absoluteBackup) 
+                    # Instead of $null, we provide a valid, conforming backup path string ($absoluteBackup)
                     # to keep the underlying Win32 subsystem happy under .NET Framework 4.8 / PS 5.1.
                     $absoluteTemp      = [System.IO.Path]::GetFullPath($tempFile)
                     $absoluteTimestamp = [System.IO.Path]::GetFullPath($TimestampFile)
@@ -214,17 +214,17 @@ function Update-Watermark {
                 Start-Sleep -Milliseconds $retryDelayMs
                 continue
             }
-            
+
             # ESCALATED ERROR: Explicitly inform operator that watermark update failed and duplicate notices may fire
             $errorMessage = "CRITICAL: Watermark update lost due to persistent lock contention. Duplicate notifications will follow for this time slice. Error: $($_.Exception.Message)"
             Write-Warning "ServyWatermark: $errorMessage"
-            
+
             Write-WatermarkLocalLog -ScriptDir $ScriptDir -Message $errorMessage
         } catch {
             # Bypass EventLog to prevent feedback loops. Record locally only.
             $errorMessage = "Failed to update timestamp file: $($_.Exception.Message)"
             Write-Warning "ServyWatermark: $errorMessage"
-            
+
             Write-WatermarkLocalLog -ScriptDir $ScriptDir -Message $errorMessage
             break # Exit loop for non-IO exceptions
         } finally {
@@ -232,7 +232,7 @@ function Update-Watermark {
             if ($null -ne $writer) { try { $writer.Dispose() } catch {} }
             if ($null -ne $reader) { try { $reader.Dispose() } catch {} }
             if ($null -ne $fs)     { try { $fs.Dispose() }     catch {} }
-            
+
             # Post-swap cleanup: Scrub both transient staging and backup assets from disk
             if (Test-Path $tempFile)   { try { Remove-Item $tempFile -Force }   catch {} }
             if (Test-Path $backupFile) { try { Remove-Item $backupFile -Force } catch {} }
@@ -261,8 +261,8 @@ function Get-EventsToProcess {
     # PRE-FILTER: Prevent feedback loops *before* selecting the most recent event.
     # This ensures a notification failure doesn't mask a genuine service crash during a first run.
     $errors = @($rawErrors | Where-Object {
-        $_.Message -notmatch "^ServyFailureEmail:" -and 
-        $_.Message -notmatch "^ServyToast:" -and 
+        $_.Message -notmatch "^ServyFailureEmail:" -and
+        $_.Message -notmatch "^ServyToast:" -and
         $_.Message -notmatch "^Servy Notification Error:"
     })
 
@@ -291,7 +291,7 @@ function ConvertFrom-ServyEventMessage {
     param([string]$Message)
 
     # Parse raw message context
-    # Split the first line to safely extract the service prefix, preventing multi-line stack traces 
+    # Split the first line to safely extract the service prefix, preventing multi-line stack traces
     # from forcing a fallback to an 'Unknown Service' state.
     $firstLine, $rest = $Message -split "\r?\n", 2
 

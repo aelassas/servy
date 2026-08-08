@@ -36,7 +36,7 @@ param(
     [string]$Runtime            = "win-x64"
 )
 
-$P_PublishDir = $PSScriptRoot 
+$P_PublishDir = $PSScriptRoot
 
 . (Join-Path $P_PublishDir "..\..\setup\build-common.ps1")
 

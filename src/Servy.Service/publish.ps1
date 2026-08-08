@@ -4,8 +4,8 @@
     Self-contained build and publish script for Servy.Service.
 
 .DESCRIPTION
-    This script builds the Servy.Service project following the standard repository 
-    build pattern. It publishes to the default bin directory and optionally 
+    This script builds the Servy.Service project following the standard repository
+    build pattern. It publishes to the default bin directory and optionally
     signs the resulting executable using SignPath.
 
 .PARAMETER Tfm
@@ -38,7 +38,7 @@ Invoke-StandardPublish `
     -Runtime $Runtime `
     -BuildConfiguration $BuildConfiguration
 
-if ($Pause) { 
+if ($Pause) {
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

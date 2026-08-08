@@ -13,9 +13,9 @@ function Write-ServyLog {
     try {
         # Normalize the path for consistent Mutex hashing
         $absPath = [System.IO.Path]::GetFullPath($FilePath)
-        
+
         # Create a deterministic, valid system Mutex name from the file path.
-        # We use a SHA256 hash to ensure the Mutex name is unique to the file but avoids Win32 
+        # We use a SHA256 hash to ensure the Mutex name is unique to the file but avoids Win32
         # invalid Mutex characters (like backslashes) or path length limits.
         $sha = [System.Security.Cryptography.SHA256]::Create()
         try {
@@ -23,8 +23,8 @@ function Write-ServyLog {
             $hashString = [System.BitConverter]::ToString($hashBytes).Replace('-', '')
         } finally {
             $sha.Dispose()
-        }        
-        
+        }
+
         try {
             $mutex = New-Object System.Threading.Mutex($false, "Global\ServyLog_$hashString")
         } catch [System.UnauthorizedAccessException] {
@@ -44,7 +44,7 @@ function Write-ServyLog {
                 Write-Warning "Servy Logging: recovered an abandoned log mutex for $absPath."
             }
             if (-not $hasLock) {
-                # Fail gracefully: log a warning to the console so the admin knows 
+                # Fail gracefully: log a warning to the console so the admin knows
                 # why the file was skipped, but allow the calling task to proceed.
                 Write-Warning "Servy Logging: Mutex timeout after 1s for $absPath. Log entry dropped to prevent service stall."
                 return
@@ -65,7 +65,7 @@ function Write-ServyLog {
                     $localTime = (Get-Date).ToString('yyyyMMdd-HHmmss-fff', $inv)
                     $ext = [System.IO.Path]::GetExtension($absPath)
                     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($absPath)
-                    
+
                     # Format: FileName_20260501-062849-301.log
                     $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
                     $target = Join-Path $logDir $rotatedFileName
@@ -80,7 +80,7 @@ function Write-ServyLog {
                             $attempt++
                         } while ([System.IO.File]::Exists($target) -and $attempt -lt 100)
                     }
-                    
+
                     # Use .NET IO for atomic renaming; Rename-Item can exhibit quirky behavior under load
                     [System.IO.File]::Move($absPath, $target)
 
@@ -96,8 +96,8 @@ function Write-ServyLog {
 
             # Enforce consistent UTF-8 logging with no BOM/UTF-16LE mix-ups
             $timestampedMsg = "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss', $inv)) - $Message"
-            
-            # Use FileStream with FileShare.None inside the Mutex lock. 
+
+            # Use FileStream with FileShare.None inside the Mutex lock.
             # This completely eliminates interleaved lines or swallowed "file in use" exceptions.
             $fs = New-Object System.IO.FileStream($absPath, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
             try {
