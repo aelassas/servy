@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Servy.CLI.Enums;
 using Servy.CLI.Helpers;
 using Servy.CLI.Models;
@@ -212,7 +212,7 @@ namespace Servy.CLI.UnitTests.Helpers
 
             // Assert
             Assert.False(result);
-            Assert.Equal(Strings.Msg_InvalidConfigFileType, error);
+            Assert.Equal(Strings.Msg_ConfigFileTypeRequired, error);
         }
 
         [Theory]

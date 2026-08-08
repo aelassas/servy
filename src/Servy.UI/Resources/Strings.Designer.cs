@@ -72,9 +72,9 @@ namespace Servy.UI.Resources {
         /// <summary>
         ///   Looks up a localized string similar to Failed copying embedded resource: {0}.
         /// </summary>
-        public static string Msg_FailedCopyingEmbeddedResource_Format {
+        public static string Msg_FailedCopyingEmbeddedResource {
             get {
-                return ResourceManager.GetString("Msg_FailedCopyingEmbeddedResource_Format", resourceCulture);
+                return ResourceManager.GetString("Msg_FailedCopyingEmbeddedResource", resourceCulture);
             }
         }
         

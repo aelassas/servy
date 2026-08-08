@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -37,7 +37,7 @@
   <data name="Msg_PathRequired" xml:space="preserve">
     <value>File path is required.</value>
   </data>
-  <data name="Msg_InvalidConfigFileType" xml:space="preserve">
+  <data name="Msg_ConfigFileTypeRequired" xml:space="preserve">
     <value>Configuration file type is required (XML or JSON).</value>
   </data>
   <data name="Msg_UnsupportedFileType" xml:space="preserve">

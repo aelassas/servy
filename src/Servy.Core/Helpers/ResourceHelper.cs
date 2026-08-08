@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Reflection;
@@ -66,7 +66,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                if (!ShouldCopyResource(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
+                if (!TryPrepareExtraction(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
@@ -184,7 +184,7 @@ namespace Servy.Core.Helpers
         {
             try
             {
-                if (!ShouldCopyResource(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
+                if (!TryPrepareExtraction(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
@@ -238,7 +238,7 @@ namespace Servy.Core.Helpers
         /// to ensure accurate re-extraction logic.
         /// </para>
         /// </remarks>
-        public DateTime GetHostProcessLastWriteTimeUTC()
+        public DateTime GetHostProcessLastWriteTimeUtc()
         {
             // 1. Primary probe via Process.MainModule
             try
@@ -292,7 +292,7 @@ namespace Servy.Core.Helpers
         /// <param name="targetPath">Output parameter containing the full destination path on disk.</param>
         /// <param name="resourceName">Output parameter containing the full manifest resource name used for extraction.</param>
         /// <returns>True if the resource needs to be copied; false if the existing file is up to date.</returns>
-        private bool ShouldCopyResource(
+        private bool TryPrepareExtraction(
             string resourceNamespace,
             string fileName,
             string extension,
@@ -321,7 +321,7 @@ namespace Servy.Core.Helpers
             if (File.Exists(targetPath))
             {
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime hostExeWriteTime = GetHostProcessLastWriteTimeUTC();
+                DateTime hostExeWriteTime = GetHostProcessLastWriteTimeUtc();
 
                 if (hostExeWriteTime == DateTime.MinValue)
                 {

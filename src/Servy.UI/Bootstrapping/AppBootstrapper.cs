@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
@@ -379,11 +379,14 @@ namespace Servy.UI.Bootstrapping
                         string resourceName = $"{handleExeFileName}.exe";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
                             "File-lock diagnostics will be unavailable this session.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, resourceName)));
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName)));
                     }
 
 #if DEBUG
-                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: CancellationToken.None);
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: CancellationToken.None))
+                    {
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyServiceUIFileName}.pdb")));
+                    }
 #endif
                     stopwatch.Stop();
 

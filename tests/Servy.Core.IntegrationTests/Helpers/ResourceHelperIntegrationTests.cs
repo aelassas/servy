@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Core.Helpers;
 using System.Reflection;
 
@@ -305,7 +305,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange (Static environment context validation)
 
             // Act
-            DateTime result = _resourceHelper.GetHostProcessLastWriteTimeUTC();
+            DateTime result = _resourceHelper.GetHostProcessLastWriteTimeUtc();
 
             // Assert
             // It should at least be a valid historical or current date, not DateTime.MinValue
