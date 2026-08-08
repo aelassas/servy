@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -361,7 +361,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             // Proves execution hit the generalized config path error message branch fallback path
-            Assert.Equal(string.Format(Strings.Msg_InvalidPathInConfig, "startup directory"), result.Message);
+            Assert.Equal(string.Format(Core.Resources.Strings.Msg_InvalidPathInConfig, "startup directory"), result.Message);
         }
 
         #endregion

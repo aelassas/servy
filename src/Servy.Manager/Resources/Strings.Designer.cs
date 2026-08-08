@@ -2206,7 +2206,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid service name..
+        ///   Looks up a localized string similar to Service name contains invalid characters. Avoid using &apos;\&apos;, &apos;/&apos;, &apos;:&apos;, &apos;*&apos;, &apos;?&apos;, &apos;&quot;&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;|&apos;..
         /// </summary>
         public static string Msg_InvalidServiceName {
             get {
@@ -2330,15 +2330,6 @@ namespace Servy.Manager.Resources {
         public static string Msg_ServiceInstalled {
             get {
                 return ResourceManager.GetString("Msg_ServiceInstalled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Service not found..
-        /// </summary>
-        public static string Msg_ServiceNotFound {
-            get {
-                return ResourceManager.GetString("Msg_ServiceNotFound", resourceCulture);
             }
         }
         

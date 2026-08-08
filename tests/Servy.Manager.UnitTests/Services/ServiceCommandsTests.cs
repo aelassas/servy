@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Newtonsoft.Json;
 using Servy.Core.Common;
 using Servy.Core.Config;
@@ -638,7 +638,7 @@ namespace Servy.Manager.UnitTests.Services
                 await sut.ConfigureServiceAsync(new Service { Name = "Missing" }, CancellationToken.None);
 
                 // Assert
-                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
             }
             finally
             {
@@ -753,7 +753,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -873,7 +873,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -958,7 +958,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1044,7 +1044,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1215,7 +1215,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ExportServiceToXmlAsync(service, CancellationToken.None);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]

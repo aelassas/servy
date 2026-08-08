@@ -2682,15 +2682,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The specified service was not found..
-        /// </summary>
-        public static string Msg_ServiceNotFound {
-            get {
-                return ResourceManager.GetString("Msg_ServiceNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Service was removed successfully..
         /// </summary>
         public static string Msg_ServiceRemoved {

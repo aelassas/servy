@@ -213,17 +213,17 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default services refresh interval when not set in appsettings. Default is 4 seconds.
         /// </summary>
-        public static readonly int DefaultRefreshIntervalInSeconds = 4;
+        public const int DefaultRefreshIntervalInSeconds = 4;
 
         /// <summary>
         /// Default performance (CPU/RAM graphs) refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
-        public static readonly int DefaultPerformanceRefreshIntervalInMs = 800;
+        public const int DefaultPerformanceRefreshIntervalInMs = 800;
 
         /// <summary>
         /// Default console refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
-        public static readonly int DefaultConsoleRefreshIntervalInMs = 800;
+        public const int DefaultConsoleRefreshIntervalInMs = 800;
 
         /// <summary>
         /// The default maximum number of log lines to retain in the console tab.
@@ -233,7 +233,7 @@ namespace Servy.Core.Config
         /// Increasing this beyond the default may lead to increased memory usage and UI virtualization lag
         /// in the <see cref="Servy.Manager"/> views.
         /// </remarks>
-        public static readonly int DefaultConsoleMaxLines = 20_000;
+        public const int DefaultConsoleMaxLines = 20_000;
 
         /// <summary>
         /// The absolute hard limit for the console tab.
@@ -243,12 +243,12 @@ namespace Servy.Core.Config
         /// exceptionally large log retention from causing OutOfMemory exceptions or
         /// unresponsiveness in the WPF rendering thread.
         /// </remarks>
-        public static readonly int MaxConsoleMaxLines = 2 * DefaultConsoleMaxLines;
+        public const int MaxConsoleMaxLines = 2 * DefaultConsoleMaxLines;
 
         /// <summary>
         /// Default dependencies tab refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
-        public static readonly int DefaultDependenciesRefreshIntervalInMs = 800;
+        public const int DefaultDependenciesRefreshIntervalInMs = 800;
 
         /// <summary>
         /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.

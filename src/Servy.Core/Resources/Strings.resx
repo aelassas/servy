@@ -17,7 +17,10 @@
     <value>Please fill in all required fields.</value>
   </data>
   <data name="Msg_ServiceNameRequired" xml:space="preserve">
-    <value>Service name cannot be empty.</value>
+    <value>Service name is required.</value>
+  </data>
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>The specified service was not found.</value>
   </data>
   <data name="Msg_ExecutablePathRequired" xml:space="preserve">
     <value>Service process path cannot be empty.</value>
@@ -298,7 +301,7 @@
     <value>Path validation failed at the kernel level: Kernel path resolution serialization failed.</value>
   </data>
   <data name="Msg_InvalidPathInConfig" xml:space="preserve">
-    <value>The {0} is invalid or the path does not exist.</value>
+    <value>Invalid {0} in configuration. Ensure the path exists and is accessible.</value>
   </data>
   <data name="Msg_InvalidPath" xml:space="preserve">
     <value>The specified path is invalid.</value>
@@ -332,7 +335,7 @@
   <data name="Msg_ImportXmlDeserializationFailed" xml:space="preserve">
   <value>Failed to deserialize service configuration from XML content.</value>
 </data>
-  <data name="Msg_ImportXmlFailed" xml:space="preserve">
+  <data name="Msg_ImportXmlFailed" xml:space="preserve">  
   <value>Failed to import service from XML: {0}</value>
 </data>
   <data name="Msg_ImportJsonNullOrEmpty" xml:space="preserve">

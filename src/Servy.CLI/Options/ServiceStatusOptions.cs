@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 
 namespace Servy.CLI.Options
 {
@@ -15,7 +15,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the name of the Windows service to check.
         /// This option is required.
         /// </summary>
-        [Option('n', "name", Required = true, HelpText = "The name of the Windows service to check the status for.")]
+        [Option('n', "name", Required = true, HelpText = "Name of the service to check.")]
         public string ServiceName { get; set; }
     }
 }

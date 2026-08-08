@@ -1,4 +1,4 @@
-﻿using Servy.Config;
+using Servy.Config;
 using Servy.Core.Common;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -279,7 +279,7 @@ namespace Servy.Services
                 var exists = _serviceManager.IsServiceInstalled(serviceName, cancellationToken);
                 if (!exists)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, Caption);
                     return false;
                 }
 
@@ -460,7 +460,7 @@ namespace Servy.Services
 
                 if (!_serviceManager.IsServiceInstalled(serviceName, cancellationToken))
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, Caption);
                     return false;
                 }
 

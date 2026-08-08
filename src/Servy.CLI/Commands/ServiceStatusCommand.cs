@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Models;
+using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Logging;
@@ -42,7 +42,7 @@ namespace Servy.CLI.Commands
             {
                 // 1. Validation using localized resource
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
+                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNameRequired);
 
                 // 2. Direct execution
                 var status = _serviceManager.GetServiceStatus(opts.ServiceName, cancellationToken: cancellationToken);

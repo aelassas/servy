@@ -1,4 +1,4 @@
-﻿using Servy.Core.Common;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -256,7 +256,7 @@ namespace Servy.Manager.Services
                 var serviceDto = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
                 if (serviceDto == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                     return;
                 }
 
@@ -304,7 +304,7 @@ namespace Servy.Manager.Services
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
                     }
 
@@ -362,7 +362,7 @@ namespace Servy.Manager.Services
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
                     }
 
@@ -411,7 +411,7 @@ namespace Servy.Manager.Services
                     var existing = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
                     if (existing == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
                     }
 
@@ -657,7 +657,7 @@ namespace Servy.Manager.Services
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
-                        errorMessage = Strings.Msg_ServiceNotFound;
+                        errorMessage = Core.Resources.Strings.Msg_ServiceNotFound;
                     }
                     else if (checkDisabled && await Task.Run(() => _serviceManager.GetServiceStartupType(service.Name, cancellationToken: cancellationToken), cancellationToken) == ServiceStartType.Disabled)
                     {
@@ -762,7 +762,7 @@ namespace Servy.Manager.Services
                 var dto = await _serviceRepository.GetByNameAsync(service.Name, decrypt: true, cancellationToken: cancellationToken);
                 if (dto == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                     return;
                 }
 

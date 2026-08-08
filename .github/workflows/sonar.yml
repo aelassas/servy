@@ -1,8 +1,9 @@
-﻿# --------------------------------------------------------------------------
-# SonarCloud Analysis Workflow for Servy (.NET Framework 4.8 build)
-# Description: Performs static code analysis and security scanning using MSBuild.
-# Author: Akram El Assas
-# --------------------------------------------------------------------------
+﻿# ===========================================
+# GitHub Actions Workflow - Sonar
+# -------------------------------------------
+# Performs SonarCloud static code analysis
+# and security scanning for the Servy solution.
+# ===========================================
 
 name: sonar
 

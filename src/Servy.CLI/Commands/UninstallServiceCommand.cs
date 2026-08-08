@@ -1,4 +1,4 @@
-﻿using Servy.CLI.Models;
+using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
@@ -47,7 +47,7 @@ namespace Servy.CLI.Commands
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                 {
-                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
+                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNameRequired);
                 }
 
                 if (!BypassElevationCheck)

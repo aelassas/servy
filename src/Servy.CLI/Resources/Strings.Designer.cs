@@ -259,15 +259,6 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid {0} in configuration. Ensure the path exists and is accessible..
-        /// </summary>
-        public static string Msg_InvalidPathInConfig {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPathInConfig", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to File path is required..
         /// </summary>
         public static string Msg_PathRequired {
@@ -318,24 +309,6 @@ namespace Servy.CLI.Resources {
         public static string Msg_ServiceDisabledError {
             get {
                 return ResourceManager.GetString("Msg_ServiceDisabledError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Service name is required..
-        /// </summary>
-        public static string Msg_ServiceNameRequired {
-            get {
-                return ResourceManager.GetString("Msg_ServiceNameRequired", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The specified service was not found..
-        /// </summary>
-        public static string Msg_ServiceNotFound {
-            get {
-                return ResourceManager.GetString("Msg_ServiceNotFound", resourceCulture);
             }
         }
         

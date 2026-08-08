@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Servy.Config;
 using Servy.Core.Common;
 using Servy.Core.DTOs;
@@ -366,7 +366,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -718,7 +718,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
             _serviceManagerMock.Verify(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
