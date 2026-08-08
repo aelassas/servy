@@ -1906,6 +1906,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 🔍 Filter:.
+        /// </summary>
+        public static string Label_ConsoleFilter {
+            get {
+                return ResourceManager.GetString("Label_ConsoleFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Console.
         /// </summary>
         public static string Label_ConsoleTab {

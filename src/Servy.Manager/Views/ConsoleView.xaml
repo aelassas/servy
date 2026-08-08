@@ -176,7 +176,7 @@
 
         <Border Background="#2D2D2D" Padding="5">
           <DockPanel>
-            <TextBlock Text="🔍 Filter:"
+            <TextBlock Text="{x:Static resx:Strings.Label_ConsoleFilter}"
                                    Foreground="Gray"
                                    VerticalAlignment="Center"
                                    Margin="5,0" />
