@@ -5,5 +5,9 @@
     <FileVersion>9.2.0.0</FileVersion>
     <AssemblyVersion>9.2.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
+
+    <!-- Globalization & Localization Optimizations -->
+    <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 </Project>
