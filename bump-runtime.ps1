@@ -103,12 +103,10 @@ Update-FilesContent -Files $workflowFiles -Pattern $currentVersionRegex -Replace
 
 # 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
-if (Test-Path $globalJsonFile) {
-    $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
-    $globalJsonReplacement = "`${1}$Version.$SdkPatch"
+$globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
+$globalJsonReplacement = "`${1}$Version.$SdkPatch"
 
-    Update-FilesContent -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun -ExpectMatch
-}
+Update-FilesContent -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun -ExpectMatch
 
 # -----------------------------
 # Summary

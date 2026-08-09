@@ -8,6 +8,7 @@
 
 param (
     [Parameter(Mandatory=$true)]
+    [ValidatePattern('^\d+\.\d+$')]
     [string]$BaseVersion,
 
     [Parameter(Mandatory=$true)]

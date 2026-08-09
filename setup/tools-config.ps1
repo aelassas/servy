@@ -36,7 +36,7 @@ function Resolve-Tool {
     # Use Get-Item because $env:SERVY_TOOL_$Name is not valid syntax.
     $envVarName = "SERVY_TOOL_$Name"
     $envPath = (Get-Item -Path "env:$envVarName" -ErrorAction SilentlyContinue).Value
-    if ($envPath -and (Test-Path $envPath)) { return $envPath }
+    if ($envPath -and (Test-Path -LiteralPath $envPath -PathType Leaf)) { return $envPath }
     if ($envPath) {
         Write-Warning "$envVarName is set to '$envPath' but the file does not exist; ignoring."
     }
@@ -50,7 +50,7 @@ function Resolve-Tool {
     # 3. Check Fallbacks
     if ($Fallbacks) {
         foreach ($p in $Fallbacks) {
-            if (Test-Path $p) { return $p }
+            if (Test-Path -LiteralPath $p -PathType Leaf) { return $p }
         }
     }
 
