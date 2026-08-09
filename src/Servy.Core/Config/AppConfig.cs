@@ -167,14 +167,24 @@ namespace Servy.Core.Config
         public static readonly string SecurityFolderPath = Path.Combine(ProgramDataPath, "security");
 
         /// <summary>
+        /// The folder name for storing service recovery and restart attempt files.
+        /// </summary>
+        public const string RecoveryFolderName = "recovery";
+
+        /// <summary>
+        /// The folder name for storing log files.
+        /// </summary>
+        public const string LogsFolderName = "logs";
+
+        /// <summary>
         /// Path to the recovery folder containing service restart attempts files.
         /// </summary>
-        public static readonly string RecoveryFolderPath = Path.Combine(ProgramDataPath, "recovery");
+        public static readonly string RecoveryFolderPath = Path.Combine(ProgramDataPath, RecoveryFolderName);
 
         /// <summary>
         /// Path to the logs folder containing log files.
         /// </summary>
-        public static readonly string LogsFolderPath = Path.Combine(ProgramDataPath, "logs");
+        public static readonly string LogsFolderPath = Path.Combine(ProgramDataPath, LogsFolderName);
 
         /// <summary>
         /// The default SQLite connection string for the Servy application.

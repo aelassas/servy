@@ -167,6 +167,9 @@
     <Compile Include="Views\ConsoleView.xaml.cs">
       <DependentUpon>ConsoleView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Controls\PidBadgeControl.xaml.cs">
+      <DependentUpon>PidBadgeControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Controls\ServiceListControl.xaml.cs">
       <DependentUpon>ServiceListControl.xaml</DependentUpon>
     </Compile>
@@ -177,10 +180,11 @@
       <DependentUpon>PerformanceView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ServiceSearchUserControl.cs" />
-    <Compile Include="Views\SplashWindow.xaml.cs">
-      <DependentUpon>SplashWindow.xaml</DependentUpon>
-    </Compile>
     <Page Include="Views\ConsoleView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Controls\PidBadgeControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -212,10 +216,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Views\PerformanceView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Views\SplashWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

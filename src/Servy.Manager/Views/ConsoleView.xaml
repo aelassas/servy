@@ -61,55 +61,7 @@
                             Orientation="Horizontal"
                             Margin="0,0,0,6"
                             VerticalAlignment="Center">
-          <Border Background="#F0F7FA"
-                            CornerRadius="2"
-                            Padding="4,0,0,0"
-                            HorizontalAlignment="Left">
-            <StackPanel Orientation="Horizontal">
-              <TextBlock Text="{x:Static resx:Strings.Label_Pid}"
-                                       Foreground="#1B7F9F"
-                                       FontSize="11"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,5,0" />
-
-              <TextBlock Text="{Binding Pid}"
-                                       Foreground="#1B7F9F"
-                                       FontWeight="Bold"
-                                       FontSize="12"
-                                       VerticalAlignment="Center"
-                                       AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsolePidValue_Name}"
-                                       AutomationProperties.AutomationId="ConsolePidValue"
-                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsolePidValue_HelpText}" />
-
-              <Button Command="{Binding CopyPidCommand}"
-                                    Margin="5,0,0,0"
-                                    Padding="4"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Cursor="Hand"
-                                    ToolTip="{x:Static resx:Strings.Button_CopyPid}"
-                                    FocusVisualStyle="{x:Null}"
-                                    AutomationProperties.Name="{x:Static resx:Strings.Button_CopyPid}"
-                                    AutomationProperties.AutomationId="ConsoleCopyPidButton"
-                                    AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleCopyPidButton_HelpText}">
-                <Button.Style>
-                  <Style TargetType="Button">
-                    <Setter Property="Opacity" Value="0.5" />
-                    <Style.Triggers>
-                      <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Opacity" Value="1.0" />
-                      </Trigger>
-                    </Style.Triggers>
-                  </Style>
-                </Button.Style>
-                <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                                      Fill="#1B7F9F"
-                                      Stretch="Uniform"
-                                      Width="12"
-                                      Height="12" />
-              </Button>
-            </StackPanel>
-          </Border>
+          <controls:PidBadgeControl />
         </StackPanel>
 
         <StackPanel Grid.Row="0"
