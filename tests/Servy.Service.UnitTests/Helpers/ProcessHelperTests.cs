@@ -17,6 +17,18 @@ namespace Servy.Service.UnitTests.Helpers
             _mockLogger = new Mock<IServyLogger>();
         }
 
+        /// <summary>
+        /// Verifies that no unexpected warnings were logged, filtering out host/diagnostic noise.
+        /// </summary>
+        private void VerifyNoRealWarnings()
+        {
+            // Ignore diagnostic/host warnings injected during --blame-crash test runs
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => !msg.Contains("COMPlus_") && !msg.Contains("DOTNET_")),
+                It.IsAny<Exception>()),
+                Times.Never);
+        }
+
         [Fact]
         public void ExpandAndAudit_WhenValid_ReturnsExpandedValuesWithoutWarnings()
         {
@@ -31,11 +43,7 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal("Value", result.env["VAR"]);
             Assert.Equal("arg1", result.expandedArgs);
 
-            // Ignore diagnostic/host warnings injected during --blame-crash test runs
-            _mockLogger.Verify(l => l.Warn(
-                It.Is<string>(msg => !msg.Contains("COMPlus_") && !msg.Contains("DOTNET_")),
-                It.IsAny<Exception>()),
-                Times.Never);
+            VerifyNoRealWarnings();
         }
 
         [Fact]
@@ -61,10 +69,7 @@ namespace Servy.Service.UnitTests.Helpers
             ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "", _mockLogger.Object);
 
             // Assert
-            _mockLogger.Verify(l => l.Warn(
-                It.Is<string>(msg => !msg.Contains("COMPlus_") && !msg.Contains("DOTNET_")),
-                It.IsAny<Exception>()),
-                Times.Never);
+            VerifyNoRealWarnings();
         }
 
         [Fact]
@@ -101,7 +106,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void ExpandAndAudit_HandlesNullOrEmptyContextPrefix(string? prefix)
         {
             // Arrange

@@ -40,6 +40,10 @@ runs:
         $asset   = $env:INPUT_ASSET_NAME
         $retries = [int]$env:INPUT_MAX_RETRIES
 
+        if ($retries -lt 0) {
+            throw "max_retries must be >= 0 (got $retries)."
+        }
+
         # Ensure destination directory exists prior to initiating download stream
         $parentDir = Split-Path -Path $out -Parent
         if ($parentDir -and -not (Test-Path -Path $parentDir)) {
@@ -53,6 +57,10 @@ runs:
                 break
             }
             catch {
+                $status = $_.Exception.Response.StatusCode.value__
+                if ($status -ge 400 -and $status -lt 500 -and $status -ne 408 -and $status -ne 429) {
+                    throw "Permanent HTTP $status downloading $asset from $url. Error: $_"
+                }
                 if ($i -eq ($attempts - 1)) {
                     throw "Failed to download $asset after $attempts attempts. Error: $_"
                 }
@@ -60,4 +68,8 @@ runs:
                 Write-Host "Transient download failure for $asset. Retrying in $delay seconds... (Attempt $($i + 1)/$attempts)"
                 Start-Sleep -Seconds $delay
             }
+        }
+
+        if (-not (Test-Path -Path $out)) {
+            throw "Download verification failed: Output file '$out' was not created for $asset."
         }

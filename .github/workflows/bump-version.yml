@@ -103,7 +103,7 @@ jobs:
                   git diff --staged --quiet
                   if ($LASTEXITCODE -ne 0) {
                       Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
-                      Invoke-Git push origin $branch
+                      Invoke-PushWithRetry -PullRef $branch -PushRef $branch
                       Write-Host "Successfully committed and pushed version updates to $branch"
                   } else {
                       Write-Host "Index is clean after staging. Skipping commit on $branch branch."

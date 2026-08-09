@@ -44,7 +44,7 @@ runs:
             $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
             $url = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/latest"
             try {
-                $response = Invoke-RestMethod -Uri $url -Headers $headers
+                $response = Invoke-RestMethod -Uri $url -Headers $headers -MaximumRetryCount 3 -RetryIntervalSec 5
                 if ($response.tag_name) {
                     $tag = $response.tag_name
                 }
