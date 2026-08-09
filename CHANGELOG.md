@@ -1,5 +1,47 @@
 # Changelog
 
+## [Servy 9.2](https://github.com/aelassas/servy/releases/tag/v9.2)
+
+**Date:** 2026-08-09 | **Tag:** [`v9.2`](https://github.com/aelassas/servy/tree/v9.2)
+
+* fix(core): AppFoldersHelper.cs / AppConfig.cs - vault subfolder names 'recovery' and 'logs' are duplicated literals that can drift between default and custom vaults (#4791)
+* fix(core): ResourceHelper.cs - the staleness check is one-directional, so a version downgrade never re-extracts and the newer wrapper stays in the vault silently (#4803)
+* fix(core): ServiceHelper.cs (Core) - StopServicesAsync never settles transitional SCM states, so stopping a StartPending service fails the batch (stop-side sibling of the #2025 fix) (#4807)
+* fix(core): ServiceAccounts.cs / NativeMethodsHelpers.cs - display alias sets and RunnableServiceAccounts have drifted apart again; BUILTIN/dot/spaced forms accepted at install show raw in the Manager UI (#5021)
+* fix(core): EnvironmentVariablesValidator.cs - the value-side illegal-character message echoes the full value, unlike its key-side twin (residual of #4716) (#5029)
+* fix(core): ServiceManager.cs - ToScmStartType coerces AutomaticDelayedStart but not Unknown, sending dwStartType=0 (SERVICE_BOOT_START) to the SCM (#5031)
+* fix(infra): DapperExecutor.cs - BeginTransaction/BeginTransactionAsync are the only members without the Busy/Locked retry policy; transaction acquisition fails on the first SQLITE_BUSY the class remarks promise to ride out (#5007)
+* fix(desktop,manager): SplashWindow.xaml (Servy + Manager) - AllowsTransparency=True on a fully opaque window adds layered-window overhead for nothing (#4841)
+* fix(cli): ExportServiceCommand.cs - createdByUs length heuristic deletes a pre-existing empty file on write failure (residual of #2039) (#5000)
+* fix(psm1): Servy.psm1 / EnvironmentVariablesValidator.cs - the module's EnvVars pre-validation regex rejects keys with spaces and multi-space separators that the CLI's authoritative validator accepts (#5012)
+* fix(notifications): Write-ServyLog.ps1 - retention pruning glob ${baseName}_*${ext} matches sibling live logs and their rotations, deleting files it does not own (#4994)
+* fix(setup): setup/servy.iss - uninstall leaves HKLM\Software\Servy (AddedToPath marker) behind; the key is written but never deleted (#4779)
+* fix(setup): setup/servy.iss - ShouldAddCurrentUser compares the localized account name to 'SYSTEM' while claiming to replicate the C# SID comparison (#4781)
+* fix(setup): setup/servy.iss - x64 and arm64 installers share {autopf}\Servy but have different AppIds; on ARM64 both install side-by-side and uninstalling one breaks the other (#4990)
+* fix(setup): tools-config.ps1 - Resolve-Tool validates paths with bare Test-Path: bracketed paths fail as wildcards and a directory passes as a tool (#4997)
+* fix: Format-SourceHygiene.ps1 - Set-Content -Encoding UTF8 emits a BOM on PowerShell 5.1, re-introducing what #4944/#4966 cleaned (11 of 21 .github files now BOM'd, was 2) (#5033)
+* ci(resolve-version/action.yml): latest-release API fallback is a single-shot Invoke-RestMethod; one transient API error fails the job with a misleading 'no tag' message (residual of the #3635 class) (#4956)
+* ci(download-with-retry/action): negative max_retries yields zero attempts and a silently successful step (boundary residual of the #4663 fix) (#4953)
+* ci(download-with-retry/action.yml): every failure is retried and logged as 'Transient', including permanent 404/403s (sibling of the #1384 class) (#4954)
+* ci(bump-version.yml): pushes to main/net48 via single-shot Invoke-Git push while dot-sourcing the Invoke-PushWithRetry helper its three sibling workflows use for exactly this race (#4959)
+* ci(sbom.yml): generate-sbom.ps1 - BaseVersion is unvalidated (siblings publish.ps1/publish-sc.ps1 call Assert-ServyVersion); a malformed value is stamped silently into the published SBOM (#4984)
+* ci(scoop): setup/scoop/servy.json - description drifted from the README feature sentence: 'CPU affinity' is missing (autoupdate never rewrites the description) (#4987)
+* fix: various code quality, enhancements, and inconsistency issues
+
+### Downloads
+* [servy-9.2-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-arm64-installer.exe) - 70.65 MB
+* [servy-9.2-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-arm64-portable.7z) - 71.93 MB
+* [servy-9.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-net48-sbom.xml) - 0.03 MB
+* [servy-9.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-net48-x64-installer.exe) - 4.33 MB
+* [servy-9.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-net48-x64-portable.7z) - 2.08 MB
+* [servy-9.2-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-sbom.xml) - 0.04 MB
+* [servy-9.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-x64-installer.exe) - 76.72 MB
+* [servy-9.2-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-x64-portable.7z) - 74.58 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.2.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.2.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.1...v9.2
+
 ## [Servy 9.1](https://github.com/aelassas/servy/releases/tag/v9.1)
 
 **Date:** 2026-08-07 | **Tag:** [`v9.1`](https://github.com/aelassas/servy/tree/v9.1)
