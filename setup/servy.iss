@@ -254,29 +254,55 @@ end;
 //  - Check if a version is already installed
 //  - Prepare install
 // -----------------------------------------------------
-function GetUninstallString(): String;
+function QueryUninstallRegistry(const AppIdGuidStr, ValueName: String): String;
 var
-  sUnInstPath, sUnInstallString: String;
+  sUnInstPath, sValue: String;
 begin
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-  sUnInstallString := '';
+  sValue := '';
+  sUnInstPath := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + AppIdGuidStr + '_is1';
 
-  if not RegQueryStringValue(HKLM64, sUnInstPath, 'UninstallString', sUnInstallString) then
+  if not RegQueryStringValue(HKLM64, sUnInstPath, ValueName, sValue) then
   begin
-    RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
+    RegQueryStringValue(HKCU, sUnInstPath, ValueName, sValue);
   end;
 
-  if sUnInstallString = '' then
+  if sValue = '' then
   begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
+    sUnInstPath := 'SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\' + AppIdGuidStr + '_is1';
 
-    if not RegQueryStringValue(HKLM32, sUnInstPath, 'UninstallString', sUnInstallString) then
+    if not RegQueryStringValue(HKLM32, sUnInstPath, ValueName, sValue) then
     begin
-      RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
+      RegQueryStringValue(HKCU, sUnInstPath, ValueName, sValue);
     end;
   end;
 
-  Result := sUnInstallString;
+  Result := sValue;
+end;
+
+function GetUninstallString(): String;
+var
+  AppIdGuids: array[0..1] of String;
+  i: Integer;
+  sResult: String;
+begin
+  // Check current architecture's AppId first, then the alternate architecture's AppId
+  AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
+  if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
+  else
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D1';
+
+  for i := 0 to High(AppIdGuids) do
+  begin
+    sResult := QueryUninstallRegistry(AppIdGuids[i], 'UninstallString');
+    if sResult <> '' then
+    begin
+      Result := sResult;
+      Exit;
+    end;
+  end;
+
+  Result := '';
 end;
 
 function IsUpgrade(): Boolean;
@@ -321,27 +347,27 @@ end;
 
 function GetInstalledVersion(): String;
 var
-  sUnInstPath, sVersionString: String;
+  AppIdGuids: array[0..1] of String;
+  i: Integer;
+  sResult: String;
 begin
-  sVersionString := '';
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
+  AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
+  if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
+  else
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D1';
 
-  if not RegQueryStringValue(HKLM64, sUnInstPath, 'DisplayVersion', sVersionString) then
+  for i := 0 to High(AppIdGuids) do
   begin
-    RegQueryStringValue(HKCU, sUnInstPath, 'DisplayVersion', sVersionString);
-  end;
-
-  if sVersionString = '' then
-  begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-
-    if not RegQueryStringValue(HKLM32, sUnInstPath, 'DisplayVersion', sVersionString) then
+    sResult := QueryUninstallRegistry(AppIdGuids[i], 'DisplayVersion');
+    if sResult <> '' then
     begin
-      RegQueryStringValue(HKCU, sUnInstPath, 'DisplayVersion', sVersionString);
+      Result := sResult;
+      Exit;
     end;
   end;
 
-  Result := sVersionString;
+  Result := '';
 end;
 
 function NumericVersion(const Version: string): Int64;
