@@ -335,9 +335,16 @@ namespace Servy.Core.Helpers
                 // Only copy if the embedded resource is newer by more than DeltaMinutes
                 bool shouldCopy = hostExeWriteTime > existingFileTime.AddMinutes(AppConfig.ResourceStalenessThresholdMinutes);
 
-                if (!shouldCopy && hostExeWriteTime > existingFileTime)
+                if (!shouldCopy)
                 {
-                    Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {AppConfig.ResourceStalenessThresholdMinutes}-minute delta. Skipping copy.");
+                    if (hostExeWriteTime > existingFileTime)
+                    {
+                        Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {AppConfig.ResourceStalenessThresholdMinutes}-minute delta. Skipping copy.");
+                    }
+                    else if (existingFileTime > hostExeWriteTime.AddMinutes(AppConfig.ResourceStalenessThresholdMinutes))
+                    {
+                        Logger.Warn($"Extracted resource '{targetFileName}' ({existingFileTime.ToLocalTime():G}) is newer than host executable ({hostExeWriteTime.ToLocalTime():G}). Potential version downgrade detected; existing file will be retained.");
+                    }
                 }
 
                 return shouldCopy;

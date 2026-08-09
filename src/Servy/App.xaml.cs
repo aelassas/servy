@@ -1,26 +1,27 @@
+using Microsoft.Extensions.DependencyInjection;
+using Servy.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.Validation;
 using Servy.Infrastructure.Data;
 using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Bootstrapping;
 using Servy.UI.Services;
+using Servy.UI.Views;
 using Servy.Validation;
 using Servy.ViewModels;
 using Servy.Views;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.IO;
-using System.Windows;
-using Servy.Config;
-using AppConfig = Servy.Core.Config.AppConfig;
-using Servy.Core.Helpers;
-using Microsoft.Extensions.DependencyInjection;
-using Servy.Core.Validation;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Windows;
+using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy
 {
@@ -149,7 +150,7 @@ namespace Servy
                 SecurityWarningMessage = Strings.Msg_SecurityWarningMessage,
                 SqliteVersionWarningTitle = Strings.Msg_SqliteVersionWarningTitle,
                 SqliteVersionWarningMessageFormat = Strings.Msg_SqliteVersionWarningMessage,
-                SplashWindowFactory = () => new SplashWindow(),
+                SplashWindowFactory = () => new SplashWindow(Strings.Splash_Text),
                 // CRITICAL: The composition root is here, not in the View.
                 MainWindowFactoryAsync = async (serviceName) =>
                 {

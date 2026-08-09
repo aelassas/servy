@@ -231,6 +231,30 @@ namespace Servy.Core.Helpers
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
 
+                        int timeout = CalculateStopTimeout(
+                            service.StopTimeout,
+                            service.PreviousStopTimeout,
+                            service.PreStopTimeoutSeconds ?? 0);
+                        var waitTime = TimeSpan.FromSeconds(timeout);
+
+                        // --- ROBUSTNESS: Settle In-Flight Transitional Pending States ---
+                        var stopwatch = Stopwatch.StartNew();
+                        while (sc.Status == ServiceControllerStatus.StartPending ||
+                               sc.Status == ServiceControllerStatus.PausePending ||
+                               sc.Status == ServiceControllerStatus.ContinuePending)
+                        {
+                            if (stopwatch.Elapsed > waitTime)
+                                throw new System.ServiceProcess.TimeoutException();
+
+                            cancellationToken.ThrowIfCancellationRequested();
+                            await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
+                            sc.Refresh();
+                        }
+
+                        // Re-check if the service transitioned to Stopped after settling
+                        if (sc.Status == ServiceControllerStatus.Stopped)
+                            continue;
+
                         try
                         {
                             // Only call Stop() if it's not already trying to stop
@@ -249,14 +273,7 @@ namespace Servy.Core.Helpers
                             // else: service is already stopped or stopping - no-op
                         }
 
-                        int timeout = CalculateStopTimeout(
-                            service.StopTimeout,
-                            service.PreviousStopTimeout,
-                            service.PreStopTimeoutSeconds ?? 0);
-                        var waitTime = TimeSpan.FromSeconds(timeout);
-
                         // This blocks until the service is Stopped or the waitTime expires
-                        var stopwatch = Stopwatch.StartNew();
                         while (sc.Status != ServiceControllerStatus.Stopped)
                         {
                             if (stopwatch.Elapsed > waitTime)
