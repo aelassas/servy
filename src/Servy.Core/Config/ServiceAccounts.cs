@@ -29,7 +29,16 @@ namespace Servy.Core.Config
         /// </summary>
         public static readonly ImmutableHashSet<string> LocalSystemAliases = ImmutableHashSet.Create(
             StringComparer.OrdinalIgnoreCase,
-            LocalSystem, @".\LocalSystem", @"NT AUTHORITY\SYSTEM", "SYSTEM"
+            LocalSystem,
+            "System",
+            @".\LocalSystem",
+            @".\System",
+            @"NT AUTHORITY\LocalSystem",
+            @"NT AUTHORITY\Local System",
+            @"NT AUTHORITY\SYSTEM",
+            "SYSTEM",
+            @"BUILTIN\LocalSystem",
+            @"BUILTIN\System"
         );
 
         /// <summary>
@@ -38,7 +47,15 @@ namespace Servy.Core.Config
         /// </summary>
         public static readonly ImmutableHashSet<string> LocalServiceAliases = ImmutableHashSet.Create(
             StringComparer.OrdinalIgnoreCase,
-            "LocalService", @".\LocalService", LocalService, @"NT AUTHORITY\LOCAL SERVICE", "LOCAL SERVICE");
+            "LocalService",
+            LocalService,
+            @".\LocalService",
+            @".\Local Service",
+            @"NT AUTHORITY\LOCAL SERVICE",
+            @"NT AUTHORITY\Local Service",
+            "LOCAL SERVICE",
+            @"BUILTIN\LocalService"
+        );
 
         /// <summary>
         /// A collection of well-known alias strings representing the 'NetworkService' account,
@@ -46,6 +63,14 @@ namespace Servy.Core.Config
         /// </summary>
         public static readonly ImmutableHashSet<string> NetworkServiceAliases = ImmutableHashSet.Create(
             StringComparer.OrdinalIgnoreCase,
-            "NetworkService", @".\NetworkService", NetworkService, @"NT AUTHORITY\NETWORK SERVICE", "NETWORK SERVICE");
+            "NetworkService",
+            NetworkService,
+            @".\NetworkService",
+            @".\Network Service",
+            @"NT AUTHORITY\NETWORK SERVICE",
+            @"NT AUTHORITY\Network Service",
+            "NETWORK SERVICE",
+            @"BUILTIN\NetworkService"
+        );
     }
 }

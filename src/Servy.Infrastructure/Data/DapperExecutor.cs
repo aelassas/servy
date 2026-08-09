@@ -114,21 +114,22 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public IDbTransaction BeginTransaction()
-        {
-            var connection = _dbContext.CreateConnection();
-            try
+        public IDbTransaction BeginTransaction() =>
+            ExecuteWithRetry(() =>
             {
-                connection.Open();
-                var transaction = connection.BeginTransaction();
-                return new WrappedDbTransaction(connection, transaction);
-            }
-            catch
-            {
-                connection.Dispose();
-                throw;
-            }
-        }
+                var connection = _dbContext.CreateConnection();
+                try
+                {
+                    connection.Open();
+                    var transaction = connection.BeginTransaction();
+                    return new WrappedDbTransaction(connection, transaction);
+                }
+                catch
+                {
+                    connection?.Dispose();
+                    throw;
+                }
+            }, "BEGIN TRANSACTION");
 
         #endregion
 
