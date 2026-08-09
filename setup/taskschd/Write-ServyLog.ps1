@@ -86,7 +86,9 @@ function Write-ServyLog {
 
                     if ($MaxBackupFiles -gt 0) {
                         $rotatedPattern = "${baseName}_*${ext}"
+                        $stampRe = '^' + [regex]::Escape($baseName) + '_\d{8}-\d{6}-\d{3}' + [regex]::Escape($ext) + '$'
                         Get-ChildItem -Path $logDir -Filter $rotatedPattern -ErrorAction SilentlyContinue |
+                            Where-Object { $_.Name -match $stampRe } |
                             Sort-Object LastWriteTime -Descending |
                             Select-Object -Skip $MaxBackupFiles |
                             Remove-Item -Force -ErrorAction SilentlyContinue

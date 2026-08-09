@@ -26,7 +26,7 @@
 function Resolve-Tool {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory=$true)]
         [string]$Name,
 
         [string[]]$Fallbacks
@@ -36,22 +36,21 @@ function Resolve-Tool {
     # Use Get-Item because $env:SERVY_TOOL_$Name is not valid syntax.
     $envVarName = "SERVY_TOOL_$Name"
     $envPath = (Get-Item -Path "env:$envVarName" -ErrorAction SilentlyContinue).Value
-    if ($envPath -and (Test-Path $envPath)) { return $envPath }
+    if ($envPath -and (Test-Path -LiteralPath $envPath -PathType Leaf)) { return $envPath }
     if ($envPath) {
         Write-Warning "$envVarName is set to '$envPath' but the file does not exist; ignoring."
     }
 
-    # 2. Check System PATH
-    $cmd = Get-Command $Name -ErrorAction SilentlyContinue
+    # 2. Check System PATH (Application only - avoid alias/function/script shadowing)
+    $cmd = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($cmd) {
-        # .Definition returns the path for Application types and the command text for others
-        return $cmd.Definition
+        return $cmd.Source   # Source is the canonical path property for Application commands
     }
 
     # 3. Check Fallbacks
     if ($Fallbacks) {
         foreach ($p in $Fallbacks) {
-            if (Test-Path $p) { return $p }
+            if (Test-Path -LiteralPath $p -PathType Leaf) { return $p }
         }
     }
 
