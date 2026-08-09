@@ -15,6 +15,8 @@
         MinHeight="770"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
         AutomationProperties.Name="{x:Static resx:Strings.Automation_ConfigMainWindow_Name}"
         AutomationProperties.AutomationId="ConfigMainWindow"
         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConfigMainWindow_HelpText}">
@@ -64,6 +66,10 @@
       <Setter Property="HorizontalScrollBarVisibility" Value="Hidden" />
       <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="SnapsToDevicePixels" Value="False" />
+      <Setter Property="UseLayoutRounding" Value="False" />
+      <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+      <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
     </Style>
   </Window.Resources>
 

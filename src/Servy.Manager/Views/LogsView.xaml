@@ -8,6 +8,8 @@
              xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
              xmlns:converters="clr-namespace:Servy.Manager.Converters"
              mc:Ignorable="d"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"             
              AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsViewRoot_Name}"
              AutomationProperties.AutomationId="LogsView"
              AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsViewRoot_HelpText}">
@@ -79,6 +81,10 @@
                      Width="200"
                      Margin="0,0,10,0"
                      VerticalContentAlignment="Center"
+                     SnapsToDevicePixels="False"
+                     UseLayoutRounding="False"
+                     TextOptions.TextFormattingMode="Display"
+                     TextOptions.TextRenderingMode="ClearType"               
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsKeywordTextBox_Name}"
                      AutomationProperties.AutomationId="LogsKeywordTextBox"
                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsKeywordTextBox_HelpText}">
