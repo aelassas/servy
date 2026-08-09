@@ -106,21 +106,22 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public IDbTransaction BeginTransaction()
-        {
-            var connection = _dbContext.CreateConnection();
-            try
+        public IDbTransaction BeginTransaction() =>
+            ExecuteWithRetry(() =>
             {
-                connection.Open();
-                var transaction = connection.BeginTransaction();
-                return new WrappedDbTransaction(connection, transaction);
-            }
-            catch
-            {
-                connection.Dispose();
-                throw;
-            }
-        }
+                var connection = _dbContext.CreateConnection();
+                try
+                {
+                    connection.Open();
+                    var transaction = connection.BeginTransaction();
+                    return new WrappedDbTransaction(connection, transaction);
+                }
+                catch
+                {
+                    connection?.Dispose();
+                    throw;
+                }
+            }, "BEGIN TRANSACTION")!;
 
         #endregion
 
@@ -325,18 +326,21 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public async Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
-            var connection = _dbContext.CreateConnection();
-            try
+            return (await ExecuteWithRetryAsync(async (ct) =>
             {
-                await connection.OpenAsync(cancellationToken);
-                var transaction = await connection.BeginTransactionAsync(cancellationToken);
-                return new WrappedDbTransaction(connection, transaction);
-            }
-            catch
-            {
-                connection.Dispose();
-                throw;
-            }
+                var connection = _dbContext.CreateConnection();
+                try
+                {
+                    await connection.OpenAsync(ct);
+                    var transaction = await connection.BeginTransactionAsync(ct);
+                    return new WrappedDbTransaction(connection, transaction);
+                }
+                catch
+                {
+                    connection?.Dispose();
+                    throw;
+                }
+            }, cancellationToken, "BEGIN TRANSACTION"))!;
         }
 
         /// <inheritdoc />

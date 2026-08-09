@@ -18,7 +18,11 @@ winget install --manifest .\manifests\a\aelassas\Servy\<version>
 # Submit a new PR to microsoft/winget-pkgs
 
 ```powershell
+git clone https://github.com/aelassas/winget-pkgs
+cd winget-pkgs
 git checkout -b servy-<version>
+# copy the generated manifests into this tree
+Copy-Item -Recurse <servy-repo>\setup\winget\manifests\a\aelassas\Servy\<version> manifests\a\aelassas\Servy\<version>
 git add manifests/a/aelassas/Servy/<version>/*
 git commit -m "New version: aelassas.Servy version <version>"
 git push origin servy-<version>

@@ -139,7 +139,8 @@ namespace Servy.CLI.Commands
             }
 
             bool committed = false;
-            bool createdByUs = false;
+            bool existedBefore = File.Exists(fullPath);
+            bool createdByUs = !existedBefore;
 
             var validationResult = PathSecurityGuard.ValidatePath(
                 userPath,
@@ -165,9 +166,6 @@ namespace Servy.CLI.Commands
 
             try
             {
-                // Inspect open stream handle length to reliably snapshot whether the file was newly created by us
-                createdByUs = fileStream.Length == 0;
-
                 using (fileStream)
                 {
                     using (var sw = new StreamWriter(fileStream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))

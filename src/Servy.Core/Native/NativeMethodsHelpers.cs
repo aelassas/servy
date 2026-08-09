@@ -20,24 +20,14 @@ namespace Servy.Core.Native
         /// <summary>
         /// A safelist of built-in Windows accounts that are actual service runners.
         /// These do not have passwords and cannot be validated via LogonUser.
+        /// Constructed dynamically from the canonical alias sets defined in <see cref="ServiceAccounts"/>.
         /// </summary>
-        private static readonly HashSet<string> RunnableServiceAccounts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            // --- Core Service Identities ---
-            "System", "LocalSystem", "LocalService", "NetworkService",
-
-            // --- NT AUTHORITY Prefixed ---
-            "NT AUTHORITY\\System", "NT AUTHORITY\\LocalSystem", "NT AUTHORITY\\Local System",
-            "NT AUTHORITY\\LocalService", "NT AUTHORITY\\Local Service",
-            "NT AUTHORITY\\NetworkService", "NT AUTHORITY\\Network Service",
-
-            // --- Dot / Local Prefixed ---
-            ".\\System", ".\\LocalSystem", ".\\Local Service", ".\\LocalService",
-            ".\\Network Service", ".\\NetworkService",
-
-            // --- BUILTIN Prefixed ---
-            "BUILTIN\\System", "BUILTIN\\LocalSystem", "BUILTIN\\LocalService", "BUILTIN\\NetworkService"
-        };
+        private static readonly HashSet<string> RunnableServiceAccounts = new HashSet<string>(
+            ServiceAccounts.LocalSystemAliases
+                .Union(ServiceAccounts.LocalServiceAliases)
+                .Union(ServiceAccounts.NetworkServiceAliases),
+            StringComparer.OrdinalIgnoreCase
+        );
 
         /// <summary>
         /// Identifies well-known Windows groups or logon contexts that are NOT

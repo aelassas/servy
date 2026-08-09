@@ -54,7 +54,7 @@ $installParams = @{
     HeartbeatInterval         = 5
     MaxFailedChecks           = 1
     MaxRestartAttempts        = 2
-    HeartbeatUrl              = "https://hc-ping.com/test-uuid"
+    HeartbeatUrl              = "http://localhost:8080/heartbeat"
     HeartbeatUrlTimeoutSeconds = 5
     EnableHeartbeatUrlFlags   = $true
 
