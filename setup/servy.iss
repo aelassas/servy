@@ -138,9 +138,9 @@ Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall sh
 ; *S-1-5-18:     Local System
 ; *S-1-5-32-545: Users (Purge)
 ; *S-1-5-11:     Authenticated Users (Purge)
-; *S-1-5-1:      Everyone (Purge)
+; *S-1-1-0:      Everyone (Purge)
 Filename: "icacls.exe"; \
-    Parameters: """{commonappdata}\Servy"" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-5-1"; \
+    Parameters: """{commonappdata}\Servy"" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0"; \
     Flags: runhidden; StatusMsg: "Securing service data directory..."
 
 ; 2. Grant the Current User (The "Manual Key")
@@ -152,16 +152,67 @@ Filename: "icacls.exe"; \
     StatusMsg: "Assigning user permissions..."
 
 [Code]
+function ConvertStringSidToSid(
+  StringSid: String;
+  var Sid: Cardinal
+): Boolean;
+  external 'ConvertStringSidToSidW@advapi32.dll stdcall';
+
+function LookupAccountSid(
+  SystemName: String;
+  Sid: Cardinal;
+  Name: String;
+  var NameSize: DWORD;
+  ReferencedDomainName: String;
+  var ReferencedDomainNameSize: DWORD;
+  var Use: DWORD
+): Boolean;
+  external 'LookupAccountSidW@advapi32.dll stdcall';
+
+function LocalFree(hMem: Cardinal): Cardinal;
+  external 'LocalFree@kernel32.dll stdcall';
+
+function GetLocalizedSystemAccountName(): String;
+var
+  pSid: Cardinal;
+  Name, Domain: String;
+  NameSize, DomainSize, Use: DWORD;
+begin
+  Result := 'SYSTEM'; // Fallback
+  pSid := 0;
+  if ConvertStringSidToSid('S-1-5-18', pSid) then
+  begin
+    try
+      NameSize := 0;
+      DomainSize := 0;
+      LookupAccountSid('', pSid, Name, NameSize, Domain, DomainSize, Use);
+      if NameSize > 0 then
+      begin
+        SetLength(Name, NameSize);
+        SetLength(Domain, DomainSize);
+        if LookupAccountSid('', pSid, Name, NameSize, Domain, DomainSize, Use) then
+        begin
+          Result := Trim(Name);
+        end;
+      end;
+    finally
+      if pSid <> 0 then
+        LocalFree(pSid);
+    end;
+  end;
+end;
+
 function ShouldAddCurrentUser(): Boolean;
 var
-  CurrentUserName: String;
+  CurrentUserName, SystemAccountName: String;
 begin
   CurrentUserName := GetUserNameString();
+  SystemAccountName := GetLocalizedSystemAccountName();
 
   // Replicate C# logic: currentUserSid != systemSid
   // We don't check for 'adminSid' here because a User SID is never equal
   // to the Administrators Group SID.
-  Result := (CompareText(CurrentUserName, 'SYSTEM') <> 0) and
+  Result := (CompareText(CurrentUserName, SystemAccountName) <> 0) and
             (CurrentUserName <> '');
 end;
 
@@ -553,6 +604,7 @@ end;
 // -----------------------------------------------------
 // Uninstall actions:
 //  - Remove Servy from PATH if necessary
+//  - Clean up marker registry keys
 // -----------------------------------------------------
 procedure RemoveFromPath(const Folder: string);
 var
@@ -597,7 +649,7 @@ begin
   end;
 end;
 
-// PATH removal on uninstall
+// PATH removal and registry cleanup on uninstall
 procedure CurUninstallStepChanged(Step: TUninstallStep);
 var
   AddedToPath: Cardinal;
@@ -612,5 +664,10 @@ begin
         Log('RemoveFromPath("' + ExpandConstant('{app}') + '")');
       end;
     end;
+  end;
+
+  if Step = usPostUninstall then
+  begin
+    RegDeleteKeyIncludingSubkeys(HKLM64, 'Software\Servy');
   end;
 end;
