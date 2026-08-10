@@ -30,20 +30,23 @@ namespace Servy.Core.IntegrationTests.Config
             { "ServyPostStopParametersEnvVar", AppConfig.PostStopParametersEnvVarName }
         };
 
+        public static TheoryData<string, string> EnvVarMappings()
+        {
+            var data = new TheoryData<string, string>();
+            foreach (var kvp in ExpectedMappings)
+            {
+                data.Add(kvp.Key, kvp.Value);
+            }
+            return data;
+        }
+
         [Theory]
-        [InlineData("ServyPasswordEnvVar", AppConfig.PasswordEnvVarName)]
-        [InlineData("ServyProcessParametersEnvVar", AppConfig.ProcessParametersEnvVarName)]
-        [InlineData("ServyEnvironmentVariablesEnvVar", AppConfig.EnvironmentVariablesEnvVarName)]
-        [InlineData("ServyFailureProgramParametersEnvVar", AppConfig.FailureProgramParametersEnvVarName)]
-        [InlineData("ServyPreLaunchParametersEnvVar", AppConfig.PreLaunchParametersEnvVarName)]
-        [InlineData("ServyPreLaunchEnvironmentVariablesEnvVar", AppConfig.PreLaunchEnvironmentVariablesEnvVarName)]
-        [InlineData("ServyPostLaunchParametersEnvVar", AppConfig.PostLaunchParametersEnvVarName)]
-        [InlineData("ServyPreStopParametersEnvVar", AppConfig.PreStopParametersEnvVarName)]
-        [InlineData("ServyPostStopParametersEnvVar", AppConfig.PostStopParametersEnvVarName)]
+        [MemberData(nameof(EnvVarMappings))]
         public void ServyPsm1_SensitiveEnvVars_MatchAppConfigConstants(string scriptVarName, string expectedEnvVarName)
         {
             // Arrange
             var psm1Path = Helper.GetServyPsm1Path();
+            Assert.True(File.Exists(psm1Path), $"Servy.psm1 file not found at path: {psm1Path}");
 
             // Act
             string scriptContent = File.ReadAllText(psm1Path);
@@ -67,16 +70,23 @@ namespace Servy.Core.IntegrationTests.Config
         {
             // Arrange
             var psm1Path = Helper.GetServyPsm1Path();
+            Assert.True(File.Exists(psm1Path), $"Servy.psm1 file not found at path: {psm1Path}");
             string scriptContent = File.ReadAllText(psm1Path);
 
             // Parse out EVERY string assignment matching the script environment variable nomenclature pattern
-            var regex = new Regex(@"\$script:(Servy\w*EnvVar)\s*=\s*['""]([^'""]+)['""]", RegexOptions.IgnoreCase);
-            var matches = regex.Matches(scriptContent);
+            var strictRegex = new Regex(@"\$script:(Servy\w*EnvVar)\s*=\s*['""]([^'""]+)['""]", RegexOptions.IgnoreCase);
+            var strictMatches = strictRegex.Matches(scriptContent);
 
-            Assert.NotEmpty(matches);
+            Assert.NotEmpty(strictMatches);
+
+            // Looser check to detect any environment variable assignment that does not use string literals (e.g. dynamic/computed expressions)
+            var looseRegex = new Regex(@"\$script:(Servy\w*EnvVar)\s*=", RegexOptions.IgnoreCase);
+            var looseMatches = looseRegex.Matches(scriptContent);
+
+            Assert.Equal(strictMatches.Count, looseMatches.Count);
 
             // Act & Assert
-            foreach (Match match in matches)
+            foreach (Match match in strictMatches)
             {
                 string scriptVarName = match.Groups[1].Value;
                 string literalValue = match.Groups[2].Value;
