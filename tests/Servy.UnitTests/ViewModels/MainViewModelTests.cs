@@ -942,7 +942,7 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public void ModelToServiceDto_WithInvalidNumericInputs_FallsBackToDefaultValue()
+        public void ModelToServiceDto_WithInvalidNumericInputs_EmitsUnparseableSentinel()
         {
             // Arrange
             _viewModel.RotationSize = "invalid";
