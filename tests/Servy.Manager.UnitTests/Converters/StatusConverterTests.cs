@@ -41,7 +41,7 @@ namespace Servy.Manager.UnitTests.Converters
             var result = _converter.Convert(status, typeof(string), null!, CultureInfo.InvariantCulture);
 
             // Assert: Extract the static public resource string value via TestReflection infrastructure
-            var expected = TestReflection.InvokePublicStatic(typeof(Strings), $"get_{resourceName}");
+            var expected = typeof(Strings).GetProperty(resourceName)?.GetValue(null!);
             Assert.Equal(expected, result);
         }
 
@@ -77,7 +77,7 @@ namespace Servy.Manager.UnitTests.Converters
         public void ConvertBack_ValidString_ReturnsEnum(ServiceStatus expected, string resourceName)
         {
             // Arrange: Extract the static public resource string value via TestReflection infrastructure
-            var input = (string)TestReflection.InvokePublicStatic(typeof(Strings), $"get_{resourceName}")!;
+            var input = typeof(Strings).GetProperty(resourceName)?.GetValue(null!)!;
 
             // Act
             var result = _converter.ConvertBack(input, typeof(ServiceStatus), null!, CultureInfo.InvariantCulture);
