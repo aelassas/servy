@@ -49,7 +49,19 @@ for ($id = 1; $id -le $WorkerCount; $id++) {
 }
 
 Write-Host "Waiting for all concurrent workers to complete processing..." -ForegroundColor Yellow
-$Jobs | Wait-Job | Out-Null
+$finished = $Jobs | Wait-Job -Timeout 120
+$finishedCount = 0
+if ($null -ne $finished) {
+    $finishedCount = $finished.Count
+}
+
+if ($null -eq $finished -or $finishedCount -lt $Jobs.Count) {
+    $runningCount = $Jobs.Count - $finishedCount
+    Write-Host "FAIL: $runningCount worker job(s) still running after 120s - probable mutex deadlock in Write-ServyLog." -ForegroundColor Red
+    $Jobs | Stop-Job
+    $Jobs | Remove-Job -Force
+    exit 1
+}
 
 # --- EVALUATION AND AUDIT PASS ---
 Write-Host "Analyzing log files for multi-process safety exceptions..." -ForegroundColor Cyan
@@ -92,10 +104,7 @@ Write-Host "  Active Log Lines:  $ActiveLines" -ForegroundColor Gray
 Write-Host "  Rotated Log Lines: $RotatedLines (Spread across $($RotatedFiles.Count) historical files)" -ForegroundColor Gray
 Write-Host "  Total Written:     $TotalLines / $ExpectedLines expected lines." -ForegroundColor White
 
-if ($TotalLines -eq $ExpectedLines -and -not $Warnings) {
-    Write-Host "SUCCESS: 100% of concurrent log entries were structurally preserved without line drops!" -ForegroundColor Green
-    exit 0
-} else {
+if ($TotalLines -ne $ExpectedLines -or $Warnings) {
     $Deficit = $ExpectedLines - $TotalLines
     if ($Deficit -gt 0) {
         Write-Host "FAIL: Missing data detected! Lost $Deficit log frames due to un-serialized write collisions." -ForegroundColor Red
@@ -104,3 +113,28 @@ if ($TotalLines -eq $ExpectedLines -and -not $Warnings) {
     }
     exit 1
 }
+
+Write-Host "SUCCESS: 100% of concurrent log entries were structurally preserved without line drops!" -ForegroundColor Green
+
+# --- PHASE 2: RETENTION PRUNING VERIFICATION ---
+Write-Host "`nTesting log retention pruning..." -ForegroundColor Cyan
+$PrunePath = Join-Path $ScriptDir "test_prune.log"
+Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
+
+. $LogScriptPath
+
+for ($i = 1; $i -le 8; $i++) {
+    Write-ServyLog -FilePath $PrunePath -Message ("X" * 64) -MaxSizeBytes 1 -MaxBackupFiles 3
+}
+
+$backups = Get-ChildItem -Path $ScriptDir -Filter "test_prune_*.log"
+if ($backups.Count -ne 3) {
+    Write-Host "FAIL: Expected 3 retained backups for pruning test, found $($backups.Count)." -ForegroundColor Red
+    Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
+    exit 1
+}
+
+Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
+Write-Host "PASS: Retention pruning successfully maintained exactly 3 backup files." -ForegroundColor Green
+
+exit 0

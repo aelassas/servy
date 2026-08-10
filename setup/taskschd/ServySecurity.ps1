@@ -15,6 +15,9 @@
 .PARAMETER Text
     The raw string (e.g., an email body, notification text, or log message) to be scrubbed.
 
+.PARAMETER TimeoutMs
+    Regex match timeout in milliseconds (default: 2000 ms).
+
 .EXAMPLE
     $safeBody = Protect-SensitiveString -Text "API_KEY: my-secret-token"
     # Returns: "API_KEY: ********"
@@ -31,7 +34,10 @@ function Protect-SensitiveString {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$false)]
-        [string]$Text
+        [string]$Text,
+
+        [Parameter(Mandatory=$false)]
+        [int]$TimeoutMs = 2000
     )
 
     if ([string]::IsNullOrWhiteSpace($Text)) { return $Text }
@@ -100,7 +106,7 @@ function Protect-SensitiveString {
     $maskingRegex = New-Object System.Text.RegularExpressions.Regex (
         $regexPattern,
         [System.Text.RegularExpressions.RegexOptions]::None,
-        [TimeSpan]::FromMilliseconds(2000)
+        [TimeSpan]::FromMilliseconds($TimeoutMs)
     )
 
     # Use MatchEvaluator to conditionally extract the matched separator group (A or B)
