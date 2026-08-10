@@ -23,5 +23,5 @@ try:
 
         time.sleep(5)
 except KeyboardInterrupt:
-    print("\n(ctrlc) Goodbye! Script terminated.", file=sys.stdout)
+    print("\nGoodbye! Script terminated.", file=sys.stdout)
     sys.exit(0)

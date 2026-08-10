@@ -13,6 +13,7 @@ LOG_FILE = os.path.join(LOG_DIR, "test.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] => %(message)s",
+    datefmt="%Y%m%d %H:%M:%S",
     handlers=[
         logging.FileHandler(LOG_FILE, encoding="utf-8"),
         logging.StreamHandler(sys.stdout)
@@ -28,8 +29,7 @@ def main():
         logging.info(f"Spawned PIDs: ctrlc2={py_proc.pid}, notepad={notepad_proc.pid}")
 
         while True:
-            current_datetime = datetime.now().strftime("%Y%m%d %H:%M:%S.%f")[:-3]
-            logging.info(f"{current_datetime} > (ctrlc_child) abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
+            logging.info("(ctrlc_child) abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
             time.sleep(3)
     except Exception:
         logging.exception("Error in loop")

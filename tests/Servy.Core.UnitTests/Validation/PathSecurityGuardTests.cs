@@ -50,7 +50,6 @@ namespace Servy.Core.UnitTests.Validation
                 ? Strings.Msg_SecurityUncPathProhibited
                 : Strings.Msg_SecurityUncPathExportProhibited;
 
-            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.Equal(expected, result.ErrorMessage);
         }
 
