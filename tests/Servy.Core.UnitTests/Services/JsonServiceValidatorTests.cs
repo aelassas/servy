@@ -74,7 +74,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_DomainValidationFailure_ReturnsFalse()
         {
             // Arrange
-            // Testing the shared ServiceValidator.ValidateDto branch via DisplayName length
+            // Testing the shared ServiceValidationRules.Validate branch via DisplayName length
             var dto = new ServiceDto
             {
                 Name = "TestService",

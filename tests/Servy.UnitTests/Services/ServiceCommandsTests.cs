@@ -52,7 +52,7 @@ namespace Servy.UnitTests.Services
             _modelToServiceDtoMock = new Mock<Func<ServiceDto>>();
             _processHelperMock = new Mock<IProcessHelper>();
 
-            // Setup functional operational defaults for safe falling executions
+            // Default all service-manager operations to success
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
@@ -106,7 +106,7 @@ namespace Servy.UnitTests.Services
             }
             catch (Exception ex)
             {
-                // Don't just catch; log it. Setup failure should be visible.
+                // Fail loudly: setup failure must be visible, not swallowed
                 throw new InvalidOperationException($"Critical: Failed to setup dummy wrapper at {_wrapperPath}", ex);
             }
         }
@@ -312,7 +312,7 @@ namespace Servy.UnitTests.Services
         public async Task OpenManager_ProcessStartThrowsException_DisplaysLaunchFailedError()
         {
             // Arrange
-            // UNIQUE ISOLATION: Generate a unique virtual string filename to pass the File.Exists check
+            // Create a real temp .exe so the File.Exists gate passes
             string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
             File.WriteAllText(tempTrackingFile, string.Empty);
 
@@ -505,7 +505,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            // Verify core localization payload warning mechanics fired
+            // The warning dialog must be shown exactly once
             _messageBoxService.Verify(m => m.ShowWarningAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
         }
 

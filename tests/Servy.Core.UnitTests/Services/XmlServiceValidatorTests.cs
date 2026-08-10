@@ -88,7 +88,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_DomainValidationFailure_ReturnsFalse()
         {
             // Arrange
-            // Name length is a Domain check via ServiceValidator.ValidateDto
+            // Name length is a domain check via ServiceValidationRules.Validate (importMode: true)
             var dto = new ServiceDto
             {
                 Name = new string('A', AppConfig.MaxServiceNameLength + 1),

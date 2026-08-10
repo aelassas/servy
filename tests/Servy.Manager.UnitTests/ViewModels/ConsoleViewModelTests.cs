@@ -353,9 +353,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var expectedTailingCts = new CancellationTokenSource();
                     var expectedLogFilterCts = new CancellationTokenSource();
 
-                    // Forcefully mock-inject active token sources into the private instance fields
-                    // using TestReflection. This sidesteps lazy initialization mechanics and guarantees
-                    // that the structural cleanup blocks inside Dispose are explicitly exercised.
+                    // Inject active cancellation token sources into the private instance fields using TestReflection.
+                    // This explicitly exercises the disposal cleanup code path.
                     TestReflection.SetField(vm, "_tailingCts", expectedTailingCts);
                     TestReflection.SetField(vm, "_logFilterCts", expectedLogFilterCts);
 
@@ -363,7 +362,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.Dispose();
 
                     // Assert
-                    // 1. Verify structural cancellation behavior commitments on our anchored handles
+                    // 1. Verify token sources were cancelled upon disposal
                     Assert.True(expectedTailingCts.IsCancellationRequested, "The active tailing cancellation token source was not cancelled during disposal.");
                     Assert.True(expectedLogFilterCts.IsCancellationRequested, "The log filter debounce cancellation token source was not cancelled during disposal.");
 
@@ -522,7 +521,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     vm.RawLines.Add(new LogLine("Cleared On Switch", LogType.StdOut));
 
-                    // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
+                    // Act - Pass empty paths so no log history is loaded
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", string.Empty, string.Empty);
                     await task;
 
@@ -547,7 +546,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Read current Session ID to pass down as a synchronized parameter match
                     int activeSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
-                    // Act - Spin up an active live tail listener instance context mapping to stdout
+                    // Act - Start a live tailer for stdout
                     TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None);
 
                     // Pull the dynamic internal event handler delegate out via reflection
@@ -597,7 +596,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act
                     handlerDelegate.DynamicInvoke(new object[] { newLinesBatch });
 
-                    // Assert - Log array size should remain 0 because mutation bypassed collection injection via text pause guard gate
+                    // Assert - Handler must not touch RawLines while the user is selecting (paused)
                     Assert.Empty(vm.RawLines);
                 }
             });
@@ -614,7 +613,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (var vm = CreateViewModel())
                 {
                     int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
-                    int staleSessionId = currentSessionId - 1; // Simulated obsolete thread queue callback sequence tracking state
+                    int staleSessionId = currentSessionId - 1; // A session id one behind the current one simulates a callback from a superseded switch
 
                     TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, CancellationToken.None);
 
@@ -690,7 +689,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     Assert.Null(doubleDisposeException);
-                    Assert.True(TestReflection.GetField<int>(vm, "_isDisposed") == 1, "The state engine failed to toggle back to an active disposed layout configuration.");
+                    Assert.True(TestReflection.GetField<int>(vm, "_isDisposed") == 1, "Second Dispose after guard reset did not set _isDisposed back to 1.");
                 }
             });
         }

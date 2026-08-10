@@ -10,7 +10,7 @@ using Servy.Service.Validation;
 namespace Servy.Service.UnitTests.Utilities
 {
     /// <summary>
-    /// Establishes an isolated mock profile and instantiation context for configuring <see cref="TestableService"/> topologies.
+    /// Holds the eight mocked dependencies of <see cref="TestableService"/> and builds instances wired to them.
     /// </summary>
     public class ServiceTestContext
     {
@@ -25,12 +25,12 @@ namespace Servy.Service.UnitTests.Utilities
 
         public ServiceTestContext()
         {
-            // Set up universally accurate base paths to prevent standard configuration failures
+            // Paths validate by default; individual tests override IsValidPath to exercise failure branches.
             PathValidator.Setup(p => p.IsValidPath(It.IsAny<string>())).Returns(true);
         }
 
         /// <summary>
-        /// Builds a new <see cref="TestableService"/> bounded context utilizing the internal mock signatures.
+        /// Creates a <see cref="TestableService"/> wired to this context's mocks.
         /// </summary>
         public TestableService Build()
         {

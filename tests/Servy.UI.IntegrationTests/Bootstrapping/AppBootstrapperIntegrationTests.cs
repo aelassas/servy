@@ -61,7 +61,6 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
         public void Dispose()
         {
-            // Arrange
             Logger.Shutdown();
 
             // Clean up headless state
