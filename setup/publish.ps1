@@ -38,11 +38,12 @@ try {
     $cliBuildOutputDir     = Join-Path $cliDir "bin\$platform\$buildConfig"
     $managerBuildOutputDir = Join-Path $managerDir "bin\$platform\$buildConfig"
 
-    # Resolver for the code signing sub-script
+    # Resolver for shared publish helpers and code signing sub-script
+    . (Join-Path $scriptDir "publish-common.ps1")
     $signPath              = Join-Path $scriptDir "signpath.ps1"
 
     $packageFolder         = "$appName-$version-$framework-$platform-portable"
-    $outputZip              = "$packageFolder.7z"
+    $outputZip             = "$packageFolder.7z"
 
     # === Tool Discovery ===
     <#
@@ -164,23 +165,20 @@ try {
         }
 
         # 3. Securely include Task Scheduler hooks
-        # Using Get-ChildItem to ensure -Exclude correctly recurses through subdirectories.
-        $taskSource = Join-Path $scriptDir "taskschd"
-        if (Test-Path $taskSource) {
-            $taskDest = Join-Path $packageFolder "taskschd"
-            [void](New-Item -Path $taskDest -ItemType Directory -Force)
+        $taskSchdSource = Join-Path $scriptDir "taskschd"
+        if (Test-Path $taskSchdSource) {
+            $taskSchdDest = Join-Path $packageFolder "taskschd"
+            [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
 
-            Get-ChildItem -Path $taskSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log','*.test.ps1' |
-                Copy-Item -Destination {
-                    Join-Path $taskDest $_.FullName.Substring($taskSource.Length).TrimStart('\')
-                } -Force
+            Copy-TaskSchdArtifacts -SourcePath $taskSchdSource -DestPath $taskSchdDest
 
-            # SECURITY AUDIT: Ensure no sensitive files leaked into the portable package
-            $leaks = Get-ChildItem -Path $taskDest -Recurse -Include 'smtp-cred.xml','*.dat','*.log'
+            # Post-copy verification to ensure no sensitive files leaked into the package
+            $excludedPatterns = @('smtp-cred.xml', '*.dat', '*.log', '*.test.ps1', 'temp.ps1')
+            $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include $excludedPatterns
             if ($leaks) {
                 throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"
             }
-        }
+        }        
 
         # 4. Include PowerShell Module Artifacts
         $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
