@@ -29,7 +29,7 @@ namespace Servy.UI.UnitTests.Converters
         }
 
         [Theory]
-        [InlineData(null!)]
+        [InlineData(null)]
         [InlineData("not a bool")]
         [InlineData(1)]
         public void Convert_InvalidValue_ReturnsBindingDoNothing(object? input)
@@ -68,7 +68,7 @@ namespace Servy.UI.UnitTests.Converters
         }
 
         [Theory]
-        [InlineData(null!)]
+        [InlineData(null)]
         [InlineData("Visible")]
         [InlineData(true)]
         public void ConvertBack_InvalidType_ReturnsBindingDoNothing(object? input)

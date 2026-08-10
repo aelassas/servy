@@ -59,6 +59,7 @@ namespace Servy.UI.UnitTests.Converters
         [Theory]
         [InlineData(null)]
         [InlineData("not a bool")]
+        [InlineData(123)]
         public void ConvertBack_NonBool_ReturnsDoNothing(object? input)
         {
             // Act
