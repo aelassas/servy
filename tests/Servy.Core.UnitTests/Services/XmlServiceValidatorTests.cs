@@ -70,6 +70,37 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void TryValidate_XmlWithUnknownElement_ReturnsFalse()
+        {
+            // Arrange
+            var xml = "<ServiceDto><Name>Test</Name><UnknownElement>Value</UnknownElement></ServiceDto>";
+
+            // Act
+            var result = _validator.TryValidate(xml, out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotNull(error);
+            Assert.Contains("Unknown XML element encountered: 'UnknownElement'", error);
+            Assert.Contains(string.Format(Strings.Msg_UnknownXmlElement, "UnknownElement"), error);
+        }
+
+        [Fact]
+        public void TryValidate_XmlWithUnknownAttribute_ReturnsFalse()
+        {
+            // Arrange
+            var xml = "<ServiceDto UnknownAttribute=\"Value\"><Name>Test</Name></ServiceDto>";
+
+            // Act
+            var result = _validator.TryValidate(xml, out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotNull(error);
+            Assert.Contains(string.Format(Strings.Msg_UnknownXmlAttribute, "UnknownAttribute"), error);
+        }
+
+        [Fact]
         public void TryValidate_DeserializedDtoIsNull_ReturnsFalse()
         {
             // Arrange

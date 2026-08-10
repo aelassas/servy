@@ -77,16 +77,19 @@ namespace Servy.Core.Validation
             // This prevents the first catch from consuming unrelated exceptions when TException is narrowed.
             catch (Exception ex) when (ex is TException || (ex is InvalidOperationException && ex.InnerException is TException))
             {
-                errorMessage = string.Format(Strings.Msg_ImportInvalidStructure, FormatName, ex.Message);
+                string detailMessage = ex.InnerException != null ? $"{ex.InnerException.Message} ({ex.Message})" : ex.Message;
+                errorMessage = string.Format(Strings.Msg_ImportInvalidStructure, FormatName, detailMessage);
                 Logger.Error($"{FormatName} import rejected: malformed document structure", ex);
                 return false;
             }
             catch (Exception ex) // Catch-all for unexpected parser exceptions
             {
-                errorMessage = string.Format(Strings.Msg_ImportStructureError, FormatName, ex.Message);
+                string detailMessage = ex.InnerException != null ? $"{ex.InnerException.Message} ({ex.Message})" : ex.Message;
+                errorMessage = string.Format(Strings.Msg_ImportStructureError, FormatName, detailMessage);
                 Logger.Error($"{FormatName} import failed with an unexpected parser exception ({ex.GetType().Name})", ex);
                 return false;
             }
+
 
             if (dto == null)
             {
