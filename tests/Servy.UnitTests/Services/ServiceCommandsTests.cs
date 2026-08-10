@@ -124,7 +124,7 @@ namespace Servy.UnitTests.Services
                 if (File.Exists(wrapperPath)) File.Move(wrapperPath, backup);
 
                 // Act
-                var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+                var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(result);
@@ -153,7 +153,7 @@ namespace Servy.UnitTests.Services
             _modelToServiceDtoMock.Setup(m => m()).Returns((ServiceDto?)null);
 
             // Act
-            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -171,7 +171,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), "abc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
-            await sut.InstallServiceAsync(config, CancellationToken.None);
+            await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Null(dto.UserAccount);
@@ -190,11 +190,34 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
-            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_ValidConfiguration_ReturnsTrueAndDisplaysSuccess()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "ValidInstallService" };
+            var dto = new ServiceDto { Name = "ValidInstallService" };
+
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled("ValidInstallService", It.IsAny<CancellationToken>())).Returns(false);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]
@@ -211,11 +234,36 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Resources.Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(false);
 
             // Act
-            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_ServiceExists_UserConfirmsOverwrite_ProceedsWithInstall()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "ExistingServiceToOverwrite" };
+            var dto = new ServiceDto { Name = "ExistingServiceToOverwrite" };
+
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled("ExistingServiceToOverwrite", It.IsAny<CancellationToken>())).Returns(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Resources.Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == "ExistingServiceToOverwrite"), It.IsAny<CancellationToken>()), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]
@@ -232,7 +280,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Failure("Access Denied OS Driver Error"));
 
             // Act
-            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -253,7 +301,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new UnauthorizedAccessException());
 
             // Act
-            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -274,7 +322,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new Exception("Fatal Kernel Loop"));
 
             // Act
-            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -357,7 +405,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
 
             // Act
-            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -374,7 +422,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
 
             // Act - StartService sets checkDisabled to true
-            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -392,7 +440,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Failure("Service is deadlocked. Control failed."));
 
             // Act - StopService leaves checkDisabled as false
-            var result = await sut.StopServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StopServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -410,7 +458,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new UnauthorizedAccessException());
 
             // Act
-            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -428,7 +476,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new InvalidOperationException("RPC Server Unavailable"));
 
             // Act
-            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -452,7 +500,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -472,7 +520,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.StopServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StopServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -496,7 +544,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -709,7 +757,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -728,7 +776,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Failure("Service marked for deletion."));
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -746,7 +794,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new UnauthorizedAccessException());
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -764,7 +812,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new Exception("WMI Registry Failure"));
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -789,7 +837,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -816,7 +864,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.RestartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.RestartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -833,7 +881,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
 
             // Act
-            var result = await sut.RestartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.RestartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -940,7 +988,7 @@ namespace Servy.UnitTests.Services
                 spyExportAction,
                 "JSON",
                 "Success",
-                CancellationToken.None,
+                TestContext.Current.CancellationToken,
             })!;
 
             await task;

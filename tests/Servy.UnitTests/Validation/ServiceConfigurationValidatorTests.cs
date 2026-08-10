@@ -70,7 +70,7 @@ namespace Servy.UnitTests.Validation
         }
 
         [Fact]
-        public async Task Validate_NullDto_ShowsErrorAndReturnsFalse()
+        public async Task ValidateAsync_NullDto_ShowsErrorAndReturnsFalse()
         {
             // Act
             var result = await _validator.ValidateAsync(null, cancellationToken: CancellationToken.None);
@@ -84,7 +84,7 @@ namespace Servy.UnitTests.Validation
         }
 
         [Fact]
-        public async Task Validate_ValidationFails_ShowsErrorAndReturnsFalse()
+        public async Task ValidateAsync_ValidationFails_ShowsErrorAndReturnsFalse()
         {
             // Arrange
             var dto = new ServiceDto { Name = "", ExecutablePath = @"C:\Service.exe", RunAsLocalSystem = true };
@@ -102,7 +102,7 @@ namespace Servy.UnitTests.Validation
         }
 
         [Fact]
-        public async Task Validate_ValidationPasses_ReturnsTrue()
+        public async Task ValidateAsync_ValidationPasses_ReturnsTrue()
         {
             // Arrange: Provide a DTO that passes validation rules
             var dto = new ServiceDto { Name = "ValidService", ExecutablePath = @"C:\ValidService.exe", RunAsLocalSystem = true };
