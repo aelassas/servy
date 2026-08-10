@@ -244,6 +244,32 @@ namespace Servy.Core.UnitTests.Validation
             }
         }
 
+        [Fact]
+        public void ValidatePath_AncestorDirectorySymlink_ReturnsFail()
+        {
+            string realDir = Path.Combine(TempDirectory, "real_dir");
+            string linkDir = Path.Combine(TempDirectory, "link_dir");
+            Directory.CreateDirectory(realDir);
+            File.WriteAllText(Path.Combine(realDir, "config.json"), "{}");
+
+            try
+            {
+                Directory.CreateSymbolicLink(linkDir, realDir);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Assert.Skip("Symlink creation unavailable on this runner");
+            }
+
+            var result = PathSecurityGuard.ValidatePath(
+                Path.Combine(linkDir, "config.json"), FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Equal(Strings.Msg_SecurityDirReparsePointProhibited, result.ErrorMessage);
+            Assert.Null(stream);
+        }
+
         /// <summary>
         /// Reliably locates any valid .json or .xml file in %WINDIR% or its subdirectories across all Windows builds.
         /// </summary>

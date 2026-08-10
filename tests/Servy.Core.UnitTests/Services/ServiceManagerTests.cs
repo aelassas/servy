@@ -2071,6 +2071,9 @@ namespace Servy.Core.UnitTests.Services
         [InlineData(ServiceStartMode.Automatic, true, ServiceStartType.AutomaticDelayedStart)]
         [InlineData(ServiceStartMode.Manual, false, ServiceStartType.Manual)]
         [InlineData(ServiceStartMode.Disabled, false, ServiceStartType.Disabled)]
+        [InlineData(ServiceStartMode.Boot, false, ServiceStartType.Unknown)]   // driver, no Servy equivalent
+        [InlineData(ServiceStartMode.System, false, ServiceStartType.Unknown)] // driver, no Servy equivalent
+        [InlineData((ServiceStartMode)999, false, ServiceStartType.Unknown)]   // Covers 'default'
         public void GetServiceStartupType_ShouldReturnCorrectType_ForAllModes(
             ServiceStartMode nativeMode,
             bool isDelayed,

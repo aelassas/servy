@@ -35,6 +35,17 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
+        public string DisplayName
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _controller.DisplayName;
+            }
+        }
+
+        /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
         public ServiceControllerStatus Status
         {
             get
@@ -85,6 +96,26 @@ namespace Servy.Core.Services
         {
             ThrowIfDisposed();
             _controller.WaitForStatus(desiredStatus, timeout);
+        }
+
+        /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
+        public IEnumerable<string> GetDependencyNames()
+        {
+            ThrowIfDisposed();
+            var deps = _controller.ServicesDependedOn;
+            try
+            {
+                return deps.Select(d => d.ServiceName).ToArray();
+            }
+            finally
+            {
+                // Disposal pass for SCM handles
+                foreach (var dep in deps)
+                {
+                    try { dep.Dispose(); } catch { /* Ignore exceptions during disposal */ }
+                }
+            }
         }
 
         /// <inheritdoc />
@@ -169,18 +200,8 @@ namespace Servy.Core.Services
 
                 using (wrapper as IDisposable)
                 {
-                    bool isRunning = false;
-                    string displayName = serviceName;
-
-                    // Safely cast once at the scope level
-                    var realWrapper = wrapper as ServiceControllerWrapper;
-
-                    if (realWrapper != null)
-                    {
-                        // Real SCM invocation path
-                        isRunning = realWrapper._controller.Status == ServiceControllerStatus.Running;
-                        displayName = realWrapper._controller.DisplayName;
-                    }
+                    bool isRunning = wrapper.Status == ServiceControllerStatus.Running;
+                    string displayName = wrapper.DisplayName;
 
                     var node = new ServiceDependencyNode(
                         serviceName,
@@ -199,27 +220,11 @@ namespace Servy.Core.Services
                     {
                         var childNodes = new List<ServiceDependencyNode>();
 
-                        if (realWrapper != null)
+                        var depNames = wrapper.GetDependencyNames();
+                        foreach (var depName in depNames)
                         {
-                            // Accessing this property can throw Win32Exception (Access Denied)
-                            var deps = realWrapper._controller.ServicesDependedOn;
-
-                            try
-                            {
-                                foreach (var dep in deps)
-                                {
-                                    cancellationToken.ThrowIfCancellationRequested();
-                                    childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded, serviceFactory, cancellationToken));
-                                }
-                            }
-                            finally
-                            {
-                                // Disposal pass for SCM handles
-                                foreach (var dep in deps)
-                                {
-                                    try { dep.Dispose(); } catch { /* Ignore exceptions during disposal */ }
-                                }
-                            }
+                            cancellationToken.ThrowIfCancellationRequested();
+                            childNodes.Add(BuildDependencyTree(depName, currentPath, fullyExpanded, serviceFactory, cancellationToken));
                         }
 
                         // 4. SORT and ADD: Order alphabetically by DisplayName
