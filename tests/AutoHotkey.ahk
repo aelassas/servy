@@ -1,6 +1,8 @@
+; Manual test fixture: minimal long-running AHK v2 script to wrap as a Servy service.
+; Appends a heartbeat line every 5 s to ahk-test.log in the script's own folder.
 #Requires AutoHotkey v2.0
 
-logFile := "C:\ahk-test.log"
+logFile := A_ScriptDir "\ahk-test.log"
 
 WriteLogLine(text) {
     global logFile
