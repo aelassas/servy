@@ -498,13 +498,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 bool isDisposedAfterFirst = TestReflection.GetField<bool>(vm, "_isDisposed");
                 Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
 
-                // Act - Manually alter the field value back to false to verify short-circuit branch safety coverage profiles natively
+                // Reset the guard so the second Dispose exercises the full dispose body again
                 TestReflection.SetField(vm, "_isDisposed", false);
                 var doubleDisposeException = Record.Exception(vm.Dispose);
 
                 // Assert
                 Assert.Null(doubleDisposeException);
-                Assert.True(TestReflection.GetField<bool>(vm, "_isDisposed"), "The state engine failed to toggle back to an active disposed layout configuration.");
+                Assert.True(TestReflection.GetField<bool>(vm, "_isDisposed"), "Second Dispose after guard reset did not set _isDisposed back to true.");
             }
         }
 
