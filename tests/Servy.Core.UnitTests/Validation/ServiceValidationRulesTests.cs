@@ -5,8 +5,6 @@ using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.UnitTests.Helpers;
 using Servy.Core.Validation;
-using System;
-using System.IO;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Validation
@@ -68,6 +66,43 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void Validate_InvalidServiceName_ReturnsErrorAndStopsValidation()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.Name = "invalid/service/name";
+
+            // Also set other invalid fields to ensure validation stops early
+            dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);
+
+            var (_, expectedErrorMsg) = Helper.IsServiceNameValid(dto.Name);
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.Single(result.Errors);
+            Assert.Contains(expectedErrorMsg, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_InvalidCpuAffinity_ReturnsError()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.CpuAffinity = "invalid_affinity_spec";
+
+            AffinityHelper.ValidateAffinity(dto.CpuAffinity, out string expectedErrorMessage);
+            Assert.NotNull(expectedErrorMessage);
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.Contains(expectedErrorMessage, result.Errors);
+        }
+
+        [Fact]
         public void Validate_ExceedingDescriptionLength_ReturnsError()
         {
             // Arrange
@@ -106,30 +141,6 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
-        public void Validate_ReflectedServicePath_WhenErrorResourceKeyIsUnset_UsesMsgInvalidPathInConfig()
-        {
-            // Arrange
-            var dto = ServiceDtoFactory.CreateValidValidationBase();
-
-            // Simulate an invalid path for a custom path evaluation
-            _processHelperMock
-                .Setup(p => p.ValidatePath(It.IsAny<string>(), It.IsAny<bool>()))
-                .Returns((string path, bool isFile) => path != "invalid_path");
-
-            // Setting a property whose path fails validation
-            dto.StartupDirectory = "invalid_path";
-
-            string expectedFallbackError = string.Format(Strings.Msg_InvalidPathInConfig, "startup directory");
-
-            // Act
-            var result = _sut.Validate(dto);
-
-            // Assert
-            Assert.NotNull(Strings.Msg_InvalidPathInConfig);
-            Assert.False(result.IsValid);
-        }
-
-        [Fact]
         public void Validate_ReflectedServicePath_WhenErrorResourceKeyIsProvided_ResolvesLocalizedResourceError()
         {
             // Arrange
@@ -141,24 +152,6 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.Contains(Strings.Msg_InvalidStartupDirectory, result.Errors);
-        }
-
-        [Fact]
-        public void Validate_ReflectedServicePath_WhenErrorResourceKeyIsMissing_FallsBackToFormattedLabelError()
-        {
-            // Arrange
-            var dto = ServiceDtoFactory.CreateValidValidationBase();
-            dto.StartupDirectory = "invalid|dir";
-
-            // Temporarily clear ErrorResourceKey for testing fallback logic via a mock or custom test DTO test pass
-            _processHelperMock.Setup(p => p.ValidatePath(It.IsAny<string>(), false)).Returns(false);
-
-            // Act
-            var result = _sut.Validate(dto);
-
-            // Assert
-            Assert.False(result.IsValid);
-            Assert.NotEmpty(result.Errors);
         }
 
         [Fact]

@@ -208,7 +208,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Act & Assert
             // Verify that the operation throws a database constraint exception
-            await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await Assert.ThrowsAsync<SQLiteException>(async () =>
             {
                 await _repository.UpsertBatchAsync(batch, cancellationToken);
             });

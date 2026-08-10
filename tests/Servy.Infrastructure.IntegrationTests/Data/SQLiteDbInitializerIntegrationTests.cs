@@ -209,6 +209,43 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void Initialize_Version3Database_WithUserIndexAndTrigger_RestoresDependentsPostRebuild()
+        {
+            // Arrange: Seed V3 database and attach custom index and trigger to Services table
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 3);
+
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT NOT NULL", "DisplayName TEXT" };
+                var seedData = new Dictionary<string, string>
+                {
+                    { "Name", "'ServiceWithDependents'" },
+                    { "DisplayName", "'Display Service'" }
+                };
+
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "DisplayName");
+
+                // Attach custom user index and trigger to verify snapshot and restore pipeline during ApplyVersion4
+                conn.Execute($"CREATE INDEX idx_custom_displayname ON {SqlConstants.ServicesTableName}(DisplayName);");
+                conn.Execute($@"
+                    CREATE TRIGGER trg_custom_after_update
+                    AFTER UPDATE ON {SqlConstants.ServicesTableName}
+                    BEGIN
+                        SELECT 1;
+                    END;");
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert
+                var dependents = conn.Query<(string Type, string Name)>("SELECT type, name FROM sqlite_master WHERE tbl_name='Services' AND type IN ('index', 'trigger');").ToList();
+
+                Assert.Contains(dependents, d => d.Type == "index" && d.Name == "idx_custom_displayname");
+                Assert.Contains(dependents, d => d.Type == "trigger" && d.Name == "trg_custom_after_update");
+            }
+        }
+
+        [Fact]
         public void MigrationHelpers_AlreadyApplied_SkipsGracefully()
         {
             // Arrange: Set DB to V1 state using faithful schema constraints
@@ -494,6 +531,34 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Verify that default values for the fresh migration column resolve safely to NULL for historical records
                 var migratedRow = conn.QuerySingle($"SELECT CpuAffinity FROM {SqlConstants.ServicesTableName} WHERE Id = 1;");
                 Assert.Null(migratedRow.CpuAffinity);
+            }
+        }
+
+        #endregion
+
+        #region Legacy Whitespace Zombie Detection
+
+        [Fact]
+        public void Initialize_WhitespacePaddedZombieAndTwin_ExecutesDetectorWithoutDeletingData()
+        {
+            // Arrange: Initialize schema to latest version and seed both clean and padded rows directly
+            using (var conn = CreateConnection())
+            {
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Insert clean row 'zombietest' and whitespace-padded row ' zombietest ' with required NOT NULL columns
+                conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('zombietest', 'C:\\path\\exe');");
+                conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES (' zombietest ', 'C:\\path\\exe');");
+
+                // Act: Re-run Initialize on an existing database containing padded zombie collisions
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert: Verify detector scan leaves both records intact and unharmed in the database
+                var names = conn.Query<string>($"SELECT Name FROM {SqlConstants.ServicesTableName} WHERE Name LIKE '%zombietest%';").ToList();
+
+                Assert.Equal(2, names.Count);
+                Assert.Contains("zombietest", names);
+                Assert.Contains(" zombietest ", names);
             }
         }
 
