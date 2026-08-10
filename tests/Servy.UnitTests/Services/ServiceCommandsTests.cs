@@ -203,6 +203,29 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_ValidConfiguration_ReturnsTrueAndDisplaysSuccess()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "ValidInstallService" };
+            var dto = new ServiceDto { Name = "ValidInstallService" };
+
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled("ValidInstallService", It.IsAny<CancellationToken>())).Returns(false);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
         public async Task InstallService_ServiceExists_UserAbortsOverwrite_ReturnsFalse()
         {
             // Arrange
@@ -221,6 +244,31 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_ServiceExists_UserConfirmsOverwrite_ProceedsWithInstall()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "ExistingServiceToOverwrite" };
+            var dto = new ServiceDto { Name = "ExistingServiceToOverwrite" };
+
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled("ExistingServiceToOverwrite", It.IsAny<CancellationToken>())).Returns(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Resources.Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == "ExistingServiceToOverwrite"), It.IsAny<CancellationToken>()), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]

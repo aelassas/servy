@@ -101,6 +101,31 @@ namespace Servy.UnitTests.Helpers
         }
 
         /// <summary>
+        /// Verifies that when the bound password matches the control's current password,
+        /// the control password is not reassigned (preventing redundant updates and caret jumps).
+        /// </summary>
+        [Fact]
+        public void OnBoundPasswordChanged_ValueAlreadyInControl_DoesNotReassignPassword()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var passwordBox = new PasswordBox();
+                passwordBox.Password = "SamePassword";   // control already holds the value
+
+                int changedCount = 0;
+                passwordBox.PasswordChanged += (_, e) => changedCount++;
+
+                // Act
+                // DP transitions null -> "SamePassword", so the callback runs,
+                // finds Password == newValue, and must skip the assignment.
+                PasswordBoxHelper.SetBoundPassword(passwordBox, "SamePassword");
+
+                Assert.Equal(0, changedCount);
+            }, createApp: true);
+        }
+
+        /// <summary>
         /// Covers the PasswordBox_PasswordChanged event branch where user input updates the control password,
         /// which correctly syncs the value back up to the attached property.
         /// </summary>
