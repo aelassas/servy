@@ -3,6 +3,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Servy.Core.DTOs;
 using Servy.Core.IO;
+using Servy.Core.Resources;
 using Servy.Core.Security;
 
 namespace Servy.Core.Services
@@ -17,6 +18,15 @@ namespace Servy.Core.Services
         protected override ServiceDto? DeserializeCore(string content)
         {
             var serializer = new XmlSerializer(typeof(ServiceDto));
+
+            serializer.UnknownElement += (sender, e) =>
+            {
+                throw new XmlException(string.Format(Strings.Msg_UnknownXmlElement, e.Element.Name), null, e.LineNumber, e.LinePosition);
+            };
+            serializer.UnknownAttribute += (sender, e) =>
+            {
+                throw new XmlException(string.Format(Strings.Msg_UnknownXmlAttribute, e.Attr.Name), null, e.LineNumber, e.LinePosition);
+            };
 
             // Security-First (XXE Protection)
             using (var stringReader = new StringReader(content))

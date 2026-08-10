@@ -347,4 +347,10 @@
   <data name="Msg_ImportJsonFailed" xml:space="preserve">
   <value>Failed to import service from JSON: {0}</value>
 </data>
+  <data name="Msg_UnknownXmlElement" xml:space="preserve">
+  <value>Unknown XML element encountered: '{0}'</value>
+</data>
+  <data name="Msg_UnknownXmlAttribute" xml:space="preserve">
+  <value>Unknown XML attribute encountered: '{0}'</value>
+</data>
 </root>

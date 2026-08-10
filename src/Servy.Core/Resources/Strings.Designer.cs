@@ -970,6 +970,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unknown XML attribute encountered: &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_UnknownXmlAttribute {
+            get {
+                return ResourceManager.GetString("Msg_UnknownXmlAttribute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown XML element encountered: &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_UnknownXmlElement {
+            get {
+                return ResourceManager.GetString("Msg_UnknownXmlElement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Please fill in all required fields..
         /// </summary>
         public static string Msg_ValidationError {

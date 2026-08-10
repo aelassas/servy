@@ -95,6 +95,32 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void Deserialize_UnknownElement_ReturnsNull()
+        {
+            // Arrange: XML containing an unknown member element
+            string xmlWithUnknownElement = "<ServiceDto><Name>TestService</Name><UnknownElement>Value</UnknownElement></ServiceDto>";
+
+            // Act
+            var result = _serializer.Deserialize(xmlWithUnknownElement);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Deserialize_UnknownAttribute_ReturnsNull()
+        {
+            // Arrange: XML containing an unknown attribute on the root tag
+            string xmlWithUnknownAttribute = "<ServiceDto UnknownAttribute=\"Value\"><Name>TestService</Name></ServiceDto>";
+
+            // Act
+            var result = _serializer.Deserialize(xmlWithUnknownAttribute);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
         public void Deserialize_EmptyRoot_ReturnsHydratedDto()
         {
             // Arrange: Valid XML structure but NO properties set
