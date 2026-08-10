@@ -88,10 +88,10 @@ function Test-ReflectionField {
     param([object]$Object, [string]$FieldName)
     $flags = [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic
     $field = $Object.GetType().GetField($FieldName, $flags)
-    if ($null -ne $field) {
-        return $field.GetValue($Object)
+    if ($null -eq $field) {
+        throw "Reflection seam broken: '$($Object.GetType().FullName)' has no non-public field '$FieldName' on this runtime."
     }
-    return $false
+    return $field.GetValue($Object)
 }
 
 Write-Host "=== Running Get-FileEncoding.ps1 Tests ===" -ForegroundColor Cyan
@@ -144,6 +144,29 @@ try {
     $utf32BeEnc = New-Object System.Text.UTF32Encoding($true, $true, $true)
     [System.IO.File]::WriteAllText($fileUtf32Be, "Hello Servy World", $utf32BeEnc)
     Assert-Encoding -TestName "UTF-32 Big Endian" -FilePath $fileUtf32Be -ExpectedType ([System.Text.UTF32Encoding]) -ExpectedEmitBom $true -ExpectedBigEndian $true
+
+    # -----------------------------------------------------
+    # Boundary & Truncated File Tests
+    # -----------------------------------------------------
+    # Empty file (0 bytes) -> default UTF-8 without BOM
+    $fileEmpty = Join-Path $TestDir "empty.txt"
+    [System.IO.File]::WriteAllBytes($fileEmpty, [byte[]]@())
+    Assert-Encoding -TestName "Empty file falls back to UTF-8 without BOM" -FilePath $fileEmpty -ExpectedType ([System.Text.UTF8Encoding]) -ExpectedEmitBom $false
+
+    # Single 0xFF byte -> default UTF-8 without BOM
+    $fileOneByte = Join-Path $TestDir "one_byte.txt"
+    [System.IO.File]::WriteAllBytes($fileOneByte, [byte[]]@(0xFF))
+    Assert-Encoding -TestName "1-byte file falls back to UTF-8 without BOM" -FilePath $fileOneByte -ExpectedType ([System.Text.UTF8Encoding]) -ExpectedEmitBom $false
+
+    # Bare UTF-16 LE BOM (2 bytes) -> UnicodeEncoding LE
+    $fileBareUtf16Le = Join-Path $TestDir "bare_utf16_le.txt"
+    [System.IO.File]::WriteAllBytes($fileBareUtf16Le, [byte[]]@(0xFF, 0xFE))
+    Assert-Encoding -TestName "2-byte file with UTF-16 LE BOM" -FilePath $fileBareUtf16Le -ExpectedType ([System.Text.UnicodeEncoding]) -ExpectedEmitBom $true -ExpectedBigEndian $false
+
+    # Bare UTF-8 BOM (3 bytes) -> UTF8Encoding with BOM
+    $fileBareUtf8Bom = Join-Path $TestDir "bare_utf8_bom.txt"
+    [System.IO.File]::WriteAllBytes($fileBareUtf8Bom, [byte[]]@(0xEF, 0xBB, 0xBF))
+    Assert-Encoding -TestName "3-byte file with UTF-8 BOM" -FilePath $fileBareUtf8Bom -ExpectedType ([System.Text.UTF8Encoding]) -ExpectedEmitBom $true
 
 }
 finally {
