@@ -16,7 +16,8 @@ namespace Servy.Core.Security
             TypeNameHandling = TypeNameHandling.None,
             MaxDepth = AppConfig.UntrustedJsonMaxDepth,
             MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-            NullValueHandling = NullValueHandling.Ignore
+            NullValueHandling = NullValueHandling.Ignore,
+            MissingMemberHandling = MissingMemberHandling.Error,
         };
     }
 }

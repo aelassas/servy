@@ -33,6 +33,41 @@ function Remove-ItemSafely {
 
 <#
     .SYNOPSIS
+    Copies Task Scheduler artifacts from a source path to a destination path, filtering out excluded/sensitive files.
+
+    .DESCRIPTION
+    Transfers Task Scheduler files recursively while applying standard exclusion rules for sensitive credentials,
+    logs, temporary files, and test scripts. Reconstructs relative directory structures at the target.
+
+    .PARAMETER SourcePath
+    The source directory containing Task Scheduler definitions and scripts.
+
+    .PARAMETER DestPath
+    The target directory where filtered artifacts should be copied.
+#>
+function Copy-TaskSchdArtifacts {
+    param(
+        [Parameter(Mandatory=$true)][string]$SourcePath,
+        [Parameter(Mandatory=$true)][string]$DestPath
+    )
+
+    Get-ChildItem -Path $SourcePath -Recurse -File |
+        Where-Object {
+            $_.Name -notin @('smtp-cred.xml', 'temp.ps1') -and
+            $_.Extension -notin @('.dat', '.log') -and
+            $_.Name -notlike '*.test.ps1'
+        } |
+        ForEach-Object {
+            $rel    = $_.FullName.Substring((Resolve-Path $SourcePath).Path.Length + 1)
+            $target = Join-Path $DestPath $rel
+            $parent = Split-Path $target -Parent
+            if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+            Copy-Item -Path $_.FullName -Destination $target -Force
+        }
+}
+
+<#
+    .SYNOPSIS
     Builds an Inno Setup installer executable using the provided configuration, incorporating retry logic for file locks.
 
     .DESCRIPTION
@@ -120,20 +155,15 @@ function Copy-CommonArtifacts {
     )
 
     # 1. Include Task Scheduler hooks
-    $excludedPatterns = @('smtp-cred.xml', '*.dat', '*.log', '*.test.ps1', 'temp.ps1')
-
     $taskSchdSource = Join-Path $ScriptDir "taskschd"
     if (Test-Path $taskSchdSource) {
         $taskSchdDest = Join-Path $DestFolder "taskschd"
         [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
 
-        # Use Get-ChildItem -Recurse -Exclude to ensure the exclusion propagates to all levels
-        Get-ChildItem -Path $taskSchdSource -Recurse -Exclude $excludedPatterns |
-            Copy-Item -Destination {
-                Join-Path $taskSchdDest $_.FullName.Substring($taskSchdSource.Length).TrimStart('\')
-            } -Force
+        Copy-TaskSchdArtifacts -SourcePath $taskSchdSource -DestPath $taskSchdDest
 
         # Post-copy verification to ensure no sensitive files leaked into the package
+        $excludedPatterns = @('smtp-cred.xml', '*.dat', '*.log', '*.test.ps1', 'temp.ps1')
         $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include $excludedPatterns
         if ($leaks) {
             throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"

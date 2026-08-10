@@ -2,7 +2,7 @@
  * Small Node.js utility to test environment variables in Servy.
  * 
  * Usage example:
- * .\\servy-cli.exe install --name "ServyEnvTest" --path "C:\\Program Files\\nodejs\\node.exe" --params "C:\\path\\to\\nodejs-app-env-vars\\index.js" --env "var1=val1;var2=val2;"
+ * .\servy-cli.exe install --name "ServyEnvTest" --path "C:\Program Files\nodejs\node.exe" --params "C:\path\to\nodejs-app-env-vars\index.js" --env "var1=val1;var2=val2;"
  * 
  * This script writes all environment variables except those in baselineEnvKeys to 'output.txt' in the script directory,
  * and logs them to the console.
@@ -32,8 +32,8 @@ fs.appendFileSync(filePath, args.join(' ') + '\n', "utf8")
 
 // let i = 0
 // for (const arg of args) {
-//   fs.appendFileSync(filePath, `arg[${i}]=${arg}` + '\n', "utf8")
-//   i++
+//    fs.appendFileSync(filePath, `arg[${i}]=${arg}` + '\n', "utf8")
+//    i++
 // }
 
 process.stderr.write('[stderr] abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍\n')
@@ -62,17 +62,17 @@ process.stderr.write('stderr boo!\n')
 // start wexflow
 // const workingDir = 'C:\\Program Files\\Wexflow Server\\Wexflow.Server\\';
 // const child = spawn(
-//   'C:\\Program Files\\dotnet\\dotnet.exe',
-//   ['Wexflow.Server.dll'],
-//   {
-//     cwd: workingDir
-//   }
+//    'C:\\Program Files\\dotnet\\dotnet.exe',
+//    ['Wexflow.Server.dll'],
+//    {
+//      cwd: workingDir
+//    }
 // );
 
 // start child process notepad.exe (Windows) detached
 // const child = spawn('notepad.exe', [], {
-//   detached: true,   // let child live independently
-//   stdio: 'ignore'   // ignore stdio so parent can exit cleanly
+//    detached: true,   // let child live independently
+//    stdio: 'ignore'   // ignore stdio so parent can exit cleanly
 // })
 
 // // allow the child process to keep running after parent exits
@@ -97,30 +97,34 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
 // process.stdout.write('App is running. Press Ctrl+C to stop.')
 // setInterval(() => { }, 1000)
 
-// keep Node alive until key press
-process.stdin.setRawMode(true)
-process.stdin.resume()
-process.stdin.on('data', () => {
-  process.stdout.write('Exiting...\n')
-  // child.kill() // kill the child process
-  process.exit(0)
-})
+// keep Node alive until key press (interactive) or until signalled (service)
+if (process.stdin.isTTY) {
+  process.stdin.setRawMode(true)
+  process.stdin.resume()
+  process.stdin.on('data', () => {
+    process.stdout.write('Exiting...\n')
+    // child.kill() // kill the child process
+    process.exit(0)
+  })
+} else {
+  setInterval(() => {}, 1 << 30)   // stay alive; SIGINT/SIGTERM handlers above do the shutdown
+}
 
 // const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // while (true) {
-//   process.stdout.write('[stdout] App is running. Press any key to stop.\n')
-//   await wait(1000)
-//   process.stderr.write('[stderr] App is running. Press any key to stop.\n')
-//   await wait(2000)
+//    process.stdout.write('[stdout] App is running. Press any key to stop.\n')
+//    await wait(1000)
+//    process.stderr.write('[stderr] App is running. Press any key to stop.\n')
+//    await wait(2000)
 // }
 
 // const logCount = 2
 // while (true) {
-//   for (let i = 0; i < logCount; i++) {
-//     process.stdout.write(`[stdout] App is running log ${i + 1}/${logCount}\n`)
-//     // process.stderr.write(`[stderr] App is running log ${i + 1}/${logCount}\n`)
-//   }
-//   process.stdout.write(`[stdout] ${new Date().toISOString()} \n`)
-//   await wait(2000)
+//    for (let i = 0; i < logCount; i++) {
+//      process.stdout.write(`[stdout] App is running log ${i + 1}/${logCount}\n`)
+//      // process.stderr.write(`[stderr] App is running log ${i + 1}/${logCount}\n`)
+//    }
+//    process.stdout.write(`[stdout] ${new Date().toISOString()} \n`)
+//    await wait(2000)
 // }

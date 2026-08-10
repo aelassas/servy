@@ -582,6 +582,8 @@ jobs:
       - name: Build portable 7z package
         shell: pwsh
         run: |
+          . setup/publish-common.ps1
+
           $pkg = "servy-$env:VERSION-$env:ARCH-portable"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
@@ -606,24 +608,7 @@ jobs:
           $sourcePath = "setup\taskschd"
           if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
 
-          Get-ChildItem -Path $sourcePath -Recurse -File |
-              Where-Object {
-                  $_.Name -notin @('smtp-cred.xml') -and
-                  $_.Extension -notin @('.dat','.log') -and
-                  $_.Name -notin @('temp.ps1') -and
-                  $_.Name -notlike '*.test.ps1'
-              } |
-              ForEach-Object {
-                  # Calculate relative path to maintain subdirectory structure in the destination
-                  $rel = $_.FullName.Substring((Resolve-Path $sourcePath).Path.Length + 1)
-                  $target = Join-Path $destPath $rel
-                  $parent = Split-Path $target -Parent
-
-                  # Ensure the subdirectory exists in the staging folder
-                  if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-
-                  Copy-Item -Path $_.FullName -Destination $target -Force
-              }
+          Copy-TaskSchdArtifacts -SourcePath $sourcePath -DestPath $destPath
 
           $zip = "$pkg.7z"
 

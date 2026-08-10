@@ -38,13 +38,28 @@ try {
             exit 1
         }
 
-        # Verify string values are trimmed
-        if ($val -ne $val.Trim()) {
-            Write-Host "FAIL: Key '$key' has untrimmed whitespace: '$val'" -ForegroundColor Red
-            exit 1
-        }
-
         Write-Host "  [OK] $key = $val" -ForegroundColor Gray
+    }
+
+    # Verify values are in the form every consumer requires
+    if ($cfg.Version -notmatch '^\d+\.\d+$') {
+        Write-Host "FAIL: Version '$($cfg.Version)' is not Major.Minor; Assert-ServyVersion and publish.yml both reject it." -ForegroundColor Red
+        exit 1
+    }
+
+    if ($cfg.Runtime -notin @('win-x64', 'win-arm64')) {
+        Write-Host "FAIL: Runtime '$($cfg.Runtime)' is not one of win-x64 / win-arm64; publish-sc.ps1 would silently build x64." -ForegroundColor Red
+        exit 1
+    }
+
+    if ($cfg.BuildConfiguration -notin @('Debug', 'Release')) {
+        Write-Host "FAIL: BuildConfiguration '$($cfg.BuildConfiguration)' is not Debug / Release." -ForegroundColor Red
+        exit 1
+    }
+
+    if ($cfg.Tfm -notmatch '^net\d+\.\d+-windows$') {
+        Write-Host "FAIL: Tfm '$($cfg.Tfm)' does not look like a Windows TFM." -ForegroundColor Red
+        exit 1
     }
 
     Write-Host "SUCCESS: build-config.ps1 loaded and validated successfully!" -ForegroundColor Green

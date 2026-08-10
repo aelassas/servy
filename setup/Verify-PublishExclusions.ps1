@@ -10,6 +10,9 @@
 
 $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
 
+# Dot-source publish-common.ps1 to import Copy-TaskSchdArtifacts under test
+. (Join-Path $ScriptDir "publish-common.ps1")
+
 Push-Location -Path $ScriptDir
 
 # ---------------------------------------------------------------------
@@ -19,6 +22,9 @@ $SandboxRoot = Join-Path $ScriptDir "PublishTestSandbox"
 $sourcePath  = Join-Path $SandboxRoot "setup_taskschd"
 $pkg         = Join-Path $SandboxRoot "staging_out"
 $destPath    = Join-Path $pkg "taskschd"
+
+$Passed = 0
+$Failed = 0
 
 try {
     if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
@@ -57,32 +63,14 @@ try {
 
     if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
 
-    Get-ChildItem -Path $sourcePath -Recurse -File |
-        Where-Object {
-            $_.Name -notin @('smtp-cred.xml') -and
-            $_.Extension -notin @('.dat','.log') -and
-            $_.Name -notin @('temp.ps1') -and
-            $_.Name -notlike '*.test.ps1'
-        } |
-        ForEach-Object {
-            # Calculate relative path to maintain subdirectory structure in the destination
-            $rel = $_.FullName.Substring((Resolve-Path $sourcePath).Path.Length + 1)
-            $target = Join-Path $destPath $rel
-            $parent = Split-Path $target -Parent
-
-            if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-
-            Copy-Item -Path $_.FullName -Destination $target -Force
-        }
+    # Invoke shared function under test
+    Copy-TaskSchdArtifacts -SourcePath $sourcePath -DestPath $destPath
 
     # ---------------------------------------------------------------------
     # EVALUATE RESULTS & EXCLUSION MATRIX
     # ---------------------------------------------------------------------
     Write-Host "`nChecking copied vs. excluded files..." -ForegroundColor Cyan
     Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
-
-    $Passed = 0
-    $Failed = 0
 
     foreach ($file in $MockFiles) {
         $expectedPath = Join-Path $destPath $file[0]
@@ -125,4 +113,8 @@ try {
 finally {
     if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force | Out-Null }
     Pop-Location
+}
+
+if ($Failed -gt 0) {
+    exit 1
 }

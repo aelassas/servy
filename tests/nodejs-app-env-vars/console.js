@@ -32,8 +32,8 @@ fs.appendFileSync(filePath, args.join(' ') + '\n', "utf8")
 
 // let i = 0
 // for (const arg of args) {
-//   fs.appendFileSync(filePath, `arg[${i}]=${arg}` + '\n', "utf8")
-//   i++
+//    fs.appendFileSync(filePath, `arg[${i}]=${arg}` + '\n', "utf8")
+//    i++
 // }
 
 process.stderr.write('[stderr] abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍\n')
@@ -61,8 +61,8 @@ fs.appendFileSync(filePath, '\n', "utf8")
 
 // start child process notepad.exe (Windows) detached
 // const child = spawn('notepad.exe', [], {
-//   detached: true,   // let child live independently
-//   stdio: 'ignore'   // ignore stdio so parent can exit cleanly
+//    detached: true,   // let child live independently
+//    stdio: 'ignore'   // ignore stdio so parent can exit cleanly
 // })
 
 // // allow the child process to keep running after parent exits
@@ -87,20 +87,22 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
 // process.stdout.write('App is running. Press Ctrl+C to stop.')
 // setInterval(() => { }, 1000)
 
-// keep Node alive until key press
-process.stdin.setRawMode(true)
-process.stdin.resume()
-process.stdin.on('data', () => {
-  process.stdout.write('Exiting...\n')
-  // child.kill() // kill the child process
-  process.exit(0)
-})
+// keep Node alive until key press (interactive) or until signalled (service)
+if (process.stdin.isTTY) {
+  process.stdin.setRawMode(true)
+  process.stdin.resume()
+  process.stdin.on('data', () => {
+    process.stdout.write('Exiting...\n')
+    // child.kill() // kill the child process
+    process.exit(0)
+  })
+}
 
 // while (true) {
-//   process.stdout.write('[stdout] App is running. Press any key to stop.\n')
-//   await wait(1000)
-//   process.stderr.write('[stderr] App is running. Press any key to stop.\n')
-//   await wait(2000)
+//    process.stdout.write('[stdout] App is running. Press any key to stop.\n')
+//    await wait(1000)
+//    process.stderr.write('[stderr] App is running. Press any key to stop.\n')
+//    await wait(2000)
 // }
 
 const logCount = 2

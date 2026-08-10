@@ -8,7 +8,7 @@ import subprocess
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.environ.get("SERVY_TEST_LOG_DIR", os.path.join(SCRIPT_DIR, "logs"))
 os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE = os.path.join(LOG_DIR, "test.log")
+LOG_FILE = os.path.join(LOG_DIR, f"{os.path.splitext(os.path.basename(__file__))[0]}.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,14 +22,26 @@ logging.basicConfig(
 
 def main():
     logging.info("Service started")
+
+    python_exe = os.environ.get("PYTHON_EXE") or sys.executable
+    if not python_exe or not os.path.exists(python_exe):
+        logging.error("PYTHON_EXE is not set and sys.executable is unusable; cannot spawn the child tree")
+        sys.exit(1)
+
     try:
         proc = subprocess.Popen(
             [
-                os.path.expandvars("%PYTHON_EXE%"),
+                python_exe,
                 os.path.join(SCRIPT_DIR, "ctrlc.py")
             ],
         )
-        logging.info(f"Spawned PID: {proc.pid}")
+    except OSError:
+        logging.exception("Failed to spawn the child process tree")
+        sys.exit(1)
+
+    logging.info(f"Spawned PID: {proc.pid}")
+
+    try:
         while True:
             logging.info("(ctrlc2) abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
             time.sleep(3)
