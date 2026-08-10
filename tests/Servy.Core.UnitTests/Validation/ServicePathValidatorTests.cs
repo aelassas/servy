@@ -29,19 +29,29 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Null(violation);
         }
 
-        [Fact]
-        public void FindFirstViolation_WhenRequiredPropertyIsNull_ReturnsMissingViolation()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\t")]
+        public void FindFirstViolation_WhenRequiredPropertyIsNullOrEmptyOrWhitespace_ReturnsMissingViolationAndSkipsPathValidation(string? requiredPath)
         {
             // Arrange
-            var dto = new TestDto { ExecutablePath = null };
+            var dto = new TestDto { ExecutablePath = requiredPath };
+            bool pathValidated = false;
 
             // Act
-            var violation = ServicePathValidator.FindFirstViolation(dto, (path, isFile) => true);
+            var violation = ServicePathValidator.FindFirstViolation(dto, (path, isFile) =>
+            {
+                pathValidated = true;
+                return true;
+            });
 
             // Assert
             Assert.NotNull(violation);
             Assert.True(violation.IsMissing);
             Assert.Equal("executable path", violation.Attribute.Label);
+            Assert.False(pathValidated); // Verifies validatePath is never invoked when string is empty or whitespace
         }
 
         [Fact]
@@ -59,17 +69,30 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Equal(@"C:\invalid\app.exe", violation.Value);
         }
 
-        [Fact]
-        public void FindFirstViolation_WhenOptionalPathIsEmpty_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\t")]
+        public void FindFirstViolation_WhenOptionalPathIsNullOrEmptyOrWhitespace_ReturnsNullAndSkipsPathValidation(string? optionalPath)
         {
             // Arrange
-            var dto = new TestDto { ExecutablePath = @"C:\valid\app.exe", StartupDirectory = null };
+            var dto = new TestDto { ExecutablePath = @"C:\valid\app.exe", StartupDirectory = optionalPath };
+            bool optionalPathValidated = false;
 
             // Act
-            var violation = ServicePathValidator.FindFirstViolation(dto, (path, isFile) => true);
+            var violation = ServicePathValidator.FindFirstViolation(dto, (path, isFile) =>
+            {
+                if (path == optionalPath)
+                {
+                    optionalPathValidated = true;
+                }
+                return true;
+            });
 
             // Assert
             Assert.Null(violation);
+            Assert.False(optionalPathValidated); // Verifies validatePath is skipped for null/empty/whitespace optional paths
         }
 
         [Fact]
@@ -154,17 +177,30 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Empty(violations);
         }
 
-        [Fact]
-        public void FindAllViolations_WhenOptionalPathIsEmpty_ReturnsEmptyEnumerable()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\t")]
+        public void FindAllViolations_WhenOptionalPathIsNullOrEmptyOrWhitespace_ReturnsEmptyEnumerableAndSkipsPathValidation(string? optionalPath)
         {
             // Arrange
-            var dto = new TestDto { ExecutablePath = @"C:\valid\app.exe", StartupDirectory = null };
+            var dto = new TestDto { ExecutablePath = @"C:\valid\app.exe", StartupDirectory = optionalPath };
+            bool optionalPathValidated = false;
 
             // Act
-            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) => true);
+            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) =>
+            {
+                if (path == optionalPath)
+                {
+                    optionalPathValidated = true;
+                }
+                return true;
+            });
 
             // Assert
             Assert.Empty(violations);
+            Assert.False(optionalPathValidated); // Verifies validatePath is skipped for null/empty/whitespace optional paths
         }
 
         [Fact]
