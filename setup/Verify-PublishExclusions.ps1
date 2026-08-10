@@ -1,0 +1,120 @@
+#Requires -Version 5.1
+<#
+.SYNOPSIS
+    Validates that the Task Scheduler publish.yml exclusion filtering logic works correctly.
+.DESCRIPTION
+    Creates an ephemeral local sandbox environment, runs the hardened recursive copy block,
+    and verifies that excluded items (*.test.ps1, .dat, .log, smtp-cred.xml) are blocked
+    while standard payloads are preserved.
+#>
+
+$ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
+
+# Dot-source publish-common.ps1 to import Copy-TaskSchdArtifacts under test
+. (Join-Path $ScriptDir "publish-common.ps1")
+
+Push-Location -Path $ScriptDir
+
+# ---------------------------------------------------------------------
+# SETUP TEMPORARY SANDBOX ENVIRONMENT
+# ---------------------------------------------------------------------
+$SandboxRoot = Join-Path $ScriptDir "PublishTestSandbox"
+$sourcePath  = Join-Path $SandboxRoot "setup_taskschd"
+$pkg         = Join-Path $SandboxRoot "staging_out"
+$destPath    = Join-Path $pkg "taskschd"
+
+$Passed = 0
+$Failed = 0
+
+try {
+    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
+
+    New-Item -Path $sourcePath -ItemType Directory -Force | Out-Null
+    New-Item -Path (Join-Path $sourcePath "SubFolder") -ItemType Directory -Force | Out-Null
+
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "Testing publish.yml taskschd copy-exclusion filter..."      -ForegroundColor Cyan
+    Write-Host "==========================================================" -ForegroundColor Cyan
+
+    # Define mock test matrix data pairs [Relative Path, Should Copy]
+    $MockFiles = @(
+        @("ServySecurity.ps1", $true),
+        @("TaskConfig.xml", $true),
+        @("SubFolder\NestedScript.ps1", $true),
+        @("smtp-cred.xml", $false),          # Blacklisted file rule
+        @("ServySecurity.test.ps1", $false), # Hardened exclusion wildcard rule
+        @("SubFolder\Nested.test.ps1", $false), # Nested wildcard rule
+        @("state.dat", $false),              # Prohibited extension rule
+        @("trace.log", $false),              # Prohibited extension rule
+        @("temp.ps1", $false)                # Prohibited temp.ps1 rule
+    )
+
+    foreach ($file in $MockFiles) {
+        $filePath = Join-Path $sourcePath $file[0]
+        $parentDir = Split-Path $filePath -Parent
+        if (-not (Test-Path $parentDir)) { New-Item -Path $parentDir -ItemType Directory -Force | Out-Null }
+        [System.IO.File]::WriteAllText($filePath, "Mock Publish Target Data Payload context.")
+    }
+
+    # ---------------------------------------------------------------------
+    # EXECUTE PUBLISH PIPELINE LOGIC UNDER TEST
+    # ---------------------------------------------------------------------
+    Write-Host "Executing filter staging copy block..." -ForegroundColor Gray
+
+    if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
+
+    # Invoke shared function under test
+    Copy-TaskSchdArtifacts -SourcePath $sourcePath -DestPath $destPath
+
+    # ---------------------------------------------------------------------
+    # EVALUATE RESULTS & EXCLUSION MATRIX
+    # ---------------------------------------------------------------------
+    Write-Host "`nChecking copied vs. excluded files..." -ForegroundColor Cyan
+    Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
+
+    foreach ($file in $MockFiles) {
+        $expectedPath = Join-Path $destPath $file[0]
+        $exists = Test-Path $expectedPath
+        $shouldExist = $file[1]
+
+        if ($exists -eq $shouldExist) {
+            Write-Host "[PASS] " -ForegroundColor Green -NoNewline
+            if ($shouldExist) {
+                Write-Host "Correctly Copied  : " -ForegroundColor Gray -NoNewline
+            } else {
+                Write-Host "Correctly Excluded: " -ForegroundColor DarkGray -NoNewline
+            }
+            Write-Host "$($file[0])" -ForegroundColor Gray
+            $Passed++
+        } else {
+            Write-Host "[FAIL] " -ForegroundColor Red -NoNewline
+            if ($shouldExist) {
+                Write-Host "Missing Target File   : " -ForegroundColor White -BackgroundColor Red -NoNewline
+            } else {
+                Write-Host "Leaked Excluded File  : " -ForegroundColor White -BackgroundColor Red -NoNewline
+            }
+            Write-Host "$($file[0])" -ForegroundColor White -BackgroundColor Red
+            $Failed++
+        }
+    }
+
+    # ---------------------------------------------------------------------
+    # TEARDOWN & CLEANUP REPORT
+    # ---------------------------------------------------------------------
+    Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
+    if ($Failed -eq 0) {
+        Write-Host "All $Passed checks passed." -ForegroundColor Green
+    } else {
+        Write-Host "$Failed of $($Passed + $Failed) checks failed." -ForegroundColor Red
+    }
+
+    Write-Host "==========================================================" -ForegroundColor Cyan
+}
+finally {
+    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force | Out-Null }
+    Pop-Location
+}
+
+if ($Failed -gt 0) {
+    exit 1
+}
