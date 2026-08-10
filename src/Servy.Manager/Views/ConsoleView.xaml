@@ -161,8 +161,6 @@
                          PreviewKeyDown="LogList_PreviewKeyDown"
                          SelectedIndex="-1"
                          IsSynchronizedWithCurrentItem="False"
-                         TextOptions.TextFormattingMode="Display"
-                         TextOptions.TextRenderingMode="ClearType"
                          ScrollViewer.ScrollChanged="LogList_ScrollChanged"
                          AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleLogList_Name}"
                          AutomationProperties.AutomationId="ConsoleLogList"
