@@ -1,60 +1,68 @@
 using System;
+using System.Collections.Generic;
 using System.ServiceProcess;
 using System.Threading;
 
 namespace Servy.Core.Services
 {
     /// <summary>
-    /// Defines an abstraction for controlling and monitoring the status of a Windows service.
+    /// Defines a contract for interacting with Windows Service Controller instances.
     /// </summary>
     public interface IServiceControllerWrapper : IDisposable
     {
         /// <summary>
-        /// Gets the service name.
+        /// Gets the internal service name.
         /// </summary>
         string ServiceName { get; }
 
         /// <summary>
-        /// Gets the current status of the Windows service.
+        /// Gets the human-readable display name of the service.
+        /// </summary>
+        string DisplayName { get; }
+
+        /// <summary>
+        /// Gets the current status of the service.
         /// </summary>
         ServiceControllerStatus Status { get; }
 
         /// <summary>
-        /// Gets the way the service is started.
+        /// Gets the startup type of the service.
         /// </summary>
         ServiceStartMode StartType { get; }
 
         /// <summary>
-        /// Starts the Windows service.
+        /// Starts the service.
         /// </summary>
         void Start();
 
         /// <summary>
-        /// Stops the Windows service.
+        /// Stops the service.
         /// </summary>
         void Stop();
 
         /// <summary>
-        /// Updates the service's property values by refreshing its status and configuration
-        /// from the Service Control Manager.
+        /// Refreshes property values.
         /// </summary>
         void Refresh();
 
         /// <summary>
-        /// Waits for the Windows service to reach the specified status within the given timeout period.
+        /// Waits for the service to reach the specified status within the given timeout.
         /// </summary>
         /// <param name="desiredStatus">The status to wait for.</param>
-        /// <param name="timeout">The maximum time to wait for the service to reach the desired status.</param>
+        /// <param name="timeout">The maximum time to wait.</param>
         void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout);
 
         /// <summary>
-        /// Builds and returns the dependency tree for a service.
+        /// Gets the names of the services depended on by this service.
         /// </summary>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests while building the dependency tree.</param>
-        /// <returns>
-        /// The root node representing the service and its recursive
-        /// dependency hierarchy.
-        /// </returns>
+        /// <returns>An enumeration of service names depended on.</returns>
+        IEnumerable<string> GetDependencyNames();
+
+        /// <summary>
+        /// Resolves the dependency hierarchy for this service.
+        /// </summary>
+        /// <param name="cancellationToken">A token to observe while resolving dependencies.</param>
+        /// <returns>A <see cref="ServiceDependencyNode"/> representing the root of the resolved dependency hierarchy.</returns>
         ServiceDependencyNode GetDependencies(CancellationToken cancellationToken = default);
     }
 }

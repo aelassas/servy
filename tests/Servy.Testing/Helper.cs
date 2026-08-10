@@ -460,6 +460,59 @@ namespace Servy.Testing
         }
 
         /// <summary>
+        /// Creates an NTFS directory symbolic link pointing to a canonical reference target directory.
+        /// Directory-level symbolic links typically require elevated execution tokens (Administrative privileges)
+        /// or an active global Windows configuration enabling Developer Mode.
+        /// </summary>
+        /// <param name="symlinkDirectoryPath">The target destination path where the new directory symbolic link item will materialize.</param>
+        /// <param name="targetDirectoryPath">The canonical baseline target data directory location that the symbolic pointer addresses.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="symlinkDirectoryPath"/> or <paramref name="targetDirectoryPath"/> is null, empty, or whitespace.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the runtime operating architecture security layout rejects execution due to missing operational deployment privileges or non-active system developer settings.</exception>
+        /// <exception cref="DirectoryNotFoundException">Thrown if validation processing finds the virtual reparse endpoint point asset is completely absent from the host volume index hierarchy.</exception>
+        /// <exception cref="IOException">Thrown when low-level directory attribution flags do not match the expected structural characteristics of an operating system reparse token constraint.</exception>
+        public static void CreateDirectorySymlink(string symlinkDirectoryPath, string targetDirectoryPath)
+        {
+            if (string.IsNullOrWhiteSpace(symlinkDirectoryPath))
+                throw new ArgumentException("Symlink directory path cannot be null or empty.", nameof(symlinkDirectoryPath));
+            if (string.IsNullOrWhiteSpace(targetDirectoryPath))
+                throw new ArgumentException("Target directory path cannot be null or empty.", nameof(targetDirectoryPath));
+
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = "cmd.exe";
+                // NOTE: Using /D flag here because it's a directory symbolic link, not a file.
+                process.StartInfo.Arguments = $"/c mklink /D \"{symlinkDirectoryPath}\" \"{targetDirectoryPath}\"";
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.Start();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    // If it fails because of permissions (common on non-admin environments),
+                    // throw a specific exception we can handle or skip gracefully in the unit test.
+                    throw new UnauthorizedAccessException($"mklink failed with exit code {process.ExitCode}. This usually indicates the process lacks administrative privileges or Developer Mode is disabled.");
+                }
+            }
+
+            // Explicitly verify the symlink using fresh state retrieval
+            var directoryInfo = new DirectoryInfo(symlinkDirectoryPath);
+
+            // CRITICAL: Flush the internal attribute snapshot cache
+            directoryInfo.Refresh();
+
+            if (!directoryInfo.Exists)
+            {
+                throw new DirectoryNotFoundException($"Symlink verification failed: Directory does not exist at {symlinkDirectoryPath}.");
+            }
+
+            if ((directoryInfo.Attributes & FileAttributes.ReparsePoint) == 0)
+            {
+                throw new IOException($"Symlink validation failed at {symlinkDirectoryPath}. The directory was created but lacks the ReparsePoint attribute.");
+            }
+        }
+
+        /// <summary>
         /// Gets the absolute filesystem path to the Servy.psm1 PowerShell module file within the repository.
         /// </summary>
         /// <returns>The absolute path to the Servy.psm1 file.</returns>

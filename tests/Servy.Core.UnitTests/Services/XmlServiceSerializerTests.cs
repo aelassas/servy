@@ -97,6 +97,17 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void Deserialize_WellFormedXmlWithUnconvertibleValue_ReturnsNull()
+        {
+            // Arrange: FormatException (not XmlException) path: no line info available,
+            // exercises the generic error-log branch of ServiceDtoSerializer.Deserialize.
+            string xml = "<ServiceDto><Name>S</Name><StartTimeout>abc</StartTimeout></ServiceDto>";
+
+            // Assert
+            Assert.Null(_serializer.Deserialize(xml));
+        }
+
+        [Fact]
         public void Deserialize_UnknownElement_ReturnsNull()
         {
             // Arrange: XML containing an unknown member element

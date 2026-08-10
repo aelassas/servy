@@ -135,7 +135,7 @@ namespace Servy.Core.UnitTests.Validation
 
             try
             {
-                Testing.Helper.CreateFileSymlink(symlinkPath, targetPath);
+                Helper.CreateFileSymlink(symlinkPath, targetPath);
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
@@ -252,6 +252,32 @@ namespace Servy.Core.UnitTests.Validation
                 // Clean up virtual DOS drive mapping (DDD_REMOVE_DEFINITION = 0x2)
                 NativeTestMethods.DefineDosDevice(2, drivePath, null);
             }
+        }
+
+        [Fact]
+        public void ValidatePath_AncestorDirectorySymlink_ReturnsFail()
+        {
+            string realDir = Path.Combine(TempDirectory, "real_dir");
+            string linkDir = Path.Combine(TempDirectory, "link_dir");
+            Directory.CreateDirectory(realDir);
+            File.WriteAllText(Path.Combine(realDir, "config.json"), "{}");
+
+            try
+            {
+                Helper.CreateDirectorySymlink(linkDir, linkDir);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                return; // Symlink creation unavailable on this runner
+            }
+
+            var result = PathSecurityGuard.ValidatePath(
+                Path.Combine(linkDir, "config.json"), FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Equal(Strings.Msg_SecurityDirReparsePointProhibited, result.ErrorMessage);
+            Assert.Null(stream);
         }
 
         /// <summary>
