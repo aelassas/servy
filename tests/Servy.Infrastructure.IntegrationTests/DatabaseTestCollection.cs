@@ -2,8 +2,11 @@ using Xunit;
 
 namespace Servy.Infrastructure.IntegrationTests
 {
-    // This attribute defines the synchronization boundary name.
-    // xUnit will NEVER run tests within the same collection concurrently.
+    // Defines the "SequentialDatabaseTests" collection. DisableParallelization = true
+    // stops xUnit from running this collection in parallel with any OTHER collection,
+    // so the DB test classes that join it get exclusive access to the shared SQLite file.
+    // (Tests within a single collection are always sequential; the flag adds the
+    // cross-collection guarantee.)
     [CollectionDefinition("SequentialDatabaseTests", DisableParallelization = true)]
     public class DatabaseTestCollection
     {

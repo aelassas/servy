@@ -39,7 +39,7 @@ namespace Servy.Manager.UnitTests.Utils
         /// Awaits the background worker startup signal using a deterministic safety deadline to prevent indefinite test hangs.
         /// </summary>
         /// <param name="tailer">The log tailer instance under evaluation.</param>
-        /// <param name="cancellationToken">The context cancellation token source mapping.</param>
+        /// <param name="cancellationToken">Cancels the wait (propagated to the timeout delay).</param>
         private static async Task WaitForLoopStartAsync(LogTailer tailer, CancellationToken cancellationToken)
         {
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
@@ -492,7 +492,7 @@ namespace Servy.Manager.UnitTests.Utils
 
             // Assert
             Assert.Null(doubleDisposeException);
-            Assert.True(TestReflection.GetField<int>(tailer, "_isDisposed") == 1, "The state engine failed to toggle back to an active disposed layout configuration.");
+            Assert.True(TestReflection.GetField<int>(tailer, "_isDisposed") == 1, "Second Dispose after guard reset did not set _isDisposed back to true.");
         }
 
         [Fact]

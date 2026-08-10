@@ -2,8 +2,10 @@ using Xunit;
 
 namespace Servy.Manager.UnitTests
 {
-    // This attribute defines the synchronization boundary name.
-    // xUnit will NEVER run tests within the same collection concurrently.
+    // Defines the collection. DisableParallelization = true stops xUnit from running
+    // this collection in parallel with any OTHER collection, protecting the shared
+    // process-global state its members mutate. (Within a collection, tests are
+    // always sequential; the flag adds the cross-collection guarantee.)
     [CollectionDefinition(Name, DisableParallelization = true)]
     public class AmbientTestCollection
     {

@@ -7,8 +7,7 @@ using System.Runtime.ExceptionServices;
 namespace Servy.Testing
 {
     /// <summary>
-    /// Centralized test infrastructure reflection engine to interact securely with public and non-public
-    /// fields, properties, and methods without copy-pasting raw BindingFlags boilerplate.
+    /// Reflection helper methods for tests to access public and non-public fields, properties, and methods.
     /// </summary>
     public static class TestReflection
     {
@@ -17,14 +16,14 @@ namespace Servy.Testing
         private const BindingFlags PublicStaticFlags = BindingFlags.Public | BindingFlags.Static;
 
         /// <summary>
-        /// Safely fetches the instance value of an internal or private field, traversing parent base types if required.
+        /// Gets the value of a non-public instance field, searching base types if needed.
         /// </summary>
-        /// <typeparam name="T">The expected data type of the field being extracted.</typeparam>
-        /// <param name="obj">The target object instance containing the field.</param>
-        /// <param name="fieldName">The exact string identifier name of the non-public instance field.</param>
-        /// <returns>The extracted casted value typed as <typeparamref name="T"/> from the object field context.</returns>
+        /// <typeparam name="T">The expected type of the field value.</typeparam>
+        /// <param name="obj">The object instance containing the field.</param>
+        /// <param name="fieldName">The name of the non-public instance field.</param>
+        /// <returns>The value of the field cast to <typeparamref name="T"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="obj"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not discovered anywhere within the inheritance lookup traversal hierarchy.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="obj"/> or its base classes.</exception>
         public static T GetField<T>(object obj, string fieldName)
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
@@ -47,14 +46,14 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Safely fetches the value of an internal or private STATIC field from the targeted type context.
+        /// Gets the value of a non-public static field on the specified type.
         /// </summary>
-        /// <typeparam name="T">The expected data type of the static field being extracted.</typeparam>
-        /// <param name="type">The declarative <see cref="Type"/> context metadata layer of the static target.</param>
-        /// <param name="fieldName">The exact string identifier name of the non-public static field.</param>
-        /// <returns>The extracted casted value typed as <typeparamref name="T"/> from the type system domain.</returns>
+        /// <typeparam name="T">The expected type of the static field value.</typeparam>
+        /// <param name="type">The target type.</param>
+        /// <param name="fieldName">The name of the non-public static field.</param>
+        /// <returns>The value of the static field cast to <typeparamref name="T"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not located on the target class definition.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="type"/>.</exception>
         public static T GetFieldStatic<T>(Type type, string fieldName)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
@@ -69,13 +68,13 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Directly alters a non-public instance field state.
+        /// Sets a non-public instance field, searching base types if needed.
         /// </summary>
-        /// <param name="obj">The target object instance containing the field to modify.</param>
-        /// <param name="fieldName">The exact string identifier name of the non-public instance field.</param>
-        /// <param name="value">The raw input assignment reference data state payload to inject into the field slot.</param>
+        /// <param name="obj">The object instance containing the field.</param>
+        /// <param name="fieldName">The name of the non-public instance field.</param>
+        /// <param name="value">The value to assign to the field.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="obj"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not discovered inside the inheritance lookup traversal hierarchy.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="obj"/> or its base classes.</exception>
         public static void SetField(object obj, string fieldName, object value)
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
@@ -98,13 +97,13 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Directly alters a non-public STATIC field state on the specified type context.
+        /// Sets a non-public static field on the specified type.
         /// </summary>
-        /// <param name="type">The declarative <see cref="Type"/> context metadata layer of the static target.</param>
-        /// <param name="fieldName">The exact string identifier name of the non-public static field to alter.</param>
-        /// <param name="value">The raw input assignment reference data state payload to inject into the type slot.</param>
+        /// <param name="type">The target type.</param>
+        /// <param name="fieldName">The name of the non-public static field.</param>
+        /// <param name="value">The value to assign to the static field.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is missing from the designated target class.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="type"/>.</exception>
         public static void SetFieldStatic(Type type, string fieldName, object value)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
@@ -119,14 +118,14 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Safely executes an internal or private instance method on the target object, cleanly unwrapping TargetInvocationException lines.
+        /// Invokes a non-public instance method, searching base types if needed, and unwraps <see cref="TargetInvocationException"/>.
         /// </summary>
-        /// <param name="obj">The execution host runtime instance context.</param>
-        /// <param name="methodName">The exact string signature identifier mapping of the non-public target method.</param>
-        /// <param name="args">An optional array vector containing arguments passed sequentially down into the invocation layer.</param>
-        /// <returns>The functional return type payload evaluation block from the invoked target, or null if void.</returns>
+        /// <param name="obj">The target object instance.</param>
+        /// <param name="methodName">The name of the non-public instance method.</param>
+        /// <param name="args">The arguments to pass to the method.</param>
+        /// <returns>The return value of the method, or null if void.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="obj"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> cannot be bound inside the target object's type or its inheritance hierarchy.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> is not found on <paramref name="obj"/> or its base classes.</exception>
         public static object InvokeNonPublic(object obj, string methodName, params object[] args)
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
@@ -161,14 +160,14 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Safely executes an internal or private static method on the specified target type, cleanly unwrapping TargetInvocationException lines.
+        /// Invokes a non-public static method on the specified type and unwraps <see cref="TargetInvocationException"/>.
         /// </summary>
-        /// <param name="type">The declarative <see cref="Type"/> token context architecture structure definition metadata layer.</param>
-        /// <param name="methodName">The exact string signature identifier mapping of the non-public static method target.</param>
-        /// <param name="args">An optional array vector containing arguments passed sequentially down into the invocation layer.</param>
-        /// <returns>The functional return type payload evaluation block from the invoked static target, or null if void.</returns>
+        /// <param name="type">The target type.</param>
+        /// <param name="methodName">The name of the non-public static method.</param>
+        /// <param name="args">The arguments to pass to the method.</param>
+        /// <returns>The return value of the static method, or null if void.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> cannot be bound onto the target class framework metadata description.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> is not found on <paramref name="type"/>.</exception>
         public static object InvokeNonPublicStatic(Type type, string methodName, params object[] args)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
@@ -194,14 +193,14 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Safely executes a PUBLIC static method on the specified target type, cleanly unwrapping TargetInvocationException lines.
+        /// Invokes a public static method on the specified type and unwraps <see cref="TargetInvocationException"/>.
         /// </summary>
-        /// <param name="type">The declarative <see cref="Type"/> token context definition metadata layer.</param>
-        /// <param name="methodName">The exact string signature identifier mapping of the public static method target.</param>
-        /// <param name="args">An optional array vector containing arguments passed sequentially down into the invocation layer.</param>
-        /// <returns>The functional return type payload evaluation block from the invoked public static target, or null if void.</returns>
+        /// <param name="type">The target type.</param>
+        /// <param name="methodName">The name of the public static method.</param>
+        /// <param name="args">The arguments to pass to the method.</param>
+        /// <returns>The return value of the static method, or null if void.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> cannot be bound onto the public static metadata layout.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> is not found on <paramref name="type"/>.</exception>
         public static object InvokePublicStatic(Type type, string methodName, params object[] args)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
@@ -227,12 +226,11 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Reflection-driven comprehensive retrieval of all public instance properties mapped across serialization boundaries,
-        /// filtered against non-serializable internal metadata keys.
+        /// Returns the readable public instance properties of <typeparamref name="T"/>, excluding any specified in <paramref name="excludedProperties"/>.
         /// </summary>
-        /// <typeparam name="T">The specific Target DTO type system context token to analyze.</typeparam>
-        /// <param name="excludedProperties">An optional list of property names to filter out.</param>
-        /// <returns>An enumerable collection of valid readable system metadata property maps.</returns>
+        /// <typeparam name="T">The type whose properties to retrieve.</typeparam>
+        /// <param name="excludedProperties">An optional collection of property names to exclude.</param>
+        /// <returns>A collection of readable public instance properties for <typeparamref name="T"/>.</returns>
         public static IEnumerable<PropertyInfo> GetMappedProperties<T>(IEnumerable<string> excludedProperties = null)
         {
             var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);

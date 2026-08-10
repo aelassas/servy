@@ -56,7 +56,7 @@ namespace Servy.Manager.UnitTests.Mappers
             // Act
             var result = await ServiceMapper.ToModelAsync(domainService, true, false, _mockProcessHelper.Object, cancellationToken: CancellationToken.None);
 
-            // Assert: Pin down all 14 mapped target fields, including shallow mapping placeholder defaults
+            // Assert: Pin down every mapped target field, including shallow mapping placeholder defaults
             Assert.NotNull(result);
             Assert.Equal("Test", result.Name);
             Assert.Equal("High performance background daemon service.", result.Description);
