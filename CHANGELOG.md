@@ -1,5 +1,30 @@
 # Changelog
 
+## [Servy 9.3](https://github.com/aelassas/servy/releases/tag/v9.3)
+
+**Date:** 2026-08-11 | **Tag:** [`v9.3`](https://github.com/aelassas/servy/tree/v9.3)
+
+* fix(core): reject unknown properties in JSON and XML imports (#4653)
+* fix(core): ServiceControllerWrapper.cs - GetDependenciesInternal's injectable factory cannot exercise tree building; every mock wrapper is cast away (#5027)
+* fix(service): EnableEventLog=false does not suppress the ServiceBase.AutoLog entries written under the "Servy" event source (#5036)
+* fix(desktop,manager): crisp textbox cursor on low resolutions
+* fix(setup): resolve InitializeSetup issues and type mismatches
+* ci(publish.yml): Verify-PublishExclusions.ps1 - the script contains a byte-identical copy of publish.yml's filter block rather than invoking it, so all nine assertions pass no matter how the real filter changes (#4684)
+
+### Downloads
+* [servy-9.3-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-arm64-installer.exe) - 70.64 MB
+* [servy-9.3-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-arm64-portable.7z) - 71.94 MB
+* [servy-9.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-net48-sbom.xml) - 0.03 MB
+* [servy-9.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-net48-x64-installer.exe) - 4.34 MB
+* [servy-9.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-net48-x64-portable.7z) - 2.08 MB
+* [servy-9.3-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-sbom.xml) - 0.04 MB
+* [servy-9.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-x64-installer.exe) - 76.71 MB
+* [servy-9.3-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.3/servy-9.3-x64-portable.7z) - 74.58 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.3.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.3.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.2...v9.3
+
 ## [Servy 9.2](https://github.com/aelassas/servy/releases/tag/v9.2)
 
 **Date:** 2026-08-09 | **Tag:** [`v9.2`](https://github.com/aelassas/servy/tree/v9.2)
