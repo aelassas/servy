@@ -107,7 +107,7 @@ namespace Servy.UI.IntegrationTests.Services
                 .ReturnsAsync(new HttpResponseMessage
                 {
                     StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{ 'name': 'Draft Release', 'tag_name': '' }")
+                    Content = new StringContent("{ \"name\": \"Draft Release\", \"tag_name\": \"\" }")
                 });
 
             // Inject our mock handler directly into the existing static HttpClient instance
@@ -135,7 +135,7 @@ namespace Servy.UI.IntegrationTests.Services
                 .ReturnsAsync(new HttpResponseMessage
                 {
                     StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{ 'tag_name': 'v1.0.0' }")
+                    Content = new StringContent("{ \"tag_name\": \"v1.0.0\" }")
                 });
 
             // Inject our mock handler directly into the existing static HttpClient instance
@@ -163,7 +163,7 @@ namespace Servy.UI.IntegrationTests.Services
                 .ReturnsAsync(new HttpResponseMessage
                 {
                     StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{ 'tag_name': 'v9999.0', 'html_url': 'https://github.com/aelassas/servy/releases/tag/v9999.0' }")
+                    Content = new StringContent("{ \"tag_name\": \"v9999.0\", \"html_url\": \"https://github.com/aelassas/servy/releases/tag/v9999.0\" }")
                 });
 
             InjectMockHandlerIntoStaticClient(mockHandler.Object);

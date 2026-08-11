@@ -13,7 +13,6 @@ using Servy.Service.Validation;
 using Servy.Testing;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -24,29 +23,17 @@ namespace Servy.Service.UnitTests
 {
     public class ServiceTests : IDisposable
     {
-        private readonly Mock<IServiceHelper> _mockServiceHelper;
-        private readonly Mock<IServyLogger> _mockLogger;
-        private readonly Mock<IStreamWriterFactory> _mockStreamWriterFactory;
-        private readonly Mock<ITimerFactory> _mockTimerFactory;
-        private readonly Mock<IProcessFactory> _mockProcessFactory;
-        private readonly Mock<IPathValidator> _mockPathValidator;
+        private readonly ServiceTestContext _ctx;
         private readonly Service _service;
 
         private readonly Mock<IStreamWriter> _mockStdoutWriter;
         private readonly Mock<IStreamWriter> _mockStderrWriter;
         private readonly Mock<ITimer> _mockTimer;
         private readonly Mock<IProcessWrapper> _mockProcess;
-        private readonly Mock<IServiceRepository> _mockServiceRepository;
-        private readonly Mock<IProcessKiller> _mockProcessKiller;
 
         public ServiceTests()
         {
-            _mockServiceHelper = new Mock<IServiceHelper>();
-            _mockLogger = new Mock<IServyLogger>();
-            _mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
-            _mockTimerFactory = new Mock<ITimerFactory>();
-            _mockProcessFactory = new Mock<IProcessFactory>();
-            _mockPathValidator = new Mock<IPathValidator>();
+            _ctx = new ServiceTestContext();
 
             _mockStdoutWriter = new Mock<IStreamWriter>();
             _mockStderrWriter = new Mock<IStreamWriter>();
@@ -56,7 +43,7 @@ namespace Servy.Service.UnitTests
             // Crucial setup: Stub the StartInfo property so it never returns null during tests
             _mockProcess.Setup(p => p.StartInfo).Returns(new ProcessStartInfo());
 
-            _mockStreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
+            _ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                 .Returns((string path, bool enableSizeRotation, long size, bool enableDateRotation, DateRotationType dateRotationType, int maxRotations, bool useLocalTimeForRotation) =>
                 {
                     if (path.Contains("stdout"))
@@ -66,25 +53,13 @@ namespace Servy.Service.UnitTests
                     return null;
                 });
 
-            _mockTimerFactory.Setup(f => f.Create(It.IsAny<double>()))
+            _ctx.TimerFactory.Setup(f => f.Create(It.IsAny<double>()))
                 .Returns(_mockTimer.Object);
 
-            _mockProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+            _ctx.ProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
                 .Returns(_mockProcess.Object);
 
-            _mockServiceRepository = new Mock<IServiceRepository>();
-            _mockProcessKiller = new Mock<IProcessKiller>();
-
-            _service = new Service(
-                _mockServiceHelper.Object,
-                _mockLogger.Object,
-                _mockStreamWriterFactory.Object,
-                _mockTimerFactory.Object,
-                _mockProcessFactory.Object,
-                _mockPathValidator.Object,
-                _mockServiceRepository.Object,
-                _mockProcessKiller.Object
-            );
+            _service = _ctx.BuildService();
         }
 
         [Theory]
@@ -97,15 +72,15 @@ namespace Servy.Service.UnitTests
         [InlineData(true, true, true, true, true, true, false, true, "serviceRepository")]
         [InlineData(true, true, true, true, true, true, true, false, "processKiller")]
         public void Constructor_WhenDependencyIsNull_ThrowsArgumentNullException(
-           bool useServiceHelper,
-           bool useLogger,
-           bool useStreamWriterFactory,
-           bool useTimerFactory,
-           bool useProcessFactory,
-           bool usePathValidator,
-           bool useServiceRepository,
-           bool useProcessKiller,
-           string expectedParamName)
+            bool useServiceHelper,
+            bool useLogger,
+            bool useStreamWriterFactory,
+            bool useTimerFactory,
+            bool useProcessFactory,
+            bool usePathValidator,
+            bool useServiceRepository,
+            bool useProcessKiller,
+            string expectedParamName)
         {
             // Arrange
             var serviceHelper = useServiceHelper ? new Mock<IServiceHelper>().Object : null;
@@ -180,6 +155,7 @@ namespace Servy.Service.UnitTests
         }
 
         #endregion
+
         [Fact]
         public void OnStart_ValidOptions_InitializesCorrectly()
         {
@@ -201,21 +177,21 @@ namespace Servy.Service.UnitTests
             var mockScopedLogger = new Mock<IServyLogger>();
 
             // 1. ServiceHelper flow
-            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, It.IsAny<string[]>()))
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, It.IsAny<string[]>()))
                 .Returns(options);
             _mockProcess.Setup(p => p.Start()).Returns(true);
 
             // 2. Logger Promotion setup
             // This is critical: the service will now use mockScopedLogger.Object for everything else
-            _mockLogger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(mockScopedLogger.Object);
+            _ctx.Logger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(mockScopedLogger.Object);
 
             // 3. Validation setup (Must use the scoped logger)
-            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object))
+            _ctx.Helper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object))
                 .Returns(true);
 
             // 4. Path Validator setup (Used inside HandleLogWriters)
-            _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
+            _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
             // Act
             _service.StartForTest();
@@ -223,7 +199,7 @@ namespace Servy.Service.UnitTests
             // Assert
             // Verify Health Monitoring started
             // 10 seconds * 1000ms = 10000
-            _mockTimerFactory.Verify(f => f.Create(10000), Times.Once);
+            _ctx.TimerFactory.Verify(f => f.Create(10000), Times.Once);
             _mockTimer.Verify(t => t.Start(), Times.Once);
 
             // Verify the scoped logger received the success message
@@ -247,26 +223,26 @@ namespace Servy.Service.UnitTests
             var mockScopedLogger = new Mock<IServyLogger>();
 
             // 1. Setup the ServiceHelper flow
-            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, fullArgs))
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs))
                 .Returns(options);
 
             // 2. Setup Logger Promotion: Root returns Scoped
-            _mockLogger.Setup(l => l.CreateScoped(options.ServiceName))
+            _ctx.Logger.Setup(l => l.CreateScoped(options.ServiceName))
                 .Returns(mockScopedLogger.Object);
 
             // 3. Setup Validation: Must return true for the method to proceed to HandleLogWriters
-            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object))
+            _ctx.Helper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object))
                 .Returns(true);
 
             // 4. Force the path validation to fail
-            _mockPathValidator.Setup(v => v.IsValidPath(options.StdoutPath)).Returns(false);
+            _ctx.PathValidator.Setup(v => v.IsValidPath(options.StdoutPath)).Returns(false);
 
             // Act
             _service.StartForTest();
 
             // Assert
-            // Verify the error was logged to the SCOPED logger, not the root _mockLogger
+            // Verify the error was logged to the SCOPED logger, not the root _ctx.Logger
             mockScopedLogger.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Invalid log file path")),
                 It.IsAny<Exception>()
@@ -274,7 +250,7 @@ namespace Servy.Service.UnitTests
 
             // The root logger must NOT be disposed because the scoped logger
             // delegates its underlying EventLog/File operations to it.
-            _mockLogger.Verify(l => l.Dispose(), Times.Never);
+            _ctx.Logger.Verify(l => l.Dispose(), Times.Never);
         }
 
         [Fact]
@@ -288,10 +264,10 @@ namespace Servy.Service.UnitTests
             _service.OnStoppedForTest += () => stopped = true;
 
             // 1. Mock GetArgs to return a valid array
-            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
 
             // 2. Mock ParseOptions to return null (simulating invalid or missing configuration)
-            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, fullArgs))
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs))
                 .Returns((StartOptions)null);
 
             // Act
@@ -302,7 +278,7 @@ namespace Servy.Service.UnitTests
             Assert.True(stopped);
 
             // Verify that ValidateAndLog was NEVER called because we exited early
-            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
+            _ctx.Helper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
         }
 
         [Fact]
@@ -316,7 +292,7 @@ namespace Servy.Service.UnitTests
             _service.OnStoppedForTest += () => stopped = true;
 
             // Simulate an exception at the very beginning of the OnStart sequence
-            _mockServiceHelper.Setup(h => h.GetArgs()).Throws(testException);
+            _ctx.Helper.Setup(h => h.GetArgs()).Throws(testException);
 
             // Act
             _service.StartForTest();
@@ -326,21 +302,21 @@ namespace Servy.Service.UnitTests
             Assert.True(stopped);
 
             // 2. Verify the error was logged to the root logger
-            // (Promotion hasn't happened yet, so _mockLogger is still the active logger)
-            _mockLogger.Verify(l => l.Error(
+            // (Promotion hasn't happened yet, so _ctx.Logger is still the active logger)
+            _ctx.Logger.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Exception in OnStart")),
                 testException
             ), Times.Once);
 
             // 3. Verify that the logger was never promoted/disposed due to early failure
-            _mockLogger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
+            _ctx.Logger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public void SetProcessPriority_ValidPriority_SetsPriorityAndLogsInfo()
         {
             // Arrange
-            using (var service = CreateTestableService())
+            using (var service = _ctx.Build())
             {
                 service.SetChildProcess(_mockProcess.Object);
                 _mockProcess.SetupProperty(p => p.PriorityClass);
@@ -350,7 +326,7 @@ namespace Servy.Service.UnitTests
 
                 // Assert
                 _mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
-                _mockLogger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High")), It.IsAny<Exception>()), Times.Once);
+                _ctx.Logger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High")), It.IsAny<Exception>()), Times.Once);
             }
         }
 
@@ -358,7 +334,7 @@ namespace Servy.Service.UnitTests
         public void SetProcessPriority_ExceptionThrown_LogsWarning()
         {
             // Arrange
-            using (var service = CreateTestableService())
+            using (var service = _ctx.Build())
             {
                 service.SetChildProcess(_mockProcess.Object);
                 _mockProcess.SetupSet(p => p.PriorityClass = It.IsAny<ProcessPriorityClass>())
@@ -368,7 +344,7 @@ namespace Servy.Service.UnitTests
                 service.InvokeSetProcessPriority(ProcessPriorityClass.High);
 
                 // Assert
-                _mockLogger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
+                _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
             }
         }
 
@@ -376,7 +352,7 @@ namespace Servy.Service.UnitTests
         public void HandleLogWriters_ValidPaths_CreatesStreamWriters()
         {
             // Arrange
-            using (var service = CreateTestableService())
+            using (var service = _ctx.Build())
             {
                 var options = new StartOptions
                 {
@@ -389,23 +365,23 @@ namespace Servy.Service.UnitTests
                 var mockStdOutWriter = new Mock<IStreamWriter>();
                 var mockStdErrWriter = new Mock<IStreamWriter>();
 
-                _mockStreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+                _ctx.StreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                     .Returns(mockStdOutWriter.Object);
 
-                _mockStreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+                _ctx.StreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                     .Returns(mockStdErrWriter.Object);
 
-                _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
+                _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
                 // Act
                 service.InvokeHandleLogWriters(options);
 
                 // Assert
-                _mockStreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-                _mockStreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+                _ctx.StreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+                _ctx.StreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
 
                 // Check no errors logged
-                _mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -413,7 +389,7 @@ namespace Servy.Service.UnitTests
         public void HandleLogWriters_InvalidPaths_LogsErrors()
         {
             // Arrange
-            using (var service = CreateTestableService())
+            using (var service = _ctx.Build())
             {
                 var options = new StartOptions
                 {
@@ -422,12 +398,14 @@ namespace Servy.Service.UnitTests
                     RotationSizeInBytes = 12345
                 };
 
+                _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
+
                 // Act
                 service.InvokeHandleLogWriters(options);
 
                 // Assert
-                _mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
-                _mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
+                _ctx.StreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
+                _ctx.Logger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
             }
         }
 
@@ -435,7 +413,7 @@ namespace Servy.Service.UnitTests
         public void HandleLogWriters_EmptyPaths_DoesNotCreateWritersOrLog()
         {
             // Arrange
-            using (var service = CreateTestableService())
+            using (var service = _ctx.Build())
             {
                 var options = new StartOptions
                 {
@@ -449,8 +427,8 @@ namespace Servy.Service.UnitTests
                 service.InvokeHandleLogWriters(options);
 
                 // Assert
-                _mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
-                _mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                _ctx.StreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
+                _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -504,7 +482,7 @@ namespace Servy.Service.UnitTests
 
         #endregion
 
-        #region DOS Reserved Device Names & Multi-Extension Edge Cases (Issue #2080)
+        #region DOS Reserved Device Names & Multi-Extension Edge Cases
 
         [Theory]
         [InlineData("CON")]
@@ -568,7 +546,7 @@ namespace Servy.Service.UnitTests
 
         #endregion
 
-        #region Disambiguation & Namespace Collision Resolution (Issue #2118 & #2069)
+        #region Disambiguation & Namespace Collision Resolution
 
         [Theory]
         [InlineData("CON", "_CON_")]
@@ -614,14 +592,16 @@ namespace Servy.Service.UnitTests
             string outDot = Service.MakeFilenameSafe(nameWithDot);
             string outSpaces = Service.MakeFilenameSafe(nameWithSpaces);
 
-            var allOutputs = new[] { outBase, outSpace, outDot, outSpaces };
-
-            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely.
-            // Grouping the collection ensures all 6 pairwise distinctness paths are fully checked.
-            Assert.Equal(allOutputs.Length, allOutputs.Distinct(StringComparer.Ordinal).Count());
+            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely
+            Assert.NotEqual(outBase, outSpace);
+            Assert.NotEqual(outBase, outDot);
+            Assert.NotEqual(outSpace, outDot);
+            Assert.NotEqual(outSpace, outSpaces);
 
             // All must preserve base readability prefixing
-            Assert.All(allOutputs, output => Assert.StartsWith("MyService_", output));
+            Assert.StartsWith("MyService_", outBase);
+            Assert.StartsWith("MyService_", outSpace);
+            Assert.StartsWith("MyService_", outDot);
         }
 
         [Theory]
@@ -644,24 +624,6 @@ namespace Servy.Service.UnitTests
         #region Private Test Helpers
 
         /// <summary>
-        /// Direct central factory targeting the creation of TestableService instances.
-        /// Consolidates individual field setups consistently, ensuring signature immunity across call sites.
-        /// </summary>
-        private TestableService CreateTestableService()
-        {
-            return new TestableService(
-                _mockServiceHelper.Object,
-                _mockLogger.Object,
-                _mockStreamWriterFactory.Object,
-                _mockTimerFactory.Object,
-                _mockProcessFactory.Object,
-                _mockPathValidator.Object,
-                _mockServiceRepository.Object,
-                _mockProcessKiller.Object
-            );
-        }
-
-        /// <summary>
         /// DRY helper to initialize the base StartOptions and mocks required to get the
         /// Service through its initial ValidateAndLog and HandleLogWriters phases cleanly.
         /// </summary>
@@ -670,11 +632,11 @@ namespace Servy.Service.UnitTests
             var fullArgs = new[] { "servy.exe" };
             var mockScopedLogger = new Mock<IServyLogger>();
 
-            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _mockServiceHelper.Setup(h => h.ParseOptions(It.IsAny<IServiceRepository>(), It.IsAny<string[]>())).Returns(options);
-            _mockLogger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
-            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object)).Returns(true);
-            _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _ctx.Helper.Setup(h => h.ParseOptions(It.IsAny<IServiceRepository>(), It.IsAny<string[]>())).Returns(options);
+            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
+            _ctx.Helper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object)).Returns(true);
+            _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
             _mockProcess.Setup(p => p.Start()).Returns(true);
 
             return mockScopedLogger;
@@ -689,7 +651,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = CreateTestService(repositoryMock.Object);
+            var service = _ctx.BuildService(repositoryMock.Object);
 
             TestReflection.SetField(service, "_serviceName", "   ");
 
@@ -705,7 +667,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = CreateTestService(repositoryMock.Object);
+            var service = _ctx.BuildService(repositoryMock.Object);
 
             TestReflection.SetField(service, "_serviceName", "ServyTest");
             repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns((ServiceDto)null);
@@ -726,7 +688,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = CreateTestService(repositoryMock.Object);
+            var service = _ctx.BuildService(repositoryMock.Object);
 
             TestReflection.SetField(service, "_serviceName", "ServyTest");
 
@@ -767,7 +729,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = CreateTestService(repositoryMock.Object);
+            var service = _ctx.BuildService(repositoryMock.Object);
 
             TestReflection.SetField(service, "_serviceName", "ServyTest");
 
@@ -797,7 +759,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
             var loggerMock = new Mock<IServyLogger>();
-            var service = CreateTestService(repositoryMock.Object, loggerMock.Object);
+            var service = _ctx.BuildService(repositoryMock.Object, loggerMock.Object);
 
             string serviceName = "ServyTest";
             TestReflection.SetField(service, "_serviceName", serviceName);
@@ -826,7 +788,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var serviceInstance = CreateTestService(repositoryMock.Object);
+            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
 
             // parameters: string baseUrl, string suffix, int timeoutSeconds
             object[] parameters = new object[] { null, "/start", 5 };
@@ -848,7 +810,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var serviceInstance = CreateTestService(repositoryMock.Object);
+            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
 
             // Inject options state using TestReflection to bypass the early return block checks
             var mockOptions = new StartOptions
@@ -875,24 +837,6 @@ namespace Servy.Service.UnitTests
 
         #endregion
 
-        #region Helper Factory Builder
-
-        private Service CreateTestService(IServiceRepository repository, IServyLogger logger = null)
-        {
-            return new Service(
-                new Mock<IServiceHelper>().Object,
-                logger ?? new Mock<IServyLogger>().Object,
-                new Mock<IStreamWriterFactory>().Object,
-                new Mock<ITimerFactory>().Object,
-                new Mock<IProcessFactory>().Object,
-                new Mock<IPathValidator>().Object,
-                repository,
-                new Mock<IProcessKiller>().Object
-            );
-        }
-
-        #endregion
-
         #region Pre-Launch Orchestration Tests
 
         [Fact]
@@ -910,7 +854,7 @@ namespace Servy.Service.UnitTests
 
             var mockPreLaunchProcess = new Mock<IProcessWrapper>();
             mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
-            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
                 .Returns(mockPreLaunchProcess.Object);
 
             // Act
@@ -943,7 +887,7 @@ namespace Servy.Service.UnitTests
             mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
             mockPreLaunchProcess.Setup(p => p.ExitCode).Returns(1); // Failed exit
 
-            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
                 .Returns(mockPreLaunchProcess.Object);
 
             // Act
@@ -974,7 +918,7 @@ namespace Servy.Service.UnitTests
             mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
             mockPreLaunchProcess.Setup(p => p.ExitCode).Returns(1); // Failed
 
-            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
                 .Returns(mockPreLaunchProcess.Object);
 
             // Act

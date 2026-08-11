@@ -7,21 +7,21 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 
-namespace Servy.Service.UnitTests.Utilities
+namespace Servy.Service.UnitTests
 {
     /// <summary>
-    /// Holds the eight mocked dependencies of <see cref="TestableService"/> and builds instances wired to them.
+    /// Holds the mocked dependencies of <see cref="TestableService"/> and builds instances wired to them.
     /// </summary>
     public class ServiceTestContext
     {
-        public Mock<IServyLogger> Logger { get; } = new Mock<IServyLogger>();
-        public Mock<IServiceHelper> Helper { get; } = new Mock<IServiceHelper>();
-        public Mock<IStreamWriterFactory> StreamWriterFactory { get; } = new Mock<IStreamWriterFactory>();
-        public Mock<ITimerFactory> TimerFactory { get; } = new Mock<ITimerFactory>();
-        public Mock<IProcessFactory> ProcessFactory { get; } = new Mock<IProcessFactory>();
-        public Mock<IPathValidator> PathValidator { get; } = new Mock<IPathValidator>();
-        public Mock<IServiceRepository> ServiceRepository { get; } = new Mock<IServiceRepository>();
-        public Mock<Core.Helpers.IProcessKiller> ProcessKiller { get; } = new Mock<Core.Helpers.IProcessKiller>();
+        public Mock<IServyLogger> Logger { get; set; } = new Mock<IServyLogger>();
+        public Mock<IServiceHelper> Helper { get; set; } = new Mock<IServiceHelper>();
+        public Mock<IStreamWriterFactory> StreamWriterFactory { get; set; } = new Mock<IStreamWriterFactory>();
+        public Mock<ITimerFactory> TimerFactory { get; set; } = new Mock<ITimerFactory>();
+        public Mock<IProcessFactory> ProcessFactory { get; set; } = new Mock<IProcessFactory>();
+        public Mock<IPathValidator> PathValidator { get; set; } = new Mock<IPathValidator>();
+        public Mock<IServiceRepository> ServiceRepository { get; set; } = new Mock<IServiceRepository>();
+        public Mock<Core.Helpers.IProcessKiller> ProcessKiller { get; set; } = new Mock<Core.Helpers.IProcessKiller>();
 
         public ServiceTestContext()
         {
@@ -42,6 +42,23 @@ namespace Servy.Service.UnitTests.Utilities
                 ProcessFactory.Object,
                 PathValidator.Object,
                 ServiceRepository.Object,
+                ProcessKiller.Object
+            );
+        }
+
+        /// <summary>
+        /// Creates a standard <see cref="Service"/> wired to this context's mocks.
+        /// </summary>
+        public Service BuildService(IServiceRepository serviceRepository = null, IServyLogger logger = null)
+        {
+            return new Service(
+                Helper.Object,
+                logger ?? Logger.Object,
+                StreamWriterFactory.Object,
+                TimerFactory.Object,
+                ProcessFactory.Object,
+                PathValidator.Object,
+                serviceRepository ?? ServiceRepository.Object,
                 ProcessKiller.Object
             );
         }

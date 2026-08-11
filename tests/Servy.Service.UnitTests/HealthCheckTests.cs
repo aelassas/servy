@@ -4,7 +4,6 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
-using Servy.Service.UnitTests.Utilities;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
