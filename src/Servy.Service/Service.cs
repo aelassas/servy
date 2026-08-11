@@ -302,14 +302,8 @@ namespace Servy.Service
                 // Centralized logging bootstrapper
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: _logger);
 
-                if (bool.TryParse(config["EnableEventLog"], out var enableEventLog))
-                {
-                    AutoLog = enableEventLog;
-                }
-                else
-                {
-                    AutoLog = false;
-                }
+                var isEventLogEnabled = ConfigParser.ParseBool(config["EnableEventLog"], AppConfig.DefaultEnableEventLog, "EnableEventLog");
+                AutoLog = isEventLogEnabled;
 
                 // --- Log Service-specific timing configurations ---
                 Logger.Debug("Servy Service Context Configuration Loaded:" + Environment.NewLine +
