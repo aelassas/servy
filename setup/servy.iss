@@ -159,13 +159,13 @@ Filename: "icacls.exe"; \
 [Code]
 function ConvertStringSidToSid(
   StringSid: String;
-  var Sid: Cardinal
+  var Sid: UINT_PTR
 ): Boolean;
   external 'ConvertStringSidToSidW@advapi32.dll stdcall';
 
 function LookupAccountSid(
   SystemName: String;
-  Sid: Cardinal;
+  Sid: UINT_PTR;
   Name: String;
   var NameSize: DWORD;
   ReferencedDomainName: String;
@@ -174,14 +174,15 @@ function LookupAccountSid(
 ): Boolean;
   external 'LookupAccountSidW@advapi32.dll stdcall';
 
-function LocalFree(hMem: Cardinal): Cardinal;
+function LocalFree(hMem: UINT_PTR): UINT_PTR;
   external 'LocalFree@kernel32.dll stdcall';
 
 function GetLocalizedSystemAccountName(): String;
 var
-  pSid: Cardinal;
+  pSid: UINT_PTR;
   Name, Domain: String;
   NameSize, DomainSize, Use: DWORD;
+  NullPos: Integer;
 begin
   Result := 'SYSTEM'; // Fallback
   pSid := 0;
@@ -197,6 +198,10 @@ begin
         SetLength(Domain, DomainSize);
         if LookupAccountSid('', pSid, Name, NameSize, Domain, DomainSize, Use) then
         begin
+          // Strip null terminator returned by Win32 API
+          NullPos := Pos(#0, Name);
+          if NullPos > 0 then
+            SetLength(Name, NullPos - 1);
           Result := Trim(Name);
         end;
       end;
@@ -256,23 +261,25 @@ end;
 // -----------------------------------------------------
 function QueryUninstallRegistry(const AppIdGuidStr, ValueName: String): String;
 var
-  sUnInstPath, sValue: String;
+  sUnInstPath, sValue, FormattedAppId: String;
 begin
   sValue := '';
-  sUnInstPath := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + AppIdGuidStr + '_is1';
 
+  // Ensure AppId is wrapped in curly braces {...}
+  FormattedAppId := AppIdGuidStr;
+  if (Length(FormattedAppId) > 0) and (FormattedAppId[1] <> '{') then
+    FormattedAppId := '{' + FormattedAppId + '}';
+
+  sUnInstPath := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + FormattedAppId + '_is1';
+
+  // 1. Check 64-bit HKLM
   if not RegQueryStringValue(HKLM64, sUnInstPath, ValueName, sValue) then
   begin
-    RegQueryStringValue(HKCU, sUnInstPath, ValueName, sValue);
-  end;
-
-  if sValue = '' then
-  begin
-    sUnInstPath := 'SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\' + AppIdGuidStr + '_is1';
-
-    if not RegQueryStringValue(HKLM32, sUnInstPath, ValueName, sValue) then
+    // 2. Check HKCU
+    if not RegQueryStringValue(HKCU, sUnInstPath, ValueName, sValue) then
     begin
-      RegQueryStringValue(HKCU, sUnInstPath, ValueName, sValue);
+      // 3. Check 32-bit HKLM (HKLM32 automatically redirects SOFTWARE to WOW6432Node)
+      RegQueryStringValue(HKLM32, sUnInstPath, ValueName, sValue);
     end;
   end;
 
@@ -285,7 +292,6 @@ var
   i: Integer;
   sResult: String;
 begin
-  // Check current architecture's AppId first, then the alternate architecture's AppId
   AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
   if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
     AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
@@ -334,7 +340,7 @@ begin
   if sUnInstallString <> '' then
   begin
     sUnInstallString := RemoveQuotes(sUnInstallString);
-    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then
+    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES', '', SW_HIDE, ewWaitUntilTerminated, iResultCode) and (iResultCode = 0) then
       Result := 3
     else
       Result := 2;
@@ -351,6 +357,7 @@ var
   i: Integer;
   sResult: String;
 begin
+  Result := '';
   AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
   if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
     AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
@@ -377,6 +384,7 @@ var
 begin
   Parts := TStringList.Create;
   try
+    Parts.StrictDelimiter := True;
     Parts.Delimiter := '.';
     Parts.DelimitedText := Version;
 
@@ -397,10 +405,10 @@ end;
 function InitializeSetup(): Boolean;
 var
   sInstalledVersion, message: String;
-  installedVersion, myAppVersion: Integer;
+  installedVersion, myAppVersion: Int64;
   v: Integer;
   UninstKey: String;
-  Hives: array[0..1] of Integer;
+  Hives: array[0..2] of Integer;
   Values: array[0..4] of String;
   i, j: Integer;
 begin
@@ -449,7 +457,8 @@ begin
 
   // Define the hives and value names to delete
   Hives[0] := HKLM64;
-  Hives[1] := HKCU;
+  Hives[1] := HKLM32;
+  Hives[2] := HKCU;
   Values[0] := 'Inno Setup: Selected Tasks';
   Values[1] := 'Inno Setup: Deselected Tasks';
   Values[2] := 'Inno Setup: Selected Components';
