@@ -122,10 +122,7 @@ namespace Servy.Testing
                     throw;
                 }
             }
-            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS: another runner published it first
-            {
-                // Lost the publish race - the file is there, which is the outcome we wanted.
-            }
+            catch (IOException) when (File.Exists(HandleExePath)) { /* published by a concurrent runner */ }
         }
 
         /// <summary>

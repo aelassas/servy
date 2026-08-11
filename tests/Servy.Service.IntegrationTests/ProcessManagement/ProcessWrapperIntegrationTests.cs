@@ -821,7 +821,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.BeginOutputReadLine();
                 wrapper.BeginErrorReadLine();
 
-                bool processExited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMsGenerous);
+                bool processExited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessGenerousTimeoutMs);
                 // Parameterless WaitForExit also waits for async output/error event handlers to drain;
                 // the timeout overload above does not.
                 wrapper.WaitForExit();
