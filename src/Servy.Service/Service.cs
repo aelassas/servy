@@ -205,6 +205,7 @@ namespace Servy.Service
             ) // allow injection
         {
             ServiceName = AppConfig.EventSource;
+            AutoLog = false; // Servy owns its event-log output via LoggerConfigurator
 
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -287,6 +288,15 @@ namespace Servy.Service
 
                 // Centralized logging bootstrapper
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: _logger);
+
+                if (bool.TryParse(config["EnableEventLog"], out var enableEventLog))
+                {
+                    AutoLog = enableEventLog;
+                }
+                else
+                {
+                    AutoLog = false;
+                }
 
                 // --- Log Service-specific timing configurations ---
                 Logger.Debug("Servy Service Context Configuration Loaded:" + Environment.NewLine +
