@@ -20,7 +20,11 @@ namespace Servy.Service.UnitTests
                 mockProcess.Setup(p => p.Id).Returns(123);
                 mockProcess.Setup(p => p.Start()).Returns(true);
 
-                ctx.ProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>())).Returns(mockProcess.Object);
+                ProcessStartInfo? seenPsi = null;
+                ctx.ProcessFactory
+                    .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                    .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                    .Returns(mockProcess.Object);
 
                 // Act
                 service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), CancellationToken.None);
@@ -29,6 +33,22 @@ namespace Servy.Service.UnitTests
                 var childProcess = service.GetChildProcess();
                 Assert.Equal(mockProcess.Object, childProcess);
                 mockProcess.Verify(p => p.Start(), Times.Once);
+
+                // Verify ProcessStartInfo propagation
+                Assert.NotNull(seenPsi);
+                Assert.Equal("C:\\myapp.exe", seenPsi.FileName);
+                Assert.Equal("--arg", seenPsi.Arguments);
+                Assert.Equal("C:\\workdir", seenPsi.WorkingDirectory);
+
+                // Verify event handler wiring
+                mockProcess.VerifySet(p => p.EnableRaisingEvents = true, Times.Once);
+                mockProcess.VerifyAdd(p => p.OutputDataReceived += It.IsAny<DataReceivedEventHandler>(), Times.Once);
+                mockProcess.VerifyAdd(p => p.ErrorDataReceived += It.IsAny<DataReceivedEventHandler>(), Times.Once);
+                mockProcess.VerifyAdd(p => p.Exited += It.IsAny<EventHandler>(), Times.Once);
+
+                // Verify asynchronous stream reading calls
+                mockProcess.Verify(p => p.BeginOutputReadLine(), Times.Once);
+                mockProcess.Verify(p => p.BeginErrorReadLine(), Times.Once);
             }
         }
 
