@@ -31,8 +31,13 @@ namespace Servy.Service.UnitTests.StreamWriters
             {
                 var adapter = Assert.IsType<RotatingStreamWriterAdapter>(result);
                 var inner = TestReflection.GetField<Core.IO.RotatingStreamWriter>(adapter, "_inner");
-                var innerUseLocalTimeForRotation = TestReflection.GetField<bool>(inner, "_useLocalTimeForRotation");
-                Assert.Equal(useLocalTime, innerUseLocalTimeForRotation);
+                Assert.Equal(path, TestReflection.GetField<FileInfo>(inner, "_file").Name);
+                Assert.Equal(enableSizeRotation, TestReflection.GetField<bool>(inner, "_enableSizeRotation"));
+                Assert.Equal(rotationSizeInBytes, TestReflection.GetField<long>(inner, "_rotationSizeInBytes"));
+                Assert.Equal(enableDateRotation, TestReflection.GetField<bool>(inner, "_enableDateRotation"));
+                Assert.Equal(dateRotationType, TestReflection.GetField<DateRotationType>(inner, "_dateRotationType"));
+                Assert.Equal(maxRotations, TestReflection.GetField<int>(inner, "_maxRotations"));
+                Assert.Equal(useLocalTime, TestReflection.GetField<bool>(inner, "_useLocalTimeForRotation"));
             }
         }
     }

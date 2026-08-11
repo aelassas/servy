@@ -1006,26 +1006,26 @@ namespace Servy.Service.UnitTests
             var scopedLogger = SetupStandardServiceStart(options);
 
             bool stopped = false;
-            _service.OnStoppedForTest += () => stopped = true;
+            var stoppedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _service.OnStoppedForTest += () =>
+            {
+                stopped = true;
+                stoppedSignal.TrySetResult(true);
+            };
+
             _service.StartForTest();
 
             _mockProcess.Setup(p => p.HasExited).Returns(true);
             _mockProcess.Setup(p => p.ExitCode).Returns(0); // Clean exit
-
-            // Wire up a completion signal via Moq's Callback to handle the async void continuation cleanly
-            var stopLoggedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            scopedLogger
-                .Setup(l => l.Info(It.Is<string>(s => s.Contains("Service will stop.")), It.IsAny<Exception>()))
-                .Callback(() => stopLoggedSignal.TrySetResult(true));
 
             // Act
             // Invoke the non-public async void event handler via reflection
             TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
             // Assert
-            // Await either the log confirmation or the state callback completion block
-            await Task.WhenAny(stopLoggedSignal.Task, Task.Delay(2000, TestContext.Current.CancellationToken));
+            // Await the stop event completion signal deterministically
+            await Task.WhenAny(stoppedSignal.Task, Task.Delay(2000, TestContext.Current.CancellationToken));
 
             Assert.True(stopped, "The background clean exit stop sequence failed to invoke the OnStoppedForTest event callback.");
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Service will stop.")), It.IsAny<Exception>()), Times.Once);
@@ -1160,6 +1160,25 @@ namespace Servy.Service.UnitTests
 
             // Assert
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("was forcefully terminated")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void SafeKillProcess_ProcessAlreadyExited_SkipsStopButStillCleansDescendants()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            _mockProcess.Setup(p => p.HasExited).Returns(true);
+
+            // Act
+            TestReflection.InvokeNonPublic(_service, "SafeKillProcess", _mockProcess.Object, 1000);
+
+            // Assert
+            _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+            _mockProcess.Verify(p => p.StopDescendants(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<int>()), Times.Once);
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("had already exited")), It.IsAny<Exception>()), Times.Once);
         }
 
         #endregion
