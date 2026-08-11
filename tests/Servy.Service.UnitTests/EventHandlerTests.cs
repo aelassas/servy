@@ -4,7 +4,6 @@ using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.UnitTests.Helpers;
-using Servy.Service.UnitTests.Utilities;
 using Servy.Testing;
 
 namespace Servy.Service.UnitTests

@@ -4,7 +4,7 @@ using Servy.UI.Services;
 namespace Servy.UI.IntegrationTests.Services
 {
     [Collection("UiSta")]
-    public class MessageBoxServiceIntegrationTests : IDisposable
+    public class MessageBoxServiceIntegrationTests
     {
         private readonly MessageBoxService _service;
 
@@ -12,11 +12,6 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Arrange
             _service = new MessageBoxService(new WpfUiDispatcher());
-        }
-
-        public void Dispose()
-        {
-            // Standard cleanup hook for collection consistency
         }
 
         #region Smoke Tests (Dispatcher Verification)

@@ -2,7 +2,6 @@ using Moq;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
-using Servy.Service.UnitTests.Utilities;
 using System.Diagnostics;
 
 namespace Servy.Service.UnitTests

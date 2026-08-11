@@ -115,10 +115,9 @@ namespace Servy.UI.UnitTests
         }
 
         [Fact]
-        public void TrimToSize_ListImplementation_UsesRemoveRange()
+        public void TrimToSize_CountAboveMax_RemovesOldestItemsAndRaisesSingleReset()
         {
             // Arrange
-            // Default constructor uses List<T> internally
             var collection = new BulkObservableCollection<int>();
             for (int i = 0; i < 10; i++) collection.Add(i);
 
@@ -142,6 +141,19 @@ namespace Servy.UI.UnitTests
 
             // Act & Assert
             Assert.Throws<ArgumentOutOfRangeException>(() => collection.TrimToSize(-1));
+        }
+
+        [Fact]
+        public void TrimToSize_ZeroMaxItems_RemovesAllItems()
+        {
+            // Arrange
+            var collection = new BulkObservableCollection<int> { 1, 2, 3 };
+
+            // Act
+            collection.TrimToSize(0);
+
+            // Assert
+            Assert.Empty(collection);
         }
 
         #endregion

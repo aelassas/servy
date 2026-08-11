@@ -2,7 +2,6 @@ using Moq;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.UnitTests.Utilities;
 using Servy.Testing;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
