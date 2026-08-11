@@ -61,7 +61,7 @@ namespace Servy.Testing
         /// <summary>
         /// Extended timeout budget (10,000 ms / 10 seconds) for waiting for process exit during asynchronous stream redirection tests.
         /// </summary>
-        public const int ProcessWrapperProcessTimeoutMsGenerous = 10_000;
+        public const int ProcessWrapperProcessGenerousTimeoutMs = 10_000;
 
         /// <summary>
         /// Delay (500 ms) before triggering cancellation in asynchronous process wrapper execution tests.

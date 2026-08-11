@@ -60,7 +60,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void OnStart_WhenParseOptionsReturnsNull_DoesNotCallEnsureValidWorkingDirectory()
+        public void OnStart_WhenParseOptionsReturnsNull_DoesNotCallEnsureValidStartupDirectory()
         {
             // Arrange
             var ctx = new ServiceTestContext();

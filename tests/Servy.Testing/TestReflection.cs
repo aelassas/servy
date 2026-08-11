@@ -46,22 +46,30 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Gets the value of a non-public static field on the specified type.
+        /// Gets the value of a non-public static field on the specified type, searching base types if needed.
         /// </summary>
         /// <typeparam name="T">The expected type of the static field value.</typeparam>
         /// <param name="type">The target type.</param>
         /// <param name="fieldName">The name of the non-public static field.</param>
         /// <returns>The value of the static field cast to <typeparamref name="T"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="type"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="type"/> or its base classes.</exception>
         public static T GetFieldStatic<T>(Type type, string fieldName)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var fieldInfo = type.GetField(fieldName, PrivateStaticFlags);
+            var currentType = type;
+            FieldInfo fieldInfo = null;
+
+            while (currentType != null && fieldInfo == null)
+            {
+                fieldInfo = currentType.GetField(fieldName, PrivateStaticFlags);
+                currentType = currentType.BaseType;
+            }
+
             if (fieldInfo == null)
             {
-                throw new ArgumentException($"Static field '{fieldName}' could not be found on type {type.Name}.");
+                throw new ArgumentException($"Static field '{fieldName}' could not be found on type {type.Name} or its base classes.");
             }
 
             return (T)fieldInfo.GetValue(null);
@@ -97,21 +105,29 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Sets a non-public static field on the specified type.
+        /// Sets a non-public static field on the specified type, searching base types if needed.
         /// </summary>
         /// <param name="type">The target type.</param>
         /// <param name="fieldName">The name of the non-public static field.</param>
         /// <param name="value">The value to assign to the static field.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="type"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is not found on <paramref name="type"/> or its base classes.</exception>
         public static void SetFieldStatic(Type type, string fieldName, object value)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var fieldInfo = type.GetField(fieldName, PrivateStaticFlags);
+            var currentType = type;
+            FieldInfo fieldInfo = null;
+
+            while (currentType != null && fieldInfo == null)
+            {
+                fieldInfo = currentType.GetField(fieldName, PrivateStaticFlags);
+                currentType = currentType.BaseType;
+            }
+
             if (fieldInfo == null)
             {
-                throw new ArgumentException($"Static field '{fieldName}' could not be found on type {type.Name}.");
+                throw new ArgumentException($"Static field '{fieldName}' could not be found on type {type.Name} or its base classes.");
             }
 
             fieldInfo.SetValue(null, value);
@@ -145,83 +161,82 @@ namespace Servy.Testing
                 throw new ArgumentException($"Method '{methodName}' could not be found on type {obj.GetType().Name} or its base classes.");
             }
 
-            try
-            {
-                return method.Invoke(obj, args);
-            }
-            catch (TargetInvocationException ex)
-            {
-                if (ex.InnerException != null)
-                {
-                    ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                }
-                throw;
-            }
+            return InvokeUnwrapped(method, obj, args);
         }
 
         /// <summary>
-        /// Invokes a non-public static method on the specified type and unwraps <see cref="TargetInvocationException"/>.
+        /// Invokes a non-public static method on the specified type, searching base types if needed, and unwraps <see cref="TargetInvocationException"/>.
         /// </summary>
         /// <param name="type">The target type.</param>
         /// <param name="methodName">The name of the non-public static method.</param>
         /// <param name="args">The arguments to pass to the method.</param>
         /// <returns>The return value of the static method, or null if void.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> is not found on <paramref name="type"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> is not found on <paramref name="type"/> or its base classes.</exception>
         public static object InvokeNonPublicStatic(Type type, string methodName, params object[] args)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var method = type.GetMethod(methodName, PrivateStaticFlags);
-            if (method == null)
+            var currentType = type;
+            MethodInfo method = null;
+
+            while (currentType != null && method == null)
             {
-                throw new ArgumentException($"Static method '{methodName}' could not be found on type {type.Name}.");
+                method = currentType.GetMethod(methodName, PrivateStaticFlags);
+                currentType = currentType.BaseType;
             }
 
-            try
+            if (method == null)
             {
-                return method.Invoke(null, args);
+                throw new ArgumentException($"Static method '{methodName}' could not be found on type {type.Name} or its base classes.");
             }
-            catch (TargetInvocationException ex)
-            {
-                if (ex.InnerException != null)
-                {
-                    ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                }
-                throw;
-            }
+
+            return InvokeUnwrapped(method, null, args);
         }
 
         /// <summary>
-        /// Invokes a public static method on the specified type and unwraps <see cref="TargetInvocationException"/>.
+        /// Invokes a public static method on the specified type, searching base types if needed, and unwraps <see cref="TargetInvocationException"/>.
         /// </summary>
         /// <param name="type">The target type.</param>
         /// <param name="methodName">The name of the public static method.</param>
         /// <param name="args">The arguments to pass to the method.</param>
         /// <returns>The return value of the static method, or null if void.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> is not found on <paramref name="type"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> is not found on <paramref name="type"/> or its base classes.</exception>
         public static object InvokePublicStatic(Type type, string methodName, params object[] args)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var method = type.GetMethod(methodName, PublicStaticFlags);
-            if (method == null)
+            var currentType = type;
+            MethodInfo method = null;
+
+            while (currentType != null && method == null)
             {
-                throw new ArgumentException($"Public static method '{methodName}' could not be found on type {type.Name}.");
+                method = currentType.GetMethod(methodName, PublicStaticFlags);
+                currentType = currentType.BaseType;
             }
 
+            if (method == null)
+            {
+                throw new ArgumentException($"Public static method '{methodName}' could not be found on type {type.Name} or its base classes.");
+            }
+
+            return InvokeUnwrapped(method, null, args);
+        }
+
+        /// <summary>
+        /// Invokes the specified method on the target instance or type and unwraps <see cref="TargetInvocationException"/>.
+        /// </summary>
+        private static object InvokeUnwrapped(MethodInfo method, object target, object[] args)
+        {
             try
             {
-                return method.Invoke(null, args);
+                return method.Invoke(target, args);
             }
-            catch (TargetInvocationException ex)
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
             {
-                if (ex.InnerException != null)
-                {
-                    ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                }
-                throw;
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw; // unreachable
             }
         }
 
