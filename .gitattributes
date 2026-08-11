@@ -1,0 +1,22 @@
+# Auto-detect text files and enforce CRLF (preserves built-in binary detection)
+* text=auto eol=crlf
+
+# Explicit binary overrides (disables text processing entirely)
+*.exe binary
+*.dll binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.cur binary
+*.7z binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.snk binary
+*.pfx binary
+*.db binary
+*.sqlite binary
