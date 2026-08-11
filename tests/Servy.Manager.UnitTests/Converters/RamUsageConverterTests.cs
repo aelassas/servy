@@ -23,16 +23,7 @@ namespace Servy.Manager.UnitTests.Converters
         public void Convert_ValidLong_ReturnsFormattedString()
         {
             // Arrange
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-
-            serviceCollection.AddSingleton(_mockProcessHelper.Object);
-
-            // Service registration must precede constructor execution
-            // to satisfy the constructor's immediate ServiceProvider lookup check.
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessHelper.Object)))
             {
                 long input = 1024 * 1024 * 10; // 10MB
                 string mockTargetOutput = "10 MB"; // Distinct payload text to prove mock interception over real formatting
@@ -46,10 +37,6 @@ namespace Servy.Manager.UnitTests.Converters
                 // Assert
                 Assert.Equal(mockTargetOutput, result);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Theory]
@@ -59,13 +46,7 @@ namespace Servy.Manager.UnitTests.Converters
         public void Convert_InvalidOrNullValue_ReturnsUnknownPlaceholder(object input)
         {
             // Arrange
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessHelper.Object);
-
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessHelper.Object)))
             {
                 var converter = new RamUsageConverter();
 
@@ -75,23 +56,13 @@ namespace Servy.Manager.UnitTests.Converters
                 // Assert
                 Assert.Equal(UiConstants.NotAvailable, result);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Fact]
         public void ConvertBack_ReturnsDoNothing()
         {
             // Arrange
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessHelper.Object);
-
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessHelper.Object)))
             {
                 var converter = new RamUsageConverter();
 
@@ -100,10 +71,6 @@ namespace Servy.Manager.UnitTests.Converters
 
                 // Assert
                 Assert.Equal(Binding.DoNothing, result);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
     }

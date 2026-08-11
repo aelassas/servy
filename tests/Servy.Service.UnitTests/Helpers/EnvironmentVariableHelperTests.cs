@@ -93,6 +93,41 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.True(expanded.ContainsKey("PATH"));
         }
 
+        [Fact]
+        public void ExpandEnvironmentVariables_EmptyValueCustomVariable_ExpandsReferencesToEmptyString()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "EMPTY_VAR", Value = "" },
+                new EnvironmentVariable { Name = "USES_EMPTY", Value = "pre%EMPTY_VAR%post" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.Equal(string.Empty, expanded["EMPTY_VAR"]);
+            Assert.Equal("prepost", expanded["USES_EMPTY"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_NullValueCustomVariable_IsSkippedAndReferenceStaysLiteral()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "NULL_VAR", Value = null },
+                new EnvironmentVariable { Name = "USES_NULL", Value = "pre%NULL_VAR%post" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.Contains("%NULL_VAR%", expanded["USES_NULL"]);
+        }
+
         #endregion
 
         #region Standard Expansion Paths

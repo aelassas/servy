@@ -93,15 +93,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange & Act
             Helper.RunOnSTA(() =>
             {
-                var originalProvider = App.Services;
-
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var dtViewModel = new PerformanceViewModel();
 
@@ -112,10 +104,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.NotNull(dtViewModel.RamPointCollection);
                     Assert.Empty(dtViewModel.CpuPointCollection);
                     Assert.Empty(dtViewModel.RamPointCollection);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -130,18 +118,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 // Arrange
-                // Preserve the original environment context firmly inside the thread scope boundary
-                var originalProvider = App.Services;
-
-                // Build an isolated runtime DI container to satisfy the base class locator check.
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-
-                // Build the provider instance explicitly and verify it isn't dropped by cross-thread assignments
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var mockService = new PerformanceService { Name = "WexflowEngine", Pid = 4321 };
@@ -175,10 +152,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.NotNull(cancellationTokenSource);
                     Assert.False(cancellationTokenSource.IsCancellationRequested); // Fresh, un-cancelled token source is active
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -187,13 +160,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var mockService = new PerformanceService { Name = "SameService" };
@@ -208,10 +175,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.False(propertyChangedRaised);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -224,17 +187,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                // Preserve the original environment context firmly inside the thread scope boundary
-                var originalProvider = App.Services;
-
-                // Build an isolated runtime DI container to satisfy internal locator checks during constructor setup
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // Arrange
                     var vm = CreateViewModel();
@@ -259,10 +212,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Empty(vm.RamPointCollection);
                     Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -272,13 +221,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             Helper.RunOnSTA(() =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // 1. Establish the Synchronization Context for this STA Thread execution boundary.
                     SynchronizationContext.SetSynchronizationContext(
@@ -334,10 +277,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.NotEmpty(vm.RamPointCollection);
                     Assert.NotEmpty(vm.RamFillPoints);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -350,13 +289,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var mockService = new PerformanceService { Name = "ActiveService", Pid = 8888 };
@@ -367,10 +300,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ActiveService" && s.Pid == 8888), It.IsAny<CancellationToken>()), Times.Once);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
