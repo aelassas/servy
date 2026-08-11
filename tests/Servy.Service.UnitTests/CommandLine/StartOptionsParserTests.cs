@@ -129,6 +129,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 Parameters = @"--port 8080",
                 StartupDirectory = @"C:\App",
                 Priority = 4, // High
+                CpuAffinity = "0,1",
                 EnableConsoleUI = true,
                 StdoutPath = @"C:\Logs\stdout.log",
                 StderrPath = @"C:\Logs\stderr.log",
@@ -140,6 +141,9 @@ namespace Servy.Service.UnitTests.CommandLine
                 RecoveryAction = 1, // RestartService
                 RecoveryOnCleanExit = false,
                 MaxRestartAttempts = 5,
+                HeartbeatUrl = "https://hc.example.com/ping/abc",
+                HeartbeatUrlTimeoutSeconds = 7,
+                EnableHeartbeatUrlFlags = true,
                 EnvironmentVariables = "ENV=PROD;THEME=DARK",
 
                 // Pre-Launch variants
@@ -189,6 +193,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(@"--port 8080", result.ExecutableArgs);
             Assert.Equal(@"C:\App", result.StartupDirectory);
             Assert.Equal(ProcessPriorityClass.High, result.Priority);
+            Assert.Equal("0,1", result.CpuAffinity);
             Assert.True(result.EnableConsoleUI);
 
             // Assert Logging
@@ -204,6 +209,11 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(RecoveryAction.RestartService, result.RecoveryAction);
             Assert.False(result.RecoveryOnCleanExit);
             Assert.Equal(5, result.MaxRestartAttempts);
+
+            // Assert Heartbeat URL properties
+            Assert.Equal("https://hc.example.com/ping/abc", result.HeartbeatUrl);
+            Assert.Equal(7, result.HeartbeatUrlTimeoutInSeconds);
+            Assert.True(result.EnableHeartbeatUrlFlags);
 
             // Assert Environment Variables
             Assert.NotNull(result.EnvironmentVariables);
@@ -279,6 +289,9 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, result.MaxFailedChecks);
             Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, result.RecoveryOnCleanExit);
             Assert.Equal(AppConfig.DefaultMaxRestartAttempts, result.MaxRestartAttempts);
+            Assert.Null(result.HeartbeatUrl);
+            Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, result.HeartbeatUrlTimeoutInSeconds);
+            Assert.Equal(AppConfig.DefaultEnableHeartbeatUrlFlags, result.EnableHeartbeatUrlFlags);
             Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, result.PreLaunchTimeoutInSeconds);
             Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, result.PreLaunchRetryAttempts);
             Assert.Equal(AppConfig.DefaultPreLaunchIgnoreFailure, result.PreLaunchIgnoreFailure);
