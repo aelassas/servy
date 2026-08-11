@@ -61,8 +61,15 @@ namespace Servy.Service.UnitTests.Helpers
             ProcessHelper.ExpandAndAudit(vars, args, _mockLogger.Object, "Prefix");
 
             // Assert
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("%MISSING%")), It.IsAny<Exception>()), Times.Once);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("%UNKNOWN%")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => msg == "Unexpanded environment variable %MISSING% in [Prefix] Environment Variable 'VAR'"),
+                It.IsAny<Exception>()),
+                Times.Once);
+
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => msg == "Unexpanded environment variable %UNKNOWN% in [Prefix] Arguments"),
+                It.IsAny<Exception>()),
+                Times.Once);
         }
 
         [Fact]

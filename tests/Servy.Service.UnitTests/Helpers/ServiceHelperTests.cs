@@ -198,10 +198,10 @@ namespace Servy.Service.UnitTests.Helpers
 
         #endregion
 
-        #region EnsureValidWorkingDirectory Tests
+        #region EnsureValidStartupDirectory Tests
 
         [Fact]
-        public void EnsureValidWorkingDirectory_ValidDirectory_RemainsUnchanged()
+        public void EnsureValidStartupDirectory_ValidDirectory_RemainsUnchanged()
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
@@ -217,7 +217,7 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void EnsureValidWorkingDirectory_FallbacksToExecutableDirectory_IfInvalid()
+        public void EnsureValidStartupDirectory_FallbacksToExecutableDirectory_IfInvalid()
         {
             // Arrange
             var options = new StartOptions
@@ -236,7 +236,7 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void EnsureValidWorkingDirectory_InvalidDirectoryAndEmptyExePath_FallsBackToSystem32()
+        public void EnsureValidStartupDirectory_InvalidDirectoryAndEmptyExePath_FallsBackToSystem32()
         {
             // Arrange
             var options = new StartOptions { StartupDirectory = " ", ExecutablePath = null };
@@ -463,7 +463,14 @@ namespace Servy.Service.UnitTests.Helpers
                 Directory.CreateDirectory(directory);
             }
 
-            File.WriteAllText(restarterPath, "dummy");
+            // Defensively ensure a dummy restarter file exists in the sandbox if it isn't already present,
+            // without modifying or deleting a real build artifact.
+            bool createdDummy = false;
+            if (!File.Exists(restarterPath))
+            {
+                File.WriteAllText(restarterPath, "dummy");
+                createdDummy = true;
+            }
 
             try
             {
@@ -477,7 +484,11 @@ namespace Servy.Service.UnitTests.Helpers
             }
             finally
             {
-                if (File.Exists(restarterPath)) File.Delete(restarterPath);
+                // Clean up only if this specific test run spawned the temporary placeholder
+                if (createdDummy && File.Exists(restarterPath))
+                {
+                    File.Delete(restarterPath);
+                }
             }
         }
 

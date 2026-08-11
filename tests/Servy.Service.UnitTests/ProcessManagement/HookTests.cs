@@ -1,6 +1,5 @@
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
-using System;
 using System.Diagnostics;
 using Xunit;
 
@@ -12,6 +11,25 @@ namespace Servy.Service.UnitTests.ProcessManagement
         private class TestableHook : Hook
         {
             public void CallProtectedDispose(bool disposing) => base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Subclass of <see cref="Process"/> to track whether Dispose(bool) was called.
+        /// </summary>
+        private sealed class DisposeTrackingProcess : Process
+        {
+            public bool Disposed { get; private set; }
+            public int DisposeCallCount { get; private set; }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    Disposed = true;
+                    DisposeCallCount++;
+                }
+                base.Dispose(disposing);
+            }
         }
 
         [Fact]
@@ -38,16 +56,15 @@ namespace Servy.Service.UnitTests.ProcessManagement
         {
             // Arrange
             var hook = new Hook();
-            // We create a dummy process instance.
-            // We do not Start() it, as we only want to test the disposal logic.
-            var process = new Process();
+            var process = new DisposeTrackingProcess();
             hook.Process = process;
 
             // Act
             hook.Dispose();
 
             // Assert
-            Assert.Throws<InvalidOperationException>(() => _ = process.Id); // or ObjectDisposedException, depending on member
+            Assert.True(process.Disposed);
+            Assert.Equal(1, process.DisposeCallCount);
         }
 
         [Fact]
@@ -70,9 +87,8 @@ namespace Servy.Service.UnitTests.ProcessManagement
             // Arrange
             var hook = new Hook();
 
-            // We instantiate a real Process to act as our disposable resource.
-            // Note: We don't call Start(), so no real OS process is spawned.
-            var process = new Process();
+            // We instantiate a DisposeTrackingProcess to track disposal calls without spawning an OS process.
+            var process = new DisposeTrackingProcess();
             hook.Process = process;
 
             // Verify initial state via reflection
@@ -83,17 +99,17 @@ namespace Servy.Service.UnitTests.ProcessManagement
             hook.Dispose();
 
             // Assert - First call should dispose process and set _disposed to true
+            Assert.True(process.Disposed);
+            Assert.Equal(1, process.DisposeCallCount);
             bool disposedAfterFirst = TestReflection.GetField<bool>(hook, "_disposed");
             Assert.True(disposedAfterFirst);
 
             // Act
             var ex = Record.Exception(hook.Dispose);
 
-            // Assert - Second call should hit 'if (_disposed) return;' and return safely
+            // Assert - Second call should hit 'if (_disposed) return;' and return safely without re-disposing
             Assert.Null(ex);
-
-            // Clean up the shell process wrapper safely
-            process.Dispose();
+            Assert.Equal(1, process.DisposeCallCount);
         }
 
         [Fact]
@@ -101,7 +117,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
         {
             // Arrange
             var hook = new TestableHook();
-            using (var process = new Process())
+            using (var process = new DisposeTrackingProcess())
             {
                 hook.Process = process;
 
@@ -109,6 +125,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
                 hook.CallProtectedDispose(false);
 
                 // Assert - the Process is still usable, i.e. it was NOT disposed
+                Assert.False(process.Disposed);
                 var ex = Record.Exception(() => _ = process.StartInfo);
                 Assert.Null(ex);
                 Assert.Same(process, hook.Process);
