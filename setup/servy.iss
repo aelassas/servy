@@ -447,7 +447,8 @@ begin
 
   // Define the hives and value names to delete
   Hives[0] := HKLM64;
-  Hives[1] := HKCU;
+  Hives[1] := HKLM32;
+  Hives[2] := HKCU;
   Values[0] := 'Inno Setup: Selected Tasks';
   Values[1] := 'Inno Setup: Deselected Tasks';
   Values[2] := 'Inno Setup: Selected Components';
