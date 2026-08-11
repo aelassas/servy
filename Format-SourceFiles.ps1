@@ -1,12 +1,13 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Recursively converts text files in the current folder and subfolders to UTF-8 without BOM.
+    Recursively converts text files in the current folder and subfolders to UTF-8 without BOM with Windows (CRLF) line endings.
 
 .DESCRIPTION
     Traverses the current directory recursively, skipping specified directories (e.g., bin, obj,
     node_modules) and file types/names (e.g., .exe, .7z, .coverage.xml, coverage.cobertura.xml).
-    Re-writes file content using [System.IO.File]::WriteAllText with UTF-8 (no BOM).
+    Normalizes line endings to Windows CRLF (`r`n) and re-writes file content using 
+    [System.IO.File]::WriteAllText with UTF-8 (no BOM).
 
 .PARAMETER ExcludeDirs
     Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport'.
@@ -44,7 +45,7 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $currentDir = Get-Location
 $scriptPath = $MyInvocation.MyCommand.Path
 
-Write-Host "Starting UTF-8 (no BOM) conversion in: $currentDir" -ForegroundColor Cyan
+Write-Host "Starting UTF-8 (no BOM) & CRLF conversion in: $currentDir" -ForegroundColor Cyan
 Write-Host "Excluding directories   : $($ExcludeDirs -join ', ')" -ForegroundColor Yellow
 Write-Host "Excluding extensions    : $($ExcludeExtensions -join ', ')" -ForegroundColor Yellow
 Write-Host "Excluding specific files: $($ExcludeFiles -join ', ')" -ForegroundColor Yellow
@@ -110,11 +111,14 @@ foreach ($file in $files) {
     }
 
     try {
-        # Read content using .NET to preserve raw text structure and line endings
+        # Read content using .NET to preserve raw text structure
         $content = [System.IO.File]::ReadAllText($file.FullName)
 
+        # Normalize all line returns (CRLF, LF, CR) to Windows CRLF (`r`n)
+        $crlfContent = $content -replace "`r?`n|`r", "`r`n"
+
         # Write back as UTF-8 without BOM
-        [System.IO.File]::WriteAllText($file.FullName, $content, $utf8NoBom)
+        [System.IO.File]::WriteAllText($file.FullName, $crlfContent, $utf8NoBom)
 
         Write-Host "Converted: $($file.FullName)" -ForegroundColor Green
         $convertedCount++
