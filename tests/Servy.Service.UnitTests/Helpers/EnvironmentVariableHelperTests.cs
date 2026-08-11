@@ -527,12 +527,14 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             string systemComSpec = Environment.GetEnvironmentVariable("COMSPEC");
             string systemPath = Environment.GetEnvironmentVariable("PATH");
+            string systemProfiler = Environment.GetEnvironmentVariable("COR_PROFILER");
 
             var vars = new List<EnvironmentVariable>
             {
                 // Attempting to bypass the block framework using scrambled character casings
                 new EnvironmentVariable { Name = "pAtH", Value = "C:\\Malicious" },
-                new EnvironmentVariable { Name = "comspec", Value = "C:\\Malicious\\cmd.exe" }
+                new EnvironmentVariable { Name = "comspec", Value = "C:\\Malicious\\cmd.exe" },
+                new EnvironmentVariable { Name = "cor_PROFILER", Value = "{EVIL-GUID}" }
             };
 
             // Act
@@ -542,6 +544,18 @@ namespace Servy.Service.UnitTests.Helpers
             // Verify rejection of malicious values
             Assert.NotEqual("C:\\Malicious", expanded["PATH"]);
             Assert.NotEqual("C:\\Malicious\\cmd.exe", expanded["COMSPEC"]);
+
+            // Verify that scrambled-case injection for COR_PROFILER is blocked across all casing keys
+            Assert.False(expanded.TryGetValue("cor_PROFILER", out var customProfiler) && customProfiler == "{EVIL-GUID}");
+            if (expanded.TryGetValue("COR_PROFILER", out var profilerVal))
+            {
+                Assert.NotEqual("{EVIL-GUID}", profilerVal);
+                Assert.Equal(systemProfiler, profilerVal);
+            }
+            else
+            {
+                Assert.Null(systemProfiler);
+            }
 
             // Verify true underlying system configuration value preservation (Symmetric Verification)
             Assert.Equal(systemPath, expanded["PATH"], ignoreCase: true);
