@@ -640,7 +640,7 @@ jobs:
       # -----------------------------------------------------
       - name: Scan Signed Installer with VirusTotal
         id: vt_installer
-        uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
+        uses: cssnr/virustotal-action@5edfa4c982eb0caec6d568ea27cf715269f5c23b #v2.0.0
         continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
@@ -659,7 +659,7 @@ jobs:
 
       - name: Scan Portable Package with VirusTotal
         id: vt_portable
-        uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
+        uses: cssnr/virustotal-action@5edfa4c982eb0caec6d568ea27cf715269f5c23b #v2.0.0
         continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
