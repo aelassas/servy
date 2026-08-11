@@ -38,7 +38,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _mockUiDispatcher = new Mock<IUiDispatcher>();
             _mockProcessKiller = new Mock<IProcessKiller>();
 
-            // Setup configuration defaults to prevent timer initialization drops
+            // InitTimer() reads PerformanceRefreshIntervalInMs; give it a sane interval
             _mockAppConfig.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
 
             // Stub out formatting helpers to return predictable metric text
@@ -51,7 +51,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             return new PerformanceViewModel(
                 _mockServiceRepository.Object,
                 _mockServiceCommands.Object,
-                _mockAppConfig.Object, // Standardized property target reference mapping
+                _mockAppConfig.Object,
                 _mockCursorService.Object,
                 _mockProcessHelper.Object,
                 _mockUiDispatcher.Object);
