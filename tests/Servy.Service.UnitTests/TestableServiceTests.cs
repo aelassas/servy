@@ -39,7 +39,7 @@ namespace Servy.Service.UnitTests
             using (var service = ctx.Build())
             {
                 // Act
-                service.TestOnStart();
+                service.StartForTest();
 
                 // Assert
                 // Verify the sequence of orchestration
@@ -120,13 +120,14 @@ namespace Servy.Service.UnitTests
         }
 
         [Theory]
-        [InlineData(0, 3, RecoveryAction.RestartService, false)]
-        [InlineData(5, 0, RecoveryAction.RestartService, false)]
-        [InlineData(5, 3, RecoveryAction.None, false)]
-        [InlineData(0, 0, RecoveryAction.None, false)]
-        [InlineData(5, 3, RecoveryAction.RestartService, true)]
+        [InlineData(false, 5, 3, RecoveryAction.RestartService, false)] // health monitoring off => disabled
+        [InlineData(true, 0, 3, RecoveryAction.RestartService, false)]
+        [InlineData(true, 5, 0, RecoveryAction.RestartService, false)]
+        [InlineData(true, 5, 3, RecoveryAction.None, false)]
+        [InlineData(true, 0, 0, RecoveryAction.None, false)]
+        [InlineData(true, 5, 3, RecoveryAction.RestartService, true)]
         public void OnStart_ComputesRecoveryActionEnabledFromOptions(
-           int heartbeat, int maxFailedChecks, RecoveryAction recovery, bool expected)
+               bool enableHealthMonitoring, int heartbeat, int maxFailedChecks, RecoveryAction recovery, bool expected)
         {
             // Arrange
             var ctx = new ServiceTestContext();
@@ -134,7 +135,7 @@ namespace Servy.Service.UnitTests
             var options = new StartOptions
             {
                 ServiceName = "TestService",
-                EnableHealthMonitoring = true,
+                EnableHealthMonitoring = enableHealthMonitoring,
                 HeartbeatIntervalInSeconds = heartbeat,
                 MaxFailedChecks = maxFailedChecks,
                 RecoveryAction = recovery

@@ -70,12 +70,6 @@ namespace Servy.Service.UnitTests
         {
         }
 
-        // Instead of overriding OnStart, expose a public method to call the base protected OnStart:
-        public void TestOnStart()
-        {
-            base.OnStart(new string[] { TestModeFlag });
-        }
-
         public void TestOnStart(string[] args)
         {
             // Guarantee TestModeFlag is at position 0 so args[0] in Service.OnStart always matches
