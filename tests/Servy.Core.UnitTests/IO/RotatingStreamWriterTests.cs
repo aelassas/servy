@@ -291,7 +291,7 @@ namespace Servy.Core.UnitTests.IO
                 Assert.NotEmpty(rotatedFiles);
 
                 // Assert precisely against the frozen time
-                Assert.Contains(fixedTime.ToString("yyyyMMdd"), rotatedFiles[0]);
+                Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotatedFiles[0]);
             }
 
             var latestRotatedFile = Directory.GetFiles(_testDir, "rotate.*.txt")
@@ -641,7 +641,7 @@ namespace Servy.Core.UnitTests.IO
             // Assert
             var rotated = Directory.GetFiles(_testDir, "daily.*.log").Where(f => !f.EndsWith("daily.log")).ToArray();
             Assert.NotEmpty(rotated);
-            Assert.Contains(fixedTime.ToString("yyyyMMdd"), rotated[0]);
+            Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotated[0]);
         }
 
         [Fact]
@@ -728,7 +728,7 @@ namespace Servy.Core.UnitTests.IO
             // Assert
             var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
-            Assert.Contains(fixedTime.ToString("yyyyMMdd"), rotated[0]);
+            Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotated[0]);
         }
 
         [Fact]
@@ -750,7 +750,7 @@ namespace Servy.Core.UnitTests.IO
             // Assert
             var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
-            Assert.Contains(fixedTime.ToString("yyyyMMdd"), rotated[0]);
+            Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotated[0]);
         }
 
         [Fact]

@@ -1267,15 +1267,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var originalProvider = App.Services;
-
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_processKillerMock.Object);
-
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_processKillerMock.Object)))
                 {
                     // Arrange
                     var vm = CreateViewModel();
@@ -1301,10 +1293,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Equal(2048576, updateInfo.RamUsage);
                     _processHelperMock.Verify(p => p.MaintainCache(), Times.Once);
                     _processHelperMock.Verify(p => p.GetProcessTreeMetrics(4321), Times.Once);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
