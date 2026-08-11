@@ -74,8 +74,8 @@ jobs:
       # -----------------------------------------------------
       # Install Build dependencies
       # -----------------------------------------------------
-      - uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce #v2
-      - uses: nuget/setup-nuget@d105a947828025cd7a980103c35ba2bfae586d0f #v2.0.2
+      - uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 #v3
+      - uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 #v4.0
 
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
@@ -674,7 +674,7 @@ jobs:
       # -----------------------------------------------------
       - name: Scan Signed Installer with VirusTotal
         id: vt_installer
-        uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
+        uses: cssnr/virustotal-action@5edfa4c982eb0caec6d568ea27cf715269f5c23b #v2.0.0
         continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
@@ -693,7 +693,7 @@ jobs:
 
       - name: Scan Portable Package with VirusTotal
         id: vt_portable
-        uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
+        uses: cssnr/virustotal-action@5edfa4c982eb0caec6d568ea27cf715269f5c23b #v2.0.0
         continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}

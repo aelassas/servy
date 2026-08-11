@@ -50,9 +50,9 @@ jobs:
 
       # 4. Add MSBuild and NuGet to the PATH
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce #v2
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 #v3
       - name: Setup NuGet
-        uses: nuget/setup-nuget@d105a947828025cd7a980103c35ba2bfae586d0f #v2.0.2
+        uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 #v4.0
 
       # 5. Cache Packages
       - name: Cache SonarCloud packages
