@@ -154,13 +154,13 @@ Filename: "icacls.exe"; \
 [Code]
 function ConvertStringSidToSid(
   StringSid: String;
-  var Sid: Cardinal
+  var Sid: UINT_PTR
 ): Boolean;
   external 'ConvertStringSidToSidW@advapi32.dll stdcall';
 
 function LookupAccountSid(
   SystemName: String;
-  Sid: Cardinal;
+  Sid: UINT_PTR;
   Name: String;
   var NameSize: DWORD;
   ReferencedDomainName: String;
@@ -169,14 +169,15 @@ function LookupAccountSid(
 ): Boolean;
   external 'LookupAccountSidW@advapi32.dll stdcall';
 
-function LocalFree(hMem: Cardinal): Cardinal;
+function LocalFree(hMem: UINT_PTR): UINT_PTR;
   external 'LocalFree@kernel32.dll stdcall';
 
 function GetLocalizedSystemAccountName(): String;
 var
-  pSid: Cardinal;
+  pSid: UINT_PTR;
   Name, Domain: String;
   NameSize, DomainSize, Use: DWORD;
+  NullPos: Integer;
 begin
   Result := 'SYSTEM'; // Fallback
   pSid := 0;
@@ -192,6 +193,10 @@ begin
         SetLength(Domain, DomainSize);
         if LookupAccountSid('', pSid, Name, NameSize, Domain, DomainSize, Use) then
         begin
+          // Strip null terminator returned by Win32 API
+          NullPos := Pos(#0, Name);
+          if NullPos > 0 then
+            SetLength(Name, NullPos - 1);
           Result := Trim(Name);
         end;
       end;
@@ -222,8 +227,6 @@ Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: r
 Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{app}\x86"
-Type: filesandordirs; Name: "{app}\x64"
 ; Type: filesandordirs; Name: "{app}\taskschd"
 
 [Code]
@@ -305,7 +308,7 @@ begin
   if sUnInstallString <> '' then
   begin
     sUnInstallString := RemoveQuotes(sUnInstallString);
-    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then
+    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES', '', SW_HIDE, ewWaitUntilTerminated, iResultCode) and (iResultCode = 0) then
       Result := 3
     else
       Result := 2;
@@ -348,6 +351,7 @@ var
 begin
   Parts := TStringList.Create;
   try
+    Parts.StrictDelimiter := True;
     Parts.Delimiter := '.';
     Parts.DelimitedText := Version;
 
@@ -379,10 +383,10 @@ end;
 function InitializeSetup(): Boolean;
 var
   sInstalledVersion, message: String;
-  installedVersion, myAppVersion: Integer;
+  installedVersion, myAppVersion: Int64;
   v: Integer;
   UninstKey: String;
-  Hives: array[0..1] of Integer;
+  Hives: array[0..2] of Integer;
   Values: array[0..4] of String;
   i, j: Integer;
 begin
