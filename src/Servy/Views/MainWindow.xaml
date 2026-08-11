@@ -71,6 +71,16 @@
       <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
       <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
     </Style>
+
+    <!-- Default PasswordBox Field Style -->
+    <Style TargetType="PasswordBox">
+      <Setter Property="Height" Value="22" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="SnapsToDevicePixels" Value="False" />
+      <Setter Property="UseLayoutRounding" Value="False" />
+      <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+      <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+    </Style>
   </Window.Resources>
 
   <DockPanel>
