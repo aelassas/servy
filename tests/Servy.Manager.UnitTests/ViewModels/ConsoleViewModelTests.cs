@@ -277,7 +277,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
-                    var service = new ConsoleService { Name = "DeadService", Pid = 1234, StdoutPath = "log.txt" };
+                    var service = new ConsoleService { Name = "DeadService", Pid = 1234, StdoutPath = "log.txt", StderrPath = "err.log" };
                     vm.SelectedService = service;
 
                     // Simulate DB returning a service state with no active PID (stopped)
@@ -291,6 +291,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.Null(service.Pid);
                     Assert.Null(service.StdoutPath);
+                    Assert.Null(service.StderrPath);
                     Assert.Equal(UiConstants.NotAvailable, vm.Pid);
                 }
             });
@@ -349,7 +350,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     bool scrollTriggered = false;
                     vm.RequestScroll += (force) => scrollTriggered = true;
 
-                    // Create fresh token sources to securely anchor verification states
+                    // Create fresh token sources to verify cancellation states on disposal
                     var expectedTailingCts = new CancellationTokenSource();
                     var expectedLogFilterCts = new CancellationTokenSource();
 
@@ -386,13 +387,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Sorting Logic Proof Tests
 
         [Fact]
-        public void HistorySort_WithIdenticalTimestamps_ShouldPreserveArrivalOrder()
+        public async Task HistorySort_WithIdenticalTimestamps_ShouldPreserveArrivalOrder()
         {
             // Arrange, Act & Assert
-            Helper.RunOnSTA(() =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
+                var sameTime = new DateTime(2026, 1, 30, 10, 0, 0, DateTimeKind.Utc);
 
                 _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(1000);
 
@@ -403,6 +404,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Write sequential log statements sharing identical log line prefix timestamp keys
                 File.WriteAllText(tempStdoutFile, $"[{sameTime:yyyy-MM-dd HH:mm:ss.fff}Z] [INFO] | Line 2{Environment.NewLine}");
                 File.WriteAllText(tempStderrFile, $"[{sameTime:yyyy-MM-dd HH:mm:ss.fff}Z] [ERROR] | Line 1{Environment.NewLine}");
+
+                // Explicitly align last write timestamps so synthetic LogTailer timestamps match exactly
+                File.SetLastWriteTimeUtc(tempStdoutFile, sameTime);
+                File.SetLastWriteTimeUtc(tempStderrFile, sameTime);
 
                 var serviceName = "StableSortTestService";
                 var testService = new ConsoleService
@@ -433,8 +438,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // forcing the production merge-sort block to parse and arrange the matching timestamps.
                         viewModel.SelectedService = testService;
 
-                        // Pump background tasks manually to allow background file I/O cycles to resolve
-                        Task.Delay(200).ContinueWith(_ => { }).Wait();
+                        // Poll deterministically until history is fully loaded into RawLines
+                        await Helper.WaitUntilAsync(
+                            () => viewModel.RawLines.Count == 2,
+                            TimeSpan.FromSeconds(5),
+                            cancellationToken: CancellationToken.None);
 
                         // Assert
                         // Both lines share a timestamp, so stable-sort order must follow arrival order.
@@ -636,28 +644,31 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 // Arrange
-                var vm = CreateViewModel();
-                var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
-                vm.SelectedService = service;
-                vm.SetPaused(true);
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
+                    vm.SelectedService = service;
+                    vm.SetPaused(true);
 
-                // Capture the tracking session ID right before deactivating the selection loop
-                int initialSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
+                    // Capture the tracking session ID right before deactivating the selection loop
+                    int initialSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
-                // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
-                vm.SetPaused(false);
+                    // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
+                    vm.SetPaused(false);
 
-                // Assert
-                // 1. Verify the foundational UI pause flag state flipped back cleanly
-                Assert.False(vm.IsPaused);
+                    // Assert
+                    // 1. Verify the foundational UI pause flag state flipped back cleanly
+                    Assert.False(vm.IsPaused);
 
-                // 2. Verify that the internal switch pipeline was actively re-triggered.
-                // Re-triggering the log-switching engine forces the view model to increment the session identifier
-                // to completely sever past background async streams.
-                int postDeactivationSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
+                    // 2. Verify that the internal switch pipeline was actively re-triggered.
+                    // Re-triggering the log-switching engine forces the view model to increment the session identifier
+                    // to completely sever past background async streams.
+                    int postDeactivationSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
-                Assert.True(postDeactivationSessionId > initialSessionId,
-                    $"The service switch pipeline was not re-triggered. The tracking session ID remained at {initialSessionId}.");
+                    Assert.True(postDeactivationSessionId > initialSessionId,
+                        $"The service switch pipeline was not re-triggered. The tracking session ID remained at {initialSessionId}.");
+                }
             });
         }
 
