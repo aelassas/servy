@@ -147,6 +147,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             _sut.CustomCreateServiceItem = (srv) => mockItem;
             _sut.SearchText = "Servy";
 
+            // Seed a stale item from a previous search to verify that Services.Clear() is called
+            _sut.Services.Add(new Mock<ServiceItemBase>().Object);
+
             // Act
             await _sut.SearchCommand.ExecuteAsync(null);
 

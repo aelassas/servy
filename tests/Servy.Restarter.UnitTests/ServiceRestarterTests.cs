@@ -369,11 +369,20 @@ namespace Servy.Restarter.UnitTests
 
         #region Disappearance Guard Tests
 
-        [Fact]
-        public void RestartService_StatusThrowsInSettleLoop_ReturnsServiceNotFoundWithoutStopOrStart()
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StatusThrowsInSettleLoop_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
         {
             // Arrange
-            _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
+            if (throwInvalidOperation)
+            {
+                _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
+            }
+            else
+            {
+                _mockController.Setup(c => c.Status).Throws<Win32Exception>();
+            }
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -415,6 +424,26 @@ namespace Servy.Restarter.UnitTests
         [Theory]
         [InlineData(true)]  // Test InvalidOperationException path
         [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StatusThrowsAtStopEntry_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running) // Settle loop check (not pending)
+                .Throws(throwInvalidOperation ? new InvalidOperationException() : (Exception)new Win32Exception()); // Stop-entry status check
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
         public void RestartService_RefreshThrowsInStartPhase_ReturnsServiceNotFoundWithoutStartCommand(bool throwInvalidOperation)
         {
             // Arrange
@@ -437,6 +466,24 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_AlreadyRunningAtStartPhase_DoesNotIssueStart()
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)  // Settle loop check
+                .Returns(ServiceControllerStatus.Stopped)  // Stop phase check (skips stop command)
+                .Returns(ServiceControllerStatus.Running);  // Pre-start phase status check
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
             _mockController.Verify(c => c.Start(), Times.Never);
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }

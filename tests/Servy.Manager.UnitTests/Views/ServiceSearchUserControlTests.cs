@@ -157,31 +157,17 @@ namespace Servy.Manager.UnitTests.Views
                 var viewModel = CreateIsolatedViewModel();
                 control.DataContext = viewModel;
 
-                Exception escapingDispatcherException = null;
-                var currentDispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
-
-                // Track unhandled dispatcher failures to prove cancellation doesn't surface as a crash
-                currentDispatcher.UnhandledException += (s, e) =>
-                {
-                    escapingDispatcherException = e.Exception;
-                    e.Handled = true; // Prevent app exit during test execution runner passes
-                };
-
                 // Act
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
                 viewModel.CommandTcs.SetException(new OperationCanceledException());
 
-                // Centralized poll tracking handles asynchronous execution window
-                await PollUntilTrueAsync(() => viewModel.ExecuteAsyncWasCalled);
-
-                // Let the asynchronous dispatcher frames drain completely to flush any trailing crashes
-                await currentDispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+                var task = control.LastLoadedTask;
+                Assert.NotNull(task);
+                await task;
 
                 // Assert
+                Assert.Equal(TaskStatus.RanToCompletion, task.Status);
                 Assert.True(viewModel.ExecuteAsyncWasCalled);
-
-                // Assert that the cancellation exception did not escape the catch boundary block
-                Assert.Null(escapingDispatcherException);
             }, createApp: true);
         }
 
@@ -199,13 +185,12 @@ namespace Servy.Manager.UnitTests.Views
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
                 viewModel.CommandTcs.SetException(new InvalidOperationException("SCM Connection Refused"));
 
-                // Centralized poll tracking handles asynchronous execution window
-                await PollUntilTrueAsync(() => viewModel.ExecuteAsyncWasCalled);
-
-                // Give the internal Logger line a single dispatch sequence loop to write out traces cleanly
-                await Task.Delay(30);
+                var task = control.LastLoadedTask;
+                Assert.NotNull(task);
+                await task;
 
                 // Assert
+                Assert.Equal(TaskStatus.RanToCompletion, task.Status);
                 Assert.True(viewModel.ExecuteAsyncWasCalled);
             }, createApp: true);
         }
