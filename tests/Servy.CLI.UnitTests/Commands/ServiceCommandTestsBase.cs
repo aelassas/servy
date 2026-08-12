@@ -1,7 +1,6 @@
 using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
-using Servy.CLI.Resources;
 using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
@@ -12,7 +11,7 @@ namespace Servy.CLI.UnitTests.Commands
     /// </summary>
     /// <typeparam name="TCommand">The command type under test.</typeparam>
     /// <typeparam name="TOptions">The CLI options type accepted by the command.</typeparam>
-    public abstract class ServiceCommandTestsBase<TCommand, TOptions>
+    public abstract class ServiceCommandTestsBase<TCommand, TOptions> : IDisposable
         where TOptions : class, new()
     {
         /// <summary>
@@ -27,10 +26,11 @@ namespace Servy.CLI.UnitTests.Commands
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommandTestsBase{TCommand, TOptions}"/> class.
-        /// Sets up the mock service manager and instantiates the command under test.
+        /// Sets up elevation bypass, mock service manager, and instantiates the command under test.
         /// </summary>
         protected ServiceCommandTestsBase()
         {
+            BaseCommand.BypassElevationCheck = true;
             MockServiceManager = new Mock<IServiceManager>();
             Command = CreateCommandInstance();
         }
@@ -114,7 +114,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             try
             {
-                BaseCommand.BypassElevationCheck = true;
                 var result = cmd.ExecuteAsync(options, TestContext.Current.CancellationToken);
                 return await result;
             }
@@ -138,8 +137,7 @@ namespace Servy.CLI.UnitTests.Commands
             IServiceManager? nullManager = null;
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>("serviceManager", () => CreateCommandInstanceWithManager(nullManager));
-            Assert.Equal("serviceManager", ex.ParamName);
+            Assert.Throws<ArgumentNullException>("serviceManager", () => CreateCommandInstanceWithManager(nullManager));
         }
 
         /// <summary>
@@ -256,6 +254,18 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal(Core.Resources.Strings.Msg_ServiceNotFound, result.Message);
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        /// <summary>
+        /// Resets process-wide static state altered during test execution.
+        /// </summary>
+        public virtual void Dispose()
+        {
+            BaseCommand.BypassElevationCheck = false;
         }
 
         #endregion

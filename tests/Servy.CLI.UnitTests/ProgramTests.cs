@@ -1,15 +1,16 @@
-using System.Reflection;
+using Servy.CLI.Helpers;
+using Servy.Testing;
 
 namespace Servy.CLI.UnitTests
 {
     [Collection("SequentialConsoleTests")]
     public class ProgramTests : IDisposable
     {
-        // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
         private const string AppSettingsFileName = "appsettings.cli.json";
         private const string AesKeyFileName = "test_aes.key";
         private const string AesIvFileName = "test_aes.iv";
         private const string DatabaseFileName = "Test_Servy.db";
+        private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
 
         private readonly string _tempConfigPath;
         private readonly TextWriter _originalConsoleOut;
@@ -139,8 +140,8 @@ namespace Servy.CLI.UnitTests
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
             // Arrange
-            // Use 'start' with a non-existent service name so execution fails (exit code 1)
-            // while ensuring no loading animation or output is written to the console buffer.
+            // Supply the service name via the required explicit option switch (-n)
+            // to satisfy CommandLineParser constraints and route into the quiet logic path.
             string[] args = { "start", "-n", "NonExistentServiceForTestingOnly", "--quiet" };
 
             // Act
@@ -158,7 +159,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async Task RunWithLoadingAnimation_WhenOutputIsRedirectedOrQuiet_BypassesAnimationLoop()
+        public async Task RunWithLoadingAnimation_WhenOutputIsRedirected_BypassesAnimationLoop()
         {
             // Arrange
             var outputWriter = new StringWriter();
@@ -167,15 +168,13 @@ namespace Servy.CLI.UnitTests
 
             try
             {
-                // Access the internal test seam via reflection to explicitly force an un-redirected state scenario
-                // to verify that the internal evaluation flag catches the runtime configuration bypass blocks.
-                var field = typeof(CLI.Helpers.ConsoleHelper).GetField("_isOutputRedirectedOverride", BindingFlags.Static | BindingFlags.NonPublic);
-                field?.SetValue(null, true); // Force out-of-bounds skip branch simulation
+                // Force an explicit output redirection override via fail-loud reflection
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, true);
 
                 bool executionCompleted = false;
 
                 // Act
-                await CLI.Helpers.ConsoleHelper.RunWithLoadingAnimation(async () =>
+                await ConsoleHelper.RunWithLoadingAnimation(async () =>
                 {
                     await Task.Delay(10);
                     executionCompleted = true;
@@ -193,8 +192,7 @@ namespace Servy.CLI.UnitTests
             {
                 // Clean up console redirection states to preserve host environment test runner stability
                 Console.SetOut(originalOut);
-                var field = typeof(CLI.Helpers.ConsoleHelper).GetField("_isOutputRedirectedOverride", BindingFlags.Static | BindingFlags.NonPublic);
-                field?.SetValue(null, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
             }
         }
 
@@ -206,7 +204,7 @@ namespace Servy.CLI.UnitTests
             Console.SetOut(_originalConsoleOut);
             Console.SetError(_originalConsoleError);
 
-            // Clean environment layout files
+            // Clean environment layout files using consistent BaseDirectory resolution
             try
             {
                 if (File.Exists(_tempConfigPath))
@@ -214,8 +212,11 @@ namespace Servy.CLI.UnitTests
                     File.Delete(_tempConfigPath);
                 }
 
-                if (File.Exists(AesKeyFileName)) File.Delete(AesKeyFileName);
-                if (File.Exists(AesIvFileName)) File.Delete(AesIvFileName);
+                string keyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AesKeyFileName);
+                if (File.Exists(keyPath)) File.Delete(keyPath);
+
+                string ivPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AesIvFileName);
+                if (File.Exists(ivPath)) File.Delete(ivPath);
 
                 string testDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DatabaseFileName);
                 if (File.Exists(testDb))
