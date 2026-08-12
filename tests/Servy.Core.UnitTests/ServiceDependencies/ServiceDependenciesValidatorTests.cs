@@ -16,6 +16,8 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("   ServiceA   ;  ServiceB  ")]              // Validate_NameWithLeadingOrTrailingWhitespace_TrimmedAndValid
         [InlineData(";ServiceA;;ServiceB; ;\n;")]                // Validate_InputWithEmptyEntries_SkipsEmptyEntriesWithoutError
         [InlineData("MSSQL$SQLEXPRESS")]                         // Validate_SingleValidServiceNameWithDollarSign_ReturnsTrue (SQL Server Named Instances)
+        [InlineData("clr_optimization_v4.0.30319_32")]           // period is allowed
+        [InlineData("My Service;Another Service")]               // internal spaces are allowed (edge spaces are trimmed, internal ones are not)
         public void Validate_ValidInput_ReturnsTrueWithNoErrors(string input)
         {
             // Arrange & Act
