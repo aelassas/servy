@@ -506,7 +506,7 @@ namespace Servy.Manager.UnitTests.Services
                 _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe);
 
                 // Mock Repository to return a valid domain entity
-                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new ServiceDto { Name = service.Name });
 
                 // Act
@@ -602,7 +602,9 @@ namespace Servy.Manager.UnitTests.Services
         {
             // Arrange
             var sut = CreateServiceCommands();
-            var tempExe = Path.GetTempFileName() + ".exe";
+            var baseTmpFile = Path.GetTempFileName();
+            var tempExe = Path.ChangeExtension(baseTmpFile, ".exe");
+            if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
 
             try
             {
@@ -626,18 +628,24 @@ namespace Servy.Manager.UnitTests.Services
         {
             // Arrange
             var sut = CreateServiceCommands();
-            var tempExe = Path.GetTempFileName() + ".exe";
+            var baseTmpFile = Path.GetTempFileName();
+            var tempExe = Path.ChangeExtension(baseTmpFile, ".exe");
+            if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
 
             try
             {
                 File.WriteAllText(tempExe, "dummy");
                 _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe);
-                _serviceRepositoryMock.Setup(r => r.GetByNameAsync("Missing", true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
+
+                _serviceRepositoryMock
+                    .Setup(r => r.GetByNameAsync("Missing", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((ServiceDto)null);
 
                 // Act
                 await sut.ConfigureServiceAsync(new Service { Name = "Missing" }, CancellationToken.None);
 
                 // Assert
+                _serviceRepositoryMock.Verify(r => r.GetByNameAsync("Missing", false, It.IsAny<CancellationToken>()), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
             }
             finally

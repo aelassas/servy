@@ -38,6 +38,20 @@ namespace Servy.Manager.UnitTests.Mappers
         }
 
         [Fact]
+        public async Task ToModelAsync_EmptyName_ReturnsNull()
+        {
+            // Arrange
+            var domainService = new Core.Domain.Service(_mockServiceManager.Object) { Name = string.Empty };
+
+            // Act
+            var result = await ServiceMapper.ToModelAsync(domainService, true, false,
+                _mockProcessHelper.Object, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
         public async Task ToModelAsync_ValidService_MapsPropertiesCorrectly()
         {
             // Arrange: Set up every single mapped property on the domain object to avoid hidden default pass-throughs

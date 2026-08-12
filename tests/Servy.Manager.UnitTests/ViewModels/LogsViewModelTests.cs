@@ -90,8 +90,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotNull(vm.SearchCommand);
                 Assert.False(vm.IsBusy);
                 Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
+                var expectedFrom = DateTime.Now.AddDays(-7);
                 Assert.NotNull(vm.FromDate);
                 Assert.NotNull(vm.ToDate);
+                Assert.True((vm.FromDate.Value - expectedFrom).Duration() < TimeSpan.FromMinutes(1));
+                Assert.True((vm.ToDate.Value - DateTime.Now).Duration() < TimeSpan.FromMinutes(1));
                 Assert.Equal(EventLogLevel.All, vm.SelectedLevel);
             }
         }
