@@ -88,9 +88,9 @@ function Get-FilteredFiles {
     foreach ($dir in $directories) {
         if ($DirExclusions -notcontains $dir.Name) {
             Get-FilteredFiles -Path $dir.FullName `
-                               -DirExclusions $DirExclusions `
-                               -ExtExclusions $ExtExclusions `
-                               -FileExclusions $FileExclusions
+                              -DirExclusions $DirExclusions `
+                              -ExtExclusions $ExtExclusions `
+                              -FileExclusions $FileExclusions
         }
     }
 }
@@ -115,7 +115,7 @@ foreach ($file in $files) {
         $content = [System.IO.File]::ReadAllText($file.FullName)
 
         # Normalize all line returns (CRLF, LF, CR) to Windows CRLF (`r`n)
-        $crlfContent = $content -replace "`r?`n|`r", "`r`n"
+        $crlfContent = $content.Replace("`r`n", "`n").Replace("`r", "`n").Replace("`n", "`r`n")
 
         # Write back as UTF-8 without BOM
         [System.IO.File]::WriteAllText($file.FullName, $crlfContent, $utf8NoBom)
