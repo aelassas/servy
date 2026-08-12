@@ -25,7 +25,11 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         public static TheoryData<string?, bool> VersionCases()
         {
             var min = AppConfig.MinRequiredSqliteVersion;
-            var justBelow = new Version(min.Major, min.Minor, Math.Max(0, min.Build - 1));
+            var justBelow = min.Build > 0
+                ? new Version(min.Major, min.Minor, min.Build - 1)
+                : min.Minor > 0
+                    ? new Version(min.Major, min.Minor - 1, 999)
+                    : new Version(min.Major - 1, 999, 999);
             var newerPatch = new Version(min.Major, min.Minor, min.Build + 2);
 
             return new TheoryData<string?, bool>

@@ -363,13 +363,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         viewModel = CreateViewModel();
                         viewModel.DependencyTree.Add(new ServiceDependencyNode("Stale", "Stale"));
-                        viewModel.SelectedService = null;
 
                         // Act
                         viewModel.LoadDependencyTreeAsync(null).GetAwaiter().GetResult();
 
                         // Assert
                         Assert.Empty(viewModel.DependencyTree);
+                        _mockServiceManager.Verify(m => m.GetDependencies(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+                        Assert.False(viewModel.IsBusy);   // the early return never enters the IsBusy block
                     }
                     finally
                     {
