@@ -15,11 +15,13 @@
 
 #define CliExeName "servy-cli.exe"
 
+#define AppIdGuid "8343B121-BE1C-463F-AA5B-FD237DD2F8D0"
+
 [Setup]
 PrivilegesRequired=admin
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}
+AppId={{{#AppIdGuid}}
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -254,29 +256,56 @@ end;
 //  - Check if a version is already installed
 //  - Prepare install
 // -----------------------------------------------------
-function GetUninstallString(): String;
+function QueryUninstallRegistry(const AppIdGuidStr, ValueName: String): String;
 var
-  sUnInstPath, sUnInstallString: String;
+  sUnInstPath, sValue, FormattedAppId: String;
 begin
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-  sUnInstallString := '';
+  sValue := '';
 
-  if not RegQueryStringValue(HKLM64, sUnInstPath, 'UninstallString', sUnInstallString) then
+  // Ensure AppId is wrapped in curly braces {...}
+  FormattedAppId := AppIdGuidStr;
+  if (Length(FormattedAppId) > 0) and (FormattedAppId[1] <> '{') then
+    FormattedAppId := '{' + FormattedAppId + '}';
+
+  sUnInstPath := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + FormattedAppId + '_is1';
+
+  // 1. Check 64-bit HKLM
+  if not RegQueryStringValue(HKLM64, sUnInstPath, ValueName, sValue) then
   begin
-    RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
-  end;
-
-  if sUnInstallString = '' then
-  begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-
-    if not RegQueryStringValue(HKLM32, sUnInstPath, 'UninstallString', sUnInstallString) then
+    // 2. Check HKCU
+    if not RegQueryStringValue(HKCU, sUnInstPath, ValueName, sValue) then
     begin
-      RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
+      // 3. Check 32-bit HKLM (HKLM32 automatically redirects SOFTWARE to WOW6432Node)
+      RegQueryStringValue(HKLM32, sUnInstPath, ValueName, sValue);
     end;
   end;
 
-  Result := sUnInstallString;
+  Result := sValue;
+end;
+
+function GetUninstallString(): String;
+var
+  AppIdGuids: array[0..1] of String;
+  i: Integer;
+  sResult: String;
+begin
+  AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
+  if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
+  else
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D1';
+
+  for i := 0 to High(AppIdGuids) do
+  begin
+    sResult := QueryUninstallRegistry(AppIdGuids[i], 'UninstallString');
+    if sResult <> '' then
+    begin
+      Result := sResult;
+      Exit;
+    end;
+  end;
+
+  Result := '';
 end;
 
 function IsUpgrade(): Boolean;
@@ -321,27 +350,28 @@ end;
 
 function GetInstalledVersion(): String;
 var
-  sUnInstPath, sVersionString: String;
+  AppIdGuids: array[0..1] of String;
+  i: Integer;
+  sResult: String;
 begin
-  sVersionString := '';
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
+  Result := '';
+  AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
+  if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
+  else
+    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D1';
 
-  if not RegQueryStringValue(HKLM64, sUnInstPath, 'DisplayVersion', sVersionString) then
+  for i := 0 to High(AppIdGuids) do
   begin
-    RegQueryStringValue(HKCU, sUnInstPath, 'DisplayVersion', sVersionString);
-  end;
-
-  if sVersionString = '' then
-  begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-
-    if not RegQueryStringValue(HKLM32, sUnInstPath, 'DisplayVersion', sVersionString) then
+    sResult := QueryUninstallRegistry(AppIdGuids[i], 'DisplayVersion');
+    if sResult <> '' then
     begin
-      RegQueryStringValue(HKCU, sUnInstPath, 'DisplayVersion', sVersionString);
+      Result := sResult;
+      Exit;
     end;
   end;
 
-  Result := sVersionString;
+  Result := '';
 end;
 
 function NumericVersion(const Version: string): Int64;
