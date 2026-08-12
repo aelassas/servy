@@ -191,8 +191,6 @@ namespace Servy.Infrastructure.UnitTests.Data
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedId);
 
-            _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
-
             var repo = CreateRepository();
 
             // Act
@@ -1176,8 +1174,29 @@ namespace Servy.Infrastructure.UnitTests.Data
         public void ApplyRuntimeState_AllCombinationsAndBranches_Covered(bool preserveState, bool preserveCredentials)
         {
             // Arrange
-            var incoming = new ServiceDto { Name = "Test", Pid = 0, Password = "new_password" };
-            var existing = new ServiceDto { Name = "Test", Pid = 555, Password = "old_password", ActiveStdoutPath = "active.log" };
+            var incoming = new ServiceDto
+            {
+                Name = "Test",
+                Pid = 0,
+                ActiveStdoutPath = "inc_out.log",
+                ActiveStderrPath = "inc_err.log",
+                PreviousStopTimeout = 10,
+                RunAsLocalSystem = true,
+                UserAccount = "inc_user",
+                Password = "new_password"
+            };
+
+            var existing = new ServiceDto
+            {
+                Name = "Test",
+                Pid = 555,
+                ActiveStdoutPath = "active_stdout.log",
+                ActiveStderrPath = "active_stderr.log",
+                PreviousStopTimeout = 30,
+                RunAsLocalSystem = false,
+                UserAccount = "old_user",
+                Password = "old_password"
+            };
 
             // Act
             TestReflection.InvokeNonPublicStatic(
@@ -1192,20 +1211,28 @@ namespace Servy.Infrastructure.UnitTests.Data
             if (preserveState)
             {
                 Assert.Equal(555, incoming.Pid);
-                Assert.Equal("active.log", incoming.ActiveStdoutPath);
+                Assert.Equal("active_stdout.log", incoming.ActiveStdoutPath);
+                Assert.Equal("active_stderr.log", incoming.ActiveStderrPath);
+                Assert.Equal(30, incoming.PreviousStopTimeout);
             }
             else
             {
                 Assert.Equal(0, incoming.Pid);
-                Assert.Null(incoming.ActiveStdoutPath);
+                Assert.Equal("inc_out.log", incoming.ActiveStdoutPath);
+                Assert.Equal("inc_err.log", incoming.ActiveStderrPath);
+                Assert.Equal(10, incoming.PreviousStopTimeout);
             }
 
             if (preserveCredentials)
             {
+                Assert.False(incoming.RunAsLocalSystem);
+                Assert.Equal("old_user", incoming.UserAccount);
                 Assert.Equal("old_password", incoming.Password);
             }
             else
             {
+                Assert.True(incoming.RunAsLocalSystem);
+                Assert.Equal("inc_user", incoming.UserAccount);
                 Assert.Equal("new_password", incoming.Password);
             }
         }
@@ -1251,7 +1278,12 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             // Arrange
             var repo = CreateRepository();
-            var poisonDto = new ServiceDto { Id = 77, Name = "PoisonRow", Description = "Original Description", Password = "poison_payload" };
+            var poisonDto = new ServiceDto { Id = 77, Name = "PoisonRow", Description = "Original Description" };
+            var type = typeof(ServiceDto);
+            foreach (var field in SensitiveFields)
+            {
+                type.GetProperty(field.Key)?.SetValue(poisonDto, $"{field.Value}_poison");
+            }
 
             _mockDapper
                 .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
@@ -1267,9 +1299,10 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.NotNull(result);
             Assert.Contains("[DECRYPTION FAILED: TimeoutException]", result.Description);
 
-            Assert.Null(result.Password);
-            Assert.Null(result.Parameters);
-            Assert.Null(result.EnvironmentVariables);
+            foreach (var field in SensitiveFields)
+            {
+                Assert.Null(type.GetProperty(field.Key)?.GetValue(result));
+            }
         }
 
         [Fact]
@@ -1292,12 +1325,20 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Contains("[DECRYPTION FAILED: InvalidOperationException]", dto.Description);
 
             // 3. Branch path verification: Inner Exception matches concrete reference mapping layout rules
-            var freshDto = new ServiceDto { Name = "Row2", Description = "Meta", Password = "ABC" };
+            var freshDto = new ServiceDto { Name = "Row2", Description = "Meta" };
+            var type = typeof(ServiceDto);
+            foreach (var field in SensitiveFields)
+            {
+                type.GetProperty(field.Key)?.SetValue(freshDto, $"{field.Value}_corrupt");
+            }
+
             TestReflection.InvokeNonPublic(repo, "HandleCorruptServiceDecryption", freshDto, targetExWithInner);
 
             Assert.Contains("[DECRYPTION FAILED: UnauthorizedAccessException]", freshDto.Description);
-            Assert.Null(freshDto.Password);
-            Assert.Null(freshDto.Parameters);
+            foreach (var field in SensitiveFields)
+            {
+                Assert.Null(type.GetProperty(field.Key)?.GetValue(freshDto));
+            }
         }
 
         #endregion

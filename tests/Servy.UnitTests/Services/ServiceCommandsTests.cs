@@ -4,6 +4,7 @@ using Servy.Core.Common;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Resources;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Services;
@@ -83,6 +84,15 @@ namespace Servy.UnitTests.Services
                 jsonServiceSerializer: _jsonServiceSerializerMock.Object,
                 processHelper: _processHelperMock.Object
             );
+        }
+
+        /// <summary>
+        /// Instantiates an OperationResult with IsSuccess = false and a blank ErrorMessage
+        /// via TestReflection on its private constructor.
+        /// </summary>
+        private static OperationResult CreateBlankFailureOperationResult(string? errorMessage)
+        {
+            return TestReflection.CreateInstanceNonPublic<OperationResult>(false, errorMessage);
         }
 
         private void SetupDummyWrapperExe()
@@ -287,6 +297,30 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync("Access Denied OS Driver Error", UiAppConfig.Caption), Times.Once);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task InstallService_ManagerFailsWithoutMessage_DisplaysUnexpectedErrorFallback(string? blankMessage)
+        {
+            // Arrange
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "SilentInstallFailureService" };
+            var dto = new ServiceDto { Name = "SilentInstallFailureService" };
+
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CreateBlankFailureOperationResult(blankMessage));
+
+            // Act
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
         [Fact]
         public async Task InstallService_UnauthorizedAccessException_DisplaysAdminRightsRequired()
         {
@@ -447,6 +481,27 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync("Service is deadlocked. Control failed.", UiAppConfig.Caption), Times.Once);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task ExecuteServiceCommand_ManagerFailsWithoutMessage_DisplaysUnexpectedErrorFallback(string? blankMessage)
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "SilentControlFailureService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CreateBlankFailureOperationResult(blankMessage));
+
+            // Act
+            var result = await sut.StopServiceAsync(serviceName, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
         [Fact]
         public async Task ExecuteServiceCommand_UnauthorizedAccess_DisplaysAdminRightsRequired()
         {
@@ -534,22 +589,22 @@ namespace Servy.UnitTests.Services
         #region IsServiceNameValid Conditional Branch Tests
 
         [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("   ")]
-        [InlineData("Invalid/Name\\WithSpecialChars")]
-        public async Task IsServiceNameValid_InvalidScenarios_ReturnsFalseAndDisplaysWarning(string? serviceName)
+        [InlineData(null, nameof(Strings.Msg_ValidationError))]
+        [InlineData("", nameof(Strings.Msg_ValidationError))]
+        [InlineData("   ", nameof(Strings.Msg_ValidationError))]
+        [InlineData("Invalid/Name\\WithSpecialChars", nameof(Strings.Msg_InvalidServiceName))]
+        public async Task IsServiceNameValid_InvalidScenarios_ReturnsFalseAndDisplaysWarning(string? serviceName, string expectedResourceKey)
         {
             // Arrange
             var sut = CreateSut();
+            var expected = Strings.ResourceManager.GetString(expectedResourceKey)!;
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
-            // The warning dialog must be shown exactly once
-            _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(expected, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -781,6 +836,27 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync("Service marked for deletion.", UiAppConfig.Caption), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UninstallService_ManagerFailsWithoutMessage_DisplaysUnexpectedErrorFallback(string? blankMessage)
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "SilentFailureService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CreateBlankFailureOperationResult(blankMessage));
+
+            // Act
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
