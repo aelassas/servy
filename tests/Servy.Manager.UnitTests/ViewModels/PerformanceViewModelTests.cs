@@ -9,7 +9,7 @@ using Servy.Manager.ViewModels;
 using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
-using System.ComponentModel;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
@@ -18,7 +18,7 @@ using Helper = Servy.Testing.Helper;
 namespace Servy.Manager.UnitTests.ViewModels
 {
     [Collection(AmbientTestCollection.Name)]
-    public class PerformanceViewModelTests
+    public class PerformanceViewModelTests : IDisposable
     {
         private readonly Mock<IServiceRepository> _mockServiceRepository;
         private readonly Mock<IServiceCommands> _mockServiceCommands;
@@ -27,6 +27,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IProcessHelper> _mockProcessHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly Mock<IUiDispatcher> _mockUiDispatcher;
+
+        // Track generated SUT view model instances to enforce complete memory containment cleanup
+        private readonly ConcurrentBag<PerformanceViewModel> _allocatedViewModels = new ConcurrentBag<PerformanceViewModel>();
 
         public PerformanceViewModelTests()
         {
@@ -48,13 +51,16 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         private PerformanceViewModel CreateViewModel()
         {
-            return new PerformanceViewModel(
+            var vm = new PerformanceViewModel(
                 _mockServiceRepository.Object,
                 _mockServiceCommands.Object,
                 _mockAppConfig.Object,
                 _mockCursorService.Object,
                 _mockProcessHelper.Object,
                 _mockUiDispatcher.Object);
+
+            _allocatedViewModels.Add(vm);
+            return vm;
         }
 
         #region Initialization & Constructor Verification
@@ -90,8 +96,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var dtViewModel = new PerformanceViewModel())
                 {
-                    var dtViewModel = new PerformanceViewModel();
+                    _allocatedViewModels.Add(dtViewModel);
 
                     // Assert
                     // Verify basic structural state and clean empty graph collection initialization
@@ -115,8 +122,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var mockService = new PerformanceService { Name = "WexflowEngine", Pid = 4321 };
                     bool propChangedFired = false;
 
@@ -124,6 +131,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         if (e.PropertyName == nameof(vm.SelectedService)) propChangedFired = true;
                     };
+
+                    // Seed points into collections to ensure buffer clearing is genuinely verified during service transitions
+                    vm.CpuPointCollection.Add(new Point(1, 1));
+                    vm.RamPointCollection.Add(new Point(2, 2));
 
                     // Act
                     vm.SelectedService = mockService;
@@ -157,8 +168,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var mockService = new PerformanceService { Name = "SameService" };
                     vm.SelectedService = mockService;
 
@@ -184,9 +195,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
                     // Arrange
-                    var vm = CreateViewModel();
                     vm.Pid = "999";
                     vm.CpuUsage = "50%";
                     vm.RamUsage = "300 MB";
@@ -218,17 +229,20 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
                     // 1. Establish the Synchronization Context for this STA Thread execution boundary.
                     SynchronizationContext.SetSynchronizationContext(
                         new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
 
-                    var vm = CreateViewModel();
                     var mockService = new PerformanceService { Name = "ServyDaemon", Pid = 2050 };
                     vm.SelectedService = mockService;
 
+                    // Stop the background DispatcherTimer to prevent concurrent automatic ticks during manual dispatcher pumping
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
                     _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
-                                          .ReturnsAsync(2050);
+                                           .ReturnsAsync(2050);
 
                     var fakeMetrics = new ProcessMetrics(45.5, 50 * 1024 * 1024);
                     _mockProcessHelper.Setup(p => p.GetProcessTreeMetrics(2050)).Returns(fakeMetrics);
@@ -286,8 +300,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var mockService = new PerformanceService { Name = "ActiveService", Pid = 8888 };
                     vm.SelectedService = mockService;
 
@@ -298,6 +312,28 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ActiveService" && s.Pid == 8888), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }, createApp: true);
+        }
+
+        #endregion
+
+        #region Disposal & Teardown
+
+        /// <summary>
+        /// Explicit test fixture teardown sequence to purge in-flight background CTS contexts safely.
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (var vm in _allocatedViewModels)
+            {
+                try
+                {
+                    vm.Dispose();
+                }
+                catch
+                {
+                    // Catch-all block to guarantee adjacent cleanup executions complete safely
+                }
+            }
         }
 
         #endregion
