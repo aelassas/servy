@@ -91,7 +91,6 @@ namespace Servy.Core.UnitTests.Logging
             // Capture a directory listing snapshot to verify no file system leaks occur
             var logDirectory = new DirectoryInfo(Logger.LogsPath);
             int initialLogFileCount = logDirectory.Exists ? logDirectory.GetFiles("*.log").Length : 0;
-            string initializationErrorLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LoggerInitializationErrors.log");
 
             // Act
             Logger.Initialize((string)null);
@@ -103,7 +102,7 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Null(internalWriter);
 
             // 2. Error Fallback Isolation Check: Ensure null is treated as a purposeful skip, not an initialization error
-            Assert.False(File.Exists(initializationErrorLogPath), "A fallback error log was written for a graceful skip condition.");
+            Assert.False(File.Exists(_initFallbackPath), "A fallback error log was written for a graceful skip condition.");
 
             // 3. File System Leak Check: Guarantee no alternative default or hardcoded log file materialized on disk
             int currentLogFileCount = logDirectory.Exists ? logDirectory.GetFiles("*.log").Length : 0;
@@ -245,51 +244,44 @@ namespace Servy.Core.UnitTests.Logging
             {
                 try
                 {
-                    try
-                    {
-                        throw new InvalidOperationException("Inner fail");
-                    }
-                    catch (Exception inner)
-                    {
-                        throw new ApplicationException("Outer fail\nMultiline", inner);
-                    }
+                    throw new InvalidOperationException("Inner fail");
                 }
-                catch (Exception caught)
+                catch (Exception inner)
                 {
-                    ex = caught; // This successfully captures the ApplicationException
+                    throw new ApplicationException("Outer fail\nMultiline", inner);
                 }
-
-                Logger.Initialize(_testFileName);
-
-                // Act
-                Logger.Error("Exception test", ex);
-                Logger.Shutdown();
-
-                // Assert
-                string content = File.ReadAllText(_fullLogPath);
-
-                // 1. Verify exception unrolling and string replacement patterns work
-                Assert.Contains("Outer fail ; Multiline", content);
-                Assert.Contains(" [Inner -> InvalidOperationException: Inner fail", content);
-
-                // 2. Isolate the exact formatted exception segment text block
-                Assert.Contains("Exception test", content);
-                int exceptionMessageIndex = content.IndexOf("Exception test", StringComparison.Ordinal);
-                string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
-
-                // Verify bracket matching directly on the isolated exception block.
-                // Since there is one level of inner exceptions nested here, the segment must end
-                // with a single closed bracket matching the "[Inner -> " opening block.
-                Assert.EndsWith("]", exceptionSegment);
-
-                // 3. Confirm that the isolated exception text contains zero raw line breaks
-                Assert.DoesNotContain("\r", exceptionSegment);
-                Assert.DoesNotContain("\n", exceptionSegment);
             }
-            catch (Exception unexpected)
+            catch (Exception caught)
             {
-                Assert.Fail($"Test threw an unexpected exception during execution: {unexpected.Message}");
+                ex = caught; // This successfully captures the ApplicationException
             }
+
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Error("Exception test", ex);
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.ReadAllText(_fullLogPath);
+
+            // 1. Verify exception unrolling and string replacement patterns work
+            Assert.Contains("Outer fail ; Multiline", content);
+            Assert.Contains(" [Inner -> InvalidOperationException: Inner fail", content);
+
+            // 2. Isolate the exact formatted exception segment text block
+            Assert.Contains("Exception test", content);
+            int exceptionMessageIndex = content.IndexOf("Exception test", StringComparison.Ordinal);
+            string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+
+            // Verify bracket matching directly on the isolated exception block.
+            // Since there is one level of inner exceptions nested here, the segment must end
+            // with a single closed bracket matching the "[Inner -> " opening block.
+            Assert.EndsWith("]", exceptionSegment);
+
+            // 3. Confirm that the isolated exception text contains zero raw line breaks
+            Assert.DoesNotContain("\r", exceptionSegment);
+            Assert.DoesNotContain("\n", exceptionSegment);
         }
 
         [Fact]
