@@ -67,7 +67,7 @@ namespace Servy.UnitTests.Validation
 
                 // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                    _validator.ValidateAsync(dto, importMode: false, cancellationToken: cts.Token));
+                    _validator.ValidateAsync(dto, cancellationToken: cts.Token));
 
                 _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             }
@@ -161,6 +161,66 @@ namespace Servy.UnitTests.Validation
             // Assert
             Assert.True(result);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        #endregion
+
+        #region ImportMode Tests
+
+        [Fact]
+        public async Task ValidateAsync_ImportModeTrue_SkipsCredentialValidation()
+        {
+            // Arrange: non-LocalSystem DTO with password mismatch that would fail credential validation if importMode was false
+            var dto = new ServiceDto
+            {
+                Name = "ValidService",
+                ExecutablePath = @"C:\ValidService.exe",
+                RunAsLocalSystem = false,
+                UserAccount = @".\nonexistent-user",
+                Password = "Password123"
+            };
+
+            _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
+
+            // Act: pass importMode: true along with a mismatching confirmPassword
+            var result = await _validator.ValidateAsync(
+                dto,
+                confirmPassword: "DifferentPassword",
+                importMode: true,
+                cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_ImportModeFalse_EnforcesCredentialValidation()
+        {
+            // Arrange: identical DTO setup with password mismatch
+            var dto = new ServiceDto
+            {
+                Name = "ValidService",
+                ExecutablePath = @"C:\ValidService.exe",
+                RunAsLocalSystem = false,
+                UserAccount = @".\nonexistent-user",
+                Password = "Password123"
+            };
+
+            _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
+
+            // Act: pass importMode: false with mismatching confirmPassword
+            var result = await _validator.ValidateAsync(
+                dto,
+                confirmPassword: "DifferentPassword",
+                importMode: false,
+                cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(
+                It.Is<string>(s => s != null && s.IndexOf(Strings.Msg_PasswordsDontMatch, StringComparison.OrdinalIgnoreCase) >= 0),
+                It.IsAny<string>()), Times.Once);
         }
 
         #endregion

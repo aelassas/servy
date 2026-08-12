@@ -173,5 +173,34 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(result);
             Assert.Null(error);
         }
+
+        [Fact]
+        public void TryValidate_PayloadExceedsMaxConfigFileSize_ReturnsFalse()
+        {
+            // Arrange
+            var oversized = new string('x', (int)AppConfig.MaxConfigFileSizeBytes + 1);
+
+            // Act
+            var result = _validator.TryValidate(oversized, out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(string.Format(Strings.Msg_ImportPayloadTooLarge, "JSON", AppConfig.MaxConfigFileSizeMB), error);
+        }
+
+        [Fact]
+        public void TryValidate_MultibytePayloadOverByteLimitButUnderCharLimit_ReturnsFalse()
+        {
+            // Arrange
+            // 'é' is 2 bytes in UTF-8: half the char count, same byte count — must still be rejected
+            var oversized = new string('é', ((int)AppConfig.MaxConfigFileSizeBytes / 2) + 1);
+
+            // Act
+            var result = _validator.TryValidate(oversized, out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(string.Format(Strings.Msg_ImportPayloadTooLarge, "JSON", AppConfig.MaxConfigFileSizeMB), error);
+        }
     }
 }

@@ -1,5 +1,7 @@
 using Servy.Core.Enums;
+using Servy.Core.IO;
 using Servy.Service.StreamWriters;
+using Servy.Testing;
 using System;
 using System.IO;
 using Xunit;
@@ -27,6 +29,38 @@ namespace Servy.Service.UnitTests.StreamWriters
                 maxRotations: 5,
                 useLocalTimeForRotation: false);
         }
+
+        #region Constructor Parameter Forwarding Tests
+
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        public void Constructor_ForwardsAllParametersToInnerWriter(bool enableSize, bool enableDate)
+        {
+            // Arrange & Act
+            using (var adapter = new RotatingStreamWriterAdapter(
+                _tempPath,
+                enableSizeRotation: enableSize,
+                rotationSizeInBytes: 4096L,
+                enableDateRotation: enableDate,
+                dateRotationType: DateRotationType.Weekly,
+                maxRotations: 7,
+                useLocalTimeForRotation: true))
+            {
+                // Inspect the private _inner instance created inside the adapter
+                var inner = TestReflection.GetField<RotatingStreamWriter>(adapter, "_inner");
+
+                // Assert: Verify that every constructor parameter is accurately forwarded to RotatingStreamWriter
+                Assert.Equal(enableSize, TestReflection.GetField<bool>(inner, "_enableSizeRotation"));
+                Assert.Equal(4096L, TestReflection.GetField<long>(inner, "_rotationSizeInBytes"));
+                Assert.Equal(enableDate, TestReflection.GetField<bool>(inner, "_enableDateRotation"));
+                Assert.Equal(DateRotationType.Weekly, TestReflection.GetField<DateRotationType>(inner, "_dateRotationType"));
+                Assert.Equal(7, TestReflection.GetField<int>(inner, "_maxRotations"));
+                Assert.True(TestReflection.GetField<bool>(inner, "_useLocalTimeForRotation"));
+            }
+        }
+
+        #endregion
 
         #region Disposal & Guard Clause Tests
 
