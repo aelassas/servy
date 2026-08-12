@@ -90,6 +90,18 @@ namespace Servy.Core.DTOs
         public string CpuAffinity { get; set; }
 
         /// <summary>
+        /// Timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// </summary>
+        [SqlColumn("INTEGER")]
+        public int? StartTimeout { get; set; }
+
+        /// <summary>
+        /// Timeout in seconds to wait for the process to exit.
+        /// </summary>
+        [SqlColumn("INTEGER")]
+        public int? StopTimeout { get; set; }
+
+        /// <summary>
         /// Whether to enable the console user interface for the service.
         /// </summary>
         [SqlColumn("INTEGER")]
@@ -150,6 +162,17 @@ namespace Servy.Core.DTOs
         /// </remarks>
         [SqlColumn("INTEGER")]
         public bool? UseLocalTimeForRotation { get; set; }
+
+        /// <summary>
+        /// Whether debug logs are enabled.
+        /// When enabled, environment variables and process parameters are recorded in the local
+        /// log file at <c>%ProgramData%\Servy\logs\Servy.Service.log</c>. Sensitive data is
+        /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
+        /// Not recommended for production environments, as the local log file may contain
+        /// sensitive information.
+        /// </summary>
+        [SqlColumn("INTEGER")]
+        public bool? EnableDebugLogs { get; set; }
 
         /// <summary>
         /// Whether health monitoring is enabled.
@@ -349,29 +372,6 @@ namespace Servy.Core.DTOs
         public string PostLaunchParameters { get; set; }
 
         /// <summary>
-        /// Whether debug logs are enabled.
-        /// When enabled, environment variables and process parameters are recorded in the local
-        /// log file at <c>%ProgramData%\Servy\logs\Servy.Service.log</c>. Sensitive data is
-        /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
-        /// Not recommended for production environments, as the local log file may contain
-        /// sensitive information.
-        /// </summary>
-        [SqlColumn("INTEGER")]
-        public bool? EnableDebugLogs { get; set; }
-
-        /// <summary>
-        /// Timeout in seconds to wait for the process to start successfully before considering the startup as failed.
-        /// </summary>
-        [SqlColumn("INTEGER")]
-        public int? StartTimeout { get; set; }
-
-        /// <summary>
-        /// Timeout in seconds to wait for the process to exit.
-        /// </summary>
-        [SqlColumn("INTEGER")]
-        public int? StopTimeout { get; set; }
-
-        /// <summary>
         /// Previous Timeout in seconds to wait for the process to exit.
         /// </summary>
         [JsonIgnore]
@@ -479,6 +479,8 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeStartupType() => StartupType.HasValue;
         public bool ShouldSerializePriority() => Priority.HasValue;
         public bool ShouldSerializeCpuAffinity() => !string.IsNullOrWhiteSpace(CpuAffinity);
+        public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
+        public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
         public bool ShouldSerializeEnableConsoleUI() => EnableConsoleUI.HasValue;
         public bool ShouldSerializeStdoutPath() => !string.IsNullOrWhiteSpace(StdoutPath);
         public bool ShouldSerializeStderrPath() => !string.IsNullOrWhiteSpace(StderrPath);
@@ -488,6 +490,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeDateRotationType() => DateRotationType.HasValue;
         public bool ShouldSerializeMaxRotations() => MaxRotations.HasValue;
         public bool ShouldSerializeUseLocalTimeForRotation() => UseLocalTimeForRotation.HasValue;
+        public bool ShouldSerializeEnableDebugLogs() => EnableDebugLogs.HasValue;
         public bool ShouldSerializeEnableHealthMonitoring() => EnableHealthMonitoring.HasValue;
         public bool ShouldSerializeHeartbeatInterval() => HeartbeatInterval.HasValue;
         public bool ShouldSerializeMaxFailedChecks() => MaxFailedChecks.HasValue;
@@ -514,9 +517,6 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePostLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PostLaunchExecutablePath);
         public bool ShouldSerializePostLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PostLaunchStartupDirectory);
         public bool ShouldSerializePostLaunchParameters() => !string.IsNullOrWhiteSpace(PostLaunchParameters);
-        public bool ShouldSerializeEnableDebugLogs() => EnableDebugLogs.HasValue;
-        public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
-        public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
         public bool ShouldSerializePreStopExecutablePath() => !string.IsNullOrWhiteSpace(PreStopExecutablePath);
         public bool ShouldSerializePreStopStartupDirectory() => !string.IsNullOrWhiteSpace(PreStopStartupDirectory);
         public bool ShouldSerializePreStopParameters() => !string.IsNullOrWhiteSpace(PreStopParameters);

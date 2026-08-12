@@ -9,6 +9,8 @@
   <StartupType>3</StartupType>
   <Priority>1</Priority>
   <CpuAffinity>0x1</CpuAffinity>
+  <StartTimeout>15</StartTimeout>
+  <StopTimeout>10</StopTimeout>
   <EnableConsoleUI>false</EnableConsoleUI>
   <StdoutPath>C:\Windows\Temp\dummy-stdout.log</StdoutPath>
   <StderrPath>C:\Windows\Temp\dummy-stderr.log</StderrPath>
@@ -18,6 +20,7 @@
   <DateRotationType>1</DateRotationType>
   <MaxRotations>3</MaxRotations>
   <UseLocalTimeForRotation>true</UseLocalTimeForRotation>
+  <EnableDebugLogs>true</EnableDebugLogs>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
   <HeartbeatInterval>5</HeartbeatInterval>
   <MaxFailedChecks>1</MaxFailedChecks>
@@ -44,9 +47,6 @@
   <PostLaunchExecutablePath>C:\Windows\System32\cmd.exe</PostLaunchExecutablePath>
   <PostLaunchStartupDirectory>C:\Windows\Temp</PostLaunchStartupDirectory>
   <PostLaunchParameters>/c exit 0 --param 2003</PostLaunchParameters>
-  <EnableDebugLogs>true</EnableDebugLogs>
-  <StartTimeout>15</StartTimeout>
-  <StopTimeout>10</StopTimeout>
   <PreStopExecutablePath>C:\Windows\System32\cmd.exe</PreStopExecutablePath>
   <PreStopStartupDirectory>C:\Windows\Temp</PreStopStartupDirectory>
   <PreStopParameters>/c exit 0 --param 2004</PreStopParameters>
