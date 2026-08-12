@@ -154,9 +154,6 @@ namespace Servy.Manager.UnitTests.Utils
             using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
-                bool loopStartedFired = false;
-                _ = tailer.LoopStartedSignal.Task.ContinueWith(_ => loopStartedFired = true);
-
                 // Act
                 var taskNull = tailer.RunFromPosition(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
                 var taskEmpty = tailer.RunFromPosition(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
@@ -164,7 +161,8 @@ namespace Servy.Manager.UnitTests.Utils
                 await taskEmpty;
 
                 // Assert
-                Assert.False(loopStartedFired, "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
+                Assert.False(tailer.LoopStartedSignal.Task.IsCompleted,
+                    "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
             }
         }
 
@@ -286,29 +284,24 @@ namespace Servy.Manager.UnitTests.Utils
                 var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
-                // Start tailing from the end of pre-existing content
-                var startPos = new FileInfo(_tempFilePath).Length;
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, startPos, DateTime.UtcNow, cts.Token);
+                // Query precise FileInfo metadata so CreationTimeUtc matches and doesn't trigger a false rotation reset to offset 0
+                var fileInfo = new FileInfo(_tempFilePath);
+                var startPos = fileInfo.Length;
+                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, startPos, fileInfo.CreationTimeUtc, cts.Token);
 
                 // Wait for the background reader loop to fully complete its initial cycle
                 // and position its internal StreamReader handle directly at the EOF boundary.
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
                 await loopCompletedTcs.Task;
 
-                // Append enough lines to cross AppConfig.LogTailerBatchFlushThreshold
-                using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
-                using (var sw = new StreamWriter(fs) { AutoFlush = true })
-                {
-                    for (int i = 0; i < AppConfig.LogTailerBatchFlushThreshold + 5; i++)
-                    {
-                        await sw.WriteLineAsync($"BatchLine_{i}");
-                    }
-                }
+                // Pre-create and flush all lines to disk synchronously
+                var contentToAppend = string.Join("\n", Enumerable.Range(0, AppConfig.LogTailerBatchFlushThreshold + 5).Select(i => $"BatchLine_{i}")) + "\n";
+                File.AppendAllText(_tempFilePath, contentToAppend);
 
                 // Wait for background batch splitting mechanics to propagate updates
                 await Helper.WaitUntilAsync(() =>
                 {
-                    lock (capturedBatches) return capturedBatches.Count >= 2 || (capturedBatches.Count == 1 && capturedBatches[0].Count >= AppConfig.LogTailerBatchFlushThreshold);
+                    lock (capturedBatches) return capturedBatches.Count >= 2;
                 }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
 
                 cts.Cancel();
@@ -317,7 +310,8 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 lock (capturedBatches)
                 {
-                    Assert.NotEmpty(capturedBatches);
+                    Assert.True(capturedBatches.Count >= 2, "Expected a mid-read threshold flush followed by the end-of-pass flush.");
+                    Assert.Equal(AppConfig.LogTailerBatchFlushThreshold, capturedBatches[0].Count);
                 }
             }
         }
@@ -504,48 +498,55 @@ namespace Servy.Manager.UnitTests.Utils
 
             int loopPassesPostDisposeCount = 0;
 
-            using (var cts = new CancellationTokenSource())
+            try
             {
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                using (var cts = new CancellationTokenSource())
+                {
+                    var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
-                // Await initial execution attach before triggering disposal path
-                await WaitForLoopStartAsync(tailer, CancellationToken.None);
+                    // Await initial execution attach before triggering disposal path
+                    await WaitForLoopStartAsync(tailer, CancellationToken.None);
 
-                // Act
-                // Hook the event handler right before disposal to catch any rogue subsequent spins
-                tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesPostDisposeCount);
+                    // Act
+                    // Hook the event handler right before disposal to catch any rogue subsequent spins
+                    tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesPostDisposeCount);
+                    tailer.Dispose();
+
+                    // Assert 1: Verify prompt task completion (HandlesLinkedCancellation) via a deterministic timeout check
+                    var completionDeadlineTask = Task.Delay(TimeSpan.FromSeconds(5), CancellationToken.None);
+                    var completedTask = await Task.WhenAny(tailTask, completionDeadlineTask);
+
+                    Assert.True(completedTask == tailTask, "The background tailer task failed to gracefully terminate within the 5-second cancellation timeout.");
+
+                    // Unroll any aggregate or operation cancelled exceptions to confirm safe termination
+                    try
+                    {
+                        await tailTask;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Internal cancellation path context validated successfully
+                    }
+
+                    // Let the thread pools settle for a brief window frame to guarantee no secondary ticks leak out
+                    await Task.Delay(50, CancellationToken.None);
+
+                    // Assert 2: Verify that the background loop is completely halted and not spinning recursively
+                    Assert.True(loopPassesPostDisposeCount <= 1,
+                        $"LogTailer incorrectly allowed recursive loop cycles ({loopPassesPostDisposeCount}) to execute after disposal.");
+
+                    // Assert 3: Verify descriptor handle cleanup (ClosesClean) by confirming exclusive file layout access
+                    var fileHandleException = Record.Exception(() =>
+                    {
+                        using (var exclusiveStreamCheck = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                    });
+
+                    Assert.Null(fileHandleException);
+                }
+            }
+            finally
+            {
                 tailer.Dispose();
-
-                // Assert 1: Verify prompt task completion (HandlesLinkedCancellation) via a deterministic timeout check
-                var completionDeadlineTask = Task.Delay(TimeSpan.FromSeconds(5), CancellationToken.None);
-                var completedTask = await Task.WhenAny(tailTask, completionDeadlineTask);
-
-                Assert.True(completedTask == tailTask, "The background tailer task failed to gracefully terminate within the 5-second cancellation timeout.");
-
-                // Unroll any aggregate or operation cancelled exceptions to confirm safe termination
-                try
-                {
-                    await tailTask;
-                }
-                catch (OperationCanceledException)
-                {
-                    // Internal cancellation path context validated successfully
-                }
-
-                // Let the thread pools settle for a brief window frame to guarantee no secondary ticks leak out
-                await Task.Delay(50, CancellationToken.None);
-
-                // Assert 2: Verify that the background loop is completely halted and not spinning recursively
-                Assert.True(loopPassesPostDisposeCount <= 1,
-                    $"LogTailer incorrectly allowed recursive loop cycles ({loopPassesPostDisposeCount}) to execute after disposal.");
-
-                // Assert 3: Verify descriptor handle cleanup (ClosesClean) by confirming exclusive file layout access
-                var fileHandleException = Record.Exception(() =>
-                {
-                    using (var exclusiveStreamCheck = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
-                });
-
-                Assert.Null(fileHandleException);
             }
         }
 
