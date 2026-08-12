@@ -448,6 +448,38 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task OnTick_ExceptionThrown_SwallowsExceptionAndResetsRefreshingFlag()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Setup the service manager to throw a generic exception during status refresh
+                    _serviceManagerMock
+                        .Setup(r => r.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Throws(new InvalidOperationException("Simulated background refresh failure"));
+
+                    // Act
+                    // Invoke OnTick (async void) and await its completion deterministically via Helper.WaitUntilAsync
+                    TestReflection.InvokeNonPublic(vm, "OnTick", null, null);
+
+                    await Helper.WaitUntilAsync(() =>
+                    {
+                        int flag = TestReflection.GetField<int>(vm, "_isRefreshingFlag");
+                        return flag == 0;
+                    }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+
+                    // Assert
+                    int isRefreshingFlag = TestReflection.GetField<int>(vm, "_isRefreshingFlag");
+                    Assert.Equal(0, isRefreshingFlag);
+                }
+            });
+        }
+
+        [Fact]
         public void GetServiceUpdateInfo_OsAndDbDrift_ResolvesGhostPidsAndUpdatesDto()
         {
             Helper.RunOnSTA(() =>
@@ -549,6 +581,69 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // before pulling DTO snapshots out of the database repository layer.
                 _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task RefreshAllServicesAsync_ServiceUpdatesPresent_AppliesUpdatesAndUpdatesSelectAllState()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        Status = ServiceStatus.Stopped,
+                        Pid = null
+                    };
+
+                    var rowVm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object)
+                    {
+                        IsChecked = true
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(rowVm);
+
+                    var osServiceInfo = new ServiceInfo
+                    {
+                        Name = "TestService",
+                        Status = ServiceStatus.Running
+                    };
+
+                    var serviceDto = new ServiceDto
+                    {
+                        Name = "TestService",
+                        Pid = 4321
+                    };
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo> { osServiceInfo });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto> { serviceDto });
+
+                    _processHelperMock
+                        .Setup(p => p.GetProcessTreeMetrics(4321))
+                        .Returns(new ProcessMetrics(10.0, 1024));
+
+                    // Act - Invoke RefreshAllServicesAsync to process service updates
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
+                    await task;
+
+                    // Assert 1: Verify ApplyServiceUpdate updated the target service's UI state
+                    Assert.Equal(ServiceStatus.Running, service.Status);
+                    Assert.Equal(4321, service.Pid);
+
+                    // Assert 2: Verify UpdateSelectAllState ran and stabilized selection state
+                    Assert.True(vm.SelectAll);
+                }
             }, createApp: true);
         }
 
