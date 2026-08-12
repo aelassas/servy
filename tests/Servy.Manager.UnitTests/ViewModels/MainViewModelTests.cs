@@ -558,27 +558,31 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             Helper.RunOnSTA(() =>
             {
-                var vm = CreateViewModel();
-                var service = new Service { Name = "CrashService", Pid = 1234 };
-                _processHelperMock.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_processKillerMock.Object)))
+                {
+                    var vm = CreateViewModel();
+                    var service = new Service { Name = "CrashService", Pid = 1234, Status = ServiceStatus.Running };
+                    var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "CrashService", new ServiceInfo { Name = "CrashService", Status = ServiceStatus.Running } }
+                    };
+                    var serviceDto = new ServiceDto { Name = "CrashService", Pid = 1234 };
 
-                // Act
-                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, new Dictionary<string, ServiceInfo>(), new ServiceDto(), CancellationToken.None);
+                    _processHelperMock.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
 
-                // Assert
-                Assert.NotNull(result);
+                    // Act
+                    var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
 
-                var type = result.GetType();
-                var updateInfo = type.GetField("Item1").GetValue(result) as ServiceUpdateInfo;
-                var updatedDto = type.GetField("Item2").GetValue(result) as ServiceDto;
+                    // Assert
+                    Assert.NotNull(result);
 
-                Assert.NotNull(updateInfo);
-                Assert.Null(updateInfo.CpuUsage);
-                Assert.Null(updateInfo.NewPid);
-                Assert.Null(updateInfo.Description);
-                Assert.False(updateInfo.IsInstalled);
+                    var type = result.GetType();
+                    var updateInfo = type.GetField("Item1").GetValue(result);
+                    var updatedDto = type.GetField("Item2").GetValue(result);
 
-                Assert.Null(updatedDto);
+                    Assert.Null(updateInfo);
+                    Assert.Null(updatedDto);
+                }
             }, createApp: true);
         }
 
@@ -1210,10 +1214,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 try
                 {
                     childRow1.IsChecked = false;
-                    vm.SelectAll = false;
+                    vm.SelectAll = null;                  // differs from current false -> passes equality check
 
-                    Assert.False(vm.SelectAll);           // Backing field is updated
-                    Assert.True(childRow2.IsChecked);     // ... but no cascade reached child rows due to guard latch
+                    Assert.Null(vm.SelectAll);             // Backing field is updated
+                    Assert.False(childRow1.IsChecked);
+                    Assert.True(childRow2.IsChecked);      // ... but no cascade reached child rows due to guard latch
                 }
                 finally
                 {
@@ -1484,12 +1489,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var uiDispatcherMock = new Mock<IUiDispatcher>();
                 uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
-                // Initialize standard child instances inheriting from MonitoringViewModelBase (implicitly IDisposable).
-                // This verifies that the parent MainViewModel context successfully triggers cascade disposal
-                // across the active child hierarchy without throwing lifecycle exceptions.
-                var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, uiDispatcherMock.Object);
-                var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object);
-                var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object);
+                // Set CallBase = true so Moq executes MonitoringViewModelBase.Dispose() and sets _isDisposed = 1
+                var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, uiDispatcherMock.Object) { CallBase = true };
+                var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object) { CallBase = true };
+                var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object) { CallBase = true };
 
                 var vm = new MainViewModel(
                     _serviceManagerMock.Object,
@@ -1514,6 +1517,9 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Assert
                 Assert.Null(exception);
+                Assert.Equal(1, TestReflection.GetField<int>(mockPerformance.Object, "_isDisposed"));
+                Assert.Equal(1, TestReflection.GetField<int>(mockConsole.Object, "_isDisposed"));
+                Assert.Equal(1, TestReflection.GetField<int>(mockDependencies.Object, "_isDisposed"));
             }, createApp: true);
         }
 
