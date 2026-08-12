@@ -44,6 +44,7 @@ namespace Servy.Core.Logging
         private static volatile int _currentLogLevel = (int)LogLevel.Info;
 
         private static string _fileName;
+        private static bool _enableSizeRotation = AppConfig.DefaultEnableInternalLogSizeRotation;
         private static int _logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
         private static DateRotationType _dateRotationType;
         private static bool _useLocalTimeForRotation;
@@ -79,6 +80,7 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
         /// <param name="logLevel">The starting log level. Defaults to <see cref="LogLevel.Info"/>.</param>
+        /// <param name="enableSizeRotation">Indicates whether to enable size-based log rotation. Defaults to <see cref="AppConfig.DefaultEnableInternalLogSizeRotation"/>.</param>
         /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation. Defaults to 10MB.</param>
         /// <param name="dateRotationType">
         /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation.
@@ -89,6 +91,7 @@ namespace Servy.Core.Logging
         public static void Initialize(
             string fileName,
             LogLevel logLevel = LogLevel.Info,
+            bool enableSizeRotation = AppConfig.DefaultEnableInternalLogSizeRotation,
             int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
@@ -98,7 +101,7 @@ namespace Servy.Core.Logging
             lock (_lock)
             {
                 _fileName = fileName;
-                Initialize(logLevel, logRotationSizeMB, dateRotationType, useLocalTimeForRotation, maxBackupLogFiles);
+                Initialize(logLevel, enableSizeRotation, logRotationSizeMB, dateRotationType, useLocalTimeForRotation, maxBackupLogFiles);
             }
         }
 
@@ -117,6 +120,7 @@ namespace Servy.Core.Logging
         /// </para>
         /// </remarks>
         /// <param name="logLevel">The minimum severity level required for an entry to be recorded. Defaults to <see cref="LogLevel.Info"/>.</param>
+        /// <param name="enableSizeRotation">Indicates whether to enable size-based log rotation. Defaults to <see cref="AppConfig.DefaultEnableInternalLogSizeRotation"/>.</param>
         /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation occurs. Defaults to 10MB.</param>
         /// <param name="dateRotationType">
         /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation.
@@ -126,6 +130,7 @@ namespace Servy.Core.Logging
         /// <param name="maxBackupLogFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
         public static void Initialize(
             LogLevel logLevel = LogLevel.Info,
+            bool enableSizeRotation = AppConfig.DefaultEnableInternalLogSizeRotation,
             int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
@@ -135,6 +140,7 @@ namespace Servy.Core.Logging
             lock (_lock)
             {
                 _currentLogLevel = (int)logLevel;
+                _enableSizeRotation = enableSizeRotation;
                 _dateRotationType = dateRotationType;
                 _useLocalTimeForRotation = useLocalTimeForRotation;
 
@@ -172,7 +178,7 @@ namespace Servy.Core.Logging
                 // until the new resource is ready, eliminating the volatile null race window.
                 var newWriter = new RotatingStreamWriter(
                     path: logPath,
-                    enableSizeRotation: true,
+                    enableSizeRotation: _enableSizeRotation,
                     rotationSizeInBytes: rotationSizeInBytes,
                     enableDateRotation: _dateRotationType != DateRotationType.None,
                     dateRotationType: _dateRotationType,

@@ -29,6 +29,8 @@ namespace Servy.Core.Config
             var isEventLogEnabled = ConfigParser.ParseBool(config["EnableEventLog"], AppConfig.DefaultEnableEventLog, "EnableEventLog");
             instanceLogger?.SetIsEventLogEnabled(isEventLogEnabled);
 
+            var enableSizeRotation = ConfigParser.ParseBool(config["EnableSizeRotation"], AppConfig.DefaultEnableInternalLogSizeRotation, "EnableSizeRotation");
+
             var logRotationSizeMB = ConfigParser.ParseInt(config["LogRotationSizeMB"], AppConfig.DefaultRotationSizeMB, "LogRotationSizeMB");
 
             var maxBackupLogFiles = ConfigParser.ParseInt(config["MaxBackupLogFiles"], AppConfig.LoggerDefaultMaxBackupLogFiles, "MaxBackupLogFiles");
@@ -41,6 +43,7 @@ namespace Servy.Core.Config
                 Logger.Initialize(
                     fileName: logFileName,
                     logLevel: logLevel,
+                    enableSizeRotation: enableSizeRotation,
                     logRotationSizeMB: logRotationSizeMB,
                     dateRotationType: dateRotationType,
                     useLocalTimeForRotation: useLocalTimeForRotation,
@@ -51,6 +54,7 @@ namespace Servy.Core.Config
             {
                 Logger.Initialize(
                     logLevel: logLevel,
+                    enableSizeRotation: enableSizeRotation,
                     logRotationSizeMB: logRotationSizeMB,
                     dateRotationType: dateRotationType,
                     useLocalTimeForRotation: useLocalTimeForRotation,
@@ -63,11 +67,13 @@ namespace Servy.Core.Config
             // Centralized debug logging prevents asymmetric log outputs
             Logger.Debug("Servy Logger Configuration Loaded:" + Environment.NewLine +
                 $"  LogLevel: {logLevel}" + Environment.NewLine +
-                $"  LogRollingInterval: {dateRotationType.ToString("D")} ({dateRotationType})" + Environment.NewLine +
-                $"  EnableEventLog: {eventLogStatus}" + Environment.NewLine +
+                $"  EnableSizeRotation: {enableSizeRotation}" + Environment.NewLine +
                 $"  LogRotationSizeMB: {logRotationSizeMB}" + Environment.NewLine +
+                $"  LogRollingInterval: {dateRotationType.ToString("D")} ({dateRotationType})" + Environment.NewLine +
                 $"  MaxBackupLogFiles: {maxBackupLogFiles}" + Environment.NewLine +
-                $"  UseLocalTimeForRotation: {useLocalTimeForRotation}");
+                $"  UseLocalTimeForRotation: {useLocalTimeForRotation}" + Environment.NewLine +
+                $"  EnableEventLog: {eventLogStatus}"
+                );
         }
     }
 }
