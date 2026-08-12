@@ -490,6 +490,11 @@ namespace Servy.Core.Config
         public const bool DefaultEnableSizeRotation = false;
 
         /// <summary>
+        /// The default value for <c>EnableSizeRotation</c> for internal log files. Default is <c>true</c>.
+        /// </summary>
+        public const bool DefaultEnableInternalLogSizeRotation = true;
+
+        /// <summary>
         /// The default value for <c>EnableDateRotation</c>. Default is <c>false</c>.
         /// </summary>
         public const bool DefaultEnableDateRotation = false;
