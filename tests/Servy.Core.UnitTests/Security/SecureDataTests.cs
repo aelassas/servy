@@ -160,11 +160,11 @@ namespace Servy.Core.UnitTests.Security
 
         [Theory]
         // Branch 1: !IsStrictBase64(payload) -> returns the raw plaintext payload string directly.
-        [InlineData("Plain_Legacy_Password_123!", "Plain_Legacy_Password_123!", false)]
-        // Branch 2: IsStrictBase64(payload) -> throws a security integrity exception when AllowLegacyV1Decryption is false,
-        // which triggers the catch block fallback, returning the input ciphertext verbatim as plaintext.
-        [InlineData(null, "DecryptedValueFromV1", true)]
-        public void Decrypt_LegacyFormat_HandlesBothBranches(string? input, string expected, bool isBase64LegacyBranch)
+        [InlineData("Plain_Legacy_Password_123!", false)]
+        // Branch 2: IsStrictBase64(payload) -> blocked while AllowLegacyV1Decryption is false; the catch
+        // fallback returns the input ciphertext verbatim, so the expectation is the input itself.
+        [InlineData(null, true)]
+        public void Decrypt_LegacyFormat_HandlesBothBranches(string? input, bool isBase64LegacyBranch)
         {
             // Arrange
             var rawKey = _mockProvider.Object.GetKey();
@@ -172,8 +172,11 @@ namespace Servy.Core.UnitTests.Security
 
             if (isBase64LegacyBranch)
             {
-                // Separate MemoryStream from the interlocking using chain to prevent premature disposal
-                // before its binary data can be extracted into the Base64 string encoder.
+                Assert.SkipWhen(AppConfig.AllowLegacyV1Decryption,
+                    "This branch asserts the legacy-blocked fallback; legacy decryption is enabled.");
+
+                const string plaintextToEncrypt = "DecryptedValueFromV1";
+
                 using (var ms = new MemoryStream())
                 {
                     using (var aes = Aes.Create())
@@ -185,16 +188,12 @@ namespace Servy.Core.UnitTests.Security
                         using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
                         using (var sw = new StreamWriter(cs, Encoding.UTF8))
                         {
-                            sw.Write(expected);
+                            sw.Write(plaintextToEncrypt);
                         }
                     }
 
                     input = Convert.ToBase64String(ms.ToArray());
                 }
-
-                // Since AllowLegacyV1Decryption is false, the engine catches the security restriction exception
-                // and safely yields the raw ciphertext payload back to the caller instead of the decrypted plain text.
-                expected = input;
             }
 
             // Act
@@ -203,7 +202,7 @@ namespace Servy.Core.UnitTests.Security
                 var result = sp.Decrypt(input!);
 
                 // Assert
-                Assert.Equal(expected, result);
+                Assert.Equal(input, result);
             }
         }
 

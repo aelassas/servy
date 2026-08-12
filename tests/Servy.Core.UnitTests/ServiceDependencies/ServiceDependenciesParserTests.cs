@@ -30,9 +30,11 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("ServiceA;ServiceB;ServiceC", "ServiceA\0ServiceB\0ServiceC\0\0")] // Parse_MultipleNamesSeparatedBySemicolon_ReturnsNullSeparatedString
         [InlineData("ServiceA\r\nServiceB\nServiceC", "ServiceA\0ServiceB\0ServiceC\0\0")] // Parse_MultipleNamesSeparatedByNewlines_ReturnsNullSeparatedString
         [InlineData(" ServiceA ;\n ServiceB  ;\r\nServiceC ", "ServiceA\0ServiceB\0ServiceC\0\0")] // Parse_MixedSeparatorsAndExtraSpaces_ReturnsTrimmedAndNullSeparatedString
-        [InlineData("ServiceA;;\n\nServiceB;", "ServiceA\0ServiceB\0\0")]             // Parse_EmptyEntriesBetweenSeparators_AreIgnored
+        [InlineData("ServiceA;;\n\nServiceB;", "ServiceA\0ServiceB\0\0")]            // Parse_EmptyEntriesBetweenSeparators_AreIgnored
         [InlineData("ServiceA;ServiceB;", "ServiceA\0ServiceB\0\0")]                 // Parse_TrailingSeparator_StillEndsWithDoubleNull
         [InlineData("ServiceA\rServiceB", "ServiceA\0ServiceB\0\0")]                 // Parse_MultipleNamesSeparatedByBareCarriageReturn_ReturnsNullSeparatedString
+        [InlineData("ServiceA;ServiceA;ServiceB", "ServiceA\0ServiceB\0\0")]         // exact duplicate is removed
+        [InlineData("ServiceA;servicea;ServiceB", "ServiceA\0ServiceB\0\0")]         // duplicate differing only in case is removed (OrdinalIgnoreCase)
         public void Parse_ValidInputs_NormalizesAndNullSeparates(string input, string expected)
         {
             // Arrange & Act

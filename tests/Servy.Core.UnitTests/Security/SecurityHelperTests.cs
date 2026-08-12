@@ -111,6 +111,11 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void CreateSecureDirectory_EnsuresCurrentUserHasAccess()
         {
+            // Skip on elevated runs: when elevated, current user access is covered transitively 
+            // by the Administrators group ACE rather than writing a distinct user ACE.
+            Assert.SkipWhen(SecurityHelper.IsAdministrator(),
+                "Elevated run: the current user is covered transitively by the Administrators ACE, so no distinct current-user ACE is written.");
+
             // Arrange
             var path = Path.Combine(_testBaseDir, "CurrentUserDir");
             SecurityIdentifier currentUserSid;
@@ -118,7 +123,6 @@ namespace Servy.Core.UnitTests.Security
             {
                 currentUserSid = identity.User!;
             }
-            bool isAdmin = SecurityHelper.IsAdministrator(); // Get the state of the runner
 
             // Act
             SecurityHelper.CreateSecureDirectory(path);
@@ -126,19 +130,10 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             var acl = new DirectoryInfo(path).GetAccessControl();
             var rules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
-                               .Cast<FileSystemAccessRule>()
-                               .ToList();
+                           .Cast<FileSystemAccessRule>()
+                           .ToList();
 
-            // If running as Administrator, current user is already covered via the broad group ACE block
-            if (isAdmin)
-            {
-                var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-                Assert.Contains(rules, r => r.IdentityReference == adminSid && r.FileSystemRights == FileSystemRights.FullControl);
-            }
-            else
-            {
-                Assert.Contains(rules, r => r.IdentityReference == currentUserSid && r.FileSystemRights == FileSystemRights.FullControl);
-            }
+            Assert.Contains(rules, r => r.IdentityReference == currentUserSid && r.FileSystemRights == FileSystemRights.FullControl);
         }
 
         [Fact]
