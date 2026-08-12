@@ -77,6 +77,13 @@ namespace Servy.Testing
         public const int ProcessWrapperStopDescendantsTimeoutMs = 500;
 
         /// <summary>
+        /// Tight launcher budget (2,000 ms) raced against <see cref="ProcessLauncherSynchronousTimeoutSeconds"/>
+        /// to deliberately trip the synchronous-launch timeout path.
+        /// </summary>
+        /// <seealso cref="ProcessLauncherSynchronousTimeoutSeconds"/>
+        public const int ProcessLauncherTimeoutTripBudgetMs = 2_000;
+
+        /// <summary>
         /// Maximum duration (5 seconds) allowed for service restarter operations to complete a restart cycle.
         /// </summary>
         public static readonly TimeSpan ServiceRestarterRestartTimeout = TimeSpan.FromSeconds(5);

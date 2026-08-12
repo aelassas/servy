@@ -87,7 +87,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void StartCommand_ShouldCallStartServiceAsync()
+        public async Task StartCommand_ShouldCallStartServiceAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -101,14 +101,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.Service.Status = ServiceStatus.Stopped;
 
             // Act
-            vm.StartCommand.Execute(parameterService);
+            await vm.StartCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void StopCommand_ShouldCallStopServiceAsync()
+        public async Task StopCommand_ShouldCallStopServiceAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -123,14 +123,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.Service.Status = ServiceStatus.Running;
 
             // Act
-            vm.StopCommand.Execute(parameterService);
+            await vm.StopCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void RestartCommand_ShouldCallRestartServiceAsync()
+        public async Task RestartCommand_ShouldCallRestartServiceAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -144,14 +144,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.Service.Status = ServiceStatus.Running;
 
             // Act
-            vm.RestartCommand.Execute(parameterService);
+            await vm.RestartCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void ConfigureCommand_ShouldCallConfigureServiceAsync()
+        public async Task ConfigureCommand_ShouldCallConfigureServiceAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -162,14 +162,14 @@ namespace Servy.Manager.UnitTests.ViewModels
               .Verifiable();
 
             // Act
-            vm.ConfigureCommand.Execute(parameterService);
+            await vm.ConfigureCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void InstallCommand_ShouldCallInstallServiceAsync()
+        public async Task InstallCommand_ShouldCallInstallServiceAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -180,14 +180,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .Verifiable();
 
             // Act
-            vm.InstallCommand.Execute(parameterService);
+            await vm.InstallCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void UninstallCommand_ShouldCallUninstallServiceAsync()
+        public async Task UninstallCommand_ShouldCallUninstallServiceAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -200,14 +200,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.Service.IsInstalled = true;
 
             // Act
-            vm.UninstallCommand.Execute(parameterService);
+            await vm.UninstallCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void RemoveCommand_ShouldCallRemoveServiceAsync()
+        public async Task RemoveCommand_ShouldCallRemoveServiceAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -218,14 +218,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .Verifiable();
 
             // Act
-            vm.RemoveCommand.Execute(parameterService);
+            await vm.RemoveCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void ExportXmlCommand_ShouldCallExportServiceToXmlAsync()
+        public async Task ExportXmlCommand_ShouldCallExportServiceToXmlAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -236,14 +236,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .Verifiable();
 
             // Act
-            vm.ExportXmlCommand.Execute(parameterService);
+            await vm.ExportXmlCommand.ExecuteAsync(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void ExportJsonCommand_ShouldCallExportServiceToJsonAsync()
+        public async Task ExportJsonCommand_ShouldCallExportServiceToJsonAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -255,14 +255,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                  .Verifiable();
 
             // Act
-            vm.ExportJsonCommand.Execute(null);
+            await vm.ExportJsonCommand.ExecuteAsync(null);
 
             // Assert
             _serviceCommandsMock.Verify();
         }
 
         [Fact]
-        public void CopyPidCommand_ShouldCallCopyPidAsync()
+        public async Task CopyPidCommand_ShouldCallCopyPidAsync()
         {
             // Arrange
             var vm = CreateViewModel("RowSvc");
@@ -273,7 +273,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .Verifiable();
 
             // Act
-            vm.CopyPidCommand.Execute(null);
+            await vm.CopyPidCommand.ExecuteAsync(null);
 
             // Assert
             _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "RowSvc" && s.Pid == 123), It.IsAny<CancellationToken>()), Times.Once);

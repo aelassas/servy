@@ -1,10 +1,12 @@
 using Moq;
 using Servy.Core.Enums;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.UnitTests.Helpers;
 using Servy.Testing;
+using System.Diagnostics;
 
 namespace Servy.Service.UnitTests
 {
@@ -172,7 +174,9 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
+            var options = CreateDefaultStartOptions();
+            options.FailureProgramPath = @"C:\App\alert.exe";
+            TestReflection.SetField(service, "_options", options);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(0);
@@ -183,17 +187,23 @@ namespace Servy.Service.UnitTests
 
             // Assert
             ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0).")), It.IsAny<Exception>()), Times.Once);
+
+            // Verify clean exit does not launch failure program
+            ctx.ProcessFactory.Verify(f => f.Create(
+                It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Never);
         }
 
         [Fact]
-        public void OnProcessExited_ExitCodeNonZero_LogsError()
+        public void OnProcessExited_ExitCodeNonZero_LogsErrorAndLaunchesFailureProgram()
         {
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
+            var options = CreateDefaultStartOptions();
+            options.FailureProgramPath = @"C:\App\alert.exe";
+            TestReflection.SetField(service, "_options", options);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(42);
@@ -204,6 +214,10 @@ namespace Servy.Service.UnitTests
 
             // Assert
             ctx.Logger.Verify(l => l.Error("Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
+
+            // Verify non-zero exit code launches configured failure program
+            ctx.ProcessFactory.Verify(f => f.Create(
+                It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Once);
         }
 
         [Fact]

@@ -10,6 +10,7 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Service.CommandLine;
+using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
@@ -169,7 +170,7 @@ namespace Servy.Service
         /// and cryptographic setup.
         /// </remarks>
         public Service() : this(
-            new Helpers.ServiceHelper(new CommandLineProvider(), new ProcessHelper()),
+            new Helpers.ServiceHelper(new CommandLineProvider(), new Core.Helpers.ProcessHelper()),
             new EventLogLogger(AppConfig.EventSource),
             new StreamWriterFactory(),
             new TimerFactory(),
@@ -324,7 +325,7 @@ namespace Servy.Service
 
                 // Copy service executable from embedded resources
                 var asm = Assembly.GetExecutingAssembly();
-                var sh = new ServiceHelper(_serviceRepository);
+                var sh = new Core.Helpers.ServiceHelper(_serviceRepository);
                 var resourceHelper = new ResourceHelper(sh, _processKiller);
 
                 if (!resourceHelper.CopyEmbeddedResourceForceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
@@ -1384,6 +1385,8 @@ namespace Servy.Service
                         targetUri = new Uri(baseStr + suffix.TrimStart('/'));
                     }
 
+                    _logger?.Debug($"Emitting heartbeat ping to: {Helpers.ServiceHelper.MaskUrl(targetUri.ToString())}");
+
                     using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)))
                     {
                         // Execute using ResponseHeadersRead to avoid allocating buffers or reading potential body payload bytes
@@ -1391,7 +1394,7 @@ namespace Servy.Service
                         {
                             if (!response.IsSuccessStatusCode)
                             {
-                                Logger.Debug($"Heartbeat ping to {targetUri} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
+                                _logger?.Debug($"Heartbeat ping to {targetUri} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
                             }
                         }
                     }
@@ -1399,7 +1402,7 @@ namespace Servy.Service
                 catch (Exception ex)
                 {
                     // Fail-silent constraint: Log strictly at debug/trace level to eliminate local disk saturation if the network goes completely down
-                    Logger.Debug($"Heartbeat ping to base URL '{Helpers.ServiceHelper.MaskUrl(baseUrl)}' failed silently.", ex);
+                    _logger?.Debug($"Heartbeat ping to base URL '{Helpers.ServiceHelper.MaskUrl(baseUrl)}' failed silently.", ex);
                 }
             });
         }

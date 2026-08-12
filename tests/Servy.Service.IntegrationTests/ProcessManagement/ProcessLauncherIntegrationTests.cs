@@ -19,7 +19,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     [Collection("ProcessLauncherIntegrationTests")]
     public class ProcessLauncherIntegrationTests : IDisposable
     {
-        private const int TimeoutTripBudgetMs = 2_000;
         private readonly List<string> _tempFiles = new List<string>();
         private readonly List<IProcessWrapper> _spawnedWrappers = new List<IProcessWrapper>();
         private readonly TestLogger _logger = new TestLogger();
@@ -173,7 +172,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 "powershell.exe",
                 $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"",
                 fireAndForget: false,
-                timeoutMs: TimeoutTripBudgetMs);
+                timeoutMs: TestTimeouts.ProcessLauncherTimeoutTripBudgetMs);
             options.WaitChunkMs = 100;
             options.LogErrorAsWarning = logErrorAsWarning;
 

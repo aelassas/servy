@@ -157,13 +157,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // 3. Exclusion Boundary Assertion: Extract grandchildren via the same helper signature
                 // to explicitly prove they are completely absent from the direct children collection.
                 grandChildren = WaitForProcessName(directChild, "powershell", ProcessExtensions.GetChildren);
-                if (grandChildren.Any())
-                {
-                    var grandchildPid = grandChildren.First().Id;
+                var psGrandchild = grandChildren.First(p =>
+                    GetSafeProcessName(p).Equals("powershell", StringComparison.OrdinalIgnoreCase));
 
-                    // The direct children list MUST NOT contain the grandchild PID if the contract holds true
-                    Assert.DoesNotContain(children, c => c.Id == grandchildPid);
-                }
+                Assert.DoesNotContain(children, c => c.Id == psGrandchild.Id);
             }
             finally
             {
