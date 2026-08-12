@@ -394,8 +394,8 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.MaxFailedChecks = "222";
             _viewModel.MaxRestartAttempts = "333";
             _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
-            _viewModel.HeartbeatUrlTimeoutSeconds = "10";
-            _viewModel.EnableHeartbeatUrlFlags = true;
+            _viewModel.HeartbeatUrlTimeoutSeconds = "29";
+            _viewModel.EnableHeartbeatUrlFlags = !DefaultEnableHeartbeatUrlFlags;
             _viewModel.FailureProgramPath = "fail.exe";
             _viewModel.FailureProgramStartupDirectory = "fail_dir";
             _viewModel.FailureProgramParameters = "fail_args";
