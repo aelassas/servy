@@ -162,8 +162,8 @@ namespace Servy.Core.IntegrationTests.Helpers
                 {
                     try
                     {
-                        // Kill the root process and ensure its nested descendants are cleaned up from the OS scheduler
-                        process.Kill();
+                        // Kill the root process and its nested descendants (Start-Process grandchildren)
+                        process.Kill(entireProcessTree: true);
                     }
                     catch { /* Ignore cleanup errors */ }
                 }
