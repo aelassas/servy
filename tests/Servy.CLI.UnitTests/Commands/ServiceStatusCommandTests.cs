@@ -39,8 +39,9 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
-            // Triggers CommandResult mapping fallback pathways natively
-            mockManager.Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>())).Throws<ArgumentException>();
+            // Triggers CommandResult mapping fallback pathways natively.
+            // Note: errorMsg parameter is unused because ServiceStatusCommand catches SCM exceptions and maps them to Msg_ServiceStatusAction.
+            mockManager.Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>())).Throws(new InvalidOperationException("SCM operational failure"));
         }
 
         protected override void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName)
@@ -77,9 +78,16 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
+            // Assert.Contains is used instead of Assert.Equal because BaseCommand.HandleException wraps
+            // ExpectedGenericActionMessage within Msg_CommandFailedTemplate ("Failed to {0}: {1}") and appends suggestion text.
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
         }
 
+        /// <summary>
+        /// Validates that attempting to query status on an uninstalled service returns a failure result.
+        /// Note: The SCM signals an unknown service name with an ArgumentException in GetServiceStatus, which the status
+        /// command maps to its generic action message (Msg_ServiceStatusAction) rather than Msg_ServiceNotFound.
+        /// </summary>
         [Fact]
         public override async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
         {
@@ -97,6 +105,8 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
+            // Assert.Contains is used instead of Assert.Equal because BaseCommand.HandleException wraps
+            // ExpectedGenericActionMessage within Msg_CommandFailedTemplate ("Failed to {0}: {1}") and appends suggestion text.
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
         }
     }
