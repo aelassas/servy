@@ -199,7 +199,7 @@ namespace Servy.Core.UnitTests.DTOs
             else if (targetType == typeof(bool))
             {
                 // NOTE: bool? has only two non-null values, so same-typed swap detection is not
-                // achievable in a single pass — alternating keeps the pattern reproducible while
+                // achievable in a single pass - alternating keeps the pattern reproducible while
                 // dual-pass cloning validates all boolean states.
                 p.SetValue(dto, (seed & 1) == 0);
             }

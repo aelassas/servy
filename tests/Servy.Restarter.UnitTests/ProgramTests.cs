@@ -165,7 +165,7 @@ namespace Servy.Restarter.UnitTests
         #region Fatal Exception Resilience Blocks
 
         [Fact]
-        public void Main_CorruptedAppDirectoryContext_FailsInitializationAndTriggersCatchBlocks()
+        public void Main_BrokenConnectionString_HitsCatchAllViaScopedLogger()
         {
             // Arrange
             // Provide a malformed layout containing an unparseable connection string.
@@ -181,8 +181,9 @@ namespace Servy.Restarter.UnitTests
                 "}";
             File.WriteAllText(_tempConfigPath, brokenConnectionConfigJson);
 
-            // Provide a corrupted path syntax that forces an immediate crash in underlying drivers
-            // before loggers can even initialize, hitting the root Exception block.
+            // Pass a target service name argument. The broken DefaultConnection string makes
+            // the SQLite open fail inside GetByName, after the scoped logger exists - exercising
+            // the scoped-logger arm of the catch-all block.
             string[] args = new string[] { "Invalid\\Service/Path:Characters" };
 
             // Act
@@ -190,7 +191,7 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(1, Environment.ExitCode);
-            // Confirms that the catch-all execution path was explicitly hit
+            // Confirms that the catch-all execution path was hit using the initialized scoped logger
             AssertLogContainsMessage("Servy.Restarter.exe failed to restart the service.");
         }
 

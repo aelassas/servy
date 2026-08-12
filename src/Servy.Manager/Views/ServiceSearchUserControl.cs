@@ -17,6 +17,12 @@ namespace Servy.Manager.Views
         protected abstract string ViewName { get; }
 
         /// <summary>
+        /// Test seam: Stores the background task started on <see cref="FrameworkElement.LoadedEvent"/>
+        /// so unit tests can directly await and inspect its completion state.
+        /// </summary>
+        internal Task? LastLoadedTask { get; private set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ServiceSearchUserControl"/> class.
         /// </summary>
         protected ServiceSearchUserControl()
@@ -29,7 +35,7 @@ namespace Servy.Manager.Views
         /// </summary>
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            _ = UiTaskRunner.RunAsync(() => UserControl_LoadedAsync(sender, e), ViewName);
+            LastLoadedTask = UiTaskRunner.RunAsync(() => UserControl_LoadedAsync(sender, e), ViewName);
         }
 
         /// <summary>
