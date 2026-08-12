@@ -1329,6 +1329,8 @@ namespace Servy.Service
                         targetUri = new Uri(baseStr + suffix.TrimStart('/'));
                     }
 
+                    _logger?.Debug($"Emitting heartbeat ping to: {Helpers.ServiceHelper.MaskUrl(targetUri.ToString())}");
+
                     using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)))
                     {
                         // Execute using ResponseHeadersRead to avoid allocating buffers or reading potential body payload bytes
@@ -1336,7 +1338,7 @@ namespace Servy.Service
                         {
                             if (!response.IsSuccessStatusCode)
                             {
-                                Logger.Debug($"Heartbeat ping to {targetUri} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
+                                _logger?.Debug($"Heartbeat ping to {targetUri} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
                             }
                         }
                     }
@@ -1344,7 +1346,7 @@ namespace Servy.Service
                 catch (Exception ex)
                 {
                     // Fail-silent constraint: Log strictly at debug/trace level to eliminate local disk saturation if the network goes completely down
-                    Logger.Debug($"Heartbeat ping to base URL '{Helpers.ServiceHelper.MaskUrl(baseUrl)}' failed silently.", ex);
+                    _logger?.Debug($"Heartbeat ping to base URL '{Helpers.ServiceHelper.MaskUrl(baseUrl)}' failed silently.", ex);
                 }
             });
         }

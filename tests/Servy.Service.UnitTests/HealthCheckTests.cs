@@ -2,6 +2,7 @@ using Moq;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
+using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
@@ -17,6 +18,18 @@ namespace Servy.Service.UnitTests
     {
         private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
 
+        private static StartOptions CreateDefaultStartOptions(string heartbeatUrl = "https://127.0.0.1:1/test-uuid") => new StartOptions
+        {
+            StdoutPath = "valid-path.log",
+            StderrPath = "error-path.log",
+            RecoveryOnCleanExit = false,
+            EnableHealthMonitoring = true,
+            EnableHeartbeatUrlFlags = true,
+            HeartbeatUrl = heartbeatUrl,
+            HeartbeatUrlTimeoutInSeconds = 10,
+            HeartbeatIntervalInSeconds = 30
+        };
+
         [Fact]
         public async Task CheckHealth_ProcessExited_IncrementsFailedChecks_AndLogs()
         {
@@ -24,6 +37,8 @@ namespace Servy.Service.UnitTests
             var ctx = new ServiceTestContext();
             var service = ctx.Build();
             _disposableServices.Add(service);
+
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -52,6 +67,13 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
+            var pingLogged = new TaskCompletionSource<string>();
+            ctx.Logger
+                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
+
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions("https://127.0.0.1:1/fail-heartbeat"));
+
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
             mockProcess.Setup(p => p.ExitCode).Returns(-1);
@@ -75,6 +97,11 @@ namespace Servy.Service.UnitTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
+
+            // Verify Placement 1: Failure threshold reached emits fail-flag ping
+            var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
+            Assert.Same(pingLogged.Task, completedTask);
+            Assert.Contains("fail-", await pingLogged.Task);
         }
 
         [Theory]
@@ -88,6 +115,8 @@ namespace Servy.Service.UnitTests
             var ctx = new ServiceTestContext();
             var service = ctx.Build();
             _disposableServices.Add(service);
+
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -133,6 +162,13 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
+            var pingLogged = new TaskCompletionSource<string>();
+            ctx.Logger
+                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
+
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions("https://127.0.0.1:1/start-heartbeat"));
+
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(false);
 
@@ -145,6 +181,44 @@ namespace Servy.Service.UnitTests
             // Assert
             Assert.Equal(0, service.GetFailedChecks());
             ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process is healthy")), It.IsAny<Exception>()), Times.Once);
+
+            // Verify Placement 2: Healthy again after failures emits start-flag ping
+            var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
+            Assert.Same(pingLogged.Task, completedTask);
+            Assert.Contains("start", await pingLogged.Task);
+        }
+
+        [Fact]
+        public async Task CheckHealth_ProcessHealthy_RoutineTick_EmitsRoutineHeartbeatPing()
+        {
+            // Arrange
+            var ctx = new ServiceTestContext();
+            var service = ctx.Build();
+            _disposableServices.Add(service);
+
+            var pingLogged = new TaskCompletionSource<string>();
+            ctx.Logger
+                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
+
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions("https://127.0.0.1:1/routine-heartbeat"));
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            Assert.Equal(0, service.GetFailedChecks());
+
+            // Verify Placement 3: Routine healthy tick emits empty-flag ping
+            var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
+            Assert.Same(pingLogged.Task, completedTask);
+            Assert.Contains("rout", await pingLogged.Task);
         }
 
         [Fact]
@@ -155,6 +229,8 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
+
             bool processHasExited = true;
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(() => processHasExited);
@@ -163,8 +239,8 @@ namespace Servy.Service.UnitTests
             var recoveryTriggered = new TaskCompletionSource<bool>();
 
             ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
-                                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                                 It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                                                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                                                 It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                   .Callback(() =>
                   {
                       processHasExited = false;
@@ -203,9 +279,9 @@ namespace Servy.Service.UnitTests
             // Assert
             ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
             ctx.Helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
-                                  It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
-                                  Times.Once);
+                                                  It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                                                  Times.Once);
         }
 
         public void Dispose()

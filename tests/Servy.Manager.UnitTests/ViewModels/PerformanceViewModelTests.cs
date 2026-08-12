@@ -285,9 +285,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Command Processing & Clear Framework Flags
 
         [Fact]
-        public void CopyPidCommand_ValidSelection_InvokesDownstreamCommands()
+        public async Task CopyPidCommand_ValidSelection_InvokesDownstreamCommands()
         {
-            Helper.RunOnSTA(() =>
+            await Helper.RunOnSTA(async () =>
             {
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 {
@@ -296,7 +296,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.SelectedService = mockService;
 
                     // Act
-                    vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                    await vm.CopyPidCommand.ExecuteAsync(null);
 
                     // Assert
                     _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ActiveService" && s.Pid == 8888), It.IsAny<CancellationToken>()), Times.Once);

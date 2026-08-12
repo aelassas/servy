@@ -32,7 +32,7 @@ param(
     [string[]]$ExcludeDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport'),
 
     [Parameter(Mandatory = $false)]
-    [string[]]$ExcludeExtensions = @('.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx'),
+    [string[]]$ExcludeExtensions = @('.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx'),
 
     [Parameter(Mandatory = $false)]
     [string[]]$ExcludeFiles = @('coverage.cobertura.xml')
