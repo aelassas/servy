@@ -9,24 +9,19 @@ namespace Servy.CLI.UnitTests.Helpers
     [Verb("testverb", HelpText = "Test verb")]
     internal class TestOptions { }
 
-    // Enforce sequential execution down a single thread apartment channel
-    // across the entire suite run pass to stop cross-thread Console static corruption.
+    // Enforce sequential execution across the entire suite run pass to stop cross-thread Console static corruption.
     [Collection("SequentialConsoleTests")]
     public class HelperTests
     {
         // Single SemaphoreSlim(1, 1) to gate access to the static Console object.
         private static readonly SemaphoreSlim _consoleSemaphore = new SemaphoreSlim(1, 1);
 
-        // Async coordination primitive sharing the same conceptual isolation boundary
-        // to prevent thread pool yields from overlapping with active capturing blocks.
-        private static readonly SemaphoreSlim _asyncConsoleLock = new SemaphoreSlim(1, 1);
-
         // Consolidated, robust console capture mechanism with synchronized lock bounds
         // Returns a tuple containing captured stdout/stderr text for assertion.
         private (string StdOut, string StdErr) RunTestWithConsoleCapture(Action testAction)
         {
-            // Synchronously drain the async gate to block multi-threaded interleaved tests
-            _asyncConsoleLock.Wait();
+            // Synchronously drain the semaphore to block multi-threaded interleaved tests
+            _consoleSemaphore.Wait();
             var oldOut = Console.Out;
             var oldErr = Console.Error;
 
@@ -53,7 +48,7 @@ namespace Servy.CLI.UnitTests.Helpers
                 // CRITICAL: Ensure static console state restoration is guaranteed fallback safety
                 Console.SetOut(oldOut);
                 Console.SetError(oldErr);
-                _asyncConsoleLock.Release();
+                _consoleSemaphore.Release();
             }
         }
 
@@ -76,7 +71,6 @@ namespace Servy.CLI.UnitTests.Helpers
                 using (var swOut = new StringWriter())
                 using (var swErr = new StringWriter())
                 {
-
                     // Act: Redirect streams
                     Console.SetOut(swOut);
                     Console.SetError(swErr);
@@ -204,8 +198,8 @@ namespace Servy.CLI.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
-        public void TryParseFileType_NullOrWhitespaceInputs_ReturnsFalseAndAppendsErrorToken(string? input)
+        [InlineData("    ")]
+        public void TryParseFileType_NullOrWhitespaceInputs_ReturnsFalseAndSetsError(string? input)
         {
             // Arrange & Act
             bool result = Helper.TryParseFileType(input, out ConfigFileType _, out string? error);
@@ -219,7 +213,7 @@ namespace Servy.CLI.UnitTests.Helpers
         [InlineData("invalid")]
         [InlineData("123")]
         [InlineData("xml,json")]
-        public void TryParseFileType_InvalidInputs_ReturnsFalseAndAppendsErrorToken(string? input)
+        public void TryParseFileType_InvalidInputs_ReturnsFalseAndSetsError(string? input)
         {
             // Arrange & Act
             bool result = Helper.TryParseFileType(input, out ConfigFileType _, out string? error);
