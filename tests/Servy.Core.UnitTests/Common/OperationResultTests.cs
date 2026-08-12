@@ -5,6 +5,13 @@ namespace Servy.Core.UnitTests.Common
     public class OperationResultTests
     {
         [Fact]
+        public void OperationResult_ExposesNoConstructorThatCanBypassTheErrorInvariant()
+        {
+            // Arrange & Act & Assert
+            Assert.Empty(typeof(OperationResult).GetConstructors());   // ctor is private; only Success()/Failure() are reachable
+        }
+
+        [Fact]
         public void Success_ShouldReturnSuccessfulResult()
         {
             // Act
@@ -41,17 +48,6 @@ namespace Servy.Core.UnitTests.Common
 
             Assert.Equal("error", exception.ParamName);
             Assert.Contains("Failure result must include an error message.", exception.Message);
-        }
-
-        [Fact]
-        public void Success_WithFailureMessage_ShouldSetProperties()
-        {
-            // Act
-            var result = OperationResult.Success();
-
-            // Assert
-            Assert.True(result.IsSuccess);
-            Assert.Null(result.ErrorMessage);
         }
     }
 }
