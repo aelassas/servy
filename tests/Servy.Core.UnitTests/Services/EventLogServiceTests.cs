@@ -6,9 +6,11 @@ using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Testing;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -22,16 +24,22 @@ namespace Servy.Core.UnitTests.Services
             return new EventLogService(mockReader.Object);
         }
 
-        private ServyEventLogEntry CreateFakeEvent(int id, byte level, DateTime? time, string message)
+        private ServyEventLogEntry CreateFakeEvent(int id, byte level, DateTime time, string message)
         {
             return new ServyEventLogEntry
             {
                 EventId = id,
                 Level = Core.Logging.EventLogReader.ParseLevel(level),
-                Time = time ?? DateTime.MinValue,
+                Time = time,
                 ProviderName = AppConfig.EventSource,
                 Message = message
             };
+        }
+
+        private static IEnumerable<ServyEventLogEntry> ThrowingIterator(Exception ex)
+        {
+            yield return new ServyEventLogEntry { Message = "[service] ok", ProviderName = AppConfig.EventSource };
+            throw ex;
         }
 
         [Fact]
@@ -108,13 +116,11 @@ namespace Servy.Core.UnitTests.Services
             var service = CreateService(mockReader);
 
             // Act: All system filters are null.
-            // Note: If the service sets 'SourceName' by default, this will actually build a populated tag.
-            // Asserting StartsWith("*") ensures it passes regardless of SourceName defaults.
             await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
-            // Assert
+            // Assert: Default source name produces the provider-filtered system query exactly
             Assert.NotNull(capturedQuery);
-            Assert.StartsWith("*", capturedQuery);
+            Assert.Equal($"*[System[Provider[@Name='{AppConfig.EventSource}']]]", capturedQuery);
         }
 
         [Fact]
@@ -144,6 +150,84 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("(Level=1 or Level=2)", capturedQuery);
 
             Assert.EndsWith("]]", capturedQuery);
+        }
+
+        #endregion
+
+        #region Security & Allowlist Tests
+
+        [Theory]
+        [InlineData("Servy'] | //*")]
+        [InlineData("Bad<Source>")]
+        [InlineData("Src&Name")]
+        public async Task SearchAsync_WhenSourceNameViolatesAllowlist_ThrowsSecurityException(string source)
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            var service = new EventLogService(mockReader.Object, source);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<SecurityException>(() =>
+                service.SearchAsync(null, null, null, null, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData("Microsoft-Windows-Servy Agent 2.0")]
+        [InlineData("Servy_Test-1")]
+        public async Task SearchAsync_WhenSourceNameIsUnusualButAllowed_DoesNotThrow(string source)
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                      .Returns(Array.Empty<ServyEventLogEntry>());
+
+            var service = new EventLogService(mockReader.Object, source);
+
+            // Act & Assert
+            var ex = await Record.ExceptionAsync(() =>
+                service.SearchAsync(null, null, null, null, CancellationToken.None));
+
+            Assert.Null(ex);
+        }
+
+        #endregion
+
+        #region Exception Translation Tests
+
+        [Fact]
+        public async Task SearchAsync_WhenReaderThrowsEventLogException_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                      .Returns(ThrowingIterator(new EventLogException("Service stopped")));
+
+            var service = CreateService(mockReader);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.SearchAsync(null, null, null, null, CancellationToken.None));
+
+            Assert.Contains("Cannot access Windows Event Log", ex.Message);
+            Assert.IsType<EventLogException>(ex.InnerException);
+        }
+
+        [Fact]
+        public async Task SearchAsync_WhenReaderThrowsUnauthorizedAccessException_ThrowsSecurityException()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                      .Returns(ThrowingIterator(new UnauthorizedAccessException("Access denied")));
+
+            var service = CreateService(mockReader);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<SecurityException>(() =>
+                service.SearchAsync(null, null, null, null, CancellationToken.None));
+
+            Assert.Contains("Access denied to Windows Event Log", ex.Message);
+            Assert.IsType<UnauthorizedAccessException>(ex.InnerException);
         }
 
         #endregion
@@ -310,11 +394,12 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task SearchAsync_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
+        public async Task SearchAsync_PreservesEntryTimestamp()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(6, 4, null, "[service] no time");
+            var timestamp = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            var fakeEvt = CreateFakeEvent(6, 4, timestamp, "[service] valid time");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
@@ -325,7 +410,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             var entry = Assert.Single(result);
-            Assert.Equal(DateTime.MinValue, entry.Time);
+            Assert.Equal(timestamp, entry.Time);
         }
 
         [Fact]
@@ -377,9 +462,6 @@ namespace Servy.Core.UnitTests.Services
                 cts.Cancel();
 
                 // Act & Assert
-                // CANCELLATION: Standardized the assertion to target the base type OperationCanceledException.
-                // This eliminates brittle exact-type constraints and mirrors the cancellation patterns
-                // verified across sibling components like ServiceManager and DapperExecutor.
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
                     service.SearchAsync(null, null, null, null, cts.Token));
             }
