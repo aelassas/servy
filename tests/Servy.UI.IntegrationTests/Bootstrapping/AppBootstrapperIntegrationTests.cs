@@ -67,18 +67,11 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
             // Force static environmental resets
             Logger.Shutdown();
-
-            // INTERCEPT MESSAGES: enable UI Headless mode using "UiHeadless".
-            // This prevents blocking popups from stalling the test pipeline.
-            UiHeadless.IsEnabled = true;
         }
 
         public void Dispose()
         {
             Logger.Shutdown();
-
-            // Clean up headless state
-            UiHeadless.IsEnabled = false;
 
             try
             {

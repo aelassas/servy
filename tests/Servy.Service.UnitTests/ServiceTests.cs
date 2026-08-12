@@ -12,6 +12,8 @@ using Servy.Service.UnitTests.Helpers;
 using Servy.Service.Validation;
 using Servy.Testing;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -780,55 +782,167 @@ namespace Servy.Service.UnitTests
         #region EmitHeartbeatPing Tests
 
         [Fact]
-        public async Task EmitHeartbeatPing_WithNullBaseUrl_ReturnsEarlyWithoutThrowing()
-        {
-            // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
-            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
-
-            // parameters: string? baseUrl, string suffix, int timeoutSeconds
-            object?[] parameters = new object?[] { null, "/start", 5 };
-
-            // Act & Assert
-            // Verify early exit path on null target through the TestReflection engine
-            var exception = Record.Exception(() =>
-                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters)
-            );
-
-            Assert.Null(exception);
-
-            // Give any background workers a moment to settle down safely
-            await Task.Delay(50, TestContext.Current.CancellationToken);
-        }
-
-        [Fact]
         public async Task EmitHeartbeatPing_WithValidUrl_ExecutesFireAndForgetWithoutBlocking()
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
             var serviceInstance = _ctx.BuildService(repositoryMock.Object);
 
-            // Inject options state using TestReflection to bypass the early return block checks
+            // Bind HttpListener with retry logic on ephemeral ports to prevent TOCTOU collisions in CI
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+
+            var requestReceivedTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var context = await listener.GetContextAsync();
+                    requestReceivedTcs.TrySetResult(context.Request.Url?.AbsolutePath ?? string.Empty);
+                    context.Response.StatusCode = (int)HttpStatusCode.OK;
+                    context.Response.Close();
+                }
+                catch
+                {
+                    // Listener stopped or disposed during test cleanup
+                }
+            }, CancellationToken.None);
+
+            try
+            {
+                var mockOptions = new StartOptions
+                {
+                    EnableHealthMonitoring = true,   // Required to pass the first guard check
+                    EnableHeartbeatUrlFlags = true   // Required to allow suffix appending
+                };
+                TestReflection.SetField(serviceInstance, "_options", mockOptions);
+
+                object?[] parameters = new object?[] { $"{baseAddress}test-uuid", "/start", 2 };
+
+                // Act
+                var watch = Stopwatch.StartNew();
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters);
+                watch.Stop();
+
+                // Assert 1: The method returned immediately without blocking the primary thread
+                Assert.True(watch.ElapsedMilliseconds < 1000, $"Method blocked primary execution thread for {watch.ElapsedMilliseconds}ms");
+
+                // Assert 2: The background task actually fired the HTTP request and correctly appended the suffix path
+                var timeoutTask = Task.Delay(5000, CancellationToken.None);
+                var completedTask = await Task.WhenAny(requestReceivedTcs.Task, timeoutTask);
+
+                Assert.True(completedTask == requestReceivedTcs.Task, "Heartbeat ping request timed out on background thread");
+
+                string receivedPath = await requestReceivedTcs.Task;
+                Assert.Equal("/test-uuid/start", receivedPath);
+            }
+            finally
+            {
+                try { listener.Stop(); } catch { /* Ignore cleanup errors */ }
+                try { listener.Close(); } catch { /* Ignore cleanup errors */ }
+            }
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void EmitHeartbeatPing_WithNullOrEmptyBaseUrl_ReturnsEarlyWithoutScheduling(string? invalidUrl)
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
+
             var mockOptions = new StartOptions
             {
+                EnableHealthMonitoring = true,
                 EnableHeartbeatUrlFlags = true
             };
             TestReflection.SetField(serviceInstance, "_options", mockOptions);
 
-            object?[] parameters = new object?[] { "https://127.0.0.1:1/test-uuid", "/start", 2 };
+            // Act & Assert
+            var ex = Record.Exception(() =>
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object?[] { invalidUrl, "/start", 2 }));
 
-            // Act
-            var watch = Stopwatch.StartNew();
-            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters);
-            watch.Stop();
+            Assert.Null(ex);
+        }
 
-            // Assert
-            // The underlying method schedules execution on Task.Run, so the caller thread
-            // must execute immediately (well under 1000 milliseconds) regardless of actual network response latency.
-            Assert.True(watch.ElapsedMilliseconds < 1000, $"Method blocked the primary thread execution context for {watch.ElapsedMilliseconds}ms");
+        [Fact]
+        public void EmitHeartbeatPing_WithHealthMonitoringDisabled_ReturnsEarlyWithoutScheduling()
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
 
-            // Allow background worker execution scope window time to wind down cleanly before test context teardown
-            await Task.Delay(100, TestContext.Current.CancellationToken);
+            var mockOptions = new StartOptions
+            {
+                EnableHealthMonitoring = false,  // Explicitly disabled
+                EnableHeartbeatUrlFlags = true
+            };
+            TestReflection.SetField(serviceInstance, "_options", mockOptions);
+
+            // Act & Assert
+            var ex = Record.Exception(() =>
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object?[] { "http://127.0.0.1:1/uuid", "/start", 2 }));
+
+            Assert.Null(ex);
+        }
+
+        [Fact]
+        public void EmitHeartbeatPing_WithSuffixAndUrlFlagsDisabled_ReturnsEarlyWithoutScheduling()
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
+
+            var mockOptions = new StartOptions
+            {
+                EnableHealthMonitoring = true,
+                EnableHeartbeatUrlFlags = false  // Flags disabled, but suffix provided
+            };
+            TestReflection.SetField(serviceInstance, "_options", mockOptions);
+
+            // Act & Assert
+            var ex = Record.Exception(() =>
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object?[] { "http://127.0.0.1:1/uuid", "/start", 2 }));
+
+            Assert.Null(ex);
+        }
+
+        private static (HttpListener listener, string baseAddress) CreateAndStartHttpListener()
+        {
+            var random = new Random();
+            for (int attempt = 0; attempt < 10; attempt++)
+            {
+                int port = random.Next(49152, 65535);
+                string baseAddress = $"http://127.0.0.1:{port}/";
+                var listener = new HttpListener();
+                try
+                {
+                    listener.Prefixes.Add(baseAddress);
+                    listener.Start();
+                    return (listener, baseAddress);
+                }
+                catch (HttpListenerException)
+                {
+                    try { listener.Close(); } catch { }
+                }
+            }
+
+            // Fallback if random attempts encounter collisions
+            int fallbackPort = GetFreeTcpPort();
+            string fallbackAddress = $"http://127.0.0.1:{fallbackPort}/";
+            var fallbackListener = new HttpListener();
+            fallbackListener.Prefixes.Add(fallbackAddress);
+            fallbackListener.Start();
+            return (fallbackListener, fallbackAddress);
+        }
+
+        private static int GetFreeTcpPort()
+        {
+            using var l = new TcpListener(IPAddress.Loopback, 0);
+            l.Start();
+            return ((IPEndPoint)l.LocalEndpoint).Port;
         }
 
         #endregion
