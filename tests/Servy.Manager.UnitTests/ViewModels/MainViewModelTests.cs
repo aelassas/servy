@@ -14,6 +14,7 @@ using Servy.Testing;
 using Servy.UI;
 using Servy.UI.Services;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -29,7 +30,7 @@ using Helper = Servy.Testing.Helper;
 namespace Servy.Manager.UnitTests.ViewModels
 {
     [Collection(AmbientTestCollection.Name)]
-    public class MainViewModelTests
+    public class MainViewModelTests : IDisposable
     {
         private readonly Mock<IServiceManager> _serviceManagerMock;
         private readonly Mock<IServiceRepository> _serviceRepositoryMock;
@@ -47,6 +48,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<DependenciesViewModel> _dependenciesViewModelMock;
         private readonly Mock<IEventLogService> _eventLogServiceMock;
         private readonly Mock<LogsViewModel> _logsViewModelMock;
+
+        // Track generated SUT view model instances to enforce complete memory containment cleanup
+        private readonly ConcurrentBag<MainViewModel> _allocatedViewModels = new ConcurrentBag<MainViewModel>();
 
         public MainViewModelTests()
         {
@@ -108,7 +112,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Always fall back to the explicit thread-bound Dispatcher context
             // instead of cross-contaminating shared static application references.
-            return new MainViewModel(
+            var vm = new MainViewModel(
                 _serviceManagerMock.Object,
                 _serviceRepositoryMock.Object,
                 _serviceCommandsMock.Object,
@@ -123,6 +127,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _processHelperMock.Object,
                 dispatcher ?? Dispatcher.CurrentDispatcher
             );
+
+            _allocatedViewModels.Add(vm);
+            return vm;
         }
 
         #region Private Message Pump Redirection Helpers
@@ -211,6 +218,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = new MainViewModel();
+                _allocatedViewModels.Add(vm);
                 Assert.NotNull(vm);
             }, createApp: true);
         }
@@ -1499,6 +1507,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Dispatcher.CurrentDispatcher
                 );
 
+                _allocatedViewModels.Add(vm);
+
                 // Act
                 var exception = Record.Exception(() => vm.Dispose());
 
@@ -1550,6 +1560,24 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var doubleDisposeException = Record.Exception(() => vm.Dispose());
                 Assert.Null(doubleDisposeException);
             }, createApp: true);
+        }
+
+        /// <summary>
+        /// Explicit test fixture teardown sequence to purge in-flight background CTS contexts and unsubscribed events safely.
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (var vm in _allocatedViewModels)
+            {
+                try
+                {
+                    vm.Dispose();
+                }
+                catch
+                {
+                    // Catch-all block to guarantee adjacent cleanup executions complete safely
+                }
+            }
         }
 
         #endregion

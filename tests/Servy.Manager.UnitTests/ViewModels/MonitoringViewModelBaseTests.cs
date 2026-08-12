@@ -36,7 +36,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         private class TestMonitoringViewModel : MonitoringViewModelBase
         {
-            private readonly Func<CancellationToken, Task> _onTickHandler;
+            public Func<CancellationToken, Task> OnTickHandler { get; set; }
             protected override int RefreshIntervalMs { get; }
 
             public bool IsOnMonitoringStoppedCalled { get; private set; }
@@ -56,7 +56,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 : base(cursorService, uiDispatcher, serviceCommands)
             {
                 RefreshIntervalMs = refreshIntervalMs;
-                _onTickHandler = onTickHandler;
+                OnTickHandler = onTickHandler;
             }
 
             public void ExposeInitTimer() => InitTimer();
@@ -93,7 +93,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
             {
                 LastAppliedSelection = selection;
-                await _onTickHandler(token);
+                await OnTickHandler(token);
             }
 
             public void ExposeDispose(bool disposing)
@@ -167,6 +167,22 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void StartMonitoring_WhenDisposed_DoesNotStartMonitoringOrCreateTimer()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+            vm.ExposeDispose(true);
+
+            // Act
+            vm.StartMonitoring();
+
+            // Assert
+            Assert.Equal(0, vm.ExposeIsMonitoringFlag);
+            Assert.Null(vm.ExposeTimer);
+            Assert.Null(vm.ExposeCts);
+        }
+
+        [Fact]
         public void StopMonitoring_HaltsTimerCancelsCtsAndNotifiesDerivedClasses()
         {
             // Arrange
@@ -219,6 +235,16 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Assert
             Assert.Equal(CancellationToken.None, postDisposeToken);
             Assert.False(postDisposeToken.IsCancellationRequested);
+
+            // Scenario 5: Disposed CancellationTokenSource instance in _monitoringCts -> Catches ObjectDisposedException and returns canceled token
+            // Act
+            var deadCts = new CancellationTokenSource();
+            deadCts.Dispose();
+            TestReflection.SetField(vm, "_monitoringCts", deadCts);
+            var deadToken = vm.ExposeCurrentToken();
+
+            // Assert
+            Assert.True(deadToken.IsCancellationRequested);
         }
 
         [Fact]
@@ -287,11 +313,15 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
             vm.StartMonitoring();
 
+            // Pre-set error count to verify cancellation resets the consecutive error counter
+            TestReflection.SetField(vm, "_tickErrorCount", 5L);
+
             // Act
             vm.ExposeOnTick();
 
             // Assert
             Assert.Equal(0, vm.ExposeIsTickRunningFlag);
+            Assert.Equal(0L, TestReflection.GetField<long>(vm, "_tickErrorCount"));
             Assert.True(vm.ExposeTimer.IsEnabled);
         }
 
@@ -315,6 +345,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Equal(i, observedErrors);
                 Assert.Equal(0, vm.ExposeIsTickRunningFlag);
             }
+
+            // Verify a subsequent successful tick resets error count to 0
+            vm.OnTickHandler = _ => Task.CompletedTask;
+            vm.ExposeOnTick();
+            Assert.Equal(0L, TestReflection.GetField<long>(vm, "_tickErrorCount"));
         }
 
         [Fact]
