@@ -4,6 +4,7 @@ using Servy.Core.Common;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Resources;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Services;
@@ -539,22 +540,22 @@ namespace Servy.UnitTests.Services
         #region IsServiceNameValid Conditional Branch Tests
 
         [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("   ")]
-        [InlineData("Invalid/Name\\WithSpecialChars")]
-        public async Task IsServiceNameValid_InvalidScenarios_ReturnsFalseAndDisplaysWarning(string serviceName)
+        [InlineData(null, nameof(Strings.Msg_ValidationError))]
+        [InlineData("", nameof(Strings.Msg_ValidationError))]
+        [InlineData("   ", nameof(Strings.Msg_ValidationError))]
+        [InlineData("Invalid/Name\\WithSpecialChars", nameof(Strings.Msg_InvalidServiceName))]
+        public async Task IsServiceNameValid_InvalidScenarios_ReturnsFalseAndDisplaysWarning(string serviceName, string expectedResourceKey)
         {
             // Arrange
             var sut = CreateSut();
+            var expected = Strings.ResourceManager.GetString(expectedResourceKey);
 
             // Act
             var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
-            // The warning dialog must be shown exactly once
-            _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(expected, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion

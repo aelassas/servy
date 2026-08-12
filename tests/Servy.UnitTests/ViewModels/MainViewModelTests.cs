@@ -116,15 +116,27 @@ namespace Servy.UnitTests.ViewModels
         public async Task InstallCommand_Calls_InstallService_With_Configuration()
         {
             // Arrange
+            ServiceConfiguration capturedConfig = null;
+            bool wasBusyDuringExecution = false;
+
+            _serviceCommandsMock
+                .Setup(s => s.InstallServiceAsync(It.IsAny<ServiceConfiguration>(), It.IsAny<CancellationToken>()))
+                .Callback<ServiceConfiguration, CancellationToken>((config, _) =>
+                {
+                    capturedConfig = config;
+                    wasBusyDuringExecution = _viewModel.IsBusy;
+                })
+                .ReturnsAsync(true);
+
             _viewModel.ServiceName = "TestService";
             _viewModel.ServiceDisplayName = "TestServiceDisplayName";
             _viewModel.ServiceDescription = "Desc";
-            _viewModel.ProcessPath = "C:\\test.exe";
-            _viewModel.StartupDirectory = "C:\\";
+            _viewModel.ProcessPath = @"C:\app\test.exe";
+            _viewModel.StartupDirectory = @"C:\app";
             _viewModel.ProcessParameters = "--flag";
             _viewModel.CpuAffinity = "0x1";
-            _viewModel.StdoutPath = "out.log";
-            _viewModel.StderrPath = "err.log";
+            _viewModel.StdoutPath = @"C:\logs\out.log";
+            _viewModel.StderrPath = @"C:\logs\err.log";
             _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "12345";
             _viewModel.UseLocalTimeForRotation = true;
@@ -145,23 +157,23 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.Password = "password";
             _viewModel.ConfirmPassword = "password";
 
-            _viewModel.PreLaunchExecutablePath = @"C:\pre-launch.exe";
-            _viewModel.PreLaunchStartupDirectory = @"C:\";
-            _viewModel.PreLaunchParameters = "--param1 val1";
-            _viewModel.PreLaunchEnvironmentVariables = "var1=val1; var2=val2;";
-            _viewModel.PreLaunchStdoutPath = @"C:\pre-launch-stdout.log";
-            _viewModel.PreLaunchStderrPath = @"C:\pre-launch-stderr.log";
+            _viewModel.PreLaunchExecutablePath = @"C:\pre-launch\pre-launch.exe";
+            _viewModel.PreLaunchStartupDirectory = @"C:\pre-launch";
+            _viewModel.PreLaunchParameters = "--pre-param val1";
+            _viewModel.PreLaunchEnvironmentVariables = "pvar1=pval1;";
+            _viewModel.PreLaunchStdoutPath = @"C:\logs\pre-launch-stdout.log";
+            _viewModel.PreLaunchStderrPath = @"C:\logs\pre-launch-stderr.log";
             _viewModel.PreLaunchTimeoutSeconds = "40";
             _viewModel.PreLaunchRetryAttempts = "3";
             _viewModel.PreLaunchIgnoreFailure = true;
 
-            _viewModel.FailureProgramPath = @"C:\failureProgram.exe";
+            _viewModel.FailureProgramPath = @"C:\failureProgram\failureProgram.exe";
             _viewModel.FailureProgramStartupDirectory = @"C:\failureProgramDir";
             _viewModel.FailureProgramParameters = "--failureProgramParam1 val1";
 
-            _viewModel.PostLaunchExecutablePath = @"C:\post-launch.exe";
-            _viewModel.PostLaunchStartupDirectory = @"C:\";
-            _viewModel.PostLaunchParameters = "--param1 val1";
+            _viewModel.PostLaunchExecutablePath = @"C:\post-launch\post-launch.exe";
+            _viewModel.PostLaunchStartupDirectory = @"C:\post-launch";
+            _viewModel.PostLaunchParameters = "--post-param val1";
             _viewModel.MaxRotations = "5";
             _viewModel.EnableDateRotation = true;
             _viewModel.SelectedDateRotationType = DateRotationType.Weekly;
@@ -171,13 +183,13 @@ namespace Servy.UnitTests.ViewModels
 
             _viewModel.PreStopExecutablePath = @"C:\pre-stop\pre-stop.exe";
             _viewModel.PreStopStartupDirectory = @"C:\pre-stop";
-            _viewModel.PreStopParameters = "pre-stop-args";
+            _viewModel.PreStopParameters = "--pre-stop-args";
             _viewModel.PreStopTimeoutSeconds = "15";
             _viewModel.PreStopLogAsError = true;
 
             _viewModel.PostStopExecutablePath = @"C:\post-stop\post-stop.exe";
             _viewModel.PostStopStartupDirectory = @"C:\post-stop";
-            _viewModel.PostStopParameters = "post-stop-args";
+            _viewModel.PostStopParameters = "--post-stop-args";
 
             _viewModel.EnableConsoleUI = true;
             _viewModel.EnableDebugLogs = true;
@@ -187,69 +199,71 @@ namespace Servy.UnitTests.ViewModels
             await _viewModel.InstallCommand.ExecuteAsync(null);
 
             // Assert
-            _serviceCommandsMock.Verify(s => s.InstallServiceAsync(
-                It.Is<ServiceConfiguration>(c =>
-                    c.Name == _viewModel.ServiceName &&
-                    c.DisplayName == _viewModel.ServiceDisplayName &&
-                    c.Description == _viewModel.ServiceDescription &&
-                    c.ExecutablePath == _viewModel.ProcessPath &&
-                    c.StartupDirectory == _viewModel.StartupDirectory &&
-                    c.Parameters == _viewModel.ProcessParameters &&
-                    c.StartupType == _viewModel.SelectedStartupType &&
-                    c.Priority == _viewModel.SelectedProcessPriority &&
-                    c.CpuAffinity == _viewModel.CpuAffinity &&
-                    c.StdoutPath == _viewModel.StdoutPath &&
-                    c.StderrPath == _viewModel.StderrPath &&
-                    c.EnableSizeRotation == _viewModel.EnableSizeRotation &&
-                    c.RotationSize == _viewModel.RotationSize &&
-                    c.EnableDateRotation == _viewModel.EnableDateRotation &&
-                    c.DateRotationType == _viewModel.SelectedDateRotationType &&
-                    c.MaxRotations == _viewModel.MaxRotations &&
-                    c.UseLocalTimeForRotation == _viewModel.UseLocalTimeForRotation &&
-                    c.EnableHealthMonitoring == _viewModel.EnableHealthMonitoring &&
-                    c.HeartbeatInterval == _viewModel.HeartbeatInterval &&
-                    c.MaxFailedChecks == _viewModel.MaxFailedChecks &&
-                    c.RecoveryAction == _viewModel.SelectedRecoveryAction &&
-                    c.MaxRestartAttempts == _viewModel.MaxRestartAttempts &&
-                    c.HeartbeatUrl == _viewModel.HeartbeatUrl &&
-                    c.HeartbeatUrlTimeoutSeconds == _viewModel.HeartbeatUrlTimeoutSeconds &&
-                    c.EnableHeartbeatUrlFlags == _viewModel.EnableHeartbeatUrlFlags &&
-                    c.FailureProgramPath == _viewModel.FailureProgramPath &&
-                    c.FailureProgramStartupDirectory == _viewModel.FailureProgramStartupDirectory &&
-                    c.FailureProgramParameters == _viewModel.FailureProgramParameters &&
-                    c.EnvironmentVariables == _viewModel.EnvironmentVariables &&
-                    c.ServiceDependencies == _viewModel.ServiceDependencies &&
-                    c.RunAsLocalSystem == _viewModel.RunAsLocalSystem &&
-                    c.UserAccount == _viewModel.UserAccount &&
-                    c.Password == _viewModel.Password &&
-                    c.ConfirmPassword == _viewModel.ConfirmPassword &&
-                    c.PreLaunchExecutablePath == _viewModel.PreLaunchExecutablePath &&
-                    c.PreLaunchStartupDirectory == _viewModel.PreLaunchStartupDirectory &&
-                    c.PreLaunchParameters == _viewModel.PreLaunchParameters &&
-                    c.PreLaunchEnvironmentVariables == _viewModel.PreLaunchEnvironmentVariables &&
-                    c.PreLaunchStdoutPath == _viewModel.PreLaunchStdoutPath &&
-                    c.PreLaunchStderrPath == _viewModel.PreLaunchStderrPath &&
-                    c.PreLaunchTimeoutSeconds == _viewModel.PreLaunchTimeoutSeconds &&
-                    c.PreLaunchRetryAttempts == _viewModel.PreLaunchRetryAttempts &&
-                    c.PreLaunchIgnoreFailure == _viewModel.PreLaunchIgnoreFailure &&
-                    c.PostLaunchExecutablePath == _viewModel.PostLaunchExecutablePath &&
-                    c.PostLaunchStartupDirectory == _viewModel.PostLaunchStartupDirectory &&
-                    c.PostLaunchParameters == _viewModel.PostLaunchParameters &&
-                    c.StartTimeout == _viewModel.StartTimeout &&
-                    c.StopTimeout == _viewModel.StopTimeout &&
-                    c.PreStopExecutablePath == _viewModel.PreStopExecutablePath &&
-                    c.PreStopStartupDirectory == _viewModel.PreStopStartupDirectory &&
-                    c.PreStopParameters == _viewModel.PreStopParameters &&
-                    c.PreStopTimeoutSeconds == _viewModel.PreStopTimeoutSeconds &&
-                    c.PreStopLogAsError == _viewModel.PreStopLogAsError &&
-                    c.PostStopExecutablePath == _viewModel.PostStopExecutablePath &&
-                    c.PostStopStartupDirectory == _viewModel.PostStopStartupDirectory &&
-                    c.PostStopParameters == _viewModel.PostStopParameters &&
+            Assert.True(wasBusyDuringExecution, "IsBusy should be true while InstallServiceAsync is running.");
+            Assert.False(_viewModel.IsBusy, "IsBusy should be reset to false after execution completes.");
 
-                    c.EnableConsoleUI == _viewModel.EnableConsoleUI &&
-                    c.EnableDebugLogs == _viewModel.EnableDebugLogs &&
-                    c.RecoveryOnCleanExit == _viewModel.RecoveryOnCleanExit
-                ), It.IsAny<CancellationToken>()), Times.Once);
+            Assert.NotNull(capturedConfig);
+            Assert.Equal("TestService", capturedConfig.Name);
+            Assert.Equal("TestServiceDisplayName", capturedConfig.DisplayName);
+            Assert.Equal("Desc", capturedConfig.Description);
+            Assert.Equal(@"C:\app\test.exe", capturedConfig.ExecutablePath);
+            Assert.Equal(@"C:\app", capturedConfig.StartupDirectory);
+            Assert.Equal("--flag", capturedConfig.Parameters);
+            Assert.Equal(ServiceStartType.Manual, capturedConfig.StartupType);
+            Assert.Equal(ProcessPriority.High, capturedConfig.Priority);
+            Assert.Equal("0x1", capturedConfig.CpuAffinity);
+            Assert.Equal(@"C:\logs\out.log", capturedConfig.StdoutPath);
+            Assert.Equal(@"C:\logs\err.log", capturedConfig.StderrPath);
+            Assert.True(capturedConfig.EnableSizeRotation);
+            Assert.Equal("12345", capturedConfig.RotationSize);
+            Assert.True(capturedConfig.EnableDateRotation);
+            Assert.Equal(DateRotationType.Weekly, capturedConfig.DateRotationType);
+            Assert.Equal("5", capturedConfig.MaxRotations);
+            Assert.True(capturedConfig.UseLocalTimeForRotation);
+            Assert.True(capturedConfig.EnableHealthMonitoring);
+            Assert.Equal("60", capturedConfig.HeartbeatInterval);
+            Assert.Equal("5", capturedConfig.MaxFailedChecks);
+            Assert.Equal(RecoveryAction.RestartService, capturedConfig.RecoveryAction);
+            Assert.Equal("3", capturedConfig.MaxRestartAttempts);
+            Assert.Equal("https://example.com/heartbeat", capturedConfig.HeartbeatUrl);
+            Assert.Equal("10", capturedConfig.HeartbeatUrlTimeoutSeconds);
+            Assert.True(capturedConfig.EnableHeartbeatUrlFlags);
+            Assert.Equal(@"C:\failureProgram\failureProgram.exe", capturedConfig.FailureProgramPath);
+            Assert.Equal(@"C:\failureProgramDir", capturedConfig.FailureProgramStartupDirectory);
+            Assert.Equal("--failureProgramParam1 val1", capturedConfig.FailureProgramParameters);
+            Assert.Equal("var1=val1;var2=val2", capturedConfig.EnvironmentVariables);
+            Assert.Equal("MongoDB", capturedConfig.ServiceDependencies);
+            Assert.False(capturedConfig.RunAsLocalSystem);
+            Assert.Equal(@".\username", capturedConfig.UserAccount);
+            Assert.Equal("password", capturedConfig.Password);
+            Assert.Equal("password", capturedConfig.ConfirmPassword);
+            Assert.Equal(@"C:\pre-launch\pre-launch.exe", capturedConfig.PreLaunchExecutablePath);
+            Assert.Equal(@"C:\pre-launch", capturedConfig.PreLaunchStartupDirectory);
+            Assert.Equal("--pre-param val1", capturedConfig.PreLaunchParameters);
+            Assert.Equal("pvar1=pval1;", capturedConfig.PreLaunchEnvironmentVariables);
+            Assert.Equal(@"C:\logs\pre-launch-stdout.log", capturedConfig.PreLaunchStdoutPath);
+            Assert.Equal(@"C:\logs\pre-launch-stderr.log", capturedConfig.PreLaunchStderrPath);
+            Assert.Equal("40", capturedConfig.PreLaunchTimeoutSeconds);
+            Assert.Equal("3", capturedConfig.PreLaunchRetryAttempts);
+            Assert.True(capturedConfig.PreLaunchIgnoreFailure);
+            Assert.Equal(@"C:\post-launch\post-launch.exe", capturedConfig.PostLaunchExecutablePath);
+            Assert.Equal(@"C:\post-launch", capturedConfig.PostLaunchStartupDirectory);
+            Assert.Equal("--post-param val1", capturedConfig.PostLaunchParameters);
+            Assert.Equal("11", capturedConfig.StartTimeout);
+            Assert.Equal("6", capturedConfig.StopTimeout);
+            Assert.Equal(@"C:\pre-stop\pre-stop.exe", capturedConfig.PreStopExecutablePath);
+            Assert.Equal(@"C:\pre-stop", capturedConfig.PreStopStartupDirectory);
+            Assert.Equal("--pre-stop-args", capturedConfig.PreStopParameters);
+            Assert.Equal("15", capturedConfig.PreStopTimeoutSeconds);
+            Assert.True(capturedConfig.PreStopLogAsError);
+            Assert.Equal(@"C:\post-stop\post-stop.exe", capturedConfig.PostStopExecutablePath);
+            Assert.Equal(@"C:\post-stop", capturedConfig.PostStopStartupDirectory);
+            Assert.Equal("--post-stop-args", capturedConfig.PostStopParameters);
+            Assert.True(capturedConfig.EnableConsoleUI);
+            Assert.True(capturedConfig.EnableDebugLogs);
+            Assert.True(capturedConfig.RecoveryOnCleanExit);
+
+            _serviceCommandsMock.Verify(s => s.InstallServiceAsync(It.IsAny<ServiceConfiguration>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -7,13 +7,67 @@ using System.Runtime.ExceptionServices;
 namespace Servy.Testing
 {
     /// <summary>
-    /// Reflection helper methods for tests to access public and non-public fields, properties, and methods.
+    /// Reflection helper methods for tests to access public and non-public fields, properties, constructors, and methods.
     /// </summary>
     public static class TestReflection
     {
         private const BindingFlags PrivateInstanceFlags = BindingFlags.NonPublic | BindingFlags.Instance;
         private const BindingFlags PrivateStaticFlags = BindingFlags.NonPublic | BindingFlags.Static;
         private const BindingFlags PublicStaticFlags = BindingFlags.Public | BindingFlags.Static;
+
+        /// <summary>
+        /// Creates an instance of <typeparamref name="T"/> using a non-public constructor that matches the provided argument types.
+        /// </summary>
+        /// <typeparam name="T">The target type to instantiate.</typeparam>
+        /// <param name="args">The arguments to pass to the non-public constructor.</param>
+        /// <returns>A new instance of <typeparamref name="T"/>.</returns>
+        /// <exception cref="ArgumentException">Thrown when a matching non-public constructor cannot be found.</exception>
+        public static T CreateInstanceNonPublic<T>(params object[] args)
+        {
+            var type = typeof(T);
+            var paramTypes = args?.Select(a => a?.GetType() ?? typeof(object)).ToArray() ?? Type.EmptyTypes;
+
+            var constructors = type.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            ConstructorInfo targetCtor = null;
+            foreach (var ctor in constructors)
+            {
+                var parameters = ctor.GetParameters();
+                if (parameters.Length != (args?.Length ?? 0)) continue;
+
+                bool isMatch = true;
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var arg = args[i];
+                    if (arg != null && !parameters[i].ParameterType.IsAssignableFrom(arg.GetType()))
+                    {
+                        isMatch = false;
+                        break;
+                    }
+                }
+
+                if (isMatch)
+                {
+                    targetCtor = ctor;
+                    break;
+                }
+            }
+
+            if (targetCtor == null)
+            {
+                throw new ArgumentException($"Matching constructor could not be found on type {type.Name}.");
+            }
+
+            try
+            {
+                return (T)targetCtor.Invoke(args);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw; // unreachable
+            }
+        }
 
         /// <summary>
         /// Gets the value of a non-public instance field, searching base types if needed.
