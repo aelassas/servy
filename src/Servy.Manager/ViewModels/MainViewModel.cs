@@ -1186,6 +1186,7 @@ namespace Servy.Manager.ViewModels
                 (PerformanceVM as IDisposable)?.Dispose();
                 (ConsoleVM as IDisposable)?.Dispose();
                 (DependenciesVM as IDisposable)?.Dispose();
+                (LogsVM as IDisposable)?.Dispose();
 
                 // Drain the row VM list - unhook MainViewModel's handler and
                 // dispose each row so its own Service.PropertyChanged unsubscription runs.
