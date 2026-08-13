@@ -44,7 +44,6 @@ namespace Servy.Core.IO
         private readonly Func<DateTime> _timeProvider;
         private DateTime _oversizeWarningNextEligibleAt = DateTime.MinValue;
 
-
         /// <summary>
         /// A circuit-breaker flag that disables all rotation logic if a permanent failure occurs.
         /// This prevents infinite loops of failed moves that spike CPU usage.
