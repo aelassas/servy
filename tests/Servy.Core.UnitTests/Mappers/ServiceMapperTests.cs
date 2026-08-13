@@ -242,6 +242,8 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(AppConfig.DefaultEnableConsoleUI, service.EnableConsoleUI);
             Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, service.RecoveryOnCleanExit);
             Assert.Equal(string.Empty, service.DisplayName);
+            Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, service.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultEnableHeartbeatUrlFlags, service.EnableHeartbeatUrlFlags);
         }
     }
 }
