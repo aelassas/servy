@@ -191,7 +191,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("  \"Name\":", json);
 
             // SECURITY CONTRACT BOUNDARY: Verify that sensitive credentials are actively
-            // stripped or omitted from the outbound file payload by UntrustedDataSettings rules.
+            // omitted from the outbound file payload via [JsonIgnore] attributes on ServiceDto.
             Assert.DoesNotContain("UserAccount", json);
             Assert.DoesNotContain("Password", json);
             Assert.DoesNotContain("Domain\\Admin", json);
