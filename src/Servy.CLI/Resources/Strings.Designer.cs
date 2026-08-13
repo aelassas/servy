@@ -259,11 +259,38 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to {0}.
+        /// </summary>
+        public static string Msg_LogFailed {
+            get {
+                return ResourceManager.GetString("Msg_LogFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to {0} (Unauthorized).
+        /// </summary>
+        public static string Msg_LogFailedUnauthorized {
+            get {
+                return ResourceManager.GetString("Msg_LogFailedUnauthorized", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File path is required..
         /// </summary>
         public static string Msg_PathRequired {
             get {
                 return ResourceManager.GetString("Msg_PathRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: Service operation completed successfully, but post-success repository synchronization failed for &apos;{1}&apos;: {2}.
+        /// </summary>
+        public static string Msg_PostSuccessSyncFailed {
+            get {
+                return ResourceManager.GetString("Msg_PostSuccessSyncFailed", resourceCulture);
             }
         }
         
@@ -309,6 +336,15 @@ namespace Servy.CLI.Resources {
         public static string Msg_ServiceDisabledError {
             get {
                 return ResourceManager.GetString("Msg_ServiceDisabledError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: failed to {1} for &apos;{2}&apos;: {3}.
+        /// </summary>
+        public static string Msg_ServiceOperationFailed {
+            get {
+                return ResourceManager.GetString("Msg_ServiceOperationFailed", resourceCulture);
             }
         }
         

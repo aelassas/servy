@@ -40,7 +40,7 @@ namespace Servy.CLI.UnitTests.Commands
         protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
             // Triggers CommandResult mapping fallback pathways natively.
-            // Note: errorMsg parameter is unused because ServiceStatusCommand catches SCM exceptions and maps them to Msg_ServiceStatusAction.
+            // Note: errorMsg parameter is unused because ServiceStatusCommand catches SCM exceptions and maps them via Msg_ServiceStatusAction.
             mockManager.Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>())).Throws(new InvalidOperationException("SCM operational failure"));
         }
 
@@ -73,14 +73,16 @@ namespace Servy.CLI.UnitTests.Commands
             var options = CreateValidOptions(serviceName);
             SetupServiceManagerFailure(MockServiceManager, serviceName, string.Empty);
 
+            var action = ExpectedGenericActionMessage(serviceName);
+            var expectedMessage = string.Format(Strings.Msg_CommandFailedTemplate, action, "SCM operational failure") +
+                $"{Environment.NewLine}{string.Format(Strings.Msg_SuggestionTemplate, Strings.Msg_ServiceStatusSuggestion)}";
+
             // Act
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
             Assert.False(result.IsSuccess);
-            // Assert.Contains is used instead of Assert.Equal because BaseCommand.HandleException wraps
-            // ExpectedGenericActionMessage within Msg_CommandFailedTemplate ("Failed to {0}: {1}") and appends suggestion text.
-            Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
+            Assert.Equal(expectedMessage, result.Message);
         }
 
         /// <summary>
@@ -95,19 +97,23 @@ namespace Servy.CLI.UnitTests.Commands
             const string serviceName = "MissingService";
             var options = CreateValidOptions(serviceName);
 
+            var ex = new ArgumentException("Service does not exist");
+
             // SCM throws ArgumentException when looking up a non-existent service name status
             MockServiceManager
                 .Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>()))
-                .Throws<ArgumentException>();
+                .Throws(ex);
+
+            var action = ExpectedGenericActionMessage(serviceName);
+            var expectedMessage = string.Format(Strings.Msg_CommandFailedTemplate, action, ex.Message) +
+                $"{Environment.NewLine}{string.Format(Strings.Msg_SuggestionTemplate, Strings.Msg_ServiceStatusSuggestion)}";
 
             // Act
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
             Assert.False(result.IsSuccess);
-            // Assert.Contains is used instead of Assert.Equal because BaseCommand.HandleException wraps
-            // ExpectedGenericActionMessage within Msg_CommandFailedTemplate ("Failed to {0}: {1}") and appends suggestion text.
-            Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
+            Assert.Equal(expectedMessage, result.Message);
         }
     }
 }

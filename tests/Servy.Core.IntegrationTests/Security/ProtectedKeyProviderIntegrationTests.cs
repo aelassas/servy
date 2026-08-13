@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Security;
 using Servy.Testing;
 using System;
@@ -335,13 +336,19 @@ namespace Servy.Core.IntegrationTests.Security
 
                 // 2. Verify the backoff retry time logic contract.
                 // Loop behavior profiling constraints:
-                // Attempt 0: Fails -> Sleeps BaseMs * (1 << 0) = 50ms
-                // Attempt 1: Fails -> Sleeps BaseMs * (1 << 1) = 100ms
-                // Attempt 2: Fails -> Exhausted, throws directly out of the final phase without sleeping.
-                // Expected accumulated wait sleep window boundary: ~150ms total threshold.
+                // Attempt 0: Fails -> Sleeps BaseMs * (1 << 0)
+                // Attempt 1: Fails -> Sleeps BaseMs * (1 << 1)
+                // Attempt 2: Max retries exhausted, rethrows without sleeping.
+                const int MaxRetries = 3;
+                int expectedSleepMs = 0;
+                for (int attempt = 0; attempt < MaxRetries - 1; attempt++)
+                {
+                    expectedSleepMs += AppConfig.KeyProviderReadRetryBackoffBaseMs * (1 << attempt);
+                }
+
                 var elapsedMs = stopwatch.ElapsedMilliseconds;
-                Assert.True(elapsedMs >= 140,
-                    $"The key provider did not retry or back off exponentially. Total execution time was only {elapsedMs}ms.");
+                Assert.True(elapsedMs >= expectedSleepMs * 0.9,
+                    $"The key provider did not retry or back off exponentially. Expected at least ~{expectedSleepMs * 0.9}ms of accumulated backoff, but total execution time was only {elapsedMs}ms.");
             }
         }
 

@@ -147,7 +147,7 @@ namespace Servy.CLI.Commands
                         }
                         catch (Exception ex)
                         {
-                            Logger.Warn($"{commandName}: Service operation completed successfully, but post-success repository synchronization failed for '{serviceName}': {ex.Message}");
+                            Logger.Warn(string.Format(Strings.Msg_PostSuccessSyncFailed, commandName, serviceName, ex.Message));
                         }
                     }
 
@@ -158,7 +158,7 @@ namespace Servy.CLI.Commands
                 else
                 {
                     var reason = string.IsNullOrWhiteSpace(res.ErrorMessage) ? Strings.Msg_UnknownError : res.ErrorMessage;
-                    Logger.Error($"{commandName}: failed to {action} for '{serviceName}': {reason}");
+                    Logger.Error(string.Format(Strings.Msg_ServiceOperationFailed, commandName, action, serviceName, reason));
                     return res.ToFailure();
                 }
             });
@@ -176,14 +176,14 @@ namespace Servy.CLI.Commands
         {
             if (ex is UnauthorizedAccessException)
             {
-                Logger.Error($"Failed to {action} (Unauthorized)", ex);
+                Logger.Error(string.Format(Strings.Msg_LogFailedUnauthorized, action), ex);
 
                 var errorMessage = string.Format(Strings.Msg_AdminPrivilegesRequired, commandName);
                 return CommandResult.Fail(errorMessage);
             }
             else
             {
-                Logger.Error($"Failed to {action}", ex);
+                Logger.Error(string.Format(Strings.Msg_LogFailed, action), ex);
 
                 var errorMessage = string.Format(Strings.Msg_CommandFailedTemplate, action, ex.Message);
 
