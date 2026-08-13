@@ -23,16 +23,17 @@ namespace Servy.UI.Services
         [ExcludeFromCodeCoverage] // Flaky on CI
         private static void SetCursorSafe(Cursor cursor)
         {
-            // Skip in unit test environments where Application.Current or its Dispatcher might be null
-            if (Application.Current?.Dispatcher == null) return;
+            // Cache dispatcher once to prevent NRE if Application.Current becomes null during shutdown
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null) return;
 
-            if (Application.Current.Dispatcher.CheckAccess())
+            if (dispatcher.CheckAccess())
             {
                 Mouse.OverrideCursor = cursor;
             }
             else
             {
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                dispatcher.InvokeAsync(() =>
                 {
                     Mouse.OverrideCursor = cursor;
                 }, DispatcherPriority.Normal);
