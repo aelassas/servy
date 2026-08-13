@@ -102,7 +102,7 @@ namespace Servy.Core.IntegrationTests.Config
             // Reflectively crawl AppConfig to discover all target public constants ending in 'EnvVarName'
             var targetFields = typeof(AppConfig)
                 .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                .Where(f => f.IsLiteral && !f.IsInitOnly && f.Name.EndsWith("EnvVarName", StringComparison.OrdinalIgnoreCase))
+                .Where(f => (f.IsLiteral || (f.IsStatic && f.IsInitOnly)) && f.Name.EndsWith("EnvVarName", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             Assert.NotEmpty(targetFields);

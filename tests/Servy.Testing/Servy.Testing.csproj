@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Servy.CLI\Servy.CLI.csproj" />
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
   </ItemGroup>
 
