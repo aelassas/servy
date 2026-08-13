@@ -224,12 +224,10 @@ namespace Servy.Core.Helpers
             {
                 using (var process = Process.GetProcessById(pid))
                 {
-                    // RAM is an instant point-in-time read, no lock needed yet.
-                    long ram = process.PrivateMemorySize64;
-
-                    // Lock only on this specific PID to safely compute the CPU delta
+                    // Lock on this specific PID to safely compute CPU delta and sample RAM atomically
                     lock (GetLockForPid(pid))
                     {
+                        long ram = process.PrivateMemorySize64;
                         var now = DateTime.UtcNow;
                         var totalTime = process.TotalProcessorTime;
 
