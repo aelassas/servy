@@ -85,9 +85,9 @@ namespace Servy.CLI.Helpers
                             }
                         }
                     }
-                    catch (IOException)
+                    catch (Exception ex) when (ex is IOException || ex is ArgumentException || ex is InvalidOperationException)
                     {
-                        // Fallback: If we still hit an IO issue, just write a newline to move on
+                        // Fallback: Move to a fresh line
                         Console.WriteLine();
                     }
                 }
