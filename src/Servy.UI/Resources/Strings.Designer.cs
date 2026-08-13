@@ -79,15 +79,6 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The specified path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to No updates currently available..
         /// </summary>
         public static string Msg_NoUpdatesAvailable {
