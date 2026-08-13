@@ -247,7 +247,6 @@ namespace Servy.Manager.ViewModels
                 currentSelection.Pid = currentPid;
                 ResetGraphs();
                 CopyPidCommand?.RaiseCanExecuteChanged();
-                SetPidText(currentSelection);
             }
 
             int pid = currentSelection.Pid.Value;
