@@ -202,7 +202,7 @@ namespace Servy.Core.Services
                     ? serviceFactory(serviceName)
                     : new ServiceControllerWrapper(serviceName);
 
-                using (wrapper as IDisposable)
+                using (wrapper)
                 {
                     bool isRunning = wrapper.Status == ServiceControllerStatus.Running;
                     string displayName = wrapper.DisplayName;
