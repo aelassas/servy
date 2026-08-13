@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Servy.Core.IntegrationTests.Native
 {
+    [Collection("CoreOsIntegration")]
     public class NativeMethodsIntegrationTests : IDisposable
     {
         private readonly ITestOutputHelper _output;
@@ -120,7 +121,6 @@ namespace Servy.Core.IntegrationTests.Native
                         } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
                     }
 
-                    NativeMethods.CloseHandle(hSnapshot);
                     Assert.True(foundCurrentProcess, "Process lookup snapshot tracking loop should isolate host runtime PID context.");
                 }
             }
@@ -432,10 +432,53 @@ namespace Servy.Core.IntegrationTests.Native
         #region LSA & Security Token Policies
 
         [Fact]
-        public void LsaPolicy_HandleManagement_ReturnsInvalidSecurityErrorsOnStandardContexts()
+        public void ProcessSnapshot_Enumeration_IncludesCurrentProcess()
+        {
+            // Arrange
+            int currentPid;
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
+                currentPid = currentProcess.Id;
+            }
+            bool foundCurrentProcess = false;
+
+            IntPtr snapshotHandle = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
+            Assert.NotEqual(IntPtr.Zero, snapshotHandle);
+            Assert.NotEqual(new IntPtr(-1), snapshotHandle);
+
+            try
+            {
+                var procEntry = new NativeMethods.PROCESSENTRY32
+                {
+                    dwSize = (uint)Marshal.SizeOf<NativeMethods.PROCESSENTRY32>()
+                };
+
+                if (NativeMethods.Process32First(snapshotHandle, ref procEntry))
+                {
+                    do
+                    {
+                        if ((int)procEntry.th32ProcessID == currentPid)
+                        {
+                            foundCurrentProcess = true;
+                            break;
+                        }
+                    }
+                    while (NativeMethods.Process32Next(snapshotHandle, ref procEntry));
+                }
+            }
+            finally
+            {
+                NativeMethods.CloseHandle(snapshotHandle);
+            }
+
+            Assert.True(foundCurrentProcess, $"The current process PID ({currentPid}) was not found in the Toolhelp32 snapshot.");
+        }
+
+        [Fact]
+        public void LsaPolicy_OpenAndClose_SucceedsOrReturnsAccessDenied()
         {
             // Standard runner environments run on least-privilege tokens.
-            // Opening LSA policies safely fails on STATUS_ACCESS_DENIED or executes safely if elevated.
+            // Opening LSA policies succeeds when elevated or fails with ERROR_ACCESS_DENIED when running unelevated.
             var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES
             {
                 Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>()
@@ -456,7 +499,11 @@ namespace Servy.Core.IntegrationTests.Native
             else
             {
                 int win32Error = NativeMethods.LsaNtStatusToWinError(ntStatus);
-                Assert.True(win32Error > 0);
+
+                // STATUS_ACCESS_DENIED -> ERROR_ACCESS_DENIED (5) is the only valid non-zero outcome for a
+                // least-privilege token context. Any other Win32 error signals a P/Invoke or struct layout failure.
+                const int ERROR_ACCESS_DENIED = 5;
+                Assert.Equal(ERROR_ACCESS_DENIED, win32Error);
             }
         }
 

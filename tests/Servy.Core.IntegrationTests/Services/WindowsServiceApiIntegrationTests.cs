@@ -37,21 +37,15 @@ namespace Servy.Core.IntegrationTests.Services
         public void GetServices_ReturnsEnumerableOfWindowsServiceInfo()
         {
             // Act
-            IEnumerable<WindowsServiceInfo> services = _api.GetServices();
+            var serviceList = _api.GetServices().ToList();
 
             // Assert
-            Assert.NotNull(services);
-
-            // Materialize the collection to assert basic hydration
-            var serviceList = services.ToList();
-
             // Basic sanity check: Windows should always have at least one service
             Assert.NotEmpty(serviceList);
             Assert.All(serviceList, s =>
             {
-                // Asserting against string properties only validates mapping accuracy, not handle tracking
-                Assert.False(string.IsNullOrWhiteSpace(s.ServiceName), "Service name was omitted or whitespace.");
-                Assert.False(string.IsNullOrWhiteSpace(s.DisplayName), "Display name was omitted or whitespace.");
+                Assert.False(string.IsNullOrWhiteSpace(s.ServiceName), "A service was enumerated with an omitted or whitespace ServiceName.");
+                Assert.False(string.IsNullOrWhiteSpace(s.DisplayName), $"Service '{s.ServiceName}' was enumerated with an omitted or whitespace DisplayName.");
             });
         }
 
