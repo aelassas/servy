@@ -643,7 +643,7 @@ jobs:
           if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
 
           Copy-TaskSchdArtifacts -SourcePath $sourcePath -DestPath $destPath
-          
+
           $zip = "$pkg.7z"
 
           # Use advanced compression config

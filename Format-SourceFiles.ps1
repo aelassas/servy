@@ -6,7 +6,7 @@
 .DESCRIPTION
     Traverses the current directory recursively, skipping specified directories (e.g., bin, obj,
     node_modules) and file types/names (e.g., .exe, .7z, .coverage.xml, coverage.cobertura.xml).
-    Normalizes line endings to Windows CRLF (`r`n) and re-writes file content using 
+    Normalizes line endings to Windows CRLF (`r`n) and re-writes file content using
     [System.IO.File]::WriteAllText with UTF-8 (no BOM).
 
 .PARAMETER ExcludeDirs

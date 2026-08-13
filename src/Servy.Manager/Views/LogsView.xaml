@@ -9,7 +9,7 @@
              xmlns:converters="clr-namespace:Servy.Manager.Converters"
              mc:Ignorable="d"
              UseLayoutRounding="True"
-             SnapsToDevicePixels="True"             
+             SnapsToDevicePixels="True"
              AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsViewRoot_Name}"
              AutomationProperties.AutomationId="LogsView"
              AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsViewRoot_HelpText}">
@@ -84,7 +84,7 @@
                      SnapsToDevicePixels="False"
                      UseLayoutRounding="False"
                      TextOptions.TextFormattingMode="Display"
-                     TextOptions.TextRenderingMode="ClearType"               
+                     TextOptions.TextRenderingMode="ClearType"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsKeywordTextBox_Name}"
                      AutomationProperties.AutomationId="LogsKeywordTextBox"
                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsKeywordTextBox_HelpText}">

@@ -299,8 +299,8 @@ namespace Servy.Core.UnitTests.Services
         /// Populates internal, unmanaged, and sensitive properties on a <see cref="ServiceDto"/> instance with non-null test values.
         /// </summary>
         /// <remarks>
-        /// Populating these properties ensures that export serialization tests verify explicit attribute-based exclusion 
-        /// (<see cref="Newtonsoft.Json.JsonIgnoreAttribute"/> and <see cref="System.Xml.Serialization.XmlIgnoreAttribute"/>) 
+        /// Populating these properties ensures that export serialization tests verify explicit attribute-based exclusion
+        /// (<see cref="Newtonsoft.Json.JsonIgnoreAttribute"/> and <see cref="System.Xml.Serialization.XmlIgnoreAttribute"/>)
         /// rather than null-value suppression.
         /// </remarks>
         /// <param name="service">The <see cref="ServiceDto"/> instance to populate.</param>

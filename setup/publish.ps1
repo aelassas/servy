@@ -178,7 +178,7 @@ try {
             if ($leaks) {
                 throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"
             }
-        }        
+        }
 
         # 4. Include PowerShell Module Artifacts
         $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")

@@ -115,7 +115,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void CreateSecureDirectory_EnsuresCurrentUserHasAccess()
         {
-            // Skip on elevated runs: when elevated, current user access is covered transitively 
+            // Skip on elevated runs: when elevated, current user access is covered transitively
             // by the Administrators group ACE rather than writing a distinct user ACE.
             if (SecurityHelper.IsAdministrator())
             {
