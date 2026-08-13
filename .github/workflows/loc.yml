@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Required for peaceiris/actions-gh-pages to push badges
+  contents: write  # Required to push badges to the loc branch
 
 env:
   LOC_BADGE_COLOR: green
@@ -110,14 +110,15 @@ jobs:
           echo "- Total: $TOTAL_SUMMARY lines" >> $GITHUB_STEP_SUMMARY
 
       # ----------------------------
-      # Deploy badges
+      # Deploy badges (Native Git)
       # ----------------------------
       - name: Deploy to loc branch
-        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 #v3.9.3
-        with:
-          publish_dir: ./output
-          publish_branch: loc
-          force_orphan: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          user_name: github-actions[bot]
-          user_email: github-actions[bot]@users.noreply.github.com
+        run: |
+          cd ./output
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b loc
+          git add -A
+          git commit -m "update loc badges"
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" loc --force
