@@ -65,13 +65,52 @@ namespace Servy.Core.Logging
             string provider = null;
             string message;
 
-            try { eventId = evt.Id; } catch (EventLogException) { /* leave default */ }
-            try { time = SafeToOffset(evt.TimeCreated); } catch (EventLogException) { /* leave default */ }
-            try { level = ParseLevel(evt.Level ?? 0); } catch (EventLogException) { /* leave default */ }
-            try { provider = evt.ProviderName; } catch (EventLogException) { provider = "<unavailable>"; }
+            try
+            {
+                eventId = evt.Id;
+            }
+            catch (EventLogException ex)
+            {
+                Logger.Debug($"Failed to read 'Id' from event record: {ex.Message}");
+            }
 
-            try { message = evt.FormatDescription() ?? string.Empty; }
-            catch (Exception ex) when (ex is EventLogException || ex is InvalidOperationException) { message = $"<unavailable: {ex.Message}>"; }
+            try
+            {
+                time = SafeToOffset(evt.TimeCreated);
+            }
+            catch (EventLogException ex)
+            {
+                Logger.Debug($"Failed to read 'TimeCreated' from event record: {ex.Message}");
+            }
+
+            try
+            {
+                level = ParseLevel(evt.Level ?? 0);
+            }
+            catch (EventLogException ex)
+            {
+                Logger.Debug($"Failed to read 'Level' from event record: {ex.Message}");
+            }
+
+            try
+            {
+                provider = evt.ProviderName;
+            }
+            catch (EventLogException ex)
+            {
+                provider = "<unavailable>";
+                Logger.Debug($"Failed to read 'ProviderName' from event record: {ex.Message}");
+            }
+
+            try
+            {
+                message = evt.FormatDescription() ?? string.Empty;
+            }
+            catch (Exception ex) when (ex is EventLogException || ex is InvalidOperationException)
+            {
+                message = $"<unavailable: {ex.Message}>";
+                Logger.Debug($"Failed to format description for event record: {ex.Message}");
+            }
 
             return new ServyEventLogEntry { EventId = eventId, Time = time, Level = level, ProviderName = provider, Message = message };
         }
