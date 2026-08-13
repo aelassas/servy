@@ -160,7 +160,7 @@ namespace Servy.Core.IntegrationTests.Logging
         }
 
         [Fact]
-        public void SafeWriteToEventLog_OversizedMessage_TruncatesSuccessfully()
+        public void WriteRawToWindowsEventLog_OversizedMessage_TruncatesSuccessfully()
         {
             // Arrange
             if (!_isElevated) return;
@@ -178,8 +178,11 @@ namespace Servy.Core.IntegrationTests.Logging
             {
                 using (var logger = new EventLogLogger(source, LogLevel.Info, true))
                 {
-                    // Create a massive string guaranteed to exceed the standard 31839 character limit
-                    string massiveString = new string('A', 40000);
+                    const string truncationSuffix = "...[truncated]";
+                    int expectedMaxLength = AppConfig.EventLogMessageMaxChars + truncationSuffix.Length;
+
+                    // Create a massive string guaranteed to exceed the configured truncation threshold
+                    string massiveString = new string('A', AppConfig.EventLogMessageMaxChars + 9_000);
 
                     // Act
                     Exception ex = Record.Exception(() => logger.Info(massiveString));
@@ -224,10 +227,10 @@ namespace Servy.Core.IntegrationTests.Logging
                             if (foundEntry != null)
                             {
                                 // Verify absolute length bounds and suffix marker format compliance
-                                Assert.True(foundEntry.Message.Length <= 31839 + "...[truncated]".Length + 200,
-                                    $"Persisted message length ({foundEntry.Message.Length}) exceeds the physical truncation ceiling.");
+                                Assert.True(foundEntry.Message.Length <= expectedMaxLength,
+                                    $"Persisted message length ({foundEntry.Message.Length}) exceeds the configured ceiling of {expectedMaxLength}.");
 
-                                Assert.Contains("...[truncated]", foundEntry.Message);
+                                Assert.EndsWith(truncationSuffix, foundEntry.Message);
                             }
                         }
                     }
@@ -250,7 +253,7 @@ namespace Servy.Core.IntegrationTests.Logging
         }
 
         [Fact]
-        public void SafeWriteToEventLog_OnNativeException_CatchesAndProceeds()
+        public void WriteRawToWindowsEventLog_OnNativeException_CatchesAndProceeds()
         {
             // Arrange
             if (!_isElevated) return;
@@ -283,7 +286,7 @@ namespace Servy.Core.IntegrationTests.Logging
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false))
             {
-                var scope1 = rootLogger.CreateScoped("   ");
+                var scope1 = rootLogger.CreateScoped("    ");
                 var scope2 = rootLogger.CreateScoped(null);
 
                 // Assert immutability pass-through optimization behavior

@@ -14,7 +14,6 @@ namespace Servy.Core.IntegrationTests.Native
     public class LogonAsServiceGrantIntegrationTests : IDisposable
     {
         private readonly string _testAccountName;
-        private readonly bool _isAdministrator;
         private readonly bool _canModifyLsaPolicy;
         private readonly bool _accountCreatedLocally;
 
@@ -30,11 +29,11 @@ namespace Servy.Core.IntegrationTests.Native
         public LogonAsServiceGrantIntegrationTests()
         {
             // 1. Verify administrative execution level
-            _isAdministrator = Helper.IsAdministrator();
+            bool isAdministrator = Helper.IsAdministrator();
 
             // 2. CI GUARD: Verify if the current context has actual operational permissions to call LSA APIs.
             // On standard GitHub Actions cloud agents, this prevents cascading Access Denied (0xC0000022) runtime breaks.
-            _canModifyLsaPolicy = _isAdministrator && Helper.CheckLsaPolicyAccess();
+            _canModifyLsaPolicy = isAdministrator && Helper.CheckLsaPolicyAccess();
 
             // Create a temporary, unique local user name
             _testAccountName = "ServyTest_" + Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -73,7 +72,7 @@ namespace Servy.Core.IntegrationTests.Native
             // Arrange & Act & Assert
             // This path relies strictly on string validation and runs safely anywhere, including CI.
             Assert.Throws<ArgumentException>("account", () => LogonAsServiceGrant.Ensure(null));
-            Assert.Throws<ArgumentException>("account", () => LogonAsServiceGrant.Ensure("   "));
+            Assert.Throws<ArgumentException>("account", () => LogonAsServiceGrant.Ensure("    "));
         }
 
         [Fact]
@@ -106,34 +105,18 @@ namespace Servy.Core.IntegrationTests.Native
             string shorthandAccount = $".\\{_testAccountName}";
             string fullyQualifiedAccount = $"{Environment.MachineName}\\{_testAccountName}";
 
-            // Act
-            // Trigger the execution path under test using the dot notation string configuration
-            Exception ex = Record.Exception(() => LogonAsServiceGrant.Ensure(shorthandAccount));
+            // Resolve the SID via the fully-qualified name — this is the target identity the shorthand must expand to.
+            var sid = (SecurityIdentifier)new NTAccount(fullyQualifiedAccount).Translate(typeof(SecurityIdentifier));
+            byte[] sidBytes = new byte[sid.BinaryLength];
+            sid.GetBinaryForm(sidBytes, 0);
 
-            // Assert
-            // 1. Maintain baseline telemetry assertions confirming no infrastructure policy execution crashes occurred
-            Assert.Null(ex);
+            Assert.DoesNotContain("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
 
-            // 2. IDENTITY PATH TRANSLATION: Explicitly expand the shorthand '.' notation to MachineName
-            // for the test assertion pool. This matches production expansion behavior and prevents .NET's
-            // NTAccount.Translate from failing on the raw literal dot prefix.
-            try
-            {
-                string expandedShorthand = $"{Environment.MachineName}\\{_testAccountName}";
+            // Act — drive the grant purely through the '.\' shorthand notation.
+            Assert.Null(Record.Exception(() => LogonAsServiceGrant.Ensure(shorthandAccount)));
 
-                var shorthandSid = new NTAccount(expandedShorthand).Translate(typeof(SecurityIdentifier));
-                var fullyQualifiedSid = new NTAccount(fullyQualifiedAccount).Translate(typeof(SecurityIdentifier));
-
-                Assert.NotNull(shorthandSid);
-                Assert.NotNull(fullyQualifiedSid);
-
-                // Assert structural equality of the resolved domain account SIDs
-                Assert.Equal(fullyQualifiedSid, shorthandSid);
-            }
-            catch (IdentityNotMappedException)
-            {
-                Assert.Fail($"The ephemeral local test account '{_testAccountName}' could not be resolved back to an NTAccount SID profile map.");
-            }
+            // Assert — verify that the logon privilege was granted to the target account resolved by the shorthand.
+            Assert.Contains("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
         }
 
         #endregion

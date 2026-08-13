@@ -7,6 +7,13 @@ namespace Servy.Core.UnitTests.ServiceDependencies
     {
         #region No Dependencies & Fallback Validation Pathways
 
+        [Fact]
+        public void NoDependencies_IsDoubleNullTerminator()
+        {
+            // Assert
+            Assert.Equal("\0\0", ServiceDependenciesParser.NoDependencies);
+        }
+
         [Theory]
         [InlineData(null)]             // Parse_NullInput_ReturnsNoDependencies
         [InlineData("")]               // Parse_EmptyString_ReturnsNoDependencies

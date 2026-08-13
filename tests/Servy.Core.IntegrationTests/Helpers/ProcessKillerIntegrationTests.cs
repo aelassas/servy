@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Core.IntegrationTests.Helpers
@@ -244,11 +246,11 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // IDIOM HARMONIZATION: Standardize exit checking pipeline onto the shared robust internal polling helper.
                 // This cleanly drops custom blocking WaitForExit branches and inconsistent manual tracking logic.
                 bool childExited = WaitForProcessExit(child, 5000);
-                bool parentExited = WaitForProcessExit(parent, 1000); // Quick verify check pass on the parent thread tracker
+                parent.Refresh();
 
                 // Assert
                 Assert.True(childExited, "The target child process should have been terminated.");
-                Assert.False(parentExited, "The parent process should remain alive because killParents was false.");
+                Assert.False(parent.HasExited, "The parent process should remain alive because killParents was false.");
 
                 // If child exit took down the parent via unintended cascade, assert evaluation catches it here.
                 if (!result)
@@ -451,6 +453,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 FileName = psPath,
                 Arguments = $"-NoProfile -NonInteractive -Command \"{psScript}\"",
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WorkingDirectory = tempPath,
@@ -459,31 +462,59 @@ namespace Servy.Core.IntegrationTests.Helpers
             var parentProcess = Process.Start(psi);
             _trackedProcesses.Add(parentProcess);
 
-            int childPid = -1;
-            while (parentProcess != null && !parentProcess.HasExited)
+            var errBuilder = new StringBuilder();
+            parentProcess.ErrorDataReceived += (s, e) =>
             {
-                string line = parentProcess.StandardOutput.ReadLine();
-                const string marker = "CHILD_PID:";
-                if (line != null && line.StartsWith(marker, StringComparison.Ordinal))
+                if (e.Data != null)
                 {
-                    childPid = int.Parse(line.Substring(marker.Length), CultureInfo.InvariantCulture);
-                    break;
+                    lock (errBuilder)
+                    {
+                        errBuilder.AppendLine(e.Data);
+                    }
                 }
+            };
+            parentProcess.BeginErrorReadLine();
+
+            int childPid = -1;
+            var readTask = Task.Run(() =>
+            {
+                while (parentProcess != null && !parentProcess.HasExited)
+                {
+                    string line = parentProcess.StandardOutput.ReadLine();
+                    const string marker = "CHILD_PID:";
+                    if (line != null && line.StartsWith(marker, StringComparison.Ordinal))
+                    {
+                        return int.Parse(line.Substring(marker.Length), CultureInfo.InvariantCulture);
+                    }
+                }
+                return -1;
+            });
+
+            if (readTask.Wait(TimeSpan.FromSeconds(15)))
+            {
+                childPid = readTask.Result;
             }
 
-            Assert.True(childPid > 0, "Failed to resolve child process ID from the orchestration script.");
+            string errOutput;
+            lock (errBuilder)
+            {
+                errOutput = errBuilder.ToString();
+            }
+
+            Assert.True(childPid > 0, $"Failed to resolve child process ID from the orchestration script. Stderr: {errOutput}");
 
             var childProcess = Process.GetProcessById(childPid);
             _trackedProcesses.Add(childProcess);
 
-            try
+            // The child is a console process with no message loop, so WaitForInputIdle does not apply.
+            // Poll for process liveness bounded by a timeout.
+            bool childAlive = SpinWait.SpinUntil(() =>
             {
-                childProcess.WaitForInputIdle(5000);
-            }
-            catch (InvalidOperationException)
-            {
-                Thread.Sleep(200);
-            }
+                childProcess.Refresh();
+                return !childProcess.HasExited;
+            }, TimeSpan.FromSeconds(5));
+
+            Assert.True(childAlive, "Spawned child process exited prematurely.");
 
             return (parentProcess, childProcess);
         }
@@ -511,14 +542,20 @@ namespace Servy.Core.IntegrationTests.Helpers
             var lockingProcess = Process.Start(psi);
             _trackedProcesses.Add(lockingProcess);
 
-            while (lockingProcess != null && !lockingProcess.HasExited)
+            var readTask = Task.Run(() =>
             {
-                string line = lockingProcess.StandardOutput.ReadLine();
-                if (line != null && line.Contains("LOCKED"))
+                while (lockingProcess != null && !lockingProcess.HasExited)
                 {
-                    break;
+                    string line = lockingProcess.StandardOutput.ReadLine();
+                    if (line != null && line.Contains("LOCKED"))
+                    {
+                        return true;
+                    }
                 }
-            }
+                return false;
+            });
+
+            readTask.Wait(TimeSpan.FromSeconds(10));
 
             return lockingProcess;
         }
