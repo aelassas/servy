@@ -773,14 +773,10 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Running)
                         return OperationResult.Success();
 
-                    timeout = ((service.StartTimeout.HasValue && service.StartTimeout.Value > AppConfig.DefaultServiceStartTimeoutSeconds)
-                        ? service.StartTimeout.Value : AppConfig.DefaultServiceStartTimeoutSeconds)
-                        + AppConfig.ScmTimeoutBufferSeconds;
-
-                    if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
-                    {
-                        timeout += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
-                    }
+                    timeout = ServiceHelper.CalculateStartTimeout(
+                        service.StartTimeout,
+                        string.IsNullOrEmpty(service.PreLaunchExecutablePath) ? 0 : (service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds),
+                        service.PreLaunchRetryAttempts ?? 0);
 
                     Logger.Info($"Attempting to start service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Start();
