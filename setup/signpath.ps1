@@ -15,18 +15,27 @@
         - Replace the original file with the signed version
 
     SECURITY: The script prioritizes the SIGNPATH_API_TOKEN environment variable.
-    If falling back to a configuration file, ensure the file has restricted
-    filesystem ACLs to prevent unauthorized read access.
+    Falling back to an API_TOKEN defined in a configuration file requires the explicit
+    -AllowPlaintextToken switch to prevent accidental credential exposure.
 
 .PARAMETER Path
     Path to the file that should be signed.
 
+.PARAMETER AllowPlaintextToken
+    If specified, permits falling back to an API_TOKEN defined in a plaintext configuration file
+    when $env:SIGNPATH_API_TOKEN is absent.
+
 .EXAMPLE
     PS> .\signpath.ps1 "C:\build\Servy.Manager.exe"
+
+.EXAMPLE
+    PS> .\signpath.ps1 "C:\build\Servy.Manager.exe" -AllowPlaintextToken
 #>
 param(
     [Parameter(Mandatory = $true)]
-    [string]$Path
+    [string]$Path,
+
+    [switch]$AllowPlaintextToken
 )
 
 # ----------------------------------------------------------
@@ -88,6 +97,7 @@ Get-Content $configPath | ForEach-Object {
 # ----------------------------------------------------------
 $signFlag = $config["SIGN"]
 Write-Host "signFlag=$signFlag"
+
 if ($signFlag -ine "true") {
     Write-Host "SIGN is not true in $configPath. Skipping signing."
     return
@@ -120,7 +130,7 @@ while ((Get-Module -Name SignPath) -and $attempts -lt $maxAttempts) {
 }
 
 if (Get-Module -Name SignPath) {
-    throw  "Could not unload pre-existing SignPath module after $attempts attempts. Aborting to avoid version pollution."
+    throw "Could not unload pre-existing SignPath module after $attempts attempts. Aborting to avoid version pollution."
 }
 
 # 2. Explicitly import the pinned version
@@ -146,15 +156,22 @@ $projectSlug               = $config["PROJECT_SLUG"]
 $signingPolicySlug         = $config["SIGNING_POLICY_SLUG"]
 $artifactConfigurationSlug = $config["ARTIFACT_CONFIGURATION_SLUG"]  # optional
 
-# API Token Resolution: Environment Variable > Config File
+# API Token Resolution: Environment Variable > Config File (only if -AllowPlaintextToken is set)
 $apiToken = $env:SIGNPATH_API_TOKEN
 if ([string]::IsNullOrWhiteSpace($apiToken)) {
-    $apiToken = $config["API_TOKEN"]
+    $candidateToken = $config["API_TOKEN"]
 
-    if (-not [string]::IsNullOrWhiteSpace($apiToken)) {
-        Write-Warning "SECURITY: Using API_TOKEN from plaintext config file ($configPath)."
-        Write-Warning "Ensure this file has strict ACLs applied (read/write only for the build user) and is excluded from source control."
-        Write-Warning "Recommendation: Inject the token via the `$env:SIGNPATH_API_TOKEN environment variable instead."
+    if (-not [string]::IsNullOrWhiteSpace($candidateToken)) {
+        if ($AllowPlaintextToken) {
+            $apiToken = $candidateToken
+            Write-Warning "SECURITY: Using API_TOKEN from plaintext config file ($configPath) because -AllowPlaintextToken switch was specified."
+            Write-Warning "Ensure this file has strict ACLs applied (read/write only for the build user) and is excluded from source control."
+            Write-Warning "Recommendation: Inject the token via the `$env:SIGNPATH_API_TOKEN environment variable instead."
+        }
+        else {
+            throw "SECURITY: SIGNPATH_API_TOKEN environment variable is missing and plaintext API_TOKEN fallback in $configPath was rejected. " +
+                  "Set the SIGNPATH_API_TOKEN environment variable, or pass -AllowPlaintextToken if plaintext config token usage is explicitly intended."
+        }
     }
 }
 
@@ -191,7 +208,7 @@ try {
     $runId      = $env:GITHUB_RUN_ID
 
     if ($commitId -and $branchName -and $repository -and $runId) {
-        $repoUrl    = "https://github.com/$repository.git"
+        $repoUrl  = "https://github.com/$repository.git"
 
         # BuildData.Url must point to the RUN URL - NOT the job URL
         $buildUrl = "https://github.com/$repository/actions/runs/$runId"
@@ -246,5 +263,4 @@ try {
 }
 catch {
     throw "Failed to replace the original file: $_"
-
 }
