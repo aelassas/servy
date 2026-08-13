@@ -449,3 +449,6 @@ sbom-*.xml
 servy-*-sbom.xml
 
 setup/PublishTestSandbox/
+
+tmp_build_output.txt
+tmp_test_output.txt

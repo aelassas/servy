@@ -12,7 +12,6 @@
                                 xmlns:core="clr-namespace:Servy.Core.Services;assembly=Servy.Core"
                                 xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
                                 mc:Ignorable="d"
-                                Loaded="UserControl_Loaded"
                                 AutomationProperties.Name="{x:Static resx:Strings.Automation_DependenciesViewRoot_Name}"
                                 AutomationProperties.AutomationId="DependenciesView"
                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesViewRoot_HelpText}">
