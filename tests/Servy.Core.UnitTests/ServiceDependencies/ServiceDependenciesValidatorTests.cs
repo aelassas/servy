@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.ServiceDependencies;
 using Xunit;
 
@@ -17,11 +18,25 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("   ServiceA   ;  ServiceB  ")]              // Validate_NameWithLeadingOrTrailingWhitespace_TrimmedAndValid
         [InlineData(";ServiceA;;ServiceB; ;\n;")]                // Validate_InputWithEmptyEntries_SkipsEmptyEntriesWithoutError
         [InlineData("MSSQL$SQLEXPRESS")]                         // Validate_SingleValidServiceNameWithDollarSign_ReturnsTrue (SQL Server Named Instances)
-        [InlineData("clr_optimization_v4.0.30319_32")]          // period is allowed
-        [InlineData("My Service;Another Service")]              // internal spaces are allowed (edge spaces are trimmed, internal ones are not)
+        [InlineData("clr_optimization_v4.0.30319_32")]           // period is allowed
+        [InlineData("My Service;Another Service")]               // internal spaces are allowed (edge spaces are trimmed, internal ones are not)
         public void Validate_ValidInput_ReturnsTrueWithNoErrors(string input)
         {
             // Arrange & Act
+            var result = ServiceDependenciesValidator.Validate(input, out var errors);
+
+            // Assert
+            Assert.True(result);
+            Assert.Empty(errors);
+        }
+
+        [Fact]
+        public void Validate_NameExactlyAtMaximumLength_ReturnsTrue()
+        {
+            // Arrange
+            var input = new string('A', AppConfig.MaxServiceNameLength);
+
+            // Act
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
 
             // Assert
@@ -60,6 +75,21 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         }
 
         [Fact]
+        public void Validate_NameExceedingMaximumLength_ReturnsFalse()
+        {
+            // Arrange
+            var input = new string('A', AppConfig.MaxServiceNameLength + 1);
+
+            // Act
+            var result = ServiceDependenciesValidator.Validate(input, out var errors);
+
+            // Assert
+            Assert.False(result);
+            Assert.Single(errors);
+            Assert.Contains(errors, e => e.Contains(AppConfig.MaxServiceNameLength.ToString()));
+        }
+
+        [Fact]
         public void Validate_MixedValidAndInvalidNames_ReturnsFalse()
         {
             // Arrange
@@ -74,6 +104,25 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             Assert.Equal(2, errors.Count);
             Assert.Contains(errors, e => e.Contains("Bad#Service"));
             Assert.Contains(errors, e => e.Contains("Another@Bad"));
+        }
+
+        [Fact]
+        public void Validate_MixedValidExceedingLengthAndInvalidNames_ReturnsFalse()
+        {
+            // Arrange
+            var validName = "ValidService";
+            var tooLongName = new string('B', AppConfig.MaxServiceNameLength + 1);
+            var invalidCharName = "Bad#Service";
+            var input = $"{validName};{tooLongName};{invalidCharName}";
+
+            // Act
+            var result = ServiceDependenciesValidator.Validate(input, out var errors);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(2, errors.Count);
+            Assert.Contains(errors, e => e.Contains(AppConfig.MaxServiceNameLength.ToString()));
+            Assert.Contains(errors, e => e.Contains("Bad#Service"));
         }
 
         [Fact]

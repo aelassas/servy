@@ -1,8 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Resources;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.ServiceDependencies
@@ -19,7 +17,7 @@ namespace Servy.Core.ServiceDependencies
         /// Validates the input string containing service dependencies.
         /// Service names must be separated by semicolons or new lines.
         /// Each service name must contain only letters, digits, hyphens,
-        /// underscores, periods, spaces, or dollar signs ($).
+        /// underscores, periods, spaces, or dollar signs ($), and must not exceed 256 characters.
         /// </summary>
         /// <param name="input">Raw input string with service dependencies.</param>
         /// <param name="errors">List of validation error messages.</param>
@@ -37,6 +35,12 @@ namespace Servy.Core.ServiceDependencies
             // Validate each dependency name produced by the shared tokenizer.
             foreach (string serviceName in ServiceDependenciesParser.Tokenize(input))
             {
+                if (serviceName.Length > AppConfig.MaxServiceNameLength)
+                {
+                    errors.Add(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
+                    continue;
+                }
+
                 if (!ValidServiceNameRegex.IsMatch(serviceName))
                 {
                     errors.Add(string.Format(Strings.Msg_InvalidServiceDependencyName, serviceName));
