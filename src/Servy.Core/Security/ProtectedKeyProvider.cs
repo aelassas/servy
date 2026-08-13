@@ -361,8 +361,13 @@ namespace Servy.Core.Security
 
                     return unprotectResult;
                 }
-                catch (CryptographicException)
+                catch (CryptographicException primaryEx)
                 {
+                    // Emit structured security warning indicating modern machine-entropy unprotect failed and legacy fallback is taking effect
+                    string fallbackLogMsg = $"[EventID: {EventIds.TransientMigrationWarning}] SECURITY DEGRADATION WARNING: Primary machine-entropy DPAPI decryption failed for '{path}'. Attempting legacy v7.8 null-entropy fallback. Reason: {primaryEx.Message}";
+                    Logger.Warn(fallbackLogMsg);
+                    TryWriteServyEventLog(fallbackLogMsg, EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
+
                     // 2. Fallback Attempt (v7.8 compatibility): Try with NO entropy (null)
                     byte[] decryptedData = ProtectedData.Unprotect(encrypted, null, ProtectionScope);
 
