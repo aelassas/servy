@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA
 		CHANGELOG.md = CHANGELOG.md
 		codecov.yml = codecov.yml
 		Directory.Build.props = Directory.Build.props
+		Format-SourceFiles.ps1 = Format-SourceFiles.ps1
+		Format-SourceHygiene.ps1 = Format-SourceHygiene.ps1
 		Get-FileEncoding.ps1 = Get-FileEncoding.ps1
 		Get-FileEncoding.test.ps1 = Get-FileEncoding.test.ps1
 		global.json = global.json
@@ -22,6 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA
 		NOTES.md = NOTES.md
 		README.md = README.md
 		ROADMAP.md = ROADMAP.md
+		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
 		Update-FileHelpers.ps1 = Update-FileHelpers.ps1
 	EndProjectSection
 EndProject
