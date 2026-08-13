@@ -520,6 +520,9 @@ namespace Servy.Infrastructure.Data
                 columnDefinitions.Add($"{col} {GetSqlType(col)}");
             }
 
+            // Clean up any stale staging table left over from a prior failed/interrupted migration attempt
+            connection.Execute("DROP TABLE IF EXISTS Services_v4;", transaction: transaction);
+
             var createTableSql = $"CREATE TABLE IF NOT EXISTS Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
             connection.Execute(createTableSql, transaction: transaction);
 
