@@ -249,6 +249,10 @@ namespace Servy.Services
                 await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, Caption);
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (UnauthorizedAccessException)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
@@ -296,6 +300,10 @@ namespace Servy.Services
 
                 await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
                 return true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (UnauthorizedAccessException)
             {
@@ -485,6 +493,10 @@ namespace Servy.Services
                     await _messageBoxService.ShowErrorAsync(errorMessage, Caption);
                     return false;
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (UnauthorizedAccessException)
             {
