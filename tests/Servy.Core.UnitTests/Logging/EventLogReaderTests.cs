@@ -59,6 +59,36 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal(12, result.Hour);
         }
 
+        [Fact]
+        public void SafeToOffset_WhenNearMinValue_ReturnsDateTimeOffsetMinValue()
+        {
+            // Arrange - Any timestamp within 1 day of DateTime.MinValue would overflow on negative local offset shifts
+            var nearMinTime = DateTime.MinValue.AddHours(12);
+
+            // Act
+            var result = EventLogReader.SafeToOffset(nearMinTime);
+
+            // Assert
+            Assert.Equal(DateTimeOffset.MinValue, result);
+        }
+
+        [Theory]
+        [InlineData(DateTimeKind.Unspecified)]
+        [InlineData(DateTimeKind.Local)]
+        public void SafeToOffset_WhenUnspecifiedOrLocalKind_InheritsMachineLocalOffset(DateTimeKind kind)
+        {
+            // Arrange
+            var testTime = new DateTime(2026, 6, 24, 12, 0, 0, kind);
+            var expected = new DateTimeOffset(testTime);
+
+            // Act
+            var result = EventLogReader.SafeToOffset(testTime);
+
+            // Assert
+            Assert.Equal(expected, result);
+            Assert.Equal(expected.Offset, result.Offset);
+        }
+
         #endregion
 
         #region MapToDto Tests
