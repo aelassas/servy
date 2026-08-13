@@ -16,8 +16,8 @@ namespace Servy.Core.Helpers
         /// Gets the CPU usage percentage.
         /// </summary>
         /// <value>
-        /// A value between 0.0 and 100.0, rounded to one decimal place.
-        /// For process trees, this value is capped at 100.0.
+        /// The raw CPU usage percentage as an unrounded <see cref="double"/>.
+        /// For display formatting rounded to one decimal place, see <see cref="IProcessHelper.FormatCpuUsage(double)"/>.
         /// </value>
         public double CpuUsage { get; }
 
