@@ -1,5 +1,36 @@
 # Changelog
 
+## [Servy 9.4](https://github.com/aelassas/servy/releases/tag/v9.4)
+
+**Date:** 2026-08-13 | **Tag:** [`v9.4`](https://github.com/aelassas/servy/tree/v9.4)
+
+* feat(config): add [EnableSizeRotation](https://github.com/aelassas/servy/wiki/Advanced-Configuration#settings-reference) option to control log size rotation for Servy's internal log files
+* fix(core): correct property ordering in XML and JSON exports
+* fix(core): ServiceDependenciesValidator.cs - dependency names are charset-checked but never length-checked, unlike Helper.IsServiceNameValid (#5038)
+* fix(service): add debug logs for heatbeat ping URLs
+* fix(desktop): resolve PasswordBox styling issues
+* fix(desktop): crisp textbox cursor on low resolutions
+* fix(setup/net48): prevent uninstall conflict between x64 and ARM64 installers (#4990)
+* chore(deps): update dependencies
+* style: normalize source code line endings to CRLF
+* style: add .gitattributes to enforce CRLF line endings
+* ci: fix Node.js 20 runner deprecation warnings
+* docs(wiki): update documentation
+
+### Downloads
+* [servy-9.4-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-arm64-installer.exe) - 70.68 MB
+* [servy-9.4-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-arm64-portable.7z) - 71.96 MB
+* [servy-9.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-net48-sbom.xml) - 0.03 MB
+* [servy-9.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-net48-x64-installer.exe) - 4.34 MB
+* [servy-9.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-net48-x64-portable.7z) - 2.08 MB
+* [servy-9.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-sbom.xml) - 0.04 MB
+* [servy-9.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-x64-installer.exe) - 76.73 MB
+* [servy-9.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-x64-portable.7z) - 74.6 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.4.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.4.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.3...v9.4
+
 ## [Servy 9.3](https://github.com/aelassas/servy/releases/tag/v9.3)
 
 **Date:** 2026-08-11 | **Tag:** [`v9.3`](https://github.com/aelassas/servy/tree/v9.3)
