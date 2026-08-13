@@ -6,7 +6,7 @@
     to prevent drift across multiple orchestration scripts.
 #>
 $config = @{
-    Version            = "9.4"
+    Version            = "9.5"
     Tfm                = "net10.0-windows"
     BuildConfiguration = "Release"
     Runtime            = "win-x64" # "win-x64" or "win-arm64"
