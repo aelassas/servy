@@ -13,12 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ConfigureAwait.Fody" Version="3.4.1" PrivateAssets="All" />
-    <PackageReference Include="Dapper" Version="2.1.79" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.11" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.11" />
+    <PackageReference Include="ConfigureAwait.Fody" PrivateAssets="All" />
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" />
   </ItemGroup>
 
   <ItemGroup>

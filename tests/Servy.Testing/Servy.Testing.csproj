@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="xunit.v3.extensibility.core" Version="3.2.2" />
+    <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>
 
   <ItemGroup>
