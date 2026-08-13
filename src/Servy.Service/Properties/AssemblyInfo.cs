@@ -29,8 +29,8 @@ using System.Runtime.InteropServices;
 //      Numéro de build
 //      Révision
 //
-[assembly: AssemblyVersion("9.4.0.0")]
-[assembly: AssemblyFileVersion("9.4.0.0")]
+[assembly: AssemblyVersion("9.5.0.0")]
+[assembly: AssemblyFileVersion("9.5.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.Service.UnitTests")]
 [assembly: InternalsVisibleTo("Servy.Service.IntegrationTests")]
