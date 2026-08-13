@@ -208,9 +208,6 @@ namespace Servy.Manager
                     var eventLogService = new EventLogService(new EventLogReader());
                     var cursorService = new CursorService();
 
-                    // 2. Initialize Standalone ViewModels
-                    var logsVm = new LogsViewModel(this, eventLogService, cursorService, messageBoxService);
-
                     // Break the circular dependency using local proxy functions
                     MainViewModel viewModel = null;
                     Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
@@ -233,7 +230,7 @@ namespace Servy.Manager
                         uiDispatcher // Pass the UI Dispatcher
                     );
 
-                    // 3. Initialize Main ViewModel
+                    // 2. Initialize Main ViewModel
 
                     viewModel = new MainViewModel(
                         serviceManager,
@@ -250,8 +247,8 @@ namespace Servy.Manager
                         processHelper
                     );
 
-                    // 4. Inject Dependencies into the View
-                    var main = new MainWindow(viewModel, logsVm, messageBoxService, processKiller);
+                    // 3. Inject Dependencies into the View
+                    var main = new MainWindow(viewModel, messageBoxService, processKiller);
                     main.Show();
 
                     return Task.FromResult<Window>(main);

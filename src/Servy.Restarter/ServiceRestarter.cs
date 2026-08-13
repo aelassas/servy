@@ -38,15 +38,9 @@ namespace Servy.Restarter
                         current = controller.Status;
                         if (!IsPendingState(current)) break;
                     }
-                    catch (InvalidOperationException)
+                    catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
-                        // ROBUSTNESS: Service was uninstalled or marked for deletion mid-flight.
-                        // There is no longer an active handle to manage or restart; exit cleanly.
-                        return RestartResult.ServiceNotFound;
-                    }
-                    catch (Win32Exception)
-                    {
-                        // ROBUSTNESS: Handle native SCM teardowns (e.g. ERROR_SERVICE_DOES_NOT_EXIST).
+                        // ROBUSTNESS: Service was uninstalled, marked for deletion, or native SCM handle was dropped.
                         return RestartResult.ServiceNotFound;
                     }
 
@@ -61,14 +55,9 @@ namespace Servy.Restarter
                     {
                         controller.Refresh();
                     }
-                    catch (InvalidOperationException)
+                    catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
-                        // ROBUSTNESS: Handle disappearance during the refresh cycle.
-                        return RestartResult.ServiceNotFound;
-                    }
-                    catch (Win32Exception)
-                    {
-                        // ROBUSTNESS: Handle native SCM teardowns (e.g. ERROR_SERVICE_DOES_NOT_EXIST).
+                        // ROBUSTNESS: Handle disappearance or native SCM teardown during the refresh cycle.
                         return RestartResult.ServiceNotFound;
                     }
                 }
@@ -81,14 +70,9 @@ namespace Servy.Restarter
                 {
                     stopEntryStatus = controller.Status;
                 }
-                catch (InvalidOperationException)
+                catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
-                    // Clean exit if the service vanished between the settle phase and this query
-                    return RestartResult.ServiceNotFound;
-                }
-                catch (Win32Exception)
-                {
-                    // Clean exit if native SCM handle drops out under race conditions
+                    // Clean exit if the service vanished or SCM handle dropped between the settle phase and this query
                     return RestartResult.ServiceNotFound;
                 }
 
@@ -113,9 +97,9 @@ namespace Servy.Restarter
                                 $"Service '{serviceName}' did not reach Stopped within {stopRemaining}.", ex);
                         }
                     }
-                    catch (InvalidOperationException)
+                    catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
-                        // Fallback: If it transitioned to Pending between our check and the call
+                        // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
                         HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Stopped, timeout - stopwatch.Elapsed);
                     }
                 }
@@ -127,8 +111,10 @@ namespace Servy.Restarter
                     if (controller.Status == ServiceControllerStatus.Running)
                         return RestartResult.Restarted; // already running, nothing left to do
                 }
-                catch (InvalidOperationException) { return RestartResult.ServiceNotFound; }
-                catch (Win32Exception) { return RestartResult.ServiceNotFound; }
+                catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
+                {
+                    return RestartResult.ServiceNotFound;
+                }
 
                 try
                 {
@@ -151,9 +137,9 @@ namespace Servy.Restarter
 
                     return RestartResult.Restarted;
                 }
-                catch (InvalidOperationException)
+                catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
-                    // Fallback: If it transitioned to Pending between our check and the call
+                    // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
                     HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
                     return RestartResult.Restarted;
                 }
