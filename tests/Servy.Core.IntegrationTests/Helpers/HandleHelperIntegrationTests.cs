@@ -62,6 +62,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         [InlineData("C:\\temp\\handle.exe", null)]
         [InlineData("", "C:\\temp\\file.txt")]
         [InlineData("C:\\temp\\handle.exe", "")]
+        [InlineData("   ", "C:\\temp\\file.txt")]
+        [InlineData("C:\\temp\\handle.exe", "   ")]
         public void GetProcessesUsingFile_ShouldThrow_WhenPathsAreNullOrEmpty(string? handleExePath, string? filePath)
         {
             // Arrange & Act & Assert
@@ -69,7 +71,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public void GetProcessesUsingFile_ShouldReturnEmptyList_WhenNoProcessHoldsHandle()
+        public void GetProcessesUsingFile_ShouldNotReturnCurrentProcess_WhenNoProcessHoldsHandle()
         {
             // Arrange
             string testFile = CreateTempFile();
