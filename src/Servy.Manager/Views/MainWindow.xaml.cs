@@ -53,12 +53,10 @@ namespace Servy.Manager.Views
         /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
         /// </summary>
         /// <param name="mainViewModel">The primary DataContext for the application.</param>
-        /// <param name="logsViewModel">The ViewModel mapped to the Logs view.</param>
         /// <param name="messageBoxService">Service for displaying UI dialogs.</param>
         /// <param name="processKiller">Service for terminating child processes on application exit.</param>
         public MainWindow(
             MainViewModel mainViewModel,
-            LogsViewModel logsViewModel,
             IMessageBoxService messageBoxService,
             IProcessKiller processKiller
             )
