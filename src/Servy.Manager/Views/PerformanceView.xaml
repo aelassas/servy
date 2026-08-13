@@ -10,7 +10,6 @@
                                 xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
                                 xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
                                 mc:Ignorable="d"
-                                Loaded="UserControl_Loaded"
                                 AutomationProperties.Name="{x:Static resx:Strings.Automation_PerformanceView_Name}"
                                 AutomationProperties.AutomationId="PerformanceView"
                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PerformanceView_HelpText}">
