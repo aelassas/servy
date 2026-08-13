@@ -191,7 +191,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_MultibytePayloadOverByteLimitButUnderCharLimit_ReturnsFalse()
         {
             // Arrange
-            // 'é' is 2 bytes in UTF-8: half the char count, same byte count — must still be rejected
+            // 'é' is 2 bytes in UTF-8: half the char count, same byte count - must still be rejected
             var oversized = new string('é', ((int)AppConfig.MaxConfigFileSizeBytes / 2) + 1);
 
             // Act
