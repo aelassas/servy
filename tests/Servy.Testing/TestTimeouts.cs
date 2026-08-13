@@ -74,11 +74,6 @@ namespace Servy.Testing
         public const int ProcessWrapperStopTimeoutMs = 50;
 
         /// <summary>
-        /// Extended timeout budget (500 ms) used when stopping descendants in process tree teardown tests.
-        /// </summary>
-        public const int ProcessWrapperStopDescendantsTimeoutMs = 500;
-
-        /// <summary>
         /// Tight launcher budget (2,000 ms) raced against <see cref="ProcessLauncherSynchronousTimeoutSeconds"/>
         /// to deliberately trip the synchronous-launch timeout path.
         /// </summary>
