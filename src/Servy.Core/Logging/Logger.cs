@@ -164,6 +164,7 @@ namespace Servy.Core.Logging
         {
             if (string.IsNullOrEmpty(_fileName)) return;
 
+            RotatingStreamWriter oldWriter = null;
             try
             {
                 EnsureLogsDir();
@@ -187,11 +188,16 @@ namespace Servy.Core.Logging
                 );
 
                 // ATOMIC SWAP: Capture the old writer context under lock, swap references,
-                // and then cleanly tear down the legacy handle.
-                var oldWriter = _writer;
-                _writer = newWriter;
-
-                oldWriter?.Dispose();
+                // and then cleanly tear down the legacy handle in a try/finally block.
+                oldWriter = _writer;
+                try
+                {
+                    _writer = newWriter;
+                }
+                finally
+                {
+                    oldWriter?.Dispose();
+                }
 
                 // Primary writer just came back online; allow another fallback budget.
                 Interlocked.Exchange(ref _initFallbackWriteCount, 0);
