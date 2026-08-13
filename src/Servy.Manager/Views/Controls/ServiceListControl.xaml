@@ -4,7 +4,7 @@
              xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
              xmlns:resx="clr-namespace:Servy.Manager.Resources"
              UseLayoutRounding="True"
-             SnapsToDevicePixels="True"             
+             SnapsToDevicePixels="True"
              AutomationProperties.AutomationId="ServiceListControl"
              AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ServiceListControl_HelpText}"
              AutomationProperties.Name="{x:Static resx:Strings.Automation_ServiceListControl_Name}">

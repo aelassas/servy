@@ -85,8 +85,8 @@ foreach ($file in $filesToScan) {
     $filePath = $file.FullName
     $rawText = [System.IO.File]::ReadAllText($filePath)
 
-    # Check 1: Missing final newline
-    $lacksFinalNewline = ($rawText.Length -gt 0) -and (-not $rawText.EndsWith("`n"))
+    # Check 1: Missing final newline (CRLF)
+    $lacksFinalNewline = ($rawText.Length -gt 0) -and (-not $rawText.EndsWith("`r`n"))
 
     # Check 2: Trailing whitespace per line
     $hasTrailingWhitespace = $false
@@ -120,7 +120,7 @@ foreach ($file in $filesToScan) {
         } else {
             # UTF8Encoding($false) = no BOM, on both Windows PowerShell 5.1 and PowerShell 7+
             $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-            $content   = ($trimmedLines -join "`n") + "`n"
+            $content   = ($trimmedLines -join "`r`n") + "`r`n"
             [System.IO.File]::WriteAllText($filePath, $content, $utf8NoBom)
             Write-Host "Formatted ($reason): $relativePath" -ForegroundColor Gray
         }
