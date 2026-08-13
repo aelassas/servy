@@ -311,6 +311,16 @@ namespace Servy.Service
                     $"  WaitChunkMs: {_waitChunkMs}" + Environment.NewLine +
                     $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}");
 
+                // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
+                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                {
+                    Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                                 $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+
+                    Environment.ExitCode = AppConfig.ServiceSpecificErrorCode;
+                    Environment.Exit(Environment.ExitCode);
+                }
+
                 // Initialize database and helpers
                 _dbContext = new AppDbContext(connectionString);
                 DatabaseInitializer.InitializeDatabase(_dbContext, SQLiteDbInitializer.Initialize);

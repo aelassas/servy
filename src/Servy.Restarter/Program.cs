@@ -5,6 +5,7 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 
 namespace Servy.Restarter
 {
@@ -86,6 +87,25 @@ namespace Servy.Restarter
 
                 // 5. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
+
+                // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
+                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                {
+                    var fatalLogger = scopedLogger ?? rootLogger;
+                    if (fatalLogger != null)
+                    {
+                        fatalLogger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                                          $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+                    }
+                    else
+                    {
+                        Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                                     $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+                    }
+
+                    Environment.ExitCode = 1;
+                    return;
+                }
 
                 // 6. Initialize database and helpers
                 dbContext = new AppDbContext(connectionString);
