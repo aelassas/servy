@@ -1,5 +1,6 @@
 using CommandLine;
 using Servy.CLI.Options;
+using Servy.Testing;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -9,21 +10,13 @@ namespace Servy.CLI.UnitTests.Options
 {
     public class SensitiveOptionsTests
     {
-        // Discover all option verbs dynamically via reflection
-        // to prevent new properties from escaping the sensitive field leak guard.
-        private static readonly Type[] OptionTypes = typeof(InstallServiceOptions).Assembly
-            .GetTypes()
-            .Where(t => t.GetCustomAttribute<VerbAttribute>() != null
-                     || t.GetProperties().Any(p => p.GetCustomAttribute<OptionAttribute>() != null))
-            .ToArray();
-
         [Fact]
         public void SensitiveProperties_MustHaveSensitiveAttribute()
         {
             // Arrange
             bool foundAnySensitiveFields = false;
 
-            foreach (var type in OptionTypes)
+            foreach (var type in CliOptionTypes.All)
             {
                 // Find properties whose CLI Option LongName matches the sensitive patterns
                 var targetProperties = type.GetProperties()

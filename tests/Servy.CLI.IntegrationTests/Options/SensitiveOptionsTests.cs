@@ -12,14 +12,6 @@ namespace Servy.CLI.IntegrationTests.Options
 {
     public class SensitiveOptionsTests
     {
-        // Discover all option verbs dynamically via reflection
-        // to prevent new properties from escaping the sensitive field leak guard.
-        private static readonly Type[] OptionTypes = typeof(InstallServiceOptions).Assembly
-            .GetTypes()
-            .Where(t => t.GetCustomAttribute<VerbAttribute>() != null
-                     || t.GetProperties().Any(p => p.GetCustomAttribute<OptionAttribute>() != null))
-            .ToArray();
-
         [Fact]
         public void SensitiveOptions_MustBeListedInServyPsm1()
         {
@@ -36,7 +28,7 @@ namespace Servy.CLI.IntegrationTests.Options
             bool evaluatedAnyProperties = false;
 
             // Act & Assert
-            foreach (var type in OptionTypes)
+            foreach (var type in CliOptionTypes.All)
             {
                 var sensitiveProperties = type.GetProperties()
                     .Where(p => p.GetCustomAttribute<SensitiveAttribute>() != null)

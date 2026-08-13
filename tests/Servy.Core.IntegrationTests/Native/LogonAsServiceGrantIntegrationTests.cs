@@ -248,7 +248,10 @@ namespace Servy.Core.IntegrationTests.Native
                 sidBuffer = Marshal.AllocHGlobal(sidBytes.Length);
                 Marshal.Copy(sidBytes, 0, sidBuffer, sidBytes.Length);
 
-                var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES();
+                var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES
+                {
+                    Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>()
+                };
 
                 int lsaOpenStatus = NativeMethods.LsaOpenPolicy(
                     IntPtr.Zero,

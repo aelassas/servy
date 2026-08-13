@@ -53,6 +53,9 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CommandLine, Version=2.9.1.0, Culture=neutral, PublicKeyToken=5a870481e358d379, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\CommandLineParser.2.9.1\lib\net461\CommandLine.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.TestPlatform.CoreUtilities, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.8.1\lib\net462\Microsoft.TestPlatform.CoreUtilities.dll</HintPath>
     </Reference>
@@ -110,6 +113,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CliOptionTypes.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TempDirectoryTestBase.cs" />
@@ -125,6 +129,10 @@
     <Analyzer Include="..\..\packages\xunit.analyzers.1.27.0\analyzers\dotnet\cs\xunit.analyzers.fixes.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Servy.CLI\Servy.CLI.csproj">
+      <Project>{d462fda5-a8b4-4a34-aaa5-244ac9ee8980}</Project>
+      <Name>Servy.CLI</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj">
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
