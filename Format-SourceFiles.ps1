@@ -13,7 +13,7 @@
     Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport'.
 
 .PARAMETER ExcludeExtensions
-    Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.exe', '.dll', '.7z', '.coverage.xml'.
+    Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx'.
 
 .PARAMETER ExcludeFiles
     Array of specific filenames to exclude. Defaults to 'coverage.cobertura.xml'.
@@ -46,9 +46,9 @@ $currentDir = Get-Location
 $scriptPath = $MyInvocation.MyCommand.Path
 
 Write-Host "Starting UTF-8 (no BOM) & CRLF conversion in: $currentDir" -ForegroundColor Cyan
-Write-Host "Excluding directories   : $($ExcludeDirs -join ', ')" -ForegroundColor Yellow
-Write-Host "Excluding extensions    : $($ExcludeExtensions -join ', ')" -ForegroundColor Yellow
-Write-Host "Excluding specific files: $($ExcludeFiles -join ', ')" -ForegroundColor Yellow
+Write-Host "Excluding directories    : $($ExcludeDirs -join ', ')" -ForegroundColor Yellow
+Write-Host "Excluding extensions     : $($ExcludeExtensions -join ', ')" -ForegroundColor Yellow
+Write-Host "Excluding specific files : $($ExcludeFiles -join ', ')" -ForegroundColor Yellow
 Write-Host ""
 
 # Helper function to recursively collect files with early folder & file filtering
