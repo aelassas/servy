@@ -137,7 +137,7 @@ namespace Servy.UI.Bootstrapping
                             MessageBoxImage.Error));
                         return;
                     }
-                    catch { /* fall through */ }
+                    catch (Exception handlerEx) { Logger.Error("Error displaying fatal error dialog", handlerEx); }
                 }
                 // No safe UI surface available; the Logger.Error line above is the user's
                 // only signal. Avoid MessageBox.Show on a non-UI thread.
