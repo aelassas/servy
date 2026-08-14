@@ -28,20 +28,40 @@ namespace Servy.Manager.UnitTests.Validation
         [Fact]
         public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() =>
+            // Arrange, Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() =>
                 new ServiceConfigurationValidator(null!, _validationRulesMock.Object));
+
+            Assert.Equal("messageBoxService", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullValidationRules_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() =>
+            // Arrange, Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() =>
                 new ServiceConfigurationValidator(_messageBoxServiceMock.Object, null!));
+
+            Assert.Equal("serviceValidationRules", ex.ParamName);
         }
 
         #endregion
 
         #region Validate Tests
+
+        [Fact]
+        public async Task ValidateAsync_CancelledToken_ThrowsOperationCanceledException()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act & Assert
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                    _validator.ValidateAsync(new ServiceDto(), cancellationToken: cts.Token));
+            }
+        }
 
         [Theory]
         [InlineData(true)]
