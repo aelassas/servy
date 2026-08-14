@@ -39,6 +39,18 @@ $ErrorActionPreference = "Stop"
 
 $baseDir = $PSScriptRoot
 
+# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions if available
+$helperPath = Join-Path $PSScriptRoot "Update-FileHelpers.ps1"
+if (Test-Path $helperPath) {
+    . $helperPath
+}
+
+$exclusionRegex = if ($script:BuildArtifactExclusionRegex) {
+    $script:BuildArtifactExclusionRegex
+} else {
+    '[\\/](bin|obj|packages|\.git|\.vs|node_modules|coveragereport|TestResults)[\\/]'
+}
+
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing files violating whitespace hygiene..." -ForegroundColor Yellow
 } else {
@@ -66,7 +78,7 @@ $filesToScan = Get-ChildItem -Path $baseDir -Recurse -File -ErrorAction Silently
         $relativePath = $_.FullName.Replace($baseDir, '')
 
         # Exclude build output, version control, and third-party dependency folders
-        if ($relativePath -match '[\\/](obj|bin|\.git|\.vs|packages|node_modules|coveragereport)[\\/]') {
+        if ($relativePath -match $exclusionRegex) {
             return $false
         }
 

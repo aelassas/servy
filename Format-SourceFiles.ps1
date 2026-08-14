@@ -10,7 +10,7 @@
     [System.IO.File]::WriteAllText with UTF-8 (no BOM).
 
 .PARAMETER ExcludeDirs
-    Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport'.
+    Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'.
 
 .PARAMETER ExcludeExtensions
     Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx'.
@@ -23,13 +23,13 @@
     Excludes the running script itself from conversion.
 
 .EXAMPLE
-    .\Convert-ToUtf8NoBom.ps1
+    .\Format-SourceFiles.ps1
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
-    [string[]]$ExcludeDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport'),
+    [string[]]$ExcludeDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'),
 
     [Parameter(Mandatory = $false)]
     [string[]]$ExcludeExtensions = @('.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx'),
@@ -37,6 +37,15 @@ param(
     [Parameter(Mandatory = $false)]
     [string[]]$ExcludeFiles = @('coverage.cobertura.xml')
 )
+
+# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions if available
+$helperPath = Join-Path $PSScriptRoot "Update-FileHelpers.ps1"
+if (Test-Path $helperPath) {
+    . $helperPath
+    if ($script:BuildArtifactExclusionDirs -and -not $PSBoundParameters.ContainsKey('ExcludeDirs')) {
+        $ExcludeDirs = $script:BuildArtifactExclusionDirs
+    }
+}
 
 # Construct UTF-8 encoding object without BOM (Byte Order Mark)
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
