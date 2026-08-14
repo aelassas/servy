@@ -25,7 +25,7 @@
 * [servy-9.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-net48-x64-portable.7z) - 2.08 MB
 * [servy-9.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-sbom.xml) - 0.04 MB
 * [servy-9.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-x64-installer.exe) - 76.73 MB
-* [servy-9.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-x64-portable.7z) - 74.6 MB
+* [servy-9.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.4/servy-9.4-x64-portable.7z) - 74.60 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.4.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.4.tar.gz)
 
@@ -208,7 +208,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.9...v9.0
 * [servy-8.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-net48-x64-portable.7z) - 2.07 MB
 * [servy-8.9-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-sbom.xml) - 0.04 MB
 * [servy-8.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-x64-installer.exe) - 82.22 MB
-* [servy-8.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-x64-portable.7z) - 80.1 MB
+* [servy-8.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-x64-portable.7z) - 80.10 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v8.9.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v8.9.tar.gz)
 
@@ -292,7 +292,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.6...v8.7
 
 ### Downloads
 * [servy-8.6-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-arm64-installer.exe) - 76.02 MB
-* [servy-8.6-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-arm64-portable.7z) - 77.4 MB
+* [servy-8.6-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-arm64-portable.7z) - 77.40 MB
 * [servy-8.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-net48-sbom.xml) - 0.03 MB
 * [servy-8.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-net48-x64-installer.exe) - 4.32 MB
 * [servy-8.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-net48-x64-portable.7z) - 2.06 MB
@@ -1717,7 +1717,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 
 ### Downloads
 * [servy-8.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-sbom.xml) - 0.02 MB
-* [servy-8.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-x64-installer.exe) - 4.1 MB
+* [servy-8.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-x64-installer.exe) - 4.10 MB
 * [servy-8.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-x64-portable.7z) - 1.84 MB
 * [servy-8.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-sbom.xml) - 0.04 MB
 * [servy-8.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-x64-installer.exe) - 81.24 MB
@@ -2515,7 +2515,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * [servy-7.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-net48-x64-portable.7z) - 1.76 MB
 * [servy-7.9-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-sbom.xml) - 0.03 MB
 * [servy-7.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-x64-installer.exe) - 81.02 MB
-* [servy-7.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-x64-portable.7z) - 78.9 MB
+* [servy-7.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-x64-portable.7z) - 78.90 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.9.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.9.tar.gz)
 
@@ -2570,7 +2570,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.7...v7.8
 * [servy-7.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-net48-x64-portable.7z) - 1.71 MB
 * [servy-7.7-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-sbom.xml) - 0.03 MB
 * [servy-7.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-x64-installer.exe) - 81.76 MB
-* [servy-7.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-x64-portable.7z) - 79.7 MB
+* [servy-7.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.7/servy-7.7-x64-portable.7z) - 79.70 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.7.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.7.tar.gz)
 
@@ -2796,7 +2796,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.8...v6.9
 ### Downloads
 * [servy-6.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-sbom.xml) - 0.02 MB
 * [servy-6.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-x64-installer.exe) - 3.95 MB
-* [servy-6.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.8-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-sbom.xml) - 0.03 MB
 * [servy-6.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-x64-installer.exe) - 81.85 MB
 * [servy-6.8-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-x64-portable.7z) - 79.72 MB
@@ -2815,7 +2815,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.7...v6.8
 ### Downloads
 * [servy-6.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-sbom.xml) - 0.02 MB
 * [servy-6.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.7-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-sbom.xml) - 0.03 MB
 * [servy-6.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-x64-installer.exe) - 81.84 MB
 * [servy-6.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-x64-portable.7z) - 79.73 MB
@@ -2842,7 +2842,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.6...v6.7
 ### Downloads
 * [servy-6.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-sbom.xml) - 0.02 MB
 * [servy-6.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.6-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-sbom.xml) - 0.03 MB
 * [servy-6.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-x64-installer.exe) - 81.85 MB
 * [servy-6.6-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-x64-portable.7z) - 79.73 MB
@@ -2865,7 +2865,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.5...v6.6
 ### Downloads
 * [servy-6.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-sbom.xml) - 0.02 MB
 * [servy-6.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.5-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-sbom.xml) - 0.03 MB
 * [servy-6.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-x64-installer.exe) - 81.85 MB
 * [servy-6.5-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-x64-portable.7z) - 79.73 MB
@@ -2885,7 +2885,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.4...v6.5
 ### Downloads
 * [servy-6.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-sbom.xml) - 0.01 MB
 * [servy-6.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-x64-installer.exe) - 3.94 MB
-* [servy-6.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-sbom.xml) - 0.03 MB
 * [servy-6.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-x64-installer.exe) - 81.85 MB
 * [servy-6.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-x64-portable.7z) - 79.72 MB
@@ -2914,7 +2914,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.3...v6.4
 ### Downloads
 * [servy-6.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-sbom.xml) - 0.01 MB
 * [servy-6.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.3-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-sbom.xml) - 0.03 MB
 * [servy-6.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-x64-installer.exe) - 81.81 MB
 * [servy-6.3-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-x64-portable.7z) - 79.69 MB
@@ -2937,7 +2937,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.2...v6.3
 ### Downloads
 * [servy-6.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-sbom.xml) - 0.01 MB
 * [servy-6.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.2-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-sbom.xml) - 0.03 MB
 * [servy-6.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-x64-installer.exe) - 81.83 MB
 * [servy-6.2-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-x64-portable.7z) - 79.71 MB
@@ -2958,7 +2958,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.1...v6.2
 ### Downloads
 * [servy-6.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-sbom.xml) - 0.01 MB
 * [servy-6.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-x64-portable.7z) - 1.7 MB
+* [servy-6.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-x64-portable.7z) - 1.70 MB
 * [servy-6.1-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-sbom.xml) - 0.03 MB
 * [servy-6.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-x64-installer.exe) - 81.85 MB
 * [servy-6.1-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-x64-portable.7z) - 79.73 MB
@@ -3262,7 +3262,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.8...v4.9
 
 ### Downloads
 * [servy-4.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-net48-sbom.xml) - 0.01 MB
-* [servy-4.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-net48-x64-installer.exe) - 3.9 MB
+* [servy-4.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-net48-x64-installer.exe) - 3.90 MB
 * [servy-4.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-net48-x64-portable.7z) - 1.67 MB
 * [servy-4.8-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-sbom.xml) - 0.04 MB
 * [servy-4.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.8/servy-4.8-x64-installer.exe) - 82.22 MB
@@ -3361,7 +3361,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.4...v4.5
 * [servy-4.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-net48-x64-installer.exe) - 3.68 MB
 * [servy-4.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-net48-x64-portable.7z) - 1.66 MB
 * [servy-4.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-sbom.xml) - 0.04 MB
-* [servy-4.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-x64-installer.exe) - 82 MB
+* [servy-4.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-x64-installer.exe) - 82.00 MB
 * [servy-4.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.4/servy-4.4-x64-portable.7z) - 80.12 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v4.4.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v4.4.tar.gz)
@@ -3401,7 +3401,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.2...v4.3
 * [servy-4.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-net48-x64-installer.exe) - 4.48 MB
 * [servy-4.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-net48-x64-portable.7z) - 2.38 MB
 * [servy-4.2-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-sbom.xml) - 0.05 MB
-* [servy-4.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-x64-installer.exe) - 82.1 MB
+* [servy-4.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-x64-installer.exe) - 82.10 MB
 * [servy-4.2-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.2/servy-4.2-x64-portable.7z) - 80.25 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v4.2.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v4.2.tar.gz)
@@ -3418,7 +3418,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.1...v4.2
 ### Downloads
 * [servy-4.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-net48-x64-installer.exe) - 4.48 MB
 * [servy-4.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-net48-x64-portable.7z) - 2.38 MB
-* [servy-4.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-x64-installer.exe) - 82.1 MB
+* [servy-4.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-x64-installer.exe) - 82.10 MB
 * [servy-4.1-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v4.1/servy-4.1-x64-portable.7z) - 80.24 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v4.1.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v4.1.tar.gz)
@@ -3636,8 +3636,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.0...v3.1
 ### Downloads
 * [servy-3.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-net48-x64-installer.exe) - 17.15 MB
 * [servy-3.0-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-net48-x64-portable.zip) - 10.52 MB
-* [servy-3.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-x64-installer.exe) - 137.2 MB
-* [servy-3.0-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-x64-portable.zip) - 338.1 MB
+* [servy-3.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-x64-installer.exe) - 137.20 MB
+* [servy-3.0-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-x64-portable.zip) - 338.10 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v3.0.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v3.0.tar.gz)
 
@@ -3653,7 +3653,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.9...v3.0
 * [servy-2.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.9-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-x64-installer.exe) - 137.21 MB
-* [servy-2.9-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-x64-portable.zip) - 338.1 MB
+* [servy-2.9-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.9/servy-2.9-x64-portable.zip) - 338.10 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v2.9.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v2.9.tar.gz)
 
@@ -3670,7 +3670,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.8...v2.9
 * [servy-2.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.8-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-x64-installer.exe) - 137.19 MB
-* [servy-2.8-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-x64-portable.zip) - 338.1 MB
+* [servy-2.8-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.8/servy-2.8-x64-portable.zip) - 338.10 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v2.8.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v2.8.tar.gz)
 
@@ -3686,7 +3686,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.7...v2.8
 * [servy-2.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.7-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-x64-installer.exe) - 137.18 MB
-* [servy-2.7-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-x64-portable.zip) - 338.1 MB
+* [servy-2.7-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.7/servy-2.7-x64-portable.zip) - 338.10 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v2.7.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v2.7.tar.gz)
 
@@ -3704,7 +3704,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.6...v2.7
 * [servy-2.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-net48-x64-installer.exe) - 17.15 MB
 * [servy-2.6-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-x64-installer.exe) - 137.19 MB
-* [servy-2.6-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-x64-portable.zip) - 338.1 MB
+* [servy-2.6-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.6/servy-2.6-x64-portable.zip) - 338.10 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v2.6.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v2.6.tar.gz)
 
@@ -3721,7 +3721,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.5...v2.6
 * [servy-2.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-net48-x64-installer.exe) - 17.14 MB
 * [servy-2.5-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-net48-x64-portable.zip) - 10.52 MB
 * [servy-2.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-x64-installer.exe) - 137.18 MB
-* [servy-2.5-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-x64-portable.zip) - 338.1 MB
+* [servy-2.5-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.5/servy-2.5-x64-portable.zip) - 338.10 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v2.5.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v2.5.tar.gz)
 
@@ -3742,7 +3742,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.4...v2.5
 ### Downloads
 * [servy-2.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-net48-x64-installer.exe) - 17.13 MB
 * [servy-2.4-net48-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-net48-x64-portable.zip) - 10.51 MB
-* [servy-2.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-x64-installer.exe) - 137.2 MB
+* [servy-2.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-x64-installer.exe) - 137.20 MB
 * [servy-2.4-x64-portable.zip](https://github.com/aelassas/servy/releases/download/v2.4/servy-2.4-x64-portable.zip) - 338.09 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v2.4.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v2.4.tar.gz)
@@ -3902,7 +3902,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.6...v1.7
 
 ### Downloads
 * [servy-1.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.6/servy-1.6-net48-x64-installer.exe) - 4.18 MB
-* [servy-1.6-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.6/servy-1.6-net8.0-x64-installer.exe) - 137.3 MB
+* [servy-1.6-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.6/servy-1.6-net8.0-x64-installer.exe) - 137.30 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.6.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v1.6.tar.gz)
 
@@ -3975,7 +3975,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.2...v1.3
 
 ### Downloads
 * [servy-1.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.2/servy-1.2-net48-x64-installer.exe) - 4.05 MB
-* [servy-1.2-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.2/servy-1.2-net8.0-x64-installer.exe) - 145.2 MB
+* [servy-1.2-net8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.2/servy-1.2-net8.0-x64-installer.exe) - 145.20 MB
 * [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v1.2.zip)
 * [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v1.2.tar.gz)
 
