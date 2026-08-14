@@ -993,6 +993,111 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_UnicodeCasingVariance_NotInstalledInScm_DeletesStaleDbRowDirectly()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ", // Target casing layout
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            var legacyDbRecord = new ServiceDto
+            {
+                Name = "serviceä", // Stale, differently-cased DB record
+                Description = "Stale Legacy Service Description"
+            };
+
+            // Pass 1: Initial check in InstallServiceAsync returns the existing stale DB record with different casing
+            // Pass 2: Post-delete check for PID / existing service DTO returns null
+            _mockServiceRepository
+                .SetupSequence(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(legacyDbRecord)
+                .ReturnsAsync((ServiceDto)null);
+
+            // Simulate SCM returning no matching services (OS side is already gone / not installed)
+            _mockWindowsServiceApi
+                .Setup(x => x.GetServices())
+                .Returns(Array.Empty<WindowsServiceInfo>());
+
+            // Setup SCM handles for creating the service with the new target casing
+            var scmHandle = CreateScmHandle(123);
+            var targetServiceHandle = CreateServiceHandle(789);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.CreateService(
+                    scmHandle,
+                    options.ServiceName,
+                    options.ServiceName,
+                    It.IsAny<uint>(),
+                    It.IsAny<uint>(),
+                    It.IsAny<uint>(),
+                    It.IsAny<uint>(),
+                    It.IsAny<string>(),
+                    null,
+                    IntPtr.Zero,
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    null))
+                .Returns(targetServiceHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.ChangeServiceConfig2(targetServiceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>()))
+                .Returns(true);
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+
+            // Verify the target branch execution: _serviceRepository.DeleteAsync was called for the stale DB record name ("serviceä")
+            _mockServiceRepository.Verify(
+                x => x.DeleteAsync("serviceä", It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            // Verify UninstallServiceAsync was NOT invoked via SCM OpenService calls
+            _mockWindowsServiceApi.Verify(
+                x => x.OpenService(It.IsAny<SafeScmHandle>(), "serviceä", It.IsAny<uint>()),
+                Times.Never);
+
+            // Verify CreateService and UpsertAsync were executed for the new cased name ("serviceÄ")
+            _mockWindowsServiceApi.Verify(
+                x => x.CreateService(
+                    scmHandle,
+                    "serviceÄ",
+                    "serviceÄ",
+                    It.IsAny<uint>(),
+                    It.IsAny<uint>(),
+                    It.IsAny<uint>(),
+                    It.IsAny<uint>(),
+                    It.IsAny<string>(),
+                    null,
+                    IntPtr.Zero,
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    null),
+                Times.Once);
+
+            _mockServiceRepository.Verify(
+                x => x.UpsertAsync(
+                    It.Is<ServiceDto>(d => d.Name == "serviceÄ"),
+                    false,
+                    false,
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task InstallService_UnicodeCasingVariance_UninstallFails_ReturnsOperationFailure()
         {
             // Arrange
