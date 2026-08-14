@@ -127,19 +127,19 @@ namespace Servy.Core.Logging
         /// <inheritdoc />
         public void Info(string message, Exception ex = null)
         {
-            WriteLeveled(LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
+            WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
         }
 
         /// <inheritdoc />
         public void Warn(string message, Exception ex = null)
         {
-            WriteLeveled(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
+            WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
         }
 
         /// <inheritdoc />
         public void Error(string message, Exception ex = null)
         {
-            WriteLeveled(LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
+            WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
         }
 
         #endregion
@@ -167,6 +167,7 @@ namespace Servy.Core.Logging
         /// Orchestrates the conditional flow between the Windows Event Log sink and the secondary file system logger,
         /// while enforcing thread-local log level thresholds and standardized message formatting.
         /// </summary>
+        /// <param name="currentLevel">The active <see cref="LogLevel"/> threshold configured for the invoking scope.</param>
         /// <param name="targetLevel">The <see cref="LogLevel"/> required for this entry to be processed.</param>
         /// <param name="entryType">The <see cref="EventLogEntryType"/> to categorize the Windows Event Log entry.</param>
         /// <param name="eventId">The application-specific ID for the log entry.</param>
@@ -176,6 +177,7 @@ namespace Servy.Core.Logging
         /// <param name="isEventLogSinkEnabled">Indicates whether the Windows Event Log sink is active for the current logger scope.</param>
         /// <param name="fileSink">The action delegate (e.g., <see cref="Logger.Info"/>) representing the file-based logging destination.</param>
         private void WriteLeveled(
+            LogLevel currentLevel,
             LogLevel targetLevel,
             EventLogEntryType entryType,
             int eventId,
@@ -187,7 +189,7 @@ namespace Servy.Core.Logging
         {
             if (string.IsNullOrEmpty(message)) return;
 
-            if ((LogLevel)_currentLogLevel <= targetLevel)
+            if (currentLevel <= targetLevel)
             {
                 var fullMessage = formatSelector(ex != null ? $"{message}\n{ex}" : message);
                 if (isEventLogSinkEnabled)
@@ -357,19 +359,19 @@ namespace Servy.Core.Logging
             /// <inheritdoc />
             public void Info(string message, Exception ex = null)
             {
-                _parent.WriteLeveled(LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
+                _parent.WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
             }
 
             /// <inheritdoc />
             public void Warn(string message, Exception ex = null)
             {
-                _parent.WriteLeveled(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
+                _parent.WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
             }
 
             /// <inheritdoc />
             public void Error(string message, Exception ex = null)
             {
-                _parent.WriteLeveled(LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
+                _parent.WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
             }
 
             /// <inheritdoc />
