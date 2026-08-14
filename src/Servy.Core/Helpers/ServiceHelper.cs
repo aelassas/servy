@@ -322,29 +322,40 @@ namespace Servy.Core.Helpers
         /// <param name="configuredTimeout">The timeout value from the service configuration.</param>
         /// <param name="preLaunchTimeoutSeconds">The timeout for the pre-launch executable hook in seconds, if any.</param>
         /// <param name="preLaunchRetryAttempts">The number of pre-launch retry attempts; used to scale the total pre-launch timeout and backoff allowance.</param>
-        /// <returns>The calculated timeout in seconds, including SCM safety buffers.</returns>
+        /// <returns>The calculated timeout in seconds, including SCM safety buffers, clamped to <see cref="int.MaxValue"/>.</returns>
         public static int CalculateStartTimeout(
             int? configuredTimeout,
             int preLaunchTimeoutSeconds = 0,
             int preLaunchRetryAttempts = 0)
         {
-            int floor = AppConfig.DefaultServiceStartTimeoutSeconds;
-            int baseline = configuredTimeout.HasValue && configuredTimeout.Value > floor
-                           ? configuredTimeout.Value
-                           : floor;
+            long floor = AppConfig.DefaultServiceStartTimeoutSeconds;
+            long baseline = configuredTimeout.HasValue && configuredTimeout.Value > floor
+                            ? configuredTimeout.Value
+                            : floor;
 
-            int attempts = Math.Max(0, preLaunchRetryAttempts) + 1;
-            int safePreLaunch = Math.Max(0, preLaunchTimeoutSeconds);
-            int totalPreLaunch = checked(attempts * safePreLaunch);
-            int totalBackoff = 0;
-            for (int i = 1; i < attempts; i++)
+            long attempts = Math.Max(0L, (long)preLaunchRetryAttempts) + 1L;
+            long safePreLaunch = Math.Max(0L, (long)preLaunchTimeoutSeconds);
+            long totalPreLaunch = attempts * safePreLaunch;
+
+            long totalBackoff = 0;
+            long maxDelaySec = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
+            long initialDelayMs = AppConfig.PreLaunchRetryInitialDelayMs;
+
+            for (long i = 1; i < attempts; i++)
             {
-                totalBackoff += Math.Min(
-                    (i * AppConfig.PreLaunchRetryInitialDelayMs) / 1000,
-                    AppConfig.PreLaunchRetryMaxDelayMs / 1000);
+                long backoffSec = Math.Min((i * initialDelayMs) / 1000, maxDelaySec);
+                totalBackoff += backoffSec;
+
+                if (totalBackoff >= int.MaxValue)
+                {
+                    totalBackoff = int.MaxValue;
+                    break;
+                }
             }
 
-            return baseline + AppConfig.ScmTimeoutBufferSeconds + totalPreLaunch + totalBackoff;
+            long totalSeconds = baseline + AppConfig.ScmTimeoutBufferSeconds + totalPreLaunch + totalBackoff;
+
+            return (int)Math.Min(totalSeconds, (long)int.MaxValue);
         }
 
         /// <summary>
