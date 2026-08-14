@@ -156,7 +156,7 @@
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
                          VirtualizingStackPanel.IsVirtualizing="True"
-                         VirtualizingStackPanel.VirtualizationMode="Standard"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
                          PreviewKeyDown="LogList_PreviewKeyDown"
                          SelectedIndex="-1"
                          IsSynchronizedWithCurrentItem="False"

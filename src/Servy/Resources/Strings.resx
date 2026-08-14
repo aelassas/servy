@@ -359,10 +359,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_ConfirmPassword" xml:space="preserve">
     <value>Confirm Password</value>
   </data>
-  <data name="Msg_PasswordsDontMatch" xml:space="preserve">
-    <value>Passwords don't match.</value>
-  </data>
-
+  
   <!-- Pre-Launch -->
   <data name="Info_PreLaunch" xml:space="preserve">
     <value>Optional script to run before service start. If it fails, the service won't start unless Ignore Failure is enabled.</value>

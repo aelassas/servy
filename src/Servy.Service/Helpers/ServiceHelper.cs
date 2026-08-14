@@ -177,6 +177,7 @@ namespace Servy.Service.Helpers
                   $"- useLocalTimeForRotation: {options.UseLocalTimeForRotation}\n\n" +
 
                   "--------Recovery---------------\n" +
+                  $"- enableHealthMonitoring: {options.EnableHealthMonitoring}\n" +
                   $"- heartbeatInterval: {options.HeartbeatIntervalInSeconds}\n" +
                   $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
                   $"- recoveryAction: {options.RecoveryAction}\n" +

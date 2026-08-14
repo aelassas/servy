@@ -2626,15 +2626,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Passwords don&apos;t match..
-        /// </summary>
-        public static string Msg_PasswordsDontMatch {
-            get {
-                return ResourceManager.GetString("Msg_PasswordsDontMatch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Servy requires administrative privileges to manage system services..
         /// </summary>
         public static string Msg_SecurityWarningMessage {
