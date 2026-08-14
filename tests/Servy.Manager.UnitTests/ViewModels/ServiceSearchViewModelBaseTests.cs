@@ -234,6 +234,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Assert - The stale task shouldn't reset UI parameters because it no longer owns the current CTS reference window
             Assert.True(_sut.IsBusy);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Never);
+            Assert.Equal(Strings.Button_Searching, _sut.SearchButtonText);
 
             // Clean up global mock allocations
             racingCts.Dispose();

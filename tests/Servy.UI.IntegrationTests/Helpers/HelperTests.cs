@@ -10,7 +10,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         #region GetVisualChild Tests
 
         [Fact]
-        public async Task GetVisualChild_NoChildren_ReturnsNull()
+        public void GetVisualChild_NoChildren_ReturnsNull()
         {
             Helper.RunOnSTA(() =>
             {
