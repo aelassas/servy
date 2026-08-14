@@ -17,8 +17,8 @@ namespace Servy.Manager.UnitTests.Utils
             // Arrange
             var sampleLines = new List<LogLine>
             {
-                new LogLine("Line 1", LogType.StdOut,  DateTime.Now ),
-                new LogLine("Line 2", LogType.StdOut, DateTime.Now ),
+                new LogLine("Line 1", LogType.StdOut,  DateTime.Now),
+                new LogLine("Line 2", LogType.StdOut, DateTime.Now),
             };
             long expectedPosition = 1024;
 
