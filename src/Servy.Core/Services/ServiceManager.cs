@@ -286,6 +286,14 @@ namespace Servy.Core.Services
                         return OperationResult.Failure($"{criticalError} Details: {ex.Message}");
                     }
                 }
+                else
+                {
+                    // OS side already gone - still need to drop the stale, differently-cased DB row
+                    // so the subsequent UpsertAsync performs a clean INSERT with the correct casing.
+                    await _serviceRepository.DeleteAsync(existingDbService.Name, cancellationToken);
+                    legacyDroppedFromDb = true;
+                    legacyBackupDto = existingDbService;
+                }
             }
 
             string binPath = string.Join(" ",

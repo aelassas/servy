@@ -340,7 +340,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
+                // Rebuild the CommandDefinition inside the lambda so it captures the cancellation token 'ct'
                 var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
 
                 if (actualTx != null)
@@ -365,7 +365,7 @@ namespace Servy.Infrastructure.Data
 
             var result = await ExecuteWithRetryAsync(async (ct) =>
             {
-                // Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
+                // Rebuild the CommandDefinition inside the lambda so it captures the cancellation token 'ct'
                 var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
 
                 if (actualTx != null)
@@ -390,7 +390,10 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
+                // Re-bind the CommandDefinition here so Dapper receives the unwrapped native transaction
+                // (actualTx) instead of the WrappedDbTransaction the caller passed in. Note: 'ct' is the
+                // same token as command.CancellationToken on every attempt - ExecuteWithRetryAsync does not
+                // mint a fresh per-attempt token today.
                 var cmd = new CommandDefinition(
                     command.CommandText,
                     command.Parameters,
@@ -438,7 +441,10 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
+                // Re-bind the CommandDefinition here so Dapper receives the unwrapped native transaction
+                // (actualTx) instead of the WrappedDbTransaction the caller passed in. Note: 'ct' is the
+                // same token as command.CancellationToken on every attempt - ExecuteWithRetryAsync does not
+                // mint a fresh per-attempt token today.
                 var cmd = new CommandDefinition(
                     command.CommandText,
                     command.Parameters,
@@ -468,8 +474,10 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // ROBUSTNESS: Re-bind the CommandDefinition inside the retry lambda here to ensure
-                // Dapper uses the correct local iteration token 'ct' and the unwrapped transaction.
+                // Re-bind the CommandDefinition here so Dapper receives the unwrapped native transaction
+                // (actualTx) instead of the WrappedDbTransaction the caller passed in. Note: 'ct' is the
+                // same token as command.CancellationToken on every attempt - ExecuteWithRetryAsync does not
+                // mint a fresh per-attempt token today.
                 var cmd = new CommandDefinition(
                     command.CommandText,
                     command.Parameters,
