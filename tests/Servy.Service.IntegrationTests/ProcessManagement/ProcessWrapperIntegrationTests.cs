@@ -614,7 +614,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void StopTree_ProcessGracefulExit_LogsCanceledWithCodeInfo()
+        public void TryStopGracefullyOrKill_HeadlessProcess_ForceKillsAndLogsFallback()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
@@ -649,6 +649,65 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert
                 Assert.Contains(_logger.Infos, m => m.Contains("terminated."));
+            }
+        }
+
+        [Fact]
+        public void StopTree_ProcessGracefulExit_LogsCanceledWithCodeInfo()
+        {
+            // Arrange
+            // Launch a PowerShell process that displays a standard WinForms window.
+            // All three standard streams are redirected so the child gets no console at all;
+            // that makes SendCtrlC's AttachConsole fail, forcing StopTree to fall through to
+            // CloseMainWindow (WM_CLOSE), which the WinForms message pump answers by exiting
+            // gracefully - unlike a console-owning process, where Ctrl+C alone would "succeed"
+            // (event delivered) without the process actually reacting to it.
+            string args = "-NoProfile -Command \"Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.Form; $f.Text = 'ServyTestWin'; [System.Windows.Forms.Application]::Run($f)\"";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = args,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                WorkingDirectory = Path.GetTempPath(),
+            };
+
+            using (var wrapper = new ProcessWrapper(psi, _logger))
+            {
+                _wrappersToCleanup.Add(wrapper);
+                wrapper.Start();
+                var process = wrapper.UnderlyingProcess;
+
+                // Poll dynamically until the WinForms window is fully created and initialized by the OS
+                bool windowCreated = SpinWait.SpinUntil(() =>
+                {
+                    try
+                    {
+                        process.Refresh();
+                        return process.MainWindowHandle != IntPtr.Zero;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }, TimeSpan.FromSeconds(5));
+
+                Assert.True(windowCreated, "Test window was not created within the timeout.");
+
+                // Act
+                TestReflection.InvokeNonPublic(
+                    wrapper,
+                    "StopTree",
+                    process,
+                    5000);
+
+                // Assert
+                Assert.True(wrapper.HasExited);
+                Assert.Contains(_logger.Infos, m => m.Contains("canceled with code") || m.Contains("canceled gracefully"));
             }
         }
 
