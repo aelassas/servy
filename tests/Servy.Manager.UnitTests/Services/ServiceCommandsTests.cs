@@ -509,11 +509,26 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new ServiceDto { Name = service.Name });
 
+                ProcessStartInfo capturedPsi = null;
+
+                // INTERCEPTION SEAM: Capture launch metadata via callback to inspect arguments and prevent actual process creation
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
+                    .Returns((Process)null);
+
                 // Act
                 await sut.ConfigureServiceAsync(service, CancellationToken.None);
 
                 // Assert
                 _appConfigMock.Verify(c => c.DesktopAppPublishPath, Times.AtLeastOnce);
+                Assert.NotNull(capturedPsi);
+                Assert.Equal(tempExe, capturedPsi.FileName);
+                Assert.True(capturedPsi.UseShellExecute);
+
+                // Argument Validation: Verify the skip-splash flag and quoted service name arguments
+                Assert.Contains("\"false\"", capturedPsi.Arguments);
+                Assert.Contains(Helper.Quote(service.Name), capturedPsi.Arguments);
             }
             finally
             {
