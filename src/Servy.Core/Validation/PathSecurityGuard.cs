@@ -148,7 +148,11 @@ namespace Servy.Core.Validation
             }
 
             // Handle Resolution (Final Target Verification)
+            bool existedBefore = File.Exists(fullPath);
+            bool createdByUs = !existedBefore;
             FileStream? fileStream = null;
+            bool success = false;
+
             try
             {
                 fileStream = new FileStream(fullPath, mode, access, share);
@@ -165,7 +169,6 @@ namespace Servy.Core.Validation
                 // This prevents resolution errors and uint overflow from silently bypassing target checks.
                 if (requiredSize == 0 || requiredSize > int.MaxValue)
                 {
-                    fileStream.Dispose();
                     var errorMsg = Strings.Msg_SecurityHandleSizeProbeFailed;
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
@@ -177,7 +180,6 @@ namespace Servy.Core.Validation
                 // Fail closed if the string serialization pass returns 0.
                 if (resultSize == 0)
                 {
-                    fileStream.Dispose();
                     var errorMsg = Strings.Msg_SecurityHandleSerializationFailed;
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
@@ -201,7 +203,6 @@ namespace Servy.Core.Validation
 
                 if (normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) || finalIsUnc)
                 {
-                    fileStream.Dispose();
                     var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityResolvedUncDestination : Strings.Msg_SecurityResolvedUncDestinationExport;
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
@@ -212,7 +213,6 @@ namespace Servy.Core.Validation
 
                 if (resolvedViolation != null)
                 {
-                    fileStream.Dispose();
                     var errorMsg = string.Format(mode == FileMode.Open ? Strings.Msg_SecurityProtectedDirectory : Strings.Msg_SecurityProtectedDirectoryExport, resolvedViolation);
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
@@ -220,6 +220,7 @@ namespace Servy.Core.Validation
 
                 stream = fileStream;
                 fileStream = null; // ownership transferred to caller; don't dispose
+                success = true;
                 return PathSecurityResult.Success(normalizedPath); // normalizedPath is the kernel-resolved target that the security re-checks above validated
             }
             catch (Exception ex)
@@ -231,6 +232,11 @@ namespace Servy.Core.Validation
             finally
             {
                 fileStream?.Dispose();
+
+                if (!success && createdByUs)
+                {
+                    try { File.Delete(fullPath); } catch { /* Best-effort cleanup of stub files created by OpenOrCreate */ }
+                }
             }
         }
     }
