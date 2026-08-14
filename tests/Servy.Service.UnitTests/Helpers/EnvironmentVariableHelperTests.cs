@@ -652,7 +652,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Fact]
         public void ExpandEnvironmentVariables_TruncationLandsExactlyOnTokenEnd_PreservesIntactToken()
         {
-            // Arrange: Tests Issue #2273 (Outer guard validation)
+            // Arrange
             int maxLen = AppConfig.MaxEnvVarExpandedLength;
             string token = EnvironmentVariableHelper.PercentEscapeToken;
 
@@ -681,14 +681,14 @@ namespace Servy.Service.UnitTests.Helpers
             // The outer look-behind filter should acknowledge the token is completely intact,
             // ignore it, and let Step 5 safely collapse it to '%'.
             Assert.True(resultValue.EndsWith("%"), $"Expected string to end with collapsed escape character '%' but got trailing value: {resultValue.Substring(resultValue.Length - 5)}");
-            Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
+            Assert.DoesNotContain(EnvironmentVariableHelper.PercentEscapeToken, resultValue);
             Assert.Equal(maxLen - token.Length + 1, resultValue.Length);
         }
 
         [Fact]
         public void ExpandEnvironmentVariables_TruncationSplitsToken_RollsBackToCleanBoundary()
         {
-            // Arrange: Tests Issue #2267 & #2273 (Token fragmentation outer protection)
+            // Arrange
             int maxLen = AppConfig.MaxEnvVarExpandedLength;
             string token = EnvironmentVariableHelper.PercentEscapeToken;
 
@@ -712,7 +712,7 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.True(resultValue.Length < maxLen, $"Expected string length ({resultValue.Length}) to be less than MaxLength ({maxLen}) due to fragment rollback.");
             Assert.True(resultValue.All(c => c == 'B'), "The string should only contain the padding prefix characters after rolling back.");
             Assert.DoesNotContain("\uFFFD", resultValue, StringComparison.Ordinal);
-            Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
+            Assert.DoesNotContain(EnvironmentVariableHelper.PercentEscapeToken, resultValue);
         }
 
         [Fact]
@@ -740,7 +740,7 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.True(resultValue.Length < maxLen, "The internal inline guard within ExpandWithDictionary should trigger and discard the split token.");
             Assert.True(resultValue.All(c => c == 'C'), "The output string must contain only sanitized baseline padding values.");
             Assert.DoesNotContain("\uFFFD", resultValue, StringComparison.Ordinal);
-            Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
+            Assert.DoesNotContain(EnvironmentVariableHelper.PercentEscapeToken, resultValue);
         }
 
         #endregion
