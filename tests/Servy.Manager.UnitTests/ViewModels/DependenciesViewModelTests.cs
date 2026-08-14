@@ -423,7 +423,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task LoadDependencyTreeAsync_ManagerThrowsException_LogsAndDisplaysErrorMessageBox()
+        public async Task LoadDependencyTreeAsync_ManagerThrowsException_DisplaysErrorMessageBox()
         {
             await Helper.RunOnSTA(async () =>
             {
