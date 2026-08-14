@@ -553,15 +553,22 @@ namespace Servy.Core.UnitTests.Logging
         public void Setters_WhenCalledWithSameValues_SkipsReinitialization()
         {
             // Arrange
-            Logger.Initialize(_testFileName, logRotationSizeMB: 10, maxBackupLogFiles: 10);
+            Logger.Initialize(
+                _testFileName,
+                logRotationSizeMB: 10,
+                maxBackupLogFiles: 10,
+                dateRotationType: DateRotationType.Daily,
+                useLocalTimeForRotation: true);
 
             // The best way to assert it didn't recreate the writer is ensuring the fallback
             // counters weren't reset (which InternalInitialize does).
             TestReflection.SetFieldStatic(typeof(Logger), "_initFallbackWriteCount", 99);
 
             // Act
-            Logger.SetLogRotationSize(10);     // Unchanged
-            Logger.SetMaxBackupLogFiles(10);   // Unchanged
+            Logger.SetLogRotationSize(10);                    // Unchanged
+            Logger.SetMaxBackupLogFiles(10);                  // Unchanged
+            Logger.SetDateRotationType(DateRotationType.Daily); // Unchanged
+            Logger.SetUseLocalTimeForRotation(true);           // Unchanged
 
             // Assert
             int count = TestReflection.GetFieldStatic<int>(typeof(Logger), "_initFallbackWriteCount")!;
@@ -616,6 +623,42 @@ namespace Servy.Core.UnitTests.Logging
 
             // Assert: The file should never have been created on disk
             Assert.False(File.Exists(_fullLogPath), "Log file should not be created for empty or null messages.");
+        }
+
+        [Fact]
+        public void Log_WhenReentrantLoggingDetected_WritesToFallbackLogAndShortCircuits()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+
+            try
+            {
+                // Force thread-static re-entrancy flag to true for the current execution context
+                TestReflection.SetFieldStatic(typeof(Logger), "_isLogging", true);
+
+                // Act
+                Logger.Warn("Reentrant warning message");
+            }
+            finally
+            {
+                // Always restore _isLogging to false so subsequent tests on this thread are unaffected
+                TestReflection.SetFieldStatic(typeof(Logger), "_isLogging", false);
+            }
+
+            Logger.Shutdown();
+
+            // Assert
+            // 1. Verify main log file does not contain the re-entrant message
+            if (File.Exists(_fullLogPath))
+            {
+                string mainContent = File.ReadAllText(_fullLogPath);
+                Assert.DoesNotContain("Reentrant warning message", mainContent);
+            }
+
+            // 2. Verify fallback error log received the re-entrant warning message
+            Assert.True(File.Exists(_writeFallbackPath), "Write fallback log should have been created for re-entrant logging.");
+            string fallbackContent = File.ReadAllText(_writeFallbackPath);
+            Assert.Contains("RE-ENTRANT LOGGER AVOIDED: Reentrant warning message", fallbackContent);
         }
 
         [Fact]

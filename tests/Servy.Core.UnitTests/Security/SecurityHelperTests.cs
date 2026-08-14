@@ -243,6 +243,9 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void CreateSecureDirectory_ExistingDirectoryWithBreakInheritanceTrue_GracefullyHandlesNonAdminFailure()
         {
+            // Skip on elevated runs
+            Assert.SkipWhen(SecurityHelper.IsAdministrator(), "Elevated run: SetAccessControl succeeds, so the non-admin fallback branch is never reached.");
+
             // Arrange
             var path = Path.Combine(_testBaseDir, "ExistingRootVaultDir");
             Directory.CreateDirectory(path);

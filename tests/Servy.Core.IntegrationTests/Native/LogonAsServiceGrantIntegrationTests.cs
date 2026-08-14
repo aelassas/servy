@@ -101,17 +101,17 @@ namespace Servy.Core.IntegrationTests.Native
             string shorthandAccount = $".\\{_testAccountName}";
             string fullyQualifiedAccount = $"{Environment.MachineName}\\{_testAccountName}";
 
-            // Resolve the SID via the fully-qualified name — this is the target identity the shorthand must expand to.
+            // Resolve the SID via the fully-qualified name - this is the target identity the shorthand must expand to.
             var sid = (SecurityIdentifier)new NTAccount(fullyQualifiedAccount).Translate(typeof(SecurityIdentifier));
             byte[] sidBytes = new byte[sid.BinaryLength];
             sid.GetBinaryForm(sidBytes, 0);
 
             Assert.DoesNotContain("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
 
-            // Act — drive the grant purely through the '.\' shorthand notation.
+            // Act - drive the grant purely through the '.\' shorthand notation.
             Assert.Null(Record.Exception(() => LogonAsServiceGrant.Ensure(shorthandAccount)));
 
-            // Assert — verify that the logon privilege was granted to the target account resolved by the shorthand.
+            // Assert - verify that the logon privilege was granted to the target account resolved by the shorthand.
             Assert.Contains("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
         }
 
@@ -244,7 +244,10 @@ namespace Servy.Core.IntegrationTests.Native
                 sidBuffer = Marshal.AllocHGlobal(sidBytes.Length);
                 Marshal.Copy(sidBytes, 0, sidBuffer, sidBytes.Length);
 
-                var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES();
+                var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES
+                {
+                    Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>()
+                };
 
                 int lsaOpenStatus = NativeMethods.LsaOpenPolicy(
                     IntPtr.Zero,
