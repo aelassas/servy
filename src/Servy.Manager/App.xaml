@@ -4,20 +4,27 @@
              xmlns:local="clr-namespace:Servy.Manager"
              xmlns:system="clr-namespace:System;assembly=mscorlib">
   <Application.Resources>
-    <SolidColorBrush x:Key="SelectionHighlightBrush" Color="#0078D7" />
-    <SolidColorBrush x:Key="SelectionInactiveHighlightBrush" Color="#0078D7" />
-    <SolidColorBrush x:Key="SelectionHighlightTextBrush" Color="White" />
-    <SolidColorBrush x:Key="SelectionInactiveHighlightTextBrush" Color="White" />
+    <!-- Canonical selection colors (WPF's markup compiler can't resolve a StaticResource-as-
+         object-element redirect inside the deferred content of a Style.Resources block, so the
+         styles below duplicate these as literals instead of referencing them - keep all copies
+         in sync if these ever change). -->
+    <!-- SelectionColor: #0078D7, SelectionTextColor: White -->
 
-    <!-- Shared DataGrid style: remaps the built-in SystemColors selection keys to the brushes
-         above so every DataGrid gets consistent selection colors instead of the native Windows
-         highlight color. Apply via Style="{StaticResource DataGridSelectionColorsStyle}".
-         NOTE: colors below are duplicated (not StaticResource-referenced) because WPF's markup
-         compiler cannot resolve a StaticResource-as-object-element redirect inside the deferred
-         content of a Style.Resources/merged dictionary (throws a XamlParseException about
-         StaticResourceHolder at InitializeComponent time) - keep these in sync with the brushes
-         above if their colors ever change. -->
+    <!-- Remaps the built-in SystemColors selection keys so every DataGrid gets consistent
+         selection colors instead of the native Windows highlight color.
+         Apply via Style="{StaticResource DataGridSelectionColorsStyle}". -->
     <Style x:Key="DataGridSelectionColorsStyle" TargetType="DataGrid">
+      <Style.Resources>
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White" />
+      </Style.Resources>
+    </Style>
+
+    <!-- Same remap as DataGridSelectionColorsStyle above, for TreeViewItem-based surfaces
+         (e.g. DependenciesView). Consume via BasedOn="{StaticResource TreeViewItemSelectionColorsStyle}". -->
+    <Style x:Key="TreeViewItemSelectionColorsStyle" TargetType="TreeViewItem">
       <Style.Resources>
         <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7" />
         <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7" />
