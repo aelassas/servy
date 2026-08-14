@@ -1,7 +1,6 @@
 using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
-using Servy.Testing;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -37,11 +36,13 @@ namespace Servy.Manager.UnitTests.Converters
         [MemberData(nameof(StatusMappings))]
         public void Convert_ValidStatus_ReturnsLocalizedResource(ServiceStatus status, string resourceName)
         {
+            // Arrange: Extract the static public resource string value via direct reflection on Strings
+            var expected = typeof(Strings).GetProperty(resourceName)?.GetValue(null!);
+
             // Act
             var result = _converter.Convert(status, typeof(string), null!, CultureInfo.InvariantCulture);
 
-            // Assert: Extract the static public resource string value via TestReflection infrastructure
-            var expected = typeof(Strings).GetProperty(resourceName)?.GetValue(null!);
+            // Assert
             Assert.Equal(expected, result);
         }
 
@@ -76,7 +77,7 @@ namespace Servy.Manager.UnitTests.Converters
         [MemberData(nameof(StatusMappings))]
         public void ConvertBack_ValidString_ReturnsEnum(ServiceStatus expected, string resourceName)
         {
-            // Arrange: Extract the static public resource string value via TestReflection infrastructure
+            // Arrange: Extract the static public resource string value via direct reflection on Strings
             var input = typeof(Strings).GetProperty(resourceName)?.GetValue(null!)!;
 
             // Act

@@ -1,6 +1,7 @@
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.Logging;
+using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
@@ -62,5 +63,20 @@ namespace Servy.Service.UnitTests
                 ProcessKiller.Object
             );
         }
+
+        /// <summary>
+        /// Creates a default <see cref="StartOptions"/> pre-configured with standard paths and heartbeat flags for unit tests.
+        /// </summary>
+        public static StartOptions CreateDefaultStartOptions(string heartbeatUrl = "https://127.0.0.1:1/test-uuid") => new StartOptions
+        {
+            StdoutPath = "valid-path.log",
+            StderrPath = "error-path.log",
+            RecoveryOnCleanExit = false,
+            EnableHealthMonitoring = true,
+            EnableHeartbeatUrlFlags = true,
+            HeartbeatUrl = heartbeatUrl,
+            HeartbeatUrlTimeoutInSeconds = 10,
+            HeartbeatIntervalInSeconds = 30
+        };
     }
 }

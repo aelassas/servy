@@ -55,15 +55,7 @@ namespace Servy.Testing
                 throw new ArgumentException($"Matching constructor could not be found on type {type.Name}.");
             }
 
-            try
-            {
-                return (T)targetCtor.Invoke(args);
-            }
-            catch (TargetInvocationException ex) when (ex.InnerException != null)
-            {
-                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                throw; // unreachable
-            }
+            return (T)InvokeUnwrapped(targetCtor, null, args)!;
         }
 
         /// <summary>
@@ -275,12 +267,17 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Invokes the specified method on the target instance or type and unwraps <see cref="TargetInvocationException"/>.
+        /// Invokes the specified method or constructor on the target instance or type and unwraps <see cref="TargetInvocationException"/>.
         /// </summary>
-        private static object? InvokeUnwrapped(MethodInfo method, object? target, object?[]? args)
+        private static object? InvokeUnwrapped(MethodBase method, object? target, object?[]? args)
         {
             try
             {
+                if (method is ConstructorInfo ctor)
+                {
+                    return ctor.Invoke(args);
+                }
+
                 return method.Invoke(target, args);
             }
             catch (TargetInvocationException ex) when (ex.InnerException != null)
