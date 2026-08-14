@@ -482,14 +482,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
-        private class MockFailingProcessWrapper : BaseMockProcessWrapper
-        {
-            public override bool Start() => true;
-            public override bool HasExited => false;
-            public override string Format() => "Mock";
-            public override bool WaitForExit(int ms) => false; // Enforces persistent loop conditions for timeouts
-        }
-
         #endregion
     }
 }
