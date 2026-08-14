@@ -99,6 +99,9 @@ function Update-FilesContent {
                     } else {
                         $newContent = [regex]::Replace($newContent, $editPattern, [string]$editReplacement)
                     }
+                } elseif ($ExpectMatch) {
+                    Write-Warning "No matches found for pattern '$editPattern' in explicitly-targeted path: $path"
+                    $script:HadFailure = $true
                 }
             }
 
@@ -112,9 +115,6 @@ function Update-FilesContent {
                     [System.IO.File]::WriteAllText($path, $newContent, $encoding)
                     Write-Host "UPDATED ($($encoding.BodyName)): $path" -ForegroundColor Green
                 }
-            } elseif ($ExpectMatch) {
-                Write-Warning "No version patterns matching provided edits were located in explicitly-targeted path: $path"
-                $script:HadFailure = $true
             }
         }
         catch {

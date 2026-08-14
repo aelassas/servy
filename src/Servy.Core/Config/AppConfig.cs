@@ -740,10 +740,11 @@ namespace Servy.Core.Config
         /// Gets the timeout duration for Regex operations used to parse output from handle.exe.
         /// </summary>
         /// <remarks>
+        /// Uses a 10x multiplier over standard input regex timeout to accommodate large system handle tables.
         /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output,
         /// such as when a single large file is associated with thousands of owners or handles.
         /// </remarks>
-        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(InputRegexTimeoutMs);
+        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs * 10);
 
         /// <summary>
         /// Specifies the maximum duration, in milliseconds, allowed for standard output and error streams
