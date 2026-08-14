@@ -128,7 +128,7 @@ jobs:
               foreach ($asset in $Release.assets) {
                   $aName = $asset.name -replace $dashPattern, '-'
                   $aUrl = $asset.browser_download_url
-                  $size = [math]::Round($asset.size / 1MB, 2)
+                  $size = ([math]::Round($asset.size / 1MB, 2)).ToString("F2", [Globalization.CultureInfo]::InvariantCulture)
                   $md += "* [$aName]($aUrl) - ${size} MB`n"
               }
 
