@@ -284,15 +284,9 @@
                 </StackPanel>
               </HierarchicalDataTemplate>
 
-              <Style x:Key="BaseTreeViewItemStyle" TargetType="TreeViewItem">
+              <Style x:Key="BaseTreeViewItemStyle" TargetType="TreeViewItem" BasedOn="{StaticResource TreeViewItemSelectionColorsStyle}">
                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                 <Setter Property="Padding" Value="2" />
-                <Style.Resources>
-                  <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7" />
-                  <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7" />
-                  <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
-                  <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White" />
-                </Style.Resources>
               </Style>
             </TreeView.Resources>
 
