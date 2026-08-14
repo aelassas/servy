@@ -121,14 +121,8 @@
                   VirtualizingStackPanel.ScrollUnit="Pixel"
                   AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsDataGrid_Name}"
                   AutomationProperties.AutomationId="LogsDataGrid"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsDataGrid_HelpText}">
-      <DataGrid.Resources>
-        <StaticResource x:Key="{x:Static SystemColors.HighlightBrushKey}" ResourceKey="SelectionHighlightBrush" />
-        <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" ResourceKey="SelectionInactiveHighlightBrush" />
-        <StaticResource x:Key="{x:Static SystemColors.HighlightTextBrushKey}" ResourceKey="SelectionHighlightTextBrush" />
-        <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" ResourceKey="SelectionInactiveHighlightTextBrush" />
-      </DataGrid.Resources>
-
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsDataGrid_HelpText}"
+                  Style="{StaticResource DataGridSelectionColorsStyle}">
       <DataGrid.RowStyle>
         <Style TargetType="DataGridRow">
           <Setter Property="Height" Value="26" />
