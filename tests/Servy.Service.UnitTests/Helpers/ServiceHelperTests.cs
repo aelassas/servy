@@ -601,7 +601,7 @@ namespace Servy.Service.UnitTests.Helpers
         private class DummyService : ServiceBase { }
 
         [Fact]
-        public void RequestAdditionalTime_ValidService_LogsRequest()
+        public void RequestAdditionalTime_UnstartedService_SwallowsInvalidOperationException()
         {
             // Arrange
             using (var service = new DummyService())
@@ -609,10 +609,12 @@ namespace Servy.Service.UnitTests.Helpers
                 var mockLog = new Mock<IServyLogger>();
 
                 // Act
-                _helper.RequestAdditionalTime(service, 5000, mockLog.Object);
+                var exception = Record.Exception(() => _helper.RequestAdditionalTime(service, 5000, mockLog.Object));
 
                 // Assert
-                Assert.True(true);
+                Assert.Null(exception);
+                mockLog.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 

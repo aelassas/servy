@@ -1,5 +1,6 @@
 using Servy.UI.Commands;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -104,17 +105,33 @@ namespace Servy.UI.UnitTests.Commands
 
         #region Execute (Async Void & Exceptions)
 
-        [Fact]
-        public void Execute_DoesNotThrowWhenInnerTaskFails()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Execute_DoesNotThrowWhenInnerTaskFails(bool isCancellation)
         {
             // Branch: catch (Exception ex) in Execute(object parameter)
             // This test ensures the 'async void' entry point does not crash the process.
 
-            var command = new AsyncCommand(_ => throw new Exception("Command Failure"));
+            var previousContext = SynchronizationContext.Current;
+            var testContext = new TestSynchronizationContext();
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(testContext);
 
-            // Act & Assert: Should not throw to caller
-            var exception = Record.Exception(() => command.Execute(null));
-            Assert.Null(exception);
+                var command = new AsyncCommand(_ => isCancellation
+                    ? Task.FromCanceled(new CancellationToken(true))
+                    : throw new Exception("Command Failure"));
+
+                command.Execute(null);
+                await testContext.WaitForCompletionAsync();
+
+                Assert.Empty(testContext.UnhandledExceptions);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
         }
 
         #endregion
@@ -135,5 +152,75 @@ namespace Servy.UI.UnitTests.Commands
             // from standard threads, preventing regression crashes in background workers.
             Assert.Null(exception);
         }
+
+        #region Helper Classes
+
+        /// <summary>
+        /// A custom <see cref="SynchronizationContext"/> implementation designed to track 
+        /// async void operation completions and capture any unhandled exceptions during unit testing.
+        /// </summary>
+        private class TestSynchronizationContext : SynchronizationContext
+        {
+            private readonly TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            private int _pendingOperations;
+
+            /// <summary>
+            /// Gets the collection of unhandled exceptions posted back to this synchronization context.
+            /// </summary>
+            public List<Exception> UnhandledExceptions { get; } = new List<Exception>();
+
+            /// <summary>
+            /// Notifies the context that an asynchronous operation has started.
+            /// Increments the pending operation counter.
+            /// </summary>
+            public override void OperationStarted()
+            {
+                Interlocked.Increment(ref _pendingOperations);
+            }
+
+            /// <summary>
+            /// Notifies the context that an asynchronous operation has completed.
+            /// Decrements the pending operation counter and completes the completion task when zero.
+            /// </summary>
+            public override void OperationCompleted()
+            {
+                if (Interlocked.Decrement(ref _pendingOperations) == 0)
+                {
+                    _tcs.TrySetResult(true);
+                }
+            }
+
+            /// <summary>
+            /// Dispatches an asynchronous message to the synchronization context.
+            /// </summary>
+            /// <param name="d">The <see cref="SendOrPostCallback"/> delegate to call.</param>
+            /// <param name="state">The object passed to the delegate.</param>
+            public override void Post(SendOrPostCallback d, object state)
+            {
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    SetSynchronizationContext(this);
+                    try
+                    {
+                        d(state);
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (UnhandledExceptions)
+                        {
+                            UnhandledExceptions.Add(ex);
+                        }
+                    }
+                });
+            }
+
+            /// <summary>
+            /// Asynchronously waits until all tracked operations posted to this synchronization context have completed.
+            /// </summary>
+            /// <returns>A <see cref="Task"/> that completes when all tracked operations are finished.</returns>
+            public Task WaitForCompletionAsync() => _tcs.Task;
+        }
+
+        #endregion
     }
 }

@@ -851,10 +851,11 @@ namespace Servy.Service.UnitTests
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void EmitHeartbeatPing_WithNullOrEmptyBaseUrl_ReturnsEarlyWithoutScheduling(string invalidUrl)
+        public async Task EmitHeartbeatPing_WithNullOrEmptyBaseUrl_ReturnsEarlyWithoutScheduling(string invalidUrl)
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
+            var loggerMock = new Mock<IServyLogger>();
             var serviceInstance = _ctx.BuildService(repositoryMock.Object);
 
             var mockOptions = new StartOptions
@@ -863,54 +864,62 @@ namespace Servy.Service.UnitTests
                 EnableHeartbeatUrlFlags = true
             };
             TestReflection.SetField(serviceInstance, "_options", mockOptions);
+            TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
 
-            // Act & Assert
-            var ex = Record.Exception(() =>
-                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { invalidUrl, "/start", 2 }));
+            // Act
+            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { invalidUrl, "/start", 2 });
+            await Task.Delay(100, CancellationToken.None);
 
-            Assert.Null(ex);
+            // Assert
+            loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
         }
 
         [Fact]
-        public void EmitHeartbeatPing_WithHealthMonitoringDisabled_ReturnsEarlyWithoutScheduling()
+        public async Task EmitHeartbeatPing_WithHealthMonitoringDisabled_ReturnsEarlyWithoutScheduling()
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
+            var loggerMock = new Mock<IServyLogger>();
             var serviceInstance = _ctx.BuildService(repositoryMock.Object);
 
             var mockOptions = new StartOptions
             {
-                EnableHealthMonitoring = false,  // Explicitly disabled
+                EnableHealthMonitoring = false,
                 EnableHeartbeatUrlFlags = true
             };
             TestReflection.SetField(serviceInstance, "_options", mockOptions);
+            TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
 
-            // Act & Assert
-            var ex = Record.Exception(() =>
-                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://127.0.0.1:1/uuid", "/start", 2 }));
+            // Act
+            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
+            await Task.Delay(100, CancellationToken.None);
 
-            Assert.Null(ex);
+            // Assert
+            loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
         }
 
         [Fact]
-        public void EmitHeartbeatPing_WithSuffixAndUrlFlagsDisabled_ReturnsEarlyWithoutScheduling()
+        public async Task EmitHeartbeatPing_WithSuffixAndUrlFlagsDisabled_ReturnsEarlyWithoutScheduling()
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
+            var loggerMock = new Mock<IServyLogger>();
             var serviceInstance = _ctx.BuildService(repositoryMock.Object);
 
             var mockOptions = new StartOptions
             {
                 EnableHealthMonitoring = true,
-                EnableHeartbeatUrlFlags = false  // Flags disabled, but suffix provided
+                EnableHeartbeatUrlFlags = false
             };
             TestReflection.SetField(serviceInstance, "_options", mockOptions);
+            TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
 
-            // Act & Assert
-            var ex = Record.Exception(() =>
-                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://127.0.0.1:1/uuid", "/start", 2 }));
+            // Act
+            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
+            await Task.Delay(100, CancellationToken.None);
 
-            Assert.Null(ex);
+            // Assert
+            loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
         }
 
         private static (HttpListener listener, string baseAddress) CreateAndStartHttpListener()
