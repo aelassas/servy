@@ -8,8 +8,9 @@
     exclusion patterns, and bootstraps Get-FileEncoding.ps1 for versioning scripts.
 #>
 
-# Shared exclusion pattern for transient build artifacts, dependencies, and vcs metadata
-$script:BuildArtifactExclusionRegex = '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]'
+# Shared exclusion array and regex pattern for transient build artifacts, dependencies, and vcs metadata
+$script:BuildArtifactExclusionDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults')
+$script:BuildArtifactExclusionRegex = '[\\/](bin|obj|packages|\.git|\.vs|node_modules|coveragereport|TestResults)[\\/]'
 
 # Bootstrap Get-FileEncoding.ps1
 $helperFile = "Get-FileEncoding.ps1"
