@@ -317,8 +317,8 @@ namespace Servy.Manager.ViewModels
         #region Public Methods & IDisposable Implementation
 
         /// <summary>
-        /// Cancels any ongoing search and cleans up the cancellation token.
-        /// Maintained as an alias for <see cref="Dispose()"/> to ensure backward compatibility.
+        /// Cancels any in-flight search and restores UI state (cursor, busy flag, button text).
+        /// Does not dispose the view model - see <see cref="Dispose()"/> for full teardown.
         /// </summary>
         public void CancelSearch()
         {

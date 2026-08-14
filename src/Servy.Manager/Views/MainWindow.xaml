@@ -164,14 +164,8 @@
                     SelectionMode="Extended"
                     AutomationProperties.Name="{x:Static resx:Strings.Automation_ServicesDataGrid_Name}"
                     AutomationProperties.AutomationId="ServicesDataGrid"
-                    AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ServicesDataGrid_HelpText}">
-            <DataGrid.Resources>
-              <StaticResource x:Key="{x:Static SystemColors.HighlightBrushKey}" ResourceKey="SelectionHighlightBrush" />
-              <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" ResourceKey="SelectionInactiveHighlightBrush" />
-              <StaticResource x:Key="{x:Static SystemColors.HighlightTextBrushKey}" ResourceKey="SelectionHighlightTextBrush" />
-              <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" ResourceKey="SelectionInactiveHighlightTextBrush" />
-            </DataGrid.Resources>
-
+                    AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ServicesDataGrid_HelpText}"
+                    Style="{StaticResource DataGridSelectionColorsStyle}">
             <DataGrid.ColumnHeaderStyle>
               <Style TargetType="DataGridColumnHeader">
                 <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ColumnHeader_PreviewMouseLeftButtonDown" />
