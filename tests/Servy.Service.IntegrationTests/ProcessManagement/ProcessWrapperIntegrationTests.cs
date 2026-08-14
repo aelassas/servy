@@ -620,7 +620,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void StopTree_ProcessGracefulExit_LogsCanceledWithCodeInfo()
+        public void TryStopGracefullyOrKill_HeadlessProcess_ForceKillsAndLogsFallback()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
