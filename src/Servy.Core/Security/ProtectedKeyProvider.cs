@@ -124,7 +124,7 @@ namespace Servy.Core.Security
             {
                 // 1. FAST-PATH: Synchronized Read
                 // We must hold the lock even for the fast-path read to prevent a TOCTOU race
-                // condition with InvalidateCache, which explicitly calls CryptographicOperations.ZeroMemory
+                // condition with InvalidateCache, which explicitly calls Array.Clear
                 // on the backing array. If we read outside the lock, we risk cloning a zeroed array.
                 if (cacheField != null)
                 {
@@ -144,22 +144,41 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Explicitly invalidates the in-memory cache and zeroes out the backing arrays.
+        /// Explicitly invalidates only the in-memory cache slot corresponding to the specified path.
+        /// </summary>
+        /// <param name="path">The full filesystem path of the material that was written.</param>
+        private void InvalidateCacheForPath(string path)
+        {
+            lock (_cacheLock)
+            {
+                if (string.Equals(path, _keyFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_cachedKey != null)
+                    {
+                        Array.Clear(_cachedKey, 0, _cachedKey.Length);
+                        _cachedKey = null;
+                    }
+                }
+                else if (string.Equals(path, _ivFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_cachedIv != null)
+                    {
+                        Array.Clear(_cachedIv, 0, _cachedIv.Length);
+                        _cachedIv = null;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Explicitly invalidates all in-memory caches and zeroes out the backing arrays.
         /// </summary>
         private void InvalidateCache()
         {
             lock (_cacheLock)
             {
-                if (_cachedKey != null)
-                {
-                    Array.Clear(_cachedKey, 0, _cachedKey.Length);
-                    _cachedKey = null;
-                }
-                if (_cachedIv != null)
-                {
-                    Array.Clear(_cachedIv, 0, _cachedIv.Length);
-                    _cachedIv = null;
-                }
+                InvalidateCacheForPath(_keyFilePath);
+                InvalidateCacheForPath(_ivFilePath);
             }
         }
 
@@ -348,7 +367,7 @@ namespace Servy.Core.Security
 
                 // Defensive check: Even though the throw above prevents this,
                 // static analysis tools (and good practice) appreciate the explicit guard.
-                if (encrypted is null)
+                if (encrypted == null)
                 {
                     throw new InvalidOperationException($"Failed to read {path} after {maxRetries} attempts");
                 }
@@ -505,8 +524,8 @@ namespace Servy.Core.Security
                     // Atomically replace the existing file
                     NativeMethodsHelpers.AtomicSecureMove(tempPath, path);
 
-                    // Explicit invalidation on successful key rotation
-                    InvalidateCache();
+                    // Explicit invalidation of only the modified key material cache slot
+                    InvalidateCacheForPath(path);
                 }
                 finally
                 {
