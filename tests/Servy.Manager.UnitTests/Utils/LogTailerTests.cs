@@ -164,7 +164,7 @@ namespace Servy.Manager.UnitTests.Utils
         #region Exception & Directory/File Race Mitigation Branch Tests
 
         [Fact]
-        public async Task RunFromPosition_MissingDirectoryException_TriggersCatchBlockAndDelays()
+        public async Task RunFromPosition_MissingDirectoryPath_ExecutesMissingFileDelayFastPath()
         {
             // Arrange
             using (var tailer = new LogTailer())

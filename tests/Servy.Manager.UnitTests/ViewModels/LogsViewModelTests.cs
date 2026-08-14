@@ -463,16 +463,23 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Wait until the pipeline executes and hits our service callback to ensure the token has been generated
                     await searchStartedTcs.Task;
 
+                    // Capture the active CancellationTokenSource instance prior to cancellation
+                    var cts = TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts");
+                    Assert.NotNull(cts);
+
                     // Validate the initial state of the active search operation token
                     Assert.NotEqual(TestContext.Current.CancellationToken, capturedToken);
                     Assert.False(capturedToken.IsCancellationRequested);
+                    Assert.False(cts.IsCancellationRequested);
 
                     // Act
                     vm.CancelSearch();
 
                     // Assert
-                    // Pin the cancel contract: verify that the token supplied to our data fetching layer is now cancelled
+                    // Pin the cancel and dispose contract: verify token cancellation and CTS disposal
                     Assert.True(capturedToken.IsCancellationRequested);
+                    Assert.True(cts.IsCancellationRequested);
+                    Assert.Throws<ObjectDisposedException>(() => _ = cts.Token);
 
                     // Unblock the hanging task to allow the pipeline to run its finalizer blocks cleanly
                     searchHangTcs.TrySetCanceled(TestContext.Current.CancellationToken);

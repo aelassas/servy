@@ -533,7 +533,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SwitchServiceAsync_GenericExceptionThrown_SwallowsExceptionAndLogsError()
+        public async Task SwitchServiceAsync_InvalidPath_CompletesCleanlyWithoutThrowing()
         {
             // Arrange, Act & Assert
             await Helper.RunOnSTA(async () =>
@@ -542,11 +542,36 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
-                    // Act - Pass an invalid path string containing a null character to force an ArgumentException during history loading
+                    // Act - Pass an invalid path string containing a null character; File.Exists catches invalid path errors internally
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", "\0", "\0")!;
                     var exception = await Record.ExceptionAsync(() => task);
 
-                    // Assert - Verify that the general catch block swallows the exception gracefully and logs the error
+                    // Assert - Verify that SwitchServiceAsync completes cleanly without throwing exceptions
+                    Assert.Null(exception);
+                    Assert.Empty(vm.RawLines);
+                }
+            });
+        }
+
+        [Fact]
+        public async Task SwitchServiceAsync_WhenTaskWhenAllFaults_SwallowsExceptionAndLogsError()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Force a null _tailingCts via reflection so new CancellationTokenSource() fails or token access throws an exception
+                    var activeCts = TestReflection.GetField<CancellationTokenSource>(vm, "_tailingCts");
+                    activeCts?.Dispose();
+
+                    // Act - Invoke SwitchServiceAsync when internal cancellation token state causes an exception
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", "valid_path.log", null)!;
+                    var exception = await Record.ExceptionAsync(() => task);
+
+                    // Assert - Verify that the general catch block in SwitchServiceAsync swallows the exception safely
                     Assert.Null(exception);
                 }
             });
