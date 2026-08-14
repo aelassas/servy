@@ -100,7 +100,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel("RowSvc");
             var parameterService = new Service { Name = "ParamSvc" };
 
-            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.Is<bool>(b => b), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
@@ -122,7 +122,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var parameterService = new Service { Name = "ParamSvc" };
 
             _serviceCommandsMock
-                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.Is<bool>(b => b), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
@@ -143,7 +143,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel("RowSvc");
             var parameterService = new Service { Name = "ParamSvc" };
 
-            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.Is<bool>(b => b), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
