@@ -10,7 +10,7 @@ scoop uninstall servy
 
 Fix encoding:
 ```powershell
-[System.IO.File]::WriteAllText("servy.json", [System.IO.File]::ReadAllText("servy.json"), (New-Object System.Text.UTF8Encoding))
+[System.IO.File]::WriteAllText("servy.json", [System.IO.File]::ReadAllText("servy.json"), (New-Object System.Text.UTF8Encoding($false)))
 ```
 
 ## Publish
