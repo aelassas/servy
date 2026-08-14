@@ -76,13 +76,9 @@
                       VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                       VirtualizingStackPanel.IsVirtualizing="True"
                       VirtualizingStackPanel.ScrollUnit="Pixel"
-                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+                      VirtualizingStackPanel.VirtualizationMode="Recycling"
+                      Style="{StaticResource DataGridSelectionColorsStyle}">
         <DataGrid.Resources>
-          <StaticResource x:Key="{x:Static SystemColors.HighlightBrushKey}" ResourceKey="SelectionHighlightBrush" />
-          <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" ResourceKey="SelectionInactiveHighlightBrush" />
-          <StaticResource x:Key="{x:Static SystemColors.HighlightTextBrushKey}" ResourceKey="SelectionHighlightTextBrush" />
-          <StaticResource x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" ResourceKey="SelectionInactiveHighlightTextBrush" />
-
           <Style TargetType="DataGridColumnHeader">
             <Setter Property="Padding" Value="10,7" />
           </Style>
