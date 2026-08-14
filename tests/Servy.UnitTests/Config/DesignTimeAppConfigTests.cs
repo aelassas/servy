@@ -19,21 +19,22 @@ namespace Servy.UnitTests.Config
         }
 
         [Fact]
-        public void DesignTimeAppConfig_PropertyChanged_NoOp()
+        public void DesignTimeAppConfig_PropertyChanged_DiscardsSubscribersAndNeverRaises()
         {
             // Arrange
-            var config = new DesignTimeAppConfig();
-            PropertyChangedEventHandler handler = (s, e) => { };
+            IAppConfiguration config = new DesignTimeAppConfig();
+            var raisedCount = 0;
+            PropertyChangedEventHandler handler = (s, e) => raisedCount++;
 
-            // Act & Assert
-            // Verifies the no-op implementation handles add/remove without exceptions
-            var exception = Record.Exception(() =>
-            {
-                config.PropertyChanged += handler;
-                config.PropertyChanged -= handler;
-            });
+            // Act
+            config.PropertyChanged += handler;
+            _ = config.IsManagerAppAvailable;
+            _ = config.ManagerAppPublishPath;
+            _ = config.ForceSoftwareRendering;
+            config.PropertyChanged -= handler;
 
-            Assert.Null(exception);
+            // Assert
+            Assert.Equal(0, raisedCount);
         }
     }
 }
