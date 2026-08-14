@@ -140,22 +140,41 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Explicitly invalidates the in-memory cache and zeroes out the backing arrays.
+        /// Explicitly invalidates only the in-memory cache slot corresponding to the specified path.
+        /// </summary>
+        /// <param name="path">The full filesystem path of the material that was written.</param>
+        private void InvalidateCacheForPath(string path)
+        {
+            lock (_cacheLock)
+            {
+                if (string.Equals(path, _keyFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_cachedKey != null)
+                    {
+                        CryptographicOperations.ZeroMemory(_cachedKey);
+                        _cachedKey = null;
+                    }
+                }
+                else if (string.Equals(path, _ivFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_cachedIv != null)
+                    {
+                        CryptographicOperations.ZeroMemory(_cachedIv);
+                        _cachedIv = null;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Explicitly invalidates all in-memory caches and zeroes out the backing arrays.
         /// </summary>
         private void InvalidateCache()
         {
             lock (_cacheLock)
             {
-                if (_cachedKey != null)
-                {
-                    CryptographicOperations.ZeroMemory(_cachedKey);
-                    _cachedKey = null;
-                }
-                if (_cachedIv != null)
-                {
-                    CryptographicOperations.ZeroMemory(_cachedIv);
-                    _cachedIv = null;
-                }
+                InvalidateCacheForPath(_keyFilePath);
+                InvalidateCacheForPath(_ivFilePath);
             }
         }
 
@@ -501,8 +520,8 @@ namespace Servy.Core.Security
                     // Atomically replace the existing file
                     File.Move(tempPath, path, overwrite: true);
 
-                    // Explicit invalidation on successful key rotation
-                    InvalidateCache();
+                    // Explicit invalidation of only the modified key material cache slot
+                    InvalidateCacheForPath(path);
                 }
                 finally
                 {
