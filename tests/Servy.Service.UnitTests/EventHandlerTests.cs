@@ -1,7 +1,6 @@
 using Moq;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
-using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.UnitTests.Helpers;
@@ -16,16 +15,6 @@ namespace Servy.Service.UnitTests
     public class EventHandlerTests : IDisposable
     {
         private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
-
-        private static StartOptions CreateDefaultStartOptions() => new StartOptions
-        {
-            StdoutPath = "valid-path.log",
-            StderrPath = "error-path.log",
-            RecoveryOnCleanExit = false,
-            HeartbeatUrl = "https://127.0.0.1:1/test-uuid",
-            HeartbeatUrlTimeoutInSeconds = 10,
-            HeartbeatIntervalInSeconds = 30
-        };
 
         [Fact]
         public void OnOutputDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
@@ -50,7 +39,7 @@ namespace Servy.Service.UnitTests
             var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
             var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
-            var startOptions = CreateDefaultStartOptions();
+            var startOptions = ServiceTestContext.CreateDefaultStartOptions();
             startOptions.RotationSizeInBytes = 1024 * 1024;
 
             service.InvokeHandleLogWriters(startOptions);
@@ -103,7 +92,7 @@ namespace Servy.Service.UnitTests
             var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
             var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
-            var startOptions = CreateDefaultStartOptions();
+            var startOptions = ServiceTestContext.CreateDefaultStartOptions();
             startOptions.RotationSizeInBytes = 1024 * 1024;
 
             service.InvokeHandleLogWriters(startOptions);
@@ -148,7 +137,7 @@ namespace Servy.Service.UnitTests
                .Setup(f => f.Create("shared-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                .Returns(mockSharedWriter.Object);
 
-            var startOptions = CreateDefaultStartOptions();
+            var startOptions = ServiceTestContext.CreateDefaultStartOptions();
             startOptions.StdoutPath = "shared-path.log";
             startOptions.StderrPath = "shared-path.log";
 
@@ -177,7 +166,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            var options = CreateDefaultStartOptions();
+            var options = ServiceTestContext.CreateDefaultStartOptions();
             options.FailureProgramPath = @"C:\App\alert.exe";
             TestReflection.SetField(service, "_options", options);
 
@@ -204,7 +193,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            var options = CreateDefaultStartOptions();
+            var options = ServiceTestContext.CreateDefaultStartOptions();
             options.FailureProgramPath = @"C:\App\alert.exe";
             TestReflection.SetField(service, "_options", options);
 
@@ -231,7 +220,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));

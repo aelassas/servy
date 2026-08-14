@@ -2,7 +2,6 @@ using Moq;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
-using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
@@ -18,18 +17,6 @@ namespace Servy.Service.UnitTests
     {
         private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
 
-        private static StartOptions CreateDefaultStartOptions(string heartbeatUrl = "https://127.0.0.1:1/test-uuid") => new StartOptions
-        {
-            StdoutPath = "valid-path.log",
-            StderrPath = "error-path.log",
-            RecoveryOnCleanExit = false,
-            EnableHealthMonitoring = true,
-            EnableHeartbeatUrlFlags = true,
-            HeartbeatUrl = heartbeatUrl,
-            HeartbeatUrlTimeoutInSeconds = 10,
-            HeartbeatIntervalInSeconds = 30
-        };
-
         [Fact]
         public async Task CheckHealth_ProcessExited_IncrementsFailedChecks_AndLogs()
         {
@@ -38,7 +25,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -72,7 +59,7 @@ namespace Servy.Service.UnitTests
                 .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions("https://127.0.0.1:1/fail-heartbeat"));
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/fail-heartbeat"));
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -116,7 +103,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -167,7 +154,7 @@ namespace Servy.Service.UnitTests
                 .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions("https://127.0.0.1:1/start-heartbeat"));
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/start-heartbeat"));
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(false);
@@ -201,7 +188,7 @@ namespace Servy.Service.UnitTests
                 .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions("https://127.0.0.1:1/routine-heartbeat"));
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/routine-heartbeat"));
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(false);
@@ -229,7 +216,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build();
             _disposableServices.Add(service);
 
-            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
             bool processHasExited = true;
             var mockProcess = new Mock<IProcessWrapper>();
@@ -239,8 +226,8 @@ namespace Servy.Service.UnitTests
             var recoveryTriggered = new TaskCompletionSource<bool>();
 
             ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
-                                                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                                                 It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                                                  It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                   .Callback(() =>
                   {
                       processHasExited = false;
