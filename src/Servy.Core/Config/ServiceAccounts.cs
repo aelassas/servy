@@ -35,7 +35,6 @@ namespace Servy.Core.Config
             @"NT AUTHORITY\LocalSystem",
             @"NT AUTHORITY\Local System",
             @"NT AUTHORITY\SYSTEM",
-            "SYSTEM",
             @"BUILTIN\LocalSystem",
             @"BUILTIN\System"
         );
@@ -50,9 +49,8 @@ namespace Servy.Core.Config
             LocalService,
             @".\LocalService",
             @".\Local Service",
-            @"NT AUTHORITY\LOCAL SERVICE",
             @"NT AUTHORITY\Local Service",
-            "LOCAL SERVICE",
+            "Local Service",
             @"BUILTIN\LocalService"
         );
 
@@ -66,9 +64,8 @@ namespace Servy.Core.Config
             NetworkService,
             @".\NetworkService",
             @".\Network Service",
-            @"NT AUTHORITY\NETWORK SERVICE",
             @"NT AUTHORITY\Network Service",
-            "NETWORK SERVICE",
+            "Network Service",
             @"BUILTIN\NetworkService"
         );
     }

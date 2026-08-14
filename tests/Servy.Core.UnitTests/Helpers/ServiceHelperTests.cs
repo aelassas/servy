@@ -185,17 +185,19 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void CalculateStartTimeout_PreLaunchMultiplicationOverflow_ThrowsOverflowException()
+        public void CalculateStartTimeout_PreLaunchMultiplicationOverflow_ClampsToIntMaxValue()
         {
             // Arrange
-            // Passing adversarial bounds to force the internal 'checked()' statement context to trigger
+            // Passing bounds that exceed int.MaxValue when multiplied to verify saturation logic
             int highTimeout = int.MaxValue / 2;
             int highAttempts = 3;
 
-            // Act & Assert
-            // Verifies the overflow guard strategy to prevent unexpected truncation errors downstream
-            Assert.Throws<OverflowException>(() =>
-                ServiceHelper.CalculateStartTimeout(30, highTimeout, highAttempts));
+            // Act
+            int result = ServiceHelper.CalculateStartTimeout(30, highTimeout, highAttempts);
+
+            // Assert
+            // Verifies the calculation saturates gracefully to int.MaxValue instead of throwing an OverflowException
+            Assert.Equal(int.MaxValue, result);
         }
 
         [Fact]
