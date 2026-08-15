@@ -49,12 +49,12 @@ OutputBaseFilename=servy-{#MyAppVersion}-{#Arch}-installer
 SetupIconFile=..\src\Servy\servy.ico
 
 Compression=lzma2
-LZMAAlgorithm=1
+; LZMAAlgorithm=1 (used in v9.4 and earlier; 1=default)
 ; LZMADictionarySize=65536
 ; LZMADictionarySize=98304
-;LZMADictionarySize=131072
+; LZMADictionarySize=131072
 LZMADictionarySize=196608
-LZMANumFastBytes=273
+; LZMANumFastBytes=273 (used in v9.4 and earlier; produces false positives)
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 
@@ -66,7 +66,7 @@ UsePreviousTasks=no
 AlwaysRestart=no
 
 [Messages]
-SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
+SetupAppRunningError=Setup has detected that %1 is currently running.%n%Please close all instances of it now, then click OK to continue, or Cancel to exit.
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
