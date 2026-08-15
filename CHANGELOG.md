@@ -3927,7 +3927,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.4...v1.5
 
 **Date:** 2025-09-18 | **Tag:** [`v1.4`](https://github.com/aelassas/servy/tree/v1.4)
 
-* fix(cli,powershell): add `--quiet` and `-q` options to CLI and `-Quiet` switch to PowerShell module #11
+* fix(cli,psm1): add `--quiet` and `-q` options to CLI and `-Quiet` switch to PowerShell module #11
 * fix(cli): rotation size calculation
 * fix(configurator): make failure program path optional instead of required
 
