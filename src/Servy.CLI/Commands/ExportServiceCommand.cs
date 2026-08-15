@@ -55,7 +55,10 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_PathRequired);
 
                 // Pre-flight elevation check
-                SecurityHelper.EnsureAdministrator();
+                if (!BypassElevationCheck)
+                {
+                    SecurityHelper.EnsureAdministrator();
+                }
 
                 var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, cancellationToken: cancellationToken);
 
