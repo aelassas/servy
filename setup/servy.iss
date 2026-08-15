@@ -58,7 +58,7 @@ LZMADictionarySize=65536
 ; LZMADictionarySize=98304
 ; LZMADictionarySize=131072
 ; LZMADictionarySize=196608
-; LZMANumFastBytes=273 (used in v9.4 and earlier; produces false positives)
+LZMANumFastBytes=273
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 
