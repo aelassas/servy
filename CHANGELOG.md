@@ -1,5 +1,80 @@
 # Changelog
 
+## [Servy 9.5](https://github.com/aelassas/servy/releases/tag/v9.5)
+
+**Date:** 2026-08-15 | **Tag:** [`v9.5`](https://github.com/aelassas/servy/tree/v9.5)
+
+This release brings ARM64 support to the Patch My PC Enterprise catalog, bug fixes, security patches, code quality improvements, and documentation updates. Full changelog listed below.
+
+### Full Changelog
+<details>
+  <summary>Click to expand release notes!</summary>
+
+* feat: add ARM64 support to the Patch My PC Enterprise catalog
+* fix: resolve DeepInstinct false positives for net48 and ARM64 builds
+* fix(core): log and report legacy DPAPI unprotect fallback
+* fix(core): validate path buffer size bounds before uint to int cast in PathSecurityGuard.cs
+* fix(core): ProcessHelper.cs -move RAM sampling inside per-PID lock for consistent metrics snapshot
+* fix(core): Logger.cs - ensure old log writer is disposed in try-finally during swap
+* fix(core): EventLogReader.cs - Event log field failures swallowed without diagnostics
+* fix(core): ServiceManager.cs - StartServiceAsync's inline timeout calc omits PreLaunchRetryAttempts, reintroducing the #2211 false-timeout bug (#5043)
+* fix(core): AppConfig.cs - HandleExeRegexTimeout uses FromSeconds on a millisecond constant, yielding a 2000-second timeout (#5104)
+* fix(core): ServiceAccounts.cs - alias hash-sets carry case-only-duplicate literals redundant under OrdinalIgnoreCase (#5105)
+* fix(core): ServiceHelper.cs - CalculateStartTimeout can throw OverflowException from two individually-valid PreLaunch field (#5106)
+* fix(core): EventLogLogger.cs - ScopedEventLogLogger's own log level is never consulted for Info/Warn/Error (residual of #1443) (#5107)
+* fix(core): ProtectedKeyProvider.cs - InvalidateCache wipes both cached Key and IV even when only one material migrates (#5109)
+* fix(core): ServiceManager.cs - Unicode-casing rename silently reverts when the legacy OS service is already gone (#5110)
+* fix(core): PathSecurityGuard.cs / ExportServiceCommand.cs - late validation failure leaves the OpenOrCreate stub file behind (regression of closed #2167) (#5111)
+* fix(core): ServiceManager.cs - InstallServiceAsync's stale-casing DeleteAsync runs unguarded, unlike the sibling SCM-cleanup branch (#5129)
+* fix(infra): SQLiteDbInitializer.cs - Missing DROP before CREATE TABLE IF NOT EXISTS in migration in ApplyVersion4()
+* fix(service): Servy.Service.exe - orphan 5-byte dummy placeholder in Servy.Service's own Resources folder (#5045)
+* fix(service): ServiceHelper.cs - LogStartupArguments Recovery block logs every health-monitoring-gated field but omits EnableHealthMonitoring itself (#5118)
+* fix(service): Service.cs - RunFireAndForgetPreLaunch drops the process wrapper without disposing it when UnderlyingProcess is not a native Process (#5119)
+* fix(service,restarter): DatabaseValidator.cs - CVE-2025-6965 SQLite version check missing from Servy.Service and Servy.Restarter (#5044)
+* fix(restarter): ServiceRestarter.cs - missing exception type in transitional-error retry filter
+* fix(restarter): ServiceRestarter.cs - Stop()/Start() command calls still catch only InvalidOperationException, not Win32Exception (last sibling of #2110/#4385/#4088) (#5050)
+* fix(restarter): ServiceRestarter.cs - HandleTransitionalError treats a vanished service like a busy SCM, burning the full timeout instead of returning ServiceNotFound (#5116)
+* fix(ui): AppBootstrapper.cs - bare catch in AppDomain unhandled-exception handler
+* fix(ui): CursorService.cs - application.Current re-checked non-atomically before dispatcher use
+* fix(ui): Strings.resx (Servy.UI) - Msg_InvalidPath has no consumer anywhere in the project (#5051)
+* fix(desktop): ServiceCommands.cs (Servy) - InstallServiceAsync, UninstallServiceAsync and Start/Stop/Restart swallow OperationCanceledException as unexpected error (#5053)
+* fix(desktop): MainWindow.xaml (Servy) - MaxLines=2147483647 repeated raw on 7 multi-line TextBoxes instead of a shared resource (#5122)
+* fix(desktop): MainWindow.xaml (Servy) - RequiredFields legend hardcodes Foreground=Gray while every other hint text uses the system brush (#5123)
+* fix(desktop): ServiceCommands.cs (Servy) - Export/Import/OpenManager show generic 'Unexpected error' on UnauthorizedAccessException (#5120)
+* fix(manager): Manager views - inactive-selection brush is #0078D7 in three list surfaces but #E5E5E5 in the dependency tree; #0078D7 repeated as a literal in four files (#4833)
+* fix(manager): PerformanceViewModel.cs - ApplyTickAsync calls SetPidText twice on the PID-changed branch (#5046)
+* fix(manager): ConsoleView/DependenciesView/PerformanceView.xaml - Loaded="UserControl_Loaded" targets a private base-class method (#5047)
+* fix(manager): MainViewModel.cs - Dispose(bool) disposes Performance/Console/DependenciesVM but not LogsVM (#5048)
+* fix(manager): MainWindow.xaml.cs - constructor's logsViewModel parameter is unused; App.xaml.cs constructs an orphan LogsViewModel that is never disposed (#5049)
+* fix(manager): ConsoleView.xaml - LogList uses VirtualizationMode=Standard while every sibling list uses Recycling (#5115)
+* fix(cli): ConsoleHelper.cs - ConsoleHelper cleanup only handles IOException
+* fix(cli): ServiceStatusCommand.cs - status of a missing service prints a blank field, never the documented 'NotInstalled' (the #4060 fix corrected the wrong premise) (#5153)
+* fix(Format-SourceHygiene.ps1): line-ending normalization target contradicts stated intent
+* fix(signpath.ps1): plaintext API token fallback only warns, does not block
+* fix: All 8 csproj - AllowUnsafeBlocks is enabled everywhere but no project uses unsafe code (#5052)
+* fix: Update-FileHelpers.ps1 - ExpectMatch checks the combined match count across MultiEdit patterns, masking a single failed edit (#5101)
+* chore: csproj files - PackageReference versions duplicated across 20 projects with no Directory.Packages.props (#5054)
+* ci(test.yml): PowerShell *.test.ps1 verification scripts are never run by CI (#5150)
+* ci(sonar.yml): dotnet tool update for the SonarCloud scanner has no exit-code check (#5146)
+* ci(changelog.yml): CHANGELOG.md - Download-section asset sizes render with 1 decimal when the second digit is 0, inconsistent with the other 420 lines (#5099)
+* docs(wiki): update documentation
+
+</details>
+
+### Downloads
+* [servy-9.5-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-arm64-installer.exe) - 70.99 MB
+* [servy-9.5-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-arm64-portable.7z) - 71.96 MB
+* [servy-9.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-net48-sbom.xml) - 0.03 MB
+* [servy-9.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-net48-x64-installer.exe) - 4.35 MB
+* [servy-9.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-net48-x64-portable.7z) - 2.08 MB
+* [servy-9.5-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-sbom.xml) - 0.04 MB
+* [servy-9.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-x64-installer.exe) - 77.16 MB
+* [servy-9.5-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-x64-portable.7z) - 74.57 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.5.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.5.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.4...v9.5
+
 ## [Servy 9.4](https://github.com/aelassas/servy/releases/tag/v9.4)
 
 **Date:** 2026-08-13 | **Tag:** [`v9.4`](https://github.com/aelassas/servy/tree/v9.4)
