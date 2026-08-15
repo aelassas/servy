@@ -22,6 +22,8 @@
         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConfigMainWindow_HelpText}">
   <Window.Resources>
     <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+    
+    <sys:Int32 x:Key="UnlimitedTextBoxLines">2147483647</sys:Int32>
 
     <!-- Tab Grid Dimensions -->
     <sys:Double x:Key="TabGridMinHeight">520</sys:Double>
@@ -285,7 +287,7 @@
                      Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="80" MinHeight="80" MaxHeight="80"
                      TextWrapping="Wrap" AcceptsReturn="False"
-                     MaxLines="2147483647" VerticalContentAlignment="Top"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxProcessParameters_Name}"
                      AutomationProperties.AutomationId="TextBoxProcessParameters"
@@ -786,7 +788,7 @@
                      Text="{Binding EnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="120" MinHeight="120" MaxHeight="120"
                      AcceptsReturn="True" TextWrapping="Wrap"
-                     MaxLines="2147483647" VerticalContentAlignment="Top"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxEnvVars_Name}"
                      AutomationProperties.AutomationId="TextBoxEnvVars"
@@ -804,7 +806,7 @@
                      Text="{Binding ServiceDependencies, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="120" MinHeight="120" MaxHeight="120"
                      AcceptsReturn="True" TextWrapping="Wrap"
-                     MaxLines="2147483647" VerticalContentAlignment="Top"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxServiceDependencies_Name}"
                      AutomationProperties.AutomationId="TextBoxServiceDependencies"
@@ -997,7 +999,7 @@
                      Text="{Binding PreLaunchEnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="100" MinHeight="100" MaxHeight="100"
                      AcceptsReturn="True" TextWrapping="Wrap"
-                     MaxLines="2147483647" VerticalContentAlignment="Top"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxPreLaunchEnvVars_Name}"
                      AutomationProperties.AutomationId="TextBoxPreLaunchEnvVars"
@@ -1156,7 +1158,7 @@
                      Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="80" MinHeight="80" MaxHeight="80"
                      TextWrapping="Wrap" AcceptsReturn="False"
-                     MaxLines="2147483647" VerticalContentAlignment="Top"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxPostLaunchParams_Name}"
                      AutomationProperties.AutomationId="TextBoxPostLaunchParams"
@@ -1252,7 +1254,7 @@
                      Text="{Binding PreStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="80" MinHeight="80" MaxHeight="80"
                      TextWrapping="Wrap" AcceptsReturn="False"
-                     MaxLines="2147483647" VerticalContentAlignment="Top"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxPreStopParams_Name}"
                      AutomationProperties.AutomationId="TextBoxPreStopParams"
@@ -1367,7 +1369,7 @@
                      Text="{Binding PostStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="80" MinHeight="80" MaxHeight="80"
                      TextWrapping="Wrap" AcceptsReturn="False"
-                     MaxLines="2147483647" VerticalContentAlignment="Top"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxPostStopParams_Name}"
                      AutomationProperties.AutomationId="TextBoxPostStopParams"
@@ -1389,7 +1391,7 @@
 
         <TextBlock Grid.Column="0"
                    Text="{x:Static resx:Strings.Label_RequiredFields}"
-                   Foreground="Gray"
+                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                    VerticalAlignment="Center"
                    Margin="10,0,0,0"
                    AutomationProperties.Name="{x:Static resx:Strings.Automation_RequiredFieldsNote_Name}" />
