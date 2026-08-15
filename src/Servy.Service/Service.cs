@@ -1000,6 +1000,11 @@ namespace Servy.Service
                         _trackedHooks.Add(new Hook { OperationName = "pre-launch", Process = nativeProcess });
                     }
                 }
+                else
+                {
+                    process?.Dispose();
+                }
+
                 return true;
             }
             catch (Exception ex)
