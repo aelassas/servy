@@ -1,6 +1,7 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
+using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 
@@ -46,11 +47,11 @@ namespace Servy.CLI.Commands
                 var status = _serviceManager.GetServiceStatus(opts.ServiceName, cancellationToken: cancellationToken);
 
                 // 3. Log the detailed technical status and return the localized result to the console
-                var statusMsg = string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, status);
+                var statusText = status?.ToString() ?? nameof(ServiceStatus.NotInstalled);
+                var statusMsg = string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, statusText);
                 Logger.Info(statusMsg);
                 return CommandResult.Ok(statusMsg);
             });
         }
-
     }
 }
