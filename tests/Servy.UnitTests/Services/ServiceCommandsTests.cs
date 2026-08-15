@@ -300,7 +300,7 @@ namespace Servy.UnitTests.Services
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public async Task InstallService_ManagerFailsWithoutMessage_DisplaysUnexpectedErrorFallback(string? blankMessage)
         {
             // Arrange
@@ -383,6 +383,40 @@ namespace Servy.UnitTests.Services
 
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ManagerAppNotFound, UiAppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task OpenManager_ProcessStartThrowsUnauthorizedAccessException_DisplaysAdminRightsRequired()
+        {
+            // Arrange
+            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new UnauthorizedAccessException("Access denied when starting process"));
+
+            var sut = CreateSut();
+
+            try
+            {
+                // Act
+                await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(
+                    Resources.Strings.Msg_AdminRightsRequired,
+                    UiAppConfig.Caption),
+                    Times.Once);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    File.Delete(tempTrackingFile);
+                }
+            }
         }
 
         [Fact]
@@ -484,7 +518,7 @@ namespace Servy.UnitTests.Services
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public async Task ExecuteServiceCommand_ManagerFailsWithoutMessage_DisplaysUnexpectedErrorFallback(string? blankMessage)
         {
             // Arrange
@@ -591,7 +625,7 @@ namespace Servy.UnitTests.Services
         [Theory]
         [InlineData(null, nameof(Strings.Msg_ValidationError))]
         [InlineData("", nameof(Strings.Msg_ValidationError))]
-        [InlineData("   ", nameof(Strings.Msg_ValidationError))]
+        [InlineData("    ", nameof(Strings.Msg_ValidationError))]
         [InlineData("Invalid/Name\\WithSpecialChars", nameof(Strings.Msg_InvalidServiceName))]
         public async Task IsServiceNameValid_InvalidScenarios_ReturnsFalseAndDisplaysWarning(string? serviceName, string expectedResourceKey)
         {
@@ -643,6 +677,24 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(File.Exists(path));
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ExportXmlConfig_UnauthorizedAccessException_DisplaysAdminRightsRequired()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
+            _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
+
+            _modelToServiceDtoMock.Setup(m => m()).Throws(new UnauthorizedAccessException());
+
+            // Act
+            await sut.ExportXmlConfigAsync("password", cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_AdminRightsRequired, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]
@@ -785,6 +837,21 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
+        public async Task ImportXmlConfig_UnauthorizedAccessException_DisplaysAdminRightsRequired()
+        {
+            // Arrange
+            var sut = CreateSut();
+            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Throws(new UnauthorizedAccessException("Access denied"));
+
+            // Act
+            await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_AdminRightsRequired, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
         public async Task ImportConfig_GeneralException_DisplaysUnexpectedError()
         {
             // Arrange
@@ -841,7 +908,7 @@ namespace Servy.UnitTests.Services
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public async Task UninstallService_ManagerFailsWithoutMessage_DisplaysUnexpectedErrorFallback(string? blankMessage)
         {
             // Arrange
@@ -1004,6 +1071,24 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
+        public async Task ExportJsonConfig_UnauthorizedAccessException_DisplaysAdminRightsRequired()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
+
+            _modelToServiceDtoMock.Setup(m => m()).Throws(new UnauthorizedAccessException());
+
+            // Act
+            await sut.ExportJsonConfigAsync("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_AdminRightsRequired, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
         public async Task ExportJsonConfig_ModelExtractionThrows_ShowsUnexpectedError()
         {
             // Arrange
@@ -1012,7 +1097,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
             // Force evaluation down the catch lane by breaking dependencies on data extraction execution
-            _modelToServiceDtoMock.Setup(m => m()).Throws(new UnauthorizedAccessException("I/O Lock Encountered"));
+            _modelToServiceDtoMock.Setup(m => m()).Throws(new InvalidOperationException("Boom!"));
 
             // Act
             await sut.ExportJsonConfigAsync("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
@@ -1164,6 +1249,21 @@ namespace Servy.UnitTests.Services
             {
                 if (File.Exists(path)) File.Delete(path);
             }
+        }
+
+        [Fact]
+        public async Task ImportJsonConfig_UnauthorizedAccessException_DisplaysAdminRightsRequired()
+        {
+            // Arrange
+            var sut = CreateSut();
+            _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Throws(new UnauthorizedAccessException("Access denied"));
+
+            // Act
+            await sut.ImportJsonConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_AdminRightsRequired, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
