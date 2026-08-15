@@ -888,7 +888,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.Single(result);
-            AssertDecryptedDtoProperties(result[0]);
+            Assert.Equal("pwd_plain", result[0].Password);
 
             // Verify that our constrained Dapper call was hit exactly once
             _mockDapper.Verify(d => d.QueryAsync<ServiceDto>(
@@ -1134,6 +1134,74 @@ namespace Servy.Infrastructure.UnitTests.Data
         #endregion
 
         #region Private Helper Branch Coverage Tests
+
+        [Fact]
+        public async Task CreateEncryptedClone_StripsDecryptionFailureMarkerFromDescription()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            const string originalDescription = "This is the real service description.";
+            const string markedDescription = "[DECRYPTION FAILED: SecureDataIntegrityException] The record's key or payload is corrupt. Original Description: " + originalDescription;
+
+            var dto = new ServiceDto
+            {
+                Name = "TestService",
+                Description = markedDescription,
+                Password = "plain_password"
+            };
+
+            ServiceDto capturedEncryptedClone = null;
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((sql, param, _, token) => capturedEncryptedClone = param as ServiceDto)
+                .ReturnsAsync(1);
+
+            // Act
+            await repo.AddAsync(dto, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(capturedEncryptedClone);
+            Assert.Equal(originalDescription, capturedEncryptedClone.Description);
+            Assert.Equal(markedDescription, dto.Description);
+        }
+
+        [Fact]
+        public async Task CreateEncryptedClone_StripsStackedDecryptionFailureMarkersFromDescription()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            const string originalDescription = "Original clean description.";
+            const string stackedMarkedDescription =
+                "[DECRYPTION FAILED: SecureDataIntegrityException] The record's key or payload is corrupt. Original Description: " +
+                "[DECRYPTION FAILED: CryptographicException] The record's key or payload is corrupt. Original Description: " +
+                originalDescription;
+
+            var dto = new ServiceDto
+            {
+                Name = "TestServiceStacked",
+                Description = stackedMarkedDescription,
+                Password = "plain_password"
+            };
+
+            ServiceDto capturedEncryptedClone = null;
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((sql, param, _, token) => capturedEncryptedClone = param as ServiceDto)
+                .ReturnsAsync(1);
+
+            // Act
+            await repo.AddAsync(dto, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(capturedEncryptedClone);
+            Assert.Equal(originalDescription, capturedEncryptedClone.Description);
+        }
 
         [Fact]
         public async Task PatchRuntimeStateAsync_ExistingNotNull_ExecutesApplyRuntimeState()

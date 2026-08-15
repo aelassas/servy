@@ -12,6 +12,7 @@ using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Servy.Infrastructure.Data
 {
@@ -25,6 +26,10 @@ namespace Servy.Infrastructure.Data
         private readonly ISecureData _secureData;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
+
+        private static readonly Regex DecryptionFailureMarkerRegex = new Regex(
+            @"^\[DECRYPTION FAILED:[^\]]+\] The record's key or payload is corrupt\. Original Description:\s*",
+            RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
         /// A centralized registry of sensitive fields that require encryption at rest.
@@ -682,6 +687,15 @@ namespace Servy.Infrastructure.Data
 
             // 1. Perform the shallow clone to isolate mutations from the original DTO
             var clone = (ServiceDto)source.Clone();
+
+            // Strip any temporary UI decryption error markers from the description before persisting
+            if (!string.IsNullOrEmpty(clone.Description))
+            {
+                while (DecryptionFailureMarkerRegex.IsMatch(clone.Description))
+                {
+                    clone.Description = DecryptionFailureMarkerRegex.Replace(clone.Description, string.Empty);
+                }
+            }
 
             // 2. Iterate the SensitiveFields triplets to maintain parity with the decryption path
             foreach (var (get, set, name) in SensitiveFields)
