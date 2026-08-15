@@ -83,15 +83,23 @@ function Assert-Encoding {
     }
 }
 
-# Helper to inspect non-public fields for strict object property assertions
+# Helper to inspect non-public fields for strict object property assertions across .NET Framework and .NET Core/5+
 function Test-ReflectionField {
     param([object]$Object, [string]$FieldName)
     $flags = [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic
-    $field = $Object.GetType().GetField($FieldName, $flags)
-    if ($null -eq $field) {
-        throw "Reflection seam broken: '$($Object.GetType().FullName)' has no non-public field '$FieldName' on this runtime."
+    
+    # Try the exact field name first, followed by standard .NET Core leading-underscore backing field conventions
+    $candidateNames = @($FieldName, "_$FieldName", "_is$FieldName", "is$FieldName")
+    $type = $Object.GetType()
+    
+    foreach ($name in $candidateNames) {
+        $field = $type.GetField($name, $flags)
+        if ($null -ne $field) {
+            return $field.GetValue($Object)
+        }
     }
-    return $field.GetValue($Object)
+
+    throw "Reflection seam broken: '$($type.FullName)' has no non-public field matching '$FieldName' on this runtime."
 }
 
 Write-Host "=== Running Get-FileEncoding.ps1 Tests ===" -ForegroundColor Cyan
