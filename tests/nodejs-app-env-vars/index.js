@@ -9,7 +9,6 @@
  */
 
 import process from "node:process"
-// import { spawn } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -30,12 +29,6 @@ fs.appendFileSync(filePath, (new Date()).toISOString() + '\n', "utf8")
 const [, , ...args] = process.argv
 fs.appendFileSync(filePath, args.join(' ') + '\n', "utf8")
 
-// let i = 0
-// for (const arg of args) {
-//    fs.appendFileSync(filePath, `arg[${i}]=${arg}` + '\n', "utf8")
-//    i++
-// }
-
 process.stderr.write('[stderr] abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍\n')
 process.stdout.write('[stdout] abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍\n')
 
@@ -44,43 +37,14 @@ for (const [key, val] of Object.entries(process.env)) {
     const line = `${key}=${val}\n`
     // Append each line to the file
     fs.appendFileSync(filePath, line, "utf8")
-    // console.log(line.trim()) // optional: print to console
   }
 }
 fs.appendFileSync(filePath, '\n', "utf8")
-// process.exit(1)
-
-// fs.writeFileSync(filePath, (new Date()).toISOString(), 'utf-8')
 
 // simulate some work
 await new Promise((res) => setTimeout(res, 2 * 1000))
 process.stdout.write('stdout boo!\n')
 process.stderr.write('stderr boo!\n')
-
-// process.exit(0)
-
-// start wexflow
-// const workingDir = 'C:\\Program Files\\Wexflow Server\\Wexflow.Server\\';
-// const child = spawn(
-//    'C:\\Program Files\\dotnet\\dotnet.exe',
-//    ['Wexflow.Server.dll'],
-//    {
-//      cwd: workingDir
-//    }
-// );
-
-// start child process notepad.exe (Windows) detached
-// const child = spawn('notepad.exe', [], {
-//    detached: true,   // let child live independently
-//    stdio: 'ignore'   // ignore stdio so parent can exit cleanly
-// })
-
-// // allow the child process to keep running after parent exits
-// child.unref()
-
-// const child = spawn(process.env.PYTHON_EXE, ['-u', 'C:\\path\\to\\tests\\ctrlc.py'])
-// child.unref()
-
 
 // Handle Ctrl+C (SIGINT) and other termination signals
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
@@ -93,38 +57,14 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
   })
 }
 
-// Simulate long-running app:
-// process.stdout.write('App is running. Press Ctrl+C to stop.')
-// setInterval(() => { }, 1000)
-
 // keep Node alive until key press (interactive) or until signalled (service)
 if (process.stdin.isTTY) {
   process.stdin.setRawMode(true)
   process.stdin.resume()
   process.stdin.on('data', () => {
     process.stdout.write('Exiting...\n')
-    // child.kill() // kill the child process
     process.exit(0)
   })
 } else {
   setInterval(() => {}, 1 << 30)   // stay alive; SIGINT/SIGTERM handlers above do the shutdown
 }
-
-// const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// while (true) {
-//    process.stdout.write('[stdout] App is running. Press any key to stop.\n')
-//    await wait(1000)
-//    process.stderr.write('[stderr] App is running. Press any key to stop.\n')
-//    await wait(2000)
-// }
-
-// const logCount = 2
-// while (true) {
-//    for (let i = 0; i < logCount; i++) {
-//      process.stdout.write(`[stdout] App is running log ${i + 1}/${logCount}\n`)
-//      // process.stderr.write(`[stderr] App is running log ${i + 1}/${logCount}\n`)
-//    }
-//    process.stdout.write(`[stdout] ${new Date().toISOString()} \n`)
-//    await wait(2000)
-// }

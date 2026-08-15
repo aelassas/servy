@@ -27,12 +27,20 @@ def main():
         logging.error("PYTHON_EXE is not set and sys.executable is unusable; cannot spawn the child tree")
         sys.exit(1)
 
+    spawned = []
     try:
         # spawn child process
         py_proc = subprocess.Popen([python_exe, os.path.join(SCRIPT_DIR, "ctrlc2.py")])
+        spawned.append(py_proc)
         notepad_proc = subprocess.Popen([r"C:\Windows\System32\notepad.exe"])
+        spawned.append(notepad_proc)
     except OSError:
         logging.exception("Failed to spawn the child process tree")
+        for p in spawned:
+            try:
+                p.kill()
+            except Exception:
+                pass
         sys.exit(1)
 
     logging.info(f"Spawned PIDs: ctrlc2={py_proc.pid}, notepad={notepad_proc.pid}")

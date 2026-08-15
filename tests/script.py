@@ -22,7 +22,7 @@ def main():
     try:
         logging.info("abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
     except Exception:
-        logging.exception("Error formatting/logging the timestamped line")
+        logging.exception("Error logging the multi-encoding test line")
 
 if __name__ == '__main__':
     try:
