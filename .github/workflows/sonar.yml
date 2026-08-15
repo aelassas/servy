@@ -80,6 +80,7 @@ jobs:
           if (-not (Test-Path $scannerDir)) { New-Item -Path $scannerDir -ItemType Directory | Out-Null }
           # Utilizing 'update' ensures version switches don't crash when versionless fallbacks populate the tool-path
           dotnet tool update dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path $scannerDir
+          if ($LASTEXITCODE -ne 0) { throw "dotnet tool update dotnet-sonarscanner failed (exit $LASTEXITCODE)" }
 
       # 8. Restore NuGet Packages (Mandatory for MSBuild)
       - name: Restore NuGet packages
