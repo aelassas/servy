@@ -278,7 +278,8 @@ namespace Servy.Core.Security
                     return DecryptV1(rawPayload);
                 }
             }
-            catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
+            catch (Exception ex) when ((ex is FormatException || ex is CryptographicException)
+                                       && !(ex is SecureDataIntegrityException))
             {
                 // For unmarked strings, we preserve the defensive fallback to avoid breaking
                 // fields that were never meant to be encrypted.
