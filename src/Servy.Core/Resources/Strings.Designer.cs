@@ -277,7 +277,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid {0} structure: {1}.
+        ///   Looks up a localized string similar to Invalid {0} structure: {1}..
         /// </summary>
         public static string Msg_ImportInvalidStructure {
             get {
@@ -331,7 +331,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0} structure error: {1}.
+        ///   Looks up a localized string similar to {0} structure error: {1}..
         /// </summary>
         public static string Msg_ImportStructureError {
             get {
@@ -349,7 +349,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to import service from XML: {0}.
+        ///   Looks up a localized string similar to Failed to import service from XML: {0}..
         /// </summary>
         public static string Msg_ImportXmlFailed {
             get {
@@ -367,7 +367,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid core specification: &apos;{0}&apos;.
+        ///   Looks up a localized string similar to Invalid core specification: &apos;{0}&apos;..
         /// </summary>
         public static string Msg_InvalidCoreSpecification {
             get {
@@ -520,7 +520,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Pre-Launch retry attempts must be a number between {0} and {1}..
+        ///   Looks up a localized string similar to pre-launch retry attempts must be a number between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidPreLaunchRetryAttempts {
             get {
@@ -556,7 +556,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Pre-Launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
+        ///   Looks up a localized string similar to pre-launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreLaunchTimeout {
             get {
@@ -583,7 +583,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Pre-Stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
+        ///   Looks up a localized string similar to pre-stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreStopTimeout {
             get {
@@ -619,7 +619,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Start timeout must be a number between {0} and {1} seconds..
+        ///   Looks up a localized string similar to Start timeout must be a number of seconds between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidStartTimeout {
             get {
@@ -655,7 +655,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Stop timeout must be a number between {0} and {1} seconds..
+        ///   Looks up a localized string similar to Stop timeout must be a number of seconds between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidStopTimeout {
             get {
@@ -673,7 +673,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Passwords don&apos;t match..
+        ///   Looks up a localized string similar to Passwords do not match..
         /// </summary>
         public static string Msg_PasswordsDontMatch {
             get {
@@ -970,7 +970,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unknown XML attribute encountered: &apos;{0}&apos;.
+        ///   Looks up a localized string similar to Unknown XML attribute encountered: &apos;{0}&apos;..
         /// </summary>
         public static string Msg_UnknownXmlAttribute {
             get {
@@ -979,7 +979,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unknown XML element encountered: &apos;{0}&apos;.
+        ///   Looks up a localized string similar to Unknown XML element encountered: &apos;{0}&apos;..
         /// </summary>
         public static string Msg_UnknownXmlElement {
             get {

@@ -44,7 +44,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             // Structural JSON failure
             var invalidJson = "{ 'invalid': 'json' ";
-            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "JSON", string.Empty).TrimEnd();
+            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "JSON", string.Empty).TrimEnd('.', ':', ' ');
 
             // Act
             var result = _validator.TryValidate(invalidJson, out var error);
@@ -144,7 +144,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Valid JSON, but the shape cannot bind to ServiceDto
             var json = "[1, 2, 3]";
-            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "JSON", string.Empty).TrimEnd();
+            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "JSON", string.Empty).TrimEnd('.', ':', ' ');
 
             var result = _validator.TryValidate(json, out var error);
 
