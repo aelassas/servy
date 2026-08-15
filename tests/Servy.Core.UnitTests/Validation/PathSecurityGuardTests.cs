@@ -270,6 +270,23 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Null(stream);
         }
 
+        [Fact(Skip = "Requires a physical or virtual mapped network drive (DriveType.Network) mounted in the test runner environment.")]
+        public void ValidatePath_MappedNetworkDrive_ReturnsFail()
+        {
+            // Arrange: Path on a mapped network drive (e.g. M:\config.json where M: is DriveType.Network)
+            string networkDrivePath = @"M:\config.json";
+
+            // Act
+            var result = PathSecurityGuard.ValidatePath(networkDrivePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Equal(Strings.Msg_SecurityNetworkDriveProhibited, result.ErrorMessage);
+            Assert.Null(stream);
+        }
+
         /// <summary>
         /// Reliably locates any valid .json or .xml file in %WINDIR% or its subdirectories across all Windows builds.
         /// </summary>

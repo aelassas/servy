@@ -85,6 +85,19 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void Deserialize_XsiNilRoot_ReturnsNull()
+        {
+            // Arrange: well-formed XML representing an explicit null object (XML's analogue of the JSON "null" literal)
+            string xml = "<ServiceDto xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\" />";
+
+            // Act
+            var result = _serializer.Deserialize(xml);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
         public void Deserialize_MalformedXml_ReturnsNull()
         {
             // Arrange: Invalid XML structure

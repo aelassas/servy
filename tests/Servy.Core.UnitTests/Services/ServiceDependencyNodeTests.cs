@@ -34,6 +34,22 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void IsExpanded_Set_RaisesPropertyChanged_WhenValueChanges()
+        {
+            // Arrange
+            var node = new ServiceDependencyNode("wuauserv", "Windows Update", true, false);
+            string? raisedPropertyName = null;
+            node.PropertyChanged += (s, e) => raisedPropertyName = e.PropertyName;
+            const string expectedPropName = nameof(ServiceDependencyNode.IsExpanded);
+
+            // Act
+            node.IsExpanded = true;
+
+            // Assert
+            Assert.Equal(expectedPropName, raisedPropertyName);
+        }
+
+        [Fact]
         public void DisplayName_Set_RaisesPropertyChanged_WhenValueChanges()
         {
             // Arrange

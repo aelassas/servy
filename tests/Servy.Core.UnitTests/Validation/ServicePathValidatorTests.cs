@@ -143,6 +143,26 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Null(violation);
         }
 
+        [Fact]
+        public void FindFirstViolation_WhenMultiplePropertiesAreInvalid_ReturnsFirstPropertyInDeclarationOrder()
+        {
+            // Arrange: Provide a DTO with multiple simultaneously invalid paths.
+            // ExecutablePath is declared before StartupDirectory in TestDto metadata.
+            var dto = new TestDto
+            {
+                ExecutablePath = @"C:\invalid\app.exe",
+                StartupDirectory = @"C:\invalid\dir"
+            };
+
+            // Act: Evaluate violations when both path checks return false.
+            var violation = ServicePathValidator.FindFirstViolation(dto, (path, isFile) => false);
+
+            // Assert: Verify that the violation for the first-declared property (ExecutablePath) is returned.
+            Assert.NotNull(violation);
+            Assert.Equal(nameof(TestDto.ExecutablePath), violation.Property.Name);
+            Assert.Equal("executable path", violation.Attribute.Label);
+        }
+
         #endregion
 
         #region FindAllViolations Tests
@@ -280,6 +300,32 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Equal("startup directory", violation.Attribute.Label);
             Assert.Equal(@"C:\invalid\dir", violation.Value);
             Assert.False(violation.IsMissing);
+        }
+
+        [Fact]
+        public void FindAllViolations_WhenMultiplePropertiesAreInvalid_ReturnsAllViolationsInDeclarationOrder()
+        {
+            // Arrange
+            var dto = new TestDto
+            {
+                ExecutablePath = null, // Missing required path (Violation 1)
+                StartupDirectory = @"C:\invalid\dir" // Invalid path (Violation 2)
+            };
+
+            // Act
+            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) => false).ToList();
+
+            // Assert: Verify that violations are yielded strictly in property MetadataToken declaration order
+            Assert.Equal(2, violations.Count);
+
+            Assert.Equal(nameof(TestDto.ExecutablePath), violations[0].Property.Name);
+            Assert.True(violations[0].IsMissing);
+            Assert.Equal("executable path", violations[0].Attribute.Label);
+
+            Assert.Equal(nameof(TestDto.StartupDirectory), violations[1].Property.Name);
+            Assert.False(violations[1].IsMissing);
+            Assert.Equal(@"C:\invalid\dir", violations[1].Value);
+            Assert.Equal("startup directory", violations[1].Attribute.Label);
         }
 
         #endregion
