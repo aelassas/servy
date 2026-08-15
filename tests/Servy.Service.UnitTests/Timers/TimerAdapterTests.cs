@@ -152,7 +152,7 @@ namespace Servy.Service.UnitTests.Timers
                     timer.Start();
 
                     // Wait up to 5 seconds to account for CI thread-pool queue delays under heavy load
-                    bool signaled = resetEvent.Wait(TimeSpan.FromSeconds(5), CancellationToken.None);
+                    bool signaled = resetEvent.Wait(TestTimeouts.CiGenerous, CancellationToken.None);
 
                     // Assert
                     Assert.True(signaled, "The underlying timer event failed to fire within the allocated timeout.");
@@ -193,7 +193,7 @@ namespace Servy.Service.UnitTests.Timers
                     timer.Start();
 
                     // Wait up to 5 seconds to account for CI thread-pool queue delays under heavy load
-                    bool signaled = resetEvent.Wait(TimeSpan.FromSeconds(5), CancellationToken.None);
+                    bool signaled = resetEvent.Wait(TestTimeouts.CiGenerous, CancellationToken.None);
 
                     // Assert
                     Assert.True(signaled, "The canary event tracking loop failed to fire.");
