@@ -882,7 +882,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.Single(result);
-            Assert.Equal("pwd_plain", result[0].Password);
+            AssertDecryptedDtoProperties(result[0]);
 
             // Verify that our constrained Dapper call was hit exactly once
             _mockDapper.Verify(d => d.QueryAsync<ServiceDto>(
