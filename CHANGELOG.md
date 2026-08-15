@@ -1004,7 +1004,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(psm1): stale comment: EnvVars 28,000-char cap is justified by 'CLI argument' limit, but EnvVars is now passed via environment variable, not the command line (#2303)
 * fix(psm1): Install-ServyService -Deps ValidatePattern rejects '$', blocking dependencies on SQL Server named-instance services (MSSQL$INSTANCE) (#2312)
 * fix(psm1): Params/PreLaunchParams/PostLaunchParams/PreStopParams/PostStopParams/FailureProgramParams lack the [ValidateLength] cap that EnvVars/PreLaunchEnv have, despite all being injected via environment variables (#2322)
-* fix(test): tests/test.ps1 - Second '--' separator before Exclude filter makes the XAML/g.cs runsettings exclusion never reach vstest (#2023)
+* test: tests/test.ps1 - Second '--' separator before Exclude filter makes the XAML/g.cs runsettings exclusion never reach vstest (#2023)
 * fix(notifications): ServySecurity.ps1 Protect-SensitiveString - declares ValueFromPipeline=$true but has no process { } block, so pipeline input only processes the last value (#1513)
 * fix(notifications): ServyFailureEmail.ps1 - ConvertTo-HtmlSafe doc claims 'PowerShell 2.0' compatibility, but script #Requires -Version 3.0 (#1503)
 * fix(notifications): Servy-Watermark.psm1 - Update-Watermark failures create a feedback loop in the notification pipeline (no '^Failed to update timestamp file' filter) (#1533)
@@ -1639,7 +1639,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 * fix(psm1): Logging-&-Log-Rotation.md - Documents -DateRotationType 'None' option, but Install-ServyService [ValidateSet] only accepts Daily/Weekly/Monthly (#1240)
 * fix(psm1): Invoke-ServyCli scrubs stderr (success path) and both streams (catch path) but leaves success-path stdout unscrubbed (#1299)
 * fix(psm1): Buffer field named ByteCount actually accumulates char count (.Length), making truncation cap unit-ambiguous (#1402)
-* fix(tests): CLI command tests - Hardcoded English message assertions break on any Strings.resx edit (#744)
+* test: CLI command tests - Hardcoded English message assertions break on any Strings.resx edit (#744)
 * fix(publish): Five per-project publish.ps1 scripts each contain a near-identical Check-LastExitCode function (DRY) (#977)
 * fix(publish): (Servy / Servy.CLI / Servy.Manager) - if ($null -ne $signPath) is unreachable; Join-Path never returns null (#978)
 * fix(publish): setup/publish-sc.ps1 and setup/publish-fd.ps1 are ~70% identical (Inno-Setup retry loop, Tool Discovery, Check-LastExitCode, Remove-ItemSafely, package construction) (#1030)
@@ -1799,10 +1799,10 @@ Servy 8.3 improves the UI experience and includes many fixes. The full changelog
 * fix(psm1): Assert-Administrator - WindowsIdentity from GetCurrent() never disposed (handle leak per call) (#864)
 * fix(psm1): Invoke-ServyCli - finally block calls process.WaitForExit() with no timeout; if Kill() failed, PowerShell hangs forever (#879)
 * fix(psm1): Install-ServyService - dead 'if ($paramName -eq "Password") { continue }' guard (no '--password' entry exists in $paramMapping) (#891)
-* fix(tests): ProcessHelper and ProcessKiller are static - cannot be mocked (#430)
-* fix(tests): multiple test files - Mock-only tests verify Moq dispatch, not production code (#552)
-* fix(tests): TestableService - 16 reflection hops into Service private members with silent null-forgiving (#742)
-* fix(tests): test fixtures - 13 occurrences of maintainer-specific Python path (C:\Users\aelassas\...) (#753)
+* test: ProcessHelper and ProcessKiller are static - cannot be mocked (#430)
+* test: multiple test files - Mock-only tests verify Moq dispatch, not production code (#552)
+* test: TestableService - 16 reflection hops into Service private members with silent null-forgiving (#742)
+* test: test fixtures - 13 occurrences of maintainer-specific Python path (C:\Users\aelassas\...) (#753)
 * fix(iss): NumericVersion drops patch component, mis-classifies upgrade vs reinstall (#817)
 * fix(publish): 8 publish-res scripts are structurally identical (~800 lines) (#406)
 * fix(publish): signpath.ps1 - API token stored in plaintext file with no ACL guidance (#583)
@@ -1897,8 +1897,8 @@ Servy 8.1 introduces many fixes across main components. The full release notes a
 * fix(manager): Strings.resx - Status_StopPending and Status_PausePending display values lack space, inconsistent with sibling statuses (#778)
 * fix(psm1): stderr ArrayList capture is unbounded while stdout has a 1 MB cap (asymmetric) (#765)
 * fix(notifications): ServyFailureEmail.ps1 - timestamp only persisted on email success causes event storm after SMTP outage (#760)
-* fix(tests): ProcessKillerTests.Dispose - cmd cleanup loop has empty body; dead code or missing Kill() (#740)
-* fix(tests): LogTailerTests - Hardcoded Task.Delay(300/1000) timing flake risk (#749)
+* test: ProcessKillerTests.Dispose - cmd cleanup loop has empty body; dead code or missing Kill() (#740)
+* test: LogTailerTests - Hardcoded Task.Delay(300/1000) timing flake risk (#749)
 * fix(bump-version): dead else branches in version-format logic (#772)
 * fix(publish): docstring example uses -fm but actual parameter is -Tfm (#773)
 * fix(bump-runtime): counters use $global: scope, pollute caller session (#774)
@@ -1966,12 +1966,12 @@ Servy 8.0 introduces many fixes across all components. The full release notes ar
 * fix(manager): LogTailer.cs - CreationTime rotation detection misses FAT32 tunneling and same-size rotation (#734)
 * fix(cli): InstallServiceCommand.cs - Duplicate \<summary\> XML doc blocks on Execute method (#704)
 * fix(cli): ConsoleHelper.cs - Duplicate \<summary\> XML doc on RunWithLoadingAnimation (#709)
-* fix(tests): ServiceRepositoryTests - Brittle reflection-based property verification couples tests to DTO shape (#736)
-* fix(tests): RotatingStreamWriterTests - DateTime.UtcNow used twice per test, midnight-boundary flake (#737)
-* fix(tests): ServiceRepositoryStub - decrypt parameter ignored; DTOs asymmetric between Get methods (#739)
-* fix(tests): ConsoleViewModelTests - [Fact(Skip="TODO needs to be fixed")] with no tracked follow-up (#741)
-* fix(tests): tests/ConsoleApp/Program.cs - Developer-specific hardcoded Python path + dead commented code (#746)
-* fix(tests): DatabaseValidatorTests - Environment-dependent Assert.Fail masquerading as unit test (#747)
+* test: ServiceRepositoryTests - Brittle reflection-based property verification couples tests to DTO shape (#736)
+* test: RotatingStreamWriterTests - DateTime.UtcNow used twice per test, midnight-boundary flake (#737)
+* test: ServiceRepositoryStub - decrypt parameter ignored; DTOs asymmetric between Get methods (#739)
+* test: ConsoleViewModelTests - [Fact(Skip="TODO needs to be fixed")] with no tracked follow-up (#741)
+* test: tests/ConsoleApp/Program.cs - Developer-specific hardcoded Python path + dead commented code (#746)
+* test: DatabaseValidatorTests - Environment-dependent Assert.Fail masquerading as unit test (#747)
 * fix(psm1): [ValidateRange(1, 2147483647)] for -MaxRestartAttempts mismatches CLI limit of 100 (#703)
 * fix(psm1): PS 2.0 compat claimed in comments but no #Requires -Version directive (#721)
 * fix(notifications): force UTF8 encoding to fix NULL character bug
@@ -2443,8 +2443,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(psm1): TrimStart casing mismatch makes PSBoundParameters.ContainsKey always fail (#510)
 * fix(psm1): Error throw uses $_ instead of $_.Exception.Message (#584)
 * fix(psd1): add license and help urls
-* fix(tests): tests/test.ps1: missing $LASTEXITCODE checks after dotnet test and reportgenerator (#342)
-* fix(tests): coverage collection only includes 2 of 8 test assemblies (#553)
+* test: tests/test.ps1: missing $LASTEXITCODE checks after dotnet test and reportgenerator (#342)
+* test: coverage collection only includes 2 of 8 test assemblies (#553)
 * fix(notifications): unnecessary Sort-Object in failure notification scripts (#63)
 * fix(notifications): ServyFailureEmail.ps1: hardcoded plaintext SMTP credentials without security warning (#65)
 * fix(notifications): ServyFailureEmail.ps1 and ServyFailureNotification.ps1: duplicated event log query and parsing logic (#74)
@@ -2998,9 +2998,9 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.9...v6.0
 * feat(manager): add [Console tab](https://github.com/aelassas/servy/wiki/Overview#console) to display real-time service stdout and stderr output
 * feat(core): add pre-stop and post-stop hooks (#36)
 * fix(service): request SCM additional time in pulses while pre-launch hook is running
-* fix(tests): correct test script issues
-* chore(tests): upgrade to xUnit v3
-* chore(tests): remove deprecated xUnit packages
+* test: correct test script issues
+* test: upgrade to xUnit v3
+* test: remove deprecated xUnit packages
 
 ### Downloads
 * [servy-5.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-net48-sbom.xml) - 0.01 MB
@@ -3106,7 +3106,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.4...v5.5
 
 * feat(psm1): improve CLI discovery for installed and portable setups
 * fix(manager): handle long user session values with proper width and trimming
-* fix(tests): eliminate race condition from fire-and-forget async work in ServiceCommands
+* test: eliminate race condition from fire-and-forget async work in ServiceCommands
 * chore(psm1): update PowerShell module samples
 * chore(deps): update dependencies
 * docs(psm1): update PowerShell module docs
@@ -3231,7 +3231,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.9...v5.0
 **Date:** 2026-01-10 | **Tag:** [`v4.9`](https://github.com/aelassas/servy/tree/v4.9)
 
 * feat(cli): add `--install` option to import command to install service after import
-* feat(powershell): add `-Install` switch to `Import-ServyServiceConfig` cmdlet to install service after import
+* feat(psm1): add `-Install` switch to `Import-ServyServiceConfig` cmdlet to install service after import
 * feat(manager): optimize real-time CPU and RAM metric collection in Services tab
 * feat(manager): apply modern look to services list in Performance tab
 * feat(manager): allow sorting services by name in Performance tab
@@ -3305,7 +3305,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.6...v4.7
 * feat(manager): apply modern look to CPU and RAM performance graphs
 * feat(manager): use raw CPU and RAM values in performance graphs without averaging
 * feat(manager): add padding to services list for better readability in performance tab
-* fix(tests): prevent multiple WPF Application instances across STA unit tests
+* test: prevent multiple WPF Application instances across STA unit tests
 
 ### Downloads
 * [servy-4.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v4.6/servy-4.6-net48-sbom.xml) - 0.01 MB
@@ -3520,7 +3520,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.6...v3.7
 * fix(core): ensure event source exists in the desktop app, the cli and the manager app
 * fix(about): make .NET runtime and year retrieval automatic
 * chore(about): refine about info text for Servy and Servy Manager
-* chore(psm): correct `Add-Arg` function description
+* chore(psm1): correct `Add-Arg` function description
 
 ### Downloads
 * [servy-3.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.6/servy-3.6-net48-x64-installer.exe) - 4.47 MB
@@ -3554,7 +3554,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.4...v3.5
 
 **Date:** 2025-11-13 | **Tag:** [`v3.4`](https://github.com/aelassas/servy/tree/v3.4)
 
-* fix(psm): improve argument parsing and handling of optional parameters
+* fix(psm1): improve argument parsing and handling of optional parameters
 * docs(wiki): add more samples to [examples & recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes)
 
 ### Downloads
