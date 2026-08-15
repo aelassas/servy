@@ -145,6 +145,7 @@ namespace Servy.Core.UnitTests.Security
                 // Act & Assert
                 var ex = Assert.Throws<ArgumentNullException>(() => sp.Decrypt(input));
 
+                // Assert
                 // Verify the parameter name matches for extra precision
                 Assert.Equal("cipherText", ex.ParamName);
             }
@@ -160,6 +161,7 @@ namespace Servy.Core.UnitTests.Security
                 // Act & Assert
                 var ex = Assert.Throws<ArgumentException>(() => sp.Decrypt(input));
 
+                // Assert
                 // Verify the parameter name matches for extra precision
                 Assert.Equal("cipherText", ex.ParamName);
             }
@@ -168,8 +170,7 @@ namespace Servy.Core.UnitTests.Security
         [Theory]
         // Branch 1: !IsStrictBase64(payload) -> returns the raw plaintext payload string directly.
         [InlineData("Plain_Legacy_Password_123!", false)]
-        // Branch 2: IsStrictBase64(payload) -> blocked while AllowLegacyV1Decryption is false; the catch
-        // fallback returns the input ciphertext verbatim, so the expectation is the input itself.
+        // Branch 2: IsStrictBase64(payload) -> blocked while AllowLegacyV1Decryption is false; throws SecureDataIntegrityException.
         [InlineData(null, true)]
         public void Decrypt_LegacyFormat_HandlesBothBranches(string input, bool isBase64LegacyBranch)
         {
@@ -179,11 +180,6 @@ namespace Servy.Core.UnitTests.Security
 
             if (isBase64LegacyBranch)
             {
-                if (AppConfig.AllowLegacyV1Decryption)
-                {
-                    return; // This branch asserts the legacy-blocked fallback; legacy decryption is enabled.
-                }
-
                 const string plaintextToEncrypt = "DecryptedValueFromV1";
 
                 using (var ms = new MemoryStream())
@@ -205,13 +201,62 @@ namespace Servy.Core.UnitTests.Security
                 }
             }
 
-            // Act
             using (var sp = new SecureData(_mockProvider.Object))
             {
-                var result = sp.Decrypt(input);
+                if (isBase64LegacyBranch && !AppConfig.AllowLegacyV1Decryption)
+                {
+                    // Act & Assert
+                    // Raw legacy ciphertext detected with legacy decryption disabled must throw SecureDataIntegrityException
+                    var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+                    Assert.Contains("Raw legacy ciphertext detected", ex.Message);
+                }
+                else
+                {
+                    // Act
+                    var result = sp.Decrypt(input);
 
-                // Assert
-                Assert.Equal(input, result);
+                    // Assert
+                    Assert.Equal(input, result);
+                }
+            }
+        }
+
+        [Fact]
+        public void Decrypt_UnmarkedStrictBase64_WhenLegacyDisabled_ThrowsSecureDataIntegrityException()
+        {
+            // Arrange
+            if (AppConfig.AllowLegacyV1Decryption)
+            {
+                // Test targets disabled legacy v1 decryption policy
+                return;
+            }
+
+            const string plaintextToEncrypt = "UnmarkedLegacyPayload";
+            string rawBase64Ciphertext;
+
+            using (var ms = new MemoryStream())
+            {
+                using (var aes = Aes.Create())
+                {
+                    aes.Key = _key;
+                    aes.IV = _iv;
+
+                    using (var encryptor = aes.CreateEncryptor())
+                    using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    using (var sw = new StreamWriter(cs, Encoding.UTF8))
+                    {
+                        sw.Write(plaintextToEncrypt);
+                    }
+                }
+
+                rawBase64Ciphertext = Convert.ToBase64String(ms.ToArray());
+            }
+
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act & Assert
+                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(rawBase64Ciphertext));
+                Assert.Contains("Raw legacy ciphertext detected", ex.Message);
             }
         }
 
@@ -226,7 +271,8 @@ namespace Servy.Core.UnitTests.Security
                 // Act
                 var result = sp.Decrypt(input);
 
-                // Assert: Unmarked strings still return as-is for backward compatibility
+                // Assert
+                // Unmarked strings still return as-is for backward compatibility
                 Assert.Equal(input, result);
             }
         }
@@ -273,7 +319,8 @@ namespace Servy.Core.UnitTests.Security
                 // It must throw an exception rather than returning tampered "junk".
                 var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
 
-                // Optional: Verify the error message relates to the integrity check
+                // Assert
+                // Verify the error message relates to the integrity check
                 Assert.Contains("HMAC integrity check failed", ex.Message);
             }
         }
@@ -325,6 +372,7 @@ namespace Servy.Core.UnitTests.Security
                 var ex = Assert.Throws<SecureDataIntegrityException>(() =>
                     TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { shortPayloadBase64 }));
 
+                // Assert
                 Assert.Contains("V2 payload length is insufficient.", ex.Message);
             }
         }
@@ -344,6 +392,7 @@ namespace Servy.Core.UnitTests.Security
             var exception = Assert.Throws<ObjectDisposedException>(() =>
                 sp.Encrypt("Sensitive Data"));
 
+            // Assert
             // Verify the exception mentions the correct class name
             Assert.Contains(nameof(SecureData), exception.ObjectName);
         }
@@ -359,6 +408,7 @@ namespace Servy.Core.UnitTests.Security
             var exception = Assert.Throws<ObjectDisposedException>(() =>
                 sp.Decrypt("SERVY_ENC:v2:dummy_payload"));
 
+            // Assert
             Assert.Contains(nameof(SecureData), exception.ObjectName);
         }
 
@@ -371,12 +421,14 @@ namespace Servy.Core.UnitTests.Security
 
             // Act 1: Should succeed before disposal
             var cipher = sp.Encrypt(plainText);
+
+            // Assert 1
             Assert.NotNull(cipher);
 
             // Act 2: Dispose
             sp.Dispose();
 
-            // Assert: Subsequent calls must fail
+            // Assert 2: Subsequent calls must fail
             Assert.Throws<ObjectDisposedException>(() => sp.Encrypt(plainText));
             Assert.Throws<ObjectDisposedException>(() => sp.Decrypt(cipher));
         }
@@ -384,7 +436,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void Dispose_ZeroesAllKeyMaterialAndHandlesIdempotency()
         {
-            // 1. Arrange: Setup Mock Provider with dummy key data
+            // Arrange: Setup Mock Provider with dummy key data
             var mockProvider = new Mock<IProtectedKeyProvider>();
             byte[] dummyKey = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
             byte[] dummyIv = { 10, 20, 30, 40, 50, 60, 70, 80 };
@@ -409,10 +461,10 @@ namespace Servy.Core.UnitTests.Security
             }
             Assert.Contains(v2Enc, b => b != 0);
 
-            // 2. Act: First Dispose (Covers all null-checks and zeroing logic)
+            // Act 1: First Dispose (Covers all null-checks and zeroing logic)
             secureData.Dispose();
 
-            // 3. Assert: Verify all memory is zeroed
+            // Assert 1: Verify all memory is zeroed
             if (AppConfig.AllowLegacyV1Decryption)
             {
                 Assert.All(v1Key, b => Assert.Equal(0, b));
@@ -421,9 +473,11 @@ namespace Servy.Core.UnitTests.Security
             Assert.All(v2Enc, b => Assert.Equal(0, b));
             Assert.All(v2Hmac, b => Assert.Equal(0, b));
 
-            // 4. Act: Second Dispose (Covers the 'if (_disposed) return' branch)
+            // Act 2: Second Dispose (Covers the 'if (_disposed) return' branch)
             // This should not throw or cause any side effects
             var record = Record.Exception(() => secureData.Dispose());
+
+            // Assert 2
             Assert.Null(record);
 
             // Verify state remains disposed
