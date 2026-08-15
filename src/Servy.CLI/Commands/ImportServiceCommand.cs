@@ -88,7 +88,10 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_PathRequired);
 
                 // Pre-flight elevation check
-                SecurityHelper.EnsureAdministrator();
+                if (!BypassElevationCheck)
+                {
+                    SecurityHelper.EnsureAdministrator();
+                }
 
                 // ROBUSTNESS: Delegate the complex path canonicalization, UNC blocking, and
                 // defense-in-depth symlink/junction guard checks to the centralized ImportGuard.
