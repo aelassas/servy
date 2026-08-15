@@ -54,9 +54,7 @@ LZMAAlgorithm=1
 ; LZMADictionarySize=98304
 ; LZMADictionarySize=131072
 LZMADictionarySize=196608
-#if Arch <> "arm64"
 LZMANumFastBytes=273
-#endif
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 

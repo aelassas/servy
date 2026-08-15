@@ -111,6 +111,39 @@ jobs:
       - name: Run all tests (Release)
         run: dotnet test Servy.sln --configuration Release --no-build --blame --blame-crash --blame-crash-dump-type full
 
+      - name: Run PowerShell verification and test scripts
+        shell: pwsh
+        run: |
+          $workspace = $env:GITHUB_WORKSPACE
+          $testScripts = @(Get-ChildItem -Path $workspace -Recurse -Filter '*.test.ps1' | Select-Object -ExpandProperty FullName)
+
+          $extraScripts = @(
+              Join-Path $workspace "setup\Verify-PublishExclusions.ps1"
+          )
+
+          foreach ($extra in $extraScripts) {
+              if (Test-Path $extra) {
+                  $testScripts += (Get-Item $extra).FullName
+              }
+          }
+
+          $testScripts = $testScripts | Select-Object -Unique
+          $failed = $false
+
+          foreach ($script in $testScripts) {
+              $relativePath = $script.Substring($workspace.Length).TrimStart('\', '/')
+              Write-Host "Running PowerShell test script: $relativePath..." -ForegroundColor Cyan
+              & pwsh -File $script
+              if ($LASTEXITCODE -ne 0) {
+                  $failed = $true
+                  Write-Host "::error::PowerShell test script failed: $relativePath"
+              }
+          }
+
+          if ($failed) {
+              Write-Error "One or more PowerShell test scripts failed."
+          }
+
       - name: Upload Test Diagnostics & Crash Dumps on Failure
         if: ${{ failure() || cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
