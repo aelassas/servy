@@ -1,4 +1,5 @@
 using Servy.Core.Helpers;
+using System.Collections.Specialized;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -216,6 +217,87 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(TestStatus.None, result);
+        }
+
+        #endregion
+
+        #region GetConfigInt Tests
+
+        [Fact]
+        public void GetConfigInt_MissingKey_ReturnsDefault()
+        {
+            // Arrange
+            var config = new NameValueCollection();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "MissingKey", 10, 1, 100);
+
+            // Assert
+            Assert.Equal(10, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_ValidInRangeValue_ReturnsParsedValue()
+        {
+            // Arrange
+            var config = new NameValueCollection
+            {
+                { "RestartTimeoutSeconds", "30" }
+            };
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds", 10, 1, 60);
+
+            // Assert
+            Assert.Equal(30, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_MalformedValue_ReturnsDefault()
+        {
+            // Arrange
+            var config = new NameValueCollection
+            {
+                { "RefreshIntervalInSeconds", "not-a-number" }
+            };
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "RefreshIntervalInSeconds", 5, 1, 60);
+
+            // Assert
+            Assert.Equal(5, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_BelowMin_ReturnsDefault()
+        {
+            // Arrange
+            var config = new NameValueCollection
+            {
+                { "ConsoleMaxLines", "0" }
+            };
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "ConsoleMaxLines", 100, 10, 10000);
+
+            // Assert
+            Assert.Equal(100, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_AboveMax_ReturnsDefault()
+        {
+            // Arrange
+            var config = new NameValueCollection
+            {
+                { "MaxBulkOperationParallelism", "100" }
+            };
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "MaxBulkOperationParallelism", 8, 1, 16);
+
+            // Assert
+            Assert.Equal(8, result);
         }
 
         #endregion

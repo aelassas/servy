@@ -69,6 +69,8 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(AppConfig.DefaultEnableConsoleUI, dto.EnableConsoleUI);
             Assert.Equal((int)AppConfig.DefaultRecoveryAction, dto.RecoveryAction);
             Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, dto.RecoveryOnCleanExit);
+            Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, dto.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultEnableHeartbeatUrlFlags, dto.EnableHeartbeatUrlFlags);
         }
 
         [Fact]
