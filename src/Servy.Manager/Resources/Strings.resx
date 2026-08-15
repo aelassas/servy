@@ -270,9 +270,11 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <!-- Startup Type Items -->
   <data name="StartupType_Automatic" xml:space="preserve">
     <value>Automatic</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
   </data>
   <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
     <value>Automatic (delayed)</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
   </data>
   <data name="StartupType_Manual" xml:space="preserve">
     <value>Manual</value>
@@ -378,10 +380,10 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
 
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
-  <value>A service with this name already exists. Would you like to replace it?
+    <value>A service with this name already exists. Would you like to replace it?
 
-If the service is disabled and marked for deletion, installation will fail until you restart your PC.</value>
-</data>
+If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
+  </data>
   <data name="Msg_ImportServiceConfirmation" xml:space="preserve">
     <value>A service with this name already exists. Would you like to replace it?
 
