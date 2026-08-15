@@ -69,7 +69,7 @@ This creates a service named `MyService` that runs your Node.js server in the ba
 
 Then start the service:
 
-```powershell
+```cmd
 servy-cli start --name="MyService"
 ```
 
