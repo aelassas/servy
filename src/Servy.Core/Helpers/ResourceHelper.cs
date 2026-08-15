@@ -254,7 +254,7 @@ namespace Servy.Core.Helpers
             }
             catch (Exception ex)
             {
-                Logger.Info("GetHostProcessLastWriteTimeUTC: MainModule.FileName access threw, falling back to AppDomain probe.", ex);
+                Logger.Info($"{nameof(GetHostProcessLastWriteTimeUtc)}: MainModule.FileName access threw, falling back to AppDomain probe.", ex);
             }
 
             // 2. AppDomain fallback (runs for BOTH the exception and the silent-null path)
@@ -275,7 +275,7 @@ namespace Servy.Core.Helpers
             }
             catch (Exception innerEx)
             {
-                Logger.Warn("GetHostProcessLastWriteTimeUTC: both MainModule and AppDomain probes failed.", innerEx);
+                Logger.Warn($"{nameof(GetHostProcessLastWriteTimeUtc)}: both MainModule and AppDomain probes failed.", innerEx);
             }
 
             return DateTime.MinValue;
