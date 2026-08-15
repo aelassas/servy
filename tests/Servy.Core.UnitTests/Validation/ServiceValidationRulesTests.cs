@@ -378,5 +378,68 @@ namespace Servy.Core.UnitTests.Validation
             // Assert
             Assert.DoesNotContain(Strings.Msg_PasswordsDontMatch, result.Errors);
         }
+
+        [Fact]
+        public void Validate_TimeoutsAndRotation_ExactMinAndMaxBoundaries_ReturnsValid()
+        {
+            // Arrange: Create two DTOs, one with all timeout and rotation values set to their minimum inclusive bounds,
+            // and one set to their maximum inclusive bounds.
+            var minDto = ServiceDtoFactory.CreateValidValidationBase();
+            minDto.StartTimeout = AppConfig.MinStartTimeout;
+            minDto.StopTimeout = AppConfig.MinStopTimeout;
+            minDto.RotationSize = AppConfig.MinRotationSize;
+            minDto.MaxRotations = AppConfig.MinMaxRotations;
+            minDto.HeartbeatUrlTimeoutSeconds = AppConfig.MinHeartbeatUrlTimeoutSeconds;
+
+            var maxDto = ServiceDtoFactory.CreateValidValidationBase();
+            maxDto.StartTimeout = AppConfig.MaxStartTimeout;
+            maxDto.StopTimeout = AppConfig.MaxStopTimeout;
+            maxDto.RotationSize = AppConfig.MaxRotationSize;
+            maxDto.MaxRotations = AppConfig.MaxMaxRotations;
+            maxDto.HeartbeatUrlTimeoutSeconds = AppConfig.MaxHeartbeatUrlTimeoutSeconds;
+
+            // Act
+            var minResult = _sut.Validate(minDto);
+            var maxResult = _sut.Validate(maxDto);
+
+            // Assert
+            Assert.True(minResult.IsValid, $"Validation failed for inclusive minimum boundary values: {string.Join(", ", minResult.Errors)}");
+            Assert.Empty(minResult.Errors);
+
+            Assert.True(maxResult.IsValid, $"Validation failed for inclusive maximum boundary values: {string.Join(", ", maxResult.Errors)}");
+            Assert.Empty(maxResult.Errors);
+        }
+
+        [Fact]
+        public void Validate_HealthAndLifecycleTimeouts_ExactMinAndMaxBoundaries_ReturnsValid()
+        {
+            // Arrange: Test inclusive min/max bounds for health monitoring and lifecycle hook timeouts/retries
+            var minDto = ServiceDtoFactory.CreateValidValidationBase();
+            minDto.HeartbeatInterval = AppConfig.MinHeartbeatInterval;
+            minDto.MaxFailedChecks = AppConfig.MinMaxFailedChecks;
+            minDto.MaxRestartAttempts = AppConfig.MinMaxRestartAttempts;
+            minDto.PreLaunchTimeoutSeconds = AppConfig.MinPreLaunchTimeoutSeconds;
+            minDto.PreLaunchRetryAttempts = AppConfig.MinPreLaunchRetryAttempts;
+            minDto.PreStopTimeoutSeconds = AppConfig.MinPreStopTimeoutSeconds;
+
+            var maxDto = ServiceDtoFactory.CreateValidValidationBase();
+            maxDto.HeartbeatInterval = AppConfig.MaxHeartbeatInterval;
+            maxDto.MaxFailedChecks = AppConfig.MaxMaxFailedChecks;
+            maxDto.MaxRestartAttempts = AppConfig.MaxMaxRestartAttempts;
+            maxDto.PreLaunchTimeoutSeconds = AppConfig.MaxPreLaunchTimeoutSeconds;
+            maxDto.PreLaunchRetryAttempts = AppConfig.MaxPreLaunchRetryAttempts;
+            maxDto.PreStopTimeoutSeconds = AppConfig.MaxPreStopTimeoutSeconds;
+
+            // Act
+            var minResult = _sut.Validate(minDto);
+            var maxResult = _sut.Validate(maxDto);
+
+            // Assert
+            Assert.True(minResult.IsValid, $"Validation failed for inclusive minimum health/lifecycle boundary values: {string.Join(", ", minResult.Errors)}");
+            Assert.Empty(minResult.Errors);
+
+            Assert.True(maxResult.IsValid, $"Validation failed for inclusive maximum health/lifecycle boundary values: {string.Join(", ", maxResult.Errors)}");
+            Assert.Empty(maxResult.Errors);
+        }
     }
 }

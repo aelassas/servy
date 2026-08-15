@@ -563,15 +563,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
-                    // Force a null _tailingCts via reflection so new CancellationTokenSource() fails or token access throws an exception
-                    var activeCts = TestReflection.GetField<CancellationTokenSource>(vm, "_tailingCts");
-                    activeCts?.Dispose();
-
-                    // Act - Invoke SwitchServiceAsync when internal cancellation token state causes an exception
-                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", "valid_path.log", null)!;
+                    // Act - Pass a path with invalid path characters (null byte) to force GetHistoryAsync/Task.WhenAll to throw an ArgumentException
+                    string invalidPathWithNullChar = "invalid\0path.log";
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", invalidPathWithNullChar, null)!;
                     var exception = await Record.ExceptionAsync(() => task);
 
-                    // Assert - Verify that the general catch block in SwitchServiceAsync swallows the exception safely
+                    // Assert - Verify that the general catch block in SwitchServiceAsync swallows the exception safely without throwing
                     Assert.Null(exception);
                 }
             });

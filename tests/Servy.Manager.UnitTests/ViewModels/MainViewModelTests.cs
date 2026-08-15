@@ -543,19 +543,19 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task RefreshAllServicesAsync_DependencyNullChecks_ExitEarly()
+        public async Task RefreshAllServicesAsync_MissingDependencyThrowsNre_IsSwallowedByCatchAll()
         {
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
                 var vm = CreateViewModel();
 
-                // Act 1: Force an early exit by removing the _serviceManager dependency field slot entirely
+                // Act 1: Force a NullReferenceException inside Task.Run by nulling the _serviceManager dependency field
                 TestReflection.SetField(vm, "_serviceManager", null);
                 var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None)!;
                 await task1;
 
-                // Assert 1: The engine must abort immediately. Downstream repository calls are never touched.
+                // Assert 1: The NullReferenceException is caught by the generic exception handler. Downstream repository calls are never reached.
                 _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Never);
 
@@ -570,8 +570,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None)!;
                 await task2;
 
-                // Assert 2: The manager is queried for OS info, but execution safely short-circuits
-                // before pulling DTO snapshots out of the database repository layer.
+                // Assert 2: The manager is queried for OS info, but the resulting NullReferenceException on the repository call
+                // is caught by the generic exception handler, preventing DTO snapshot loading.
                 _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
