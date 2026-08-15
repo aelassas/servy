@@ -423,6 +423,10 @@ namespace Servy.Services
             {
                 throw;
             }
+            catch (UnauthorizedAccessException)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to start Manager app at {_appConfig.ManagerAppPublishPath}.", ex);
@@ -579,6 +583,10 @@ namespace Servy.Services
             {
                 throw;
             }
+            catch (UnauthorizedAccessException)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to export service configuration to {formatName}.", ex);
@@ -660,6 +668,10 @@ namespace Servy.Services
             catch (OperationCanceledException)
             {
                 throw;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
             }
             catch (Exception ex)
             {

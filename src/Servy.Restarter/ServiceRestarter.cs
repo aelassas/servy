@@ -100,7 +100,8 @@ namespace Servy.Restarter
                     catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
                         // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
-                        HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Stopped, timeout - stopwatch.Elapsed);
+                        var transitionalResult = HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Stopped, timeout - stopwatch.Elapsed);
+                        if (transitionalResult.HasValue) return transitionalResult.Value;
                     }
                 }
 
@@ -140,7 +141,8 @@ namespace Servy.Restarter
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
                     // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
-                    HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
+                    var transitionalResult = HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
+                    if (transitionalResult.HasValue) return transitionalResult.Value;
                     return RestartResult.Restarted;
                 }
             }
@@ -170,6 +172,10 @@ namespace Servy.Restarter
         /// <param name="controller">The <see cref="IServiceController"/> instance to manage.</param>
         /// <param name="targetStatus">The desired <see cref="ServiceControllerStatus"/> (typically Running or Stopped).</param>
         /// <param name="timeout">The maximum <see cref="TimeSpan"/> allowed for the entire recovery operation.</param>
+        /// <returns>
+        /// A <see cref="RestartResult"/> if the operation detected that the service was uninstalled or lost (<see cref="RestartResult.ServiceNotFound"/>);
+        /// otherwise, <c>null</c> when the target status is successfully reached.
+        /// </returns>
         /// <exception cref="System.TimeoutException">
         /// Thrown if the service fails to reach the <paramref name="targetStatus"/>
         /// before the <paramref name="timeout"/> expires.
@@ -179,7 +185,7 @@ namespace Servy.Restarter
         /// to wait out <see cref="InvalidOperationException"/> errors caused by the Windows SCM
         /// locking the service during state transitions.
         /// </remarks>
-        private void HandleTransitionalError(string serviceName, IServiceController controller, ServiceControllerStatus targetStatus, TimeSpan timeout)
+        private RestartResult? HandleTransitionalError(string serviceName, IServiceController controller, ServiceControllerStatus targetStatus, TimeSpan timeout)
         {
             var stopwatch = Stopwatch.StartNew();
             while (stopwatch.Elapsed < timeout)
@@ -187,7 +193,7 @@ namespace Servy.Restarter
                 try
                 {
                     controller.Refresh();
-                    if (controller.Status == targetStatus) return;
+                    if (controller.Status == targetStatus) return null;
 
                     // If it's still in a pending state, wait and retry the command
                     if (targetStatus == ServiceControllerStatus.Stopped)
@@ -200,10 +206,21 @@ namespace Servy.Restarter
                         throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.");
 
                     controller.WaitForStatus(targetStatus, remaining);
-                    return;
+                    return null;
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception || ex is System.ServiceProcess.TimeoutException)
                 {
+                    // ROBUSTNESS: Re-probe status to detect mid-flight uninstalls or dropped SCM handles
+                    try
+                    {
+                        controller.Refresh();
+                        _ = controller.Status;
+                    }
+                    catch (Exception probeEx) when (probeEx is InvalidOperationException || probeEx is Win32Exception)
+                    {
+                        return RestartResult.ServiceNotFound;
+                    }
+
                     // Still transitional or experiencing transient SCM access blocks; wait before the next poll
                     var remaining = timeout - stopwatch.Elapsed;
                     if (remaining <= TimeSpan.Zero) break;

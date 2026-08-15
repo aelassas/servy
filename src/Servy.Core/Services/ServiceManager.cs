@@ -288,11 +288,25 @@ namespace Servy.Core.Services
                 }
                 else
                 {
-                    // OS side already gone - still need to drop the stale, differently-cased DB row
-                    // so the subsequent UpsertAsync performs a clean INSERT with the correct casing.
-                    await _serviceRepository.DeleteAsync(existingDbService.Name, cancellationToken);
-                    legacyDroppedFromDb = true;
-                    legacyBackupDto = existingDbService;
+                    try
+                    {
+                        // OS side already gone - still need to drop the stale, differently-cased DB row
+                        // so the subsequent UpsertAsync performs a clean INSERT with the correct casing.
+                        await _serviceRepository.DeleteAsync(existingDbService.Name, cancellationToken);
+                        legacyDroppedFromDb = true;
+                        legacyBackupDto = existingDbService;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Logger.Info($"Installation cancelled while dropping legacy casing variant '{existingDbService.Name}'.");
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        string criticalError = $"Unexpected error occurred while trying to drop stale casing-variant row '{existingDbService.Name}'.";
+                        Logger.Error(criticalError, ex);
+                        return OperationResult.Failure($"{criticalError} Details: {ex.Message}");
+                    }
                 }
             }
 
