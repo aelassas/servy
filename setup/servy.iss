@@ -48,7 +48,7 @@ OutputDir=.
 OutputBaseFilename=servy-{#MyAppVersion}-{#Arch}-installer
 SetupIconFile=..\src\Servy\servy.ico
 
-Compression=lzma2
+Compression=lzma
 LZMAAlgorithm=1
 ; LZMADictionarySize=65536
 ; LZMADictionarySize=98304
