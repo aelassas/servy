@@ -38,7 +38,7 @@ namespace Servy.Core.UnitTests.Native
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void ValidateCredentials_EmptyUsername_ThrowsArgumentException(string invalidUsername)
         {
             Assert.Throws<ArgumentException>(() => NativeMethodsHelpers.ValidateCredentials(invalidUsername, null));
@@ -133,7 +133,7 @@ namespace Servy.Core.UnitTests.Native
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void AtomicSecureMove_NullOrEmptySource_ThrowsArgumentException(string source)
         {
             Assert.Throws<ArgumentException>("source", () => NativeMethodsHelpers.AtomicSecureMove(source, "dest.txt"));
@@ -142,7 +142,7 @@ namespace Servy.Core.UnitTests.Native
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void AtomicSecureMove_NullOrEmptyDestination_ThrowsArgumentException(string destination)
         {
             Assert.Throws<ArgumentException>("destination", () => NativeMethodsHelpers.AtomicSecureMove("src.txt", destination));
@@ -159,7 +159,6 @@ namespace Servy.Core.UnitTests.Native
             var ex = Assert.Throws<Win32Exception>(() => NativeMethodsHelpers.AtomicSecureMove(src, dest));
             Assert.Contains("Failed to atomically replace", ex.Message);
         }
-
 
         [Fact]
         public void AtomicSecureMove_ValidFiles_Succeeds()
@@ -292,7 +291,7 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
-        public void GetFileIdentity_ClosedStream_HandlesGracefully()
+        public void GetFileIdentity_ClosedStream_HandlesGracefullyAndLeavesPrefixDigestNull()
         {
             // Arrange
             string filePath = Path.Combine(_testDir, "closed.log");
@@ -306,12 +305,42 @@ namespace Servy.Core.UnitTests.Native
 
             // Act
             // Passing a closed stream will force SafeFileHandle to throw ObjectDisposedException
-            // and fs.CanSeek to return false. The method should catch these safely.
+            // and fs.CanSeek to return false. The method should catch these safely and leave PrefixDigest null.
             var identity = NativeMethodsHelpers.GetFileIdentity(closedStream);
 
             // Assert
             Assert.False(identity.IsValidHandleInfo); // Kernel32 probe failed
-            Assert.Empty(identity.PrefixDigest); // Prefix probe skipped (CanSeek was false)
+            Assert.Null(identity.PrefixDigest); // Prefix probe skipped/failed (returns null, not string.Empty)
+        }
+
+        [Fact]
+        public void FileIdentity_IsDifferentFrom_FailedProbesWithNullDigests_TriggersSafeDefaultReturnTrue()
+        {
+            // Arrange: Two identities where handle info failed (IsValidHandleInfo=false)
+            // and content probes failed (PrefixDigest=null).
+            var identity1 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
+            var identity2 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
+
+            // Act
+            bool isDifferent = identity1.IsDifferentFrom(identity2);
+
+            // Assert: Safe default triggers (returns true) because identities are undeterminable
+            Assert.True(isDifferent);
+        }
+
+        [Fact]
+        public void FileIdentity_IsDifferentFrom_EmptyFilesWithEmptyStringDigests_ReturnsFalse()
+        {
+            // Arrange: Two identities where handle info failed (IsValidHandleInfo=false)
+            // but content probes succeeded on empty files (PrefixDigest=string.Empty).
+            var identity1 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = string.Empty };
+            var identity2 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = string.Empty };
+
+            // Act
+            bool isDifferent = identity1.IsDifferentFrom(identity2);
+
+            // Assert: Compares equal (returns false) because both content probes succeeded on empty files
+            Assert.False(isDifferent);
         }
 
         #endregion
