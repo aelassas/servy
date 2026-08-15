@@ -236,7 +236,7 @@ namespace Servy.Core.Native
         {
             if (fs == null) throw new ArgumentNullException(nameof(fs));
 
-            var identity = new FILE_IDENTITY { PrefixDigest = string.Empty };
+            var identity = new FILE_IDENTITY { PrefixDigest = null };
 
             // 1. Kernel32 Handle Probe
             try

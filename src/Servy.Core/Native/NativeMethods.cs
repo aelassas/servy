@@ -331,7 +331,7 @@ namespace Servy.Core.Native
             public uint VolumeSerialNumber;
 
             /// <summary>A digest of the start of the file for secondary identification.</summary>
-            public string PrefixDigest;
+            public string? PrefixDigest;
 
             /// <summary>Indicates if handle-based information was successfully retrieved.</summary>
             public bool IsValidHandleInfo;
