@@ -106,10 +106,10 @@
     <value>The specified pre-launch stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
-    <value>Pre-Launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
+    <value>pre-launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
   </data>
   <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
-    <value>Pre-Launch retry attempts must be a number between {0} and {1}.</value>
+    <value>pre-launch retry attempts must be a number between {0} and {1}.</value>
   </data>
 
   <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
@@ -127,10 +127,10 @@
   </data>
 
   <data name="Msg_InvalidStartTimeout" xml:space="preserve">
-    <value>Start timeout must be a number between {0} and {1} seconds.</value>
+    <value>Start timeout must be a number of seconds between {0} and {1}.</value>
   </data>
   <data name="Msg_InvalidStopTimeout" xml:space="preserve">
-    <value>Stop timeout must be a number between {0} and {1} seconds.</value>
+    <value>Stop timeout must be a number of seconds between {0} and {1}.</value>
   </data>
 
   <data name="Msg_InvalidPreStopPath" xml:space="preserve">
@@ -140,7 +140,7 @@
     <value>The specified pre-stop startup directory is invalid.</value>
   </data>
   <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
-    <value>Pre-Stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
+    <value>pre-stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
   </data>
 
   <data name="Msg_InvalidPostStopPath" xml:space="preserve">
@@ -163,7 +163,7 @@
     <value>Arguments for field '{0}' exceed the Windows command-line limit of {1} characters.</value>
   </data>
   <data name="Msg_PasswordsDontMatch" xml:space="preserve">
-    <value>Passwords don't match.</value>
+    <value>Passwords do not match.</value>
   </data>
 
   <data name="Msg_FatalError_Title" xml:space="preserve">
@@ -191,10 +191,10 @@
     <value>{0} payload exceeds the maximum allowed size of {1} MB.</value>
   </data>
   <data name="Msg_ImportInvalidStructure" xml:space="preserve">
-    <value>Invalid {0} structure: {1}</value>
+    <value>Invalid {0} structure: {1}.</value>
   </data>
   <data name="Msg_ImportStructureError" xml:space="preserve">
-    <value>{0} structure error: {1}</value>
+    <value>{0} structure error: {1}.</value>
   </data>
   <data name="Msg_ImportEmptyDefinition" xml:space="preserve">
     <value>{0} deserialization resulted in an empty service definition.</value>
@@ -327,30 +327,30 @@
     <value>Core index '{0}' is out of bounds (0-{1}).</value>
   </data>
   <data name="Msg_InvalidCoreSpecification" xml:space="preserve">
-    <value>Invalid core specification: '{0}'</value>
+    <value>Invalid core specification: '{0}'.</value>
   </data>
   <data name="Msg_ImportXmlNullOrEmpty" xml:space="preserve">
-  <value>XML content cannot be null or empty.</value>
-</data>
+    <value>XML content cannot be null or empty.</value>
+  </data>
   <data name="Msg_ImportXmlDeserializationFailed" xml:space="preserve">
-  <value>Failed to deserialize service configuration from XML content.</value>
-</data>
+    <value>Failed to deserialize service configuration from XML content.</value>
+  </data>
   <data name="Msg_ImportXmlFailed" xml:space="preserve">  
-  <value>Failed to import service from XML: {0}</value>
-</data>
+    <value>Failed to import service from XML: {0}.</value>
+  </data>
   <data name="Msg_ImportJsonNullOrEmpty" xml:space="preserve">
-  <value>JSON content cannot be null or empty.</value>
-</data>
+    <value>JSON content cannot be null or empty.</value>
+  </data>
   <data name="Msg_ImportJsonDeserializationFailed" xml:space="preserve">
-  <value>Failed to deserialize service configuration from JSON content.</value>
-</data>
+    <value>Failed to deserialize service configuration from JSON content.</value>
+  </data>
   <data name="Msg_ImportJsonFailed" xml:space="preserve">
-  <value>Failed to import service from JSON: {0}</value>
-</data>
+    <value>Failed to import service from JSON: {0}</value>
+  </data>
   <data name="Msg_UnknownXmlElement" xml:space="preserve">
-  <value>Unknown XML element encountered: '{0}'</value>
-</data>
+    <value>Unknown XML element encountered: '{0}'.</value>
+  </data>
   <data name="Msg_UnknownXmlAttribute" xml:space="preserve">
-  <value>Unknown XML attribute encountered: '{0}'</value>
-</data>
+    <value>Unknown XML attribute encountered: '{0}'.</value>
+  </data>
 </root>

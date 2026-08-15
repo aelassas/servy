@@ -43,7 +43,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             // Missing closing tag
             var invalidXml = "<ServiceDto><Name>Test</Name>";
-            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "XML", string.Empty).TrimEnd();
+            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "XML", string.Empty).TrimEnd('.', ':', ' ');
 
             // Act
             var result = _validator.TryValidate(invalidXml, out var error);
@@ -59,7 +59,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             // Valid XML, but doesn't map to ServiceDto properties
             var xml = "<NotServiceDto><Foo>bar</Foo></NotServiceDto>";
-            var expectedPrefix = string.Format(Strings.Msg_ImportStructureError, "XML", string.Empty).TrimEnd();
+            var expectedPrefix = string.Format(Strings.Msg_ImportStructureError, "XML", string.Empty).TrimEnd('.', ':', ' ');
 
             // Act
             var result = _validator.TryValidate(xml, out var error);
