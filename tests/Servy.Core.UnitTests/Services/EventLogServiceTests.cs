@@ -533,5 +533,31 @@ namespace Servy.Core.UnitTests.Services
                     $"Results are out of sequence at index {k}. Elements must be monotonically ordered by descending time across the entire dataset.");
             }
         }
+
+        [Fact]
+        public async Task SearchAsync_WildcardMode_FiltersOutNonServyProviderEvents()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            var matchingEvent = CreateFakeEvent(1, 4, DateTime.UtcNow, "[Service] Servy event log entry");
+            matchingEvent.ProviderName = AppConfig.EventSource;
+
+            var nonMatchingEvent = CreateFakeEvent(2, 4, DateTime.UtcNow, "[Service] Unrelated system event entry");
+            nonMatchingEvent.ProviderName = "Microsoft-Windows-Kernel-General";
+
+            mockReader
+                .Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                .Returns(new[] { matchingEvent, nonMatchingEvent });
+
+            var service = new EventLogService(mockReader.Object, string.Empty);
+
+            // Act
+            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
+
+            // Assert
+            var entry = Assert.Single(results);
+            Assert.Equal(1, entry.EventId);
+            Assert.Equal(AppConfig.EventSource, entry.ProviderName);
+        }
     }
 }

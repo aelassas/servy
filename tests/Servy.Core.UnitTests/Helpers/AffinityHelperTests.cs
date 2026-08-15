@@ -89,7 +89,10 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Arrange
             int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64);
-            if (maxAllowedCores >= 64) return; // Skip if host has full 64 cores
+            if (maxAllowedCores >= 64)
+            {
+                Assert.SkipWhen(maxAllowedCores >= 64, $"Host has {maxAllowedCores} usable cores; this case needs fewer than 64."); // Skip if host has full 64 cores
+            }
 
             // Mask that sets a bit beyond host max cores
             long outOfBoundsMask = 1L << maxAllowedCores;

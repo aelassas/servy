@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Servy.Core.Helpers;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -16,7 +17,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null, 10, 10)]
         [InlineData("", 10, 10)]
-        [InlineData("   ", 10, 10)]
+        [InlineData("    ", 10, 10)]
         public void ParseInt_NullOrWhitespace_ReturnsDefault(string? input, int @default, int expected)
         {
             // Act
@@ -54,7 +55,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, true, true)]
         [InlineData("", true, true)]
         [InlineData("", false, false)]
-        [InlineData("   ", false, false)]
+        [InlineData("    ", false, false)]
         public void ParseBool_NullOrWhitespace_ReturnsDefault(string? input, bool @default, bool expected)
         {
             // Act
@@ -214,6 +215,101 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(TestStatus.None, result);
+        }
+
+        #endregion
+
+        #region GetConfigInt Tests
+
+        [Fact]
+        public void GetConfigInt_MissingKey_ReturnsDefault()
+        {
+            // Arrange
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection()
+                .Build();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "MissingKey", 10, 1, 100);
+
+            // Assert
+            Assert.Equal(10, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_ValidInRangeValue_ReturnsParsedValue()
+        {
+            // Arrange
+            var settings = new Dictionary<string, string?>
+            {
+                { "RestartTimeoutSeconds", "30" }
+            };
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(settings)
+                .Build();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds", 10, 1, 60);
+
+            // Assert
+            Assert.Equal(30, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_MalformedValue_ReturnsDefault()
+        {
+            // Arrange
+            var settings = new Dictionary<string, string?>
+            {
+                { "RefreshIntervalInSeconds", "not-a-number" }
+            };
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(settings)
+                .Build();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "RefreshIntervalInSeconds", 5, 1, 60);
+
+            // Assert
+            Assert.Equal(5, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_BelowMin_ReturnsDefault()
+        {
+            // Arrange
+            var settings = new Dictionary<string, string?>
+            {
+                { "ConsoleMaxLines", "0" }
+            };
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(settings)
+                .Build();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "ConsoleMaxLines", 100, 10, 10000);
+
+            // Assert
+            Assert.Equal(100, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_AboveMax_ReturnsDefault()
+        {
+            // Arrange
+            var settings = new Dictionary<string, string?>
+            {
+                { "MaxBulkOperationParallelism", "100" }
+            };
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(settings)
+                .Build();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "MaxBulkOperationParallelism", 8, 1, 16);
+
+            // Assert
+            Assert.Equal(8, result);
         }
 
         #endregion

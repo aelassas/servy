@@ -129,16 +129,33 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.NotNull(childProcess);
             _spawnedProcesses.Add(childProcess);
 
-            // 1. HARDEN STABILIZATION TIMING:
-            // Allow time for the root process to initialize and execute its nested child payload.
-            Thread.Sleep(3000);
-
             int childPid = childProcess.Id;
+
+            // 1. HARDEN STABILIZATION TIMING:
+            // Poll until the nested child process initializes, allocates memory, and tree metrics exceed single root metrics.
+            var stopwatch = Stopwatch.StartNew();
+            var timeout = TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds);
+
+            ProcessMetrics singleMetrics = _sut.GetProcessMetrics(childPid);
+            ProcessMetrics treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+
+            while (stopwatch.Elapsed < timeout)
+            {
+                singleMetrics = _sut.GetProcessMetrics(childPid);
+                treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+
+                if (singleMetrics.RamUsage > 0 && treeMetrics.RamUsage > singleMetrics.RamUsage)
+                {
+                    break;
+                }
+
+                Thread.Sleep(50);
+            }
 
             // 2. CAPTURE METRICS BACK-TO-BACK:
             // Act
-            var singleMetrics = _sut.GetProcessMetrics(childPid);
-            var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+            singleMetrics = _sut.GetProcessMetrics(childPid);
+            treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
             // Assert
             Assert.True(singleMetrics.RamUsage > 0, "Root process RAM should be captured.");
