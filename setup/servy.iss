@@ -49,12 +49,14 @@ OutputBaseFilename=servy-{#MyAppVersion}-{#Arch}-installer
 SetupIconFile=..\src\Servy\servy.ico
 
 Compression=lzma2
-; LZMAAlgorithm=1 (used in v9.4 and earlier; 1=default)
+LZMAAlgorithm=1
 ; LZMADictionarySize=65536
 ; LZMADictionarySize=98304
 ; LZMADictionarySize=131072
 LZMADictionarySize=196608
-; LZMANumFastBytes=273 (used in v9.4 and earlier; produces false positives)
+#if Arch != "arm64"
+LZMANumFastBytes=273
+#endif
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 
