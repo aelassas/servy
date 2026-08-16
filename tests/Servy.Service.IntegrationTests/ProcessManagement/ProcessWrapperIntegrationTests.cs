@@ -832,6 +832,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void SendCtrlC_ProcessWithAttachedConsole_SendsSignalSuccessfully()
         {
+            // Skip execution on ARM64 environments (native or emulated) where conhost/GenerateConsoleCtrlEvent
+            // severs testhost.exe's stdio IPC pipe and crashes the test host process.
+            bool isArm64 = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ||
+                           RuntimeInformation.OSArchitecture == Architecture.Arm64;
+
+            if (isArm64)
+            {
+                Assert.Skip("Skipping SendCtrlC test on ARM64 environment to prevent console IPC pipe crash.");
+            }
+
             // Arrange
             // Launch cmd.exe with CreateNoWindow = false so Windows allocates a console buffer.
             using (var wrapper = CreateWrapper("cmd.exe", "/c pause", createNoWindow: false))
