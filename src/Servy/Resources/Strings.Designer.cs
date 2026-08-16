@@ -826,7 +826,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cpu Affinity.
+        ///   Looks up a localized string similar to CPU Affinity.
         /// </summary>
         public static string Automation_TextBoxCpuAffinity_Name {
             get {
@@ -934,7 +934,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Heartbeat Url.
+        ///   Looks up a localized string similar to Heartbeat URL.
         /// </summary>
         public static string Automation_TextBoxHeartbeatUrl_Name {
             get {
@@ -1735,7 +1735,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos;, \&quot; to escape &apos;&quot;&apos;, \; to escape &apos;;&apos;, \\ to escape &apos;\&apos;, and %% to escape &apos;%&apos; (collapses to a single &apos;%&apos;). Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin.
+        ///   Looks up a localized string similar to Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos;, \&quot; to escape &apos;&quot;&apos;, \; to escape &apos;;&apos;, \\ to escape &apos;\&apos;, and %% to escape &apos;%&apos; (collapses to a single &apos;%&apos;). Supports environment variable expansion. Example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin.
         /// </summary>
         public static string Info_EnvironmentVariables {
             get {
@@ -1879,7 +1879,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe.
+        ///   Looks up a localized string similar to Supports environment variable expansion. Example: %JAVA_HOME%\bin\java.exe.
         /// </summary>
         public static string Info_ProcessPath {
             get {
@@ -1933,7 +1933,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supports environment variable expansion, example: %PROGRAMDATA%\MyApp.
+        ///   Looks up a localized string similar to Supports environment variable expansion. Example: %PROGRAMDATA%\MyApp.
         /// </summary>
         public static string Info_StartupDirectory {
             get {

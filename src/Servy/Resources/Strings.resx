@@ -128,13 +128,13 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Process Path *</value>
   </data>
   <data name="Info_ProcessPath" xml:space="preserve">
-    <value>Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+    <value>Supports environment variable expansion. Example: %JAVA_HOME%\bin\java.exe</value>
   </data>
   <data name="Label_StartupDirectory" xml:space="preserve">
     <value>Startup Directory</value>
   </data>
   <data name="Info_StartupDirectory" xml:space="preserve">
-    <value>Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+    <value>Supports environment variable expansion. Example: %PROGRAMDATA%\MyApp</value>
   </data>
   <data name="Label_ProcessParameters" xml:space="preserve">
     <value>Process Parameters</value>
@@ -193,7 +193,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Real Time (use with caution)</value>
   </data>
 
-  <!-- Cpu Affinity -->
+  <!-- CPU Affinity -->
   <data name="Label_CpuAffinity" xml:space="preserve">
     <value>CPU Affinity</value>
   </data>
@@ -329,7 +329,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Environment Variables</value>
   </data>
   <data name="Info_EnvironmentVariables" xml:space="preserve">
-    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=', \" to escape '"', \; to escape ';', \\ to escape '\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
+    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=', \" to escape '"', \; to escape ';', \\ to escape '\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion. Example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
   </data>
 
   <!-- Service Dependencies -->
@@ -663,7 +663,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Select the process priority level.</value>
   </data>
   <data name="Automation_TextBoxCpuAffinity_Name" xml:space="preserve">
-    <value>Cpu Affinity</value>
+    <value>CPU Affinity</value>
   </data>
   <data name="Automation_TextBoxCpuAffinity_HelpText" xml:space="preserve">
     <value>Enter the logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>
@@ -779,7 +779,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_TextBoxHeartbeatUrl_Name" xml:space="preserve">
-    <value>Heartbeat Url</value>
+    <value>Heartbeat URL</value>
   </data>
   <data name="Automation_TextBoxHeartbeatUrl_HelpText" xml:space="preserve">
     <value>Enter the URL for the heartbeat endpoint.</value>
