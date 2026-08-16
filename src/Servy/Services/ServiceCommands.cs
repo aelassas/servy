@@ -658,7 +658,7 @@ namespace Servy.Services
 
                 if (!await _serviceConfigurationValidator.ValidateAsync(dto, importMode: true, cancellationToken: cancellationToken))
                 {
-                    Logger.Info($"{formatName} File '{path}' not valid.");
+                    Logger.Warn($"{formatName} file '{path}' is not valid.");
                     return;
                 }
 
