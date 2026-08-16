@@ -216,7 +216,7 @@ namespace Servy.Infrastructure.Data
                 {
                     var currentChunk = serviceList.Skip(i).Take(AppConfig.DbBatchIdSyncChunkSize).ToList();
 
-                    // Pass original names; let SQLite lower both sides in the SQL itself
+                    // Pass original names; the UNICODE_NOCASE collation folds case on the SQL side
                     var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
 
                     var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(

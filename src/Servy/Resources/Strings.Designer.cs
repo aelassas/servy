@@ -1906,7 +1906,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency&apos;s start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start..
+        ///   Looks up a localized string similar to Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Service names may contain letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($). Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start..
         /// </summary>
         public static string Info_ServiceDependencies {
             get {

@@ -103,11 +103,13 @@ namespace Servy.UI.Commands
 
         /// <summary>
         /// Triggers a global re-evaluation of all command bindings within the UI.
-        /// Utilizes <see cref="CommandManager.InvalidateRequerySuggested"/> to safely marshal the update to the UI thread.
+        /// Utilizes <see cref="CommandManager.InvalidateRequerySuggested"/> to requery command bindings
+        /// registered on the current thread's CommandManager. Must be called on the UI thread.
         /// </summary>
         public void RaiseCanExecuteChanged()
         {
-            // Note: Inversion of control - this automatically dispatches to the UI thread!
+            // Note: CommandManager is thread-affine. Must be called on the UI thread;
+            // calling from a background thread operates on that thread's CommandManager and is a silent no-op.
             CommandManager.InvalidateRequerySuggested();
         }
     }
