@@ -102,7 +102,8 @@ namespace Servy.UI.Services
                     // This prevents false positives caused by System.Version evaluating missing fields (-1) as less than 0.
                     var normalizedLatest = NormalizeVersion(latestVersion);
 
-                    // Fall back to a blank version array if the assembly definition configuration is malformed
+                    // Fall back to version 0.0.0.0 when the running assembly's version could not be parsed
+                    // (AppConfig.Version is "unknown" when the assembly has no version).
                     var normalizedCurrent = NormalizeVersion(currentVersion ?? new Version(0, 0, 0, 0));
 
                     if (normalizedLatest > normalizedCurrent)
