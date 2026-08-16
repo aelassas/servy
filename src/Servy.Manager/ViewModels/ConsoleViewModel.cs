@@ -395,7 +395,8 @@ namespace Servy.Manager.ViewModels
                 bool hasUniqueStderr = !string.IsNullOrWhiteSpace(stderrPath) &&
                        !string.Equals(stdoutPath, stderrPath, StringComparison.OrdinalIgnoreCase);
 
-                int historyLimit = hasUniqueStderr ? _maxLines / 2 : _maxLines;
+                bool hasTwoStreams = !string.IsNullOrWhiteSpace(stdoutPath) && hasUniqueStderr;
+                int historyLimit = hasTwoStreams ? _maxLines / 2 : _maxLines;
 
                 using (var stdoutHistoryTailer = new LogTailer())
                 using (var stderrHistoryTailer = new LogTailer())
