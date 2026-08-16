@@ -153,7 +153,7 @@ namespace Servy.Service.ProcessManagement
                 logger,
                 "ProcessLauncher.Start");
 
-            // Overwrite redirection states explicitly since dependent side-hook tasks match tighter pipeline controls
+            // Re-derive redirection per stream: only redirect a stream whose target path is actually configured
             psi.RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdoutPath);
             psi.RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StderrPath);
 
@@ -225,7 +225,6 @@ namespace Servy.Service.ProcessManagement
 
                                 if (stdoutWriter == null)
                                 {
-                                    // Outsource handwritten file generation block to helper
                                     stdoutWriter = TryOpenAppendWriter(outPath!, encoding, options.ExecutablePath, "stdout", logger);
                                     if (stdoutWriter == null)
                                     {
@@ -262,7 +261,6 @@ namespace Servy.Service.ProcessManagement
 
                                     if (stdoutWriter == null)
                                     {
-                                        // Utilize our unified log builder tool helper logic
                                         stdoutWriter = TryOpenAppendWriter(outPath!, encoding, options.ExecutablePath, "multiplexed stdout/stderr", logger);
                                         if (stdoutWriter == null)
                                         {
@@ -279,7 +277,6 @@ namespace Servy.Service.ProcessManagement
 
                                     if (stderrWriter == null)
                                     {
-                                        // Route calls seamlessly through shared infrastructure
                                         stderrWriter = TryOpenAppendWriter(errPath!, encoding, options.ExecutablePath, "stderr", logger);
                                         if (stderrWriter == null)
                                         {

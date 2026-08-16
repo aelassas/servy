@@ -193,9 +193,6 @@ namespace Servy.Manager.Utils
                                         string? line;
                                         string? lastSuccessfullyReadLine = null;
 
-                                        // Track offset of the last known fully terminated line
-                                        long lastTerminatedLineEndOffset = fs.Position;
-
                                         while ((line = await reader.ReadLineAsync(linkedToken)) != null)
                                         {
                                             consecutiveFailures = 0;
@@ -219,13 +216,9 @@ namespace Servy.Manager.Utils
                                                 {
                                                     batch.RemoveAt(batch.Count - 1);
                                                     carryOverFragment = line;
-                                                    lastPosition = lastTerminatedLineEndOffset;
                                                 }
-                                                else
-                                                {
-                                                    lastTerminatedLineEndOffset = fs.Position;
-                                                    lastPosition = lastTerminatedLineEndOffset;
-                                                }
+
+                                                lastPosition = fs.Position;
 
                                                 if (batch.Count > 0)
                                                 {
@@ -233,10 +226,6 @@ namespace Servy.Manager.Utils
                                                 }
 
                                                 batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
-                                            }
-                                            else
-                                            {
-                                                lastTerminatedLineEndOffset = fs.Position;
                                             }
                                         }
 
@@ -254,21 +243,18 @@ namespace Servy.Manager.Utils
                                                 }
 
                                                 carryOverFragment = lastSuccessfullyReadLine;
-
-                                                // Roll back our persistent file offset indicator pointer to the end of the last fully terminated line.
-                                                // This ensures the next polling loop pass re-scans and captures the fully completed line cleanly.
-                                                lastPosition = lastTerminatedLineEndOffset;
                                             }
                                             else
                                             {
                                                 // Trailing character is a valid newline. Clear tracking fragment strings completely.
                                                 carryOverFragment = string.Empty;
-                                                lastPosition = fs.Position;
                                             }
+
+                                            lastPosition = fs.Position;
                                         }
                                         else if (string.IsNullOrEmpty(carryOverFragment))
                                         {
-                                            // Complete line at EOF: publish it and commit the new offset.
+                                            // Nothing new was read and no fragment is pending; refresh the committed offset.
                                             lastPosition = fs.Position;
                                         }
 

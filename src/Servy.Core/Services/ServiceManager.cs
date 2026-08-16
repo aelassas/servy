@@ -1056,7 +1056,6 @@ namespace Servy.Core.Services
                         throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
                     }
 
-
                     Parallel.ForEach(services, new ParallelOptions
                     {
                         CancellationToken = cancellationToken,
@@ -1064,8 +1063,7 @@ namespace Servy.Core.Services
                     },
                     service =>
                     {
-                        // We do not wrap this body in a try/finally for service.Dispose() anymore,
-                        // as it is handled by the outer block to prevent cancellation leaks.
+                        // Wrapper disposal is owned by the outer finally so cancelled iterations are still cleaned up.
 
                         // Check before any work so cancellation surfaces as OperationCanceledException, not a partial result set.
                         cancellationToken.ThrowIfCancellationRequested();

@@ -656,58 +656,76 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopTree_ProcessGracefulExit_LogsCanceledWithCodeInfo()
         {
             // Arrange
-            // Launch a PowerShell process that displays a standard WinForms window.
-            // All three standard streams are redirected so the child gets no console at all;
-            // that makes SendCtrlC's AttachConsole fail, forcing StopTree to fall through to
-            // CloseMainWindow (WM_CLOSE), which the WinForms message pump answers by exiting
-            // gracefully - unlike a console-owning process, where Ctrl+C alone would "succeed"
-            // (event delivered) without the process actually reacting to it.
-            string args = "-NoProfile -Command \"Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.Form; $f.Text = 'ServyTestWin'; [System.Windows.Forms.Application]::Run($f)\"";
+            // Dynamically compile a lightweight Win32 GUI executable to TEMP.
+            // Compiling with -OutputType WindowsApplication ensures the binary has the GUI subsystem header,
+            // so Windows will not spawn a child conhost.exe process. WinForms creates a valid MainWindowHandle
+            // via USER32 even in headless CI sessions, responding cleanly to CloseMainWindow (WM_CLOSE) with exit code 0.
+            string tempExe = Path.Combine(Path.GetTempPath(), $"ServyTestWin_{Guid.NewGuid():N}.exe");
 
-            var psi = new ProcessStartInfo
+            try
             {
-                FileName = "powershell.exe",
-                Arguments = args,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                WorkingDirectory = Path.GetTempPath(),
-            };
-
-            using (var wrapper = new ProcessWrapper(psi, _logger))
-            {
-                _wrappersToCleanup.Add(wrapper);
-                wrapper.Start();
-                var process = wrapper.UnderlyingProcess;
-
-                // Poll dynamically until the WinForms window is fully created and initialized by the OS
-                bool windowCreated = SpinWait.SpinUntil(() =>
+                var compilePsi = new ProcessStartInfo
                 {
-                    try
+                    FileName = "powershell.exe",
+                    Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ Application.Run(new Form()); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+
+                using (var compileProc = Process.Start(compilePsi))
+                {
+                    compileProc?.WaitForExit();
+                }
+
+                Assert.True(File.Exists(tempExe), "Failed to compile temporary WinForms test executable.");
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = tempExe,
+                    UseShellExecute = false,
+                    WorkingDirectory = Path.GetTempPath(),
+                };
+
+                using (var wrapper = new ProcessWrapper(psi, _logger))
+                {
+                    _wrappersToCleanup.Add(wrapper);
+                    wrapper.Start();
+                    var process = wrapper.UnderlyingProcess;
+
+                    // Poll dynamically until the WinForms window handle is allocated by USER32
+                    bool windowCreated = SpinWait.SpinUntil(() =>
                     {
-                        process.Refresh();
-                        return process.MainWindowHandle != IntPtr.Zero;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }, TimeSpan.FromSeconds(5));
+                        try
+                        {
+                            process.Refresh();
+                            return process.MainWindowHandle != IntPtr.Zero;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    }, TimeSpan.FromSeconds(5));
 
-                Assert.True(windowCreated, "Test window was not created within the timeout.");
+                    Assert.True(windowCreated, "Test window was not created within the timeout.");
 
-                // Act
-                TestReflection.InvokeNonPublic(
-                    wrapper,
-                    "StopTree",
-                    process,
-                    5000);
+                    // Act
+                    TestReflection.InvokeNonPublic(
+                        wrapper,
+                        "StopTree",
+                        process,
+                        5000);
 
-                // Assert
-                Assert.True(wrapper.HasExited);
-                Assert.Contains(_logger.Infos, m => m.Contains("canceled with code") || m.Contains("canceled gracefully"));
+                    // Assert
+                    Assert.True(wrapper.HasExited);
+                    Assert.Contains(_logger.Infos, m => m.Contains("canceled with code") || m.Contains("canceled gracefully"));
+                }
+            }
+            finally
+            {
+                if (File.Exists(tempExe))
+                {
+                    try { File.Delete(tempExe); } catch { }
+                }
             }
         }
 
