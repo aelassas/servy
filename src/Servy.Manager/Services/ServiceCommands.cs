@@ -264,7 +264,14 @@ namespace Servy.Manager.Services
                 // Pass false to skip splash screen
                 psi.Arguments = $"\"false\" {Helper.Quote(service.Name)}{forceFlag}";
 
-                using (StartProcess(psi)) { }
+                using (var process = StartProcess(psi))
+                {
+                    if (process == null)
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption);
+                        return;
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
