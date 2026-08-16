@@ -77,8 +77,9 @@ namespace Servy.Service.ProcessManagement
         #region Redirection
 
         /// <summary>
-        /// Gets or sets a value indicating whether standard output and error should be redirected
-        /// to the service's internal rotating log writers.
+        /// Gets or sets a value indicating whether standard output and error should be appended
+        /// to the files named by <see cref="StdoutPath"/>/<see cref="StderrPath"/>.
+        /// Unlike the main monitored process, these writers do not rotate.
         /// </summary>
         public bool RedirectToWriters { get; set; } = false;
 

@@ -127,8 +127,8 @@ namespace Servy.Service.Helpers
         /// <summary>
         /// Attempts to restart the Windows service associated with the current process.
         /// </summary>
-        /// <param name="logger">The logger instance used to report progress and errors.</param>
         /// <param name="serviceName">The name of the Windows service to restart.</param>
+        /// <param name="logger">The logger instance used to report progress and errors.</param>
         /// <remarks>
         /// This should be used when the service is registered with the Service Control Manager.
         /// </remarks>

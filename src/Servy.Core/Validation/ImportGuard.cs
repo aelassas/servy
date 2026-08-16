@@ -5,7 +5,9 @@ using Servy.Core.Resources;
 namespace Servy.Core.Validation
 {
     /// <summary>
-    /// Provides shared validation logic for importing and exporting configuration files.
+    /// Provides the shared import-side gate for configuration files: path security,
+    /// size threshold, and content read from the validated stream.
+    /// (The path-security gate shared with export lives in <see cref="PathSecurityGuard"/>.)
     /// </summary>
     public static class ImportGuard
     {

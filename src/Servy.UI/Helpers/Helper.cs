@@ -99,8 +99,8 @@ namespace Servy.UI.Helpers
         /// </summary>
         /// <param name="count">The number of items processed.</param>
         /// <param name="duration">The time taken for the operation.</param>
-        /// <param name="noneFormat">Template for zero items (e.g. "No services loaded in {0}").</param>
-        /// <param name="oneFormat">Template for one item (e.g. "Loaded 1 service in {0}").</param>
+        /// <param name="noneFormat">Template for zero items (e.g. "No services loaded in {1}").</param>
+        /// <param name="oneFormat">Template for one item (e.g. "Loaded 1 service in {1}").</param>
         /// <param name="manyFormat">Template for multiple items (e.g. "Loaded {0} services in {1}").</param>
         /// <returns>
         /// A string such as:
