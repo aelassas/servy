@@ -271,7 +271,7 @@ namespace Servy.Infrastructure.Data
 
             // 2. Detect Orphaned Columns (Present in DB, but not in SqlConstants)
             var orphans = existingColumns
-                .MakeOrphanFilter(expectedColumns)
+                .GetOrphanColumns(expectedColumns)
                 .ToList();
 
             if (orphans.Count > 0)
@@ -758,9 +758,10 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Extension-like helper logic utilized to filter collection groups cleanly.
+        /// Identifies orphan column names by returning elements from the source collection 
+        /// that do not exist in the reference set using a case-insensitive comparison.
         /// </summary>
-        private static IEnumerable<string> MakeOrphanFilter(this IEnumerable<string> source, HashSet<string> references)
+        private static IEnumerable<string> GetOrphanColumns(this IEnumerable<string> source, HashSet<string> references)
         {
             return source.Except(references, StringComparer.OrdinalIgnoreCase);
         }
