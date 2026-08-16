@@ -65,7 +65,7 @@ namespace Servy.CLI.Commands
                     SecurityHelper.EnsureAdministrator();
                 }
 
-                var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, cancellationToken: cancellationToken);
+                var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: false, cancellationToken: cancellationToken);
 
                 if (exists == null)
                     return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
