@@ -37,7 +37,7 @@ namespace Servy.Views
         /// </summary>
         /// <param name="serviceName">Service Name.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
-        public async Task LoadServiceConfiguration(string serviceName)
+        public async Task LoadServiceConfigurationAsync(string serviceName)
         {
             if (!string.IsNullOrWhiteSpace(serviceName))
             {
