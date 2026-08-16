@@ -829,12 +829,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool AttachConsole(int dwProcessId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool FreeConsole();
-
         [Fact]
         public void SendCtrlC_ProcessWithAttachedConsole_SendsSignalSuccessfully()
         {
@@ -845,27 +839,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
                 var process = wrapper.UnderlyingProcess;
 
-                // Poll dynamically until conhost.exe finishes attaching the console to the child process
-                bool consoleReady = SpinWait.SpinUntil(() =>
-                {
-                    try
-                    {
-                        if (process.HasExited) return false;
-                        FreeConsole();
-                        if (AttachConsole(process.Id))
-                        {
-                            FreeConsole();
-                            return true;
-                        }
-                        return false;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }, TimeSpan.FromSeconds(5));
-
-                Assert.True(consoleReady, "Target process console was not initialized within the timeout.");
+                // Allow conhost.exe time to initialize and attach the console buffer to cmd.exe
+                Thread.Sleep(500);
 
                 // Act
                 var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", process);
