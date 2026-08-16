@@ -214,7 +214,7 @@ namespace Servy
 
                     if (!string.IsNullOrWhiteSpace(serviceName))
                     {
-                        await mainWindow.LoadServiceConfiguration(serviceName);
+                        await mainWindow.LoadServiceConfigurationAsync(serviceName);
                     }
 
                     return mainWindow;
