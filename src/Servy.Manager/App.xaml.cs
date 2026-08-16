@@ -45,7 +45,8 @@ namespace Servy.Manager
         #region Static Properties
 
         /// <summary>
-        /// Service provider for dependency injection, initialized by the bootstrapper.
+        /// Service provider for dependency injection, built by the App constructor.
+        /// Cleared on exit for test hosts.
         /// </summary>
         public static IServiceProvider Services { get; internal set; }
 

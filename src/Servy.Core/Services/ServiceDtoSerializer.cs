@@ -40,7 +40,7 @@ namespace Servy.Core.Services
         /// Deserializes a format-specific textual stream representation into a structured <see cref="ServiceDto"/>.
         /// </summary>
         /// <param name="input">The raw text block content.</param>
-        /// <returns>The DTO, or <c>null</c> if the input is null/empty or parsing fails.</returns>
+        /// <returns>The DTO, or <c>null</c> if the input is null, empty, or whitespace-only, or parsing fails.</returns>
         public ServiceDto Deserialize(string input)
         {
             // Initial guard: null/empty input deserializes to null per contract
