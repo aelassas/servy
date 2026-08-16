@@ -318,7 +318,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
 
   <data name="Info_FailureProgram" xml:space="preserve">
-    <value>Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed.</value>
+    <value>Configure a script or executable to run when the process fails. If health monitoring is disabled, the program runs when the process exits with a non-zero code. If health monitoring is enabled, the program only runs after all configured recovery action retries have failed. It does not run when the process fails to start.</value>
   </data>
   <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
     <value>Optional. If not set, defaults to the service working directory.</value>

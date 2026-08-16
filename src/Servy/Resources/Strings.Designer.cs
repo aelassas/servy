@@ -1744,7 +1744,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed..
+        ///   Looks up a localized string similar to Configure a script or executable to run when the process fails. If health monitoring is disabled, the program runs when the process exits with a non-zero code. If health monitoring is enabled, the program only runs after all configured recovery action retries have failed. It does not run when the process fails to start..
         /// </summary>
         public static string Info_FailureProgram {
             get {
