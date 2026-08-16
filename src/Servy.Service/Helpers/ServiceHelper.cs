@@ -550,6 +550,12 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="args">The raw string of executable arguments.</param>
         /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
+        /// <summary>
+        /// Uses a timed regular expression to identify and mask sensitive credentials
+        /// within a raw command-line argument string.
+        /// </summary>
+        /// <param name="args">The raw string of executable arguments.</param>
+        /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
         internal static string? MaskRawArguments(string? args)
         {
             if (string.IsNullOrWhiteSpace(args)) return args;
@@ -560,23 +566,8 @@ namespace Servy.Service.Helpers
                 {
                     string key = m.Groups["key"].Value;
                     string sep = m.Groups["sep"].Value;
-                    string val = m.Groups["val"].Value;
 
-                    // Cleanly catch encapsulated quoted string allocations first to block space-splitting leaks
-                    if ((val.StartsWith("\"", StringComparison.Ordinal) && val.EndsWith("\"", StringComparison.Ordinal)) ||
-                        (val.StartsWith("'", StringComparison.Ordinal) && val.EndsWith("'", StringComparison.Ordinal)))
-                    {
-                        return $"{key}{sep}********";
-                    }
-
-                    // Branch B unquoted fallback: isolate and mask only the final whitespace-delimited argument token
-                    int lastSpaceInValue = val.LastIndexOf(' ');
-                    if (lastSpaceInValue >= 0)
-                    {
-                        string intermediateText = val.Substring(0, lastSpaceInValue + 1);
-                        return $"{key}{sep}{intermediateText}********";
-                    }
-
+                    // Redact the entire captured value regardless of quotes or spaces to guarantee no credential leaks.
                     return $"{key}{sep}********";
                 });
             }

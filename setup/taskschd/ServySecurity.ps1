@@ -79,9 +79,8 @@ function Protect-SensitiveString {
 
     # Constructed via concatenation to avoid multi-line here-string whitespace issues.
     # Branch B (space separator) consumes multi-word unquoted values up to the next
-    # command-flag delimiter (-x / /x). To maintain architecture safety constraints,
-    # only the final whitespace-delimited token of an unquoted value is masked;
-    # multi-word unquoted sequences are partially redacted.
+    # command-flag delimiter (-x / /x). To maintain security guarantees, any matched
+    # value is fully redacted as ********.
     # Suffix matching logic pulled inside the (?<key>...) group boundary to protect composite keys.
     # Entire choice blocks are wrapped in atomic groups (?>...) to eliminate catastrophic backtracking timeouts.
     $regexPattern = "(?i)(?<![a-zA-Z0-9])(?<key>(?:$keyPattern)(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
@@ -89,16 +88,16 @@ function Protect-SensitiveString {
             # BRANCH A: Explicit Separators (:, =, /)
             "(?<sep>\s*[:=]\s*|/)" +
             "(?>(?:" +
-                "(?<val>`"[^`"]*`")|" +            # Double quoted: captures quotes so the whole string gets masked cleanly
-                "(?<val>'[^']*')|" +               # Single quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>`"[^`"]*`")|" +             # Double quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>'[^']*')|" +                # Single quoted: captures quotes so the whole string gets masked cleanly
                 "(?<val>[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*)" + # Unquoted: isolates spaces cleanly without nested loops
             "))" +
             "|" +
             # BRANCH B: Space Separator
             "(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
             "(?>(?:" +
-                "(?<val>`"[^`"]*`")|" +            # Double quoted: captures quotes so the whole string gets masked cleanly
-                "(?<val>'[^']*')|" +               # Single quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>`"[^`"]*`")|" +             # Double quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>'[^']*')|" +                # Single quoted: captures quotes so the whole string gets masked cleanly
                 "(?<val>[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*)" + # Unquoted: isolates spaces cleanly without nested loops
             "))" +
         "))"
@@ -109,24 +108,12 @@ function Protect-SensitiveString {
         [TimeSpan]::FromMilliseconds($TimeoutMs)
     )
 
-    # Use MatchEvaluator to conditionally extract the matched separator group (A or B)
+    # Use MatchEvaluator to extract key and separator groups and redact the value completely
     $evaluator = [System.Text.RegularExpressions.MatchEvaluator] {
         param($m)
 
         $key = $m.Groups["key"].Value
         $sep = $m.Groups["sep"].Value
-        $val = $m.Groups["val"].Value
-
-        # Use foolproof native string manipulation to check encapsulation boundaries safely
-        if (($val.StartsWith('"') -and $val.EndsWith('"')) -or ($val.StartsWith("'") -and $val.EndsWith("'"))) {
-            return "$key$sep********"
-        }
-
-        # Branch B unquoted fallback logic
-        $lastTokenIndex = $val.LastIndexOf(' ')
-        if ($lastTokenIndex -ge 0) {
-            return "$key$sep$($val.Substring(0, $lastTokenIndex + 1))********"
-        }
 
         return "$key$sep********"
     }
