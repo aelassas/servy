@@ -78,7 +78,7 @@ namespace Servy.Service.ProcessManagement
         ProcessPriorityClass PriorityClass { get; set; }
 
         /// <summary>
-        /// Get or sets the logical CPUs the process may run on.
+        /// Gets or sets the logical CPUs the process may run on.
         /// </summary>
         IntPtr ProcessorAffinity { get; set; }
 
@@ -139,7 +139,7 @@ namespace Servy.Service.ProcessManagement
         /// Stops all descendant processes of the associated process.
         /// </summary>
         /// <param name="parentPid">Parent process PID.</param>
-        /// <param name="parentStartTime">Parent process start time</param>
+        /// <param name="parentStartTime">Parent process start time.</param>
         /// <param name="timeoutMs">The timeout in milliseconds to wait for the descendant processes to stop.</param>
         void StopDescendants(int parentPid, DateTime parentStartTime, int timeoutMs);
 

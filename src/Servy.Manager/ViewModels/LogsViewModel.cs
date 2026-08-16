@@ -329,7 +329,10 @@ namespace Servy.Manager.ViewModels
         /// Safely disposes of resources, specifically cancelling and disposing the internal
         /// <see cref="CancellationTokenSource"/> to prevent memory leaks.
         /// </summary>
-        /// <param name="disposing">True if called from Dispose(), false if from a finalizer.</param>
+        /// <param name="disposing">
+        /// <see langword="true"/> when called from <see cref="Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (_isDisposed) return;

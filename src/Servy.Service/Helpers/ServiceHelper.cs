@@ -597,7 +597,7 @@ namespace Servy.Service.Helpers
                 return "[INVALID URL]";
             }
 
-            // Capture solely the scheme and host boundary to strip user:pass, query string strings, and precise routing hashes
+            // Keep only scheme://host plus a 5-character path hint; strips user:pass, the query string, and the fragment
             string baseSecuredUri = $"{uri.Scheme}://{uri.Host}";
             string localPath = uri.LocalPath;
 
