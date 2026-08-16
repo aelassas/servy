@@ -213,12 +213,34 @@ namespace Servy.Manager.Utils
 
                                             lastSuccessfullyReadLine = line;
                                             batch.Add(new LogLine(line, type));
-                                            lastTerminatedLineEndOffset = fs.Position;
 
+                                            // Determine if this batch hit the flush threshold
                                             if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
-                                                OnNewLines?.Invoke(batch);
+                                                // If we hit threshold at EOF and the file has an unterminated tail,
+                                                // hold back the torn line in carryOverFragment instead of publishing it.
+                                                if (fs.Position >= fs.Length && fs.Length > 0 && !EndsWithNewline(fs))
+                                                {
+                                                    batch.RemoveAt(batch.Count - 1);
+                                                    carryOverFragment = line;
+                                                    lastPosition = lastTerminatedLineEndOffset;
+                                                }
+                                                else
+                                                {
+                                                    lastTerminatedLineEndOffset = fs.Position;
+                                                    lastPosition = lastTerminatedLineEndOffset;
+                                                }
+
+                                                if (batch.Count > 0)
+                                                {
+                                                    OnNewLines?.Invoke(batch);
+                                                }
+
                                                 batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
+                                            }
+                                            else
+                                            {
+                                                lastTerminatedLineEndOffset = fs.Position;
                                             }
                                         }
 

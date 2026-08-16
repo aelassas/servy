@@ -1612,7 +1612,7 @@ namespace Servy.Service
 
                 if (exitCode == 0)
                 {
-                    if (_options.RecoveryOnCleanExit)
+                    if (_options.RecoveryOnCleanExit && _recoveryActionEnabled)
                     {
                         _logger?.Info("Child process exited successfully (Code 0). RecoveryOnCleanExit is ENABLED. Checking recovery...");
                         needsRecovery = RegisterFailureAndCheckRecovery();

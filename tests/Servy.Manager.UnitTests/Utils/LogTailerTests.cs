@@ -296,7 +296,12 @@ namespace Servy.Manager.UnitTests.Utils
 
                 // Pre-create and flush all lines to disk synchronously
                 var contentToAppend = string.Join("\n", Enumerable.Range(0, AppConfig.LogTailerBatchFlushThreshold + 5).Select(i => $"BatchLine_{i}")) + "\n";
-                File.AppendAllText(_tempFilePath, contentToAppend);
+
+                using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+                using (var writer = new StreamWriter(fs))
+                {
+                    await writer.WriteAsync(contentToAppend);
+                }
 
                 // Wait for background batch splitting mechanics to propagate updates
                 await Helper.WaitUntilAsync(() =>
@@ -312,6 +317,137 @@ namespace Servy.Manager.UnitTests.Utils
                 {
                     Assert.True(capturedBatches.Count >= 2, "Expected a mid-read threshold flush followed by the end-of-pass flush.");
                     Assert.Equal(AppConfig.LogTailerBatchFlushThreshold, capturedBatches[0].Count);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task RunFromPosition_ThresholdBatchWithUnterminatedLine_HoldsBackTornFragmentUntilNewline()
+        {
+            // Arrange
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                File.WriteAllText(_tempFilePath, string.Empty);
+                var fileInfo = new FileInfo(_tempFilePath);
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedLines) capturedLines.AddRange(lines);
+                };
+
+                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                await WaitForLoopStartAsync(tailer, CancellationToken.None);
+
+                // Construct AppConfig.LogTailerBatchFlushThreshold lines where the last line lacks a trailing newline
+                int threshold = AppConfig.LogTailerBatchFlushThreshold;
+                var fullLines = Enumerable.Range(1, threshold - 1).Select(i => $"FullLine_{i}");
+                string contentWithTornTail = string.Join("\n", fullLines) + "\nUNTERMINATED_TAIL_LINE";
+
+                // Act
+                File.WriteAllText(_tempFilePath, contentWithTornTail);
+
+                // Wait for the complete lines to be published
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedLines) return capturedLines.Count == threshold - 1;
+                }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+
+                // Assert - The torn tail line should be held back and not published prematurely
+                lock (capturedLines)
+                {
+                    Assert.Equal(threshold - 1, capturedLines.Count);
+                    Assert.DoesNotContain(capturedLines, l => l.Text.Contains("UNTERMINATED_TAIL_LINE"));
+                }
+
+                // Act - Terminate the tail line with a newline
+                using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+                using (var writer = new StreamWriter(fs))
+                {
+                    await writer.WriteAsync("\n");
+                }
+
+                // Wait for the full line to be published
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedLines) return capturedLines.Count == threshold;
+                }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert - The reconstructed full line should now be emitted exactly once
+                lock (capturedLines)
+                {
+                    Assert.Equal(threshold, capturedLines.Count);
+                    Assert.Equal(1, capturedLines.Count(l => l.Text == "UNTERMINATED_TAIL_LINE"));
+                }
+            }
+        }
+
+        [Fact]
+        public async Task RunFromPosition_MidPassExceptionAfterFlush_DoesNotReplayFlushedLines()
+        {
+            // Arrange
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                File.WriteAllText(_tempFilePath, string.Empty);
+                var fileInfo = new FileInfo(_tempFilePath);
+
+                var capturedBatches = new List<List<LogLine>>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
+                };
+
+                var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
+                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                await WaitForLoopStartAsync(tailer, CancellationToken.None);
+                await loopCompletedTcs.Task;
+
+                // Act - Append a full batch threshold of complete lines using shared write permissions
+                int threshold = AppConfig.LogTailerBatchFlushThreshold;
+                var batchContent = string.Join("\n", Enumerable.Range(1, threshold).Select(i => $"Line_{i}")) + "\n";
+
+                using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+                using (var writer = new StreamWriter(fs))
+                {
+                    await writer.WriteAsync(batchContent);
+                }
+
+                // Wait for the threshold flush to be published and committed
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedBatches) return capturedBatches.Count >= 1;
+                }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+
+                // Append additional lines after the threshold flush using shared write permissions
+                using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+                using (var writer = new StreamWriter(fs))
+                {
+                    await writer.WriteAsync("PostFlushLine1\nPostFlushLine2\n");
+                }
+
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedBatches) return capturedBatches.SelectMany(b => b).Any(l => l.Text == "PostFlushLine2");
+                }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert - Flushed lines from earlier passes must not be duplicated
+                lock (capturedBatches)
+                {
+                    var allLines = capturedBatches.SelectMany(b => b).Select(l => l.Text).ToList();
+                    Assert.Equal(1, allLines.Count(l => l == "Line_1"));
+                    Assert.Equal(1, allLines.Count(l => l == $"Line_{threshold}"));
+                    Assert.Equal(1, allLines.Count(l => l == "PostFlushLine1"));
+                    Assert.Equal(1, allLines.Count(l => l == "PostFlushLine2"));
                 }
             }
         }

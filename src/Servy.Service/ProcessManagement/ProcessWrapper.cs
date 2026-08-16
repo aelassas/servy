@@ -610,6 +610,8 @@ namespace Servy.Service.ProcessManagement
 
                 if (!AttachConsole(process.Id))
                 {
+                    int error = Marshal.GetLastWin32Error();   // must be first - HasExited clobbers the last-error slot
+
                     // Double check if the process has actually exited under our feet.
                     // If the process is dead, any attach failure means it's already gone.
                     if (process.HasExited)
@@ -617,7 +619,6 @@ namespace Servy.Service.ProcessManagement
                         return null;
                     }
 
-                    int error = Marshal.GetLastWin32Error();
                     bool? outcome = ClassifyAttachFailure(error);
 
                     if (error == Errors.ERROR_PIPE_NOT_CONNECTED)

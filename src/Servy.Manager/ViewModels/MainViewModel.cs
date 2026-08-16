@@ -640,8 +640,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void StopRefreshTimer()
         {
-            _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
-
             // Thread-safe disposal pattern
             var oldCts = Interlocked.Exchange(ref _cts, null);
             if (oldCts != null)
@@ -664,6 +662,9 @@ namespace Servy.Manager.ViewModels
         public void CreateAndStartTimer()
         {
             if (_isDisposed) return;
+
+            // Resync state in case AppConfig changed while the Main tab was deactivated
+            IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
 
             Interlocked.CompareExchange(ref _cts, new CancellationTokenSource(), null);
 
@@ -1177,6 +1178,8 @@ namespace Servy.Manager.ViewModels
 
             if (disposing)
             {
+                _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
+
                 // Stop the main timer first so no more ticks reach ServiceCommands.
                 StopRefreshTimer();
                 ClearActiveSearchContext();
