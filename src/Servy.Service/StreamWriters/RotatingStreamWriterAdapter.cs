@@ -78,7 +78,10 @@ namespace Servy.Service.StreamWriters
         /// <summary>
         /// Protected dispose pattern implementation.
         /// </summary>
-        /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+        /// <param name="disposing">
+        /// <see langword="true"/> when called from <see cref="Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;

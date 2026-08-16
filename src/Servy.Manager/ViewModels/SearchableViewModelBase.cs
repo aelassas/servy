@@ -76,11 +76,11 @@ namespace Servy.Manager.ViewModels
         /// Runs the centralized seven-step search pipeline engine thread-safely.
         /// </summary>
         /// <param name="fetchAndApplyAsync">Asynchronous delegate to execute the data query and process collection changes.</param>
-        /// <param name="noneFormat">String format constraint applied when zero matches return.</param>
-        /// <param name="oneFormat">String format constraint applied when exactly one match returns.</param>
-        /// <param name="manyFormat">String format constraint applied when multiple matches return.</param>
+        /// <param name="noneFormat">Footer format string used when the search returns no matches.</param>
+        /// <param name="oneFormat">Footer format string used when the search returns exactly one match.</param>
+        /// <param name="manyFormat">Footer format string used when the search returns multiple matches.</param>
         /// <param name="onPreFetchYieldAsync">Optional hook parameter allowing views to trigger intermediary UI thread dispatcher yielding.</param>
-        /// <returns>A tracking execution task container handle.</returns>
+        /// <returns>A task that represents the asynchronous search operation.</returns>
         protected async Task ExecuteSearchPipelineAsync(
             Func<CancellationToken, Task<int>> fetchAndApplyAsync,
             string noneFormat,
@@ -131,7 +131,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error($"Search pipeline executed with a critical anomaly in {GetType().Name}.", ex);
+                Logger.Error($"Search pipeline failed in {GetType().Name}.", ex);
                 await HandleSearchExceptionAsync(ex);
             }
             finally

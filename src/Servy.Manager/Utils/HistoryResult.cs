@@ -38,8 +38,8 @@ namespace Servy.Manager.Utils
         public HistoryResult(List<LogLine>? lines, long position, DateTime creationTime)
         {
             // We still accept List<T> in the constructor for convenience,
-            // but it is stored and exposed as IReadOnlyList.
-            Lines = lines ?? new List<LogLine>();
+            // but it is stored and exposed as a defensively copied IReadOnlyList.
+            Lines = lines != null ? new List<LogLine>(lines) : new List<LogLine>();
             Position = position;
             CreationTime = creationTime;
         }
