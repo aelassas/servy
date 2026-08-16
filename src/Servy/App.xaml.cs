@@ -172,7 +172,7 @@ namespace Servy
                     // 2. Initialize UI Services
                     var fileDialogService = new FileDialogService();
                     var messageBoxService = new MessageBoxService(new WpfUiDispatcher());
-                    var helperService = new HelpService(messageBoxService);
+                    var helpService = new HelpService(messageBoxService);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var configValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);
 
@@ -204,7 +204,7 @@ namespace Servy
                         serviceCommands,
                         messageBoxService,
                         ServiceRepository!,
-                        helperService,
+                        helpService,
                         this
                     );
 
