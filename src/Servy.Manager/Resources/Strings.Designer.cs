@@ -2158,6 +2158,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to launch the Desktop application..
+        /// </summary>
+        public static string Msg_DesktopAppLaunchFailed {
+            get {
+                return ResourceManager.GetString("Msg_DesktopAppLaunchFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Servy Desktop App not found..
         /// </summary>
         public static string Msg_DesktopAppNotFound {

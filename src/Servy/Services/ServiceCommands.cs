@@ -413,6 +413,8 @@ namespace Servy.Services
                     if (process == null)
                     {
                         Logger.Warn($"Failed to start external process {_appConfig.ManagerAppPublishPath}.");
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppLaunchFailed, Caption);
+                        return;
                     }
                 }
             }
