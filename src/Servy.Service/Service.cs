@@ -1159,7 +1159,7 @@ namespace Servy.Service
         {
             if (_childProcess == null)
             {
-                _logger?.Warn("SetProcessAffinity called before child process was started; ignoring.");
+                _logger?.Warn("SetProcessCpuAffinity called before child process was started; ignoring.");
                 return;
             }
 

@@ -236,7 +236,7 @@ namespace Servy.Infrastructure.Data
             // Fetch full column definitions (name and type) from PRAGMA
             var tableInfo = connection.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});", transaction: transaction).ToList();
 
-            // DRY PASS: Derive hash set from raw metadata rows directly to save an extra query round-trip
+            // Reuse the PRAGMA rows fetched above instead of calling GetExistingColumnNames, saving a second round-trip.
             var existingColumns = new HashSet<string>(
                 tableInfo.Select(row => (string)row.name),
                 StringComparer.OrdinalIgnoreCase);
@@ -456,8 +456,7 @@ namespace Servy.Infrastructure.Data
             // --------------------------------------------------------------------------------------------------------
 
             connection.Execute($"CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));", transaction: transaction);
-
-            // DRY PASS: Utilize centralized factory query engine helper
+    
             var existingColumns = GetExistingColumnNames(connection, transaction);
 
             // --- Intercept ambiguous legacy column and rename before dynamic column mapping ---
@@ -673,7 +672,6 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private static void AddColumnIfMissing(DbConnection conn, DbTransaction tx, int version, string columnName)
         {
-            // DRY PASS: Utilize centralized factory query engine helper
             var existing = GetExistingColumnNames(conn, tx);
 
             if (!existing.Contains(columnName))
@@ -695,7 +693,6 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private static void RenameColumnIfExists(DbConnection conn, DbTransaction tx, int version, string oldName, string newName)
         {
-            // DRY PASS: Utilize centralized factory query engine helper
             var existing = GetExistingColumnNames(conn, tx);
 
             if (existing.Contains(oldName) && !existing.Contains(newName))
