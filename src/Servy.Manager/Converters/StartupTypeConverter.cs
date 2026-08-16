@@ -26,10 +26,10 @@ namespace Servy.Manager.Converters
         }
 
         /// <summary>
-        /// Provides a fallback string value when the start type calculation routing pass breaks.
+        /// Returns a fallback string when the bound value is not a mapped <see cref="ServiceStartType"/>.
         /// </summary>
-        /// <param name="value">The raw unmapped source value.</param>
-        /// <returns>The string representation or a customized fetching notice label.</returns>
+        /// <param name="value">The unmapped source value.</param>
+        /// <returns>The value's string representation, or <see cref="Strings.Label_Fetching"/> when null.</returns>
         protected override string GetFallbackValue(object value)
         {
             return value?.ToString() ?? Strings.Label_Fetching;

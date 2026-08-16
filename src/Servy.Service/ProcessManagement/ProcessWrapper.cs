@@ -512,7 +512,8 @@ namespace Servy.Service.ProcessManagement
         /// Releases unmanaged and optionally managed resources.
         /// </summary>
         /// <param name="disposing">
-        /// True if called from <see cref="Dispose()"/>; false if called from a finalizer.
+        /// <see langword="true"/> when called from <see cref="Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
