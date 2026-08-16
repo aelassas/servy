@@ -2,6 +2,7 @@ using Servy.Core.Native;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
@@ -828,6 +829,57 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AttachConsole(int dwProcessId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool FreeConsole();
+
+        [Fact]
+        public void SendCtrlC_ProcessWithAttachedConsole_SendsSignalSuccessfully()
+        {
+            // Arrange
+            // Launch cmd.exe with CreateNoWindow = false so Windows allocates a console buffer.
+            using (var wrapper = CreateWrapper("cmd.exe", "/c pause", createNoWindow: false))
+            {
+                wrapper.Start();
+                var process = wrapper.UnderlyingProcess;
+
+                // Poll dynamically until conhost.exe finishes attaching the console to the child process
+                bool consoleReady = SpinWait.SpinUntil(() =>
+                {
+                    try
+                    {
+                        if (process.HasExited) return false;
+                        FreeConsole();
+                        if (AttachConsole(process.Id))
+                        {
+                            FreeConsole();
+                            return true;
+                        }
+                        return false;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }, TimeSpan.FromSeconds(5));
+
+                Assert.True(consoleReady, "Target process console was not initialized within the timeout.");
+
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", process);
+
+                // Assert
+                Assert.Equal(true, result);
+                Assert.Contains(_logger.Infos, m => m.Contains("Sent Ctrl+C to process"));
+
+                // Cleanup
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
+            }
+        }
+
         [Theory]
         [InlineData(Errors.ERROR_PIPE_NOT_CONNECTED, true)]
         [InlineData(Errors.ERROR_INVALID_HANDLE, false)]
@@ -857,6 +909,25 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Assert
                 Assert.NotNull(reader);
                 Assert.Contains("STREAM_TEST", content);
+            }
+        }
+
+        [Fact]
+        public void StandardError_Get_ReturnsValidStreamReader()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"[Console]::Error.WriteLine('STDERR_TEST')\"", redirectOutput: true))
+            {
+                wrapper.Start();
+
+                // Act
+                StreamReader reader = wrapper.StandardError;
+                string content = reader.ReadToEnd();
+                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+                // Assert
+                Assert.NotNull(reader);
+                Assert.Contains("STDERR_TEST", content);
             }
         }
 
