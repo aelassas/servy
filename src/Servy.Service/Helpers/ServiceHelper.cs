@@ -567,23 +567,8 @@ namespace Servy.Service.Helpers
                 {
                     string key = m.Groups["key"].Value;
                     string sep = m.Groups["sep"].Value;
-                    string val = m.Groups["val"].Value;
 
-                    // Cleanly catch encapsulated quoted string allocations first to block space-splitting leaks
-                    if ((val.StartsWith("\"", StringComparison.Ordinal) && val.EndsWith("\"", StringComparison.Ordinal)) ||
-                        (val.StartsWith("'", StringComparison.Ordinal) && val.EndsWith("'", StringComparison.Ordinal)))
-                    {
-                        return $"{key}{sep}********";
-                    }
-
-                    // Branch B unquoted fallback: isolate and mask only the final whitespace-delimited argument token
-                    int lastSpaceInValue = val.LastIndexOf(' ');
-                    if (lastSpaceInValue >= 0)
-                    {
-                        string intermediateText = val.Substring(0, lastSpaceInValue + 1);
-                        return $"{key}{sep}{intermediateText}********";
-                    }
-
+                    // Redact the entire captured value regardless of quotes or spaces to guarantee no credential leaks.
                     return $"{key}{sep}********";
                 });
             }

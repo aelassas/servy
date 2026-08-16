@@ -703,7 +703,7 @@ namespace Servy.Service.UnitTests.Helpers
 
         [Theory]
         [InlineData("myapp.exe --password mysecret", "myapp.exe --password ********")]
-        [InlineData("CONNSTR my server address password", "CONNSTR my server address ********")]
+        [InlineData("CONNSTR my server address password", "CONNSTR ********")]
         public void MaskRawArguments_BranchB_SpaceSeparators_MasksCorrectly(string input, string expected)
         {
             // Act
@@ -750,6 +750,20 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Assert
             Assert.Equal(input, result); // Should remain completely untouched
+        }
+
+        [Theory]
+        [InlineData("--db-password=hunter2 dump.sql", "--db-password=********")]
+        [InlineData("PASSWORD hunter2 dump.sql", "PASSWORD ********")]
+        [InlineData("PASSPHRASE=correct horse battery staple", "PASSPHRASE=********")]
+        [InlineData("API_KEY my-secret-token extra_arg1 extra_arg2", "API_KEY ********")]
+        public void MaskRawArguments_UnquotedMultiWordWithTrailingPositionalArgs_RedactsEntireValueWithoutLeakingFirstToken(string input, string expected)
+        {
+            // Act
+            var result = ServiceHelper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
         }
 
         #endregion
