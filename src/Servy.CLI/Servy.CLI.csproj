@@ -13,7 +13,6 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <StripSymbols>true</StripSymbols>
 
     <IsTrimmable>true</IsTrimmable>
     <PublishTrimmed>true</PublishTrimmed>
