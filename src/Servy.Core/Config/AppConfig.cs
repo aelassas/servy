@@ -116,12 +116,6 @@ namespace Servy.Core.Config
         public static readonly string HandleExeARM64 = $"{HandleExeARM64FileName}.exe";
 
         /// <summary>
-        /// The file name of the Servy.Core assembly (without extension).
-        /// Used when copying or loading the core library dynamically.
-        /// </summary>
-        public const string ServyCoreDllName = "Servy.Core";
-
-        /// <summary>
         /// The base file name (without extension) of the Servy Service UI executable.
         /// </summary>
         public const string ServyServiceUIFileName = "Servy.Service";

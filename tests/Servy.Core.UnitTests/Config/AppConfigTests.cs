@@ -28,18 +28,6 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
-        public void ServyCoreDllName_ShouldBeCorrect()
-        {
-            // Arrange (Static property validation context)
-
-            // Act
-            var dllName = AppConfig.ServyCoreDllName;
-
-            // Assert
-            Assert.Equal("Servy.Core", dllName);
-        }
-
-        [Fact]
         public void ServyServiceUIExe_ShouldBeCorrect()
         {
             // Arrange (Static property validation context)
