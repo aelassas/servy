@@ -824,12 +824,16 @@ namespace Servy.Manager.ViewModels
                 // Scale parallelism up to 2x logical CPU cores, capped by application configuration.
                 int maxRefreshDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
 
-                using (var semaphore = new SemaphoreSlim(maxRefreshDegreeOfParallelism))
+                await Task.Run(() =>
                 {
-                    var tasks = snapshot.Select(async service =>
-                    {
-                        await semaphore.WaitAsync(token);
-                        try
+                    Parallel.ForEach(
+                        snapshot,
+                        new ParallelOptions
+                        {
+                            MaxDegreeOfParallelism = maxRefreshDegreeOfParallelism,
+                            CancellationToken = token
+                        },
+                        service =>
                         {
                             if (service == null || string.IsNullOrWhiteSpace(service.Name)) return;
                             allDtosDict.TryGetValue(service.Name, out var dto);
@@ -842,15 +846,8 @@ namespace Servy.Manager.ViewModels
 
                             if (result.UpdatedDto != null)
                                 changedDtos.Add(result.UpdatedDto);
-                        }
-                        finally
-                        {
-                            semaphore.Release();
-                        }
-                    }).ToList();
-
-                    await Task.WhenAll(tasks);
-                }
+                        });
+                }, token);
 
                 // 5. Batch-Apply all UI updates to the UI thread in one go
                 // This prevents the "Collection modified" crash by ensuring
