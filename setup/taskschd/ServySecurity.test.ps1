@@ -32,7 +32,7 @@ $testCases = @(
     @{ Name = "Branch A: Forward Slash Separator"; Input = "API_KEY/my-secret-token"; Expected = "API_KEY/********" },
     @{ Name = "Branch B: Space Separator"; Input = "myapp.exe --password mysecret"; Expected = "myapp.exe --password ********" },
 
-# Standardized expectation to match the engine's targeted keyword redaction architecture
+    # Standardized expectation to match the engine's targeted keyword redaction architecture
     @{ Name = "Branch B: Space Separator Multi-Word Value"; Input = "CONNSTR my server address password"; Expected = "CONNSTR ********" },
 
     # --- Quoted Values Preservation Constraints ---
