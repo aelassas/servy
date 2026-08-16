@@ -243,7 +243,13 @@ namespace Servy.Manager.Services
 
                 if (service == null)
                 {
-                    using (StartProcess(psi)) { }
+                    using (var process = StartProcess(psi))
+                    {
+                        if (process == null)
+                        {
+                            await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption);
+                        }
+                    }
                     return;
                 }
 
