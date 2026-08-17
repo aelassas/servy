@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.ServiceProcess;
 using System.Threading;
+using static Servy.Core.Native.Errors;
 
 namespace Servy.Core.Services
 {
@@ -263,8 +264,7 @@ namespace Servy.Core.Services
             {
                 Logger.Warn($"Win32 error resolving dependency '{serviceName}'.", ex);
 
-                // Discrimination filter targeting Win32 error code 5 (ERROR_ACCESS_DENIED)
-                string localizedMessage = ex.NativeErrorCode == 5
+                string localizedMessage = ex.NativeErrorCode == ERROR_ACCESS_DENIED
                     ? string.Format(Strings.Msg_DependencyAccessDenied, serviceName)
                     : string.Format(Strings.Msg_DependencyUnavailable, serviceName);
 

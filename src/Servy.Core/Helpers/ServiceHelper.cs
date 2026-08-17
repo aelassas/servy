@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
+using static Servy.Core.Native.Errors;
 
 namespace Servy.Core.Helpers
 {
@@ -453,7 +454,7 @@ namespace Servy.Core.Helpers
                                     NativeMethods.QueryServiceConfig(serviceHandle, IntPtr.Zero, 0, out int bytesNeeded);
                                     int lastError = Marshal.GetLastWin32Error();
 
-                                    if (lastError != NativeMethods.ERROR_INSUFFICIENT_BUFFER)
+                                    if (lastError != ERROR_INSUFFICIENT_BUFFER)
                                         continue;
 
                                     IntPtr bufferPtr = Marshal.AllocHGlobal(bytesNeeded);

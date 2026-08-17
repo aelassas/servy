@@ -338,10 +338,8 @@ namespace Servy.Core.Security
             try
             {
                 // Retry with short exponential backoff
-                const int maxRetries = 3;
-
                 // Move the safety check to the loop condition
-                for (int attempt = 0; attempt < maxRetries; attempt++)
+                for (int attempt = 0; attempt < AppConfig.KeyProviderReadMaxRetries; attempt++)
                 {
                     try
                     {
@@ -353,10 +351,10 @@ namespace Servy.Core.Security
                         || ex is UnauthorizedAccessException)
                     {
                         // If this was the last attempt, rethrow to be caught by BaseCommand
-                        if (attempt == maxRetries - 1)
+                        if (attempt == AppConfig.KeyProviderReadMaxRetries - 1)
                         {
                             var verb = ex is UnauthorizedAccessException ? "Access denied" : "Failed to read file";
-                            Logger.Error($"{verb} after {maxRetries} attempts: {path}", ex);
+                            Logger.Error($"{verb} after {AppConfig.KeyProviderReadMaxRetries} attempts: {path}", ex);
                             throw;
                         }
 
@@ -369,7 +367,7 @@ namespace Servy.Core.Security
                 // static analysis tools (and good practice) appreciate the explicit guard.
                 if (encrypted == null)
                 {
-                    throw new InvalidOperationException($"Failed to read {path} after {maxRetries} attempts");
+                    throw new InvalidOperationException($"Failed to read {path} after {AppConfig.KeyProviderReadMaxRetries} attempts");
                 }
 
                 byte[] dynamicEntropy = MachineEntropy.Value;

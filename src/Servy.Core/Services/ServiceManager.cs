@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
+using static Servy.Core.Native.Errors;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
