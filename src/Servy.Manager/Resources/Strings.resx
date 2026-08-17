@@ -534,7 +534,7 @@ If the service is disabled and marked for deletion, installation will fail until
   </data>
 
   <data name="Automation_SearchButton_HelpText" xml:space="preserve">
-    <value>Execute service search.</value>
+    <value>Executes the service search.</value>
   </data>
 
   <data name="Automation_ServicesDataGrid_Name" xml:space="preserve">
@@ -991,7 +991,7 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Search Services</value>
   </data>
   <data name="Automation_SidebarSearchTextBox_HelpText" xml:space="preserve">
-    <value>Type a keyword to search services</value>
+    <value>Type a keyword to search services.</value>
   </data>
   <data name="Automation_SidebarServicesDataGrid_Name" xml:space="preserve">
     <value>Services List</value>

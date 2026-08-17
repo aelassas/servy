@@ -24,7 +24,7 @@ namespace Servy.Manager.Config
         public int SearchDebounceDelayMs => Core.Config.AppConfig.DefaultSearchDebounceDelayMs; // Standard UI responsiveness delay
         public int MaxBulkOperationParallelism => Core.Config.AppConfig.DefaultMaxBulkOperationParallelism;
 
-        string IAppConfiguration.DesktopAppPublishPath => Core.Config.AppConfig.DefaultDesktopAppPublishPath;
+        public string DesktopAppPublishPath => Core.Config.AppConfig.DefaultDesktopAppPublishPath;
 
         public event PropertyChangedEventHandler PropertyChanged
         {
