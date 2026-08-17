@@ -37,6 +37,25 @@ namespace Servy.Core.Services
     /// </remarks>
     public class ServiceManager : IServiceManager
     {
+        #region Private Delegates
+
+        /// <summary>
+        /// Encapsulates a native Win32 or P/Invoke wrapper delegate used for two-pass service configuration queries,
+        /// supporting both initial size-probing and memory buffer population calls.
+        /// </summary>
+        /// <param name="handle">A valid handle to the target Windows service.</param>
+        /// <param name="buffer">A pointer to the allocated unmanaged buffer where configuration data is written, or <see cref="IntPtr.Zero"/> during size-probing.</param>
+        /// <param name="bufferSize">The allocated size of the unmanaged buffer in bytes.</param>
+        /// <param name="bytesNeeded">Receives the required buffer size in bytes if the buffer is insufficient, or the actual number of bytes written on success.</param>
+        /// <returns><c>true</c> if the query operation succeeded; otherwise, <c>false</c>.</returns>
+        private delegate bool QueryServiceConfigNativeDelegate(
+            SafeServiceHandle handle,
+            IntPtr buffer,
+            int bufferSize,
+            out int bytesNeeded);
+
+        #endregion
+
         #region Private Fields
 
         private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
@@ -1190,17 +1209,23 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Retrieves the account name under which the service runs.
+        /// Executes a two-pass Win32 service configuration query using a size-probe pattern,
+        /// allocating native memory dynamically before marshalling the target result string.
         /// </summary>
         /// <param name="svcHandle">A valid handle to the target Windows service.</param>
-        /// <returns>The account string or <c>null</c> if it couldn't be retrieved.</returns>
+        /// <param name="queryConfig">The native P/Invoke method or wrapper delegate executing the Win32 query call.</param>
+        /// <param name="extractString">Delegate that marshals the native structure from unmanaged memory and extracts the target string pointer.</param>
+        /// <param name="probeContext">Description of the configuration target used for diagnostic logging.</param>
+        /// <returns>The extracted string or <c>null</c> if no configuration value is set.</returns>
         /// <exception cref="Win32Exception">Thrown when the Win32 subsystem encounters an infrastructural or security impediment.</exception>
-        private string GetServiceUser(SafeServiceHandle svcHandle)
+        private string QueryServiceConfigString(
+            SafeServiceHandle svcHandle,
+            QueryServiceConfigNativeDelegate queryConfig,
+            Func<IntPtr, string> extractString,
+            string probeContext)
         {
-            int bytesNeeded = 0;
-
             // Invoke Pass 1: Size-Probe using an intentional null destination pointer
-            _windowsServiceApi.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out bytesNeeded);
+            queryConfig(svcHandle, IntPtr.Zero, 0, out int bytesNeeded);
 
             // Intercept the native error state immediately before any subsequent C# evaluations occur
             int errorCode = _win32ErrorProvider.GetLastWin32Error();
@@ -1209,7 +1234,7 @@ namespace Servy.Core.Services
             {
                 if (errorCode != ERROR_INSUFFICIENT_BUFFER)
                 {
-                    Logger.Warn($"QueryServiceConfig size probe failed for account configuration. Win32 Error Code: {errorCode}");
+                    Logger.Warn($"QueryServiceConfig size probe failed for {probeContext}. Win32 Error Code: {errorCode}");
                     throw new Win32Exception(errorCode);
                 }
                 return null;
@@ -1218,10 +1243,9 @@ namespace Servy.Core.Services
             IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
             try
             {
-                if (_windowsServiceApi.QueryServiceConfig(svcHandle, ptr, bytesNeeded, out _))
+                if (queryConfig(svcHandle, ptr, bytesNeeded, out _))
                 {
-                    var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(ptr);
-                    return Marshal.PtrToStringAuto(config.lpServiceStartName);
+                    return extractString(ptr);
                 }
 
                 int callErrorCode = _win32ErrorProvider.GetLastWin32Error();
@@ -1231,6 +1255,26 @@ namespace Servy.Core.Services
             {
                 Marshal.FreeHGlobal(ptr);
             }
+        }
+
+        /// <summary>
+        /// Retrieves the account name under which the service runs.
+        /// </summary>
+        /// <param name="svcHandle">A valid handle to the target Windows service.</param>
+        /// <returns>The account string or <c>null</c> if it couldn't be retrieved.</returns>
+        /// <exception cref="Win32Exception">Thrown when the Win32 subsystem encounters an infrastructural or security impediment.</exception>
+        private string GetServiceUser(SafeServiceHandle svcHandle)
+        {
+            return QueryServiceConfigString(
+                svcHandle,
+                (SafeServiceHandle handle, IntPtr buffer, int bufferSize, out int bytesNeeded) =>
+                    _windowsServiceApi.QueryServiceConfig(handle, buffer, bufferSize, out bytesNeeded),
+                ptr =>
+                {
+                    var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(ptr);
+                    return Marshal.PtrToStringAuto(config.lpServiceStartName);
+                },
+                "account configuration");
         }
 
         /// <summary>
@@ -1295,40 +1339,16 @@ namespace Servy.Core.Services
         /// <exception cref="Win32Exception">Thrown when the Win32 subsystem encounters an infrastructural or security impediment.</exception>
         private string GetServiceDescription(SafeServiceHandle svcHandle)
         {
-            // Invoke Pass 1: Size-Probe using an intentional null destination pointer
-            _windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, out int bytesNeeded);
-
-            // Intercept the native error state immediately before any subsequent C# evaluations occur
-            int errorCode = _win32ErrorProvider.GetLastWin32Error();
-
-            if (bytesNeeded <= 0)
-            {
-                // If it failed because there's truly no data, or if it's an expected condition, return null.
-                // Otherwise, treat non-buffer-size errors as structural failures.
-                if (errorCode != ERROR_INSUFFICIENT_BUFFER)
-                {
-                    Logger.Warn($"QueryServiceConfig2 size probe failed for description. Win32 Error Code: {errorCode}");
-                    throw new Win32Exception(errorCode);
-                }
-                return null;
-            }
-
-            IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
-            try
-            {
-                if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, ptr, bytesNeeded, out _))
+            return QueryServiceConfigString(
+                svcHandle,
+                (SafeServiceHandle handle, IntPtr buffer, int bufferSize, out int bytesNeeded) =>
+                    _windowsServiceApi.QueryServiceConfig2(handle, SERVICE_CONFIG_DESCRIPTION, buffer, bufferSize, out bytesNeeded),
+                ptr =>
                 {
                     var descStruct = Marshal.PtrToStructure<SERVICE_DESCRIPTION>(ptr);
                     return Marshal.PtrToStringAuto(descStruct.lpDescription);
-                }
-
-                int callErrorCode = _win32ErrorProvider.GetLastWin32Error();
-                throw new Win32Exception(callErrorCode);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(ptr);
-            }
+                },
+                "description");
         }
 
         /// <summary>

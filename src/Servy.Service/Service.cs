@@ -563,6 +563,18 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Determines whether health monitoring and automated recovery actions are fully enabled based on startup options.
+        /// </summary>
+        private static bool IsRecoveryEnabled(StartOptions options)
+        {
+            return options != null &&
+                   options.EnableHealthMonitoring &&
+                   options.HeartbeatIntervalInSeconds > 0 &&
+                   options.MaxFailedChecks > 0 &&
+                   options.RecoveryAction != RecoveryAction.None;
+        }
+
+        /// <summary>
         /// Initializes the path to the restart attempts file for the current service,
         /// located under the %ProgramData%\Servy\recovery directory.
         /// The filename is unique per service based on its name to prevent conflicts
@@ -1933,8 +1945,9 @@ namespace Servy.Service
         /// </summary>
         /// <param name="exitCode">The exit code of the terminated process, or null if unreachable.</param>
         /// <param name="source">The caller context tag for log messages (e.g., "OnProcessExited" or "CheckHealth").</param>
+        /// <param name="isHealthCheck">Indicates whether the evaluation originates from periodic health monitoring polling.</param>
         /// <returns>A tuple indicating whether recovery is needed or if the service should stop.</returns>
-        private (bool NeedsRecovery, bool ShouldStop) EvaluateExitOutcome(int? exitCode, string source)
+        private (bool NeedsRecovery, bool ShouldStop) EvaluateExitOutcome(int? exitCode, string source, bool isHealthCheck = false)
         {
             if (_options == null)
             {
@@ -1943,7 +1956,7 @@ namespace Servy.Service
 
             if (exitCode == 0)
             {
-                if (_options.RecoveryOnCleanExit && _recoveryActionEnabled)
+                if (_options.RecoveryOnCleanExit && (_recoveryActionEnabled || isHealthCheck))
                 {
                     _logger?.Info($"[{source}] Child process exited successfully (Code 0). RecoveryOnCleanExit is ENABLED. Checking recovery...");
                     return (RegisterFailureAndCheckRecovery(), false);
@@ -1953,7 +1966,10 @@ namespace Servy.Service
                 return (false, true);
             }
 
-            if (_recoveryActionEnabled)
+            // Periodic health check ticks always register failures for telemetry and threshold tracking.
+            // Event-driven process exits trigger failure registration if recovery is enabled,
+            // or log an error and initiate a service stop if recovery is disabled.
+            if (_recoveryActionEnabled || isHealthCheck)
             {
                 return (RegisterFailureAndCheckRecovery(), false);
             }
@@ -2007,7 +2023,7 @@ namespace Servy.Service
                     int? exitCode = null;
                     try { exitCode = process?.ExitCode; } catch (Exception ex) { _logger?.Warn($"Health check could not read ExitCode (treating as failure): {ex.Message}"); }
 
-                    (needsRecovery, shouldStop) = EvaluateExitOutcome(exitCode, "CheckHealth");
+                    (needsRecovery, shouldStop) = EvaluateExitOutcome(exitCode, "CheckHealth", isHealthCheck: true);
 
                     // PLACEMENT 1: Alert the external monitor immediately if we are escalating to full recovery action
                     if (needsRecovery && _options != null)

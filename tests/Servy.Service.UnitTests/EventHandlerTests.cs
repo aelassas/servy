@@ -205,7 +205,7 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            ctx.Logger.Verify(l => l.Error("Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
+            ctx.Logger.Verify(l => l.Error("[OnProcessExited] Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
 
             // Verify non-zero exit code launches configured failure program
             ctx.ProcessFactory.Verify(f => f.Create(
