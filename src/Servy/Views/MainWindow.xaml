@@ -12,7 +12,7 @@
         mc:Ignorable="d"
         Title="Servy"
         MinWidth="700"
-        MinHeight="770"
+        MinHeight="790"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
         UseLayoutRounding="True"
@@ -22,7 +22,7 @@
         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConfigMainWindow_HelpText}">
   <Window.Resources>
     <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-    
+
     <sys:Int32 x:Key="UnlimitedTextBoxLines">2147483647</sys:Int32>
 
     <!-- Tab Grid Dimensions -->
@@ -752,6 +752,10 @@
             <TextBox Grid.Row="17" Grid.Column="1" Grid.ColumnSpan="2"
                      Margin="0,5"
                      Text="{Binding FailureProgramParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     Height="80" MinHeight="80" MaxHeight="80"
+                     TextWrapping="Wrap" AcceptsReturn="False"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
+                     VerticalScrollBarVisibility="Auto"                     
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxFailureProgramParams_Name}"
                      AutomationProperties.AutomationId="TextBoxFailureProgramParams"
                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxFailureProgramParams_HelpText}" />
@@ -983,6 +987,10 @@
             <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
                      Margin="0,5"
                      Text="{Binding PreLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     Height="80" MinHeight="80" MaxHeight="80"
+                     TextWrapping="Wrap" AcceptsReturn="False"
+                     MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
+                     VerticalScrollBarVisibility="Auto"                     
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxPreLaunchParams_Name}"
                      AutomationProperties.AutomationId="TextBoxPreLaunchParams"
                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxPreLaunchParams_HelpText}" />
