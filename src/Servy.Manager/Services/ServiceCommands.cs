@@ -341,8 +341,7 @@ namespace Servy.Manager.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    string serviceName = service?.Name ?? "<unknown>";
-                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    Logger.Debug($"Operation on {service.Name} was cancelled.");
                     throw;
                 }
                 catch (Exception ex)
@@ -389,8 +388,7 @@ namespace Servy.Manager.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    string serviceName = service?.Name ?? "<unknown>";
-                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    Logger.Debug($"Operation on {service.Name} was cancelled.");
                     throw;
                 }
                 catch (Exception ex)
@@ -442,8 +440,7 @@ namespace Servy.Manager.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    string serviceName = service?.Name ?? "<unknown>";
-                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    Logger.Debug($"Operation on {service.Name} was cancelled.");
                     throw;
                 }
                 catch (Exception ex)
@@ -691,8 +688,7 @@ namespace Servy.Manager.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    string serviceName = service?.Name ?? "<unknown>";
-                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    Logger.Debug($"Operation on {service.Name} was cancelled.");
                     throw;
                 }
                 catch (Exception ex)
