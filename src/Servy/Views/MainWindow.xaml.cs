@@ -17,6 +17,12 @@ namespace Servy.Views
     [ExcludeFromCodeCoverage]
     public partial class MainWindow : Window
     {
+        /// <summary>The minimum vertical screen resolution threshold in pixels to trigger expanded window height constraints.</summary>
+        private const double FullHdScreenHeightThreshold = 1080;
+
+        /// <summary>The minimum window height enforced for displays meeting or exceeding Full HD vertical resolution.</summary>
+        private const double FullHdMinWindowHeight = 790;
+
         private readonly MainViewModel _mainViewModel;
         private readonly IProcessKiller _processKiller;
 
@@ -29,9 +35,22 @@ namespace Servy.Views
         {
             InitializeComponent();
 
+            AdjustWindowDimensionsForScreenResolution();
+
             _mainViewModel = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
             DataContext = _mainViewModel;
+        }
+
+        /// <summary>
+        /// Adjusts the minimum height of the main window based on the primary screen's vertical resolution.
+        /// </summary>
+        private void AdjustWindowDimensionsForScreenResolution()
+        {
+            if (SystemParameters.PrimaryScreenHeight >= FullHdScreenHeightThreshold)
+            {
+                MinHeight = FullHdMinWindowHeight;
+            }
         }
 
         /// <summary>
