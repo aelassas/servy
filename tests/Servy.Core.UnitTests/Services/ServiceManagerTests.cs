@@ -1188,7 +1188,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains("Unexpected error occurred while trying to drop legacy service casing layout", result.ErrorMessage);
+            Assert.Contains("Failed to unregister legacy casing variant", result.ErrorMessage);
             Assert.Contains("Fatal SCM Memory Corruption.", result.ErrorMessage);
         }
 
@@ -1538,17 +1538,22 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task UninstallService_Throws_Win32Exception()
+        public async Task UninstallServiceAsync_WhenOpenServiceThrowsException_ReturnsFailureResult()
         {
             // Arrange
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
-             .Returns(CreateScmHandle(2));
+                .Returns(CreateScmHandle(2));
 
             _mockWindowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()))
                 .Throws(new Win32Exception("Boom!"));
 
-            // Act & Assert
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.UninstallServiceAsync("ServiceName", CancellationToken.None));
+            // Act
+            var result = await _serviceManager.UninstallServiceAsync("ServiceName", CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Boom!", result.ErrorMessage);
         }
 
         [Fact]
