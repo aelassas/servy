@@ -10,7 +10,7 @@ namespace Servy.Manager.ViewModels
     /// <summary>
     /// Base class providing a unified, thread-safe seven-step search pipeline infrastructure with integrated cancellation and footer telemetry tracking.
     /// </summary>
-    public abstract class SearchableViewModelBase : ViewModelBase
+    public abstract class SearchableViewModelBase : ViewModelBase, IDisposable
     {
         #region Fields
 
@@ -23,6 +23,11 @@ namespace Servy.Manager.ViewModels
         /// Cursor service used to manage visual wait state boundaries.
         /// </summary>
         protected readonly ICursorService _cursorService;
+
+        /// <summary>
+        /// Atomic flag representing whether the current instance has been disposed (0 = false, 1 = true).
+        /// </summary>
+        protected int _isDisposed = 0;
 
         #endregion
 
@@ -83,20 +88,45 @@ namespace Servy.Manager.ViewModels
         /// <returns>A task that represents the asynchronous search operation.</returns>
         protected async Task ExecuteSearchPipelineAsync(
             Func<CancellationToken, Task<int>> fetchAndApplyAsync,
-            string noneFormat,
-            string oneFormat,
-            string manyFormat,
+            string? noneFormat = null,
+            string? oneFormat = null,
+            string? manyFormat = null,
             Func<Task>? onPreFetchYieldAsync = null)
         {
+            // LIFECYCLE GATE: Bail immediately if the ViewModel has already initiated teardown
+            if (Volatile.Read(ref _isDisposed) != 0)
+            {
+                return;
+            }
+
             // Step 1 & 2: Stopwatch initialization and atomic thread-safe CTS swap
             var stopwatch = Stopwatch.StartNew();
             var newCts = new CancellationTokenSource();
-            var token = newCts.Token;
             var oldCts = Interlocked.Exchange(ref _searchCts, newCts);
 
             if (oldCts != null)
             {
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
+            }
+
+            CancellationToken token;
+            try
+            {
+                // RACING DISPOSE CHECK: Capture token safely. If a racing Dispose pulled this
+                // instance out from under us and processed it, this will throw an ObjectDisposedException.
+                token = newCts.Token;
+
+                // Re-verify global disposal state immediately after the swap to handle tight race windows
+                if (Volatile.Read(ref _isDisposed) != 0)
+                {
+                    Helpers.Helper.CancelAndDisposeSafely(newCts);
+                    return;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Captured CTS was cancelled and disposed mid-swap by a racing Dispose thread. Exit cleanly.
+                return;
             }
 
             try
@@ -115,15 +145,22 @@ namespace Servy.Manager.ViewModels
                 // Step 5 & 6: Execute site-specific query actions and update underlying collection records
                 int matchCount = await fetchAndApplyAsync(token);
 
-                token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 stopwatch.Stop();
 
-                FooterText = UiHelper.GetRowsInfo(
-                    count: matchCount,
-                    duration: stopwatch.Elapsed,
-                    noneFormat: noneFormat,
-                    oneFormat: oneFormat,
-                    manyFormat: manyFormat);
+                if (!string.IsNullOrEmpty(noneFormat) || !string.IsNullOrEmpty(oneFormat) || !string.IsNullOrEmpty(manyFormat))
+                {
+                    FooterText = UiHelper.GetRowsInfo(
+                        count: matchCount,
+                        duration: stopwatch.Elapsed,
+                        noneFormat: noneFormat ?? string.Empty,
+                        oneFormat: oneFormat ?? string.Empty,
+                        manyFormat: manyFormat ?? string.Empty);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -166,6 +203,38 @@ namespace Servy.Manager.ViewModels
                 SearchButtonText = Strings.Button_Search;
                 IsBusy = false;
             }
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        /// <summary>
+        /// Disposes the ViewModel, safely cancelling and releasing the search token.
+        /// </summary>
+        /// <param name="disposing">
+        /// <see langword="true"/> when called from <see cref="IDisposable.Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            // Trip the flag FIRST, before cleaning tokens, so racing search threads self-terminate immediately.
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                ClearActiveSearchContext();
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion

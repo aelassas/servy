@@ -3,6 +3,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI.Services;
 
 namespace Servy.Manager.UnitTests.ViewModels
@@ -58,8 +59,15 @@ namespace Servy.Manager.UnitTests.ViewModels
                 return new Mock<ServiceItemBase>().Object;
             }
 
-            public CancellationTokenSource? GetCancellationTokenSource() => _serviceSearchCts;
-            public void SetCancellationTokenSource(CancellationTokenSource cts) => _serviceSearchCts = cts;
+            public CancellationTokenSource? GetCancellationTokenSource()
+            {
+                return TestReflection.GetField<CancellationTokenSource?>(this, "_searchCts");
+            }
+
+            public void SetCancellationTokenSource(CancellationTokenSource cts)
+            {
+                TestReflection.SetField(this, "_searchCts", cts);
+            }
         }
 
         #endregion
