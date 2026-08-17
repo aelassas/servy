@@ -135,7 +135,7 @@
     <Compile Include="Helpers\ConfigParserTests.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Helpers\ProcessKillerTests.cs" />
-    <Compile Include="Helpers\SecureDataHelper.cs" />
+    <Compile Include="Security\SecureDataHelper.cs" />
     <Compile Include="Helpers\ServiceDtoFactory.cs" />
     <Compile Include="Helpers\ServiceDtoFactoryTests.cs" />
     <Compile Include="Helpers\ServiceDtoHelperTests.cs" />
