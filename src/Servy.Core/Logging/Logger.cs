@@ -550,7 +550,7 @@ namespace Servy.Core.Logging
             {
                 var (current, depth) = nodeStack.Pop();
 
-                if (current == null || depth >= AppConfig.LoggerMaxInnerExceptionDepth)
+                if (depth >= AppConfig.LoggerMaxInnerExceptionDepth)
                 {
                     continue;
                 }

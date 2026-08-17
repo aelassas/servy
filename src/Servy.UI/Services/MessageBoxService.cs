@@ -34,21 +34,19 @@ namespace Servy.UI.Services
         /// <param name="image">The dialog icon classification.</param>
         /// <param name="buttons">The button set presented on the dialog.</param>
         /// <param name="headlessTag">The text label prefix printed in console output during headless execution.</param>
-        /// <param name="headlessResult">The default boolean return value provided during headless execution.</param>
         /// <returns>A task returning <c>true</c> if the user confirmed (or auto-answered 'Yes' in headless mode); otherwise, <c>false</c>.</returns>
         private Task<bool> ShowCoreAsync(
             string message,
             string caption,
             MessageBoxImage image,
             MessageBoxButton buttons,
-            string headlessTag,
-            bool headlessResult)
+            string headlessTag)
         {
             if (UiHeadless.IsEnabled)
             {
                 string suffix = buttons == MessageBoxButton.YesNo ? " -> Auto-answering 'Yes'." : string.Empty;
                 Console.WriteLine($"[HEADLESS {headlessTag}] {caption}: {message}{suffix}");
-                return Task.FromResult(headlessResult);
+                return Task.FromResult(true); // headless runs auto-confirm
             }
 
             // Use InvokeAsync to ensure the task doesn't complete until the dialog is closed.
@@ -62,25 +60,25 @@ namespace Servy.UI.Services
         /// <inheritdoc />
         public Task ShowInfoAsync(string message, string caption)
         {
-            return ShowCoreAsync(message, caption, MessageBoxImage.Information, MessageBoxButton.OK, "INFO", true);
+            return ShowCoreAsync(message, caption, MessageBoxImage.Information, MessageBoxButton.OK, "INFO");
         }
 
         /// <inheritdoc />
         public Task ShowWarningAsync(string message, string caption)
         {
-            return ShowCoreAsync(message, caption, MessageBoxImage.Warning, MessageBoxButton.OK, "WARNING", true);
+            return ShowCoreAsync(message, caption, MessageBoxImage.Warning, MessageBoxButton.OK, "WARNING");
         }
 
         /// <inheritdoc />
         public Task ShowErrorAsync(string message, string caption)
         {
-            return ShowCoreAsync(message, caption, MessageBoxImage.Error, MessageBoxButton.OK, "ERROR", true);
+            return ShowCoreAsync(message, caption, MessageBoxImage.Error, MessageBoxButton.OK, "ERROR");
         }
 
         /// <inheritdoc />
         public Task<bool> ShowConfirmAsync(string message, string caption)
         {
-            return ShowCoreAsync(message, caption, MessageBoxImage.Question, MessageBoxButton.YesNo, "CONFIRM", true);
+            return ShowCoreAsync(message, caption, MessageBoxImage.Question, MessageBoxButton.YesNo, "CONFIRM");
         }
     }
 }
