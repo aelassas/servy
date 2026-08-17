@@ -1922,7 +1922,8 @@ namespace Servy.Service
                     // _maxRestartAttempts == 0 means unlimited restart attempts
                     if (_maxRestartAttempts > 0)
                     {
-                        currentAttempts = await EnsureRestartAttemptsFileAsync();
+                        var ct = _cancellationSource?.Token ?? CancellationToken.None;
+                        currentAttempts = await EnsureRestartAttemptsFileAsync(ct);
 
                         if (currentAttempts >= _maxRestartAttempts)
                         {
