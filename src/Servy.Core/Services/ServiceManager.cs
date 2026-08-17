@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
+using static Servy.Core.Native.Errors;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services

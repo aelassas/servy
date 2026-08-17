@@ -2,6 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using static Servy.Core.Native.Errors;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Native

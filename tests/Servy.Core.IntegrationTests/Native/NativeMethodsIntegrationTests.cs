@@ -62,7 +62,7 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(0x0u, NativeMethods.VOLUME_NAME_DOS);
             Assert.Equal(0x01u, NativeMethods.MOVEFILE_REPLACE_EXISTING);
             Assert.Equal(0x08u, NativeMethods.MOVEFILE_WRITE_THROUGH);
-            Assert.Equal(122, NativeMethods.ERROR_INSUFFICIENT_BUFFER);
+            Assert.Equal(122, Errors.ERROR_INSUFFICIENT_BUFFER);
             Assert.Equal(0x0001u, NativeMethods.SC_MANAGER_CONNECT);
             Assert.Equal(0x0002u, NativeMethods.SC_MANAGER_CREATE_SERVICE);
             Assert.Equal(0x0002u, NativeMethods.SERVICE_CHANGE_CONFIG);

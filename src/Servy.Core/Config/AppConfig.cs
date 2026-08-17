@@ -1163,6 +1163,11 @@ namespace Servy.Core.Config
         public const int KeyProviderMutexTimeoutSeconds = 30;
 
         /// <summary>
+        /// Maximum number of retry attempts when reading protected key files before failing.
+        /// </summary>
+        public const int KeyProviderReadMaxRetries = 3;
+
+        /// <summary>
         /// The base backoff delay period in milliseconds used inside the exponential backoff
         /// strategy when retrying file-read IO operations on cryptographic keys.
         /// </summary>

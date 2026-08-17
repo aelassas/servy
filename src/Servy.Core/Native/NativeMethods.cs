@@ -75,15 +75,6 @@ namespace Servy.Core.Native
         /// <summary>Ensures the move operation is flushed to disk before returning.</summary>
         public const uint MOVEFILE_WRITE_THROUGH = 0x08;
 
-        /// <summary>Represents the Win32 error code indicating the provided buffer is too small to contain the data.</summary>
-        public const int ERROR_INSUFFICIENT_BUFFER = 122;
-
-        /// <summary>
-        /// Represents the Win32 error code indicating that a data block or process table length changed
-        /// between internal allocation queries (commonly thrown transiently by Toolhelp32 APIs).
-        /// </summary>
-        public const int ERROR_BAD_LENGTH = 24;
-
         #endregion
 
         #region SCM Access Rights
