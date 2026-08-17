@@ -200,7 +200,6 @@ namespace Servy.Manager.Views
                 }
                 catch (COMException) { /* clipboard locked */ }
                 catch (ExternalException) { /* generic Win32 failure */ }
-                catch (ArgumentException) { /* text is null or empty */ }
 
                 if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
                 {

@@ -97,15 +97,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Copies the service process ID to the clipboard..
-        /// </summary>
-        public static string Automation_ConsoleCopyPidButton_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_ConsoleCopyPidButton_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Enter text to filter the visible log lines..
         /// </summary>
         public static string Automation_ConsoleFilterTextBox_HelpText {
@@ -156,24 +147,6 @@ namespace Servy.Manager.Resources {
         public static string Automation_ConsoleLogList_Name {
             get {
                 return ResourceManager.GetString("Automation_ConsoleLogList_Name", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The process identifier (PID) of the monitored service..
-        /// </summary>
-        public static string Automation_ConsolePidValue_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_ConsolePidValue_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Process ID.
-        /// </summary>
-        public static string Automation_ConsolePidValue_Name {
-            get {
-                return ResourceManager.GetString("Automation_ConsolePidValue_Name", resourceCulture);
             }
         }
         
@@ -322,15 +295,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Copies the process ID to the clipboard..
-        /// </summary>
-        public static string Automation_DependenciesCopyPidButton_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_DependenciesCopyPidButton_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Expands all branches in the dependency tree..
         /// </summary>
         public static string Automation_DependenciesExpandAllButton_HelpText {
@@ -354,24 +318,6 @@ namespace Servy.Manager.Resources {
         public static string Automation_DependenciesLegendInfo_Name {
             get {
                 return ResourceManager.GetString("Automation_DependenciesLegendInfo_Name", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The process identifier (PID) of the selected service..
-        /// </summary>
-        public static string Automation_DependenciesPidValue_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_DependenciesPidValue_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Process ID.
-        /// </summary>
-        public static string Automation_DependenciesPidValue_Name {
-            get {
-                return ResourceManager.GetString("Automation_DependenciesPidValue_Name", resourceCulture);
             }
         }
         
@@ -903,24 +849,6 @@ namespace Servy.Manager.Resources {
         public static string Automation_MoreActionsButton_HelpText {
             get {
                 return ResourceManager.GetString("Automation_MoreActionsButton_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Placeholder for the More Actions menu header..
-        /// </summary>
-        public static string Automation_MoreActionsHeaderButton_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_MoreActionsHeaderButton_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to More Actions Header Placeholder.
-        /// </summary>
-        public static string Automation_MoreActionsHeaderButton_Name {
-            get {
-                return ResourceManager.GetString("Automation_MoreActionsHeaderButton_Name", resourceCulture);
             }
         }
         

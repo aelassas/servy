@@ -181,7 +181,7 @@ namespace Servy.Manager.ViewModels
                 {
                     ResetMonitoringState();
                     _hadSelectedService = false;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    CopyPidCommand.RaiseCanExecuteChanged();
                 }
                 return;
             }

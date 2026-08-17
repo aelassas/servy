@@ -443,7 +443,7 @@ If the service is disabled and marked for deletion, installation will fail until
   <data name="Msg_DesktopAppLaunchFailed" xml:space="preserve">
     <value>Failed to launch the Desktop application.</value>
   </data>
-  
+
   <!-- Service Footer Templates -->
   <data name="Footer_Service_None" xml:space="preserve">
     <value>No services loaded in {1}</value>
@@ -633,13 +633,6 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Restarts all selected services.</value>
   </data>
 
-  <data name="Automation_MoreActionsHeaderButton_Name" xml:space="preserve">
-    <value>More Actions Header Placeholder</value>
-  </data>
-  <data name="Automation_MoreActionsHeaderButton_HelpText" xml:space="preserve">
-    <value>Placeholder for the More Actions menu header.</value>
-  </data>
-
   <data name="Automation_StartServiceButton_Name" xml:space="preserve">
     <value>Start Service</value>
   </data>
@@ -810,17 +803,6 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Select a service to view its console output.</value>
   </data>
 
-  <data name="Automation_ConsolePidValue_Name" xml:space="preserve">
-    <value>Process ID</value>
-  </data>
-  <data name="Automation_ConsolePidValue_HelpText" xml:space="preserve">
-    <value>The process identifier (PID) of the monitored service.</value>
-  </data>
-
-  <data name="Automation_ConsoleCopyPidButton_HelpText" xml:space="preserve">
-    <value>Copies the service process ID to the clipboard.</value>
-  </data>
-
   <data name="Automation_ResumeScrollButton_Name" xml:space="preserve">
     <value>Resume Scrolling</value>
   </data>
@@ -869,17 +851,6 @@ If the service is disabled and marked for deletion, installation will fail until
   </data>
   <data name="Automation_DependenciesServiceList_HelpText" xml:space="preserve">
     <value>Search and select a service to view its dependencies.</value>
-  </data>
-
-  <data name="Automation_DependenciesPidValue_Name" xml:space="preserve">
-    <value>Process ID</value>
-  </data>
-  <data name="Automation_DependenciesPidValue_HelpText" xml:space="preserve">
-    <value>The process identifier (PID) of the selected service.</value>
-  </data>
-
-  <data name="Automation_DependenciesCopyPidButton_HelpText" xml:space="preserve">
-    <value>Copies the process ID to the clipboard.</value>
   </data>
 
   <data name="Automation_DependenciesRefreshButton_HelpText" xml:space="preserve">
