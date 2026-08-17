@@ -63,13 +63,6 @@ namespace Servy.Service.StreamWriters
         }
 
         /// <inheritdoc />
-        public void Write(string text)
-        {
-            ThrowIfDisposed();
-            _inner!.Write(text);
-        }
-
-        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);

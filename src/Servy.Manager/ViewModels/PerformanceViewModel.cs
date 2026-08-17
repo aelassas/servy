@@ -77,7 +77,7 @@ namespace Servy.Manager.ViewModels
                 _selectedService = value;
                 OnPropertyChanged(nameof(SelectedService));
 
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                CopyPidCommand.RaiseCanExecuteChanged();
 
                 ResetGraphs();
 
@@ -237,7 +237,7 @@ namespace Servy.Manager.ViewModels
                 {
                     currentSelection.Pid = null;
                     ResetGraphs();
-                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    CopyPidCommand.RaiseCanExecuteChanged();
                 }
                 return;
             }
@@ -246,7 +246,7 @@ namespace Servy.Manager.ViewModels
             {
                 currentSelection.Pid = currentPid;
                 ResetGraphs();
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                CopyPidCommand.RaiseCanExecuteChanged();
             }
 
             int pid = currentSelection.Pid.Value;

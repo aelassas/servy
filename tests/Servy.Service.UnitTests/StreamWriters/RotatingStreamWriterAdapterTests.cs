@@ -86,17 +86,6 @@ namespace Servy.Service.UnitTests.StreamWriters
             Assert.Throws<ObjectDisposedException>(() => adapter.WriteLine("Test line"));
         }
 
-        [Fact]
-        public void Write_AfterDispose_ThrowsObjectDisposedException()
-        {
-            // Arrange
-            var adapter = CreateAdapter();
-            adapter.Dispose();
-
-            // Act & Assert
-            Assert.Throws<ObjectDisposedException>(() => adapter.Write("Test text"));
-        }
-
         #endregion
 
         #region Functional Delegation Tests
@@ -117,24 +106,6 @@ namespace Servy.Service.UnitTests.StreamWriters
             Assert.True(File.Exists(_tempPath));
             string content = File.ReadAllText(_tempPath);
             Assert.Contains(testLine, content);
-        }
-
-        [Fact]
-        public void Write_WritesToStreamSuccessfully()
-        {
-            // Arrange
-            string testText = "Partial text";
-
-            // Act
-            using (var adapter = CreateAdapter())
-            {
-                adapter.Write(testText);
-            }
-
-            // Assert
-            Assert.True(File.Exists(_tempPath));
-            string content = File.ReadAllText(_tempPath);
-            Assert.Equal(testText, content);
         }
 
         #endregion
