@@ -24,15 +24,15 @@
     </Grid.ColumnDefinitions>
 
     <controls:ServiceListControl Grid.Column="0"
-                                     Services="{Binding Services}"
-                                     SelectedService="{Binding SelectedService}"
-                                     SearchText="{Binding SearchText}"
-                                     SearchButtonText="{Binding SearchButtonText}"
-                                     SearchCommand="{Binding SearchCommand}"
-                                     IsBusy="{Binding IsBusy}"
-                                     AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleServiceList_Name}"
-                                     AutomationProperties.AutomationId="ConsoleServiceList"
-                                     AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleServiceList_HelpText}" />
+                                 Services="{Binding Services}"
+                                 SelectedService="{Binding SelectedService}"
+                                 SearchText="{Binding SearchText}"
+                                 SearchButtonText="{Binding SearchButtonText}"
+                                 SearchCommand="{Binding SearchCommand}"
+                                 IsBusy="{Binding IsBusy}"
+                                 AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleServiceList_Name}"
+                                 AutomationProperties.AutomationId="ConsoleServiceList"
+                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleServiceList_HelpText}" />
 
     <Grid Grid.Column="1" Margin="10">
       <Grid.RowDefinitions>
@@ -54,67 +54,37 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Row="0"
-                            Grid.Column="0"
-                            Orientation="Horizontal"
-                            Margin="0,0,0,6"
-                            VerticalAlignment="Center">
+                    Grid.Column="0"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,6"
+                    VerticalAlignment="Center">
           <controls:PidBadgeControl />
         </StackPanel>
 
         <StackPanel Grid.Row="0"
-                            Grid.Column="2"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center">
+                    Grid.Column="2"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
           <Button Command="{Binding ClearSelectionCommand}"
-                            Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
-                            Margin="0,0,0,6"
-                            Padding="8,2"
-                            Foreground="White"
-                            Content="{x:Static resx:Strings.Button_Resume}"
-                            ToolTip="{x:Static resx:Strings.Tooltip_Resume}"
-                            Cursor="Hand"
-                            AutomationProperties.Name="{x:Static resx:Strings.Automation_ResumeScrollButton_Name}"
-                            AutomationProperties.AutomationId="ResumeScrollButton"
-                            AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ResumeScrollButton_HelpText}">
-            <Button.Style>
-              <Style TargetType="Button">
-                <Setter Property="Background" Value="#1B7F9F" />
-                <Setter Property="Template">
-                  <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                      <Border x:Name="border"
-                                                    Background="{TemplateBinding Background}"
-                                                    BorderThickness="0"
-                                                    CornerRadius="3"
-                                                    Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                      </Border>
-                      <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                          <Setter TargetName="border" Property="Background" Value="#25A2C9" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                          <Setter TargetName="border" Property="Background" Value="#146078" />
-                        </Trigger>
-                      </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                  </Setter.Value>
-                </Setter>
-              </Style>
-            </Button.Style>
-          </Button>
+                  Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
+                  Style="{StaticResource ToolbarPillButtonStyle}"
+                  Content="{x:Static resx:Strings.Button_Resume}"
+                  ToolTip="{x:Static resx:Strings.Tooltip_Resume}"
+                  AutomationProperties.Name="{x:Static resx:Strings.Automation_ResumeScrollButton_Name}"
+                  AutomationProperties.AutomationId="ResumeScrollButton"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ResumeScrollButton_HelpText}" />
         </StackPanel>
 
         <TextBlock Grid.Row="0"
-                           Grid.Column="4"
-                           Text="{x:Static resx:Strings.Console_Info}"
-                           FontSize="11"
-                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Right"
-                           Margin="0,0,0,6"
-                           AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleInstructions_Name}"
-                           AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleInstructions_HelpText}" />
+                   Grid.Column="4"
+                   Text="{x:Static resx:Strings.Console_Info}"
+                   FontSize="11"
+                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Right"
+                   Margin="0,0,0,6"
+                   AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleInstructions_Name}"
+                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleInstructions_HelpText}" />
       </Grid>
 
       <Grid Grid.Row="1" Background="#121212">
@@ -126,42 +96,42 @@
         <Border Background="#2D2D2D" Padding="5">
           <DockPanel>
             <TextBlock Text="{x:Static resx:Strings.Label_ConsoleFilter}"
-                                   Foreground="Gray"
-                                   VerticalAlignment="Center"
-                                   Margin="5,0" />
+                       Foreground="Gray"
+                       VerticalAlignment="Center"
+                       Margin="5,0" />
 
             <TextBox Text="{Binding ConsoleSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="#3C3C3C"
-                                 Foreground="White"
-                                 BorderThickness="0"
-                                 Padding="3"
-                                 SnapsToDevicePixels="False"
-                                 UseLayoutRounding="False"
-                                 TextOptions.TextFormattingMode="Display"
-                                 TextOptions.TextRenderingMode="ClearType"
-                                 AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleFilterTextBox_Name}"
-                                 AutomationProperties.AutomationId="ConsoleFilterTextBox"
-                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleFilterTextBox_HelpText}" />
+                     Background="#3C3C3C"
+                     Foreground="White"
+                     BorderThickness="0"
+                     Padding="3"
+                     SnapsToDevicePixels="False"
+                     UseLayoutRounding="False"
+                     TextOptions.TextFormattingMode="Display"
+                     TextOptions.TextRenderingMode="ClearType"
+                     AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleFilterTextBox_Name}"
+                     AutomationProperties.AutomationId="ConsoleFilterTextBox"
+                     AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleFilterTextBox_HelpText}" />
           </DockPanel>
         </Border>
 
         <ListBox x:Name="LogList"
-                         Grid.Row="1"
-                         ItemsSource="{Binding VisibleLines}"
-                         Background="Black"
-                         BorderThickness="0"
-                         SelectionMode="Extended"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                         VirtualizingStackPanel.IsVirtualizing="True"
-                         VirtualizingStackPanel.VirtualizationMode="Recycling"
-                         PreviewKeyDown="LogList_PreviewKeyDown"
-                         SelectedIndex="-1"
-                         IsSynchronizedWithCurrentItem="False"
-                         ScrollViewer.ScrollChanged="LogList_ScrollChanged"
-                         AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleLogList_Name}"
-                         AutomationProperties.AutomationId="ConsoleLogList"
-                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleLogList_HelpText}">
+                 Grid.Row="1"
+                 ItemsSource="{Binding VisibleLines}"
+                 Background="Black"
+                 BorderThickness="0"
+                 SelectionMode="Extended"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 PreviewKeyDown="LogList_PreviewKeyDown"
+                 SelectedIndex="-1"
+                 IsSynchronizedWithCurrentItem="False"
+                 ScrollViewer.ScrollChanged="LogList_ScrollChanged"
+                 AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleLogList_Name}"
+                 AutomationProperties.AutomationId="ConsoleLogList"
+                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleLogList_HelpText}">
           <ListBox.ItemContainerStyle>
             <Style TargetType="ListBoxItem">
               <Setter Property="Background" Value="Transparent" />
@@ -204,21 +174,21 @@
           <ListBox.ContextMenu>
             <ContextMenu>
               <MenuItem Header="{x:Static resx:Strings.Label_Copy}"
-                                      Click="CopyMenuItem_Click"
-                                      AutomationProperties.Name="{x:Static resx:Strings.Automation_CopyLogMenuItem_Name}"
-                                      AutomationProperties.AutomationId="CopyLogMenuItem"
-                                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CopyLogMenuItem_HelpText}" />
+                        Click="CopyMenuItem_Click"
+                        AutomationProperties.Name="{x:Static resx:Strings.Automation_CopyLogMenuItem_Name}"
+                        AutomationProperties.AutomationId="CopyLogMenuItem"
+                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CopyLogMenuItem_HelpText}" />
             </ContextMenu>
           </ListBox.ContextMenu>
 
           <ListBox.ItemTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding Text}"
-                                       FontFamily="Consolas"
-                                       FontSize="12"
-                                       TextWrapping="Wrap"
-                                       Padding="4,0"
-                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" />
+                         FontFamily="Consolas"
+                         FontSize="12"
+                         TextWrapping="Wrap"
+                         Padding="4,0"
+                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" />
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>

@@ -88,7 +88,7 @@
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Style.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#F5F5F5" />
+                <Setter Property="Background" Value="{StaticResource RowHoverBrush}" />
               </Trigger>
             </Style.Triggers>
           </Style>
