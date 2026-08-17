@@ -100,10 +100,13 @@ namespace Servy.Core.Logging
         {
             lock (_lock)
             {
-                if (!string.IsNullOrEmpty(fileName))
+                _fileName = fileName;
+
+                if (string.IsNullOrEmpty(_fileName))
                 {
-                    _fileName = fileName;
+                    Shutdown();
                 }
+
                 Initialize(logLevel, enableSizeRotation, logRotationSizeMB, dateRotationType, useLocalTimeForRotation, maxBackupLogFiles);
             }
         }

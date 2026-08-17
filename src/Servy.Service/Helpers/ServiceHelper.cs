@@ -444,7 +444,14 @@ namespace Servy.Service.Helpers
                         return;
                     }
 
-                    logger?.Info($"Servy.Restarter.Net48.exe exited with code {process.ExitCode}.");
+                    if (process.ExitCode == 0)
+                    {
+                        logger?.Info($"Servy.Restarter.Net48.exe exited with code {process.ExitCode}.");
+                    }
+                    else
+                    {
+                        logger?.Error($"Servy.Restarter.Net48.exe exited with non-zero code {process.ExitCode}; the service restart likely failed.");
+                    }
                 }
             }
             catch (Exception ex)

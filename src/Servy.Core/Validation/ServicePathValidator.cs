@@ -34,7 +34,7 @@ namespace Servy.Core.Validation
         {
             if (target == null) yield break;
 
-            foreach (var property in typeof(T).GetProperties().OrderBy(p => p.MetadataToken))
+            foreach (var property in target.GetType().GetProperties().OrderBy(p => p.MetadataToken))
             {
                 var attr = property.GetCustomAttribute<ServicePathAttribute>();
                 if (attr == null) continue;
