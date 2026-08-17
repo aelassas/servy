@@ -91,17 +91,8 @@ namespace Servy.Restarter
                 // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
                 if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
                 {
-                    var fatalLogger = scopedLogger ?? rootLogger;
-                    if (fatalLogger != null)
-                    {
-                        fatalLogger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                    scopedLogger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
                                           $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
-                    }
-                    else
-                    {
-                        Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
-                                     $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
-                    }
 
                     Environment.ExitCode = 1;
                     return;
