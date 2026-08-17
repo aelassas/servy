@@ -137,8 +137,7 @@ namespace Servy.Core.UnitTests.Helpers
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
 
-            // SANDBOX GUARD: By passing clean relative combinations, testFilePath is guaranteed
-            // to resolve directly inside the safe, unique tempDir boundary layout.
+            // Rows must stay relative so every path resolves inside tempDir (never the real drive).
             var testFilePath = Path.Combine(tempDir, filePath);
 
             try
@@ -631,8 +630,7 @@ namespace Servy.Core.UnitTests.Helpers
                 Assert.True(File.Exists(targetPath));
                 Assert.Equal("atomic-sync-test-48", File.ReadAllText(targetPath));
 
-                // VACUOUS CHECK REFACTOR: Evaluate all matching staging remnants in the container directory
-                // to verify that the core dynamic GUID-suffixed file format handles cleanup routines successfully.
+                // No GUID-suffixed *.tmp staging file may remain after a successful write.
                 var leftovers = Directory.GetFiles(tempDir, "*.tmp");
                 Assert.Empty(leftovers);
             }
