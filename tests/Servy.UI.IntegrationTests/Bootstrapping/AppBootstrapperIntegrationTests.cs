@@ -80,14 +80,74 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         public void Constructor_NullOptions_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new AppBootstrapper(null, _mockProcessKiller.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new AppBootstrapper(null, _mockProcessKiller.Object));
+            Assert.Equal("options", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullProcessKiller_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new AppBootstrapper(_options, null));
+            var ex = Assert.Throws<ArgumentNullException>(() => new AppBootstrapper(_options, null));
+            Assert.Equal("processKiller", ex.ParamName);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Constructor_InvalidLogFileName_ThrowsArgumentException(string invalidLogFileName)
+        {
+            // Arrange
+            var options = CreateValidOptions();
+            options.LogFileName = invalidLogFileName;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new AppBootstrapper(options, _mockProcessKiller.Object));
+            Assert.Equal("options", ex.ParamName);
+            Assert.StartsWith("BootstrapperOptions.LogFileName is required.", ex.Message);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Constructor_InvalidResourcesNamespace_ThrowsArgumentException(string invalidResourcesNamespace)
+        {
+            // Arrange
+            var options = CreateValidOptions();
+            options.ResourcesNamespace = invalidResourcesNamespace;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new AppBootstrapper(options, _mockProcessKiller.Object));
+            Assert.Equal("options", ex.ParamName);
+            Assert.StartsWith("BootstrapperOptions.ResourcesNamespace is required.", ex.Message);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Constructor_InvalidSqliteVersionWarningMessageFormat_ThrowsArgumentException(string invalidFormat)
+        {
+            // Arrange
+            var options = CreateValidOptions();
+            options.SqliteVersionWarningMessageFormat = invalidFormat;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new AppBootstrapper(options, _mockProcessKiller.Object));
+            Assert.Equal("options", ex.ParamName);
+            Assert.StartsWith("BootstrapperOptions.SqliteVersionWarningMessageFormat is required.", ex.Message);
+        }
+
+        private BootstrapperOptions CreateValidOptions()
+        {
+            return new BootstrapperOptions
+            {
+                LogFileName = "test.log",
+                ResourcesNamespace = "Servy.UI.Tests",
+                SqliteVersionWarningMessageFormat = "Version {0} is required, found {1}"
+            };
         }
 
         #endregion

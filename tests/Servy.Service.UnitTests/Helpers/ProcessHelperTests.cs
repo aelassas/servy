@@ -32,6 +32,55 @@ namespace Servy.Service.UnitTests.Helpers
                 Times.Never);
         }
 
+        [Theory]
+        [InlineData("%PATH%")]
+        [InlineData("%ProgramFiles(x86)%")]
+        [InlineData("%CommonProgramFiles(x86)%")]
+        [InlineData("%DOTNET_ROOT(x86)%")]
+        [InlineData("%MY-VAR-NAME%")]
+        [InlineData("%VAR.NAME%")]
+        [InlineData("%_UNDER_SCORE_123%")]
+        public void EnvVarRegex_ValidPlaceholders_MatchesExpectedVariables(string input)
+        {
+            // Act
+            MatchCollection matches = ProcessHelper.EnvVarRegex.Matches(input);
+
+            // Assert
+            Assert.Single(matches);
+            Assert.Equal(input, matches[0].Value);
+        }
+
+        [Fact]
+        public void EnvVarRegex_MultiplePlaceholdersInString_FindsAllMatches()
+        {
+            // Arrange
+            string input = @"C:\Program Files\%MY_APP%\bin;%ProgramFiles(x86)%\Common;%DOTNET_ROOT%";
+
+            // Act
+            MatchCollection matches = ProcessHelper.EnvVarRegex.Matches(input);
+
+            // Assert
+            Assert.Equal(3, matches.Count);
+            Assert.Equal("%MY_APP%", matches[0].Value);
+            Assert.Equal("%ProgramFiles(x86)%", matches[1].Value);
+            Assert.Equal("%DOTNET_ROOT%", matches[2].Value);
+        }
+
+        [Theory]
+        [InlineData("%%")]                  // Empty placeholder
+        [InlineData("%VAR=VALUE%")]         // Contains assignment operator '='
+        [InlineData("%VAR\rNAME%")]         // Contains carriage return
+        [InlineData("%VAR\nNAME%")]         // Contains newline
+        [InlineData("NO_PERCENTS_HERE")]    // Plain string
+        public void EnvVarRegex_InvalidOrMalformedPlaceholders_DoesNotMatch(string input)
+        {
+            // Act
+            MatchCollection matches = ProcessHelper.EnvVarRegex.Matches(input);
+
+            // Assert
+            Assert.Empty(matches);
+        }
+
         [Fact]
         public void ExpandAndAudit_WhenValid_ReturnsExpandedValuesWithoutWarnings()
         {

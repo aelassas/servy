@@ -21,7 +21,7 @@ namespace Servy.Service.Helpers
         /// Includes a match timeout to prevent ReDoS attacks.
         /// </summary>
         internal static IRegexWrapper EnvVarRegex = new RegexWrapper(new Regex(
-            @"(%[a-zA-Z_][a-zA-Z0-9_]*%)",
+            @"(%[^%=\r\n]+%)",
             RegexOptions.Compiled,
             AppConfig.InputRegexTimeout)); // AppConfig.InputRegexTimeout is generous for this pattern
 

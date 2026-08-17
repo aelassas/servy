@@ -367,6 +367,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid {0} in configuration..
+        /// </summary>
+        public static string Msg_InvalidConfig {
+            get {
+                return ResourceManager.GetString("Msg_InvalidConfig", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid core specification: &apos;{0}&apos;..
         /// </summary>
         public static string Msg_InvalidCoreSpecification {

@@ -197,9 +197,6 @@ namespace Servy.Manager.Utils
                                         string line;
                                         string lastSuccessfullyReadLine = null;
 
-                                        // Track offset of the last known fully terminated line
-                                        long lastTerminatedLineEndOffset = fs.Position;
-
                                         while ((line = await reader.ReadLineAsync()) != null)
                                         {
                                             consecutiveFailures = 0;
@@ -358,7 +355,7 @@ namespace Servy.Manager.Utils
             if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
             long pos = 0;
             DateTime created = DateTime.MinValue;
-            var lines = await Task.Run(() => LoadHistory(path, type, maxLines, out pos, out created), cancellationToken);
+            var lines = await Task.Run(() => LoadHistory(path, type, maxLines, out pos, out created, cancellationToken), cancellationToken);
             return new HistoryResult(lines, pos, created);
         }
 
@@ -375,8 +372,9 @@ namespace Servy.Manager.Utils
         /// <param name="maxLines">Maximum number of historical lines to retrieve.</param>
         /// <param name="finalPos">Outputs the file position where the history ended (to start tailing from).</param>
         /// <param name="creationTime">Outputs the creation time of the file used for rotation detection.</param>
+        /// <param name="cancellationToken">A token used to cancel the history load operation.</param>
         /// <returns>A list of log lines retrieved from the end of the file.</returns>
-        private List<LogLine> LoadHistory(string path, LogType type, int maxLines, out long finalPos, out DateTime creationTime)
+        private List<LogLine> LoadHistory(string path, LogType type, int maxLines, out long finalPos, out DateTime creationTime, CancellationToken cancellationToken = default)
         {
             finalPos = 0;
             creationTime = DateTime.MinValue;
@@ -411,6 +409,8 @@ namespace Servy.Manager.Utils
                     // Backwards scan for newline characters to locate the start of the last 'maxLines'
                     while (pos > 0 && count <= maxLines)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
+
                         int toRead = (int)Math.Min(pos, buffer.Length);
                         pos -= toRead;
                         fs.Seek(pos, SeekOrigin.Begin);
@@ -448,6 +448,7 @@ namespace Servy.Manager.Utils
                         var tempLines = new List<string>();
                         while ((line = sr.ReadLine()) != null && tempLines.Count < maxLines)
                         {
+                            cancellationToken.ThrowIfCancellationRequested();
                             tempLines.Add(line);
                         }
 
@@ -471,6 +472,7 @@ namespace Servy.Manager.Utils
                     }
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch (FileNotFoundException) { return lines; }
             catch (DirectoryNotFoundException) { return lines; }
             catch (IOException ex) { Logger.Debug($"History load IO error for {path}: {ex.Message}"); return lines; }

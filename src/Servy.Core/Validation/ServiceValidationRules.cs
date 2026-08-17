@@ -82,8 +82,8 @@ namespace Servy.Core.Validation
             }
 
             // CpuAffinity
-            if (!AffinityHelper.ValidateAffinity(dto.CpuAffinity, out string errorMessage) && errorMessage != null)
-                result.Errors.Add(errorMessage);
+            if (!AffinityHelper.ValidateAffinity(dto.CpuAffinity, out string errorMessage))
+                result.Errors.Add(errorMessage ?? string.Format(Strings.Msg_InvalidConfig, nameof(dto.CpuAffinity)));
 
             // Reflected [ServicePath] Validation
             var pathViolations = ServicePathValidator.FindAllViolations(dto, _processHelper.ValidatePath);

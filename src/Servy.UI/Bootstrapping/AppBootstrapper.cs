@@ -100,6 +100,9 @@ namespace Servy.UI.Bootstrapping
             )
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            if (string.IsNullOrWhiteSpace(options.LogFileName)) throw new ArgumentException("BootstrapperOptions.LogFileName is required.", nameof(options));
+            if (string.IsNullOrWhiteSpace(options.ResourcesNamespace)) throw new ArgumentException("BootstrapperOptions.ResourcesNamespace is required.", nameof(options));
+            if (string.IsNullOrWhiteSpace(options.SqliteVersionWarningMessageFormat)) throw new ArgumentException("BootstrapperOptions.SqliteVersionWarningMessageFormat is required.", nameof(options));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
 
