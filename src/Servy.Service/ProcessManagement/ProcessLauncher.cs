@@ -323,7 +323,7 @@ namespace Servy.Service.ProcessManagement
             }
             catch (Exception ex)
             {
-                string pathValue = options.ExecutablePath ?? string.Empty;
+                string pathValue = options.ExecutablePath;
                 logger.Error($"Failed during synchronous execution or log flushing for '{pathValue}'.", ex);
                 throw;
             }

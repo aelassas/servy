@@ -32,6 +32,11 @@ namespace Servy.Core.Validation
         public static PathSecurityResult ValidatePath(string path, FileMode mode, FileAccess access, FileShare share, out FileStream stream)
         {
             stream = null;
+            bool isImport = mode == FileMode.Open;
+
+            // Helper local function to pick between import-flavored and export-flavored message strings.
+            string Pick(string importMsg, string exportMsg) => isImport ? importMsg : exportMsg;
+
             string fullPath;
             try
             {
@@ -48,7 +53,7 @@ namespace Servy.Core.Validation
             bool isUncUri = Uri.TryCreate(fullPath, UriKind.Absolute, out var uri) && uri.IsUnc;
             if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || isUncUri)
             {
-                var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityUncPathProhibited : Strings.Msg_SecurityUncPathExportProhibited;
+                var errorMsg = Pick(Strings.Msg_SecurityUncPathProhibited, Strings.Msg_SecurityUncPathExportProhibited);
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
@@ -62,7 +67,7 @@ namespace Servy.Core.Validation
                     var drive = new DriveInfo(root);
                     if (drive.DriveType == DriveType.Network)
                     {
-                        var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityNetworkDriveProhibited : Strings.Msg_SecurityNetworkDriveExportProhibited;
+                        var errorMsg = Pick(Strings.Msg_SecurityNetworkDriveProhibited, Strings.Msg_SecurityNetworkDriveExportProhibited);
                         Logger.Error(errorMsg);
                         return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                     }
@@ -76,7 +81,7 @@ namespace Servy.Core.Validation
             // Reparse Point Guard (Directory and File Level)
             if (Helper.HasAncestorReparsePoint(fullPath))
             {
-                var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityDirReparsePointProhibited : Strings.Msg_SecurityDirReparsePointExportProhibited;
+                var errorMsg = Pick(Strings.Msg_SecurityDirReparsePointProhibited, Strings.Msg_SecurityDirReparsePointExportProhibited);
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
@@ -86,7 +91,7 @@ namespace Servy.Core.Validation
             fileLinkInfo.Refresh();
             if (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
-                var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityFileReparsePointProhibited : Strings.Msg_SecurityFileReparsePointExportProhibited;
+                var errorMsg = Pick(Strings.Msg_SecurityFileReparsePointProhibited, Strings.Msg_SecurityFileReparsePointExportProhibited);
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
@@ -127,7 +132,7 @@ namespace Servy.Core.Validation
 
             if (violatedFolder != null)
             {
-                var errorMsg = string.Format(mode == FileMode.Open ? Strings.Msg_SecurityProtectedDirectory : Strings.Msg_SecurityProtectedDirectoryExport, violatedFolder);
+                var errorMsg = string.Format(Pick(Strings.Msg_SecurityProtectedDirectory, Strings.Msg_SecurityProtectedDirectoryExport), violatedFolder);
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
@@ -143,7 +148,7 @@ namespace Servy.Core.Validation
             }
 
             // Existence Check (Only required for Input/Import modes)
-            if (mode == FileMode.Open && !fileLinkInfo.Exists)
+            if (isImport && !fileLinkInfo.Exists)
             {
                 var errorMsg = string.Format(Strings.Msg_ImportFileNotFound, fullPath);
                 Logger.Error(errorMsg);
@@ -212,7 +217,7 @@ namespace Servy.Core.Validation
 
                 if (normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) || finalIsUnc)
                 {
-                    var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityResolvedUncDestination : Strings.Msg_SecurityResolvedUncDestinationExport;
+                    var errorMsg = Pick(Strings.Msg_SecurityResolvedUncDestination, Strings.Msg_SecurityResolvedUncDestinationExport);
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
@@ -222,7 +227,7 @@ namespace Servy.Core.Validation
 
                 if (resolvedViolation != null)
                 {
-                    var errorMsg = string.Format(mode == FileMode.Open ? Strings.Msg_SecurityProtectedDirectory : Strings.Msg_SecurityProtectedDirectoryExport, resolvedViolation);
+                    var errorMsg = string.Format(Pick(Strings.Msg_SecurityProtectedDirectory, Strings.Msg_SecurityProtectedDirectoryExport), resolvedViolation);
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }

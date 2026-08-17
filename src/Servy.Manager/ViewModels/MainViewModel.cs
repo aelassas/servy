@@ -104,20 +104,11 @@ namespace Servy.Manager.ViewModels
             get => _serviceCommands;
             set
             {
-                _serviceCommands = value;
-
-                if (PerformanceVM != null)
-                {
-                    PerformanceVM.ServiceCommands = value;
-                }
-                if (ConsoleVM != null)
-                {
-                    ConsoleVM.ServiceCommands = value;
-                }
-                if (DependenciesVM != null)
-                {
-                    DependenciesVM.ServiceCommands = value;
-                }
+                _serviceCommands = value ?? throw new ArgumentNullException(nameof(value));
+                PerformanceVM.ServiceCommands = value;
+                ConsoleVM.ServiceCommands = value;
+                DependenciesVM.ServiceCommands = value;
+                OnPropertyChanged();
             }
         }
 
