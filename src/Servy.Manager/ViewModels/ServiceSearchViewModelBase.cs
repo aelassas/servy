@@ -1,14 +1,11 @@
 using Servy.Core.Logging;
 using Servy.Manager.Models;
-using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
-using Servy.UI.ViewModels;
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.Manager.ViewModels
@@ -21,37 +18,20 @@ namespace Servy.Manager.ViewModels
     /// and ensures that asynchronous search operations are properly cancelled when a new
     /// search is triggered, preventing race conditions in the UI.
     /// </remarks>
-    public abstract class ServiceSearchViewModelBase : ViewModelBase, IDisposable
+    public abstract class ServiceSearchViewModelBase : SearchableViewModelBase
     {
         #region Private fields
 
         private string _searchText;
-        private string _searchButtonText = Strings.Button_Search;
-        private bool _isBusy;
 
         #endregion
 
         #region Protected fields
 
         /// <summary>
-        /// Manages the cancellation lifecycle for the current service search operation.
-        /// </summary>
-        protected CancellationTokenSource _serviceSearchCts;
-
-        /// <summary>
         /// UI dispatcher for yielding control back to the UI thread during long-running operations.
         /// </summary>
         protected readonly IUiDispatcher _uiDispatcher;
-
-        /// <summary>
-        /// Cursor service for managing wait cursor state during long-running operations.
-        /// </summary>
-        protected readonly ICursorService _cursorService;
-
-        /// <summary>
-        /// Atomic flag representing whether the current instance has been disposed (0 = false, 1 = true).
-        /// </summary>
-        protected int _isDisposed = 0;
 
         #endregion
 
@@ -69,26 +49,6 @@ namespace Servy.Manager.ViewModels
         {
             get => _searchText;
             set => Set(ref _searchText, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the text displayed on the search button, dynamically toggling
-        /// between 'Search' and 'Searching...' states.
-        /// </summary>
-        public string SearchButtonText
-        {
-            get => _searchButtonText;
-            set => Set(ref _searchButtonText, value);
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether a search operation is currently in progress.
-        /// Used to bind progress indicators in the UI.
-        /// </summary>
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set => Set(ref _isBusy, value);
         }
 
         #endregion
@@ -117,14 +77,16 @@ namespace Servy.Manager.ViewModels
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
         protected ServiceSearchViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands)
+            : base(cursorService)
         {
-            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _uiDispatcher = uiDispatcher ?? throw new ArgumentNullException(nameof(uiDispatcher));
             ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             SearchCommand = new AsyncCommand(SearchServicesAsync, name: nameof(SearchCommand));
         }
 
         #endregion
+
+        #region Protected Methods
 
         /// <summary>
         /// When implemented in a derived class, creates a view-specific service model
@@ -133,6 +95,10 @@ namespace Servy.Manager.ViewModels
         /// <param name="service">The raw service entity returned from the repository.</param>
         /// <returns>A specialized <see cref="ServiceItemBase"/> instance.</returns>
         protected abstract ServiceItemBase CreateServiceItem(Service service);
+
+        #endregion
+
+        #region Private Methods
 
         /// <summary>
         /// Orchestrates the asynchronous search process.
@@ -156,108 +122,30 @@ namespace Servy.Manager.ViewModels
                 return;
             }
 
-            // LIFECYCLE GATE: Bail immediately if the ViewModel has already initiated teardown
-            if (Volatile.Read(ref _isDisposed) != 0)
-            {
-                return;
-            }
-
-            var newCts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
-
-            CancellationToken token;
-            try
-            {
-                // RACING DISPOSE CHECK: Capture token safely. If a racing Dispose pulled this
-                // instance out from under us and processed it, this will throw an ObjectDisposedException.
-                token = newCts.Token;
-
-                // Re-verify global disposal state immediately after the swap to handle tight race windows
-                if (Volatile.Read(ref _isDisposed) != 0)
+            await ExecuteSearchPipelineAsync(
+                async token =>
                 {
-                    Helpers.Helper.CancelAndDisposeSafely(newCts);
-                    return;
-                }
-            }
-            catch (ObjectDisposedException)
-            {
-                // Captured CTS was cancelled and disposed mid-swap by a racing Dispose thread. Exit cleanly.
-                return;
-            }
+                    var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
 
-            try
-            {
-                _cursorService.SetWaitCursor();
-                IsBusy = true;
-                SearchButtonText = Strings.Button_Searching;
+                    if (token.IsCancellationRequested) return 0;
 
-                // Yield to the UI dispatcher to allow visual updates before the blocking call,
-                // safely bypassing during xUnit test runs.
-                await _uiDispatcher.YieldAsync();
-
-                var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
-
-                // Bail out if a newer search has superseded us, even if the inner call
-                // produced a result before noticing the cancellation.
-                if (token.IsCancellationRequested) return;
-
-                Services.Clear();
-                Services.AddRange(results.Select(CreateServiceItem));
-            }
-            catch (OperationCanceledException)
-            {
-                // Search was cancelled by a newer request; exit gracefully.
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to search services in {GetType().Name}.", ex);
-            }
-            finally
-            {
-                // Only the current (non-superseded) search owns the shared UI state.
-                if (ReferenceEquals(Volatile.Read(ref _serviceSearchCts), newCts))
-                {
-                    _cursorService.ResetCursor();
-                    IsBusy = false;
-                    SearchButtonText = Strings.Button_Search;
-                }
-            }
+                    Services.Clear();
+                    Services.AddRange(results.Select(CreateServiceItem));
+                    return Services.Count;
+                },
+                onPreFetchYieldAsync: () => _uiDispatcher.YieldAsync());
         }
 
-        /// <summary>
-        /// Disposes the ViewModel, safely cancelling and releasing the search token.
-        /// </summary>
-        /// <param name="disposing">
-        /// <see langword="true"/> when called from <see cref="IDisposable.Dispose()"/>. This type has no finalizer,
-        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            // Trip the flag FIRST, before cleaning tokens, so racing search threads self-terminate immediately.
-            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
-            {
-                return;
-            }
+        #endregion
 
-            if (disposing)
-            {
-                var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
-                if (oldSearchCts != null)
-                {
-                    Helpers.Helper.CancelAndDisposeSafely(oldSearchCts);
-                }
-            }
-        }
+        #region IDisposable Implementation
 
         /// <inheritdoc />
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            base.Dispose(disposing);
         }
+
+        #endregion
     }
 }
