@@ -1,5 +1,8 @@
 using System.IO;
 using System.Xml;
+using System.Xml.Serialization;
+using Servy.Core.DTOs;
+using Servy.Core.Resources;
 
 namespace Servy.Core.Security
 {
@@ -29,5 +32,26 @@ namespace Servy.Core.Security
         /// making it suitable for processing untrusted or externally sourced XML input.
         /// </remarks>
         public static XmlReader CreateReader(TextReader input) => XmlReader.Create(input, ReaderSettings);
+
+        /// <summary>
+        /// Creates an <see cref="XmlSerializer"/> configured with strict unknown element and unknown attribute handlers
+        /// to prevent unmapped or unexpected XML payloads from deserializing into a <see cref="ServiceDto"/>.
+        /// </summary>
+        /// <returns>A new <see cref="XmlSerializer"/> instance configured with strict parsing rules.</returns>
+        public static XmlSerializer CreateStrictServiceDtoSerializer()
+        {
+            var serializer = new XmlSerializer(typeof(ServiceDto));
+
+            serializer.UnknownElement += (sender, e) =>
+            {
+                throw new XmlException(string.Format(Strings.Msg_UnknownXmlElement, e.Element.Name), null, e.LineNumber, e.LinePosition);
+            };
+            serializer.UnknownAttribute += (sender, e) =>
+            {
+                throw new XmlException(string.Format(Strings.Msg_UnknownXmlAttribute, e.Attr.Name), null, e.LineNumber, e.LinePosition);
+            };
+
+            return serializer;
+        }
     }
 }
