@@ -63,7 +63,7 @@
                                  SearchCommand="{Binding SearchCommand}"
                                  IsBusy="{Binding IsBusy}"
                                  AutomationProperties.Name="{x:Static resx:Strings.Automation_DependenciesServiceList_Name}"
-                                 AutomationProperties.AutomationId="ServiceListControl"
+                                 AutomationProperties.AutomationId="DependenciesServiceList"
                                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesServiceList_HelpText}" />
 
     <Grid Grid.Column="1" Margin="10">

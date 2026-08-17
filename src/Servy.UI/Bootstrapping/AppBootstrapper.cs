@@ -400,7 +400,7 @@ namespace Servy.UI.Bootstrapping
 #endif
                     if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems, cancellationToken: CancellationToken.None))
                     {
-                        throw new InvalidOperationException($"Failed to extract embedded resources. Manager cannot start safely - see file log for details.");
+                        throw new InvalidOperationException($"Failed to extract embedded resources. The application cannot start safely - see file log for details.");
                     }
 
                     stopwatch.Stop();

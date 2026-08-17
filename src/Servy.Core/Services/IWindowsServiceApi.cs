@@ -39,7 +39,7 @@ namespace Servy.Core.Services
         /// <summary>
         /// Creates a service object and adds it to the specified service control manager database.
         /// </summary>
-        /// <param name="hSCManager">Handle to the service control manager.</param>
+        /// <param name="hSCManager">A handle to the service control manager.</param>
         /// <param name="lpServiceName">The name of the service.</param>
         /// <param name="lpDisplayName">The display name of the service.</param>
         /// <param name="dwDesiredAccess">The desired access rights for the service.</param>
@@ -72,7 +72,7 @@ namespace Servy.Core.Services
         /// <summary>
         /// Opens an existing service.
         /// </summary>
-        /// <param name="hSCManager">Handle to the service control manager.</param>
+        /// <param name="hSCManager">A handle to the service control manager.</param>
         /// <param name="lpServiceName">The name of the service to open.</param>
         /// <param name="dwDesiredAccess">The access to the service.</param>
         /// <returns>A handle to the service.</returns>
@@ -81,14 +81,14 @@ namespace Servy.Core.Services
         /// <summary>
         /// Marks the specified service for deletion from the service control manager database.
         /// </summary>
-        /// <param name="hService">Handle to the service.</param>
+        /// <param name="hService">A handle to the service.</param>
         /// <returns><see langword="true"/> if the operation succeeds; otherwise, <see langword="false"/>.</returns>
         bool DeleteService(SafeServiceHandle hService);
 
         /// <summary>
         /// Sends a control code to a service.
         /// </summary>
-        /// <param name="hService">Handle to the service.</param>
+        /// <param name="hService">A handle to the service.</param>
         /// <param name="dwControl">The control code to send.</param>
         /// <param name="lpServiceStatus">Receives the latest status information about the service.</param>
         /// <returns><see langword="true"/> if the operation succeeds; otherwise, <see langword="false"/>.</returns>
@@ -97,7 +97,7 @@ namespace Servy.Core.Services
         /// <summary>
         /// Changes the configuration parameters of a service.
         /// </summary>
-        /// <param name="hService">Handle to the service.</param>
+        /// <param name="hService">A handle to the service.</param>
         /// <param name="dwServiceType">The new service type.</param>
         /// <param name="dwStartType">The new start type.</param>
         /// <param name="dwErrorControl">The severity of the error if the service fails to start.</param>
@@ -126,7 +126,7 @@ namespace Servy.Core.Services
         /// <summary>
         /// Changes the optional configuration parameters of a service using a description structure.
         /// </summary>
-        /// <param name="hService">Handle to the service.</param>
+        /// <param name="hService">A handle to the service.</param>
         /// <param name="dwInfoLevel">The configuration information level to be set.</param>
         /// <param name="lpInfo">A reference to the new configuration information.</param>
         /// <returns><see langword="true"/> if the configuration is successfully changed; otherwise, <see langword="false"/>.</returns>
