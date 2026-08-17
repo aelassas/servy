@@ -389,16 +389,66 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
+        public virtual Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(xml))
-                return OperationResult.Failure(Strings.Msg_ImportXmlNullOrEmpty);
+            return ImportAsync(
+                content: xml,
+                deserialize: _xmlServiceSerializer.Deserialize,
+                emptyMessage: Strings.Msg_ImportXmlNullOrEmpty,
+                deserializationFailedMessage: Strings.Msg_ImportXmlDeserializationFailed,
+                logFormat: "Failed to import service from XML.",
+                failedFormat: Strings.Msg_ImportXmlFailed,
+                cancellationToken: cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+            var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
+            if (service == null) return string.Empty;
+
+            return _jsonServiceSerializer.Serialize(service) ?? string.Empty;
+        }
+
+        /// <inheritdoc />
+        public virtual Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
+        {
+            return ImportAsync(
+                content: json,
+                deserialize: _jsonServiceSerializer.Deserialize,
+                emptyMessage: Strings.Msg_ImportJsonNullOrEmpty,
+                deserializationFailedMessage: Strings.Msg_ImportJsonDeserializationFailed,
+                logFormat: "Failed to import service from JSON.",
+                failedFormat: Strings.Msg_ImportJsonFailed,
+                cancellationToken: cancellationToken);
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Centralized worker that handles the common import pipeline (content validation,
+        /// deserialization, runtime-state/credential-preserving upsert, cancellation rethrowing, and error logging).
+        /// </summary>
+        private async Task<OperationResult> ImportAsync(
+            string content,
+            Func<string, ServiceDto> deserialize,
+            string emptyMessage,
+            string deserializationFailedMessage,
+            string logFormat,
+            string failedFormat,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+                return OperationResult.Failure(emptyMessage);
 
             try
             {
-                var service = _xmlServiceSerializer.Deserialize(xml);
+                var service = deserialize(content);
                 if (service == null)
-                    return OperationResult.Failure(Strings.Msg_ImportXmlDeserializationFailed);
+                    return OperationResult.Failure(deserializationFailedMessage);
 
                 // Preserve runtime state (PID, ActiveStdoutPath/ActiveStderrPath paths) if the service exists and is running.
                 await UpsertAsync(
@@ -415,55 +465,10 @@ namespace Servy.Infrastructure.Data
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to import service from XML.", ex);
-                return OperationResult.Failure(string.Format(Strings.Msg_ImportXmlFailed, ex.Message));
+                Logger.Error(logFormat, ex);
+                return OperationResult.Failure(string.Format(failedFormat, ex.Message));
             }
         }
-
-        /// <inheritdoc />
-        public virtual async Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
-            var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
-            if (service == null) return string.Empty;
-
-            return _jsonServiceSerializer.Serialize(service) ?? string.Empty;
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                return OperationResult.Failure(Strings.Msg_ImportJsonNullOrEmpty);
-
-            try
-            {
-                var service = _jsonServiceSerializer.Deserialize(json);
-                if (service == null)
-                    return OperationResult.Failure(Strings.Msg_ImportJsonDeserializationFailed);
-
-                await UpsertAsync(
-                    service,
-                    preserveExistingRuntimeState: true,
-                    preserveExistingCredentials: true,
-                    cancellationToken: cancellationToken
-                    );
-                return OperationResult.Success();
-            }
-            catch (OperationCanceledException)
-            {
-                throw;   // let the caller observe cancellation
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Failed to import service from JSON.", ex);
-                return OperationResult.Failure(string.Format(Strings.Msg_ImportJsonFailed, ex.Message));
-            }
-        }
-
-        #endregion
-
-        #region Private Helpers
 
         /// <summary>
         /// Executes an asynchronous single-row retrieval query by a service name parameter,

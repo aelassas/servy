@@ -1615,29 +1615,7 @@ namespace Servy.Service
                     _logger?.Warn($"Failed to get exit code: {ex.Message}");
                 }
 
-                if (exitCode == 0)
-                {
-                    if (_options.RecoveryOnCleanExit && _recoveryActionEnabled)
-                    {
-                        _logger?.Info("Child process exited successfully (Code 0). RecoveryOnCleanExit is ENABLED. Checking recovery...");
-                        needsRecovery = RegisterFailureAndCheckRecovery();
-                    }
-                    else
-                    {
-                        _logger?.Info("Child process exited successfully (Code 0). Service will stop.");
-                        shouldStop = true;
-                    }
-                }
-                else if (_recoveryActionEnabled)
-                {
-                    // Unified recovery check
-                    needsRecovery = RegisterFailureAndCheckRecovery();
-                }
-                else
-                {
-                    _logger?.Error($"Process exited with code {exitCode} and recovery is disabled.");
-                    shouldStop = true;
-                }
+                (needsRecovery, shouldStop) = EvaluateExitOutcome(exitCode, "OnProcessExited");
             }
 
             // Determine if this is an unrecovered error exit when recovery options are disabled
@@ -1950,6 +1928,41 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Evaluates child process exit code against recovery configuration options,
+        /// logging the event and determining whether to trigger recovery or stop the service.
+        /// </summary>
+        /// <param name="exitCode">The exit code of the terminated process, or null if unreachable.</param>
+        /// <param name="source">The caller context tag for log messages (e.g., "OnProcessExited" or "CheckHealth").</param>
+        /// <returns>A tuple indicating whether recovery is needed or if the service should stop.</returns>
+        private (bool NeedsRecovery, bool ShouldStop) EvaluateExitOutcome(int? exitCode, string source)
+        {
+            if (_options == null)
+            {
+                return (false, true);
+            }
+
+            if (exitCode == 0)
+            {
+                if (_options.RecoveryOnCleanExit && _recoveryActionEnabled)
+                {
+                    _logger?.Info($"[{source}] Child process exited successfully (Code 0). RecoveryOnCleanExit is ENABLED. Checking recovery...");
+                    return (RegisterFailureAndCheckRecovery(), false);
+                }
+
+                _logger?.Info($"[{source}] Child process exited successfully (Code 0). Service will stop.");
+                return (false, true);
+            }
+
+            if (_recoveryActionEnabled)
+            {
+                return (RegisterFailureAndCheckRecovery(), false);
+            }
+
+            _logger?.Error($"[{source}] Process exited with code {exitCode?.ToString() ?? "null"} and recovery is disabled.");
+            return (false, true);
+        }
+
+        /// <summary>
         /// Periodically evaluates the health of the child process.
         /// Increments failure counters if the process is missing or crashed, and triggers recovery logic
         /// when the maximum failure threshold is reached.
@@ -1994,24 +2007,7 @@ namespace Servy.Service
                     int? exitCode = null;
                     try { exitCode = process?.ExitCode; } catch (Exception ex) { _logger?.Warn($"Health check could not read ExitCode (treating as failure): {ex.Message}"); }
 
-                    if (exitCode == 0)
-                    {
-                        if (_options.RecoveryOnCleanExit)
-                        {
-                            _logger?.Info("Health check detected clean exit (Code 0), but RecoveryOnCleanExit is ENABLED. Checking recovery...");
-                            needsRecovery = RegisterFailureAndCheckRecovery();
-                        }
-                        else
-                        {
-                            _logger?.Info("Health check detected child process exited successfully (Code 0). Service will stop.");
-                            shouldStop = true;
-                        }
-                    }
-                    else
-                    {
-                        // Unified recovery check for non-zero exit codes or missing processes
-                        needsRecovery = RegisterFailureAndCheckRecovery();
-                    }
+                    (needsRecovery, shouldStop) = EvaluateExitOutcome(exitCode, "CheckHealth");
 
                     // PLACEMENT 1: Alert the external monitor immediately if we are escalating to full recovery action
                     if (needsRecovery && _options != null)
