@@ -31,6 +31,8 @@
   <ItemGroup>
     <None Remove="Resources\handle64.exe" />
     <None Remove="Resources\handle64a.exe" />
+    <None Remove="Resources\Servy.Service.exe" />
+    <None Remove="Resources\Servy.Service.pdb" />
     <None Remove="Resources\Icons\Error.png" />
     <None Remove="Resources\Icons\Info.png" />
     <None Remove="Resources\Icons\Warning.png" />
@@ -81,8 +83,8 @@
 
   <ItemGroup>
     <EmbeddedResource Update="Resources\Strings.resx">
-      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

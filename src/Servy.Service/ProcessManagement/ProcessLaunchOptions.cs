@@ -10,6 +10,11 @@ namespace Servy.Service.ProcessManagement
     public class ProcessLaunchOptions
     {
         /// <summary>
+        /// Gets or sets the label used to prefix expansion-audit log lines (e.g. "Pre-Launch", "Post-Stop").
+        /// </summary>
+        public string AuditContext { get; set; } = "ProcessLauncher.Start";
+
+        /// <summary>
         /// Gets or sets the absolute filesystem path to the executable to be launched.
         /// </summary>
         public string ExecutablePath { get; set; } = string.Empty;

@@ -151,7 +151,7 @@ namespace Servy.Service.ProcessManagement
                 options.EnvironmentVariables!,
                 options.EnableConsoleUI,
                 logger,
-                "ProcessLauncher.Start");
+                options.AuditContext);
 
             // Re-derive redirection per stream: only redirect a stream whose target path is actually configured
             psi.RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdoutPath);

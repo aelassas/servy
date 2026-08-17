@@ -930,6 +930,7 @@ namespace Servy.Service
 
             var launchOptions = new ProcessLaunchOptions
             {
+                AuditContext = "Pre-Launch",
                 ExecutablePath = options.PreLaunchExecutablePath,
                 Arguments = args,
                 StartupDirectory = workingDir,
@@ -1511,6 +1512,7 @@ namespace Servy.Service
                     ? _options.StartupDirectory : hookWorkingDir;
                 var launchOptions = new ProcessLaunchOptions
                 {
+                    AuditContext = hookName,
                     ExecutablePath = exePath,
                     Arguments = rawArgs ?? string.Empty,
                     StartupDirectory = workingDir,
@@ -2699,6 +2701,7 @@ namespace Servy.Service
 
                 var launchOptions = new ProcessLaunchOptions
                 {
+                    AuditContext = "PreStop",
                     ExecutablePath = options.PreStopExecutablePath,
                     Arguments = args,
                     StartupDirectory = workingDir,
