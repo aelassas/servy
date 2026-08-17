@@ -148,7 +148,7 @@ namespace Servy.Service.ProcessManagement
                 options.ExecutablePath,
                 options.Arguments ?? string.Empty,
                 options.StartupDirectory,
-                options.EnvironmentVariables!,
+                options.EnvironmentVariables,
                 options.EnableConsoleUI,
                 logger,
                 options.AuditContext);

@@ -834,10 +834,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             // Skip execution on ARM64 environments (native or emulated) where conhost/GenerateConsoleCtrlEvent
             // severs testhost.exe's stdio IPC pipe and crashes the test host process.
-            bool isArm64 = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ||
-                           RuntimeInformation.OSArchitecture == Architecture.Arm64;
-
-            if (isArm64)
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
             {
                 Assert.Skip("Skipping SendCtrlC test on ARM64 environment to prevent console IPC pipe crash.");
             }
