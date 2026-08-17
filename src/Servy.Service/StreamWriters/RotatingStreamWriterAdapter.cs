@@ -79,6 +79,7 @@ namespace Servy.Service.StreamWriters
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
+            _disposed = true;
 
             if (disposing)
             {
@@ -86,8 +87,6 @@ namespace Servy.Service.StreamWriters
                 _inner?.Dispose();
                 _inner = null;
             }
-
-            _disposed = true;
         }
 
         /// <summary>

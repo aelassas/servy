@@ -66,6 +66,7 @@ namespace Servy.Service.Timers
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
+            _disposed = true;
 
             if (disposing)
             {
@@ -73,8 +74,6 @@ namespace Servy.Service.Timers
                 _timer?.Dispose();
                 _timer = null;
             }
-
-            _disposed = true;
         }
 
         /// <summary>
