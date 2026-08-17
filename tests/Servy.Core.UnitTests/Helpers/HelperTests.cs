@@ -40,7 +40,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null, false)]
         [InlineData("", false)]
-        [InlineData("   ", false)]
+        [InlineData("    ", false)]
         [InlineData("..\\somepath", false)]            // Explicit directory traversal at start
         [InlineData("C:\\valid\\path.txt", true)]     // Valid absolute path (Windows style)
         [InlineData("C:/valid/path.txt", true)]       // Valid absolute path (forward slash)
@@ -136,32 +136,21 @@ namespace Servy.Core.UnitTests.Helpers
         public void CreateParentDirectory_DirectoryExistsOrCreated_ReturnsTrue(string filePath)
         {
             // Arrange
-            var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
 
             // Rows must stay relative so every path resolves inside tempDir (never the real drive).
             var testFilePath = Path.Combine(tempDir, filePath);
 
-            try
-            {
-                // Act
-                var result = Helper.CreateParentDirectory(testFilePath);
+            // Act
+            var result = Helper.CreateParentDirectory(testFilePath);
 
-                // Assert
-                Assert.True(result);
+            // Assert
+            Assert.True(result);
 
-                var parentDir = Path.GetDirectoryName(testFilePath);
-                Assert.NotNull(parentDir);
-                Assert.True(Directory.Exists(parentDir), $"The expected parent directory container '{parentDir}' was not physically instantiated on disk.");
-            }
-            finally
-            {
-                // Cleanup
-                if (Directory.Exists(tempDir))
-                {
-                    Directory.Delete(tempDir, true);
-                }
-            }
+            var parentDir = Path.GetDirectoryName(testFilePath);
+            Assert.NotNull(parentDir);
+            Assert.True(Directory.Exists(parentDir), $"The expected parent directory container '{parentDir}' was not physically instantiated on disk.");
         }
 
         [Fact]
@@ -247,8 +236,8 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("2026.05.25", "2026.5.25")] // Leading zeros in segments
                                                 // --- EDGE CASES ---
         [InlineData("1.2.3.4", "1.2.3.4")]     // 4-part versioning
-        [InlineData("", null)]                 // New null contract
-        [InlineData("   ", null)]              // Whitespace handling
+        [InlineData("", null)]                  // New null contract
+        [InlineData("    ", null)]              // Whitespace handling
         [InlineData("invalid", null)]          // New null contract
         [InlineData("1.x.0", null)]            // Invalid structure
         public void ParseVersion_ReturnsExpectedVersion(string version, string expectedVersionString)
@@ -283,7 +272,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void IsServiceNameValid_NullOrWhitespace_ReturnsValidationError(string input)
         {
             // Act
@@ -463,7 +452,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void NormalizePath_NullOrWhiteSpace_ReturnsNull(string input)
         {
             // Act
@@ -538,75 +527,61 @@ namespace Servy.Core.UnitTests.Helpers
         public void WriteFileAtomic_Success_WritesFileAndCleansUpTemp()
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             string targetPath = Path.Combine(tempDir, "target.txt");
 
-            try
+            // Act: WriteFileAtomic ensures parent directory creation
+            Helper.WriteFileAtomic(targetPath, (Stream stream) =>
             {
-                // Act: WriteFileAtomic ensures parent directory creation
-                Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
                 {
-                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
-                    {
-                        writer.Write("atomic-sync-test-48");
-                    }
-                }, CancellationToken.None);
+                    writer.Write("atomic-sync-test-48");
+                }
+            }, CancellationToken.None);
 
-                // Assert
-                Assert.True(File.Exists(targetPath));
-                Assert.Equal("atomic-sync-test-48", File.ReadAllText(targetPath));
+            // Assert
+            Assert.True(File.Exists(targetPath));
+            Assert.Equal("atomic-sync-test-48", File.ReadAllText(targetPath));
 
-                // No GUID-suffixed *.tmp staging file may remain after a successful write.
-                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
-                Assert.Empty(leftovers);
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-            }
+            // No GUID-suffixed *.tmp staging file may remain after a successful write.
+            var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+            Assert.Empty(leftovers);
         }
 
         [Fact]
         public void WriteFileAtomic_OnException_CleansUpTempAndDoesNotCreateTarget()
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             string targetPath = Path.Combine(tempDir, "target.txt");
 
-            try
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() =>
             {
-                // Act & Assert
-                Assert.Throws<InvalidOperationException>(() =>
+                Helper.WriteFileAtomic(targetPath, (Stream stream) =>
                 {
-                    Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
                     {
-                        using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
-                        {
-                            writer.Write("partial-data");
-                            throw new InvalidOperationException("Simulated failure");
-                        }
-                    }, CancellationToken.None);
-                });
+                        writer.Write("partial-data");
+                        throw new InvalidOperationException("Simulated failure");
+                    }
+                }, CancellationToken.None);
+            });
 
-                // CleanupTempFile is called in finally to ensure .tmp is removed
-                Assert.False(File.Exists(targetPath), "Target should not exist if move was never reached.");
+            // CleanupTempFile is called in finally to ensure .tmp is removed
+            Assert.False(File.Exists(targetPath), "Target should not exist if move was never reached.");
 
-                // Ensure no dynamically generated GUID staging targets
-                // are leaked inside the scratch tracking folder when an unhandled execution exception triggers.
-                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
-                Assert.Empty(leftovers);
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-            }
+            // Ensure no dynamically generated GUID staging targets
+            // are leaked inside the scratch tracking folder when an unhandled execution exception triggers.
+            var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+            Assert.Empty(leftovers);
         }
 
         [Fact]
         public void WriteFileAtomic_OverwritesReadOnlyFile()
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
             string targetPath = Path.Combine(tempDir, "target.txt");
 
@@ -635,7 +610,6 @@ namespace Servy.Core.UnitTests.Helpers
             finally
             {
                 if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
             }
         }
 
@@ -647,100 +621,79 @@ namespace Servy.Core.UnitTests.Helpers
         public async Task WriteFileAtomicAsync_Success_WritesFile()
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             string targetPath = Path.Combine(tempDir, "target.txt");
 
-            try
+            // Act: Uses WriteFileAtomicCore internally
+            await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
             {
-                // Act: Uses WriteFileAtomicCore internally
-                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
-                {
-                    byte[] data = Encoding.UTF8.GetBytes("atomic-async-test-48");
-                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
-                }, CancellationToken.None);
+                byte[] data = Encoding.UTF8.GetBytes("atomic-async-test-48");
+                await stream.WriteAsync(data, 0, data.Length, cancellationToken);
+            }, CancellationToken.None);
 
-                // Assert
-                Assert.True(File.Exists(targetPath));
+            // Assert
+            Assert.True(File.Exists(targetPath));
 
-                string result;
-                using (StreamReader reader = new StreamReader(targetPath))
-                {
-                    result = await reader.ReadToEndAsync();
-                }
-                Assert.Equal("atomic-async-test-48", result);
-            }
-            finally
+            string result;
+            using (StreamReader reader = new StreamReader(targetPath))
             {
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+                result = await reader.ReadToEndAsync();
             }
+            Assert.Equal("atomic-async-test-48", result);
         }
 
         [Fact]
         public async Task WriteFileAtomicAsync_CreatesNestedDirectories()
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             string nestedPath = Path.Combine(tempDir, "deeply", "nested", "path");
             string targetPath = Path.Combine(nestedPath, "test.log");
 
-            try
+            // Act: Core logic calls Directory.CreateDirectory
+            await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
             {
-                // Act: Core logic calls Directory.CreateDirectory
-                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
-                {
-                    byte[] data = Encoding.UTF8.GetBytes("nesting-test");
-                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
-                }, CancellationToken.None);
+                byte[] data = Encoding.UTF8.GetBytes("nesting-test");
+                await stream.WriteAsync(data, 0, data.Length, cancellationToken);
+            }, CancellationToken.None);
 
-                // Assert
-                Assert.True(Directory.Exists(nestedPath));
-                Assert.True(File.Exists(targetPath));
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-            }
+            // Assert
+            Assert.True(Directory.Exists(nestedPath));
+            Assert.True(File.Exists(targetPath));
         }
 
         [Fact]
         public async Task WriteFileAtomicAsync_OnException_CleansUpTempAndDoesNotCreateTarget()
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             string targetPath = Path.Combine(tempDir, "target.txt");
             Directory.CreateDirectory(tempDir);
 
-            try
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
-                // Act & Assert
-                await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
                 {
-                    await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
-                    {
-                        byte[] data = Encoding.UTF8.GetBytes("partial-async-data");
-                        await stream.WriteAsync(data, 0, data.Length, cancellationToken);
-                        throw new InvalidOperationException("Simulated failure");
-                    }, CancellationToken.None);
-                });
+                    byte[] data = Encoding.UTF8.GetBytes("partial-async-data");
+                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
+                    throw new InvalidOperationException("Simulated failure");
+                }, CancellationToken.None);
+            });
 
-                // CleanupTempFile should be executed in the finally block of WriteFileAtomicCore
-                Assert.False(File.Exists(targetPath), "Target should not exist if move operation was never reached.");
+            // CleanupTempFile should be executed in the finally block of WriteFileAtomicCore
+            Assert.False(File.Exists(targetPath), "Target should not exist if move operation was never reached.");
 
-                // Ensure no dynamically generated GUID staging targets are leaked inside the scratch folder
-                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
-                Assert.Empty(leftovers);
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-            }
+            // Ensure no dynamically generated GUID staging targets are leaked inside the scratch folder
+            var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+            Assert.Empty(leftovers);
         }
 
         [Fact]
         public async Task WriteFileAtomicAsync_OverwritesReadOnlyFile()
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
             string targetPath = Path.Combine(tempDir, "target.txt");
 
@@ -767,7 +720,6 @@ namespace Servy.Core.UnitTests.Helpers
             finally
             {
                 if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
             }
         }
 
@@ -907,7 +859,7 @@ namespace Servy.Core.UnitTests.Helpers
                 }
                 catch (IOException ex) when ((ex.HResult & 0xFFFF) == ErrorPrivilegeNotHeld)
                 {
-                    return; // Symlink creation unavailable on this runner (SeCreateSymbolicLinkPrivilege not held; enable Developer Mode or run elevated).
+                    return; // Skip test - Symlink creation unavailable on this runner (SeCreateSymbolicLinkPrivilege not held; enable Developer Mode or run elevated).
                 }
                 catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && i < MaxFileSystemRetries - 1)
                 {
