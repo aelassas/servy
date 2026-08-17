@@ -767,7 +767,7 @@ namespace Servy.Core.Services
             catch (Exception ex)
             {
                 Logger.Error($"Error uninstalling service '{serviceName}'.", ex);
-                throw;
+                return OperationResult.Failure($"Error uninstalling service '{serviceName}': {ex.Message}");
             }
             finally
             {

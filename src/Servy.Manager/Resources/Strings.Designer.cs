@@ -1159,7 +1159,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Execute service search..
+        ///   Looks up a localized string similar to Executes the service search..
         /// </summary>
         public static string Automation_SearchButton_HelpText {
             get {
@@ -1276,7 +1276,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Type a keyword to search services.
+        ///   Looks up a localized string similar to Type a keyword to search services..
         /// </summary>
         public static string Automation_SidebarSearchTextBox_HelpText {
             get {

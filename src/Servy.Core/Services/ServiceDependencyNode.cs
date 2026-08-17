@@ -84,7 +84,7 @@ namespace Servy.Core.Services
         {
             ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
             _displayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
-            IsRunning = isRunning;
+            _isRunning = isRunning;
             IsCyclic = isCyclic;
         }
 
