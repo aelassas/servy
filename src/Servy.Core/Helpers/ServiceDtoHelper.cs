@@ -1,6 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
+using System;
 
 namespace Servy.Core.Helpers
 {
@@ -15,10 +16,23 @@ namespace Servy.Core.Helpers
     public static class ServiceDtoHelper
     {
         /// <summary>
+        /// Creates a shallow copy of a <see cref="ServiceDto"/>.
+        /// Delegates to <see cref="ICloneable.Clone"/> to perform a memberwise clone, preventing property drift when new properties are added.
+        /// </summary>
+        /// <param name="dto">The service data transfer object to copy.</param>
+        /// <returns>A new <see cref="ServiceDto"/> instance with identical property values.</returns>
+        public static ServiceDto Clone(ServiceDto dto)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            return (ServiceDto)dto.Clone();
+        }
+
+        /// <summary>
         /// Populates null nullable properties with their matching system configurations sourced from <see cref="AppConfig"/>.
         /// This ensures structural parameter completeness across business contexts without executing side-effect identity mutations.
         /// </summary>
-        /// <param name="dto">The service data transfer object layout to populate.</param>
+        /// <param name="dto">The service data transfer object layout to populate. The instance is modified in place.</param>
         public static void HydrateDefaults(ServiceDto dto)
         {
             if (dto == null) return;
@@ -70,7 +84,7 @@ namespace Servy.Core.Helpers
         /// Additionally, unconditionally resets RunAsLocalSystem/UserAccount/Password to a
         /// password-less LocalSystem baseline (Global Identity Reset on Import policy).
         /// </summary>
-        /// <param name="dto">The service DTO to hydrate. If null, the method returns immediately.</param>
+        /// <param name="dto">The service DTO to hydrate. The instance is modified in place. If null, the method returns immediately.</param>
         public static void ApplyDefaultsAndResetIdentity(ServiceDto dto)
         {
             if (dto == null) return;

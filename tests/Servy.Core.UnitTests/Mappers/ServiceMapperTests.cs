@@ -249,5 +249,71 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, service.HeartbeatUrlTimeoutSeconds);
             Assert.Equal(AppConfig.DefaultEnableHeartbeatUrlFlags, service.EnableHeartbeatUrlFlags);
         }
+
+        [Fact]
+        public void ToDomain_DoesNotMutateInputDto()
+        {
+            // Arrange
+            var dto = new ServiceDto
+            {
+                Name = "NonMutatingService",
+                ExecutablePath = @"C:\app\service.exe",
+                StartTimeout = null,
+                StopTimeout = null,
+                StartupType = null,
+                Priority = null,
+                EnableConsoleUI = null,
+                EnableSizeRotation = null,
+                RotationSize = null,
+                EnableDateRotation = null,
+                DateRotationType = null,
+                MaxRotations = null,
+                UseLocalTimeForRotation = null,
+                EnableHealthMonitoring = null,
+                HeartbeatInterval = null,
+                MaxFailedChecks = null,
+                RecoveryAction = null,
+                RecoveryOnCleanExit = null,
+                MaxRestartAttempts = null,
+                HeartbeatUrlTimeoutSeconds = null,
+                EnableHeartbeatUrlFlags = null,
+                PreLaunchTimeoutSeconds = null,
+                PreLaunchRetryAttempts = null,
+                PreLaunchIgnoreFailure = null,
+                EnableDebugLogs = null,
+                PreStopTimeoutSeconds = null,
+                PreStopLogAsError = null
+            };
+
+            // Act
+            _ = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
+
+            // Assert: Verify that the input DTO's null values remain null after mapping
+            Assert.Null(dto.StartTimeout);
+            Assert.Null(dto.StopTimeout);
+            Assert.Null(dto.StartupType);
+            Assert.Null(dto.Priority);
+            Assert.Null(dto.EnableConsoleUI);
+            Assert.Null(dto.EnableSizeRotation);
+            Assert.Null(dto.RotationSize);
+            Assert.Null(dto.EnableDateRotation);
+            Assert.Null(dto.DateRotationType);
+            Assert.Null(dto.MaxRotations);
+            Assert.Null(dto.UseLocalTimeForRotation);
+            Assert.Null(dto.EnableHealthMonitoring);
+            Assert.Null(dto.HeartbeatInterval);
+            Assert.Null(dto.MaxFailedChecks);
+            Assert.Null(dto.RecoveryAction);
+            Assert.Null(dto.RecoveryOnCleanExit);
+            Assert.Null(dto.MaxRestartAttempts);
+            Assert.Null(dto.HeartbeatUrlTimeoutSeconds);
+            Assert.Null(dto.EnableHeartbeatUrlFlags);
+            Assert.Null(dto.PreLaunchTimeoutSeconds);
+            Assert.Null(dto.PreLaunchRetryAttempts);
+            Assert.Null(dto.PreLaunchIgnoreFailure);
+            Assert.Null(dto.EnableDebugLogs);
+            Assert.Null(dto.PreStopTimeoutSeconds);
+            Assert.Null(dto.PreStopLogAsError);
+        }
     }
 }
