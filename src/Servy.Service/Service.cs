@@ -1107,7 +1107,7 @@ namespace Servy.Service
                         }
 
                         // Pulse the SCM during the wait so the service is not killed by timeout.
-                        _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, _logger);
+                        _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
                         elapsed += slice;
                     }
                 }

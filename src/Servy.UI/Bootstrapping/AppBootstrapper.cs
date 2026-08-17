@@ -363,7 +363,7 @@ namespace Servy.UI.Bootstrapping
                     {
                         string resourceName = $"{AppConfig.ServyServiceUIFileName}.exe";
                         throw new InvalidOperationException($"Failed to extract embedded resource '{resourceName}'. " +
-                            "Manager cannot start safely - see file log for details.");
+                            "The application cannot start safely - see file log for details.");
                     }
 
                     var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
