@@ -761,10 +761,10 @@ namespace Servy.Manager.Services
             string successMessage,
             CancellationToken cancellationToken = default)
         {
+            if (service == null || string.IsNullOrWhiteSpace(service.Name)) return;
+
             try
             {
-                if (service == null || string.IsNullOrWhiteSpace(service.Name)) return;
-
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
@@ -782,8 +782,7 @@ namespace Servy.Manager.Services
             }
             catch (OperationCanceledException)
             {
-                string serviceName = service?.Name ?? "<unknown>";
-                Logger.Debug($"Operation on {serviceName} was cancelled.");
+                Logger.Debug($"Operation on {service.Name} was cancelled.");
                 throw;
             }
             catch (Exception ex)
