@@ -946,7 +946,7 @@ namespace Servy.Service
                 }
                 else
                 {
-                    process?.Dispose();
+                    process.Dispose();
                 }
                 return true;
             }
@@ -1462,7 +1462,7 @@ namespace Servy.Service
                 var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger);
                 if (track && process.UnderlyingProcess is Process p)
                     lock (_trackedHooks) _trackedHooks.Add(new Hook { OperationName = hookName, Process = p });
-                else process?.Dispose();
+                else process.Dispose();
             }
             catch (Exception ex) { _logger?.Error($"Failed to run {hookName} program.", ex); }
         }
