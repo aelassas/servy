@@ -57,6 +57,13 @@ namespace Servy.Core.Helpers
             // 2. Comma-separated list with ranges (e.g., "0-3,8,10-12")
             string[] parts = cleaned.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
+            if (parts.Length == 0)
+            {
+                throw new ArgumentException(
+                    string.Format(Strings.Msg_InvalidCoreSpecification, cleaned),
+                    nameof(affinityInput));
+            }
+
             foreach (var part in parts)
             {
                 string token = part.Trim();
