@@ -24,91 +24,92 @@ namespace Servy.Core.Mappers
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            // Hydrate raw property defaults cleanly via centralized core template logic
-            ServiceDtoHelper.HydrateDefaults(dto);
+            // Hydrate raw property defaults on a copy to avoid mutating the caller's DTO instance
+            var hydratedDto = ServiceDtoHelper.Clone(dto);
+            ServiceDtoHelper.HydrateDefaults(hydratedDto);
 
             return new Service(serviceManager)
             {
-                Name = dto.Name,
-                Description = dto.Description,
-                ExecutablePath = dto.ExecutablePath,
-                StartupDirectory = dto.StartupDirectory,
-                Parameters = dto.Parameters,
+                Name = hydratedDto.Name,
+                Description = hydratedDto.Description,
+                ExecutablePath = hydratedDto.ExecutablePath,
+                StartupDirectory = hydratedDto.StartupDirectory,
+                Parameters = hydratedDto.Parameters,
 
                 // Validate Enum ranges before mapping from DTO using shared parser
-                StartupType = ConfigParser.ParseEnum(dto.StartupType, AppConfig.DefaultStartupType),
-                Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultProcessPriority),
+                StartupType = ConfigParser.ParseEnum(hydratedDto.StartupType, AppConfig.DefaultStartupType),
+                Priority = ConfigParser.ParseEnum(hydratedDto.Priority, AppConfig.DefaultProcessPriority),
 
-                CpuAffinity = dto.CpuAffinity,
+                CpuAffinity = hydratedDto.CpuAffinity,
 
-                EnableConsoleUI = dto.EnableConsoleUI!.Value,
+                EnableConsoleUI = hydratedDto.EnableConsoleUI!.Value,
 
-                StdoutPath = dto.StdoutPath,
-                StderrPath = dto.StderrPath,
-                EnableSizeRotation = dto.EnableSizeRotation!.Value,
-                RotationSize = dto.RotationSize!.Value,
-                EnableDateRotation = dto.EnableDateRotation!.Value,
-
-                // Validate Enum ranges
-                DateRotationType = ConfigParser.ParseEnum(dto.DateRotationType, AppConfig.DefaultDateRotationType),
-
-                MaxRotations = dto.MaxRotations!.Value,
-                UseLocalTimeForRotation = dto.UseLocalTimeForRotation!.Value,
-                EnableHealthMonitoring = dto.EnableHealthMonitoring!.Value,
-                HeartbeatInterval = dto.HeartbeatInterval!.Value,
-                MaxFailedChecks = dto.MaxFailedChecks!.Value,
+                StdoutPath = hydratedDto.StdoutPath,
+                StderrPath = hydratedDto.StderrPath,
+                EnableSizeRotation = hydratedDto.EnableSizeRotation!.Value,
+                RotationSize = hydratedDto.RotationSize!.Value,
+                EnableDateRotation = hydratedDto.EnableDateRotation!.Value,
 
                 // Validate Enum ranges
-                RecoveryAction = ConfigParser.ParseEnum(dto.RecoveryAction, AppConfig.DefaultRecoveryAction),
+                DateRotationType = ConfigParser.ParseEnum(hydratedDto.DateRotationType, AppConfig.DefaultDateRotationType),
 
-                RecoveryOnCleanExit = dto.RecoveryOnCleanExit!.Value,
+                MaxRotations = hydratedDto.MaxRotations!.Value,
+                UseLocalTimeForRotation = hydratedDto.UseLocalTimeForRotation!.Value,
+                EnableHealthMonitoring = hydratedDto.EnableHealthMonitoring!.Value,
+                HeartbeatInterval = hydratedDto.HeartbeatInterval!.Value,
+                MaxFailedChecks = hydratedDto.MaxFailedChecks!.Value,
 
-                MaxRestartAttempts = dto.MaxRestartAttempts!.Value,
-                HeartbeatUrl = dto.HeartbeatUrl,
-                HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds!.Value,
-                EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags!.Value,
-                FailureProgramPath = dto.FailureProgramPath,
-                FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory,
-                FailureProgramParameters = dto.FailureProgramParameters,
-                EnvironmentVariables = dto.EnvironmentVariables,
-                ServiceDependencies = dto.ServiceDependencies,
-                RunAsLocalSystem = dto.RunAsLocalSystem ?? AppConfig.DefaultRunAsLocalSystem,
-                UserAccount = dto.UserAccount,
-                Password = dto.Password,
-                PreLaunchExecutablePath = dto.PreLaunchExecutablePath,
-                PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory,
-                PreLaunchParameters = dto.PreLaunchParameters,
-                PreLaunchEnvironmentVariables = dto.PreLaunchEnvironmentVariables,
-                PreLaunchStdoutPath = dto.PreLaunchStdoutPath,
-                PreLaunchStderrPath = dto.PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds!.Value,
-                PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts!.Value,
-                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure!.Value,
+                // Validate Enum ranges
+                RecoveryAction = ConfigParser.ParseEnum(hydratedDto.RecoveryAction, AppConfig.DefaultRecoveryAction),
 
-                PostLaunchExecutablePath = dto.PostLaunchExecutablePath,
-                PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
-                PostLaunchParameters = dto.PostLaunchParameters,
+                RecoveryOnCleanExit = hydratedDto.RecoveryOnCleanExit!.Value,
 
-                EnableDebugLogs = dto.EnableDebugLogs!.Value,
+                MaxRestartAttempts = hydratedDto.MaxRestartAttempts!.Value,
+                HeartbeatUrl = hydratedDto.HeartbeatUrl,
+                HeartbeatUrlTimeoutSeconds = hydratedDto.HeartbeatUrlTimeoutSeconds!.Value,
+                EnableHeartbeatUrlFlags = hydratedDto.EnableHeartbeatUrlFlags!.Value,
+                FailureProgramPath = hydratedDto.FailureProgramPath,
+                FailureProgramStartupDirectory = hydratedDto.FailureProgramStartupDirectory,
+                FailureProgramParameters = hydratedDto.FailureProgramParameters,
+                EnvironmentVariables = hydratedDto.EnvironmentVariables,
+                ServiceDependencies = hydratedDto.ServiceDependencies,
+                RunAsLocalSystem = hydratedDto.RunAsLocalSystem ?? AppConfig.DefaultRunAsLocalSystem,
+                UserAccount = hydratedDto.UserAccount,
+                Password = hydratedDto.Password,
+                PreLaunchExecutablePath = hydratedDto.PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = hydratedDto.PreLaunchStartupDirectory,
+                PreLaunchParameters = hydratedDto.PreLaunchParameters,
+                PreLaunchEnvironmentVariables = hydratedDto.PreLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = hydratedDto.PreLaunchStdoutPath,
+                PreLaunchStderrPath = hydratedDto.PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = hydratedDto.PreLaunchTimeoutSeconds!.Value,
+                PreLaunchRetryAttempts = hydratedDto.PreLaunchRetryAttempts!.Value,
+                PreLaunchIgnoreFailure = hydratedDto.PreLaunchIgnoreFailure!.Value,
 
-                DisplayName = dto.DisplayName ?? string.Empty,
+                PostLaunchExecutablePath = hydratedDto.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = hydratedDto.PostLaunchStartupDirectory,
+                PostLaunchParameters = hydratedDto.PostLaunchParameters,
 
-                StartTimeout = dto.StartTimeout!.Value,
-                StopTimeout = dto.StopTimeout!.Value,
+                EnableDebugLogs = hydratedDto.EnableDebugLogs!.Value,
 
-                Pid = dto.Pid,
-                ActiveStdoutPath = dto.ActiveStdoutPath,
-                ActiveStderrPath = dto.ActiveStderrPath,
+                DisplayName = hydratedDto.DisplayName ?? string.Empty,
 
-                PreStopExecutablePath = dto.PreStopExecutablePath,
-                PreStopStartupDirectory = dto.PreStopStartupDirectory,
-                PreStopParameters = dto.PreStopParameters,
-                PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds!.Value,
-                PreStopLogAsError = dto.PreStopLogAsError!.Value,
+                StartTimeout = hydratedDto.StartTimeout!.Value,
+                StopTimeout = hydratedDto.StopTimeout!.Value,
 
-                PostStopExecutablePath = dto.PostStopExecutablePath,
-                PostStopStartupDirectory = dto.PostStopStartupDirectory,
-                PostStopParameters = dto.PostStopParameters,
+                Pid = hydratedDto.Pid,
+                ActiveStdoutPath = hydratedDto.ActiveStdoutPath,
+                ActiveStderrPath = hydratedDto.ActiveStderrPath,
+
+                PreStopExecutablePath = hydratedDto.PreStopExecutablePath,
+                PreStopStartupDirectory = hydratedDto.PreStopStartupDirectory,
+                PreStopParameters = hydratedDto.PreStopParameters,
+                PreStopTimeoutSeconds = hydratedDto.PreStopTimeoutSeconds!.Value,
+                PreStopLogAsError = hydratedDto.PreStopLogAsError!.Value,
+
+                PostStopExecutablePath = hydratedDto.PostStopExecutablePath,
+                PostStopStartupDirectory = hydratedDto.PostStopStartupDirectory,
+                PostStopParameters = hydratedDto.PostStopParameters,
             };
         }
     }
