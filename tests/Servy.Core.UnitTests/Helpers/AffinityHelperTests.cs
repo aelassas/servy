@@ -64,11 +64,13 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("0x123456789ABCDEF0123")] // Exceeds long limits
         public void ParseAffinity_InvalidHex_ThrowsArgumentException(string input)
         {
+            // Arrange
+            string expectedPrefix = Strings.Msg_InvalidHexAffinityFormat.Split('{')[0];
+
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity(input));
 
             // Extract the static format prefix from the localized template
-            string expectedPrefix = Strings.Msg_InvalidHexAffinityFormat.Split('{')[0];
             Assert.Contains(expectedPrefix, ex.Message);
         }
 
@@ -77,10 +79,12 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("0xFFFFFFFFFFFFFFFF")]     // All bits set / overflow
         public void ParseAffinity_HexOutOfBoundsOrZero_ThrowsArgumentOutOfRangeException(string input)
         {
+            // Arrange
+            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
+
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
 
-            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
             Assert.Contains(expectedPrefix, ex.Message);
         }
 
@@ -97,11 +101,11 @@ namespace Servy.Core.UnitTests.Helpers
             // Mask that sets a bit beyond host max cores
             long outOfBoundsMask = 1L << maxAllowedCores;
             string input = $"0x{outOfBoundsMask:X}";
+            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
 
-            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
             Assert.Contains(expectedPrefix, ex.Message);
         }
 
@@ -113,12 +117,17 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("0, abc")] // Mixed invalid token
         [InlineData("0-abc")] // Non-numeric end range
         [InlineData("abc-1")] // Non-numeric start range
+        [InlineData(",")] // Comma-only input
+        [InlineData(",,")] // Multiple commas
+        [InlineData(" , ")] // Comma with whitespace
         public void ParseAffinity_InvalidTokenOrRangeSyntax_ThrowsArgumentException(string input)
         {
+            // Arrange
+            string expectedPrefix = Strings.Msg_InvalidCoreSpecification.Split('{')[0];
+
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity(input));
 
-            string expectedPrefix = Strings.Msg_InvalidCoreSpecification.Split('{')[0];
             Assert.Contains(expectedPrefix, ex.Message);
         }
 
@@ -176,8 +185,13 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("0x0")]
         [InlineData("abc")]
         [InlineData("9999")]
+        [InlineData(",")]
+        [InlineData(",,")]
+        [InlineData(" , ")]
         public void ValidateAffinity_InvalidInput_ReturnsFalseAndPopulatesErrorMessage(string input)
         {
+            // Arrange (N/A)
+
             // Act
             bool isValid = AffinityHelper.ValidateAffinity(input, out string? errorMessage);
 
