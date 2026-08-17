@@ -29,16 +29,7 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         protected override ServiceDto? Parse(string content)
         {
-            var serializer = new XmlSerializer(typeof(ServiceDto));
-
-            serializer.UnknownElement += (sender, e) =>
-            {
-                throw new XmlException(string.Format(Strings.Msg_UnknownXmlElement, e.Element.Name), null, e.LineNumber, e.LinePosition);
-            };
-            serializer.UnknownAttribute += (sender, e) =>
-            {
-                throw new XmlException(string.Format(Strings.Msg_UnknownXmlAttribute, e.Attr.Name), null, e.LineNumber, e.LinePosition);
-            };
+            var serializer = SecureXml.CreateStrictServiceDtoSerializer();
 
             // Prevent XXE attacks: SecureXml prohibits DTD processing and nulls the resolver.
             using (var stringReader = new StringReader(content))
