@@ -522,9 +522,9 @@ namespace Servy.Core.Domain
         /// <param name="wrapperExeDir">Wrapper exe parent directory.</param>
         /// <param name="isCLI">Indicates if install is from the CLI.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="ArgumentException">
         /// Thrown if required properties such as <see cref="Name"/> or
-        /// <see cref="ExecutablePath"/> are null or empty.
+        /// <see cref="ExecutablePath"/> are null, empty, or whitespace.
         /// </exception>
         /// <exception cref="Win32Exception">
         /// Thrown if the Service Control Manager cannot be accessed or the service
@@ -627,8 +627,8 @@ namespace Servy.Core.Domain
         /// is <see cref="OperationResult"/> describing whether the uninstall succeeded
         /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if <see cref="Name"/> is null or empty.
+        /// <exception cref="ArgumentException">
+        /// Thrown if <see cref="Name"/> is null, empty, or whitespace.
         /// </exception>
         /// <exception cref="Win32Exception">
         /// Thrown if the Service Control Manager cannot be accessed or the service
