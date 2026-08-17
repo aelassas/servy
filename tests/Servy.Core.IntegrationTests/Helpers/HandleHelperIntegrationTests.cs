@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 using System;
 using System.Collections.Generic;
@@ -207,8 +208,9 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.NotNull(results);
-            // Ensure we didn't block longer than the timeout if the exe is working
-            Assert.True(stopwatch.ElapsedMilliseconds < 5000, "Normal execution should be faster than timeout.");
+            // Normal execution should finish well inside the kill timeout the SUT enforces.
+            Assert.True(stopwatch.ElapsedMilliseconds < AppConfig.HandleExeTimeoutMs,
+                $"Normal execution took {stopwatch.ElapsedMilliseconds} ms, expected to stay under HandleExeTimeoutMs ({AppConfig.HandleExeTimeoutMs} ms).");
         }
     }
 }

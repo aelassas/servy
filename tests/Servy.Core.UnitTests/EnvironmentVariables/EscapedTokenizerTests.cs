@@ -5,8 +5,8 @@ using Xunit;
 namespace Servy.Core.UnitTests.EnvironmentVariables
 {
     /// <summary>
-    /// Contains comprehensive unit tests for the <see cref="EscapedTokenizer"/> class.
-    /// Ensures all branching paths for splitting, indexing, counting, and unescaping are verified.
+    /// Contains unit tests for the <see cref="EscapedTokenizer"/> class.
+    /// Ensures functionality for splitting, indexing, and unescaping is verified.
     /// </summary>
     public class EscapedTokenizerTests
     {

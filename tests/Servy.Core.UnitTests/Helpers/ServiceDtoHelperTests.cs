@@ -244,7 +244,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ApplyDefaults_WhenAllPropertiesAreNull_PopulatesEveryDefault()
+        public void ApplyDefaultsAndResetIdentity_WhenAllPropertiesAreNull_PopulatesEveryDefault()
         {
             // Arrange: Create a DTO where all nullable properties are null
             // Note: ServiceDto has field initializers, so explicitly null
@@ -360,7 +360,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ApplyDefaults_WhenDtoIsNull_ShouldNotThrow()
+        public void ApplyDefaultsAndResetIdentity_WhenDtoIsNull_ShouldNotThrow()
         {
             // Arrange
             ServiceDto dto = null;
