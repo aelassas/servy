@@ -1382,7 +1382,7 @@ namespace Servy.Service
             if (string.IsNullOrWhiteSpace(baseUrl) || _options == null || !_options.EnableHealthMonitoring) return;
 
             // Capture the configuration state instantly on the caller thread to avoid thread-race NullReferenceExceptions
-            bool enableFlags = _options.EnableHeartbeatUrlFlags == true;
+            bool enableFlags = _options.EnableHeartbeatUrlFlags;
 
             if (!string.IsNullOrEmpty(suffix) && !enableFlags) return;
 
@@ -2138,7 +2138,7 @@ namespace Servy.Service
 
                         if (exitCode == 0)
                         {
-                            if (_options!.RecoveryOnCleanExit == true)
+                            if (_options!.RecoveryOnCleanExit)
                             {
                                 _logger?.Info("Health check detected clean exit (Code 0), but RecoveryOnCleanExit is ENABLED. Checking recovery...");
                                 needsRecovery = RegisterFailureAndCheckRecovery();
@@ -2675,7 +2675,7 @@ namespace Servy.Service
             void LogIssue(string message, Exception? ex = null)
             {
                 if (!logAsError)
-                    _logger?.Warn(message);
+                    _logger?.Warn(message, ex);
                 else if (ex != null)
                     _logger?.Error(message, ex);
                 else

@@ -62,7 +62,7 @@ namespace Servy.Service.ProcessManagement
         public static ProcessStartInfo CreateStartInfo(
             string executablePath,
             string arguments,
-            string workingDirectory,
+            string? workingDirectory,
             List<EnvironmentVariable> environmentVariables,
             bool enableConsoleUI,
             IServyLogger? logger,
@@ -147,7 +147,7 @@ namespace Servy.Service.ProcessManagement
             var psi = CreateStartInfo(
                 options.ExecutablePath,
                 options.Arguments ?? string.Empty,
-                options.StartupDirectory!,
+                options.StartupDirectory,
                 options.EnvironmentVariables!,
                 options.EnableConsoleUI,
                 logger,
@@ -319,7 +319,7 @@ namespace Servy.Service.ProcessManagement
             }
             catch (Exception ex)
             {
-                string pathValue = options.ExecutablePath ?? string.Empty;
+                string pathValue = options.ExecutablePath;
                 logger.Error($"Failed during synchronous execution or log flushing for '{pathValue}'.", ex);
                 throw;
             }
