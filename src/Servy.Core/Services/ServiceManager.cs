@@ -482,7 +482,7 @@ namespace Servy.Core.Services
 
                         if (!serviceCreated)
                         {
-                            var isInstalled = IsServiceInstalled(options.ServiceName);
+                            var isInstalled = IsServiceInstalled(options.ServiceName, cancellationToken: cancellationToken);
                             if (isInstalled)
                             {
                                 cancellationToken.ThrowIfCancellationRequested();

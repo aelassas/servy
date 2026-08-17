@@ -952,7 +952,10 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Error($"Failed to launch fire-and-forget pre-launch process: {ex.Message}");
+                if (ignoreFailure)
+                    _logger?.Warn("Failed to launch fire-and-forget pre-launch process.", ex);
+                else
+                    _logger?.Error("Failed to launch fire-and-forget pre-launch process.", ex);
                 return ignoreFailure;
             }
         }

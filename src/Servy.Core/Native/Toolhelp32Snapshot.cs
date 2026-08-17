@@ -74,7 +74,7 @@ namespace Servy.Core.Native
 
             try
             {
-                PROCESSENTRY32 pe32 = new PROCESSENTRY32 { dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32)) };
+                PROCESSENTRY32 pe32 = new PROCESSENTRY32 { dwSize = (uint)Marshal.SizeOf<PROCESSENTRY32>() };
                 if (Process32First(snapshot, ref pe32))
                 {
                     do
