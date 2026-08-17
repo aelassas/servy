@@ -282,12 +282,7 @@ namespace Servy.Core.UnitTests.Helpers
             return InvokeInAssembly(assemblyBuilder);
         }
 
-        private string InvokeInAssembly(Assembly assembly)
-        {
-            // Arrange & Act
-            // Invoke the public static method safely using the updated reflection infrastructure
-            return (string)TestReflection.InvokePublicStatic(typeof(Helper), "GetBuiltWithFramework", assembly)!;
-        }
+        private string InvokeInAssembly(Assembly assembly) => Helper.GetBuiltWithFramework(assembly);
 
         [Fact]
         public void GetBuiltWithFramework_AttributeMissing_ReturnsUnknown()
