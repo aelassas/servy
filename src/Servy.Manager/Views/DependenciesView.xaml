@@ -15,38 +15,6 @@
 
   <views:ServiceSearchUserControl.Resources>
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
-
-    <Style x:Key="ToolbarPillButtonStyle" TargetType="Button">
-      <Setter Property="Background" Value="#1B7F9F" />
-      <Setter Property="Foreground" Value="White" />
-      <Setter Property="Margin" Value="0,0,0,6" />
-      <Setter Property="Padding" Value="6,1" />
-      <Setter Property="FontSize" Value="10.5" />
-      <Setter Property="Height" Value="20" />
-      <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="border"
-                    Background="{TemplateBinding Background}"
-                    CornerRadius="2"
-                    Padding="{TemplateBinding Padding}">
-              <ContentPresenter HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Margin="0,0,0,1" />
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="border" Property="Background" Value="#25A2C9" />
-              </Trigger>
-              <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="border" Property="Background" Value="#146078" />
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
   </views:ServiceSearchUserControl.Resources>
 
   <Grid>
