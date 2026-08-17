@@ -105,6 +105,24 @@ namespace Servy.Infrastructure.Data
             return transaction is WrappedDbTransaction wrapper ? wrapper.Transaction : transaction;
         }
 
+        /// <summary>
+        /// Re-binds a <see cref="CommandDefinition"/> so Dapper receives the unwrapped native transaction
+        /// (<paramref name="actualTx"/>) instead of the <see cref="WrappedDbTransaction"/> the caller passed in.
+        /// Note: <paramref name="ct"/> is the same token as <see cref="CommandDefinition.CancellationToken"/>
+        /// on every attempt - ExecuteWithRetryAsync does not mint a fresh per-attempt token today.
+        /// </summary>
+        private static CommandDefinition Rebind(in CommandDefinition command, IDbTransaction? actualTx, CancellationToken ct)
+        {
+            return new CommandDefinition(
+                command.CommandText,
+                command.Parameters,
+                actualTx,
+                command.CommandTimeout,
+                command.CommandType,
+                command.Flags,
+                ct);
+        }
+
         /// <inheritdoc />
         public IDbTransaction BeginTransaction() =>
             ExecuteWithRetry(() =>
@@ -402,18 +420,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // Re-bind the CommandDefinition here so Dapper receives the unwrapped native transaction
-                // (actualTx) instead of the WrappedDbTransaction the caller passed in. Note: 'ct' is the
-                // same token as command.CancellationToken on every attempt - ExecuteWithRetryAsync does not
-                // mint a fresh per-attempt token today.
-                var cmd = new CommandDefinition(
-                    command.CommandText,
-                    command.Parameters,
-                    actualTx,
-                    command.CommandTimeout,
-                    command.CommandType,
-                    command.Flags,
-                    ct);
+                var cmd = Rebind(command, actualTx, ct);
 
                 if (cmd.Transaction != null)
                 {
@@ -453,18 +460,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // Re-bind the CommandDefinition here so Dapper receives the unwrapped native transaction
-                // (actualTx) instead of the WrappedDbTransaction the caller passed in. Note: 'ct' is the
-                // same token as command.CancellationToken on every attempt - ExecuteWithRetryAsync does not
-                // mint a fresh per-attempt token today.
-                var cmd = new CommandDefinition(
-                    command.CommandText,
-                    command.Parameters,
-                    actualTx,
-                    command.CommandTimeout,
-                    command.CommandType,
-                    command.Flags,
-                    ct);
+                var cmd = Rebind(command, actualTx, ct);
 
                 if (cmd.Transaction != null)
                 {
@@ -486,18 +482,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // Re-bind the CommandDefinition here so Dapper receives the unwrapped native transaction
-                // (actualTx) instead of the WrappedDbTransaction the caller passed in. Note: 'ct' is the
-                // same token as command.CancellationToken on every attempt - ExecuteWithRetryAsync does not
-                // mint a fresh per-attempt token today.
-                var cmd = new CommandDefinition(
-                    command.CommandText,
-                    command.Parameters,
-                    actualTx,
-                    command.CommandTimeout,
-                    command.CommandType,
-                    command.Flags,
-                    ct);
+                var cmd = Rebind(command, actualTx, ct);
 
                 if (cmd.Transaction != null)
                 {
