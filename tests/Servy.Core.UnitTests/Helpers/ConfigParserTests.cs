@@ -12,6 +12,21 @@ namespace Servy.Core.UnitTests.Helpers
             Paused = 2
         }
 
+        [Flags]
+        public enum TestFlags
+        {
+            None = 0,
+            A = 1,
+            B = 2,
+            Combined = 3
+        }
+
+        public enum ByteBackedEnum : byte
+        {
+            None = 0,
+            Member = 1
+        }
+
         #region ParseInt Tests
 
         [Theory]
@@ -32,6 +47,16 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Act
             var result = ConfigParser.ParseInt("42", 10);
+
+            // Assert
+            Assert.Equal(42, result);
+        }
+
+        [Fact]
+        public void ParseInt_PaddedInput_ReturnsParsedValue()
+        {
+            // Act
+            var result = ConfigParser.ParseInt(" 42 ", 10);
 
             // Assert
             Assert.Equal(42, result);
@@ -160,6 +185,38 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(TestStatus.None, result);
         }
 
+        [Theory]
+        [InlineData(1, TestFlags.A)]
+        [InlineData(3, TestFlags.Combined)]
+        public void ParseEnum_Int_FlagsEnum_ValidValue_ReturnsParsedValue(int input, TestFlags expected)
+        {
+            // Act
+            var result = ConfigParser.ParseEnum(input, TestFlags.None);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void ParseEnum_Int_FlagsEnum_UnmappedBits_ReturnsDefault()
+        {
+            // Act
+            var result = ConfigParser.ParseEnum(5, TestFlags.None);
+
+            // Assert
+            Assert.Equal(TestFlags.None, result);
+        }
+
+        [Fact]
+        public void ParseEnum_Int_OverflowUnderlyingType_CatchesExceptionAndReturnsDefault()
+        {
+            // Act
+            var result = ConfigParser.ParseEnum(999, ByteBackedEnum.None);
+
+            // Assert
+            Assert.Equal(ByteBackedEnum.None, result);
+        }
+
         #endregion
 
         #region ParseEnum (String) Tests
@@ -188,6 +245,32 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("A", TestFlags.A)]
+        [InlineData("A, B", TestFlags.Combined)]
+        [InlineData("1", TestFlags.A)]
+        [InlineData("3", TestFlags.Combined)]
+        public void ParseEnum_String_FlagsEnum_ValidInput_ReturnsParsedValue(string input, TestFlags expected)
+        {
+            // Act
+            var result = ConfigParser.ParseEnum(input, TestFlags.None);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("5")]
+        [InlineData("A, Invalid")]
+        public void ParseEnum_String_FlagsEnum_UnmappedInput_ReturnsDefault(string input)
+        {
+            // Act
+            var result = ConfigParser.ParseEnum(input, TestFlags.None);
+
+            // Assert
+            Assert.Equal(TestFlags.None, result);
         }
 
         [Theory]
@@ -253,6 +336,44 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(30, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_MinBoundaryValue_ReturnsParsedValue()
+        {
+            // Arrange
+            var settings = new Dictionary<string, string?>
+            {
+                { "ConsoleMaxLines", "10" }
+            };
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(settings)
+                .Build();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "ConsoleMaxLines", 100, 10, 10000);
+
+            // Assert
+            Assert.Equal(10, result);
+        }
+
+        [Fact]
+        public void GetConfigInt_MaxBoundaryValue_ReturnsParsedValue()
+        {
+            // Arrange
+            var settings = new Dictionary<string, string?>
+            {
+                { "ConsoleMaxLines", "10000" }
+            };
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(settings)
+                .Build();
+
+            // Act
+            var result = ConfigParser.GetConfigInt(config, "ConsoleMaxLines", 100, 10, 10000);
+
+            // Assert
+            Assert.Equal(10000, result);
         }
 
         [Fact]

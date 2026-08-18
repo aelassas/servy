@@ -61,7 +61,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void KillProcessesUsingFile_InvalidInput_ReturnsExpected(string? path)
+        public void KillProcessesUsingFile_InvalidInput_ReturnsTrue(string? path)
             => Assert.True(_processKiller.KillProcessesUsingFile(path!));
 
         [Fact]
@@ -74,7 +74,7 @@ namespace Servy.Core.UnitTests.Helpers
             var result = _processKiller.KillProcessesUsingFile(fakePath);
 
             // Assert
-            // The method returns true and logs an error if the target file is missing
+            // Missing target file means nothing to kill: the method logs at Info and reports success.
             Assert.True(result);
         }
 

@@ -8,8 +8,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
     /// </summary>
     public class EscapedTokenizerTests
     {
-        private static readonly char[] Delimiters = new[] { ';', '\r', '\n' };
-
         #region SplitByUnescapedDelimiters Tests
 
         /// <summary>
@@ -127,6 +125,29 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
         #endregion
 
+        #region IsEscapedAt Tests
+
+        /// <summary>
+        /// Verifies that <see cref="EscapedTokenizer.IsEscapedAt"/> evaluates backslash run length parity correctly
+        /// to determine whether a character at a specific index is escaped.
+        /// </summary>
+        [Theory]
+        [InlineData("a\"", 1, false)]       // No preceding backslash
+        [InlineData("a\\\"", 2, true)]      // One backslash - escaped
+        [InlineData("a\\\\\"", 3, false)]   // Two backslashes - unescaped
+        [InlineData("\\\"", 1, true)]       // Run reaches index 0
+        [InlineData("\"", 0, false)]        // Index 0, nothing before it
+        public void IsEscapedAt_BackslashRunParity_ReturnsExpected(string input, int index, bool expected)
+        {
+            // Arrange & Act
+            bool result = EscapedTokenizer.IsEscapedAt(input, index);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        #endregion
+
         #region Unescape Tests
 
         /// <summary>
@@ -207,7 +228,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             string input = "KEY1\\=value1\\;contains\\\r\\\ncontinued;KEY2\\=value2";
 
             // Act
-            var tokens = EscapedTokenizer.SplitByUnescapedDelimiters(input, Delimiters)
+            var tokens = EscapedTokenizer.SplitByUnescapedDelimiters(input, EscapedTokenizer.EnvVarRecordDelimiters)
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToList();
 
