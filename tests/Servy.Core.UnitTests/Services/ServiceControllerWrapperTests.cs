@@ -30,9 +30,8 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(StandardTestService, name);
             }
         }
-
         [Fact]
-        public void InstanceMutations_PostDispose_ThrowsObjectDisposedException()
+        public void MemberAccess_PostDispose_ThrowsObjectDisposedException()
         {
             // Arrange
             var wrapper = new ServiceControllerWrapper(StandardTestService);
@@ -40,6 +39,9 @@ namespace Servy.Core.UnitTests.Services
 
             // Act & Assert
             Assert.Throws<ObjectDisposedException>(() => wrapper.ServiceName);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.DisplayName);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Status);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.GetDependencyNames());
             Assert.Throws<ObjectDisposedException>(() => wrapper.GetDependencies(cancellationToken: CancellationToken.None));
         }
 
