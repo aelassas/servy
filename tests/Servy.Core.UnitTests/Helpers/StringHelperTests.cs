@@ -23,7 +23,10 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("VAR1=value1\r\nVAR2=value2\nVAR3=value3\rVAR4=value4", "VAR1=value1;VAR2=value2;VAR3=value3;VAR4=value4")]
         public void NormalizeString_ReplacesLineBreaksWithSemicolons(string input, string expected)
         {
+            // Act
             var result = StringHelper.NormalizeString(input);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
@@ -62,11 +65,12 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 new EnvironmentVariable { Name = "KEY_TRAILING_SLASH", Value = @"C:\Foo\" },
                 new EnvironmentVariable { Name = "KEY_DOUBLE_SLASH", Value = @"C:\Bar\\" },
-                new EnvironmentVariable { Name = "KEY_INTERNAL_NEWLINE", Value = "line1\\nline2" },
+                new EnvironmentVariable { Name = "KEY_LITERAL_BACKSLASH_N", Value = "line1\\nline2" },
                 new EnvironmentVariable { Name = "KEY_ESCAPED_SEMICOLON", Value = "value1;value2" },
                 new EnvironmentVariable { Name = "STANDARD_KEY", Value = "NormalValue" }
             };
 
+            // Act
             // Convert raw structural model to single-line persistence string (Simulates initial load from DB)
             // Example layout: "KEY_TRAILING_SLASH=C:\\Foo\\;KEY_DOUBLE_SLASH=..."
             string serializedDbString = string.Join(";", originalVars.Select(v => $"{v.Name}={StringHelper.Escape(v.Value)}"));
@@ -74,7 +78,7 @@ namespace Servy.Core.UnitTests.Helpers
             // Step 1: Format for UI presentation (Multi-line layout)
             string uiText = StringHelper.FormatEnvironmentVariables(serializedDbString);
 
-            // Step 2: Act - Run the UI multi-line string through our updated, parity-aware normalization
+            // Step 2: Run the UI multi-line string through our updated, parity-aware normalization
             string singleLineSaveString = StringHelper.NormalizeString(uiText);
 
             // Step 3: Parse the saved string back into model objects
@@ -93,14 +97,17 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void FormatServiceDependencies_ShouldReturnEmpty_WhenInputIsNull()
         {
+            // Act
             var result = StringHelper.FormatServiceDependencies(null);
+
+            // Assert
             Assert.Empty(result);
         }
 
         [Theory]
         [InlineData("", "")]
         [InlineData("singleDep", "singleDep")]
-        [InlineData("dep1;dep2;dep3", "dep1|dep2|dep3")] // Use a temporary pipe delimiter for tokenization
+        [InlineData("dep1;dep2;dep3", "dep1|dep2|dep3")] // Environment.NewLine cannot appear in [InlineData]; '|' is a placeholder substituted below
         public void FormatServiceDependencies_ShouldReplaceSemicolonWithNewLine(string input, string expectedTemplate)
         {
             // Arrange
@@ -166,6 +173,5 @@ namespace Servy.Core.UnitTests.Helpers
 
             Assert.Equal(expected, result);
         }
-
     }
 }

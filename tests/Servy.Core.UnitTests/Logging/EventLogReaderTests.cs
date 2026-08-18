@@ -148,6 +148,12 @@ namespace Servy.Core.UnitTests.Logging
             // Arrange
             var mockEvent = new TestableEventRecord
             {
+                // Deliberately non-default: if a getter stopped throwing, these values would
+                // surface instead of the defaults asserted below.
+                IdValue = 4242,
+                TimeCreatedValue = new DateTime(2026, 6, 24, 15, 0, 0, DateTimeKind.Utc),
+                LevelValue = 2,                       // would map to Error, not Information
+                ProviderNameValue = "ServyEngine",
                 ThrowExceptionOnProperties = true,
                 FormatDescriptionValue = "Message survives a properties-only failure"
             };
@@ -194,6 +200,7 @@ namespace Servy.Core.UnitTests.Logging
         /// A test double for <see cref="EventRecord"/>. Every member is overridden directly, so no
         /// reflection or native event-log handle is required. Set <see cref="ThrowExceptionOnProperties"/>
         /// or <see cref="ExceptionToThrowOnFormat"/> to exercise MapToDto's per-property catch blocks.
+        /// Set <see cref="FormatDescriptionValue"/> to <c>null</c> to simulate missing provider metadata.
         /// </summary>
         private class TestableEventRecord : EventRecord
         {
@@ -261,6 +268,9 @@ namespace Servy.Core.UnitTests.Logging
 
             public override byte? Version => null;
 
+            // Deliberately returns null through a non-nullable signature: the real
+            // EventRecord.FormatDescription() can return null when provider metadata is
+            // missing, and MapToDto's '?? string.Empty' is what this covers. Do not "fix".
             public override string FormatDescription()
             {
                 if (ExceptionToThrowOnFormat != null)
@@ -272,7 +282,11 @@ namespace Servy.Core.UnitTests.Logging
 
             public override string FormatDescription(IEnumerable<object> values)
             {
-                return FormatDescriptionValue ?? string.Empty;
+                if (ExceptionToThrowOnFormat != null)
+                {
+                    throw ExceptionToThrowOnFormat;
+                }
+                return FormatDescriptionValue;
             }
 
             public override string ToXml()
