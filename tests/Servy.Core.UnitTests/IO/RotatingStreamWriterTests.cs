@@ -605,7 +605,8 @@ namespace Servy.Core.UnitTests.IO
             {
                 writer.Write(""); // create lazy file inner handle context without triggering auto-rotation
 
-                // Set file attribute to ReadOnly to force an intentional IOException on deletion
+                // Mark the file read-only so File.Delete throws UnauthorizedAccessException
+                // (the locked-file sibling in EnforceMaxRotations_CoversAllBranches covers IOException)
                 File.SetAttributes(rotated2, FileAttributes.ReadOnly);
 
                 // Act
@@ -615,7 +616,7 @@ namespace Servy.Core.UnitTests.IO
                 });
 
                 // Assert
-                Assert.Null(ex); // Verifies that the internal catch-block swallows the IOException gracefully
+                Assert.Null(ex); // The untyped catch in EnforceMaxRotations swallows it and logs a warning
 
                 // Reset attributes back to normal so the cleanup engine can purge the directory safely
                 File.SetAttributes(rotated2, FileAttributes.Normal);
@@ -698,8 +699,7 @@ namespace Servy.Core.UnitTests.IO
                 // Explicitly align the last rotation date field to our safe mid-week anchor
                 TestReflection.SetField(writer, "_lastRotationDate", recently);
 
-                // Overwrite any internal live-clock tracking if your class maintains an internal baseline
-                // otherwise the write operation evaluates against the current system time window cleanly.
+                // _lastRotationDate was seeded above; the write below evaluates ShouldRotateByDate against it.
                 writer.WriteLine("should not rotate");
                 writer.Flush();
             }
@@ -1064,7 +1064,8 @@ namespace Servy.Core.UnitTests.IO
             {
                 writer.Write("init"); // Ensure file and writer exist
 
-                // Differentiate local vs UTC time variants across the branches to resolve the redundant ternary smell.
+                // _lastRotationDate must be seeded from the same clock the writer's time provider uses,
+                // otherwise the machine's UTC offset shifts the backdated value.
                 DateTime fakePast = useLocal ? DateTime.Now.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
                 TestReflection.SetField(writer, "_lastRotationDate", fakePast);
 

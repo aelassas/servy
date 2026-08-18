@@ -81,7 +81,7 @@ namespace Servy.Core.UnitTests.Logging
         public void Initialize_WithNullFileName_GracefullySkipsInitialization()
         {
             // Arrange
-            // Ensure the static logger infrastructure is perfectly flushed and reset before testing bounds
+            // Ensure the static logger infrastructure is flushed and reset before testing bounds
             Logger.Shutdown();
 
             // Capture a directory listing snapshot to verify no file system leaks occur
@@ -93,7 +93,7 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Info("Should drop silently and never instantiate a stream handle.");
 
             // Assert
-            // 1. Structural State Check: route explicitly through the static field extraction engine targeting '_writer'
+            // 1. Structural State Check: verify '_writer' is null
             var internalWriter = TestReflection.GetFieldStatic<RotatingStreamWriter?>(typeof(Logger), "_writer");
             Assert.Null(internalWriter);
 
@@ -207,8 +207,6 @@ namespace Servy.Core.UnitTests.Logging
         public void Log_SanitizesMessage_MaintainsSingleLineContract(string rawMessage, string expectedFragment)
         {
             // Arrange
-            // Pure instance isolation is guaranteed cleanly via sequential collection serialization constraints
-            // and the distinct constructor allocation mappings.
             Logger.Initialize(_testFileName);
 
             // Act
@@ -218,7 +216,7 @@ namespace Servy.Core.UnitTests.Logging
             // Assert
             string[] lines = File.ReadAllLines(_fullLogPath);
 
-            // Trace target element dynamically to insulate the assertion loop from background thread telemetry noise
+            // Locate by payload rather than by index: the file may already hold entries from earlier writes.
             int matchingIndex = Array.FindIndex(lines, l => l.Contains(expectedFragment));
             Assert.True(matchingIndex >= 0, $"Expected log entry containing fragment '{expectedFragment}' was not found.");
 
@@ -444,9 +442,10 @@ namespace Servy.Core.UnitTests.Logging
             int msgIndex = content.IndexOf("Nested chain execution pass", StringComparison.Ordinal);
             string exceptionSegment = content.Substring(msgIndex).TrimEnd();
 
-            // Calculate bracket balance
+            // Calculate bracket balance via structural closing brackets at the tail end
             var openTokensCount = Regex.Matches(exceptionSegment, Regex.Escape("[Inner -> ")).Count;
-            var closeBracketsCount = exceptionSegment.Split(']').Length - 1;
+            var structuralCloseMatches = Regex.Matches(exceptionSegment, @"\]+$");
+            var closeBracketsCount = structuralCloseMatches.Count > 0 ? structuralCloseMatches[0].Value.Length : 0;
 
             // ASSERTIONS:
             // 1. There must be exactly 3 "[Inner -> " opened tokens.
@@ -499,8 +498,7 @@ namespace Servy.Core.UnitTests.Logging
 
             // 4. Calculate depth by counting structural depth tracking brackets inside the exception block
             int innerBracketCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
-            // NAIVE BRACKET COUNT: Instead of counting every ']' raw character via Split,
-            // target only the structural closing brackets that terminate the inner exception blocks at the tail end.
+            // STRUCTURAL BRACKET COUNT: Target only the structural closing brackets that terminate the inner exception blocks at the tail end.
             var structuralCloseMatches = Regex.Matches(exceptionSegment, @"\]+$");
             int closingBracketCount = structuralCloseMatches.Count > 0 ? structuralCloseMatches[0].Value.Length : 0;
 
@@ -524,8 +522,7 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Initialize(_testFileName);
             Logger.Info("First writer");
 
-            // Behavioral Setup: Leverage centralized test infrastructure reflection engine
-            // to inject a non-zero sentinel into the private static fallback tracking variable slot.
+            // Inject a non-zero sentinel into _initFallbackWriteCount.
             // On a successful reconfiguration run, InternalInitialize() will reset this back to 0.
             const string targetCounterFieldName = "_initFallbackWriteCount";
             TestReflection.SetFieldStatic(typeof(Logger), targetCounterFieldName, 99);
@@ -579,7 +576,6 @@ namespace Servy.Core.UnitTests.Logging
         public void SetUseLocalTimeForRotation_UpdatesTimestampTimezoneFormat()
         {
             // Arrange
-            // Absolute test boundaries are governed securely via strict sequential test serialization rules.
             Logger.Initialize(_testFileName, useLocalTimeForRotation: false);
 
             // Act
@@ -591,8 +587,7 @@ namespace Servy.Core.UnitTests.Logging
             // Assert
             string[] lines = File.ReadAllLines(_fullLogPath);
 
-            // Extract the targeted indices explicitly using their message payloads
-            // so background threads firing logs into the static entity won't disrupt verification.
+            // Extract the targeted indices explicitly using their message payloads.
             int utcIndex = Array.FindIndex(lines, l => l.Contains("Message UTC"));
             int localIndex = Array.FindIndex(lines, l => l.Contains("Message Local"));
 
