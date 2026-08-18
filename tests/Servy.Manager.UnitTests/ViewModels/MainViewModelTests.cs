@@ -511,7 +511,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 };
 
                 // Act
-                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", targetService, osMockPayload, databaseDto, CancellationToken.None);
+                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", targetService, osMockPayload, databaseDto, TestContext.Current.CancellationToken);
 
                 var resultType = result!.GetType();
                 var uiUpdateInfo = resultType.GetField("Item1")!.GetValue(result);
@@ -552,7 +552,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Act 1: Force a NullReferenceException inside Task.Run by nulling the _serviceManager dependency field
                 TestReflection.SetField(vm, "_serviceManager", null);
-                var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None)!;
+                var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
                 await task1;
 
                 // Assert 1: The NullReferenceException is caught by the generic exception handler. Downstream repository calls are never reached.
@@ -567,7 +567,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 TestReflection.SetField(vm, "_serviceManager", _serviceManagerMock.Object);
                 TestReflection.SetField(vm, "_serviceRepository", null);
 
-                var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None)!;
+                var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
                 await task2;
 
                 // Assert 2: The manager is queried for OS info, but the resulting NullReferenceException on the repository call
@@ -627,7 +627,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         .Returns(new ProcessMetrics(10.0, 1024));
 
                     // Act - Invoke RefreshAllServicesAsync to process service updates
-                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None)!;
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
                     await task;
 
                     // Assert 1: Verify ApplyServiceUpdate updated the target service's UI state
@@ -659,7 +659,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _processHelperMock.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
 
                     // Act
-                    var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
+                    var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, TestContext.Current.CancellationToken);
 
                     // Assert
                     Assert.NotNull(result);
@@ -1390,7 +1390,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _processHelperMock.Setup(p => p.GetProcessTreeMetrics(4321)).Returns(new ProcessMetrics(12.5, 2048576));
 
                     // Act
-                    var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
+                    var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, TestContext.Current.CancellationToken);
 
                     // Assert
                     Assert.NotNull(result);
@@ -1424,7 +1424,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = (int)ServiceStartType.Automatic };
 
                 // Act
-                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
+                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.NotNull(result);
@@ -1448,7 +1448,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
 
                 // Act
-                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, null!, CancellationToken.None);
+                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, null!, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.NotNull(result);

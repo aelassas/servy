@@ -590,7 +590,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     int activeSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
                     // Act - Start a live tailer for stdout
-                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None);
+                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, TestContext.Current.CancellationToken);
 
                     // Pull the dynamic internal event handler delegate out via reflection
                     var tailerInstance = TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer");
@@ -631,7 +631,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
-                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, currentSessionId, CancellationToken.None);
+                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, currentSessionId, TestContext.Current.CancellationToken);
 
                     var handlerDelegate = TestReflection.GetField<Delegate>(vm, "_stdoutTailerHandler");
                     var newLinesBatch = new List<LogLine> { new LogLine("Ignored live incoming console data string line", LogType.StdOut) };
@@ -658,7 +658,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
                     int staleSessionId = currentSessionId - 1; // A session id one behind the current one simulates a callback from a superseded switch
 
-                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, CancellationToken.None);
+                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, TestContext.Current.CancellationToken);
 
                     var handlerDelegate = TestReflection.GetField<Delegate>(vm, "_stdoutTailerHandler");
                     var newLinesBatch = new List<LogLine> { new LogLine("Obsolete service log line output", LogType.StdOut) };

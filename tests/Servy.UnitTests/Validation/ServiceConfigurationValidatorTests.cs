@@ -73,7 +73,7 @@ namespace Servy.UnitTests.Validation
         public async Task ValidateAsync_NullDto_ShowsErrorAndReturnsFalse()
         {
             // Act
-            var result = await _validator.ValidateAsync(null, cancellationToken: CancellationToken.None);
+            var result = await _validator.ValidateAsync(null, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);

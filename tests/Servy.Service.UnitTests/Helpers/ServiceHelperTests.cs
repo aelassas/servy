@@ -384,7 +384,7 @@ namespace Servy.Service.UnitTests.Helpers
                 (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, CancellationToken.None);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockProcess.Verify(p => p.Stop(1000), Times.Once);
@@ -408,7 +408,7 @@ namespace Servy.Service.UnitTests.Helpers
                 (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, CancellationToken.None);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockLog.Verify(l => l.Warn(It.Is<string>(s => s.Contains("error while getting process PID")), It.IsAny<Exception>()), Times.Once);
@@ -432,7 +432,7 @@ namespace Servy.Service.UnitTests.Helpers
                 (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, CancellationToken.None);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("proceeding with launch anyway")), It.IsAny<UnauthorizedAccessException>()), Times.Once);

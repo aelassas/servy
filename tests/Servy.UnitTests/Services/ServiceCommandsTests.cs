@@ -634,7 +634,7 @@ namespace Servy.UnitTests.Services
             var expected = Strings.ResourceManager.GetString(expectedResourceKey)!;
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -919,7 +919,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(CreateBlankFailureOperationResult(blankMessage));
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);

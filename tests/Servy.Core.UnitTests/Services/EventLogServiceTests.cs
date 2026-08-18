@@ -552,7 +552,7 @@ namespace Servy.Core.UnitTests.Services
             var service = new EventLogService(mockReader.Object, string.Empty);
 
             // Act
-            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
+            var results = await service.SearchAsync(null, null, null, null, TestContext.Current.CancellationToken);
 
             // Assert
             var entry = Assert.Single(results);
