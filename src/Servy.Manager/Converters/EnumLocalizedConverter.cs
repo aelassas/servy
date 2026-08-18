@@ -40,27 +40,15 @@ namespace Servy.Manager.Converters
         }
 
         /// <summary>
-        /// Converts a localized string back to its corresponding enum value.
+        /// Not implemented (one-way binding only).
         /// </summary>
         /// <param name="value">The localized string to convert.</param>
         /// <param name="targetType">The type to convert to.</param>
         /// <param name="parameter">Optional parameter (unused).</param>
         /// <param name="culture">The culture to use in the converter.</param>
-        /// <returns>The corresponding enum value if found; otherwise, <see cref="Binding.DoNothing"/>.</returns>
+        /// <returns><see cref="Binding.DoNothing"/> because two-way binding is not supported.</returns>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is string str)
-            {
-                var entry = _map.FirstOrDefault(x => x.Value() == str);
-
-                // Dictionary defaults to a KeyValuePair with Key=0 if not found.
-                // We verify the value provider is not null to guarantee an explicit match.
-                if (entry.Value != null)
-                {
-                    return entry.Key;
-                }
-            }
-
             return Binding.DoNothing;
         }
 
