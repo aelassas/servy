@@ -4,7 +4,10 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Mappers;
 using Servy.Core.Services;
+using Servy.Testing;
 using System;
+using System.Linq;
+using System.Reflection;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Mappers
@@ -31,6 +34,27 @@ namespace Servy.Core.UnitTests.Mappers
 
             // Verify the parameter name in the exception matches the code
             Assert.Equal("dto", exception.ParamName);
+        }
+
+        [Fact]
+        public void ToDomain_CoversEveryMappedProperty()
+        {
+            // Arrange
+            // DTO-only persistence fields with no domain counterpart.
+            var excluded = new[] { nameof(ServiceDto.Id), nameof(ServiceDto.PreviousStopTimeout) };
+
+            var domainProperties = typeof(Core.Domain.Service)
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(p => p.Name)
+                .ToHashSet();
+
+            // Act & Assert
+            foreach (var dtoProperty in TestReflection.GetMappedProperties<ServiceDto>(excluded))
+            {
+                Assert.True(domainProperties.Contains(dtoProperty.Name),
+                    $"ServiceDto.{dtoProperty.Name} has no domain counterpart. Add it to ToDomain, " +
+                    $"or to the excluded list above if it is deliberately persistence-only.");
+            }
         }
 
         [Fact]
@@ -185,56 +209,31 @@ namespace Servy.Core.UnitTests.Mappers
         public void ToDomain_NullOptionalValues_UsesDefaultFallbacks()
         {
             // Arrange
-            // Create a DTO with only the absolute required fields; others are null
+            // Create a DTO with only the absolute required fields; all nullable fields are null
             var dto = new ServiceDto
             {
                 Name = "MinimalService",
-                ExecutablePath = @"C:\app\service.exe",
-                // Every nullable field below is left as null to test fallbacks
-                StartupType = null,
-                Priority = null,
-                EnableSizeRotation = null,
-                RotationSize = null,
-                EnableDateRotation = null,
-                DateRotationType = null,
-                MaxRotations = null,
-                UseLocalTimeForRotation = null,
-                EnableHealthMonitoring = null,
-                HeartbeatInterval = null,
-                MaxFailedChecks = null,
-                RecoveryAction = null,
-                MaxRestartAttempts = null,
-                HeartbeatUrlTimeoutSeconds = null,
-                EnableHeartbeatUrlFlags = null,
-                RunAsLocalSystem = null,
-                PreLaunchTimeoutSeconds = null,
-                PreLaunchRetryAttempts = null,
-                PreLaunchIgnoreFailure = null,
-                EnableDebugLogs = null,
-                StartTimeout = null,
-                StopTimeout = null,
-                PreStopTimeoutSeconds = null,
-                PreStopLogAsError = null
+                ExecutablePath = @"C:\app\service.exe"
             };
 
             // Act
             var service = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
 
             // Assert: Verify every fallback branch was hit correctly
-            Assert.Equal(AppConfig.DefaultStartupType, service.StartupType); // StartupType == null branch
-            Assert.Equal(AppConfig.DefaultProcessPriority, service.Priority);        // Priority == null branch
-            Assert.False(service.EnableSizeRotation);                         // ?? false
-            Assert.Equal(AppConfig.DefaultRotationSizeMB, service.RotationSize); // ?? Default
-            Assert.False(service.EnableDateRotation);                     // ?? false
-            Assert.Equal(AppConfig.DefaultDateRotationType, service.DateRotationType); // .HasValue == false branch
+            Assert.Equal(AppConfig.DefaultStartupType, service.StartupType);
+            Assert.Equal(AppConfig.DefaultProcessPriority, service.Priority);
+            Assert.False(service.EnableSizeRotation);
+            Assert.Equal(AppConfig.DefaultRotationSizeMB, service.RotationSize);
+            Assert.False(service.EnableDateRotation);
+            Assert.Equal(AppConfig.DefaultDateRotationType, service.DateRotationType);
             Assert.Equal(AppConfig.DefaultMaxRotations, service.MaxRotations);
             Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, service.UseLocalTimeForRotation);
             Assert.False(service.EnableHealthMonitoring);
             Assert.Equal(AppConfig.DefaultHeartbeatInterval, service.HeartbeatInterval);
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, service.MaxFailedChecks);
-            Assert.Equal(AppConfig.DefaultRecoveryAction, service.RecoveryAction); // RecoveryAction == null branch
+            Assert.Equal(AppConfig.DefaultRecoveryAction, service.RecoveryAction);
             Assert.Equal(AppConfig.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
-            Assert.True(service.RunAsLocalSystem);                                // ?? true
+            Assert.True(service.RunAsLocalSystem);
             Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
             Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
             Assert.False(service.PreLaunchIgnoreFailure);
@@ -257,63 +256,27 @@ namespace Servy.Core.UnitTests.Mappers
             var dto = new ServiceDto
             {
                 Name = "NonMutatingService",
-                ExecutablePath = @"C:\app\service.exe",
-                StartTimeout = null,
-                StopTimeout = null,
-                StartupType = null,
-                Priority = null,
-                EnableConsoleUI = null,
-                EnableSizeRotation = null,
-                RotationSize = null,
-                EnableDateRotation = null,
-                DateRotationType = null,
-                MaxRotations = null,
-                UseLocalTimeForRotation = null,
-                EnableHealthMonitoring = null,
-                HeartbeatInterval = null,
-                MaxFailedChecks = null,
-                RecoveryAction = null,
-                RecoveryOnCleanExit = null,
-                MaxRestartAttempts = null,
-                HeartbeatUrlTimeoutSeconds = null,
-                EnableHeartbeatUrlFlags = null,
-                PreLaunchTimeoutSeconds = null,
-                PreLaunchRetryAttempts = null,
-                PreLaunchIgnoreFailure = null,
-                EnableDebugLogs = null,
-                PreStopTimeoutSeconds = null,
-                PreStopLogAsError = null
+                ExecutablePath = @"C:\app\service.exe"
             };
+
+            // Reflectively capture all nullable value-type or reference-type property names on ServiceDto
+            var nullableProperties = typeof(ServiceDto)
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.CanRead && p.CanWrite &&
+                            p.Name != nameof(ServiceDto.Name) &&
+                            p.Name != nameof(ServiceDto.ExecutablePath) &&
+                            (Nullable.GetUnderlyingType(p.PropertyType) != null || !p.PropertyType.IsValueType))
+                .ToList();
 
             // Act
             _ = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
 
-            // Assert: Verify that the input DTO's null values remain null after mapping
-            Assert.Null(dto.StartTimeout);
-            Assert.Null(dto.StopTimeout);
-            Assert.Null(dto.StartupType);
-            Assert.Null(dto.Priority);
-            Assert.Null(dto.EnableConsoleUI);
-            Assert.Null(dto.EnableSizeRotation);
-            Assert.Null(dto.RotationSize);
-            Assert.Null(dto.EnableDateRotation);
-            Assert.Null(dto.DateRotationType);
-            Assert.Null(dto.MaxRotations);
-            Assert.Null(dto.UseLocalTimeForRotation);
-            Assert.Null(dto.EnableHealthMonitoring);
-            Assert.Null(dto.HeartbeatInterval);
-            Assert.Null(dto.MaxFailedChecks);
-            Assert.Null(dto.RecoveryAction);
-            Assert.Null(dto.RecoveryOnCleanExit);
-            Assert.Null(dto.MaxRestartAttempts);
-            Assert.Null(dto.HeartbeatUrlTimeoutSeconds);
-            Assert.Null(dto.EnableHeartbeatUrlFlags);
-            Assert.Null(dto.PreLaunchTimeoutSeconds);
-            Assert.Null(dto.PreLaunchRetryAttempts);
-            Assert.Null(dto.PreLaunchIgnoreFailure);
-            Assert.Null(dto.EnableDebugLogs);
-            Assert.Null(dto.PreStopTimeoutSeconds);
-            Assert.Null(dto.PreStopLogAsError);
+            // Assert: Verify that every nullable DTO field remains null after mapping
+            foreach (var prop in nullableProperties)
+            {
+                var value = prop.GetValue(dto);
+                Assert.Null(value);
+            }
         }
     }
 }
