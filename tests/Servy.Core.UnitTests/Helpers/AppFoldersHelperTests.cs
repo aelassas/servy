@@ -56,21 +56,6 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void EnsureFolders_InvalidDbFilePath_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var conn = "Data Source=:db:"; // invalid path will fail Path.GetDirectoryName
-            var key = Path.Combine(_tempDir, "key.aes");
-            var iv = Path.Combine(_tempDir, "iv.aes");
-
-            // Act
-            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
-
-            // Assert
-            Assert.Equal("Cannot determine database folder path.", ex.Message);
-        }
-
-        [Fact]
         public void EnsureFolders_ValidPaths_CreatesAllFoldersUnderCustomRoot()
         {
             // Arrange
@@ -99,6 +84,7 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Theory]
         [InlineData("Data Source=Servy.db;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
+        [InlineData("Data Source=:db:;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
         [InlineData("Data Source={tmp}\\db\\Servy.db;", "key.aes", "{tmp}\\iv\\iv.aes", "Cannot determine AES key folder path.")]
         [InlineData("Data Source={tmp}\\db\\Servy.db;", "{tmp}\\key\\key.aes", "iv.aes", "Cannot determine AES IV folder path.")]
         public void EnsureFolders_PathWithoutDirectory_ThrowsInvalidOperationException(string conn, string key, string iv, string expectedMessage)

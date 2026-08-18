@@ -100,27 +100,7 @@ namespace Servy.Core.UnitTests.Security
             using (var sp = new SecureData(_mockProvider.Object))
             {
                 var secret = "LegacySecret";
-
-                string rawV1Base64;
-                using (var aes = Aes.Create())
-                {
-                    aes.Key = _key;
-                    aes.IV = _iv;
-
-                    byte[] encryptedBytes;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
-                        {
-                            byte[] input = Encoding.UTF8.GetBytes(secret);
-                            cs.Write(input, 0, input.Length);
-                        }
-                        encryptedBytes = ms.ToArray();
-                    }
-
-                    rawV1Base64 = Convert.ToBase64String(encryptedBytes);
-                }
-
+                var rawV1Base64 = SecureDataHelper.CreateLegacyV1Base64(_key, _iv, secret);
                 var fullCipherWithPrefix = prefix + rawV1Base64;
 
                 // Act
@@ -181,24 +161,7 @@ namespace Servy.Core.UnitTests.Security
             if (isBase64LegacyBranch)
             {
                 const string plaintextToEncrypt = "DecryptedValueFromV1";
-
-                using (var ms = new MemoryStream())
-                {
-                    using (var aes = Aes.Create())
-                    {
-                        aes.Key = rawKey;
-                        aes.IV = rawIv;
-
-                        using (var encryptor = aes.CreateEncryptor())
-                        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                        using (var sw = new StreamWriter(cs, Encoding.UTF8))
-                        {
-                            sw.Write(plaintextToEncrypt);
-                        }
-                    }
-
-                    input = Convert.ToBase64String(ms.ToArray());
-                }
+                input = SecureDataHelper.CreateLegacyV1Base64(rawKey, rawIv, plaintextToEncrypt);
             }
 
             using (var sp = new SecureData(_mockProvider.Object))
@@ -232,25 +195,7 @@ namespace Servy.Core.UnitTests.Security
             }
 
             const string plaintextToEncrypt = "UnmarkedLegacyPayload";
-            string rawBase64Ciphertext;
-
-            using (var ms = new MemoryStream())
-            {
-                using (var aes = Aes.Create())
-                {
-                    aes.Key = _key;
-                    aes.IV = _iv;
-
-                    using (var encryptor = aes.CreateEncryptor())
-                    using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                    using (var sw = new StreamWriter(cs, Encoding.UTF8))
-                    {
-                        sw.Write(plaintextToEncrypt);
-                    }
-                }
-
-                rawBase64Ciphertext = Convert.ToBase64String(ms.ToArray());
-            }
+            string rawBase64Ciphertext = SecureDataHelper.CreateLegacyV1Base64(_key, _iv, plaintextToEncrypt);
 
             using (var sp = new SecureData(_mockProvider.Object))
             {

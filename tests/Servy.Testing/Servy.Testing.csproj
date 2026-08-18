@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CliOptionTypes.cs" />
+    <Compile Include="ConsoleCapture.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TempDirectoryTestBase.cs" />
