@@ -43,7 +43,8 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("KEY=C:\\Foo\\\\\r\nNEXT=Val", "KEY=C:\\Foo\\\\;NEXT=Val")] // Trailing even run (2) safely remains even (2)
+        [InlineData("KEY=C:\\Foo\\\\\r\nNEXT=Val", "KEY=C:\\Foo\\\\;NEXT=Val")] // Trailing even run (2) before line break safely remains even (2)
+        [InlineData("KEY=C:\\Foo\\\\", "KEY=C:\\Foo\\\\")]                      // Trailing even run (2) at EOF is left alone
         public void NormalizeString_ValidatesExplicitLineBreakParity(string input, string expected)
         {
             // Act
@@ -123,7 +124,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void Escape_NullInput_ReturnsEmptyString()
         {
             // Act
-            var result = StringHelper.Escape(null!);
+            var result = StringHelper.Escape(null);
 
             // Assert
             Assert.Equal(string.Empty, result);

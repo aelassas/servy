@@ -10,10 +10,13 @@ namespace Servy.Core.UnitTests.Helpers
         /// Ensures that CreateFull populates every writable, serialized property on ServiceDto.
         /// Prevents regressions where newly added properties remain null and are skipped during serialization round-trips.
         /// </summary>
-        [Fact]
-        public void CreateFull_PopulatesEverySerializedProperty()
+        [Theory]
+        [InlineData("")]
+        [InlineData("Xml")]
+        public void CreateFull_PopulatesEverySerializedProperty(string suffix)
         {
-            var dto = ServiceDtoFactory.CreateFull();
+            // Arrange & Act
+            var dto = ServiceDtoFactory.CreateFull(suffix);
 
             var unset = typeof(ServiceDto)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -30,6 +33,7 @@ namespace Servy.Core.UnitTests.Helpers
                 .Select(p => p.Name)
                 .ToList();
 
+            // Assert
             Assert.True(unset.Count == 0, $"Unset properties on ServiceDto: {string.Join(", ", unset)}");
         }
     }
