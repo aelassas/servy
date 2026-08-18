@@ -519,7 +519,7 @@ namespace Servy.Core.UnitTests.Security
         public void IsStrictBase64_ShouldCoverAllBranches(string input, bool expected)
         {
             // Arrange & Act
-            // GetOptionName is a private static method; invoke it seamlessly via updated helper
+            // IsStrictBase64 is a private static method on SecureData
             var result = (bool)TestReflection.InvokeNonPublicStatic(typeof(SecureData), "IsStrictBase64", input);
 
             // Assert
