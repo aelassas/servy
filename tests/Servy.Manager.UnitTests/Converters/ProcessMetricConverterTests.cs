@@ -39,12 +39,10 @@ namespace Servy.Manager.UnitTests.Converters
         {
             // Arrange
             var mockHelper = new Mock<IProcessHelper>();
-            var mockKiller = new Mock<IProcessKiller>();
 
             using (new AmbientAppServicesScope(sc =>
             {
                 sc.AddSingleton<IProcessHelper>(mockHelper.Object);
-                sc.AddSingleton<IProcessKiller>(mockKiller.Object);
             }))
             {
                 // Act
@@ -80,9 +78,7 @@ namespace Servy.Manager.UnitTests.Converters
         public void Constructor_ServicesNotNullButHelperMissing_FallsBackToDesignTimeHelper()
         {
             // Arrange
-            var mockKiller = new Mock<IProcessKiller>();
-
-            using (new AmbientAppServicesScope(sc => sc.AddSingleton(mockKiller.Object)))
+            using (new AmbientAppServicesScope(sc => { }))
             {
                 // Act
                 var converter = new TestMetricConverter();
