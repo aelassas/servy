@@ -68,35 +68,12 @@ namespace Servy.Manager.UnitTests.Converters
 
         #region ConvertBack Tests
 
-        [Theory]
-        [MemberData(nameof(StartupTypeMappings))]
-        public void ConvertBack_ValidString_ReturnsEnum(ServiceStartType expected, string resourceName)
-        {
-            // Arrange
-            var input = typeof(Strings).GetProperty(resourceName)?.GetValue(null) as string;
-
-            // Act
-            var result = _converter.ConvertBack(input, typeof(ServiceStartType), null, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.Equal(expected, result);
-        }
-
         [Fact]
-        public void ConvertBack_NullInput_ReturnsDoNothing()
+        public void ConvertBack_ReturnsDoNothing_OneWayBindingOnly()
         {
             // Act & Assert
-            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null, typeof(string), null, CultureInfo.InvariantCulture));
-        }
-
-        [Fact]
-        public void ConvertBack_InvalidString_ReturnsDoNothing()
-        {
-            // Act
-            var result = _converter.ConvertBack("Invalid String", typeof(ServiceStartType), null, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.Equal(Binding.DoNothing, result);
+            Assert.Equal(Binding.DoNothing, _converter.ConvertBack("Automatic", typeof(ServiceStartType), null, CultureInfo.InvariantCulture));
+            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null, typeof(ServiceStartType), null, CultureInfo.InvariantCulture));
         }
 
         #endregion

@@ -76,38 +76,12 @@ namespace Servy.Manager.UnitTests.Converters
 
         #region ConvertBack Tests
 
-        [Theory]
-        [MemberData(nameof(StatusMappings))]
-        public void ConvertBack_ValidString_ReturnsEnum(ServiceStatus expected, string resourceName)
-        {
-            // Arrange: Extract the static public resource string value via direct reflection on Strings
-            var input = typeof(Strings).GetProperty(resourceName)?.GetValue(null);
-
-            // Act
-            var result = _converter.ConvertBack(input, typeof(ServiceStatus), null, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.Equal(expected, result);
-        }
-
         [Fact]
-        public void ConvertBack_NullInput_ReturnsDoNothing()
+        public void ConvertBack_ReturnsDoNothing_OneWayBindingOnly()
         {
-            // Act
-            var result = _converter.ConvertBack(null, typeof(string), null, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.Equal(Binding.DoNothing, result);
-        }
-
-        [Fact]
-        public void ConvertBack_InvalidString_ReturnsDoNothing()
-        {
-            // Act
-            var result = _converter.ConvertBack("Unknown status string", typeof(ServiceStatus), null, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.Equal(Binding.DoNothing, result);
+            // Act & Assert
+            Assert.Equal(Binding.DoNothing, _converter.ConvertBack("Running", typeof(ServiceStatus), null, CultureInfo.InvariantCulture));
+            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null, typeof(ServiceStatus), null, CultureInfo.InvariantCulture));
         }
 
         #endregion
