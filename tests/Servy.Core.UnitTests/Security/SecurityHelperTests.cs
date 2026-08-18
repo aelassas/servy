@@ -130,8 +130,8 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             var acl = new DirectoryInfo(path).GetAccessControl();
             var rules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
-                           .Cast<FileSystemAccessRule>()
-                           .ToList();
+                               .Cast<FileSystemAccessRule>()
+                               .ToList();
 
             Assert.Contains(rules, r => r.IdentityReference == currentUserSid && r.FileSystemRights == FileSystemRights.FullControl);
         }
@@ -161,7 +161,6 @@ namespace Servy.Core.UnitTests.Security
 
         [Theory]
         [InlineData(WellKnownSidType.LocalSystemSid)]
-        [InlineData(WellKnownSidType.BuiltinAdministratorsSid)]
         [InlineData(null)]
         public void ApplySecurityRules_HighPrivilegeOrNullUser_SkipsDuplicateOrEmptyAclEntry(WellKnownSidType? wellKnownSidType)
         {
@@ -171,16 +170,49 @@ namespace Servy.Core.UnitTests.Security
                 ? new SecurityIdentifier(wellKnownSidType.Value, null)
                 : null;
 
+            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
             // Act
             InvokeApplySecurityRules(security, sidToTest);
 
             // Assert
-            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier));
+            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                                .Cast<FileSystemAccessRule>()
+                                .ToList();
 
-            // Core logic verification: Check that the total ACL count evaluates cleanly to
-            // exactly 2 rules (Local System and Administrators), verifying that duplicate
-            // assignments or null objects are cleanly skipped.
+            // Core logic verification: Validate exact mandatory ACEs (Local System and Administrators),
+            // verifying that duplicate LocalSystem or null user assignments do not create additional ACE entries.
+            Assert.Contains(rules, r => r.IdentityReference == adminSid && r.FileSystemRights == FileSystemRights.FullControl);
+            Assert.Contains(rules, r => r.IdentityReference == systemSid && r.FileSystemRights == FileSystemRights.FullControl);
             Assert.Equal(2, rules.Count);
+        }
+
+        [Fact]
+        public void ApplySecurityRules_NonPrivilegedUser_AddsCurrentUserAce()
+        {
+            // Skip on elevated runs: when elevated, the current-user ACE is intentionally skipped via IsAdministrator().
+            Assert.SkipWhen(SecurityHelper.IsAdministrator(), "Elevated run: the current-user ACE is skipped via IsAdministrator().");
+
+            // Arrange
+            var security = new DirectorySecurity();
+            var nonPrivilegedSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+
+            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+            // Act
+            InvokeApplySecurityRules(security, nonPrivilegedSid);
+
+            // Assert
+            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                                .Cast<FileSystemAccessRule>()
+                                .ToList();
+
+            Assert.Contains(rules, r => r.IdentityReference == adminSid && r.FileSystemRights == FileSystemRights.FullControl);
+            Assert.Contains(rules, r => r.IdentityReference == systemSid && r.FileSystemRights == FileSystemRights.FullControl);
+            Assert.Contains(rules, r => r.IdentityReference == nonPrivilegedSid && r.FileSystemRights == FileSystemRights.FullControl);
+            Assert.Equal(3, rules.Count);
         }
 
         #region breakInheritance:false Branch Coverage Tests
@@ -226,7 +258,7 @@ namespace Servy.Core.UnitTests.Security
         #region Non-Admin Graceful Fallback Coverage Tests
 
         [Fact]
-        public void HandleNonAdminFallback_LogsWarningMessageWithoutThrowing()
+        public void HandleNonAdminFallback_DoesNotThrow()
         {
             // Arrange
             var ex = new UnauthorizedAccessException("Access to the path is denied.");

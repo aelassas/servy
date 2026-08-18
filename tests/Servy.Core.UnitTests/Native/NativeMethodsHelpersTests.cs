@@ -2,6 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.Native;
 using System.ComponentModel;
 using System.Security;
+using System.Security.Principal;
 
 namespace Servy.Core.UnitTests.Native
 {
@@ -101,26 +102,34 @@ namespace Servy.Core.UnitTests.Native
         public void ValidateCredentials_ValidLocalAccount_BadPassword_ThrowsException()
         {
             // Arrange
-            // ENVIRONMENT DEPENDENCY NOTE: Environment.UserName maps to the current executing identity.
-            // If the host is domain-joined or running under a built-in system service account, resolving this
-            // as a local machine account via '.\' can trigger translation or password-guard failures before
-            // LogonUser is reached. We capture any downstream structural failure context below.
             string currentUser = $".\\{Environment.UserName}";
+
+            // The bad-password path is only reachable when the name resolves as a local account.
+            // On domain-joined hosts or under a service identity, ValidateCredentials fails earlier
+            // (SecurityException at translation, ArgumentException at built-in/group guards) and
+            // LogonUser is never reached.
+            bool resolvable;
+            try
+            {
+                var ntAccount = new NTAccount(Environment.MachineName, Environment.UserName);
+                _ = ntAccount.Translate(typeof(SecurityIdentifier));
+                resolvable = true;
+            }
+            catch (IdentityNotMappedException)
+            {
+                resolvable = false;
+            }
+
+            Assert.SkipUnless(resolvable, "Current identity does not resolve as a local account; LogonUser is unreachable here.");
+
             string badPassword = Guid.NewGuid().ToString(); // Guaranteed to be wrong
 
             // Act & Assert
-            // Depending on host configuration (Workstation vs. Domain vs. SYSTEM), this call path will fail with
-            // UnauthorizedAccessException/Win32Exception (bad password), SecurityException (unmapped local name),
-            // or ArgumentException (system identity rule violation).
             var exception = Assert.ThrowsAny<Exception>(() => NativeMethodsHelpers.ValidateCredentials(currentUser, badPassword));
 
-            // ENVIRONMENT-RESILIENT RANGE CHECK: Broaden the accepted exception boundaries to prevent environmental false-positives
             Assert.True(
-                exception is Win32Exception ||
-                exception is UnauthorizedAccessException ||
-                exception is SecurityException ||
-                exception is ArgumentException,
-                $"Unexpected identity translation exception caught for current environment profile: {exception.GetType().Name}");
+                exception is UnauthorizedAccessException || exception is Win32Exception,
+                $"Expected a logon failure exception from LogonUser, but received {exception.GetType().Name}: {exception.Message}");
         }
 
         #endregion

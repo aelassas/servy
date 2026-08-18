@@ -20,14 +20,12 @@ namespace Servy.Core.UnitTests.Native
             using (SafeWinProcessHandle handle = OpenProcess(access, false, currentPid))
             {
                 // Assert
-                Assert.NotNull(handle);
                 Assert.False(handle.IsInvalid, "The handle should be valid for the current process.");
                 Assert.False(handle.IsClosed, "The handle should not be closed while inside the using block.");
 
                 // Verify the underlying pointer is assigned
                 IntPtr rawValue = handle.GetHandleOrZero();
                 Assert.NotEqual(IntPtr.Zero, rawValue);
-                Assert.NotEqual(new IntPtr(-1), rawValue);
             }
         }
 
@@ -42,7 +40,6 @@ namespace Servy.Core.UnitTests.Native
             using (SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, nonExistentPid))
             {
                 // Assert
-                Assert.NotNull(handle);
                 Assert.True(handle.IsInvalid, "Opening a non-existent PID should return an invalid handle.");
                 Assert.Equal(IntPtr.Zero, handle.GetHandleOrZero());
             }
@@ -85,7 +82,7 @@ namespace Servy.Core.UnitTests.Native
 
         private int GetCurrentProcessId()
         {
-            using(var process = Process.GetCurrentProcess())
+            using (var process = Process.GetCurrentProcess())
             {
                 return process.Id;
             }

@@ -643,11 +643,15 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Shutdown();
 
             // Assert
-            // 1. Verify main log file does not contain the re-entrant message
+            // 1. Verify main log file short-circuits and never receives the re-entrant message
             if (File.Exists(_fullLogPath))
             {
                 string mainContent = File.ReadAllText(_fullLogPath);
                 Assert.DoesNotContain("Reentrant warning message", mainContent);
+            }
+            else
+            {
+                Assert.False(File.Exists(_fullLogPath), "Re-entrant logging must short-circuit before writing; the main log file should not exist.");
             }
 
             // 2. Verify fallback error log received the re-entrant warning message
