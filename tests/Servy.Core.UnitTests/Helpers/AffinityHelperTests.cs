@@ -80,6 +80,9 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_HexOutOfBoundsOrZero_ThrowsArgumentOutOfRangeException(string input)
         {
             // Arrange
+            int maxCores = Math.Min(Environment.ProcessorCount, 64);
+            if (input == "0xFFFFFFFFFFFFFFFF" && maxCores >= 64) return; // Skip if host has full 64 cores and input is all bits set
+
             string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
 
             // Act & Assert
