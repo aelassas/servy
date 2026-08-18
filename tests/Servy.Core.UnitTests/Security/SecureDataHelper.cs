@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Servy.Core.UnitTests.Helpers
+namespace Servy.Core.UnitTests.Security
 {
     public static class SecureDataHelper
     {
@@ -11,10 +11,10 @@ namespace Servy.Core.UnitTests.Helpers
         /// <param name="key">The AES key to use for encryption.</param>
         /// <param name="iv">The AES initialization vector to use for encryption.</param>
         /// <param name="plainText">The plaintext to encrypt.</param>
-        /// <param name="markerPrefix">The prefix to use for the legacy format. Default is "SERVY_ENC:v1:".</param>
         /// <returns>A string in the legacy V1 format: "SERVY_ENC:v1:{Base64}"</returns>
-        public static string CreateLegacyV1EncryptedString(byte[] key, byte[] iv, string plainText, string markerPrefix = "SERVY_ENC:v1:")
+        public static string CreateLegacyV1EncryptedString(byte[] key, byte[] iv, string plainText)
         {
+            const string markerPrefix = "SERVY_ENC:v1:";
             using (var aes = Aes.Create())
             {
                 aes.Key = key;

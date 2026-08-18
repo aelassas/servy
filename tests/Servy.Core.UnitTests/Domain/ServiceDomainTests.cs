@@ -25,7 +25,7 @@ namespace Servy.Core.UnitTests.Domain
             };
         }
 
-        #region Operational Process Control Lifecycle Hook Tests
+        #region Start / Stop / Restart
 
         [Fact]
         public async Task Start_ShouldCallServiceManager()
@@ -43,7 +43,7 @@ namespace Servy.Core.UnitTests.Domain
         }
 
         [Fact]
-        public async Task Start_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        public async Task Start_ReturnsFailure_WhenServiceManagerReturnsFalse()
         {
             // Arrange
             var service = CreateService();
@@ -73,7 +73,7 @@ namespace Servy.Core.UnitTests.Domain
         }
 
         [Fact]
-        public async Task Stop_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        public async Task Stop_ReturnsFailure_WhenServiceManagerReturnsFalse()
         {
             // Arrange
             var service = CreateService();
@@ -103,7 +103,7 @@ namespace Servy.Core.UnitTests.Domain
         }
 
         [Fact]
-        public async Task Restart_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        public async Task Restart_ReturnsFailure_WhenServiceManagerReturnsFalse()
         {
             // Arrange
             var service = CreateService();
@@ -119,7 +119,7 @@ namespace Servy.Core.UnitTests.Domain
 
         #endregion
 
-        #region Metadata Lookup Discovery Queries
+        #region Status and metadata queries
 
         [Fact]
         public void GetStatus_ShouldReturnNull_WhenServiceNotInstalled()
@@ -186,7 +186,7 @@ namespace Servy.Core.UnitTests.Domain
 
         #endregion
 
-        #region Installation Registry Integration Handlers
+        #region Install / Uninstall
 
         [Fact]
         public async Task Install_ShouldCallServiceManagerWithCorrectArguments()
@@ -402,8 +402,7 @@ namespace Servy.Core.UnitTests.Domain
                     o.EnableHealthMonitoring == true &&
                     o.RecoveryAction == service.RecoveryAction &&
 
-                    // Symmetrical Hardening: Firmly assert that the fallback mechanism routes to
-                    // the default UI executable path and does not leak the alternative CLI variant.
+                    // Fallback must resolve to the UI wrapper exe, never the CLI variant.
                     !string.IsNullOrWhiteSpace(o.WrapperExePath) &&
                     o.WrapperExePath.Contains(AppConfig.ServyServiceUIExe) &&
                     o.WrapperExePath.IndexOf(".CLI", StringComparison.OrdinalIgnoreCase) == -1
