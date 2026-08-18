@@ -23,7 +23,7 @@ namespace Servy.Core.UnitTests.Services
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void TryValidate_NullOrEmptyJson_ReturnsFalse(string? input)
         {
             // Arrange
@@ -93,7 +93,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Theory]
-        [InlineData(0)]                               // below min
+        [InlineData(0)]                                // below min
         [InlineData(AppConfig.MaxStopTimeout + 1)]    // above max
         public void TryValidate_InvalidStopTimeout_ReturnsFalse(int invalidTimeout)
         {
@@ -148,7 +148,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
-            Assert.Contains(expectedPrefix, error);
+            Assert.StartsWith(expectedPrefix, error);
         }
 
         [Fact]
@@ -159,7 +159,7 @@ namespace Servy.Core.UnitTests.Services
             {
                 Name = "TestService",
                 ExecutablePath = "C:\\Windows\\System32\\calc.exe",
-                StopTimeout = 30000 // Valid: 30000 seconds (~8.3h, under the 86400 max)
+                StopTimeout = 30
             };
             var json = JsonConvert.SerializeObject(dto);
 

@@ -50,14 +50,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.DoesNotContain("user", xml, StringComparison.OrdinalIgnoreCase);
 
             // Dynamic Attribute-Driven Security Check: Validate every [XmlIgnore] property is strictly omitted
-            var xmlIgnoredProps = typeof(ServiceDto).GetProperties()
-                .Where(p => p.IsDefined(typeof(XmlIgnoreAttribute), inherit: true))
-                .Select(p => p.Name);
-
-            foreach (var propName in xmlIgnoredProps)
-            {
-                Assert.DoesNotContain($"<{propName}>", xml);
-            }
+            AssertXmlPropertiesAbsent(xml, GetXmlIgnoredPropertyNames());
         }
 
         [Fact]
@@ -88,14 +81,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.DoesNotContain("user", content, StringComparison.OrdinalIgnoreCase);
 
                 // Dynamic Attribute-Driven Security Check: Validate every [XmlIgnore] property is strictly omitted
-                var xmlIgnoredProps = typeof(ServiceDto).GetProperties()
-                    .Where(p => p.IsDefined(typeof(XmlIgnoreAttribute), inherit: true))
-                    .Select(p => p.Name);
-
-                foreach (var propName in xmlIgnoredProps)
-                {
-                    Assert.DoesNotContain($"<{propName}>", content);
-                }
+                AssertXmlPropertiesAbsent(content, GetXmlIgnoredPropertyNames());
             }
             finally
             {
@@ -145,14 +131,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.DoesNotContain("user", json, StringComparison.OrdinalIgnoreCase);
 
             // Dynamic Attribute-Driven Security Check: Validate every [JsonIgnore] property is strictly omitted
-            var jsonIgnoredProps = typeof(ServiceDto).GetProperties()
-                .Where(p => p.IsDefined(typeof(JsonIgnoreAttribute), inherit: true))
-                .Select(p => p.Name);
-
-            foreach (var propName in jsonIgnoredProps)
-            {
-                Assert.DoesNotContain($"\"{propName}\"", json);
-            }
+            AssertJsonPropertiesAbsent(json, GetJsonIgnoredPropertyNames());
         }
 
         [Fact]
@@ -182,14 +161,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.DoesNotContain("user", content, StringComparison.OrdinalIgnoreCase);
 
                 // Dynamic Attribute-Driven Security Check: Validate every [JsonIgnore] property is strictly omitted
-                var jsonIgnoredProps = typeof(ServiceDto).GetProperties()
-                    .Where(p => p.IsDefined(typeof(JsonIgnoreAttribute), inherit: true))
-                    .Select(p => p.Name);
-
-                foreach (var propName in jsonIgnoredProps)
-                {
-                    Assert.DoesNotContain($"\"{propName}\"", content);
-                }
+                AssertJsonPropertiesAbsent(content, GetJsonIgnoredPropertyNames());
             }
             finally
             {
@@ -217,76 +189,21 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("\"ExecutablePath\": \"C:\\\\service.exe\"", json);
 
             // 2. Comprehensive validation: Ensure all properties matching dynamic conditional
-            // serialization rules (ShouldSerialize*) are completely omitted when null or unassigned.
-            var keysToProveAbsent = new[]
-            {
-                "DisplayName",
-                "Description",
-                "StartupDirectory",
-                "Parameters",
-                "StartupType",
-                "Priority",
-                "EnableConsoleUI",
-                "StdoutPath",
-                "StderrPath",
-                "EnableSizeRotation",
-                "RotationSize",
-                "EnableDateRotation",
-                "DateRotationType",
-                "MaxRotations",
-                "UseLocalTimeForRotation",
-                "EnableHealthMonitoring",
-                "HeartbeatInterval",
-                "MaxFailedChecks",
-                "RecoveryAction",
-                "RecoveryOnCleanExit",
-                "MaxRestartAttempts",
-                "FailureProgramPath",
-                "FailureProgramStartupDirectory",
-                "FailureProgramParameters",
-                "EnvironmentVariables",
-                "ServiceDependencies",
-                "PreLaunchExecutablePath",
-                "PreLaunchStartupDirectory",
-                "PreLaunchParameters",
-                "PreLaunchEnvironmentVariables",
-                "PreLaunchStdoutPath",
-                "PreLaunchStderrPath",
-                "PreLaunchTimeoutSeconds",
-                "PreLaunchRetryAttempts",
-                "PreLaunchIgnoreFailure",
-                "PostLaunchExecutablePath",
-                "PostLaunchStartupDirectory",
-                "PostLaunchParameters",
-                "EnableDebugLogs",
-                "StartTimeout",
-                "StopTimeout",
-                "PreStopExecutablePath",
-                "PreStopStartupDirectory",
-                "PreStopParameters",
-                "PreStopTimeoutSeconds",
-                "PreStopLogAsError",
-                "PostStopExecutablePath",
-                "PostStopStartupDirectory",
-                "PostStopParameters",
+            // serialization rules (ShouldSerialize*) and [JsonIgnore] attributes are completely omitted when null or unassigned.
+            var alwaysPresent = new[] { "Name", "ExecutablePath" };
 
-                // Hardened Security Bounds: Validate explicit exclusion of unmanaged internal properties
-                // and sensitive credentials that are decorated with [JsonIgnore] or skipped natively.
-                "Id",
-                "Pid",
-                "PreviousStopTimeout",
-                "ActiveStdoutPath",
-                "ActiveStderrPath",
-                "RunAsLocalSystem",
-                "UserAccount",
-                "Password"
-            };
+            var conditionalProps = typeof(ServiceDto).GetMethods()
+                .Where(m => m.Name.StartsWith("ShouldSerialize", StringComparison.Ordinal) && m.ReturnType == typeof(bool))
+                .Select(m => m.Name.Substring("ShouldSerialize".Length));
 
-            foreach (var key in keysToProveAbsent)
-            {
-                // Quote the keys to prevent false positive substring matching against string field values
-                Assert.DoesNotContain($"\"{key}\"", json);
-            }
+            var ignoredProps = GetJsonIgnoredPropertyNames();
+
+            var keysToProveAbsent = conditionalProps
+                .Concat(ignoredProps)
+                .Distinct()
+                .Except(alwaysPresent);
+
+            AssertJsonPropertiesAbsent(json, keysToProveAbsent);
         }
 
         #region Helper Methods
@@ -310,6 +227,49 @@ namespace Servy.Core.UnitTests.Services
             service.PreviousStopTimeout = 10;
             service.ActiveStdoutPath = @"C:\logs\stdout.log";
             service.ActiveStderrPath = @"C:\logs\stderr.log";
+        }
+
+        /// <summary>
+        /// Gets all property names on <see cref="ServiceDto"/> decorated with <see cref="XmlIgnoreAttribute"/>.
+        /// </summary>
+        private static IEnumerable<string> GetXmlIgnoredPropertyNames()
+        {
+            return typeof(ServiceDto).GetProperties()
+                .Where(p => p.IsDefined(typeof(XmlIgnoreAttribute), inherit: true))
+                .Select(p => p.Name);
+        }
+
+        /// <summary>
+        /// Gets all property names on <see cref="ServiceDto"/> decorated with <see cref="JsonIgnoreAttribute"/>.
+        /// </summary>
+        private static IEnumerable<string> GetJsonIgnoredPropertyNames()
+        {
+            return typeof(ServiceDto).GetProperties()
+                .Where(p => p.IsDefined(typeof(JsonIgnoreAttribute), inherit: true))
+                .Select(p => p.Name);
+        }
+
+        /// <summary>
+        /// Asserts that the specified XML element names are completely absent from the XML payload.
+        /// </summary>
+        private static void AssertXmlPropertiesAbsent(string xml, IEnumerable<string> propertyNames)
+        {
+            foreach (var propName in propertyNames)
+            {
+                Assert.DoesNotContain($"<{propName}>", xml);
+            }
+        }
+
+        /// <summary>
+        /// Asserts that the specified JSON property keys are completely absent from the JSON payload.
+        /// </summary>
+        private static void AssertJsonPropertiesAbsent(string? json, IEnumerable<string> propertyNames)
+        {
+            foreach (var propName in propertyNames)
+            {
+                // Quote the keys to prevent false positive substring matching against string field values
+                Assert.DoesNotContain($"\"{propName}\"", json);
+            }
         }
 
         #endregion
