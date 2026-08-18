@@ -1,7 +1,6 @@
 using Servy.Core.Helpers;
 using System;
 using System.IO;
-using System.Security.AccessControl;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -24,6 +23,8 @@ namespace Servy.Core.UnitTests.Helpers
             catch { /* Prevent teardown exceptions from hiding test results */ }
         }
 
+        #region EnsureFolders Tests
+
         [Theory]
         [InlineData(null, "key.aes", "iv.aes")]
         [InlineData("Data Source=db.db;", null, "iv.aes")]
@@ -31,13 +32,29 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("", "key.aes", "iv.aes")]
         [InlineData("Data Source=db.db;", "", "iv.aes")]
         [InlineData("Data Source=db.db;", "key.aes", "")]
-        [InlineData("   ", "key.aes", "iv.aes")]
-        [InlineData("Data Source=db.db;", "   ", "iv.aes")]
-        [InlineData("Data Source=db.db;", "key.aes", "   ")]
+        [InlineData("    ", "key.aes", "iv.aes")]
+        [InlineData("Data Source=db.db;", "    ", "iv.aes")]
+        [InlineData("Data Source=db.db;", "key.aes", "    ")]
         public void EnsureFolders_NullOrWhitespaceArgs_Throws(string conn, string key, string iv)
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
+        }
+
+        [Fact]
+        public void EnsureFolders_MalformedConnectionString_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var conn = "==;;";
+            var key = Path.Combine(_tempDir, "key.aes");
+            var iv = Path.Combine(_tempDir, "iv.aes");
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
+
+            // Assert
+            Assert.Equal("Connection string format is invalid.", ex.Message);
+            Assert.IsType<ArgumentException>(ex.InnerException);
         }
 
         [Fact]
@@ -53,6 +70,44 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Contains("Data Source", ex.Message);
+        }
+
+        [Fact]
+        public void EnsureFolders_EmptyDataSourceValue_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var conn = "Data Source=;";
+            var key = Path.Combine(_tempDir, "key.aes");
+            var iv = Path.Combine(_tempDir, "iv.aes");
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
+
+            // Assert: DbConnectionStringBuilder treats 'Data Source=;' as either missing or empty
+            Assert.True(
+                ex.Message == "The database path provided in the connection string is empty." ||
+                ex.Message == "Connection string does not contain a valid 'Data Source' or 'DataSource' key.");
+        }
+
+        [Fact]
+        public void EnsureFolders_DataSourceKeySpelling_Succeeds()
+        {
+            // Arrange
+            var dbFolder = Path.Combine(_tempDir, "db");
+            var keyFolder = Path.Combine(_tempDir, "keys");
+            var ivFolder = Path.Combine(_tempDir, "iv");
+
+            var conn = $"DataSource={Path.Combine(dbFolder, "Servy.db")};";
+            var key = Path.Combine(keyFolder, "key.aes");
+            var iv = Path.Combine(ivFolder, "iv.aes");
+
+            // Act
+            AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir);
+
+            // Assert
+            Assert.True(Directory.Exists(dbFolder));
+            Assert.True(Directory.Exists(keyFolder));
+            Assert.True(Directory.Exists(ivFolder));
         }
 
         [Fact]
@@ -82,6 +137,36 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(dbSecurity.AreAccessRulesProtected); // child of root -> inheritance preserved
         }
 
+        [Fact]
+        public void EnsureFolders_ExternalFolder_BreaksInheritance()
+        {
+            // Arrange: Place root vault and database folder in separate root directories
+            var externalTempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            try
+            {
+                var dbFolder = Path.Combine(externalTempDir, "external_db");
+                var keyFolder = Path.Combine(_tempDir, "keys");
+                var ivFolder = Path.Combine(_tempDir, "iv");
+
+                var conn = $"Data Source={Path.Combine(dbFolder, "Servy.db")};";
+                var key = Path.Combine(keyFolder, "key.aes");
+                var iv = Path.Combine(ivFolder, "iv.aes");
+
+                // Act
+                AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir);
+
+                // Assert: External folder must break inheritance as its own security root
+                Assert.True(Directory.Exists(dbFolder));
+                var dbSecurity = new DirectoryInfo(dbFolder).GetAccessControl();
+                Assert.True(dbSecurity.AreAccessRulesProtected); // external folder -> inheritance broken
+            }
+            finally
+            {
+                try { if (Directory.Exists(externalTempDir)) Directory.Delete(externalTempDir, true); }
+                catch { /* Prevent teardown exceptions */ }
+            }
+        }
+
         [Theory]
         [InlineData("Data Source=Servy.db;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
         [InlineData("Data Source=:db:;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
@@ -101,5 +186,22 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.Equal(expectedMessage, ex.Message);
         }
+
+        #endregion
+
+        #region GetAppDirectory Tests
+
+        [Fact]
+        public void GetAppDirectory_ReturnsDirectoryContainingProcessOrBaseDir()
+        {
+            // Act
+            var appDir = AppFoldersHelper.GetAppDirectory();
+
+            // Assert
+            Assert.False(string.IsNullOrWhiteSpace(appDir));
+            Assert.True(Directory.Exists(appDir));
+        }
+
+        #endregion
     }
 }

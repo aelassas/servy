@@ -9,6 +9,20 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
     public class EnvironmentVariablesValidatorTests
     {
         [Fact]
+        public void Validate_NullInput_ReturnsTrue()
+        {
+            // Arrange
+            string input = null;
+
+            // Act
+            bool result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
+
+            // Assert
+            Assert.True(result);
+            Assert.Empty(error);
+        }
+
+        [Fact]
         public void Validate_EmptyInput_ReturnsTrue()
         {
             // Arrange
@@ -280,6 +294,21 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.False(isValid);
             Assert.NotEmpty(errorMessages);
             Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, "KEY_START\nKEY_END"), errorMessages[0]);
+        }
+
+        [Fact]
+        public void Validate_VariableWithEscapedNewlineInValue_ReturnsFalse()
+        {
+            // Arrange
+            string input = "KEY=line1\\\nline2";
+
+            // Act
+            bool isValid = EnvironmentVariablesValidator.Validate(input, out List<string> errorMessages);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.NotEmpty(errorMessages);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, "KEY"), errorMessages[0]);
         }
 
         [Fact]
