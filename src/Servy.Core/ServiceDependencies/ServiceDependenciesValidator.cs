@@ -36,7 +36,7 @@ namespace Servy.Core.ServiceDependencies
             {
                 if (serviceName.Length > AppConfig.MaxServiceNameLength)
                 {
-                    errors.Add(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
+                    errors.Add(string.Format(Strings.Msg_ServiceDependencyNameLengthReachedForName, serviceName, AppConfig.MaxServiceNameLength));
                     continue;
                 }
 

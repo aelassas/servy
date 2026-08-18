@@ -153,6 +153,9 @@
   <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
     <value>Service name exceeds {0} characters.</value>
   </data>
+  <data name="Msg_ServiceDependencyNameLengthReachedForName" xml:space="preserve">
+    <value>Service dependency '{0}' exceeds the maximum length of {1} characters.</value>
+  </data>
   <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
     <value>Display name exceeds {0} characters.</value>
   </data>

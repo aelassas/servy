@@ -1,6 +1,6 @@
 using Servy.Core.Config;
+using Servy.Core.Resources;
 using Servy.Core.ServiceDependencies;
-using Xunit;
 
 namespace Servy.Core.UnitTests.ServiceDependencies
 {
@@ -78,15 +78,16 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         public void Validate_NameExceedingMaximumLength_ReturnsFalse()
         {
             // Arrange
-            var input = new string('A', AppConfig.MaxServiceNameLength + 1);
+            var tooLongName = new string('A', AppConfig.MaxServiceNameLength + 1);
+            var expectedError = string.Format(Strings.Msg_ServiceDependencyNameLengthReachedForName, tooLongName, AppConfig.MaxServiceNameLength);
 
             // Act
-            var result = ServiceDependenciesValidator.Validate(input, out var errors);
+            var result = ServiceDependenciesValidator.Validate(tooLongName, out var errors);
 
             // Assert
             Assert.False(result);
             Assert.Single(errors);
-            Assert.Contains(errors, e => e.Contains(AppConfig.MaxServiceNameLength.ToString()));
+            Assert.Contains(expectedError, errors);
         }
 
         [Fact]
@@ -114,6 +115,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             var tooLongName = new string('B', AppConfig.MaxServiceNameLength + 1);
             var invalidCharName = "Bad#Service";
             var input = $"{validName};{tooLongName};{invalidCharName}";
+            var expectedLengthError = string.Format(Strings.Msg_ServiceDependencyNameLengthReachedForName, tooLongName, AppConfig.MaxServiceNameLength);
 
             // Act
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
@@ -121,7 +123,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             // Assert
             Assert.False(result);
             Assert.Equal(2, errors.Count);
-            Assert.Contains(errors, e => e.Contains(AppConfig.MaxServiceNameLength.ToString()));
+            Assert.Contains(expectedLengthError, errors);
             Assert.Contains(errors, e => e.Contains("Bad#Service"));
         }
 
