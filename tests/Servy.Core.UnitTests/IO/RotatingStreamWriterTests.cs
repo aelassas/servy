@@ -759,26 +759,28 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             var filePath = Path.Combine(_testDir, "sizeDate.log");
             var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
+            var staleDate = fixedTime.AddDays(-1);
 
-            // Act
+            // Both triggers are armed: writing 6 bytes exceeds the 5-byte limit AND _lastRotationDate is backdated a day.
             using (var writer = CreateWriter(filePath, true, 5, true, DateRotationType.Daily, 0, false, () => fixedTime))
             {
-                TestReflection.SetField(writer, "_lastRotationDate", fixedTime.AddDays(-1));
+                TestReflection.SetField(writer, "_lastRotationDate", staleDate);
 
                 writer.Write("123456");
                 writer.Flush();
+
+                // Assert size rotation took precedence: PrepareRotation was called via the size branch,
+                // so ShouldRotateByDate was bypassed and _lastRotationDate was committed to fixedTime.
+                var updatedRotationDate = TestReflection.GetField<DateTime>(writer, "_lastRotationDate");
+                Assert.Equal(fixedTime, updatedRotationDate);
             }
 
-            // Assert
-            var rotated = Directory.GetFiles(_testDir, "sizeDate.*.log").Where(f => !f.EndsWith("sizeDate.log")).ToArray();
-            Assert.NotEmpty(rotated);
-
-            var latest = new DirectoryInfo(_testDir)
-                .GetFiles("sizeDate.*.log")
-                .Where(fi => !fi.Name.Equals("sizeDate.log"))
-                .OrderByDescending(fi => fi.LastWriteTimeUtc)
-                .First();
-            Assert.Contains("123456", File.ReadAllText(latest.FullName));
+            // Both triggers were armed, but the documented contract mandates exactly one rotation per write.
+            var rotated = Directory.GetFiles(_testDir, "sizeDate.*.log")
+                                   .Where(f => !f.EndsWith("sizeDate.log"))
+                                   .ToArray();
+            Assert.Single(rotated);
+            Assert.Contains("123456", File.ReadAllText(rotated[0]));
         }
 
         [Fact]
@@ -798,8 +800,10 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            var rotated = Directory.GetFiles(_testDir, "dateOnlyWhenSizeNotExceeded.*.log").Where(f => !f.EndsWith("dateOnlyWhenSizeNotExceeded.log")).ToArray();
-            Assert.NotEmpty(rotated);
+            var rotated = Directory.GetFiles(_testDir, "dateOnlyWhenSizeNotExceeded.*.log")
+                                   .Where(f => !f.EndsWith("dateOnlyWhenSizeNotExceeded.log"))
+                                   .ToArray();
+            Assert.Single(rotated);
         }
 
         [Fact]
@@ -813,7 +817,7 @@ namespace Servy.Core.UnitTests.IO
 
                 // 2. Act: Provide the required DateTime parameter (even for the default/invalid case)
                 var args = new object[] { DateTime.UtcNow };
-                var result = (bool)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args)!;
+                var result = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // 3. Assert: An unrecognized rotation type should safely return false
                 Assert.False(result);
@@ -1171,8 +1175,8 @@ namespace Servy.Core.UnitTests.IO
 
                     SpinWait.SpinUntil(() =>
                     {
-                        isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
-                        cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil")!;
+                        isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled");
+                        cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil");
                         return cooldown == DateTime.MinValue;
                     }, TimeSpan.FromSeconds(1));
 
@@ -1211,8 +1215,8 @@ namespace Servy.Core.UnitTests.IO
 
                 SpinWait.SpinUntil(() =>
                 {
-                    isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
-                    cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil")!;
+                    isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled");
+                    cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil");
                     return cooldown > DateTime.MinValue;
                 }, TimeSpan.FromSeconds(1));
 
@@ -1275,7 +1279,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
 
                 // 4. Assert: Verify the circuit breaker tripped due to the Exception.
-                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
+                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled");
                 Assert.True(isDisabled, "Circuit breaker should trip on permanent failure (Unique filename exhaustion).");
             }
         }
@@ -1303,7 +1307,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
 
                 // 3. Assert
-                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
+                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled");
                 Assert.False(isDisabled, "Breaker should reset automatically after the cooldown expires.");
 
                 var rotated = Directory.GetFiles(_testDir, "healing.*.log").Where(f => !f.EndsWith("healing.log"));
@@ -1397,8 +1401,8 @@ namespace Servy.Core.UnitTests.IO
                 }
 
                 // Assert
-                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
-                DateTime cooldown = TestReflection.GetField<DateTime>(writer, "_disabledCooldownUntil")!;
+                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled");
+                DateTime cooldown = TestReflection.GetField<DateTime>(writer, "_disabledCooldownUntil");
 
                 Assert.True(isDisabled, "A non-IOException should successfully trip the circuit breaker.");
                 Assert.True(cooldown > DateTime.UtcNow, "Circuit breaker cooldown should be set to the future.");

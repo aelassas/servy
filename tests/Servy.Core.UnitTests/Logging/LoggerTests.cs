@@ -568,7 +568,7 @@ namespace Servy.Core.UnitTests.Logging
             Logger.SetUseLocalTimeForRotation(true);           // Unchanged
 
             // Assert
-            int count = TestReflection.GetFieldStatic<int>(typeof(Logger), "_initFallbackWriteCount")!;
+            int count = TestReflection.GetFieldStatic<int>(typeof(Logger), "_initFallbackWriteCount");
             Assert.Equal(99, count); // Proves InternalInitialize was bypassed
         }
 
