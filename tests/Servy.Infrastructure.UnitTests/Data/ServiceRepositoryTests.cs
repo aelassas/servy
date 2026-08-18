@@ -178,6 +178,165 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
+        public async Task UpdateAsync_WithPreserveExistingCredentialsTrue_PassesFlagAndPreservesCredentialsInDatabasePayload()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            var incoming = new ServiceDto
+            {
+                Id = 10,
+                Name = "TargetService",
+                ExecutablePath = "C:\\updated.exe",
+                RunAsLocalSystem = true,
+                UserAccount = "NewUser",
+                Password = "NewPassword"
+            };
+
+            var existingInDb = new ServiceDto
+            {
+                Id = 10,
+                Name = "TargetService",
+                ExecutablePath = "C:\\old.exe",
+                RunAsLocalSystem = false,
+                UserAccount = "Domain\\OrigUser",
+                Password = "EncryptedOrigPassword"
+            };
+
+            // Use a broad query setup so PatchRuntimeStateAsync resolves existingInDb regardless of whether it queries by Id or Name
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existingInDb);
+
+            ServiceDto? capturedDto = null;
+            _mockDapper.Setup(d => d.ExecuteAsync(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((sql, param, _, token) => capturedDto = param as ServiceDto)
+                .ReturnsAsync(1);
+
+            // Act
+            int affected = await repo.UpdateAsync(incoming, preserveExistingRuntimeState: false, preserveExistingCredentials: true, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(1, affected);
+            Assert.NotNull(capturedDto);
+            Assert.Equal("C:\\updated.exe", capturedDto.ExecutablePath);
+            Assert.False(capturedDto.RunAsLocalSystem);
+            Assert.Equal("Domain\\OrigUser", capturedDto.UserAccount);
+            Assert.Equal("EncryptedOrigPassword", capturedDto.Password);
+        }
+
+        [Fact]
+        public void Update_WithPreserveExistingCredentialsTrue_PassesFlagAndPreservesCredentialsInDatabasePayload()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            var incoming = new ServiceDto
+            {
+                Id = 20,
+                Name = "SyncTargetService",
+                ExecutablePath = "C:\\sync_updated.exe",
+                RunAsLocalSystem = true,
+                UserAccount = "SyncNewUser",
+                Password = "SyncNewPassword"
+            };
+
+            var existingInDb = new ServiceDto
+            {
+                Id = 20,
+                Name = "SyncTargetService",
+                ExecutablePath = "C:\\sync_old.exe",
+                RunAsLocalSystem = false,
+                UserAccount = "Domain\\SyncOrigUser",
+                Password = "SyncEncryptedOrigPassword"
+            };
+
+            // Match both SQL query variants used by GetById / GetByName synchronously in PatchRuntimeState
+            _mockDapper.Setup(d => d.QuerySingleOrDefault<ServiceDto>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>()))
+                .Returns(existingInDb);
+
+            ServiceDto? capturedDto = null;
+            _mockDapper.Setup(d => d.Execute(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>()))
+                .Callback<string, object, IDbTransaction>((sql, param, _) => capturedDto = param as ServiceDto)
+                .Returns(1);
+
+            // Act
+            int affected = repo.Update(incoming, preserveExistingRuntimeState: false, preserveExistingCredentials: true);
+
+            // Assert
+            Assert.Equal(1, affected);
+            Assert.NotNull(capturedDto);
+            Assert.Equal("C:\\sync_updated.exe", capturedDto.ExecutablePath);
+            Assert.False(capturedDto.RunAsLocalSystem);
+            Assert.Equal("Domain\\SyncOrigUser", capturedDto.UserAccount);
+            Assert.Equal("SyncEncryptedOrigPassword", capturedDto.Password);
+        }
+
+        [Fact]
+        public async Task UpsertAsync_WithPreserveExistingCredentialsTrue_FetchesExistingAndPreservesCredentialsOnConflict()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            var incoming = new ServiceDto
+            {
+                Name = "UpsertTargetService",
+                ExecutablePath = "C:\\upsert_updated.exe",
+                RunAsLocalSystem = true,
+                UserAccount = "UpsertNewUser",
+                Password = "UpsertNewPassword"
+            };
+
+            var existingInDb = new ServiceDto
+            {
+                Id = 30,
+                Name = "UpsertTargetService",
+                ExecutablePath = "C:\\upsert_old.exe",
+                RunAsLocalSystem = false,
+                UserAccount = "Domain\\UpsertOrigUser",
+                Password = "UpsertEncryptedOrigPassword"
+            };
+
+            // Setup lookup by name for PatchRuntimeStateAsync
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.Is<string>(sql => sql.Contains("WHERE Name = @Name")),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existingInDb);
+
+            ServiceDto? capturedDto = null;
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((sql, param, _, token) => capturedDto = param as ServiceDto)
+                .ReturnsAsync(30);
+
+            // Act
+            int upsertedId = await repo.UpsertAsync(incoming, preserveExistingRuntimeState: false, preserveExistingCredentials: true, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(30, upsertedId);
+            Assert.NotNull(capturedDto);
+            Assert.Equal("C:\\upsert_updated.exe", capturedDto.ExecutablePath);
+            Assert.False(capturedDto.RunAsLocalSystem);
+            Assert.Equal("Domain\\UpsertOrigUser", capturedDto.UserAccount);
+            Assert.Equal("UpsertEncryptedOrigPassword", capturedDto.Password);
+        }
+
+        [Fact]
         public async Task UpsertAsync_ReturnsGeneratedId_AndSetsDtoId()
         {
             // Arrange

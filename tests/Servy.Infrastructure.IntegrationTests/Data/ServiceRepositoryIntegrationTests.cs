@@ -133,6 +133,51 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task UpdateAsync_WithPreserveExistingCredentialsTrue_PreservesCredentialFields()
+        {
+            // Arrange
+            var originalService = new ServiceDto
+            {
+                Name = "SingleUpdateCredService",
+                ExecutablePath = "C:\\orig.exe",
+                RunAsLocalSystem = false,
+                UserAccount = "Domain\\OrigUser",
+                Password = "OriginalPassword123"
+            };
+            int id = await _repository.AddAsync(originalService, TestContext.Current.CancellationToken);
+
+            // Act - Submit updated payload with altered/blanked credential details while preserving existing credentials
+            var updatePayload = new ServiceDto
+            {
+                Id = id,
+                Name = "SingleUpdateCredService",
+                ExecutablePath = "C:\\updated.exe",
+                RunAsLocalSystem = true,
+                UserAccount = "Domain\\OverwrittenUser",
+                Password = "OverwrittenPassword"
+            };
+            int affectedRows = await _repository.UpdateAsync(updatePayload, preserveExistingRuntimeState: false, preserveExistingCredentials: true, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(1, affectedRows);
+
+            // Verify encrypted storage level parity
+            var rawRecord = await _repository.GetByIdAsync(id, decrypt: false, TestContext.Current.CancellationToken);
+            Assert.NotNull(rawRecord);
+            Assert.False(rawRecord.RunAsLocalSystem);
+            Assert.Equal("Domain\\OrigUser", rawRecord.UserAccount);
+            Assert.Equal("SECRET_HASH:OriginalPassword123", rawRecord.Password);
+
+            // Verify decrypted entity mapping
+            var decryptedRecord = await _repository.GetByIdAsync(id, decrypt: true, TestContext.Current.CancellationToken);
+            Assert.NotNull(decryptedRecord);
+            Assert.Equal("C:\\updated.exe", decryptedRecord.ExecutablePath);
+            Assert.False(decryptedRecord.RunAsLocalSystem);
+            Assert.Equal("Domain\\OrigUser", decryptedRecord.UserAccount);
+            Assert.Equal("OriginalPassword123", decryptedRecord.Password);
+        }
+
+        [Fact]
         public async Task UpsertAsync_OnConflict_ExecutesInPlaceUpdate()
         {
             // Arrange
@@ -148,6 +193,50 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(id1, id2); // Same record identity targeted
             var updatedRecord = await _repository.GetByIdAsync(id1, decrypt: true, TestContext.Current.CancellationToken);
             Assert.Equal("C:\\v2.exe", updatedRecord!.ExecutablePath);
+        }
+
+        [Fact]
+        public async Task UpsertAsync_WithPreserveExistingCredentialsTrue_PreservesCredentialFieldsOnConflict()
+        {
+            // Arrange
+            var originalService = new ServiceDto
+            {
+                Name = "SingleUpsertCredService",
+                ExecutablePath = "C:\\upsert_v1.exe",
+                RunAsLocalSystem = false,
+                UserAccount = "Domain\\UpsertUser",
+                Password = "UpsertSecretPass123"
+            };
+            int originalId = await _repository.AddAsync(originalService, TestContext.Current.CancellationToken);
+
+            // Act - Upsert on conflicting name with changed credential properties
+            var incomingPayload = new ServiceDto
+            {
+                Name = "singleupsertcredservice", // Collation test casing match
+                ExecutablePath = "C:\\upsert_v2.exe",
+                RunAsLocalSystem = true,
+                UserAccount = "Domain\\BadUser",
+                Password = "BadPassword"
+            };
+            int upsertedId = await _repository.UpsertAsync(incomingPayload, preserveExistingRuntimeState: false, preserveExistingCredentials: true, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(originalId, upsertedId);
+
+            // Verify raw cipher text retention
+            var rawRecord = await _repository.GetByIdAsync(originalId, decrypt: false, TestContext.Current.CancellationToken);
+            Assert.NotNull(rawRecord);
+            Assert.False(rawRecord.RunAsLocalSystem);
+            Assert.Equal("Domain\\UpsertUser", rawRecord.UserAccount);
+            Assert.Equal("SECRET_HASH:UpsertSecretPass123", rawRecord.Password);
+
+            // Verify decrypted state
+            var decryptedRecord = await _repository.GetByIdAsync(originalId, decrypt: true, TestContext.Current.CancellationToken);
+            Assert.NotNull(decryptedRecord);
+            Assert.Equal("C:\\upsert_v2.exe", decryptedRecord.ExecutablePath);
+            Assert.False(decryptedRecord.RunAsLocalSystem);
+            Assert.Equal("Domain\\UpsertUser", decryptedRecord.UserAccount);
+            Assert.Equal("UpsertSecretPass123", decryptedRecord.Password);
         }
 
         [Fact]
@@ -458,13 +547,18 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void Update_SynchronousPath_SavesAndPreservesStateSymmetrically()
+        public async Task Update_SynchronousPath_SavesAndPreservesStateSymmetrically()
         {
-            // Arrange
-            int id = _executor.ExecuteScalar<int>(
-                $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();");
+            // Arrange - Seed the initial record through the repository to ensure all schema defaults and primary keys are set
+            var initialService = new ServiceDto
+            {
+                Name = "SyncService",
+                ExecutablePath = "C:\\s.exe",
+                Pid = 444
+            };
+            int id = await _repository.AddAsync(initialService, TestContext.Current.CancellationToken);
 
-            // Act
+            // Act - Update the record with new executable path while requesting runtime state preservation
             var updatePayload = new ServiceDto { Id = id, Name = "SyncService", ExecutablePath = "C:\\new_sync.exe", Pid = 888 };
             int affectedRows = _repository.Update(updatePayload, preserveExistingRuntimeState: true, preserveExistingCredentials: false);
 
@@ -474,6 +568,50 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.NotNull(result);
             Assert.Equal("C:\\new_sync.exe", result.ExecutablePath);
             Assert.Equal(444, result.Pid); // Preserved via synchronous routing pass flags
+        }
+
+        [Fact]
+        public async Task Update_SynchronousPath_WithPreserveExistingCredentialsTrue_PreservesCredentialFields()
+        {
+            // Arrange
+            int id = await _repository.AddAsync(new ServiceDto
+            {
+                Name = "SyncCredService",
+                ExecutablePath = "C:\\sync_orig.exe",
+                RunAsLocalSystem = false,
+                UserAccount = "Domain\\SyncUser",
+                Password = "SyncSecretPassword"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Act - Synchronously update service payload with modified credential properties while flag is true
+            var updatePayload = new ServiceDto
+            {
+                Id = id,
+                Name = "SyncCredService",
+                ExecutablePath = "C:\\sync_updated.exe",
+                RunAsLocalSystem = true,
+                UserAccount = "Domain\\OverwrittenSyncUser",
+                Password = "OverwrittenSyncPassword"
+            };
+            int affectedRows = _repository.Update(updatePayload, preserveExistingRuntimeState: false, preserveExistingCredentials: true);
+
+            // Assert
+            Assert.Equal(1, affectedRows);
+
+            // Verify encrypted cipher text retention
+            var rawRecord = _repository.GetByName("SyncCredService", decrypt: false);
+            Assert.NotNull(rawRecord);
+            Assert.False(rawRecord.RunAsLocalSystem);
+            Assert.Equal("Domain\\SyncUser", rawRecord.UserAccount);
+            Assert.Equal("SECRET_HASH:SyncSecretPassword", rawRecord.Password);
+
+            // Verify decrypted values
+            var decryptedRecord = _repository.GetByName("SyncCredService", decrypt: true);
+            Assert.NotNull(decryptedRecord);
+            Assert.Equal("C:\\sync_updated.exe", decryptedRecord.ExecutablePath);
+            Assert.False(decryptedRecord.RunAsLocalSystem);
+            Assert.Equal("Domain\\SyncUser", decryptedRecord.UserAccount);
+            Assert.Equal("SyncSecretPassword", decryptedRecord.Password);
         }
 
         [Fact]
