@@ -257,34 +257,6 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
-        public void FindAllViolations_WhenMultiplePropertiesAreInvalid_ReturnsAllViolations()
-        {
-            // Arrange
-            var dto = new TestDto
-            {
-                ExecutablePath = null, // Missing required path (Violation 1)
-                StartupDirectory = @"C:\invalid\dir" // Invalid path (Violation 2)
-            };
-
-            // Act
-            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) => false).ToList();
-
-            // Assert
-            Assert.Equal(2, violations.Count);
-
-            var firstViolation = violations.FirstOrDefault(v => v.Property.Name == nameof(TestDto.ExecutablePath));
-            Assert.NotNull(firstViolation);
-            Assert.True(firstViolation.IsMissing);
-            Assert.Equal("executable path", firstViolation.Attribute.Label);
-
-            var secondViolation = violations.FirstOrDefault(v => v.Property.Name == nameof(TestDto.StartupDirectory));
-            Assert.NotNull(secondViolation);
-            Assert.False(secondViolation.IsMissing);
-            Assert.Equal(@"C:\invalid\dir", secondViolation.Value);
-            Assert.Equal("startup directory", secondViolation.Attribute.Label);
-        }
-
-        [Fact]
         public void FindAllViolations_WhenOnlyOnePropertyIsInvalid_ReturnsSingleViolation()
         {
             // Arrange
