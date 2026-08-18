@@ -78,7 +78,7 @@ namespace Servy.Core.UnitTests.Security
         [Trait("Category", "Stress")]
         public void StressTest_V1_BackwardCompatibility_LargePayload()
         {
-            Assert.SkipWhen(!AppConfig.AllowLegacyV1Decryption, "Legacy V1 decryption is disabled in the configuration.");
+            Assert.SkipUnless(AppConfig.AllowLegacyV1Decryption, "Legacy V1 decryption is disabled in the configuration.");
 
             // Arrange
             int sizeInMb = 5;

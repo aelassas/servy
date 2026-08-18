@@ -13,7 +13,7 @@ namespace Servy.Core.UnitTests.IO
 
         public RotatingStreamWriterTests()
         {
-            _testDir = Path.Combine(Path.GetTempPath(), "RotatingStreamWriterTests", Guid.NewGuid().ToString());
+            _testDir = Path.Combine(Path.GetTempPath(), "RotatingStreamWriterTests_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_testDir);
             _logFilePath = Path.Combine(_testDir, "test.log");
         }
@@ -1298,7 +1298,7 @@ namespace Servy.Core.UnitTests.IO
                 TestReflection.SetField(writer, "_rotationDisabled", true);
                 TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(-1));
 
-                // 2. Act: This write should trigger the healing logic, reset the breaker, and rotate
+                // 2. Act: This should trigger the healing logic, reset the breaker, and rotate
                 writer.Write("this_forces_rotation");
                 writer.Flush();
 
