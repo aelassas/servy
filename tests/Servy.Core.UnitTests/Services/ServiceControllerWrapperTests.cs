@@ -30,6 +30,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(StandardTestService, name);
             }
         }
+
         [Fact]
         public void MemberAccess_PostDispose_ThrowsObjectDisposedException()
         {
@@ -167,22 +168,33 @@ namespace Servy.Core.UnitTests.Services
         #region Win32Exception & Edge Case Resolution Tests
 
         [Fact]
+        public void GetDependencies_InvalidOperationException_ReturnsUnavailableNode()
+        {
+            // Arrange
+            using (var wrapper = new ServiceControllerWrapper("TargetService"))
+            {
+                Func<string, IServiceControllerWrapper> factory = name =>
+                    throw new InvalidOperationException($"Service {name} was not found on computer '.'.");
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(factory, CancellationToken.None);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal("TargetService", result.ServiceName);
+                Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "TargetService"), result.DisplayName);
+                Assert.False(result.IsRunning);
+                Assert.False(result.IsCyclic);
+            }
+        }
+
+        [Fact]
         public void GetDependencies_Win32ExceptionAccessDenied_ReturnsAccessDeniedNode()
         {
             // Arrange
             using (var wrapper = new ServiceControllerWrapper("TargetService"))
             {
-                // Mock factory returning a mock wrapper that throws Win32Exception(5)
-                Func<string, IServiceControllerWrapper> factory = name =>
-                {
-                    var mock = new Mock<IServiceControllerWrapper>();
-                    mock.Setup(m => m.ServiceName).Returns(name);
-                    if (name == "TargetService")
-                    {
-                        throw new Win32Exception(5); // ERROR_ACCESS_DENIED
-                    }
-                    return mock.Object;
-                };
+                Func<string, IServiceControllerWrapper> factory = name => throw new Win32Exception(5); // ERROR_ACCESS_DENIED
 
                 // Act
                 var result = wrapper.GetDependenciesInternal(factory, CancellationToken.None);
@@ -202,17 +214,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             using (var wrapper = new ServiceControllerWrapper("TargetService"))
             {
-                // Mock factory returning a mock wrapper that throws Win32Exception(1060 - ERROR_SERVICE_DOES_NOT_EXIST)
-                Func<string, IServiceControllerWrapper> factory = name =>
-                {
-                    var mock = new Mock<IServiceControllerWrapper>();
-                    mock.Setup(m => m.ServiceName).Returns(name);
-                    if (name == "TargetService")
-                    {
-                        throw new Win32Exception(1060);
-                    }
-                    return mock.Object;
-                };
+                Func<string, IServiceControllerWrapper> factory = name => throw new Win32Exception(1060); // ERROR_SERVICE_DOES_NOT_EXIST
 
                 // Act
                 var result = wrapper.GetDependenciesInternal(factory, CancellationToken.None);
@@ -223,6 +225,41 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "TargetService"), result.DisplayName);
                 Assert.False(result.IsRunning);
                 Assert.False(result.IsCyclic);
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_FailingChildDependency_DoesNotAbortSiblingDependencies()
+        {
+            // Arrange: Root -> [ChildGoodA, ChildMissing, ChildGoodB]
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ChildGoodA", "ChildMissing", "ChildGoodB" });
+                var mockGoodA = CreateMockWrapper("ChildGoodA", "Alpha Service", ServiceControllerStatus.Running, Array.Empty<string>());
+                var mockGoodB = CreateMockWrapper("ChildGoodB", "Zulu Service", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                Func<string, IServiceControllerWrapper> factory = name =>
+                {
+                    if (string.Equals(name, "Root", StringComparison.OrdinalIgnoreCase)) return mockRoot.Object;
+                    if (string.Equals(name, "ChildGoodA", StringComparison.OrdinalIgnoreCase)) return mockGoodA.Object;
+                    if (string.Equals(name, "ChildGoodB", StringComparison.OrdinalIgnoreCase)) return mockGoodB.Object;
+
+                    throw new InvalidOperationException($"Service {name} was not found on computer '.'.");
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(factory, CancellationToken.None);
+
+                // Assert: All 3 children should be resolved, including the unavailable middle dependency
+                Assert.NotNull(result);
+                Assert.Equal(3, result.Dependencies.Count);
+
+                var childMissingNode = result.Dependencies.Single(n => n.ServiceName == "ChildMissing");
+                Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "ChildMissing"), childMissingNode.DisplayName);
+                Assert.False(childMissingNode.IsRunning);
+
+                Assert.Contains(result.Dependencies, n => n.ServiceName == "ChildGoodA");
+                Assert.Contains(result.Dependencies, n => n.ServiceName == "ChildGoodB");
             }
         }
 

@@ -1,10 +1,27 @@
 using Servy.Core.Services;
+using System;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Services
 {
     public class ServiceDependencyNodeTests
     {
+        [Fact]
+        public void Constructor_NullServiceName_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceDependencyNode(null, "Display"));
+            Assert.Equal("serviceName", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullDisplayName_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceDependencyNode("svc", null));
+            Assert.Equal("displayName", ex.ParamName);
+        }
+
         [Fact]
         public void Constructor_ShouldInitializePropertiesCorrectly()
         {
@@ -93,6 +110,7 @@ namespace Servy.Core.UnitTests.Services
             // Act
             node.DisplayName = "Display"; // Same as initial
             node.IsRunning = true;        // Same as initial
+            node.IsExpanded = false;      // Same as initial
 
             // Assert
             Assert.False(wasRaised);
