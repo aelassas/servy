@@ -49,30 +49,19 @@ namespace Servy.Core.UnitTests.ServiceDependencies
 
         #region Invalid Input Constraint Validation Tests
 
-        [Fact]
-        public void Validate_NameWithInvalidSpecialCharacter_ReturnsFalse()
+        [Theory]
+        [InlineData("Bad#Service")]
+        [InlineData("Service@Name")]
+        [InlineData("Bad^Service")]
+        public void Validate_NameWithInvalidCharacter_ReturnsFalse(string invalidName)
         {
-            // Arrange & Act
-            // Tests that a name containing an invalid special character like '#' is rejected
-            var result = ServiceDependenciesValidator.Validate("Bad#Service", out var errors);
-
-            // Assert
-            Assert.False(result);
-            Assert.Contains(errors, e => e.Contains("Bad#Service"));
-        }
-
-        [Fact]
-        public void Validate_NameWithSpecialCharacters_ReturnsFalse()
-        {
-            // Arrange
-            // '@' is rejected as an invalid service-name character
-
             // Act
-            var result = ServiceDependenciesValidator.Validate("Service@Name", out var errors);
+            var result = ServiceDependenciesValidator.Validate(invalidName, out var errors);
 
             // Assert
             Assert.False(result);
-            Assert.Contains(errors, e => e.Contains("Service@Name"));
+            Assert.Single(errors);
+            Assert.Contains(errors, e => e.Contains(invalidName));
         }
 
         [Fact]
