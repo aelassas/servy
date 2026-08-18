@@ -42,39 +42,6 @@ namespace Servy.CLI.UnitTests
             File.WriteAllText(_tempConfigPath, mockConfigJson);
         }
 
-        #region Private Test Orchestration Helpers
-
-        /// <summary>
-        /// Encapsulates the console output redirection lifecycle to eliminate duplicate boilerplate blocks
-        /// across CLI execution integration test paths while protecting async background contexts.
-        /// </summary>
-        private async Task<(int ExitCode, string Output)> RunWithConsoleCaptureAsync(Func<Task<int>> actBlock)
-        {
-            var originalOut = Console.Out;
-
-            // Arrange: Keep a direct reference to the raw underlying StringWriter
-            using (var baseWriter = new StringWriter())
-            using (var synchronizedWriter = TextWriter.Synchronized(baseWriter))
-            {
-                try
-                {
-                    // Act
-                    Console.SetOut(synchronizedWriter);
-                    int exitCode = await actBlock();
-
-                    // Assert: Extract the text from the base StringWriter to bypass the SyncTextWriter proxy name
-                    string capturedOutput = baseWriter.ToString();
-                    return (exitCode, capturedOutput);
-                }
-                finally
-                {
-                    Console.SetOut(originalOut);
-                }
-            }
-        }
-
-        #endregion
-
         #region Console Validation Logic Branches
 
         [Fact]
@@ -105,16 +72,16 @@ namespace Servy.CLI.UnitTests
             string[] emptyArgs = Array.Empty<string>();
 
             // Act
-            var result = await RunWithConsoleCaptureAsync(async () =>
+            var result = await ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(emptyArgs);
             });
 
             // Assert
             // Match against the actual verbs listed in the auto-generated help index screen
-            Assert.Equal((int)CliExitCode.Success, result.ExitCode);
-            Assert.Contains("install", result.Output);
-            Assert.Contains("uninstall", result.Output);
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.Contains("install", result.StdOut);
+            Assert.Contains("uninstall", result.StdOut);
         }
 
         [Fact]
@@ -124,16 +91,16 @@ namespace Servy.CLI.UnitTests
             string[] args = { "--help" };
 
             // Act
-            var result = await RunWithConsoleCaptureAsync(async () =>
+            var result = await ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(args);
             });
 
             // Assert
             // Match against the actual verbs listed in the auto-generated help index screen
-            Assert.Equal((int)CliExitCode.Success, result.ExitCode);
-            Assert.Contains("install", result.Output);
-            Assert.Contains("uninstall", result.Output);
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.Contains("install", result.StdOut);
+            Assert.Contains("uninstall", result.StdOut);
         }
 
         [Fact]
@@ -145,17 +112,17 @@ namespace Servy.CLI.UnitTests
             string[] args = { "start", "-n", "NonExistentServiceForTestingOnly", "--quiet" };
 
             // Act
-            var result = await RunWithConsoleCaptureAsync(async () =>
+            var result = await ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(args);
             });
 
             // Assert
             // The command fails because the service is not found in the database/SCM, returning Error (1)
-            Assert.Equal((int)CliExitCode.Error, result.ExitCode);
+            Assert.Equal((int)CliExitCode.Error, result.Result);
 
             // Verify that no loading animation frames or status text fragments were written to stdout/stderr
-            Assert.True(string.IsNullOrEmpty(result.Output), "Console output should be completely suppressed when the --quiet flag is supplied.");
+            Assert.True(string.IsNullOrEmpty(result.StdOut), "Console output should be completely suppressed when the --quiet flag is supplied.");
         }
 
         [Fact]
