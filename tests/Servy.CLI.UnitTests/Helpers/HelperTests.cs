@@ -1,6 +1,5 @@
 using CommandLine;
 using Servy.CLI.Enums;
-using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.Testing;
@@ -8,7 +7,6 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 using Helper = Servy.CLI.Helpers.Helper;
-
 
 namespace Servy.CLI.UnitTests.Helpers
 {
@@ -52,17 +50,13 @@ namespace Servy.CLI.UnitTests.Helpers
         {
             // Arrange
             var result = CommandResult.Ok("Success!");
-            int exitCode = -1;
 
             // Act
-            var consoleOutput = ConsoleCapture.Run(() =>
-            {
-                exitCode = Helper.PrintAndReturn(result);
-            });
+            var consoleOutput = ConsoleCapture.Run(() => Helper.PrintAndReturn(result));
 
             // Assert
             // Validate message content is natively dispatched to standard output stream.
-            Assert.Equal(0, exitCode);
+            Assert.Equal(0, consoleOutput.Result);
             Assert.Contains("Success!", consoleOutput.StdOut);
             Assert.Empty(consoleOutput.StdErr);
         }
@@ -72,17 +66,13 @@ namespace Servy.CLI.UnitTests.Helpers
         {
             // Arrange
             var result = CommandResult.Fail("Error!", 1);
-            int exitCode = -1;
 
             // Act
-            var consoleOutput = ConsoleCapture.Run(() =>
-            {
-                exitCode = Helper.PrintAndReturn(result);
-            });
+            var consoleOutput = ConsoleCapture.Run(() => Helper.PrintAndReturn(result));
 
             // Assert
             // Validate message content is natively dispatched to standard error stream.
-            Assert.Equal(1, exitCode);
+            Assert.Equal(1, consoleOutput.Result);
             Assert.Contains("Error!", consoleOutput.StdErr);
             Assert.Empty(consoleOutput.StdOut);
         }

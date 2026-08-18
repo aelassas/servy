@@ -42,6 +42,18 @@ namespace Servy.Core.UnitTests.Services
             throw ex;
         }
 
+        private static string GetInternalQuery(EventLogQuery queryObj)
+        {
+            var fields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
+                                              .Where(f => f.FieldType == typeof(string));
+            foreach (var field in fields)
+            {
+                var val = field.GetValue(queryObj) as string;
+                if (val != null && val.StartsWith("*")) return val;
+            }
+            return null;
+        }
+
         [Fact]
         public void Constructor_WhenReaderIsNull_ThrowsArgumentNullException()
         {
@@ -488,29 +500,16 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal("*", capturedQuery);
         }
 
-        private string GetInternalQuery(EventLogQuery queryObj)
-        {
-            var fields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
-                                              .Where(f => f.FieldType == typeof(string));
-            foreach (var field in fields)
-            {
-                var val = field.GetValue(queryObj) as string;
-                if (val != null && val.StartsWith("*")) return val;
-            }
-            return null;
-        }
-
         [Fact]
         public async Task SearchAsync_WhenResultsExceedMaxResults_BreaksLoop()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
 
-            // One more than the service's cap, so the 'break' is forced.
             const int limit = AppConfig.EventLogMaxResults;
 
-            // Use ascending time values (+i) to provide unsorted mock data.
-            // This forces the production system's OrderByDescending method to actively reverse the pipeline.
+            // Feed one more than the service's cap (limit + 1) so the 'break' is forced.
+            // Ascending time values (+i) keep the mock data unsorted, so OrderByDescending has to reverse it.
             var excessiveResults = Enumerable.Range(1, limit + 1)
                 .Select(i => CreateFakeEvent(
                     id: i,
