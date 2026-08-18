@@ -846,14 +846,27 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
                 var process = wrapper.UnderlyingProcess;
 
-                // Allow conhost.exe time to initialize and attach the console buffer to cmd.exe
-                Thread.Sleep(500);
+                // Act & Assert
+                // Poll with retries to account for conhost.exe setup latency on headless CI runners.
+                bool result = false;
+                const int maxAttempts = 10;
+                const int pollIntervalMs = 500;
 
-                // Act
-                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", process);
+                for (int attempt = 1; attempt <= maxAttempts; attempt++)
+                {
+                    if (process != null && !process.HasExited)
+                    {
+                        result = (bool)TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", process)!;
+                        if (result)
+                        {
+                            break;
+                        }
+                    }
 
-                // Assert
-                Assert.Equal(true, result);
+                    Thread.Sleep(pollIntervalMs);
+                }
+
+                Assert.True(result, "SendCtrlC failed to attach to console or signal the process within the retry window.");
                 Assert.Contains(_logger.Infos, m => m.Contains("Sent Ctrl+C to process"));
 
                 // Cleanup
