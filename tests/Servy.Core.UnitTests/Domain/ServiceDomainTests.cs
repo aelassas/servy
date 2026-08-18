@@ -189,6 +189,22 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Verify(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Fact]
+        public void GetServiceStartupType_ShouldReturnUnknown_WhenServiceNotInstalled()
+        {
+            // Arrange
+            var service = CreateService();
+            _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()))
+                .Returns(ServiceStartType.Unknown);
+
+            // Act
+            var result = service.GetServiceStartupType(CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ServiceStartType.Unknown, result);
+            _serviceManagerMock.Verify(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         #endregion
 
         #region Install / Uninstall
@@ -328,6 +344,23 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.PostStopExecutablePath, captured.PostStopExePath);
             Assert.Equal(service.PostStopStartupDirectory, captured.PostStopStartupDirectory);
             Assert.Equal(service.PostStopParameters, captured.PostStopArgs);
+        }
+
+        [Fact]
+        public async Task Install_ReturnsFailure_WhenServiceManagerReturnsFailure()
+        {
+            // Arrange
+            var service = CreateService();
+            _serviceManagerMock.Setup(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Failure("Failed to install service."));
+
+            // Act
+            var result = await service.Install(cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to install service.", result.ErrorMessage);
+            _serviceManagerMock.Verify(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -523,6 +556,23 @@ namespace Servy.Core.UnitTests.Domain
 
             // Assert
             Assert.True(result.IsSuccess);
+            _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Uninstall_ReturnsFailure_WhenServiceManagerReturnsFailure()
+        {
+            // Arrange
+            var service = CreateService();
+            _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Failure("Failed to uninstall service."));
+
+            // Act
+            var result = await service.Uninstall(CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to uninstall service.", result.ErrorMessage);
             _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
