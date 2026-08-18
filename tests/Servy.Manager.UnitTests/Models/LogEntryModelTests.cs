@@ -87,8 +87,9 @@ namespace Servy.Manager.UnitTests.Models
         [InlineData(EventLogLevel.Warning, "Warning.png")]
         [InlineData(EventLogLevel.Information, "Info.png")]
         [InlineData(EventLogLevel.Verbose, "Info.png")]
-        [InlineData((EventLogLevel)999, "Info.png")] // Undefined/Default boundary fallback branch
-        public void LevelIcon_GetsInvoked_ReturnsExpectedAbsolutePackUri(EventLogLevel inputLevel, string expectedIconFile)
+        [InlineData(EventLogLevel.All, "Info.png")]        // Default-constructed state, EventLogLevel.All == 0
+        [InlineData((EventLogLevel)999, "Info.png")]       // Undefined/Default boundary fallback branch
+        public void LevelIcon_ForEachLevel_ReturnsUriEndingWithExpectedIconFile(EventLogLevel inputLevel, string expectedIconFile)
         {
             // Arrange
             var logEntry = new LogEntryModel { Level = inputLevel };
@@ -97,7 +98,6 @@ namespace Servy.Manager.UnitTests.Models
             string actualUri = logEntry.LevelIcon;
 
             // Assert
-            Assert.NotNull(actualUri);
             Assert.StartsWith("pack://application:", actualUri, StringComparison.OrdinalIgnoreCase);
             Assert.EndsWith(expectedIconFile, actualUri, StringComparison.OrdinalIgnoreCase);
         }
