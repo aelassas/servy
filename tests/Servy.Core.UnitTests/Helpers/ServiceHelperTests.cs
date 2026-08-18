@@ -1,4 +1,5 @@
 using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -315,6 +316,76 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(expected, actual);
+        }
+
+        #endregion
+
+        #region ResolvePreStopTimeout Tests
+
+        [Fact]
+        public void ResolvePreStopTimeout_NullService_ReturnsZero()
+        {
+            // Arrange
+            ServiceDto? service = null;
+
+            // Act
+            int result = ServiceHelper.ResolvePreStopTimeout(service);
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void ResolvePreStopTimeout_NullOrEmptyPreStopExecutablePath_ReturnsZero(string? path)
+        {
+            // Arrange
+            var service = new ServiceDto
+            {
+                PreStopExecutablePath = path,
+                PreStopTimeoutSeconds = 30
+            };
+
+            // Act
+            int result = ServiceHelper.ResolvePreStopTimeout(service);
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public void ResolvePreStopTimeout_ExecutablePathProvidedAndTimeoutConfigured_ReturnsConfiguredTimeout()
+        {
+            // Arrange
+            var service = new ServiceDto
+            {
+                PreStopExecutablePath = @"C:\Scripts\pre-stop.bat",
+                PreStopTimeoutSeconds = 45
+            };
+
+            // Act
+            int result = ServiceHelper.ResolvePreStopTimeout(service);
+
+            // Assert
+            Assert.Equal(45, result);
+        }
+
+        [Fact]
+        public void ResolvePreStopTimeout_ExecutablePathProvidedAndTimeoutNull_ReturnsDefaultPreStopTimeout()
+        {
+            // Arrange
+            var service = new ServiceDto
+            {
+                PreStopExecutablePath = @"C:\Scripts\pre-stop.bat",
+                PreStopTimeoutSeconds = null
+            };
+
+            // Act
+            int result = ServiceHelper.ResolvePreStopTimeout(service);
+
+            // Assert
+            Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, result);
         }
 
         #endregion
