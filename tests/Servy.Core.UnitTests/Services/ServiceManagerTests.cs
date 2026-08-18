@@ -4,6 +4,7 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
@@ -12,8 +13,6 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
-
-#pragma warning disable CS8625
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -225,7 +224,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(invalidScmHandle);
 
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
-                .Returns(1074); // ERROR_SERVICE_DEPENDENCY_DELETED
+                .Returns(5); // ERROR_ACCESS_DENIED
 
             // Act
             var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
@@ -1093,6 +1092,72 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_UnicodeCasingVariance_StaleRowDeleteThrows_ReturnsFailure()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            _mockServiceRepository
+                .Setup(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "serviceä" });
+
+            // OS side already gone -> the else branch
+            _mockWindowsServiceApi.Setup(x => x.GetServices()).Returns(Array.Empty<WindowsServiceInfo>());
+
+            _mockServiceRepository
+                .Setup(x => x.DeleteAsync("serviceä", It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Database is locked."));
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Unexpected error occurred while trying to drop stale casing-variant row", result.ErrorMessage);
+            Assert.Contains("Database is locked.", result.ErrorMessage);
+
+            // The install must not have proceeded past the failed cleanup.
+            _mockWindowsServiceApi.Verify(x => x.CreateService(
+                It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(),
+                It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_UnicodeCasingVariance_StaleRowDeleteCancelled_Rethrows()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            _mockServiceRepository
+                .Setup(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "serviceä" });
+
+            _mockWindowsServiceApi.Setup(x => x.GetServices()).Returns(Array.Empty<WindowsServiceInfo>());
+
+            using (var cts = new CancellationTokenSource())
+            {
+                _mockServiceRepository
+                    .Setup(x => x.DeleteAsync("serviceä", It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                    _serviceManager.InstallServiceAsync(options, cts.Token));
+            }
+        }
+
+        [Fact]
         public async Task InstallService_UnicodeCasingVariance_UninstallFails_ReturnsOperationFailure()
         {
             // Arrange
@@ -1173,7 +1238,7 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(x => x.GetServices())
                 .Returns(new[] { new WindowsServiceInfo { ServiceName = "serviceä" } });
 
-            // Force OpenService to trigger a severe structural exception during step evaluations
+            // Force OpenSCManager to trigger a severe structural exception during step evaluations
             _mockWindowsServiceApi
                 .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Throws(new InvalidOperationException("Fatal SCM Memory Corruption."));
@@ -1523,7 +1588,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task UninstallService_ReturnsFalse_WhenOpenSCManagerFails()
         {
             // Arrange
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(CreateScmHandle(0));
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(CreateScmHandle(0));
 
             // Act
             var result = await _serviceManager.UninstallServiceAsync("ServiceName", TestContext.Current.CancellationToken);
@@ -1536,7 +1601,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task UninstallServiceAsync_WhenOpenServiceThrowsException_ReturnsFailureResult()
         {
             // Arrange
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>()))
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(CreateScmHandle(2));
 
             _mockWindowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()))
@@ -1708,7 +1773,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(result.IsSuccess);
 
             mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
-            mockController.VerifyGet(c => c.Status, Times.AtLeastOnce);
+            mockController.Verify(c => c.Status, Times.AtLeastOnce);
         }
 
         [Fact]
@@ -1817,12 +1882,14 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Stopped)
                 .Returns(ServiceControllerStatus.Running);
 
+            var preLaunchDto = new ServiceDto
+            {
+                Name = serviceName,
+                PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe"
+            };
+
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceDto
-                {
-                    Name = serviceName,
-                    PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe"
-                });
+                .ReturnsAsync(preLaunchDto);
 
             // Act
             var result = await _serviceManager.StartServiceAsync(serviceName, cancellationToken: TestContext.Current.CancellationToken);
@@ -1835,6 +1902,11 @@ namespace Servy.Core.UnitTests.Services
 
             // Verify that the loop actually checked the SCM for updates
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
+
+            // Verify that the pre-launch window widens the calculated timeout compared to a baseline without pre-launch
+            var withHook = ServiceHelper.CalculateStartTimeout(preLaunchDto.StartTimeout, AppConfig.DefaultPreLaunchTimeoutSeconds, 0);
+            var withoutHook = ServiceHelper.CalculateStartTimeout(preLaunchDto.StartTimeout, 0, 0);
+            Assert.True(withHook > withoutHook);
         }
 
         [Fact]
@@ -1950,12 +2022,14 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Running)
                 .Returns(ServiceControllerStatus.Stopped);
 
+            var preStopDto = new ServiceDto
+            {
+                Name = serviceName,
+                PreStopExecutablePath = @"C:\Apps\pre-stop.exe"
+            };
+
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceDto
-                {
-                    Name = serviceName,
-                    PreStopExecutablePath = @"C:\Apps\pre-stop.exe"
-                });
+                .ReturnsAsync(preStopDto);
 
             // Act
             var result = await _serviceManager.StopServiceAsync(serviceName, cancellationToken: TestContext.Current.CancellationToken);
@@ -1968,6 +2042,11 @@ namespace Servy.Core.UnitTests.Services
 
             // Verify the polling logic actually refreshed the status from the SCM
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
+
+            // Verify that the pre-stop window widens the calculated timeout compared to a baseline without pre-stop
+            var withHook = ServiceHelper.CalculateStopTimeout(preStopDto.StopTimeout, preStopDto.PreviousStopTimeout, ServiceHelper.ResolvePreStopTimeout(preStopDto));
+            var withoutHook = ServiceHelper.CalculateStopTimeout(preStopDto.StopTimeout, preStopDto.PreviousStopTimeout, 0);
+            Assert.True(withHook > withoutHook);
         }
 
         [Fact]
@@ -2309,7 +2388,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(x => x.StartType).Returns(ServiceStartMode.Automatic);
 
             // 2. Simulate the Native API failure (e.g., Access Denied)
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>()))
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                     .Returns(CreateScmHandle(0));
 
             // Act
@@ -2320,7 +2399,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(ServiceStartType.Automatic, result);
 
             // Verify we actually tried to open the manager
-            _mockWindowsServiceApi.Verify(x => x.OpenSCManager(null!, null!, It.IsAny<uint>()), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.OpenSCManager(null, null, It.IsAny<uint>()), Times.Once);
         }
 
         [Fact]
@@ -2349,7 +2428,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             // Branch: scmHandle == IntPtr.Zero
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(CreateScmHandle(0));
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(CreateScmHandle(0));
 
             // Act & Assert
             Assert.Throws<Win32Exception>(() => _serviceManager.GetAllServices(TestContext.Current.CancellationToken));
@@ -2361,7 +2440,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             // Branch: Parallel.ForEach with empty list
             _mockServiceControllerProvider.Setup(x => x.GetServices()).Returns(Array.Empty<IServiceControllerWrapper>());
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(CreateScmHandle(1));
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(CreateScmHandle(1));
 
             // Act
             var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
@@ -2390,7 +2469,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Use a factory for the return and loose matching for downstream calls
             _mockWindowsServiceApi
-                .Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>()))
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(() => CreateScmHandle(1));
 
             // We MUST mock OpenService if GetAllServices iterates, otherwise it returns null handles
@@ -2418,7 +2497,7 @@ namespace Servy.Core.UnitTests.Services
 
             // 1. Use factory lambda for SCM handle
             _mockWindowsServiceApi
-                .Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>()))
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(() => CreateScmHandle(1));
 
             // 2. REQUIRED: Mock OpenService to prevent NRE in PopulateNativeDetails
@@ -2430,7 +2509,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             // Assert
-            // Verify it hit the catch block and defaulted to Manual (as per the implementation logic)
+            // Verify it hit the catch block and fell back to Unknown (as per the implementation logic)
             Assert.Equal(ServiceStartType.Unknown, result[0].StartupType);
         }
 
@@ -2445,7 +2524,7 @@ namespace Servy.Core.UnitTests.Services
             mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Automatic);
 
             _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
 
             // 1. Force 'bytesNeeded > 0' to be FALSE for User/Description
@@ -2486,7 +2565,7 @@ namespace Servy.Core.UnitTests.Services
 
             // 1. Loose matching and factory return for SCM
             _mockWindowsServiceApi
-                .Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>()))
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(() => CreateScmHandle(1));
 
             // 2. REQUIRED: Mock OpenService so PopulateNativeDetails doesn't hit a null handle
@@ -2511,7 +2590,7 @@ namespace Servy.Core.UnitTests.Services
             mockSvc.Setup(s => s.ServiceName).Returns("TestSvc");
 
             _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
 
             // Setup QueryServiceConfig size thresholds
@@ -2874,8 +2953,6 @@ namespace Servy.Core.UnitTests.Services
         public void GetDependencies_ShouldReturnNull()
         {
             // Arrange
-            var deps = new ServiceDependencyNode("ServiceName", "ServiceDisplayName");
-
             _mockWindowsServiceApi.Setup(p => p.GetServices())
                  .Returns(Array.Empty<WindowsServiceInfo>());
 
@@ -3005,5 +3082,3 @@ namespace Servy.Core.UnitTests.Services
         #endregion
     }
 }
-
-#pragma warning restore CS8625

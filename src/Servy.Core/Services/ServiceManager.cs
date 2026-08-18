@@ -109,10 +109,10 @@ namespace Servy.Core.Services
             string description,
             string binPath,
             ServiceStartType startType,
-            string username,
+            string? username,
             string? password,
             string? lpDependencies,
-            string displayName
+            string? displayName
             )
         {
             using (var serviceHandle = _windowsServiceApi.OpenService(
