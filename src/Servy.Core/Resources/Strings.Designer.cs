@@ -853,6 +853,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service dependency &apos;{0}&apos; exceeds the maximum length of {1} characters..
+        /// </summary>
+        public static string Msg_ServiceDependencyNameLengthReachedForName {
+            get {
+                return ResourceManager.GetString("Msg_ServiceDependencyNameLengthReachedForName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Service was installed successfully..
         /// </summary>
         public static string Msg_ServiceInstalled {
