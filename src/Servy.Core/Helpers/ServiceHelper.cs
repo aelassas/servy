@@ -1,5 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.Domain;
+using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using System;
@@ -241,7 +243,7 @@ namespace Servy.Core.Helpers
                         int timeout = CalculateStopTimeout(
                             service.StopTimeout,
                             service.PreviousStopTimeout,
-                            service.PreStopTimeoutSeconds ?? 0);
+                            ResolvePreStopTimeout(service));
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // --- ROBUSTNESS: Settle In-Flight Transitional Pending States ---
@@ -387,6 +389,19 @@ namespace Servy.Core.Helpers
 
             return total;
         }
+
+        /// <summary>
+        /// Resolves the pre-stop timeout in seconds for the specified service.
+        /// </summary>
+        /// <param name="service">The service instance to evaluate.</param>
+        /// <returns>
+        /// <c>0</c> if no pre-stop executable path is configured; otherwise, the configured 
+        /// <see cref="Service.PreStopTimeoutSeconds"/> or <see cref="AppConfig.DefaultPreStopTimeoutSeconds"/> as fallback.
+        /// </returns>
+        public static int ResolvePreStopTimeout(ServiceDto service) =>
+            string.IsNullOrEmpty(service?.PreStopExecutablePath)
+                ? 0
+                : (service?.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds);
 
         #endregion
 

@@ -26,10 +26,8 @@ namespace Servy.Core.Validation
             // Invoke the shared security gate using read intent semantics
             var securityCheck = PathSecurityGuard.ValidatePath(path, FileMode.Open, FileAccess.Read, FileShare.Read, out var fileStream);
             if (!securityCheck.IsValid) return securityCheck;
-            if (fileStream == null)
-                return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, Strings.Msg_ImportReadFailure);
 
-            using (fileStream)
+            using (fileStream) // guaranteed non-null when IsValid; see PathSecurityGuard.ValidatePath
             {
                 if (fileStream.Length > AppConfig.MaxConfigFileSizeBytes)
                 {

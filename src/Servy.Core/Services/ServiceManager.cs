@@ -722,7 +722,7 @@ namespace Servy.Core.Services
                         int waitTimeout = ServiceHelper.CalculateStopTimeout(
                             service?.StopTimeout,
                             service?.PreviousStopTimeout,
-                            service?.PreStopTimeoutSeconds ?? 0);
+                            ServiceHelper.ResolvePreStopTimeout(service));
 
                         while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < waitTimeout)
                         {
@@ -892,7 +892,10 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Stopped)
                         return OperationResult.Success();
 
-                    timeout = ServiceHelper.CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout, service.PreStopTimeoutSeconds ?? 0);
+                    timeout = ServiceHelper.CalculateStopTimeout(
+                          service.StopTimeout,
+                          service.PreviousStopTimeout,
+                          ServiceHelper.ResolvePreStopTimeout(service));
 
                     Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Stop();
