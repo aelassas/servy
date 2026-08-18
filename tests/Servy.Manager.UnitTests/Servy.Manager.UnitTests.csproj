@@ -16,7 +16,6 @@
     <Product>Servy.Manager.UnitTests</Product>
   </PropertyGroup>
 
-
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
