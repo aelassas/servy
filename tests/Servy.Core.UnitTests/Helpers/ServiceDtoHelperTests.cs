@@ -246,7 +246,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ApplyDefaultsAndResetIdentity_WhenAllPropertiesAreNull_PopulatesEveryDefault()
         {
-            // Arrange: Explicitly null every nullable property defensively to exercise ApplyDefaults on an incomplete import
+            // Arrange: Explicitly null every nullable property defensively to exercise ApplyDefaultsAndResetIdentity on an incomplete import
             var dto = new ServiceDto
             {
                 StartupType = null,

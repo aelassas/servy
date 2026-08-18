@@ -38,7 +38,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(result);
             Assert.Equal("PartialXmlService", result.Name);
 
-            // Integration check: Verify hydration via ServiceDtoHelper.ApplyDefaults
+            // Integration check: Verify hydration via ServiceDtoHelper.ApplyDefaultsAndResetIdentity
             Assert.Equal(AppConfig.DefaultStartTimeout, result.StartTimeout);
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, result.RunAsLocalSystem);

@@ -48,7 +48,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(result);
             Assert.Equal("PartialService", result.Name);
 
-            // Verify hydration from ServiceDtoHelper.ApplyDefaults
+            // Verify hydration from ServiceDtoHelper.ApplyDefaultsAndResetIdentity
             Assert.Equal(AppConfig.DefaultStartTimeout, result.StartTimeout);
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, result.RunAsLocalSystem);
@@ -68,7 +68,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.NotNull(result);
 
-            // Document baseline safe platform properties enforced by ServiceDtoHelper.ApplyDefaults
+            // Document baseline safe platform properties enforced by ServiceDtoHelper.ApplyDefaultsAndResetIdentity
             Assert.Equal(AppConfig.DefaultStartTimeout, result.StartTimeout);
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, result.RunAsLocalSystem);
