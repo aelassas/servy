@@ -80,6 +80,10 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_HexOutOfBoundsOrZero_ThrowsArgumentOutOfRangeException(string input)
         {
             // Arrange
+            int maxCores = Math.Min(Environment.ProcessorCount, 64);
+            Assert.SkipWhen(input == "0xFFFFFFFFFFFFFFFF" && maxCores >= 64,
+                $"Host has {maxCores} usable cores; 0xFFFFFFFFFFFFFFFF is a valid mask on 64-core hosts.");
+
             string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
 
             // Act & Assert
@@ -93,10 +97,8 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Arrange
             int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64);
-            if (maxAllowedCores >= 64)
-            {
-                Assert.SkipWhen(maxAllowedCores >= 64, $"Host has {maxAllowedCores} usable cores; this case needs fewer than 64."); // Skip if host has full 64 cores
-            }
+            Assert.SkipWhen(maxAllowedCores >= 64,
+                $"Host has {maxAllowedCores} usable cores; this case needs fewer than 64.");
 
             // Mask that sets a bit beyond host max cores
             long outOfBoundsMask = 1L << maxAllowedCores;
