@@ -1368,7 +1368,8 @@ namespace Servy.Service
                         {
                             if (!response.IsSuccessStatusCode)
                             {
-                                _logger?.Debug($"Heartbeat ping to {targetUri} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
+                                var flagText = !string.IsNullOrEmpty(suffix) ? $" (flag: '{suffix}')" : string.Empty;
+                                _logger?.Debug($"Heartbeat ping to {Helpers.ServiceHelper.MaskUrl(targetUri.ToString())}{flagText} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
                             }
                         }
                     }
