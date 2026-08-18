@@ -93,8 +93,8 @@ namespace Servy.Service.Helpers
             "DOTNET_DbgMiniDumpName",          "COMPlus_DbgMiniDumpName",
             "DOTNET_DbgMiniDumpType",          "COMPlus_DbgMiniDumpType",
 
-            // Java Injection - Covers direct java.exe (TOOL_OPTIONS) and common shell-wrapper launchers (OPTS)
-            "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JAVA_OPTS", "JAVA_OPTIONS",
+            // Java Injection - Covers direct java.exe (TOOL_OPTIONS, JDK_JAVA_OPTIONS) and common shell-wrapper launchers (OPTS)
+            "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JDK_JAVA_OPTIONS", "JAVA_OPTS", "JAVA_OPTIONS",
             "CATALINA_OPTS", "CATALINA_JAVA_OPTS",
             "MAVEN_OPTS", "M2_OPTS",
             "GRADLE_OPTS",
@@ -105,6 +105,11 @@ namespace Servy.Service.Helpers
             // Node.js & NPM Injection - Covers direct runtime, npm config wrappers, and rogue CA injection
             "NODE_OPTIONS", "NODE_PATH", "NODE_EXTRA_CA_CERTS",
             "NPM_CONFIG_PREFIX", "NPM_CONFIG_USERCONFIG", "NPM_CONFIG_GLOBALCONFIG",
+
+            // TLS Trust Store & OpenSSL Configuration - Rogue CA injection and provider/engine module loading
+            "OPENSSL_CONF", "OPENSSL_MODULES",
+            "SSL_CERT_FILE", "SSL_CERT_DIR",
+            "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
 
             // Python Injection - Covers interpreters and package manager wrappers
             "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",

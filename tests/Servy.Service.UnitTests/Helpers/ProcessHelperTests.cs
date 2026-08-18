@@ -4,7 +4,6 @@ using Servy.Core.Logging;
 using Servy.Core.RegexWrapper;
 using Servy.Service.Helpers;
 using System.Text.RegularExpressions;
-using Match = System.Text.RegularExpressions.Match;
 
 namespace Servy.Service.UnitTests.Helpers
 {
