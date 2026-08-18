@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Resources;
 using System;
 using System.IO;
@@ -162,6 +163,71 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(result);
         }
 
+        #region EnsureDirectoryExists Tests
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void EnsureDirectoryExists_NullOrEmpty_DoesNotThrow(string path)
+        {
+            // Act & Assert
+            var exception = Record.Exception(() => Helper.EnsureDirectoryExists(path));
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void EnsureDirectoryExists_ValidPath_CreatesDirectory()
+        {
+            // Arrange
+            string targetDir = Path.Combine(_testRoot, "EnsureDirectoryFolder");
+            string dummyFilePath = Path.Combine(targetDir, "dummy.log");
+
+            Assert.False(Directory.Exists(targetDir));
+
+            // Act
+            Helper.EnsureDirectoryExists(dummyFilePath);
+
+            // Assert
+            Assert.True(Directory.Exists(targetDir), $"Directory was not created at target path: '{targetDir}'");
+        }
+
+        #endregion
+
+        #region GetUniqueTempPath Tests
+
+        [Fact]
+        public void GetUniqueTempPath_ReturnsUniquePathWithGivenPrefixAndTmpExtension()
+        {
+            // Arrange
+            string basePath = Path.Combine(_testRoot, "Servy_Test");
+
+            // Act
+            string path1 = Helper.GetUniqueTempPath(basePath);
+            string path2 = Helper.GetUniqueTempPath(basePath);
+
+            // Assert
+            Assert.NotNull(path1);
+            Assert.NotNull(path2);
+            Assert.NotEqual(path1, path2);
+
+            // Verify it starts with the provided base path and ends with .tmp
+            Assert.StartsWith(basePath, path1, StringComparison.OrdinalIgnoreCase);
+            Assert.EndsWith(".tmp", path1, StringComparison.OrdinalIgnoreCase);
+
+            // Verify the generated format: basepath.<16-char-guid-hash>.tmp
+            string fileName = Path.GetFileName(path1);
+            string baseFileName = Path.GetFileName(basePath);
+            string[] parts = fileName.Split('.');
+
+            Assert.Equal(3, parts.Length); // [Servy_Test, <hash>, tmp]
+            Assert.Equal(baseFileName, parts[0], StringComparer.OrdinalIgnoreCase);
+            Assert.Equal(16, parts[1].Length);
+            Assert.Equal("tmp", parts[2], StringComparer.OrdinalIgnoreCase);
+        }
+
+        #endregion
+
         [Theory]
         [InlineData(null, "\"\"")]                  // null input
         [InlineData("", "\"\"")]                    // empty string
@@ -204,12 +270,12 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Theory]
         [InlineData(null, "")]                               // Null input
-        [InlineData("", "")]                                 // Empty string
-        [InlineData("abc", "abc")]                           // Simple text, nothing to escape
-        [InlineData(@"C:\Path", @"C:\Path")]              // Backslashes not before quotes - unchanged
+        [InlineData("", "")]                                  // Empty string
+        [InlineData("abc", "abc")]                            // Simple text, nothing to escape
+        [InlineData(@"C:\Path", @"C:\Path")]               // Backslashes not before quotes - unchanged
         [InlineData(@"C:\Path\""File", @"C:\Path\\""File")] // Backslash immediately before quote - doubled
         [InlineData(@"NoQuotesHere\", @"NoQuotesHere\")] // Trailing backslash - unchanged
-        [InlineData(@"\""", @"\\""")]                     // Single backslash + quote - doubled before quote
+        [InlineData(@"\""", @"\\""")]                      // Single backslash + quote - doubled before quote
         [InlineData(@"\\\""", @"\\\\\\""")]               // Multiple backslashes before quote
         [InlineData(@"Mix\ed\\\""Case", @"Mix\ed\\\\\\""Case")] // Mixed case: normal + before quote
         [InlineData("abc\0def", @"abc\0def")]           // Contains null char -> replaced with literal "\0"
@@ -316,6 +382,24 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
+        /// Covers Branch 3: serviceName.Length > AppConfig.MaxServiceNameLength
+        /// </summary>
+        [Fact]
+        public void IsServiceNameValid_ExceedsMaxLength_ReturnsFalseWithFormattedMessage()
+        {
+            // Arrange
+            string longName = new string('a', AppConfig.MaxServiceNameLength + 1);
+            string expectedMessage = string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength);
+
+            // Act
+            var (isValid, errorMessage) = Helper.IsServiceNameValid(longName);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(expectedMessage, errorMessage);
+        }
+
+        /// <summary>
         /// Covers Branch 3a: serviceName.IndexOfAny(InvalidServiceChars) >= 0
         /// </summary>
         [Theory]
@@ -339,12 +423,14 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers Branch 3b: serviceName.Any(c => char.IsControl(c))
+        /// Covers Branch 3b: serviceName.Any(c => char.IsControl(c) || IsDisallowedNameChar(c))
         /// </summary>
         [Theory]
         [InlineData("My\nService")] // Newline
         [InlineData("My\tService")] // Tab
         [InlineData("MyService\u0000")] // Null character
+        [InlineData("My\u200BService")] // Unicode Format Character (Zero-Width Space, Category Cf)
+        [InlineData("My\u2028Service")] // Unicode Line Separator (Category Zl)
         public void IsServiceNameValid_ControlCharacters_ReturnsInvalidCharError(string input)
         {
             // Act
@@ -448,6 +534,8 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.True(isValid);
             Assert.Equal(string.Empty, error);
         }
+
+
 
         [Theory]
         [InlineData(null)]

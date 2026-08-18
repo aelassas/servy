@@ -176,7 +176,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HydrateDefaults_WhenAllPropertiesAreNull_PopulatesDefaultsWithoutResettingIdentity()
         {
-            // Arrange: Create a DTO where all nullable properties are null
+            // Arrange: Explicitly null every nullable property defensively to exercise HydrateDefaults on an incomplete import
             var dto = new ServiceDto
             {
                 StartupType = null,
@@ -197,6 +197,8 @@ namespace Servy.Core.UnitTests.Helpers
                 HeartbeatInterval = null,
                 MaxFailedChecks = null,
                 MaxRestartAttempts = null,
+                HeartbeatUrlTimeoutSeconds = null,
+                EnableHeartbeatUrlFlags = null,
                 PreLaunchTimeoutSeconds = null,
                 PreLaunchRetryAttempts = null,
                 PreLaunchIgnoreFailure = null,
@@ -246,9 +248,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ApplyDefaultsAndResetIdentity_WhenAllPropertiesAreNull_PopulatesEveryDefault()
         {
-            // Arrange: Create a DTO where all nullable properties are null
-            // Note: ServiceDto has field initializers, so explicitly null
-            // every nullable property to exercise ApplyDefaults on an incomplete import.
+            // Arrange: Explicitly null every nullable property defensively to exercise ApplyDefaults on an incomplete import
             var dto = new ServiceDto
             {
                 StartupType = null,
@@ -267,6 +267,8 @@ namespace Servy.Core.UnitTests.Helpers
                 HeartbeatInterval = null,
                 MaxFailedChecks = null,
                 MaxRestartAttempts = null,
+                HeartbeatUrlTimeoutSeconds = null,
+                EnableHeartbeatUrlFlags = null,
                 PreLaunchTimeoutSeconds = null,
                 PreLaunchRetryAttempts = null,
                 PreLaunchIgnoreFailure = null,
