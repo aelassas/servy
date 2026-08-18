@@ -172,6 +172,7 @@ namespace Servy.Manager.UnitTests.Services
                 _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                Assert.False(_refreshCalled);
             }
             finally
             {
@@ -282,6 +283,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Never);
+            Assert.False(_refreshCalled);
         }
 
         [Fact]
@@ -308,6 +310,7 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_FailedToLoadJson, UiAppConfig.Caption), Times.Once);
                 _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                Assert.False(_refreshCalled);
             }
             finally
             {
@@ -339,6 +342,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                Assert.False(_refreshCalled);
             }
             finally
             {
@@ -521,12 +525,57 @@ namespace Servy.Manager.UnitTests.Services
                 Assert.True(capturedPsi.UseShellExecute);
 
                 // Argument Validation: Verify the skip-splash flag and quoted service name arguments
-                Assert.Contains("\"false\"", capturedPsi.Arguments);
-                Assert.Contains(Helper.Quote(service.Name), capturedPsi.Arguments);
+                Assert.Equal($"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)}", capturedPsi.Arguments.Trim());
             }
             finally
             {
                 // 4. Clean up our active dummy testing file artifact safely
+                if (File.Exists(tempExe))
+                {
+                    try { File.Delete(tempExe); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_ForceSoftwareRendering_AppendsRenderingFlagAfterServiceName()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+
+            var baseTmpFile = Path.GetTempFileName();
+            var tempExe = Path.ChangeExtension(baseTmpFile, ".exe");
+
+            try
+            {
+                if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
+                File.WriteAllText(tempExe, "dummy");
+
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe);
+                _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(true);
+
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = service.Name });
+
+                ProcessStartInfo? capturedPsi = null;
+
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
+                    .Returns((Process?)null);
+
+                // Act
+                await sut.ConfigureServiceAsync(service, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.NotNull(capturedPsi);
+                Assert.Equal(
+                    $"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)} {AppConfig.ForceSoftwareRenderingArg}",
+                    capturedPsi.Arguments.Trim());
+            }
+            finally
+            {
                 if (File.Exists(tempExe))
                 {
                     try { File.Delete(tempExe); } catch { /* fail-silent */ }
@@ -553,8 +602,8 @@ namespace Servy.Manager.UnitTests.Services
         public async Task ConfigureServiceAsync_NullServiceParameter_LaunchesAppDirectlyWithoutArguments()
         {
             // Arrange
-            // Create an empty, non-executable tracking file context to pass the File.Exists guard
-            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            // Create an empty, non-executable tracking file context in temp directory to pass the File.Exists guard
+            string tempTrackingFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.exe");
 
             try
             {
@@ -601,7 +650,7 @@ namespace Servy.Manager.UnitTests.Services
                 // Delete temporary executable path on test completion
                 if (File.Exists(tempTrackingFile))
                 {
-                    File.Delete(tempTrackingFile);
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
                 }
             }
         }
@@ -1167,9 +1216,8 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "XmlExportService" };
 
-            // Generate a guaranteed unique filename instead of a fixed name to avoid test collisions
-            var uniqueBaseName = Path.GetFileNameWithoutExtension(Path.GetTempFileName());
-            var targetPath = Path.Combine(Path.GetTempPath(), $"{uniqueBaseName}_export_test.xml");
+            // Generate a guaranteed unique filename without creating a zero-byte file on disk
+            var targetPath = Path.Combine(Path.GetTempPath(), $"{Path.GetRandomFileName()}_export_test.xml");
             var sampleDto = new ServiceDto { Name = service.Name, ExecutablePath = "test.exe" };
 
             _fileDialogServiceMock.Setup(f => f.SaveXml(Strings.SaveFileDialog_XmlTitle))
@@ -1259,11 +1307,14 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
 
-            // Act & Assert
+            // Act
             await sut.ExportServiceToXmlAsync(null, TestContext.Current.CancellationToken);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             await sut.ExportServiceToJsonAsync(null, TestContext.Current.CancellationToken);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+
+            // Assert
+            _messageBoxServiceMock.VerifyNoOtherCalls();
+            _fileDialogServiceMock.VerifyNoOtherCalls();
+            _serviceRepositoryMock.VerifyNoOtherCalls();
         }
 
         #endregion
