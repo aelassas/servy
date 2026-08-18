@@ -95,8 +95,6 @@ namespace Servy.Manager.UnitTests.Models
             string actualUri = logEntry.LevelIcon;
 
             // Assert
-            // Validate that the string suffix resolves to the correct filename payload
-            // without hardcoding or binding against the absolute WPF application pack infrastructure schema.
             Assert.NotNull(actualUri);
             Assert.StartsWith("pack://application:", actualUri, StringComparison.OrdinalIgnoreCase);
             Assert.EndsWith(expectedIconFile, actualUri, StringComparison.OrdinalIgnoreCase);
