@@ -84,7 +84,7 @@ namespace Servy.Service.UnitTests
             // Verify Placement 1: Failure threshold reached emits fail-flag ping
             var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
             Assert.Same(pingLogged.Task, completedTask);
-            Assert.Contains("fail-", await pingLogged.Task);
+            Assert.Contains("(flag: fail)", await pingLogged.Task);
         }
 
         [Theory]
@@ -164,7 +164,7 @@ namespace Servy.Service.UnitTests
             // Verify Placement 2: Healthy again after failures emits start-flag ping
             var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
             Assert.Same(pingLogged.Task, completedTask);
-            Assert.Contains("start", await pingLogged.Task);
+            Assert.Contains("(flag: start)", await pingLogged.Task);
         }
 
         [Fact]
@@ -195,7 +195,7 @@ namespace Servy.Service.UnitTests
             // Verify Placement 3: Routine healthy tick emits empty-flag ping
             var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
             Assert.Same(pingLogged.Task, completedTask);
-            Assert.Contains("rout", await pingLogged.Task);
+            Assert.Contains("(flag: routine)", await pingLogged.Task);
         }
 
         [Fact]
