@@ -1416,7 +1416,8 @@ namespace Servy.Service
                         targetUri = new Uri(baseStr + suffix.TrimStart('/'));
                     }
 
-                    _logger?.Debug($"Emitting heartbeat ping to: {Helpers.ServiceHelper.MaskUrl(targetUri.ToString())}");
+                    var flagLabel = string.IsNullOrEmpty(suffix) ? "routine" : suffix.TrimStart('/');
+                    _logger?.Debug($"Emitting heartbeat ping to: {Helpers.ServiceHelper.MaskUrl(targetUri.ToString())} (flag: {flagLabel})");
 
                     using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)))
                     {
@@ -1425,8 +1426,7 @@ namespace Servy.Service
                         {
                             if (!response.IsSuccessStatusCode)
                             {
-                                var flagText = !string.IsNullOrEmpty(suffix) ? $" (flag: '{suffix}')" : string.Empty;
-                                _logger?.Debug($"Heartbeat ping to {Helpers.ServiceHelper.MaskUrl(targetUri.ToString())}{flagText} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
+                                _logger?.Debug($"Heartbeat ping to {Helpers.ServiceHelper.MaskUrl(targetUri.ToString())} (flag: {flagLabel}) returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
                             }
                         }
                     }
