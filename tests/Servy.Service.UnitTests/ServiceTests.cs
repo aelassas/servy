@@ -318,120 +318,110 @@ namespace Servy.Service.UnitTests
         public void SetProcessPriority_ValidPriority_SetsPriorityAndLogsInfo()
         {
             // Arrange
-            using (var service = _ctx.Build())
-            {
-                service.SetChildProcess(_mockProcess.Object);
-                _mockProcess.SetupProperty(p => p.PriorityClass);
+            var service = _ctx.Build();
+            service.SetChildProcess(_mockProcess.Object);
+            _mockProcess.SetupProperty(p => p.PriorityClass);
 
-                // Act
-                service.InvokeSetProcessPriority(ProcessPriorityClass.High);
+            // Act
+            service.InvokeSetProcessPriority(ProcessPriorityClass.High);
 
-                // Assert
-                _mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
-                _ctx.Logger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High")), It.IsAny<Exception>()), Times.Once);
-            }
+            // Assert
+            _mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
         public void SetProcessPriority_ExceptionThrown_LogsWarning()
         {
             // Arrange
-            using (var service = _ctx.Build())
-            {
-                service.SetChildProcess(_mockProcess.Object);
-                _mockProcess.SetupSet(p => p.PriorityClass = It.IsAny<ProcessPriorityClass>())
-                           .Throws(new Exception("Priority error"));
+            var service = _ctx.Build();
+            service.SetChildProcess(_mockProcess.Object);
+            _mockProcess.SetupSet(p => p.PriorityClass = It.IsAny<ProcessPriorityClass>())
+                       .Throws(new Exception("Priority error"));
 
-                // Act
-                service.InvokeSetProcessPriority(ProcessPriorityClass.High);
+            // Act
+            service.InvokeSetProcessPriority(ProcessPriorityClass.High);
 
-                // Assert
-                _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
-            }
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
         public void HandleLogWriters_ValidPaths_CreatesStreamWriters()
         {
             // Arrange
-            using (var service = _ctx.Build())
+            var service = _ctx.Build();
+            var options = new StartOptions
             {
-                var options = new StartOptions
-                {
-                    StdoutPath = "valid_stdout.log",
-                    StderrPath = "valid_stderr.log",
-                    RotationSizeInBytes = 12345,
-                    UseLocalTimeForRotation = true,
-                };
+                StdoutPath = "valid_stdout.log",
+                StderrPath = "valid_stderr.log",
+                RotationSizeInBytes = 12345,
+                UseLocalTimeForRotation = true,
+            };
 
-                var mockStdOutWriter = new Mock<IStreamWriter>();
-                var mockStdErrWriter = new Mock<IStreamWriter>();
+            var mockStdOutWriter = new Mock<IStreamWriter>();
+            var mockStdErrWriter = new Mock<IStreamWriter>();
 
-                _ctx.StreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
-                    .Returns(mockStdOutWriter.Object);
+            _ctx.StreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+                .Returns(mockStdOutWriter.Object);
 
-                _ctx.StreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
-                    .Returns(mockStdErrWriter.Object);
+            _ctx.StreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+                .Returns(mockStdErrWriter.Object);
 
-                _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
+            _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
-                // Act
-                service.InvokeHandleLogWriters(options);
+            // Act
+            service.InvokeHandleLogWriters(options);
 
-                // Assert
-                _ctx.StreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-                _ctx.StreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            // Assert
+            _ctx.StreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            _ctx.StreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
 
-                // Check no errors logged
-                _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
-            }
+            // Check no errors logged
+            _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         [Fact]
         public void HandleLogWriters_InvalidPaths_LogsErrors()
         {
             // Arrange
-            using (var service = _ctx.Build())
+            var service = _ctx.Build();
+            var options = new StartOptions
             {
-                var options = new StartOptions
-                {
-                    StdoutPath = "invalid_stdout.log",
-                    StderrPath = "invalid_stderr.log",
-                    RotationSizeInBytes = 12345
-                };
+                StdoutPath = "invalid_stdout.log",
+                StderrPath = "invalid_stderr.log",
+                RotationSizeInBytes = 12345
+            };
 
-                _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
+            _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
 
-                // Act
-                service.InvokeHandleLogWriters(options);
+            // Act
+            service.InvokeHandleLogWriters(options);
 
-                // Assert
-                _ctx.StreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
-                _ctx.Logger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
-            }
+            // Assert
+            _ctx.StreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
+            _ctx.Logger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
         }
 
         [Fact]
         public void HandleLogWriters_EmptyPaths_DoesNotCreateWritersOrLog()
         {
             // Arrange
-            using (var service = _ctx.Build())
+            var service = _ctx.Build();
+            var options = new StartOptions
             {
-                var options = new StartOptions
-                {
-                    StdoutPath = "",
-                    StderrPath = string.Empty,
-                    RotationSizeInBytes = 12345,
-                    MaxRotations = 5,
-                };
+                StdoutPath = "",
+                StderrPath = string.Empty,
+                RotationSizeInBytes = 12345,
+                MaxRotations = 5,
+            };
 
-                // Act
-                service.InvokeHandleLogWriters(options);
+            // Act
+            service.InvokeHandleLogWriters(options);
 
-                // Assert
-                _ctx.StreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
-                _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
-            }
+            // Assert
+            _ctx.StreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
+            _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         #region Null, Empty, and Standard Sanitization Tests
@@ -653,15 +643,16 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = _ctx.BuildService(repositoryMock.Object);
+            using (var service = _ctx.BuildService(repositoryMock.Object))
+            {
+                TestReflection.SetField(service, "_serviceName", "   ");
 
-            TestReflection.SetField(service, "_serviceName", "   ");
+                // Act
+                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true });
 
-            // Act
-            TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true });
-
-            // Assert
-            repositoryMock.Verify(r => r.GetByName(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+                // Assert
+                repositoryMock.Verify(r => r.GetByName(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+            }
         }
 
         [Fact]
@@ -669,18 +660,19 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = _ctx.BuildService(repositoryMock.Object);
+            using (var service = _ctx.BuildService(repositoryMock.Object))
+            {
+                TestReflection.SetField(service, "_serviceName", "ServyTest");
+                repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns((ServiceDto)null);
 
-            TestReflection.SetField(service, "_serviceName", "ServyTest");
-            repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns((ServiceDto)null);
+                // Act
+                var exception = Record.Exception(() =>
+                    TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true }));
 
-            // Act
-            var exception = Record.Exception(() =>
-                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true }));
-
-            // Assert
-            Assert.Null(exception);
-            repositoryMock.Verify(r => r.Update(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never);
+                // Assert
+                Assert.Null(exception);
+                repositoryMock.Verify(r => r.Update(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never);
+            }
         }
 
         [Theory]
@@ -690,40 +682,41 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = _ctx.BuildService(repositoryMock.Object);
-
-            TestReflection.SetField(service, "_serviceName", "ServyTest");
-
-            // Mock out a test configuration options block
-            var options = new StartOptions
+            using (var service = _ctx.BuildService(repositoryMock.Object))
             {
-                StopTimeoutInSeconds = 30,
-                StdoutPath = "C:\\stdout.log",
-                StderrPath = "C:\\stderr.log"
-            };
-            TestReflection.SetField(service, "_options", options);
+                TestReflection.SetField(service, "_serviceName", "ServyTest");
 
-            var testDto = new ServiceDto { Name = "ServyTest" };
-            repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
+                // Mock out a test configuration options block
+                var options = new StartOptions
+                {
+                    StopTimeoutInSeconds = 30,
+                    StdoutPath = "C:\\stdout.log",
+                    StderrPath = "C:\\stderr.log"
+                };
+                TestReflection.SetField(service, "_options", options);
 
-            // Act
-            TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 9999, setPreviousStopTimeout });
+                var testDto = new ServiceDto { Name = "ServyTest" };
+                repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
 
-            // Assert
-            Assert.Equal(9999, testDto.Pid);
-            Assert.Equal("C:\\stdout.log", testDto.ActiveStdoutPath);
-            Assert.Equal("C:\\stderr.log", testDto.ActiveStderrPath);
+                // Act
+                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 9999, setPreviousStopTimeout });
 
-            if (setPreviousStopTimeout)
-            {
-                Assert.Equal(30, testDto.PreviousStopTimeout);
+                // Assert
+                Assert.Equal(9999, testDto.Pid);
+                Assert.Equal("C:\\stdout.log", testDto.ActiveStdoutPath);
+                Assert.Equal("C:\\stderr.log", testDto.ActiveStderrPath);
+
+                if (setPreviousStopTimeout)
+                {
+                    Assert.Equal(30, testDto.PreviousStopTimeout);
+                }
+                else
+                {
+                    Assert.Null(testDto.PreviousStopTimeout);
+                }
+
+                repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
             }
-            else
-            {
-                Assert.Null(testDto.PreviousStopTimeout);
-            }
-
-            repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
         }
 
         [Fact]
@@ -731,28 +724,29 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var service = _ctx.BuildService(repositoryMock.Object);
-
-            TestReflection.SetField(service, "_serviceName", "ServyTest");
-
-            var testDto = new ServiceDto
+            using (var service = _ctx.BuildService(repositoryMock.Object))
             {
-                Name = "ServyTest",
-                Pid = 5555,
-                ActiveStdoutPath = "old_out.log",
-                ActiveStderrPath = "old_err.log"
-            };
-            repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
+                TestReflection.SetField(service, "_serviceName", "ServyTest");
 
-            // Act
-            TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { null, false });
+                var testDto = new ServiceDto
+                {
+                    Name = "ServyTest",
+                    Pid = 5555,
+                    ActiveStdoutPath = "old_out.log",
+                    ActiveStderrPath = "old_err.log"
+                };
+                repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
 
-            // Assert
-            Assert.Null(testDto.Pid);
-            Assert.Null(testDto.ActiveStdoutPath);
-            Assert.Null(testDto.ActiveStderrPath);
+                // Act
+                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { null, false });
 
-            repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
+                // Assert
+                Assert.Null(testDto.Pid);
+                Assert.Null(testDto.ActiveStdoutPath);
+                Assert.Null(testDto.ActiveStderrPath);
+
+                repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
+            }
         }
 
         [Fact]
@@ -761,24 +755,25 @@ namespace Servy.Service.UnitTests
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
             var loggerMock = new Mock<IServyLogger>();
-            var service = _ctx.BuildService(repositoryMock.Object, loggerMock.Object);
+            using (var service = _ctx.BuildService(repositoryMock.Object, loggerMock.Object))
+            {
+                string serviceName = "ServyTest";
+                TestReflection.SetField(service, "_serviceName", serviceName);
 
-            string serviceName = "ServyTest";
-            TestReflection.SetField(service, "_serviceName", serviceName);
+                var repositoryException = new InvalidOperationException("Database deadlock or lock failure");
+                repositoryMock.Setup(r => r.GetByName(serviceName, true)).Throws(repositoryException);
 
-            var repositoryException = new InvalidOperationException("Database deadlock or lock failure");
-            repositoryMock.Setup(r => r.GetByName(serviceName, true)).Throws(repositoryException);
+                // Act
+                var testRunException = Record.Exception(() =>
+                    TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true }));
 
-            // Act
-            var testRunException = Record.Exception(() =>
-                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true }));
-
-            // Assert
-            Assert.Null(testRunException); // Confirms the exception branch is swallowed inside the try-catch block
-            loggerMock.Verify(l => l.Error(
-                It.Is<string>(msg => msg.Contains($"Failed to persist PID 1234 for service '{serviceName}'.")),
-                repositoryException),
-                Times.Once);
+                // Assert
+                Assert.Null(testRunException); // Confirms the exception branch is swallowed inside the try-catch block
+                loggerMock.Verify(l => l.Error(
+                    It.Is<string>(msg => msg.Contains($"Failed to persist PID 1234 for service '{serviceName}'.")),
+                    repositoryException),
+                    Times.Once);
+            }
         }
 
         #endregion
@@ -790,60 +785,61 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
-            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
-
-            // Bind HttpListener with retry logic on ephemeral ports to prevent TOCTOU collisions in CI
-            var (listener, baseAddress) = CreateAndStartHttpListener();
-
-            var requestReceivedTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            _ = Task.Run(async () =>
+            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
             {
+                // Bind HttpListener with retry logic on ephemeral ports to prevent TOCTOU collisions in CI
+                var (listener, baseAddress) = CreateAndStartHttpListener();
+
+                var requestReceivedTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var context = await listener.GetContextAsync();
+                        requestReceivedTcs.TrySetResult(context.Request.Url?.AbsolutePath ?? string.Empty);
+                        context.Response.StatusCode = (int)HttpStatusCode.OK;
+                        context.Response.Close();
+                    }
+                    catch
+                    {
+                        // Listener stopped or disposed during test cleanup
+                    }
+                }, CancellationToken.None);
+
                 try
                 {
-                    var context = await listener.GetContextAsync();
-                    requestReceivedTcs.TrySetResult(context.Request.Url?.AbsolutePath ?? string.Empty);
-                    context.Response.StatusCode = (int)HttpStatusCode.OK;
-                    context.Response.Close();
+                    var mockOptions = new StartOptions
+                    {
+                        EnableHealthMonitoring = true,   // Required to pass the first guard check
+                        EnableHeartbeatUrlFlags = true   // Required to allow suffix appending
+                    };
+                    TestReflection.SetField(serviceInstance, "_options", mockOptions);
+
+                    object[] parameters = new object[] { $"{baseAddress}test-uuid", "/start", 2 };
+
+                    // Act
+                    var watch = Stopwatch.StartNew();
+                    TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters);
+                    watch.Stop();
+
+                    // Assert 1: The method returned immediately without blocking the primary thread
+                    Assert.True(watch.ElapsedMilliseconds < 1000, $"Method blocked primary execution thread for {watch.ElapsedMilliseconds}ms");
+
+                    // Assert 2: The background task actually fired the HTTP request and correctly appended the suffix path
+                    var timeoutTask = Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None);
+                    var completedTask = await Task.WhenAny(requestReceivedTcs.Task, timeoutTask);
+
+                    Assert.True(completedTask == requestReceivedTcs.Task, "Heartbeat ping request timed out on background thread");
+
+                    string receivedPath = await requestReceivedTcs.Task;
+                    Assert.Equal("/test-uuid/start", receivedPath);
                 }
-                catch
+                finally
                 {
-                    // Listener stopped or disposed during test cleanup
+                    try { listener.Stop(); } catch { /* Ignore cleanup errors */ }
+                    try { listener.Close(); } catch { /* Ignore cleanup errors */ }
                 }
-            }, CancellationToken.None);
-
-            try
-            {
-                var mockOptions = new StartOptions
-                {
-                    EnableHealthMonitoring = true,   // Required to pass the first guard check
-                    EnableHeartbeatUrlFlags = true   // Required to allow suffix appending
-                };
-                TestReflection.SetField(serviceInstance, "_options", mockOptions);
-
-                object[] parameters = new object[] { $"{baseAddress}test-uuid", "/start", 2 };
-
-                // Act
-                var watch = Stopwatch.StartNew();
-                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters);
-                watch.Stop();
-
-                // Assert 1: The method returned immediately without blocking the primary thread
-                Assert.True(watch.ElapsedMilliseconds < 1000, $"Method blocked primary execution thread for {watch.ElapsedMilliseconds}ms");
-
-                // Assert 2: The background task actually fired the HTTP request and correctly appended the suffix path
-                var timeoutTask = Task.Delay(5000, CancellationToken.None);
-                var completedTask = await Task.WhenAny(requestReceivedTcs.Task, timeoutTask);
-
-                Assert.True(completedTask == requestReceivedTcs.Task, "Heartbeat ping request timed out on background thread");
-
-                string receivedPath = await requestReceivedTcs.Task;
-                Assert.Equal("/test-uuid/start", receivedPath);
-            }
-            finally
-            {
-                try { listener.Stop(); } catch { /* Ignore cleanup errors */ }
-                try { listener.Close(); } catch { /* Ignore cleanup errors */ }
             }
         }
 
@@ -856,22 +852,23 @@ namespace Servy.Service.UnitTests
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
             var loggerMock = new Mock<IServyLogger>();
-            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
-
-            var mockOptions = new StartOptions
+            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
             {
-                EnableHealthMonitoring = true,
-                EnableHeartbeatUrlFlags = true
-            };
-            TestReflection.SetField(serviceInstance, "_options", mockOptions);
-            TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
+                var mockOptions = new StartOptions
+                {
+                    EnableHealthMonitoring = true,
+                    EnableHeartbeatUrlFlags = true
+                };
+                TestReflection.SetField(serviceInstance, "_options", mockOptions);
+                TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
 
-            // Act
-            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { invalidUrl, "/start", 2 });
-            await Task.Delay(100, CancellationToken.None);
+                // Act
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { invalidUrl, "/start", 2 });
+                await Task.Delay(100, CancellationToken.None);
 
-            // Assert
-            loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                // Assert
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+            }
         }
 
         [Fact]
@@ -880,22 +877,23 @@ namespace Servy.Service.UnitTests
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
             var loggerMock = new Mock<IServyLogger>();
-            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
-
-            var mockOptions = new StartOptions
+            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
             {
-                EnableHealthMonitoring = false,
-                EnableHeartbeatUrlFlags = true
-            };
-            TestReflection.SetField(serviceInstance, "_options", mockOptions);
-            TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
+                var mockOptions = new StartOptions
+                {
+                    EnableHealthMonitoring = false,
+                    EnableHeartbeatUrlFlags = true
+                };
+                TestReflection.SetField(serviceInstance, "_options", mockOptions);
+                TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
 
-            // Act
-            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
-            await Task.Delay(100, CancellationToken.None);
+                // Act
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
+                await Task.Delay(100, CancellationToken.None);
 
-            // Assert
-            loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                // Assert
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+            }
         }
 
         [Fact]
@@ -904,22 +902,23 @@ namespace Servy.Service.UnitTests
             // Arrange
             var repositoryMock = new Mock<IServiceRepository>();
             var loggerMock = new Mock<IServyLogger>();
-            var serviceInstance = _ctx.BuildService(repositoryMock.Object);
-
-            var mockOptions = new StartOptions
+            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
             {
-                EnableHealthMonitoring = true,
-                EnableHeartbeatUrlFlags = false
-            };
-            TestReflection.SetField(serviceInstance, "_options", mockOptions);
-            TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
+                var mockOptions = new StartOptions
+                {
+                    EnableHealthMonitoring = true,
+                    EnableHeartbeatUrlFlags = false
+                };
+                TestReflection.SetField(serviceInstance, "_options", mockOptions);
+                TestReflection.SetField(serviceInstance, "_logger", loggerMock.Object);
 
-            // Act
-            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
-            await Task.Delay(100, CancellationToken.None);
+                // Act
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
+                await Task.Delay(100, CancellationToken.None);
 
-            // Assert
-            loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                // Assert
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+            }
         }
 
         private static (HttpListener listener, string baseAddress) CreateAndStartHttpListener()
@@ -1194,8 +1193,8 @@ namespace Servy.Service.UnitTests
             TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
             // Assert
-            // Await the completion signal deterministically up to a generous 2-second timeout to accommodate slow CI runners.
-            await Task.WhenAny(recoveryLoggedSignal.Task, Task.Delay(2000, CancellationToken.None));
+            // Await the completion signal deterministically, bounded by the shared CI timeout budget.
+            await Task.WhenAny(recoveryLoggedSignal.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
 
             Assert.True(recoveryLoggedSignal.Task.IsCompleted,
                 "The internal recovery sequence was not scheduled or executed within the time limit.");
@@ -1318,7 +1317,7 @@ namespace Servy.Service.UnitTests
         /// </summary>
         public void Dispose()
         {
-            _service?.Dispose();
+            _ctx.Dispose();
         }
 
         #endregion

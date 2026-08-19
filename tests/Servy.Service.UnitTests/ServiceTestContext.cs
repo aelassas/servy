@@ -7,14 +7,19 @@ using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
+using System;
+using System.Collections.Generic;
 
 namespace Servy.Service.UnitTests
 {
     /// <summary>
     /// Holds the mocked dependencies of <see cref="TestableService"/> and builds instances wired to them.
+    /// Manages lifetime disposal of all built services.
     /// </summary>
-    public class ServiceTestContext
+    public class ServiceTestContext : IDisposable
     {
+        private readonly List<IDisposable> _builtServices = new List<IDisposable>();
+
         public Mock<IServyLogger> Logger { get; set; } = new Mock<IServyLogger>();
         public Mock<IServiceHelper> Helper { get; set; } = new Mock<IServiceHelper>();
         public Mock<IStreamWriterFactory> StreamWriterFactory { get; set; } = new Mock<IStreamWriterFactory>();
@@ -35,7 +40,7 @@ namespace Servy.Service.UnitTests
         /// </summary>
         public TestableService Build()
         {
-            return new TestableService(
+            var service = new TestableService(
                 Helper.Object,
                 Logger.Object,
                 StreamWriterFactory.Object,
@@ -45,6 +50,9 @@ namespace Servy.Service.UnitTests
                 ServiceRepository.Object,
                 ProcessKiller.Object
             );
+
+            _builtServices.Add(service);
+            return service;
         }
 
         /// <summary>
@@ -52,7 +60,7 @@ namespace Servy.Service.UnitTests
         /// </summary>
         public Service BuildService(IServiceRepository serviceRepository = null, IServyLogger logger = null)
         {
-            return new Service(
+            var service = new Service(
                 Helper.Object,
                 logger ?? Logger.Object,
                 StreamWriterFactory.Object,
@@ -62,6 +70,9 @@ namespace Servy.Service.UnitTests
                 serviceRepository ?? ServiceRepository.Object,
                 ProcessKiller.Object
             );
+
+            _builtServices.Add(service);
+            return service;
         }
 
         /// <summary>
@@ -78,5 +89,25 @@ namespace Servy.Service.UnitTests
             HeartbeatUrlTimeoutInSeconds = 10,
             HeartbeatIntervalInSeconds = 30
         };
+
+        /// <summary>
+        /// Performs best-effort disposal of all SUT instances created via <see cref="Build"/> or <see cref="BuildService"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (var service in _builtServices)
+            {
+                try
+                {
+                    service?.Dispose();
+                }
+                catch
+                {
+                    // Teardown is best-effort to prevent a failing SUT from blocking remaining disposals
+                }
+            }
+
+            _builtServices.Clear();
+        }
     }
 }
