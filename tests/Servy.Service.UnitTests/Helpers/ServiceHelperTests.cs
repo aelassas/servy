@@ -769,7 +769,7 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void MaskUrl_NonAbsoluteInput_ShouldReturnEmptyString(string? inputUrl)
+        public void MaskUrl_NullOrWhitespaceInput_ShouldReturnEmptyString(string? inputUrl)
         {
             // Act
             var result = ServiceHelper.MaskUrl(inputUrl);
@@ -781,7 +781,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Theory]
         [InlineData("not-a-valid-url")]
         [InlineData("/relative/path/only")]
-        public void MaskUrl_InvalidInput_ShouldReturnInvalidUrlString(string? inputUrl)
+        public void MaskUrl_NonAbsoluteInput_ShouldReturnInvalidUrlString(string? inputUrl)
         {
             // Act
             var result = ServiceHelper.MaskUrl(inputUrl);
