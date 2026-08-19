@@ -20,6 +20,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.True(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.None, result.FailureKind);
             Assert.NotNull(result.ValidPath);
             Assert.Equal(filePath, result.ValidPath!.ResolvedPath);
             Assert.Equal(expectedContent, content);
@@ -37,9 +38,10 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
             Assert.Null(content);
             Assert.NotNull(result.ErrorMessage);
-            Assert.Contains(".txt", result.ErrorMessage);
+            Assert.Equal(string.Format(Strings.Msg_SecurityInvalidFileType, ".txt"), result.ErrorMessage);
         }
 
         [Fact]
@@ -57,6 +59,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
             Assert.Null(content);
 
             string expectedMessage = string.Format(Strings.Msg_ConfigSizeLimitReached, filePath, AppConfig.MaxConfigFileSizeMB);

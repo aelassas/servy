@@ -81,7 +81,6 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.False(result);
             Assert.NotNull(error);
-            Assert.Contains("Unknown XML element encountered: 'UnknownElement'", error);
             Assert.Contains(string.Format(Strings.Msg_UnknownXmlElement, "UnknownElement"), error);
         }
 

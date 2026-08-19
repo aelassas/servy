@@ -15,7 +15,7 @@ namespace Servy.Core.UnitTests.Services
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void Deserialize_NullOrWhitespace_ReturnsNull(string? input)
         {
             // Arrange & Act
@@ -63,6 +63,7 @@ namespace Servy.Core.UnitTests.Services
             var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
             var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
 
+            int compared = 0;
             foreach (var prop in properties)
             {
                 var expectedValue = prop.GetValue(expected);
@@ -76,12 +77,32 @@ namespace Servy.Core.UnitTests.Services
                 }
 
                 Assert.Equal(expectedValue, actualValue);
+                compared++;
             }
+
+            Assert.True(compared >= 50, $"Only {compared} of {properties.Count()} properties were compared; the fixture has gone sparse.");
 
             // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings are omitted
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
             Assert.True(actual.RunAsLocalSystem);
+        }
+
+        [Fact]
+        public void Deserialize_HostileXmlPayloadWithCredentials_RejectsDocument()
+        {
+            // Arrange: Malicious XML payload attempting to inject UserAccount and Password.
+            // Credential members are [XmlIgnore], so the strict serializer sees unknown elements and rejects the file.
+            string maliciousXml =
+                "<ServiceDto><Name>MaliciousService</Name>" +
+                "<UserAccount>TargetDomain\\Administrator</UserAccount>" +
+                "<Password>RoguePassword123!</Password></ServiceDto>";
+
+            // Act
+            var result = _serializer.Deserialize(maliciousXml);
+
+            // Assert
+            Assert.Null(result);
         }
 
         [Fact]
@@ -198,6 +219,66 @@ namespace Servy.Core.UnitTests.Services
 
             // Verify Utf8StringWriter integration: ensures encoding reflects lowercase 'utf-8' without BOM corruptions
             Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", xmlResult);
+        }
+
+        [Fact]
+        public void Serialize_PopulatedDto_ExcludesSensitiveFields()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateFull("Xml");
+            dto.UserAccount = "Domain\\Admin";
+            dto.Password = "SuperSecret123!";
+
+            // Act
+            var xml = _serializer.Serialize(dto);
+
+            // Assert
+            Assert.NotNull(xml);
+            Assert.DoesNotContain("UserAccount", xml);
+            Assert.DoesNotContain("Password", xml);
+            Assert.DoesNotContain("Domain\\Admin", xml);
+            Assert.DoesNotContain("SuperSecret123!", xml);
+        }
+
+        [Fact]
+        public void SerializeAndDeserialize_RoundTripSymmetry_MaintainsObjectIntegrity()
+        {
+            // Arrange
+            var original = ServiceDtoFactory.CreateFull("Xml");
+            original.UserAccount = "Domain\\Admin";
+            original.Password = "SuperSecret123!";
+
+            // Act
+            var xml = _serializer.Serialize(original);
+            var deserialized = _serializer.Deserialize(xml);
+
+            // Assert
+            Assert.NotNull(xml);
+            Assert.NotNull(deserialized);
+
+            var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
+            var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
+
+            int compared = 0;
+            foreach (var prop in properties)
+            {
+                var expectedValue = prop.GetValue(original);
+                var actualValue = prop.GetValue(deserialized);
+
+                if (expectedValue == null)
+                {
+                    continue;
+                }
+
+                Assert.Equal(expectedValue, actualValue);
+                compared++;
+            }
+
+            Assert.True(compared >= 50, $"Only {compared} of {properties.Count()} properties were compared; the fixture has gone sparse.");
+
+            Assert.Null(deserialized.UserAccount);
+            Assert.Null(deserialized.Password);
+            Assert.True(deserialized.RunAsLocalSystem);
         }
 
         [Fact]

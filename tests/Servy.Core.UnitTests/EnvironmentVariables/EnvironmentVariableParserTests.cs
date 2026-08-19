@@ -5,6 +5,16 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
     public class EnvironmentVariableParserTests
     {
         [Fact]
+        public void Parse_Null_ReturnsEmptyList()
+        {
+            // Arrange & Act
+            var result = EnvironmentVariableParser.Parse(null);
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
         public void Parse_EmptyString_ReturnsEmptyList()
         {
             // Arrange & Act
@@ -373,6 +383,18 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Assert
             Assert.Contains($"no unescaped '='", ex.Message);
             Assert.Contains(expectedFragmentInMessage, ex.Message);
+        }
+
+        [Theory]
+        [InlineData("KEY=VAL\0UE")]
+        [InlineData("K\0EY=VALUE")]
+        public void Parse_NulCharacter_ThrowsFormatExceptionWithValidatorMessage(string input)
+        {
+            // Arrange & Act
+            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
+
+            // Assert
+            Assert.DoesNotContain("forbidden newline", ex.Message);
         }
     }
 }
