@@ -17,6 +17,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\handle64.exe" />
+    <None Remove="Resources\handle64a.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Resources\handle64.exe" />
     <EmbeddedResource Include="Resources\handle64a.exe" />
   </ItemGroup>
