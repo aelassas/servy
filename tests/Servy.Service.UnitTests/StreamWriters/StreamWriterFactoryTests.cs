@@ -6,31 +6,34 @@ namespace Servy.Service.UnitTests.StreamWriters
 {
     public class StreamWriterFactoryTests
     {
-        [Fact]
-        public void Create_ReturnsInstanceOfRotatingStreamWriterAdapter()
+        [Theory]
+        [InlineData(true, false, true)]
+        [InlineData(false, true, false)]
+        public void Create_ReturnsInstanceOfRotatingStreamWriterAdapter(
+            bool enableSizeRotation,
+            bool enableDateRotation,
+            bool useLocalTime)
         {
             // Arrange
             var factory = new StreamWriterFactory();
             string path = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.log");
-            bool enableSizeRotation = true;
             long rotationSizeInBytes = 1024;
-            bool enableDateRotation = false;
             DateRotationType dateRotationType = DateRotationType.Daily;
             int maxRotations = 3;
-            bool useLocalTime = true;
 
             try
             {
-                // Act & Assert
+                // Act
                 using (var result = factory.Create(
-                    path,
-                    enableSizeRotation,
-                    rotationSizeInBytes,
-                    enableDateRotation,
-                    dateRotationType,
-                    maxRotations,
-                    useLocalTime))
+                    path: path,
+                    enableSizeRotation: enableSizeRotation,
+                    rotationSizeInBytes: rotationSizeInBytes,
+                    enableDateRotation: enableDateRotation,
+                    dateRotationType: dateRotationType,
+                    maxRotations: maxRotations,
+                    useLocalTimeForRotation: useLocalTime))
                 {
+                    // Assert
                     var adapter = Assert.IsType<RotatingStreamWriterAdapter>(result);
                     var inner = TestReflection.GetField<Core.IO.RotatingStreamWriter>(adapter, "_inner");
                     Assert.Equal(path, TestReflection.GetField<FileInfo>(inner, "_file").FullName);

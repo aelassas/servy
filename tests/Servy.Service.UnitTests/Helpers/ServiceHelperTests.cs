@@ -445,49 +445,6 @@ namespace Servy.Service.UnitTests.Helpers
         #region RestartService Tests
 
         [Fact]
-        public void RestartService_ProcessIsNull_LogsError()
-        {
-            // Arrange
-            var mockLog = new Mock<IServyLogger>();
-            var restarterPath = Path.Combine(GetTargetRestarterDirectory(), "Servy.Restarter.exe");
-
-            // Safe guard: Ensure target sandbox directory exists (crucial for ProgramData on barebones CI servers)
-            var directory = Path.GetDirectoryName(restarterPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            // Defensively ensure a dummy restarter file exists in the sandbox if it isn't already present,
-            // without modifying or deleting a real build artifact.
-            bool createdDummy = false;
-            if (!File.Exists(restarterPath))
-            {
-                File.WriteAllText(restarterPath, "dummy");
-                createdDummy = true;
-            }
-
-            try
-            {
-                _mockProcessHelper.Setup(p => p.Start(It.IsAny<ProcessStartInfo>())).Returns((Process?)null);
-
-                // Act
-                _helper.RestartService("TestService", mockLog.Object);
-
-                // Assert
-                mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.exe.", It.IsAny<Exception>()), Times.Once);
-            }
-            finally
-            {
-                // Clean up only if this specific test run spawned the temporary placeholder
-                if (createdDummy && File.Exists(restarterPath))
-                {
-                    File.Delete(restarterPath);
-                }
-            }
-        }
-
-        [Fact]
         public void RestartService_RestarterFailsToStart_LogsErrorAndAborts()
         {
             // Arrange
@@ -520,10 +477,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Assert
                 // Verify that the start failure branch executed cleanly and surfaced the corresponding error profile
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Failed to start Servy.Restarter.exe")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
+                mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.exe.", It.IsAny<Exception>()), Times.Once);
             }
             finally
             {

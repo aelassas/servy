@@ -27,7 +27,7 @@ namespace Servy.Service.UnitTests
                 .Returns(mockProcess.Object);
 
             // Act
-            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), CancellationToken.None);
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), TestContext.Current.CancellationToken);
 
             // Assert
             var childProcess = service.GetChildProcess();
