@@ -8,11 +8,11 @@ $installerType = 'exe'
 $checksumType  = 'sha256'
 $silentArgs    = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL'
 
-$url64         = 'https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-x64-installer.exe'
-$checksum64    = '70AD1B237BB2CB4F50A8A3A5B6C417146A42360E76A854FDEC1C1510FAA33418'
+$url64         = 'https://github.com/aelassas/servy/releases/download/v9.6/servy-9.6-x64-installer.exe'
+$checksum64    = 'FA4E2D6F469FD3B8254F522998C3FADABDD23AE7ABFC3786D6FF35969532669A'
 
-$urlArm64      = 'https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-arm64-installer.exe'
-$checksumArm64 = '21086DB213D3104FA20158005A97FB3C67315B5431239728C2C8AAEC97377912'
+$urlArm64      = 'https://github.com/aelassas/servy/releases/download/v9.6/servy-9.6-arm64-installer.exe'
+$checksumArm64 = 'E0EDC95ECD331E416E649E3E89BE30467800D2C0AC47DC683B2FD89E67856793'
 
 # Detect OS architecture dynamically
 $isArm64 = ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') -or ($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64')
