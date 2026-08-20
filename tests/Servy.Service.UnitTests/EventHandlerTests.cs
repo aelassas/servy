@@ -6,7 +6,6 @@ using Servy.Service.StreamWriters;
 using Servy.Service.UnitTests.Helpers;
 using Servy.Testing;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Xunit;
 
@@ -14,24 +13,22 @@ namespace Servy.Service.UnitTests
 {
     public class EventHandlerTests : IDisposable
     {
-        private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
+        private readonly ServiceTestContext _ctx = new ServiceTestContext();
 
         [Fact]
         public void OnOutputDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service); // Track SUT instance for teardown disposal
+            var service = _ctx.Build();
 
             var mockStdoutWriter = new Mock<IStreamWriter>();
             var mockStderrWriter = new Mock<IStreamWriter>();
 
-            ctx.StreamWriterFactory
+            _ctx.StreamWriterFactory
                .Setup(f => f.Create("valid-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                .Returns(mockStdoutWriter.Object);
 
-            ctx.StreamWriterFactory
+            _ctx.StreamWriterFactory
                .Setup(f => f.Create("error-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                .Returns(mockStderrWriter.Object);
 
@@ -73,18 +70,16 @@ namespace Servy.Service.UnitTests
         public void OnErrorDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             var mockStdoutWriter = new Mock<IStreamWriter>();
             var mockStderrWriter = new Mock<IStreamWriter>();
 
-            ctx.StreamWriterFactory
+            _ctx.StreamWriterFactory
                .Setup(f => f.Create("valid-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                .Returns(mockStdoutWriter.Object);
 
-            ctx.StreamWriterFactory
+            _ctx.StreamWriterFactory
                .Setup(f => f.Create("error-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                .Returns(mockStderrWriter.Object);
 
@@ -127,13 +122,11 @@ namespace Servy.Service.UnitTests
         public void HandleLogWriters_SameStdoutAndStderrPath_MultiplexesToSingleWriter()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             var mockSharedWriter = new Mock<IStreamWriter>();
 
-            ctx.StreamWriterFactory
+            _ctx.StreamWriterFactory
                .Setup(f => f.Create("shared-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                .Returns(mockSharedWriter.Object);
 
@@ -153,7 +146,7 @@ namespace Servy.Service.UnitTests
             Assert.Same(stdoutWriterValue, stderrWriterValue);
 
             // Verify Create was invoked only once for the shared multiplexed stream
-            ctx.StreamWriterFactory.Verify(
+            _ctx.StreamWriterFactory.Verify(
                 f => f.Create("shared-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()),
                 Times.Once);
         }
@@ -162,9 +155,7 @@ namespace Servy.Service.UnitTests
         public void OnProcessExited_LogsExitInfo()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             var options = ServiceTestContext.CreateDefaultStartOptions();
             options.FailureProgramPath = @"C:\App\alert.exe";
@@ -178,10 +169,10 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0).")), It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0).")), It.IsAny<Exception>()), Times.Once);
 
             // Verify clean exit does not launch failure program
-            ctx.ProcessFactory.Verify(f => f.Create(
+            _ctx.ProcessFactory.Verify(f => f.Create(
                 It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Never);
         }
 
@@ -189,9 +180,7 @@ namespace Servy.Service.UnitTests
         public void OnProcessExited_ExitCodeNonZero_LogsErrorAndLaunchesFailureProgram()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             var options = ServiceTestContext.CreateDefaultStartOptions();
             options.FailureProgramPath = @"C:\App\alert.exe";
@@ -205,10 +194,10 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            ctx.Logger.Verify(l => l.Error("[OnProcessExited] Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Error("[OnProcessExited] Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
 
             // Verify non-zero exit code launches configured failure program
-            ctx.ProcessFactory.Verify(f => f.Create(
+            _ctx.ProcessFactory.Verify(f => f.Create(
                 It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Once);
         }
 
@@ -216,9 +205,7 @@ namespace Servy.Service.UnitTests
         public void OnProcessExited_ExitCodeThrowsException_LogsWarning()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
@@ -230,16 +217,9 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
         }
 
-        public void Dispose()
-        {
-            // Unified Cleanup: Iterate and safely drop transient test services to avoid CTS leaks
-            foreach (var service in _disposableServices)
-            {
-                service?.Dispose();
-            }
-        }
+        public void Dispose() => _ctx.Dispose();
     }
 }

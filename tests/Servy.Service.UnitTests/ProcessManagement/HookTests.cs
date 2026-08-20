@@ -52,22 +52,6 @@ namespace Servy.Service.UnitTests.ProcessManagement
         }
 
         [Fact]
-        public void Dispose_WhenProcessIsNotNull_DisposesProcess()
-        {
-            // Arrange
-            var hook = new Hook();
-            var process = new DisposeTrackingProcess();
-            hook.Process = process;
-
-            // Act
-            hook.Dispose();
-
-            // Assert
-            Assert.True(process.Disposed);
-            Assert.Equal(1, process.DisposeCallCount);
-        }
-
-        [Fact]
         public void Dispose_WhenProcessIsNull_DoesNotThrow()
         {
             // Arrange

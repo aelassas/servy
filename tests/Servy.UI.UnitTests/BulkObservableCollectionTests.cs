@@ -75,6 +75,60 @@ namespace Servy.UI.UnitTests
             Assert.False(eventRaised);
         }
 
+        [Fact]
+        public void AddRange_SequenceThrowsMidEnumeration_PublishesItemsAddedSoFar()
+        {
+            // Arrange
+            var collection = new BulkObservableCollection<int>();
+            int collectionChangedCount = 0;
+            NotifyCollectionChangedAction? lastAction = null;
+
+            collection.CollectionChanged += (s, e) =>
+            {
+                collectionChangedCount++;
+                lastAction = e.Action;
+            };
+
+            IEnumerable<int> Faulty()
+            {
+                yield return 1;
+                yield return 2;
+                throw new InvalidOperationException("source failed");
+            }
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => collection.AddRange(Faulty()));
+
+            Assert.Equal(2, collection.Count);
+            Assert.Equal(1, collectionChangedCount);
+            Assert.Equal(NotifyCollectionChangedAction.Reset, lastAction);
+        }
+
+        [Fact]
+        public void AddRange_SequenceThrowsAtStart_RaisesNoNotifications()
+        {
+            // Arrange
+            var collection = new BulkObservableCollection<int>();
+            bool eventRaised = false;
+            collection.CollectionChanged += (s, e) => eventRaised = true;
+
+            IEnumerable<int> FaultyAtStart()
+            {
+                if (collection != null)
+                {
+                    throw new InvalidOperationException("source failed immediately");
+                }
+
+                yield break;
+            }
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => collection.AddRange(FaultyAtStart()));
+
+            Assert.Empty(collection);
+            Assert.False(eventRaised);
+        }
+
         #endregion
 
         #region OnCollectionChanged Suppression Tests

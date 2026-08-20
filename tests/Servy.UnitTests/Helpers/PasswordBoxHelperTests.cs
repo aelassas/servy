@@ -8,12 +8,16 @@ using Helper = Servy.Testing.Helper;
 
 namespace Servy.UnitTests.Helpers
 {
+    /// <summary>
+    /// WPF control creation requires an STA thread, so every test here runs its body through
+    /// <see cref="Helper.RunOnSTA(Action, bool)"/> with an Application instance.
+    /// </summary>
     public class PasswordBoxHelperTests
     {
         /// <summary>
         /// Verifies standard getter and setter flows for the attached property.
         /// </summary>
-        [Fact] // Executes test on an STA thread to allow WPF control creation
+        [Fact]
         public void BoundPassword_GetAndSet_WorksCorrectly()
         {
             Helper.RunOnSTA(() =>
@@ -122,6 +126,29 @@ namespace Servy.UnitTests.Helpers
                 PasswordBoxHelper.SetBoundPassword(passwordBox, "SamePassword");
 
                 Assert.Equal(0, changedCount);
+            }, createApp: true);
+        }
+
+        /// <summary>
+        /// Verifies that setting <see cref="PasswordBoxHelper.BoundPasswordProperty"/> to <see langword="null"/>
+        /// safely falls back to <see cref="string.Empty"/> and clears the control password without throwing an exception.
+        /// </summary>
+        [Fact]
+        public void OnBoundPasswordChanged_NullValue_ClearsPasswordInsteadOfThrowing()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var passwordBox = new PasswordBox();
+                PasswordBoxHelper.SetBoundPassword(passwordBox, "ExistingPassword123");
+
+                // Act
+                var exception = Record.Exception(() =>
+                    passwordBox.SetValue(PasswordBoxHelper.BoundPasswordProperty, null));
+
+                // Assert
+                Assert.Null(exception);
+                Assert.Equal(string.Empty, passwordBox.Password);
             }, createApp: true);
         }
 

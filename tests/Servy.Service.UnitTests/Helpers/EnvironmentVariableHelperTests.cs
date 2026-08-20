@@ -112,7 +112,7 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void ExpandEnvironmentVariables_NullValueCustomVariable_IsSkippedAndReferenceStaysLiteral()
+        public void ExpandEnvironmentVariables_NullValueCustomVariable_IsKeptButNotSubstituted()
         {
             // Arrange
             var vars = new List<EnvironmentVariable>
@@ -125,7 +125,12 @@ namespace Servy.Service.UnitTests.Helpers
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
 
             // Assert
+            // Verify that the null-valued variable is skipped as a substitution source (reference remains literal)...
             Assert.Contains("%NULL_VAR%", expanded["USES_NULL"]);
+
+            // ...and that the variable entry itself is retained in the dictionary with a null value.
+            Assert.True(expanded.ContainsKey("NULL_VAR"));
+            Assert.Null(expanded["NULL_VAR"]);
         }
 
         #endregion

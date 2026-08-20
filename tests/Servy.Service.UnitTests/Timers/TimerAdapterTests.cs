@@ -151,7 +151,6 @@ namespace Servy.Service.UnitTests.Timers
                     timer.AutoReset = false;
                     timer.Start();
 
-                    // Wait up to 5 seconds to account for CI thread-pool queue delays under heavy load
                     bool signaled = resetEvent.Wait(TestTimeouts.CiGenerous, CancellationToken.None);
 
                     // Assert
@@ -192,7 +191,6 @@ namespace Servy.Service.UnitTests.Timers
                     timer.AutoReset = false;
                     timer.Start();
 
-                    // Wait up to 5 seconds to account for CI thread-pool queue delays under heavy load
                     bool signaled = resetEvent.Wait(TestTimeouts.CiGenerous, CancellationToken.None);
 
                     // Assert

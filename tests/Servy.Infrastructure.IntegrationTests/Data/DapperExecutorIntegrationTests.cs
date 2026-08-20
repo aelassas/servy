@@ -127,6 +127,77 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         /// <summary>
+        /// Concrete test double simulating transient SQLite faults for a configured number of initial attempts
+        /// before delegating to a real <see cref="SQLiteConnection"/> to test retry recovery loops.
+        /// </summary>
+        private class TransientFailureDbConnection : TestDbConnectionBase
+        {
+            private readonly SQLiteErrorCode _errorCode;
+            private readonly int _failuresBeforeSuccess;
+            private readonly string _realConnectionString;
+            private SQLiteConnection _realConnection;
+
+            /// <summary>
+            /// Gets the total number of connection open operations attempted against this instance.
+            /// </summary>
+            public int OpenAttempts { get; private set; }
+
+            public TransientFailureDbConnection(SQLiteErrorCode errorCode, int failuresBeforeSuccess, string realConnectionString)
+            {
+                _errorCode = errorCode;
+                _failuresBeforeSuccess = failuresBeforeSuccess;
+                _realConnectionString = realConnectionString;
+            }
+
+            /// <inheritdoc />
+            public override void Open()
+            {
+                OpenAttempts++;
+                if (OpenAttempts <= _failuresBeforeSuccess)
+                {
+                    throw new SQLiteException(_errorCode, "Transient SQLite error.");
+                }
+
+                _realConnection = new SQLiteConnection(_realConnectionString);
+                _realConnection.Open();
+            }
+
+            /// <inheritdoc />
+            public override async Task OpenAsync(CancellationToken cancellationToken)
+            {
+                OpenAttempts++;
+                if (OpenAttempts <= _failuresBeforeSuccess)
+                {
+                    throw new SQLiteException(_errorCode, "Transient SQLite error.");
+                }
+
+                _realConnection = new SQLiteConnection(_realConnectionString);
+                await _realConnection.OpenAsync(cancellationToken);
+            }
+
+            /// <inheritdoc />
+            public override ConnectionState State => _realConnection?.State ?? ConnectionState.Closed;
+
+            /// <inheritdoc />
+            protected override DbCommand CreateDbCommand() =>
+                _realConnection?.CreateCommand() ?? throw new InvalidOperationException("Connection is not open.");
+
+            /// <inheritdoc />
+            protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) =>
+                _realConnection?.BeginTransaction(isolationLevel) ?? throw new InvalidOperationException("Connection is not open.");
+
+            /// <inheritdoc />
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    _realConnection?.Dispose();
+                }
+                base.Dispose(disposing);
+            }
+        }
+
+        /// <summary>
         /// Concrete test stub configured to toggle execution flow routing behaviors for transaction pipeline evaluations.
         /// </summary>
         private class FlexibleDbConnectionStub : TestDbConnectionBase
@@ -408,6 +479,74 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             });
 
             Assert.Equal(AppConfig.DbAsyncMaxRetries, busyConnectionSpy.OpenAttempts);
+        }
+
+        [Fact]
+        public void ExecuteWithRetry_TransientBusyThenSuccess_RecoversAndReturnsResult()
+        {
+            // Arrange
+            const int failuresBeforeSuccess = 2;
+            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Busy, failuresBeforeSuccess, _connectionString);
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+
+            // Act
+            long count = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
+
+            // Assert
+            Assert.Equal(2, count);
+            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
+        }
+
+        [Fact]
+        public void ExecuteWithRetry_TransientLockedThenSuccess_RecoversAndReturnsResult()
+        {
+            // Arrange
+            const int failuresBeforeSuccess = 1;
+            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Locked, failuresBeforeSuccess, _connectionString);
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+
+            // Act
+            long count = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
+
+            // Assert
+            Assert.Equal(2, count);
+            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
+        }
+
+        [Fact]
+        public async Task ExecuteWithRetryAsync_TransientBusyThenSuccess_RecoversAndReturnsResult()
+        {
+            // Arrange
+            const int failuresBeforeSuccess = 2;
+            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Busy, failuresBeforeSuccess, _connectionString);
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+
+            // Act
+            long count = await _executor.ExecuteScalarAsync<long>(
+                "SELECT COUNT(*) FROM TestServices;",
+                cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.Equal(2, count);
+            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
+        }
+
+        [Fact]
+        public async Task ExecuteWithRetryAsync_TransientLockedThenSuccess_RecoversAndReturnsResult()
+        {
+            // Arrange
+            const int failuresBeforeSuccess = 1;
+            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Locked, failuresBeforeSuccess, _connectionString);
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+
+            // Act
+            long count = await _executor.ExecuteScalarAsync<long>(
+                "SELECT COUNT(*) FROM TestServices;",
+                cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.Equal(2, count);
+            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
         }
 
         [Fact]

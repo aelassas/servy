@@ -47,6 +47,6 @@ using System.Windows;
 //      Numéro de build
 //      Révision
 //
-[assembly: AssemblyVersion("9.6.0.0")]
-[assembly: AssemblyFileVersion("9.6.0.0")]
+[assembly: AssemblyVersion("9.7.0.0")]
+[assembly: AssemblyFileVersion("9.7.0.0")]
 [assembly: NeutralResourcesLanguage("en", UltimateResourceFallbackLocation.MainAssembly)]

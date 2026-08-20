@@ -103,6 +103,21 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void Validate_ExceedingDisplayNameLength_ReturnsError()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.DisplayName = new string('C', AppConfig.MaxDisplayNameLength + 1);
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.Single(result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength), result.Errors);
+        }
+
+        [Fact]
         public void Validate_ExceedingDescriptionLength_ReturnsError()
         {
             // Arrange
@@ -115,6 +130,31 @@ namespace Servy.Core.UnitTests.Validation
             // Assert
             Assert.Single(result.Errors);
             Assert.Contains(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength), result.Errors);
+        }
+
+        [Theory]
+        [InlineData(nameof(ServiceDto.Parameters))]
+        [InlineData(nameof(ServiceDto.PreLaunchParameters))]
+        [InlineData(nameof(ServiceDto.PostLaunchParameters))]
+        [InlineData(nameof(ServiceDto.PreStopParameters))]
+        [InlineData(nameof(ServiceDto.PostStopParameters))]
+        [InlineData(nameof(ServiceDto.FailureProgramParameters))]
+        public void Validate_ExceedingParametersLength_ReturnsErrorForField(string fieldName)
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            var oversizedValue = new string('C', AppConfig.MaxArgumentLength + 1);
+
+            typeof(ServiceDto)
+                .GetProperty(fieldName)
+                ?.SetValue(dto, oversizedValue);
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.Single(result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_ArgumentsLengthReachedForField, fieldName, AppConfig.MaxArgumentLength), result.Errors);
         }
 
         [Fact]

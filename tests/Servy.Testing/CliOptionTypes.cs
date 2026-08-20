@@ -12,8 +12,9 @@ namespace Servy.Testing
     public static class CliOptionTypes
     {
         /// <summary>
-        /// Discovers all option verbs dynamically via reflection
-        /// to prevent new properties from escaping sensitive field leak guards.
+        /// Discovers every CLI option-carrying type in the <c>Servy.CLI</c> assembly: verbs,
+        /// and any other type declaring <see cref="OptionAttribute"/> properties, such as <c>GlobalOptionsBase</c>.
+        /// Dynamic reflection is used to prevent newly added properties from escaping sensitive field leak guards.
         /// </summary>
         public static readonly Type[] All = typeof(InstallServiceOptions).Assembly
             .GetTypes()

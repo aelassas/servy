@@ -128,7 +128,7 @@ namespace Servy.Service.UnitTests.CommandLine
             var serviceDto = new ServiceDto
             {
                 ExecutablePath = @"C:\App\worker.exe",
-                Parameters = @"--port 8080",
+                Parameters = @"--config C:\path\ --name \""svc\""",
                 StartupDirectory = @"C:\App",
                 Priority = 4, // High
                 CpuAffinity = "0,1",
@@ -171,12 +171,13 @@ namespace Servy.Service.UnitTests.CommandLine
                 DateRotationType = 0, // Daily
                 EnableSizeRotation = true,
                 EnableDateRotation = true,
+                EnableDebugLogs = true,
                 MaxRotations = 10,
                 StartTimeout = 90,
                 StopTimeout = 60,
                 PreStopExecutablePath = @"C:\App\pre_stop.exe",
                 PreStopStartupDirectory = @"C:\App\pre_stop_dir",
-                PreStopParameters = "--drain",
+                PreStopParameters = "--tag\0end",
                 PreStopTimeoutSeconds = 20,
                 PreStopLogAsError = true,
                 PostStopExecutablePath = @"C:\App\post_stop.exe",
@@ -192,7 +193,7 @@ namespace Servy.Service.UnitTests.CommandLine
             // Assert main mappings
             Assert.Equal(serviceName, result.ServiceName);
             Assert.Equal(@"C:\App\worker.exe", result.ExecutablePath);
-            Assert.Equal(@"--port 8080", result.ExecutableArgs);
+            Assert.Equal(@"--config C:\path\ --name \\""svc\\""", result.ExecutableArgs);
             Assert.Equal(@"C:\App", result.StartupDirectory);
             Assert.Equal(ProcessPriorityClass.High, result.Priority);
             Assert.Equal("0,1", result.CpuAffinity);
@@ -248,7 +249,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.True(result.EnableDateRotation);
             Assert.Equal(10, result.MaxRotations);
             Assert.Equal(DateRotationType.Daily, result.DateRotationType);
-            Assert.False(result.EnableDebugLogs);
+            Assert.True(result.EnableDebugLogs);
 
             // Assert Lifespan Timeouts
             Assert.Equal(90, result.StartTimeoutInSeconds);
@@ -257,7 +258,7 @@ namespace Servy.Service.UnitTests.CommandLine
             // Assert Pre-Stop block
             Assert.Equal(@"C:\App\pre_stop.exe", result.PreStopExecutablePath);
             Assert.Equal(@"C:\App\pre_stop_dir", result.PreStopStartupDirectory);
-            Assert.Equal("--drain", result.PreStopExecutableArgs);
+            Assert.Equal(@"--tag\0end", result.PreStopExecutableArgs);
             Assert.Equal(20, result.PreStopTimeoutInSeconds);
             Assert.True(result.PreStopLogAsError);
 
@@ -300,6 +301,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(AppConfig.DefaultMaxRotations, result.MaxRotations);
             Assert.Equal(AppConfig.DefaultEnableSizeRotation, result.EnableSizeRotation);
             Assert.Equal(AppConfig.DefaultEnableDateRotation, result.EnableDateRotation);
+            Assert.Equal(AppConfig.DefaultEnableDebugLogs, result.EnableDebugLogs);
             Assert.Equal(AppConfig.DefaultStartTimeout, result.StartTimeoutInSeconds);
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeoutInSeconds);
             Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, result.PreStopTimeoutInSeconds);

@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.UI.Design;
+using System;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,6 +67,10 @@ namespace Servy.UI.UnitTests.Design
             repo.Delete("test");
             Assert.Equal(0, repo.Update(new ServiceDto(), true, true));
             Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: ct));
+            Assert.Equal(0, await repo.AddAsync(new ServiceDto(), cancellationToken: ct));
+            Assert.Equal(0, await repo.UpdateAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
+            Assert.Equal(0, await repo.UpsertAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
+            Assert.Equal(0, await repo.UpsertBatchAsync(new[] { new ServiceDto() }, cancellationToken: ct));
         }
 
         #endregion
@@ -96,6 +101,24 @@ namespace Servy.UI.UnitTests.Design
             // Act & Assert - Collection branches
             Assert.Empty(manager.GetAllServices(cancellationToken: ct));
             Assert.Null(manager.GetDependencies("test", ct));
+        }
+
+        #endregion
+
+        #region Event Log Service Tests
+
+        [Fact]
+        public async Task DesignTimeEventLogService_SearchAsync_ReturnsEmpty()
+        {
+            // Arrange
+            var service = new DesignTimeEventLogService();
+            var ct = CancellationToken.None;
+
+            // Act
+            var result = await service.SearchAsync(keyword: "test", level: EventLogLevel.All, startDate: DateTime.MinValue, endDate: DateTime.Now, token: ct);
+
+            // Assert
+            Assert.Empty(result);
         }
 
         #endregion

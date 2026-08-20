@@ -43,7 +43,6 @@ namespace Servy.Testing
         /// <exception cref="FileNotFoundException">Thrown when the embedded resource cannot be located in the manifest.</exception>
         public static void ExtractHandleExe()
         {
-            // Check if the file physically exists on the disk frame right now
             if (File.Exists(HandleExePath)) return;
 
             lock (_extractionLock)
@@ -52,7 +51,7 @@ namespace Servy.Testing
                 if (File.Exists(HandleExePath)) return;
 
                 var assembly = Assembly.GetExecutingAssembly();
-                string targetFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "handle64a.exe" : "handle64.exe";
+                string targetFileName = Path.GetFileName(HandleExePath);
 
                 // Dynamically build the primary resource path using the executing assembly name
                 // rather than hardcoding a stale namespace string from an external integration test project.
@@ -76,7 +75,6 @@ namespace Servy.Testing
                     }
                     else
                     {
-                        // Primary target branch is now successfully executed and covered
                         WriteResourceToDisk(resourceStream);
                     }
                 }
@@ -328,7 +326,7 @@ namespace Servy.Testing
         /// <returns>True if the process can open LSA policy with lookup permissions; otherwise, false.</returns>
         public static bool CheckLsaPolicyAccess()
         {
-            // Emulates an LSA open loop using minimum query flags to detect if the kernel drops an access error
+            // Opens the LSA policy with the minimum lookup rights and reports whether the current process is allowed to.
             var oa = new NativeMethods.LSA_OBJECT_ATTRIBUTES
             {
                 Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>()
@@ -555,7 +553,7 @@ namespace Servy.Testing
                 await Task.Delay(interval, cancellationToken);
             }
 
-            // Final check: Catch cases where the predicate flipped during the final delay interval
+            // Final check: Re-evaluate once in case another thread satisfied the condition while the deadline was being evaluated.
             if (predicate())
             {
                 return;
