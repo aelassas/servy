@@ -17,6 +17,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         {
             Helper.RunOnSTA(() =>
             {
+                // Arrange
                 // Branch: Loop i < GetChildrenCount (zero count)
                 var border = new Border();
 
@@ -24,7 +25,10 @@ namespace Servy.UI.IntegrationTests.Helpers
                 border.Measure(new Size(100, 100));
                 border.Arrange(new Rect(0, 0, 100, 100));
 
+                // Act
                 var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(border);
+
+                // Assert
                 Assert.Null(result);
             });
         }
@@ -34,6 +38,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 // Branch: if (child is T t) return t;
                 var grid = new Grid();
                 var scrollViewer = new ScrollViewer();
@@ -44,9 +49,10 @@ namespace Servy.UI.IntegrationTests.Helpers
                 grid.Arrange(new Rect(0, 0, 100, 100));
                 grid.UpdateLayout();
 
+                // Act
                 var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(grid);
 
-                Assert.NotNull(result);
+                // Assert
                 Assert.Same(scrollViewer, result);
             });
         }
@@ -56,6 +62,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 // Branch: var res = GetVisualChild<T>(child); if (res != null) return res;
                 var grid = new Grid();
                 var border = new Border();
@@ -69,9 +76,10 @@ namespace Servy.UI.IntegrationTests.Helpers
                 grid.Arrange(new Rect(0, 0, 100, 100));
                 grid.UpdateLayout();
 
+                // Act
                 var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(grid);
 
-                Assert.NotNull(result);
+                // Assert
                 Assert.Same(scrollViewer, result);
             });
         }
@@ -112,14 +120,22 @@ namespace Servy.UI.IntegrationTests.Helpers
         [InlineData(1000000, "1,000,000")]
         public void FormatNumber_Integers_ReturnsInvariantCultureFormatting(int number, string expected)
         {
+            // Arrange
             var prev = CultureInfo.CurrentCulture;
             try
             {
                 CultureInfo.CurrentCulture = new CultureInfo("de-DE"); // Wrap the assertion in a non-comma culture to prove invariance
+
+                // Act
                 var result = UI.Helpers.Helper.FormatNumber(number);   // Still comma-grouped
+
+                // Assert
                 Assert.Equal(expected, result);
             }
-            finally { CultureInfo.CurrentCulture = prev; }
+            finally
+            {
+                CultureInfo.CurrentCulture = prev;
+            }
         }
 
         #endregion
@@ -133,24 +149,33 @@ namespace Servy.UI.IntegrationTests.Helpers
         [Fact]
         public void GetRowsInfo_CountZero_ReturnsNoneFormat()
         {
+            // Arrange & Act
             // Branch: if (count == 0)
             var result = UI.Helpers.Helper.GetRowsInfo(0, TimeSpan.FromSeconds(1), None, One, Many);
+
+            // Assert
             Assert.Equal("None: 1s", result);
         }
 
         [Fact]
         public void GetRowsInfo_CountOne_ReturnsOneFormat()
         {
+            // Arrange & Act
             // Branch: if (count == 1)
             var result = UI.Helpers.Helper.GetRowsInfo(1, TimeSpan.FromSeconds(1), None, One, Many);
+
+            // Assert
             Assert.Equal("One: 1s", result);
         }
 
         [Fact]
         public void GetRowsInfo_CountMany_ReturnsManyFormat()
         {
+            // Arrange & Act
             // Branch: Default/Many
             var result = UI.Helpers.Helper.GetRowsInfo(1234, TimeSpan.FromSeconds(1), None, One, Many);
+
+            // Assert
             Assert.Equal("Many: 1,234 1s", result);
         }
 
