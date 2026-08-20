@@ -603,6 +603,9 @@ jobs:
           Copy-Item "src/Servy.CLI/Servy.psd1" $pkg -Force
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
 
+          # Scripts
+          Copy-Item "setup\taskschd\Set-ServyExePermissions.ps1" $pkg -Force
+
           # Task Scheduler setup - Hardened Recursive Copy
           $destPath = Join-Path $pkg "taskschd"
           $sourcePath = "setup\taskschd"

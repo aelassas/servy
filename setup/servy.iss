@@ -108,6 +108,9 @@ Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\{#Runtime}\publish\{#M
 ; appsettings.manager.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.Manager\appsettings.manager.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_manager
 
+; Scripts
+Source: ".\Set-ServyExePermissions.ps1"; DestDir: "{app}"; Flags: ignoreversion;
+
 ; taskschd
 ; 1. Copy everything EXCEPT the config, credentials, transient state files, and test/temp scripts
 Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Excludes: "smtp-config.xml, smtp-cred.xml, *.dat, *.log, temp.ps1, *.test.ps1"; Flags: ignoreversion
