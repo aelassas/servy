@@ -134,7 +134,7 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
-        public void ConvertBack_Always_ReturnsBindingDoNothingToken()
+        public void ConvertBack_Always_ReturnsDoNothing()
         {
             // Arrange
             var converter = new TestMetricConverter();

@@ -32,7 +32,7 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(null)]
         [InlineData("not a bool")]
         [InlineData(1)]
-        public void Convert_InvalidValue_ReturnsBindingDoNothing(object? input)
+        public void Convert_InvalidValue_ReturnsDoNothing(object? input)
         {
             // Arrange & Act
             var result = _converter.Convert(input!, typeof(Visibility), null!, CultureInfo.InvariantCulture);
@@ -71,7 +71,7 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(null)]
         [InlineData("Visible")]
         [InlineData(true)]
-        public void ConvertBack_InvalidType_ReturnsBindingDoNothing(object? input)
+        public void ConvertBack_InvalidType_ReturnsDoNothing(object? input)
         {
             // Arrange & Act
             var result = _converter.ConvertBack(input!, typeof(bool), null!, CultureInfo.InvariantCulture);
