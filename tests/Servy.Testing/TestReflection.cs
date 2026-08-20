@@ -22,7 +22,6 @@ namespace Servy.Testing
         public static T CreateInstance<T>(params object?[]? args)
         {
             var type = typeof(T);
-            var paramTypes = args?.Select(a => a?.GetType() ?? typeof(object)).ToArray() ?? Type.EmptyTypes;
 
             var constructors = type.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
 
