@@ -137,14 +137,12 @@ namespace Servy.UI.UnitTests.Commands
             // Arrange
             var command = new AsyncCommand(_ => Task.CompletedTask);
 
-            // Act
-            // Capture any potential exceptions thrown by environmental mismatches
-            // or underlying CommandManager synchronization dependencies.
+            // Act & Assert
+            // Verifies RaiseCanExecuteChanged() is safe to call (does not throw) from a standard thread.
+            // CommandManager.InvalidateRequerySuggested is a static WPF call and is not directly verifiable here.
+            // Note that off the UI thread the call is a no-op rather than an error; see AsyncCommand.RaiseCanExecuteChanged.
             var exception = Record.Exception(() => command.RaiseCanExecuteChanged());
 
-            // Assert
-            // This verifies that the execution pipeline is completely safe to call
-            // from standard threads, preventing regression crashes in background workers.
             Assert.Null(exception);
         }
 

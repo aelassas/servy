@@ -92,7 +92,7 @@ namespace Servy.UnitTests.Services
         /// </summary>
         private static OperationResult CreateBlankFailureOperationResult(string? errorMessage)
         {
-            return TestReflection.CreateInstanceNonPublic<OperationResult>(false, errorMessage);
+            return TestReflection.CreateInstance<OperationResult>(false, errorMessage);
         }
 
         private void SetupDummyWrapperExe()

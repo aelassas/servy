@@ -10,15 +10,13 @@ namespace Servy.Service.UnitTests
 {
     public class HealthCheckTests : IDisposable
     {
-        private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
+        private readonly ServiceTestContext _ctx = new ServiceTestContext();
 
         [Fact]
         public async Task CheckHealth_ProcessExited_IncrementsFailedChecks_AndLogs()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
@@ -36,7 +34,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             Assert.Equal(1, service.GetFailedChecks());
-            ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
                 s.Contains("Health check failed") && s.Contains("(1/3)")), It.IsAny<Exception>()),
                 Times.Once);
         }
@@ -45,12 +43,10 @@ namespace Servy.Service.UnitTests
         public async Task CheckHealth_ExceedMaxFailedChecks_TriggersRecoveryAction()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             var pingLogged = new TaskCompletionSource<string>();
-            ctx.Logger
+            _ctx.Logger
                 .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
 
@@ -70,10 +66,10 @@ namespace Servy.Service.UnitTests
             await service.InvokeCheckHealthAsync(null, null);
 
             // Assert
-            ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed (1/1)")), It.IsAny<Exception>()), Times.Once);
-            ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains($"Performing recovery action '{RecoveryAction.RestartProcess}' (1/3)")), It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed (1/1)")), It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains($"Performing recovery action '{RecoveryAction.RestartProcess}' (1/3)")), It.IsAny<Exception>()), Times.Once);
 
-            ctx.Helper.Verify(h => h.RestartProcess(
+            _ctx.Helper.Verify(h => h.RestartProcess(
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -83,7 +79,7 @@ namespace Servy.Service.UnitTests
             // Verify Placement 1: Failure threshold reached emits fail-flag ping
             var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
             Assert.Same(pingLogged.Task, completedTask);
-            Assert.Contains("fail-", await pingLogged.Task);
+            Assert.Contains("(flag: fail)", await pingLogged.Task);
         }
 
         [Theory]
@@ -94,9 +90,7 @@ namespace Servy.Service.UnitTests
         public async Task CheckHealth_RecoveryActions_ExecuteExpectedLogic(RecoveryAction action)
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
@@ -118,20 +112,20 @@ namespace Servy.Service.UnitTests
             switch (action)
             {
                 case RecoveryAction.None:
-                    ctx.Helper.VerifyNoOtherCalls();
+                    _ctx.Helper.VerifyNoOtherCalls();
                     break;
                 case RecoveryAction.RestartProcess:
-                    ctx.Helper.Verify(h => h.RestartProcess(
+                    _ctx.Helper.Verify(h => h.RestartProcess(
                         It.IsAny<IProcessWrapper>(),
                         It.IsAny<StartProcessCallback>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                     break;
                 case RecoveryAction.RestartService:
-                    ctx.Helper.Verify(h => h.RestartService(service.ServiceName, It.IsAny<IServyLogger>()), Times.Once);
+                    _ctx.Helper.Verify(h => h.RestartService(service.ServiceName, It.IsAny<IServyLogger>()), Times.Once);
                     break;
                 case RecoveryAction.RestartComputer:
-                    ctx.Helper.Verify(h => h.RestartComputer(It.IsAny<IServyLogger>()), Times.Once);
+                    _ctx.Helper.Verify(h => h.RestartComputer(It.IsAny<IServyLogger>()), Times.Once);
                     break;
             }
         }
@@ -140,12 +134,10 @@ namespace Servy.Service.UnitTests
         public async Task CheckHealth_ProcessHealthy_ResetsFailedChecks_AndLogs()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             var pingLogged = new TaskCompletionSource<string>();
-            ctx.Logger
+            _ctx.Logger
                 .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
 
@@ -162,24 +154,22 @@ namespace Servy.Service.UnitTests
 
             // Assert
             Assert.Equal(0, service.GetFailedChecks());
-            ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process is healthy")), It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process is healthy")), It.IsAny<Exception>()), Times.Once);
 
             // Verify Placement 2: Healthy again after failures emits start-flag ping
             var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
             Assert.Same(pingLogged.Task, completedTask);
-            Assert.Contains("start", await pingLogged.Task);
+            Assert.Contains("(flag: start)", await pingLogged.Task);
         }
 
         [Fact]
         public async Task CheckHealth_ProcessHealthy_RoutineTick_EmitsRoutineHeartbeatPing()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             var pingLogged = new TaskCompletionSource<string>();
-            ctx.Logger
+            _ctx.Logger
                 .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
 
@@ -200,16 +190,14 @@ namespace Servy.Service.UnitTests
             // Verify Placement 3: Routine healthy tick emits empty-flag ping
             var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
             Assert.Same(pingLogged.Task, completedTask);
-            Assert.Contains("rout", await pingLogged.Task);
+            Assert.Contains("(flag: routine)", await pingLogged.Task);
         }
 
         [Fact]
         public async Task CheckHealth_ThreadSafety_MultipleConcurrentCalls()
         {
             // Arrange
-            var ctx = new ServiceTestContext();
-            var service = ctx.Build();
-            _disposableServices.Add(service);
+            var service = _ctx.Build();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
@@ -220,7 +208,7 @@ namespace Servy.Service.UnitTests
 
             var recoveryTriggered = new TaskCompletionSource<bool>();
 
-            ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
+            _ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
                                                   It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                                                   It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                   .Callback(() =>
@@ -259,20 +247,13 @@ namespace Servy.Service.UnitTests
             await Task.WhenAll(tasks);
 
             // Assert
-            ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
-            ctx.Helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
+            _ctx.Helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
                                                   It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                                                   It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                                                   Times.Once);
         }
 
-        public void Dispose()
-        {
-            // Unified Cleanup: Iterate and safely drop transient test services to avoid CTS leaks
-            foreach (var service in _disposableServices)
-            {
-                service?.Dispose();
-            }
-        }
+        public void Dispose() => _ctx.Dispose();
     }
 }

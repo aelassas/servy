@@ -245,6 +245,51 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void ValidatePath_ExportMode_PostResolutionRejection_DeletesStubFile()
+        {
+            // Arrange
+            string winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            string targetDir = Path.Combine(winDir, "System32");
+
+            char driveLetter = GetUnusedDriveLetter();
+            if (driveLetter == '\0')
+            {
+                Assert.Skip("No unused drive letter available for subst mapping.");
+            }
+
+            string drivePath = $"{driveLetter}:";
+            if (!NativeTestMethods.DefineDosDevice(0, drivePath, targetDir))
+            {
+                Assert.Skip($"Failed to define virtual drive {drivePath}. Win32 Error: {Marshal.GetLastWin32Error()}");
+            }
+
+            string stubName = $"servy_stub_{Guid.NewGuid():N}.json";
+            string substFilePath = Path.Combine($"{drivePath}\\", stubName);
+            string realFilePath = Path.Combine(targetDir, stubName);
+
+            try
+            {
+                // Act: Open file with OpenOrCreate mode targeting a non-existent path on a virtual drive that maps to a protected system folder.
+                // Pre-open checks pass (as the virtual drive path hides System32), allowing the stream to be opened/created.
+                // Post-resolution check unrolls the kernel path to System32, failing security validation and triggering the cleanup block.
+                var result = PathSecurityGuard.ValidatePath(
+                    substFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, out var stream);
+
+                // Assert
+                Assert.False(result.IsValid);
+                Assert.Null(stream);
+
+                // Verify the stub file created during handle resolution was cleaned up upon validation failure.
+                Assert.False(File.Exists(realFilePath), "Rejected export left a stub file behind in the target directory.");
+            }
+            finally
+            {
+                try { File.Delete(realFilePath); } catch { }
+                NativeTestMethods.DefineDosDevice(2, drivePath, null);
+            }
+        }
+
+        [Fact]
         public void ValidatePath_AncestorDirectorySymlink_ReturnsFail()
         {
             string realDir = Path.Combine(TempDirectory, "real_dir");

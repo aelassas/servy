@@ -301,7 +301,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act
-                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), CancellationToken.None);
+                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.True(isHealthy);
@@ -320,7 +320,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act
-                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(isHealthy);

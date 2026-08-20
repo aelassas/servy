@@ -31,7 +31,7 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(null)]
         [InlineData("string")]
         [InlineData(123)]
-        public void Convert_NonBool_ReturnsBindingDoNothing(object? input)
+        public void Convert_NonBool_ReturnsDoNothing(object? input)
         {
             // Act
             var result = _converter.Convert(input!, typeof(bool), null!, CultureInfo.InvariantCulture);

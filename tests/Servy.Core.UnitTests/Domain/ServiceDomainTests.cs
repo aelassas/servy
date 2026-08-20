@@ -126,8 +126,8 @@ namespace Servy.Core.UnitTests.Domain
         {
             // Arrange
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(false);
-            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns((ServiceControllerStatus?)null);
+            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>()))
+                .Returns((ServiceControllerStatus?)null);
 
             // Act
             var result = service.GetStatus(TestContext.Current.CancellationToken);
@@ -135,6 +135,7 @@ namespace Servy.Core.UnitTests.Domain
             // Assert
             Assert.Null(result);
             _serviceManagerMock.Verify(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceManagerMock.Verify(s => s.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -142,8 +143,8 @@ namespace Servy.Core.UnitTests.Domain
         {
             // Arrange
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
+            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>()))
+                .Returns(ServiceControllerStatus.Running);
 
             // Act
             var result = service.GetStatus(TestContext.Current.CancellationToken);
@@ -151,6 +152,7 @@ namespace Servy.Core.UnitTests.Domain
             // Assert
             Assert.Equal(ServiceControllerStatus.Running, result);
             _serviceManagerMock.Verify(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceManagerMock.Verify(s => s.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -158,7 +160,8 @@ namespace Servy.Core.UnitTests.Domain
         {
             // Arrange
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>()))
+                .Returns(true);
 
             // Act
             var result = service.IsInstalled(TestContext.Current.CancellationToken);

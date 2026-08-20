@@ -13,16 +13,15 @@ namespace Servy.Testing
         private const BindingFlags PublicStaticFlags = BindingFlags.Public | BindingFlags.Static;
 
         /// <summary>
-        /// Creates an instance of <typeparamref name="T"/> using a non-public constructor that matches the provided argument types.
+        /// Creates an instance of <typeparamref name="T"/> using a constructor (public or non-public) that matches the provided argument types.
         /// </summary>
         /// <typeparam name="T">The target type to instantiate.</typeparam>
-        /// <param name="args">The arguments to pass to the non-public constructor.</param>
+        /// <param name="args">The arguments to pass to the constructor.</param>
         /// <returns>A new instance of <typeparamref name="T"/>.</returns>
-        /// <exception cref="ArgumentException">Thrown when a matching non-public constructor cannot be found.</exception>
-        public static T CreateInstanceNonPublic<T>(params object?[]? args)
+        /// <exception cref="ArgumentException">Thrown when a matching constructor cannot be found.</exception>
+        public static T CreateInstance<T>(params object?[]? args)
         {
             var type = typeof(T);
-            var paramTypes = args?.Select(a => a?.GetType() ?? typeof(object)).ToArray() ?? Type.EmptyTypes;
 
             var constructors = type.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
 
