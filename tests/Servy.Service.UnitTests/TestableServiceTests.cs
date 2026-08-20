@@ -76,7 +76,7 @@ namespace Servy.Service.UnitTests
             var service = _ctx.Build();
 
             // Act
-            service.TestOnStart(fullArgs);
+            service.StartForTest();
 
             // Assert
             // Verify we attempted to parse but stopped there
@@ -102,7 +102,7 @@ namespace Servy.Service.UnitTests
             var service = _ctx.Build();
 
             // Act
-            service.TestOnStart(new string[] { });
+            service.StartForTest();
 
             // Assert
             // Since the crash happens before promotion, mockLogger is still the active logger
@@ -147,7 +147,7 @@ namespace Servy.Service.UnitTests
             var service = _ctx.Build();
 
             // Act
-            service.TestOnStart(fullArgs);
+            service.StartForTest();
 
             // Assert
             Assert.Equal(expected, TestReflection.GetField<bool>(service, "_recoveryActionEnabled"));
