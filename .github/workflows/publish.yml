@@ -637,6 +637,9 @@ jobs:
               Get-ChildItem -Path $pkg -Recurse -Filter $ext -File | Remove-Item -Force
           }
 
+          # Scripts
+          Copy-Item "setup\taskschd\Set-ServyExePermissions.ps1" $pkg -Force
+
           # Task Scheduler setup - Hardened Recursive Copy
           $destPath = Join-Path $pkg "taskschd"
           $sourcePath = "setup\taskschd"

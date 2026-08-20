@@ -72,6 +72,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{70D87C51
 		setup\publish-res.ps1 = setup\publish-res.ps1
 		setup\publish.ps1 = setup\publish.ps1
 		setup\servy.iss = setup\servy.iss
+		setup\Set-ServyExePermissions.ps1 = setup\Set-ServyExePermissions.ps1
 		setup\signpath.ps1 = setup\signpath.ps1
 		setup\tools-config.ps1 = setup\tools-config.ps1
 		setup\Verify-PublishExclusions.ps1 = setup\Verify-PublishExclusions.ps1
