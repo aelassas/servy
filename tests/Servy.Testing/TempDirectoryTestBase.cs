@@ -3,28 +3,29 @@ using System.IO;
 namespace Servy.Testing
 {
     /// <summary>
-    /// Serves as a base class for tests requiring a uniquely isolated temporary directory fixture.
-    /// Automatically provisions the filesystem context on instantiation and ensures a recursive,
-    /// cascading teardown cleanup pass occurs upon disposal.
+    /// Base class for tests requiring an isolated temporary directory.
+    /// Creates the directory on construction and attempts recursive deletion on disposal,
+    /// retrying on transient file locks and leaving the directory in place if locks persist.
     /// </summary>
     public abstract class TempDirectoryTestBase : IDisposable
     {
         private const int MaxRetryAttempts = 3;
+        private const int RetryDelayMs = 50;
 
         /// <summary>
-        /// Gets the absolute filesystem path to the isolated temporary directory allocated for the current test context.
+        /// Gets the absolute filesystem path to the isolated temporary directory allocated for the current test.
         /// </summary>
         protected string TempDirectory { get; } = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TempDirectoryTestBase"/> class
-        /// and physically constructs the isolated backing directory on disk.
+        /// and creates the temporary directory on disk.
         /// </summary>
         protected TempDirectoryTestBase() => Directory.CreateDirectory(TempDirectory);
 
         /// <summary>
-        /// Disposes of the fixture context by recursively purging the managed temporary directory
-        /// and all nested filesystem items from disk.
+        /// Performs best-effort recursive deletion of the temporary directory,
+        /// retrying on transient file locks and swallowing lingering lock exceptions after all attempts expire.
         /// </summary>
         public virtual void Dispose()
         {
@@ -46,7 +47,7 @@ namespace Servy.Testing
                         // Final attempt failed due to persistent lock; allow orphan in %TEMP% rather than failing a passing test
                         break;
                     }
-                    Thread.Sleep(50);
+                    Thread.Sleep(RetryDelayMs);
                 }
             }
         }
