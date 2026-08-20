@@ -41,8 +41,9 @@ namespace Servy.CLI.UnitTests.Helpers
             var verbs = Helper.GetVerbs();
 
             // Assert
-            Assert.Contains("version", verbs);
-            Assert.Contains("--version", verbs);
+            Assert.Contains("install", verbs);   // Discovered via [Verb] reflection
+            Assert.Contains("version", verbs);   // Hardcoded addition
+            Assert.Contains("--version", verbs); // Hardcoded addition
         }
 
         [Fact]
@@ -99,6 +100,7 @@ namespace Servy.CLI.UnitTests.Helpers
         [Theory]
         [InlineData("Xml", ConfigFileType.Xml)]
         [InlineData("JSON", ConfigFileType.Json)]
+        [InlineData("  xml  ", ConfigFileType.Xml)]
         public void TryParseFileType_ValidInputs_ReturnsTrueAndMapsCorrectly(string input, ConfigFileType expectedType)
         {
             // Arrange & Act
@@ -128,6 +130,7 @@ namespace Servy.CLI.UnitTests.Helpers
         [InlineData("invalid")]
         [InlineData("123")]
         [InlineData("xml,json")]
+        [InlineData(" bogus ")]
         public void TryParseFileType_InvalidInputs_ReturnsFalseAndSetsError(string input)
         {
             // Arrange & Act
@@ -135,7 +138,7 @@ namespace Servy.CLI.UnitTests.Helpers
 
             // Assert
             Assert.False(result);
-            Assert.Equal(string.Format(Strings.Msg_UnsupportedFileType, input), error);
+            Assert.Equal(string.Format(Strings.Msg_UnsupportedFileType, input.Trim()), error);
         }
     }
 }
