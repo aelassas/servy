@@ -13,29 +13,24 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public async Task YieldAsync_CompletesSuccessfully()
         {
-            // Arrange & Act & Assert: Execute inside the active STA message loop thread context
+            // Execute inside the active STA message loop thread context
             await Helper.RunOnSTA(async () =>
             {
-                // Arrange: Bind the dispatcher wrapper inside the active STA thread execution loop
+                // Arrange
                 var uiDispatcher = new WpfUiDispatcher();
-                var task = uiDispatcher.YieldAsync();
 
-                // Assert: Verify the task is created successfully
-                Assert.NotNull(task);
+                // Act: Record any exception thrown while yielding to the dispatcher message pump
+                var exception = await Record.ExceptionAsync(async () => await uiDispatcher.YieldAsync());
 
-                // Act: Wait for the background yield pass to complete cleanly
-                await task;
-
-                // Assert: If we reach here, the Background priority action was executed
-                // and the dispatcher processed it.
-                Assert.True(task.IsCompleted && !task.IsFaulted && !task.IsCanceled);
+                // Assert: The absence of an exception proves that YieldAsync completed cleanly on the active STA thread
+                Assert.Null(exception);
             });
         }
 
         [Fact]
         public async Task YieldAsync_EnsuresExecutionOrder()
         {
-            // Arrange & Act & Assert: Execute inside the active STA message loop thread context
+            // Execute inside the active STA message loop thread context
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange: Bind the dispatcher wrapper inside the active STA thread execution loop
