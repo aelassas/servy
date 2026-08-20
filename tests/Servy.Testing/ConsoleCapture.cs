@@ -13,6 +13,38 @@ namespace Servy.Testing
         private static readonly SemaphoreSlim _consoleSemaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
+        /// Encapsulates console stream redirection and guarantees stream restoration before the backing StringWriters are disposed.
+        /// </summary>
+        private readonly struct ConsoleRedirect : IDisposable
+        {
+            private readonly TextWriter _oldOut;
+            private readonly TextWriter _oldErr;
+
+            public StringWriter StdOutWriter { get; }
+            public StringWriter StdErrWriter { get; }
+
+            public ConsoleRedirect(StringWriter stdOutWriter, StringWriter stdErrWriter)
+            {
+                _oldOut = Console.Out;
+                _oldErr = Console.Error;
+                StdOutWriter = stdOutWriter;
+                StdErrWriter = stdErrWriter;
+
+                Console.SetOut(stdOutWriter);
+                Console.SetError(stdErrWriter);
+            }
+
+            /// <summary>
+            /// Restores the original static Console stream outputs.
+            /// </summary>
+            public void Dispose()
+            {
+                Console.SetOut(_oldOut);
+                Console.SetError(_oldErr);
+            }
+        }
+
+        /// <summary>
         /// Synchronously captures standard output, standard error, and a return result during action execution.
         /// </summary>
         /// <typeparam name="TResult">The return type of the synchronous operation.</typeparam>
@@ -21,30 +53,22 @@ namespace Servy.Testing
         public static (string StdOut, string StdErr, TResult Result) Run<TResult>(Func<TResult> testAction)
         {
             _consoleSemaphore.Wait();
-            var oldOut = Console.Out;
-            var oldErr = Console.Error;
-
             try
             {
                 using (var swOut = new StringWriter())
                 using (var swErr = new StringWriter())
                 {
-                    Console.SetOut(swOut);
-                    Console.SetError(swErr);
-
-                    var result = testAction();
-
-                    // Restore streams before StringWriters are disposed
-                    Console.SetOut(oldOut);
-                    Console.SetError(oldErr);
+                    TResult result;
+                    using (var redirect = new ConsoleRedirect(swOut, swErr))
+                    {
+                        result = testAction();
+                    }
 
                     return (swOut.ToString(), swErr.ToString(), result);
                 }
             }
             finally
             {
-                Console.SetOut(oldOut);
-                Console.SetError(oldErr);
                 _consoleSemaphore.Release();
             }
         }
@@ -69,30 +93,22 @@ namespace Servy.Testing
         public static async Task<(string StdOut, string StdErr, TResult Result)> RunAsync<TResult>(Func<Task<TResult>> testAction)
         {
             await _consoleSemaphore.WaitAsync();
-            var oldOut = Console.Out;
-            var oldErr = Console.Error;
-
             try
             {
                 using (var swOut = new StringWriter())
                 using (var swErr = new StringWriter())
                 {
-                    Console.SetOut(swOut);
-                    Console.SetError(swErr);
-
-                    var result = await testAction();
-
-                    // Restore streams before StringWriters are disposed
-                    Console.SetOut(oldOut);
-                    Console.SetError(oldErr);
+                    TResult result;
+                    using (var redirect = new ConsoleRedirect(swOut, swErr))
+                    {
+                        result = await testAction();
+                    }
 
                     return (swOut.ToString(), swErr.ToString(), result);
                 }
             }
             finally
             {
-                Console.SetOut(oldOut);
-                Console.SetError(oldErr);
                 _consoleSemaphore.Release();
             }
         }

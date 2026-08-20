@@ -70,21 +70,6 @@ namespace Servy.Service.UnitTests
         {
         }
 
-        public void TestOnStart(string[] args)
-        {
-            // Guarantee TestModeFlag is at position 0 so args[0] in Service.OnStart always matches
-            var testArgs = args ?? Array.Empty<string>();
-
-            if (testArgs.Length == 0 || !string.Equals(testArgs[0], TestModeFlag, StringComparison.OrdinalIgnoreCase))
-            {
-                // Remove duplicate TestModeFlag if it was placed elsewhere in the array, then insert at position 0
-                var filtered = testArgs.Where(a => !string.Equals(a, TestModeFlag, StringComparison.OrdinalIgnoreCase));
-                testArgs = new[] { TestModeFlag }.Concat(filtered).ToArray();
-            }
-
-            base.OnStart(testArgs);
-        }
-
         public void InvokeSetProcessPriority(ProcessPriorityClass priority) => SetProcessPriority(priority);
 
         public void SetChildProcess(IProcessWrapper process) =>
