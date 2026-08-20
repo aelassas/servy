@@ -6,6 +6,7 @@ using Servy.Core.Security;
 using Servy.Infrastructure.Helpers;
 using Servy.Testing;
 using Servy.UI.Bootstrapping;
+using System.Data.SQLite;
 using System.Reflection;
 using System.Windows;
 using Helper = Servy.Testing.Helper;
@@ -13,9 +14,8 @@ using Helper = Servy.Testing.Helper;
 namespace Servy.UI.IntegrationTests.Bootstrapping
 {
     [Collection("UiSta")]
-    public class AppBootstrapperIntegrationTests : IDisposable
+    public class AppBootstrapperIntegrationTests : TempDirectoryTestBase
     {
-        private readonly string _testDir;
         private readonly string _appSettingsFile;
         private readonly string _logFile;
         private readonly string _dbFile;
@@ -27,14 +27,11 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         public AppBootstrapperIntegrationTests()
         {
             // Arrange
-            _testDir = Path.Combine(Path.GetTempPath(), $"ServyBootstrapperTests_{Guid.NewGuid():N}");
-            Directory.CreateDirectory(_testDir);
-
-            _appSettingsFile = Path.Combine(_testDir, "appsettings.json");
+            _appSettingsFile = Path.Combine(TempDirectory, "appsettings.json");
             _logFile = $"BootstrapperTest_{Guid.NewGuid():N}.log";
-            _dbFile = Path.Combine(_testDir, "test.db");
-            _keyFile = Path.Combine(_testDir, "test.key");
-            _ivFile = Path.Combine(_testDir, "test.iv");
+            _dbFile = Path.Combine(TempDirectory, "test.db");
+            _keyFile = Path.Combine(TempDirectory, "test.key");
+            _ivFile = Path.Combine(TempDirectory, "test.iv");
 
             _mockProcessKiller = new Mock<IProcessKiller>();
 
@@ -69,23 +66,24 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             Logger.Shutdown();
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             Logger.Shutdown();
 
+            // Clear SQLite connection pools so any open DB locks are released
+            SQLiteConnection.ClearAllPools();
+
             try
             {
-                if (Directory.Exists(_testDir))
-                {
-                    Directory.Delete(_testDir, true);
-                }
                 string globalLogPath = Path.Combine(Logger.LogsPath, _logFile);
                 if (File.Exists(globalLogPath))
                 {
                     File.Delete(globalLogPath);
                 }
             }
-            catch { /* Fail-silent on cleanup blocks */ }
+            catch { /* Fail-silent on log file cleanup */ }
+
+            base.Dispose(); // Retrying recursive delete of TempDirectory
         }
 
         #region Constructor Guard Tests
