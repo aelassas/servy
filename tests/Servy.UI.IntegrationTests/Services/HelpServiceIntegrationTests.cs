@@ -26,7 +26,6 @@ namespace Servy.UI.IntegrationTests.Services
         {
             _mockMessageBox = new Mock<IMessageBoxService>();
             _service = new HelpService(_mockMessageBox.Object);
-            UiHeadless.IsEnabled = true;
         }
 
         public void Dispose()
