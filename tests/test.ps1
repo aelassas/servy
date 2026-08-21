@@ -62,7 +62,6 @@ foreach ($ProjFile in $RawTestProjects) {
     $dotnetArgs = @(
         'test', $Proj,
         '--configuration', 'Debug',
-        '--no-launch-profile',
         '--results-directory', $resultsPath,
         '--',
         '--coverage',
