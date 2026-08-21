@@ -203,9 +203,9 @@ jobs:
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
-      # Run unit tests
+      # Run all tests
       # -----------------------------------------------------
-      - name: Run unit tests
+      - name: Run all tests
         shell: pwsh
         run: |
           # Use vswhere to find the latest installed vstest.console.exe dynamically
