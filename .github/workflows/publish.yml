@@ -252,8 +252,7 @@ jobs:
               --force `
               --self-contained true `
               /p:DeleteExistingFiles=true `
-              /p:DebugType=portable `
-              /p:DebugSymbols=true
+              /p:CopyOutputSymbolsToPublishDirectory=true
 
       # -----------------------------------------------------
       # SIGN Servy.Restarter.exe
@@ -310,8 +309,7 @@ jobs:
               --force `
               --self-contained true `
               /p:DeleteExistingFiles=true `
-              /p:DebugType=portable `
-              /p:DebugSymbols=true
+              /p:CopyOutputSymbolsToPublishDirectory=true
 
       # -----------------------------------------------------
       # SIGN Servy.Service.exe
