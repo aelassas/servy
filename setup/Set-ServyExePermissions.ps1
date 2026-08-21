@@ -19,6 +19,7 @@
     - Servy.Service.exe
     - Servy.Service.CLI.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.exe gets copied to %ProgramData%\Servy)
     - Servy.Restarter.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.exe gets copied to %ProgramData%\Servy)
+    - handle64.exe / handle64a.exe
 
 .PARAMETER TargetAccount
     Mandatory account identifier receiving Read & Execute permissions. Supported formats:
@@ -49,7 +50,9 @@ $ErrorActionPreference = 'Stop'
 $exeNames = @(
     'Servy.Service.exe',
     'Servy.Service.CLI.exe',
-    'Servy.Restarter.exe'
+    'Servy.Restarter.exe',
+    'handle64.exe',
+    'handle64a.exe'
 )
 
 $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")

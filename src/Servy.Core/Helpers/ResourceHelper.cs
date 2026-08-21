@@ -2,6 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.AccessControl;
 
 namespace Servy.Core.Helpers
 {
@@ -69,6 +70,9 @@ namespace Servy.Core.Helpers
                 if (!TryPrepareExtraction(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
+                // Capture pre-existing explicit ACLs BEFORE stopping services, killing processes, or staging files
+                FileSecurity? existingAcl = GetExistingFileSecurity(targetPath);
+
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
                 // This prevents stopping services or killing locking processes if the resource is missing.
                 Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -107,6 +111,10 @@ namespace Servy.Core.Helpers
 
                         // Plumb the token parameter through to the atomic I/O engine
                         await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync, cancellationToken);
+
+                        // Restore pre-existing ACLs on the newly written file
+                        RestoreFileSecurity(targetPath, existingAcl);
+
                         copyDone = true; // File write succeeded natively within the execution path
                     }
                     finally
@@ -187,6 +195,9 @@ namespace Servy.Core.Helpers
                 if (!TryPrepareExtraction(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
+                // Capture pre-existing explicit ACLs BEFORE killing processes or executing atomic writes
+                FileSecurity? existingAcl = GetExistingFileSecurity(targetPath);
+
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
                 Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
                 if (resourceStream == null)
@@ -204,6 +215,9 @@ namespace Servy.Core.Helpers
                         return false;
 
                     Helper.WriteFileAtomic(targetPath, resourceStream.CopyTo);
+
+                    // Restore pre-existing ACLs on the newly written file
+                    RestoreFileSecurity(targetPath, existingAcl);
                 }
 
                 Logger.Info($"Successfully forcefully copied embedded resource '{resourceName}' to '{targetPath}'.");
@@ -282,6 +296,56 @@ namespace Servy.Core.Helpers
         }
 
         #region Shared Internal Logic
+
+        /// <summary>
+        /// Attempts to retrieve the existing Access Control List (ACL) for a file before replacement,
+        /// converting inherited rules into explicit Access Control Entries (ACEs).
+        /// </summary>
+        /// <param name="filePath">The target file path.</param>
+        /// <returns>The <see cref="FileSecurity"/> of the target file if it exists; otherwise, <c>null</c>.</returns>
+        private FileSecurity? GetExistingFileSecurity(string filePath)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                {
+                    var fileInfo = new FileInfo(filePath);
+                    var security = fileInfo.GetAccessControl();
+
+                    // Protect against re-inheriting parent directory permissions upon atomic file replacement
+                    security.SetAccessRuleProtection(isProtected: true, preserveInheritance: true);
+                    return security;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to read existing ACL for file '{filePath}'. Pre-existing security settings may not be preserved upon replacement.", ex);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Reapplies a previously captured Access Control List (ACL) to a target file after replacement.
+        /// </summary>
+        /// <param name="filePath">The target file path.</param>
+        /// <param name="fileSecurity">The <see cref="FileSecurity"/> settings to apply.</param>
+        private void RestoreFileSecurity(string filePath, FileSecurity? fileSecurity)
+        {
+            if (fileSecurity == null || string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return;
+
+            try
+            {
+                var fileInfo = new FileInfo(filePath);
+                fileInfo.SetAccessControl(fileSecurity);
+                Logger.Debug($"Successfully restored explicit pre-existing ACL settings on '{filePath}'.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to restore pre-existing ACL settings on '{filePath}'.", ex);
+            }
+        }
 
         /// <summary>
         /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required based on timestamps.
