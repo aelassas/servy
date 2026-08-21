@@ -1,8 +1,10 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Disable Microsoft.Testing.Platform MSBuild targets to allow VSTest/dotnet test compatibility on .NET 10 -->
+    <!-- Disable Microsoft.Testing.Platform VSTest enforcement for .NET 10.0+ -->
     <EnableMicrosoftTestingPlatform>false</EnableMicrosoftTestingPlatform>
+    <TestingPlatformDotnetTestSupport>false</TestingPlatformDotnetTestSupport>
+    <UseVSTest>true</UseVSTest>
   </PropertyGroup>
 
   <ItemGroup>

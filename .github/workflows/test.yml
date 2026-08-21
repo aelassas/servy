@@ -79,6 +79,8 @@ jobs:
                   'test', $projPath,
                   '--configuration', 'Debug',
                   '--no-build',
+                  '-p:EnableMicrosoftTestingPlatform=false',
+                  '-p:TestingPlatformDotnetTestSupport=false',
                   '--blame',
                   '--blame-crash',
                   '--blame-crash-dump-type', 'full',
@@ -109,7 +111,7 @@ jobs:
         run: dotnet build Servy.sln --configuration Release --no-restore
 
       - name: Run all tests (Release)
-        run: dotnet test Servy.sln --configuration Release --no-build --blame --blame-crash --blame-crash-dump-type full
+        run: dotnet test Servy.sln --configuration Release --no-build -p:EnableMicrosoftTestingPlatform=false -p:TestingPlatformDotnetTestSupport=false --blame --blame-crash --blame-crash-dump-type full
 
       - name: Run PowerShell verification and test scripts
         shell: pwsh

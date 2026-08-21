@@ -195,7 +195,7 @@ jobs:
           & $exePath | Select-String "7-Zip"
 
       # -----------------------------------------------------
-      # Run unit tests
+      # Run all tests
       # -----------------------------------------------------
       # NOTE: Tests are skipped here for ARM64 because they are fully
       # covered by the dedicated ARM64 test matrices in test.yml.
@@ -213,7 +213,7 @@ jobs:
       - name: Run all tests
         if: ${{ inputs.arm64 == false }}
         shell: pwsh
-        run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build
+        run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build -p:EnableMicrosoftTestingPlatform=false -p:TestingPlatformDotnetTestSupport=false
 
       # -----------------------------------------------------
       # Build and Publish SBOM
