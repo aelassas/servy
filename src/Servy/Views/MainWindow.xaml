@@ -833,12 +833,13 @@
         </TabItem>
 
         <TabItem Header="{x:Static resx:Strings.Label_LogOnTab}"
-                 AutomationProperties.Name="{x:Static resx:Strings.Label_LogOnTab}"
-                 AutomationProperties.AutomationId="TabItemLogOn"
-                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TabItemLogOn_HelpText}">
+         AutomationProperties.Name="{x:Static resx:Strings.Label_LogOnTab}"
+         AutomationProperties.AutomationId="TabItemLogOn"
+         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TabItemLogOn_HelpText}">
           <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Grid Style="{StaticResource TabGridStyle}">
               <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -853,61 +854,66 @@
               </Grid.ColumnDefinitions>
 
               <RadioButton Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
-                           Margin="0,0,0,10"
-                           Content="{x:Static resx:Strings.Label_RunAsLocalSystem}"
-                           IsChecked="{Binding RunAsLocalSystem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           AutomationProperties.Name="{x:Static resx:Strings.Label_RunAsLocalSystem}"
-                           AutomationProperties.AutomationId="RadioButtonLocalSystem"
-                           AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RadioButtonLocalSystem_HelpText}" />
+                   Margin="0,0,0,10"
+                   Content="{x:Static resx:Strings.Label_RunAsLocalSystem}"
+                   IsChecked="{Binding RunAsLocalSystem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                   AutomationProperties.Name="{x:Static resx:Strings.Label_RunAsLocalSystem}"
+                   AutomationProperties.AutomationId="RadioButtonLocalSystem"
+                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RadioButtonLocalSystem_HelpText}" />
 
               <RadioButton Grid.Row="1" Grid.Column="0"
-                           Content="{x:Static resx:Strings.Label_UserAccount}"
-                           IsChecked="{Binding RunAsLocalSystem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanConverter}}"
-                           AutomationProperties.Name="{x:Static resx:Strings.Label_UserAccount}"
-                           AutomationProperties.AutomationId="RadioButtonUserAccount"
-                           AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RadioButtonUserAccount_HelpText}" />
+                   Content="{x:Static resx:Strings.Label_UserAccount}"
+                   IsChecked="{Binding RunAsLocalSystem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanConverter}}"
+                   AutomationProperties.Name="{x:Static resx:Strings.Label_UserAccount}"
+                   AutomationProperties.AutomationId="RadioButtonUserAccount"
+                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RadioButtonUserAccount_HelpText}" />
 
               <TextBox Grid.Row="1" Grid.Column="1"
-                       Margin="0,0,0,5"
-                       IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
-                       Text="{Binding UserAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxUserAccount_Name}"
-                       AutomationProperties.AutomationId="TextBoxUserAccount"
-                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxUserAccount_HelpText}" />
+               Margin="0,0,0,5"
+               IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+               Text="{Binding UserAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxUserAccount_Name}"
+               AutomationProperties.AutomationId="TextBoxUserAccount"
+               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxUserAccount_HelpText}" />
 
               <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
-                         Text="{x:Static resx:Strings.Info_UserAccount}"
-                         Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                         TextWrapping="Wrap" Margin="0,0,0,10" />
+                 Text="{x:Static resx:Strings.Info_UserAccount}"
+                 Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                 TextWrapping="Wrap" Margin="0,0,0,10" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_Password}"
-                         Margin="0,5,10,5" VerticalAlignment="Center" />
+                 Text="{x:Static resx:Strings.Label_Password}"
+                 Margin="0,5,10,5" VerticalAlignment="Center" />
 
               <PasswordBox Grid.Row="3" Grid.Column="1"
-                           Margin="0,0,0,10"
-                           IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
-                           helpers:PasswordBoxHelper.BoundPassword="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           AutomationProperties.Name="{x:Static resx:Strings.Label_Password}"
-                           AutomationProperties.AutomationId="PasswordBoxUser"
-                           AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PasswordBoxUser_HelpText}" />
+                   Margin="0,0,0,10"
+                   IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+                   helpers:PasswordBoxHelper.BoundPassword="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                   AutomationProperties.Name="{x:Static resx:Strings.Label_Password}"
+                   AutomationProperties.AutomationId="PasswordBoxUser"
+                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PasswordBoxUser_HelpText}" />
 
               <TextBlock Grid.Row="4" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ConfirmPassword}"
-                         Margin="0,5,10,5" VerticalAlignment="Center" />
+                 Text="{x:Static resx:Strings.Label_ConfirmPassword}"
+                 Margin="0,5,10,5" VerticalAlignment="Center" />
 
               <PasswordBox Grid.Row="4" Grid.Column="1"
-                           Margin="0,0,0,10"
-                           IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
-                           helpers:PasswordBoxHelper.BoundPassword="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           AutomationProperties.Name="{x:Static resx:Strings.Label_ConfirmPassword}"
-                           AutomationProperties.AutomationId="PasswordBoxConfirm"
-                           AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PasswordBoxConfirm_HelpText}" />
+                   Margin="0,0,0,10"
+                   IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+                   helpers:PasswordBoxHelper.BoundPassword="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                   AutomationProperties.Name="{x:Static resx:Strings.Label_ConfirmPassword}"
+                   AutomationProperties.AutomationId="PasswordBoxConfirm"
+                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PasswordBoxConfirm_HelpText}" />
 
               <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
-                         Text="{x:Static resx:Strings.Info_UserAccountRights}"
-                         Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                         TextWrapping="Wrap" Margin="0,0,0,10" />
+                 Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                 TextWrapping="Wrap" Margin="0,5,0,10">
+                  <Run Text="{x:Static resx:Strings.Info_SecurityHardeningNotice}" />
+                  <Hyperlink NavigateUri="https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory"
+                             RequestNavigate="Hyperlink_RequestNavigate">
+                    <Run Text="{x:Static resx:Strings.Link_SecurityHardeningGuide}" />
+                  </Hyperlink>
+              </TextBlock>
             </Grid>
           </ScrollViewer>
         </TabItem>
