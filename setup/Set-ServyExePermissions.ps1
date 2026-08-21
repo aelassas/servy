@@ -1,12 +1,19 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Hardens Servy executable permissions by breaking inheritance and granting Read & Execute rights.
+    Hardens Servy executable permissions to Read & Execute to prevent privilege escalation and binary tampering (Mandatory Security Hardening).
 
 .DESCRIPTION
-    Breaks permission inheritance on Servy binary executables in %ProgramData%\Servy and grants
-    explicit Read & Execute rights to a target user, domain account, gMSA, or local account.
-    Preserves Full Control for SYSTEM and Administrators using Well-Known SIDs.
+    Mandatory security script for hardening Servy service runner accounts. Servy requires directory-level
+    'Modify' permissions on %ProgramData%\Servy to write database logs, process state, and runtime recovery files.
+    However, leaving binaries with inherited 'Modify' access allows a compromised service process or unprivileged
+    runner account to tamper with, replace, or hijack core executables.
+
+    This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
+    executable files and restricting the target runner account to strict 'Read & Execute' rights. This ensures the
+    service runner can execute required binaries without being able to overwrite or replace them, protecting against
+    unprivileged binary replacement and local privilege escalation vectors. Full Control is explicitly preserved for
+    SYSTEM and Administrators using language-agnostic Well-Known SIDs.
 
     Hardened Executable Files:
     - Servy.Service.exe
