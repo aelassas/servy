@@ -438,7 +438,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        public async Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
+        public Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -448,21 +448,26 @@ namespace Servy.Services
                     UseShellExecute = true
                 };
 
-                using (var process = _processHelper.Start(psi))
+                var process = _processHelper.Start(psi);
+                if (process != null)
                 {
-                    if (process == null)
+                    using (process)
                     {
-                        Logger.Warn($"Failed to start external process for link: '{AppConfig.SecurityHardeningGuideLink}'.");
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                        return;
+                        // Native handle disposed safely when a new process instance is spawned
                     }
+                }
+                else
+                {
+                    Logger.Debug($"Security hardening guide link handed off to an existing browser process: '{AppConfig.SecurityHardeningGuideLink}'.");
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error($"Error opening security hardening guide link '{AppConfig.SecurityHardeningGuideLink}'", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
+
+            return Task.CompletedTask;
         }
 
         #endregion

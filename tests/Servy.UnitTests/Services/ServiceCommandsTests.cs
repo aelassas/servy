@@ -490,7 +490,7 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
-        public async Task OpenSecurityHardeningGuide_ProcessReturnsNull_DisplaysError()
+        public async Task OpenSecurityHardeningGuide_ProcessReturnsNull_SucceedsWithoutError()
         {
             // Arrange
             _processHelperMock
@@ -502,8 +502,8 @@ namespace Servy.UnitTests.Services
             // Act
             await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
 
-            // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            // Assert: Handing off to an existing browser instance (returning null) should NOT trigger an error popup
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
