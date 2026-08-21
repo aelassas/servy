@@ -1906,6 +1906,16 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If the service runs under an account other than Local System, you must grant Modify access to
+        ///%ProgramData%\Servy for the account running the service and execute the mandatory hardening script: Set-ServyExePermissions.ps1 -TargetAccount &quot;domain\user&quot; to prevent unprivileged binary tampering and local privilege escalation. .
+        /// </summary>
+        public static string Info_SecurityHardeningNotice {
+            get {
+                return ResourceManager.GetString("Info_SecurityHardeningNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Service names may contain letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($). Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start..
         /// </summary>
         public static string Info_ServiceDependencies {
@@ -1956,15 +1966,6 @@ namespace Servy.Resources {
         public static string Info_UserAccount {
             get {
                 return ResourceManager.GetString("Info_UserAccount", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If the service runs under an account other than Local System, you must grant write access to %ProgramData%\Servy for the account that runs the service..
-        /// </summary>
-        public static string Info_UserAccountRights {
-            get {
-                return ResourceManager.GetString("Info_UserAccountRights", resourceCulture);
             }
         }
         
@@ -2460,6 +2461,15 @@ namespace Servy.Resources {
         public static string Label_UserAccount {
             get {
                 return ResourceManager.GetString("Label_UserAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Learn script location and execution usage..
+        /// </summary>
+        public static string Link_SecurityHardeningGuide {
+            get {
+                return ResourceManager.GetString("Link_SecurityHardeningGuide", resourceCulture);
             }
         }
         

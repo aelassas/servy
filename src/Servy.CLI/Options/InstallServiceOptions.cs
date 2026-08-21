@@ -97,6 +97,22 @@ namespace Servy.CLI.Options
         public string? CpuAffinity { get; set; }
 
         /// <summary>
+        /// Gets or sets timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// Must be >= 1 second.
+        /// Optional. Defaults to 10 seconds.
+        /// </summary>
+        [Option("startTimeout", HelpText = "Timeout in seconds to wait for the process to start successfully before considering the startup as failed. Must be between 1 and 86400 seconds. Defaults to 10 seconds.")]
+        public string? StartTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets timeout in seconds to wait for the process to exit.
+        /// Must be >= 1 second.
+        /// Optional. Defaults to 5 seconds.
+        /// </summary>
+        [Option("stopTimeout", HelpText = "Timeout in seconds to wait for the process to exit. Must be between 1 and 86400 seconds. Defaults to 5 seconds.")]
+        public string? StopTimeout { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// </summary>
         [Option("enableConsoleUI", HelpText = "Enable console user interface for the service. When enabled, stdout/stderr redirection is disabled.")]
@@ -171,6 +187,14 @@ namespace Servy.CLI.Options
         /// </remarks>
         [Option("useLocalTimeForRotation", HelpText = "Use local server time for log rotation instead of UTC. Default is false.")]
         public bool UseLocalTimeForRotation { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether debug logs are enabled.
+        /// When enabled, environment variables and process parameters are recorded in the Servy.Service.log file.
+        /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// </summary>
+        [Option("debug", HelpText = "Whether debug logs are enabled. When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.")]
+        public bool EnableDebugLogs { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
@@ -296,8 +320,11 @@ namespace Servy.CLI.Options
             HelpText = "The service account username (e.g., .\\username, DOMAIN\\username, or DOMAIN\\gMSA$). " +
                        "If this option is not set, the service runs under Local System. " +
                        "If the service runs under an account other than Local System, " +
-                       "you must grant Modify access to %ProgramData%\\Servy " +
-                       "for the account that runs the service."
+                       "you must grant Modify access to %ProgramData%\\Servy for the account running " +
+                       "the service and execute the mandatory hardening script: " +
+                       "Set-ServyExePermissions.ps1 -TargetAccount \"domain\\user\" to prevent unprivileged " +
+                       "binary tampering and local privilege escalation. Learn script location and " +
+                       "execution usage at: https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory"
         )]
         public string? User { get; set; }
 
@@ -415,30 +442,6 @@ namespace Servy.CLI.Options
         [Sensitive]
         [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable." + SecurityWarningPrefix + AppConfig.PostLaunchParametersEnvVarName + SecurityWarningSuffixParams)]
         public string? PostLaunchParameters { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether debug logs are enabled.
-        /// When enabled, environment variables and process parameters are recorded in the Servy.Service.log file.
-        /// Not recommended for production environments, as these logs may contain sensitive information.
-        /// </summary>
-        [Option("debug", HelpText = "Whether debug logs are enabled. When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.")]
-        public bool EnableDebugLogs { get; set; }
-
-        /// <summary>
-        /// Gets or sets timeout in seconds to wait for the process to start successfully before considering the startup as failed.
-        /// Must be >= 1 second.
-        /// Optional. Defaults to 10 seconds.
-        /// </summary>
-        [Option("startTimeout", HelpText = "Timeout in seconds to wait for the process to start successfully before considering the startup as failed. Must be between 1 and 86400 seconds. Defaults to 10 seconds.")]
-        public string? StartTimeout { get; set; }
-
-        /// <summary>
-        /// Gets or sets timeout in seconds to wait for the process to exit.
-        /// Must be >= 1 second.
-        /// Optional. Defaults to 5 seconds.
-        /// </summary>
-        [Option("stopTimeout", HelpText = "Timeout in seconds to wait for the process to exit. Must be between 1 and 86400 seconds. Defaults to 5 seconds.")]
-        public string? StopTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets the pre-stop executable path.
