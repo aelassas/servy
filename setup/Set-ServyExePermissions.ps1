@@ -1,11 +1,25 @@
+#Requires -Version 2.0
 <#
 .SYNOPSIS
-    Hardens Servy .NET Framework 4.8 executable permissions by breaking inheritance and granting Read & Execute rights.
+    Hardens Servy .NET Framework 4.8 executable and library permissions to Read & Execute to prevent privilege escalation and binary tampering (Mandatory Security Hardening).
 
 .DESCRIPTION
-    Breaks permission inheritance on Servy .NET Framework 4.8 binary executables in %ProgramData%\Servy and grants
-    explicit Read & Execute rights to a target user, domain account, gMSA, or local account.
-    Preserves Full Control for SYSTEM and Administrators using Well-Known SIDs.
+    Mandatory security script for hardening Servy .NET Framework 4.8 service runner accounts. Servy requires
+    directory-level 'Modify' permissions on %ProgramData%\Servy to write database logs, process state, and runtime
+    recovery files. However, leaving binaries and loaded assemblies with inherited 'Modify' access allows a
+    compromised service process or unprivileged runner account to tamper with, replace, or hijack core executables and DLLs.
+
+    This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
+    executable files and DLL assemblies, restricting the target runner account to strict 'Read & Execute' rights.
+    This ensures the service runner can execute required binaries without being able to overwrite, replace, or DLL-hijack
+    them, protecting against unprivileged binary replacement and local privilege escalation vectors. Full Control is
+    explicitly preserved for SYSTEM and Administrators using language-agnostic Well-Known SIDs.
+
+    Hardened Target Files:
+    - Servy.Service.Net48.exe
+    - Servy.Service.CLI.Net48.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.Net48.exe gets copied to %ProgramData%\Servy)
+    - Servy.Restarter.Net48.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.Net48.exe gets copied to %ProgramData%\Servy)
+    - All *.dll files in %ProgramData%\Servy
 
 .PARAMETER TargetAccount
     Mandatory account identifier receiving Read & Execute permissions. Supported formats:
@@ -23,7 +37,7 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = "Specify target account (e.g., 'DOMAIN\User', '.\User', or 'DOMAIN\gMSA$').")]
+    [Parameter(Mandatory = $true, HelpMessage = 'Specify target account like DOMAIN\User, .\User, or DOMAIN\gMSA$')]
     [ValidateNotNullOrEmpty()]
     [ValidatePattern('^(?i)(?:(?:\.|[a-z0-9_.-]+)\\)?[a-z0-9_.-]+\$?$')]
     [string]$TargetAccount
@@ -33,7 +47,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # .NET Framework 4.8 executable target list
-$exeNames = @(
+$staticExeNames = @(
     'Servy.Service.Net48.exe',
     'Servy.Service.CLI.Net48.exe',
     'Servy.Restarter.Net48.exe'
@@ -46,8 +60,8 @@ if (-not (Test-Path -Path $programDataDir)) {
     exit 0
 }
 
-# Resolve relative notation '.\User' to actual computer name
-if ($TargetAccount.StartsWith(".\")) {
+# Resolve relative notation '.\User' to actual computer name (PS 2.0 compatible)
+if ($TargetAccount.Length -ge 2 -and $TargetAccount.Substring(0, 2) -eq ".\") {
     $TargetAccount = "$env:COMPUTERNAME\" + $TargetAccount.Substring(2)
 }
 
@@ -58,22 +72,36 @@ $targetNTAccount = New-Object System.Security.Principal.NTAccount($TargetAccount
 $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
 $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
 
-Write-Host "Securing Servy (.NET Framework 4.8) executable files in: $programDataDir" -ForegroundColor Cyan
+# Discover all .dll files in %ProgramData%\Servy (PS 2.0 compatible file discovery without -File flag)
+$dllFiles = Get-ChildItem -Path $programDataDir -Filter "*.dll" -ErrorAction SilentlyContinue | 
+    Where-Object { -not $_.PSIsContainer } | 
+    Select-Object -ExpandProperty Name
+
+# Combine static executables and discovered DLLs
+$targetFiles = @($staticExeNames) + @($dllFiles)
+
+Write-Host "Securing Servy (.NET Framework 4.8) binary and library files in: $programDataDir" -ForegroundColor Cyan
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
-foreach ($exeName in $exeNames) {
-    $exePath = [System.IO.Path]::Combine($programDataDir, $exeName)
+foreach ($fileName in $targetFiles) {
+    if ([string]::IsNullOrEmpty($fileName)) { continue }
 
-    if (-not (Test-Path -Path $exePath)) {
-        Write-Host "Skipping '$exeName' (file not found)." -ForegroundColor Gray
+    $filePath = [System.IO.Path]::Combine($programDataDir, $fileName)
+
+    if (-not (Test-Path -Path $filePath)) {
+        if ($fileName -eq 'Servy.Restarter.Net48.exe') {
+            Write-Host "Skipping '$fileName' (file not found). Note: Start the service once so Servy.Restarter.Net48.exe gets copied to %ProgramData%\Servy." -ForegroundColor Yellow
+        } else {
+            Write-Host "Skipping '$fileName' (file not found)." -ForegroundColor Gray
+        }
         continue
     }
 
-    Write-Host "Hardening permissions on '$exeName'..." -ForegroundColor Green
+    Write-Host "Hardening permissions on '$fileName'..." -ForegroundColor Green
 
     # Execute two ACL passes: Pass 1 converts inheritance to explicit rules; Pass 2 purges old rules and locks down Read & Execute.
     for ($pass = 1; $pass -le 2; $pass++) {
-        $acl = Get-Acl -Path $exePath
+        $acl = Get-Acl -Path $filePath
 
         # 1. Break inheritance and convert existing inherited permissions to explicit ACEs
         $acl.SetAccessRuleProtection($true, $true)
@@ -96,10 +124,10 @@ foreach ($exeName in $exeNames) {
         $acl.SetAccessRule($targetRule)
 
         # Commit ACL pass to disk
-        Set-Acl -Path $exePath -AclObject $acl
+        Set-Acl -Path $filePath -AclObject $acl
     }
 
-    Write-Host "Successfully hardened '$exeName'." -ForegroundColor Green
+    Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
 }
 
-Write-Host "`nExecutable permission hardening complete." -ForegroundColor Cyan
+Write-Host "`nExecutable and library permission hardening complete." -ForegroundColor Cyan
