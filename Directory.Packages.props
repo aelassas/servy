@@ -1,7 +1,10 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Disable Microsoft.Testing.Platform MSBuild targets to allow VSTest/dotnet test compatibility on .NET 10 -->
+    <EnableMicrosoftTestingPlatform>false</EnableMicrosoftTestingPlatform>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
     <PackageVersion Include="ConfigureAwait.Fody" Version="3.4.1" />
