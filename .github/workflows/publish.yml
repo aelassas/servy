@@ -251,7 +251,9 @@ jobs:
               -o $publishDir `
               --force `
               --self-contained true `
-              /p:DeleteExistingFiles=true
+              /p:DeleteExistingFiles=true `
+              /p:DebugType=portable `
+              /p:DebugSymbols=true
 
       # -----------------------------------------------------
       # SIGN Servy.Restarter.exe
@@ -307,7 +309,9 @@ jobs:
               -o $publishDir `
               --force `
               --self-contained true `
-              /p:DeleteExistingFiles=true
+              /p:DeleteExistingFiles=true `
+              /p:DebugType=portable `
+              /p:DebugSymbols=true
 
       # -----------------------------------------------------
       # SIGN Servy.Service.exe
