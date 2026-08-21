@@ -284,6 +284,10 @@ jobs:
           if (-not (Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
 
+          $pdb = "src/Servy.Restarter/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.Restarter.pdb"
+          if (-not (Test-Path $pdb)) { throw "Servy.Restarter.pdb not found!" }
+          Copy-Item $pdb src/Servy.Service/Resources/Servy.Restarter.pdb -Force
+
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Service.exe
       # -----------------------------------------------------
@@ -335,16 +339,21 @@ jobs:
           $signed = "signed/Servy.Service/Servy.Service.exe"
           if (-not (Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
 
+          $pdb = "src/Servy.Service/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.Service.pdb"
+          if (-not (Test-Path $pdb)) { throw "Servy.Service.pdb not found!" }
+
           $targets = @(
-              "src/Servy/Resources/Servy.Service.exe",
-              "src/Servy.Manager/Resources/Servy.Service.exe",
-              "src/Servy.CLI/Resources/Servy.Service.CLI.exe"
+              @{ Exe = "src/Servy/Resources/Servy.Service.exe"; Pdb = "src/Servy/Resources/Servy.Service.pdb" },
+              @{ Exe = "src/Servy.Manager/Resources/Servy.Service.exe"; Pdb = "src/Servy.Manager/Resources/Servy.Service.pdb" },
+              @{ Exe = "src/Servy.CLI/Resources/Servy.Service.CLI.exe"; Pdb = "src/Servy.CLI/Resources/Servy.Service.CLI.pdb" }
           )
 
-          # Inject the signed EXE into each resource folder
-          foreach ($dst in $targets) {
-              Write-Host "Injecting SIGNED Servy.Service.exe into $dst"
-              Copy-Item $signed $dst -Force
+          # Inject the signed EXE and matching PDB into each resource folder
+          foreach ($target in $targets) {
+              Write-Host "Injecting SIGNED Servy.Service.exe into $($target.Exe)"
+              Copy-Item $signed $($target.Exe) -Force
+              Write-Host "Injecting matching Servy.Service.pdb into $($target.Pdb)"
+              Copy-Item $pdb $($target.Pdb) -Force
           }
 
       # -----------------------------------------------------
