@@ -1,5 +1,31 @@
 # Changelog
 
+## [Servy 9.7](https://github.com/aelassas/servy/releases/tag/v9.7)
+
+**Date:** 2026-08-21 | **Tag:** [`v9.7`](https://github.com/aelassas/servy/tree/v9.7)
+
+* feat(security): add [Set-ServyExePermissions.ps1](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory) to harden service binaries with explicit Read & Execute rights
+* feat(security): update service account documentation and UI to require Set-ServyExePermissions.ps1 hardening
+* fix(core): preserve file ACLs across atomic resource extractions in ResourceHelper.cs
+* fix(cli): align install command options sequence with core service schema
+* test: migrate test runner and coverage collection from VSTest to MTP
+* chore(deps): update dependencies
+* ci(publish.yml): signed exe injected into Resources without a matching pdb, leaving embedded debug symbols stale for the shipped binary (#5436)
+
+### Downloads
+* [servy-9.7-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-arm64-installer.exe) - 73.32 MB
+* [servy-9.7-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-arm64-portable.7z) - 74.21 MB
+* [servy-9.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-net48-sbom.xml) - 0.03 MB
+* [servy-9.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-net48-x64-installer.exe) - 4.35 MB
+* [servy-9.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-net48-x64-portable.7z) - 2.09 MB
+* [servy-9.7-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-sbom.xml) - 0.04 MB
+* [servy-9.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-x64-installer.exe) - 79.50 MB
+* [servy-9.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.7/servy-9.7-x64-portable.7z) - 76.89 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.7.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.7.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.6...v9.7
+
 ## [Servy 9.6](https://github.com/aelassas/servy/releases/tag/v9.6)
 
 **Date:** 2026-08-19 | **Tag:** [`v9.6`](https://github.com/aelassas/servy/tree/v9.6)
