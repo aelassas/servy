@@ -38,7 +38,6 @@ jobs:
     env:
       REPORTGENERATOR_VERSION: "5.5.10"
       # Centralized source of truth for coverage exclusions
-      VSTEST_EXCLUSIONS: "[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/*.Designer.cs,**/obj/**/*"
       REPORTGENERATOR_ASSEMBLIES: "-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
       REPORTGENERATOR_FILES: "-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
       MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
