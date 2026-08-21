@@ -19,6 +19,7 @@
     - Servy.Service.Net48.exe
     - Servy.Service.CLI.Net48.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.Net48.exe gets copied to %ProgramData%\Servy)
     - Servy.Restarter.Net48.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.Net48.exe gets copied to %ProgramData%\Servy)
+    - handle64.exe
     - All *.dll files in %ProgramData%\Servy
 
 .PARAMETER TargetAccount
@@ -50,7 +51,8 @@ $ErrorActionPreference = 'Stop'
 $staticExeNames = @(
     'Servy.Service.Net48.exe',
     'Servy.Service.CLI.Net48.exe',
-    'Servy.Restarter.Net48.exe'
+    'Servy.Restarter.Net48.exe',
+    'handle64.exe'
 )
 
 $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
