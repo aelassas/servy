@@ -1,3 +1,4 @@
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Hardens Servy executable permissions by breaking inheritance and granting Read & Execute rights.
@@ -6,6 +7,11 @@
     Breaks permission inheritance on Servy binary executables in %ProgramData%\Servy and grants
     explicit Read & Execute rights to a target user, domain account, gMSA, or local account.
     Preserves Full Control for SYSTEM and Administrators using Well-Known SIDs.
+
+    Hardened Executable Files:
+    - Servy.Service.exe
+    - Servy.Service.CLI.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.exe gets copied to %ProgramData%\Servy)
+    - Servy.Restarter.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.exe gets copied to %ProgramData%\Servy)
 
 .PARAMETER TargetAccount
     Mandatory account identifier receiving Read & Execute permissions. Supported formats:
