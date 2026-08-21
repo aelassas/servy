@@ -75,13 +75,17 @@ jobs:
 
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
 
+              # .NET 10.0+ MTP CLI syntax
               $dotnetArgs = @(
-                  'test', "--project", $projPath,
+                  'test',
+                  '--project', $projPath,
                   '--configuration', 'Debug',
                   '--no-build',
+                  '--no-launch-profile',
+                  '--results-directory', "./TestResults/$subDirName/$projName",
+                  '--',
                   '--coverage',
-                  '--coverage-output-format', 'cobertura',
-                  '--results-directory', "./TestResults/$subDirName/$projName"
+                  '--coverage-output-format', 'cobertura'
               )
 
               $dotnetArgs += @(

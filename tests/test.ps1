@@ -56,22 +56,18 @@ foreach ($ProjFile in $RawTestProjects) {
 
     Write-Host "Running tests for $($Proj)..." -ForegroundColor Cyan
 
-    # Build the 'dotnet test' arguments for this project
+    $resultsPath = Join-Path $TestResultsDir $ProjName
+
+    # Build pure MTP v2 'dotnet test' arguments
     $dotnetArgs = @(
         'test', $Proj,
         '--configuration', 'Debug',
-        '--blame',
-        '--blame-crash',
-        '--blame-crash-dump-type', 'full',
-        '--collect', 'XPlat Code Coverage',
-        '--results-directory', (Join-Path $TestResultsDir $ProjName)
-    )
-
-    $dotnetArgs += @(
+        '--no-launch-profile',
+        '--results-directory', $resultsPath,
         '--',
-        'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura',
-        'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/*.Designer.cs,**/obj/**/*',
-        'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"'
+        '--coverage',
+        '--coverage-output-format', 'cobertura',
+        '--coverage-output', 'coverage.cobertura.xml'
     )
 
     & dotnet @dotnetArgs

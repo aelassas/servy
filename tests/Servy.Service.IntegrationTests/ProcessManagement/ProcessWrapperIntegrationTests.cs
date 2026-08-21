@@ -829,7 +829,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping SendCtrlC test to prevent console IPC pipe crash.")]
         public void SendCtrlC_ProcessWithAttachedConsole_SendsSignalSuccessfully()
         {
             // Skip execution on ARM64 environments (native or emulated) where conhost/GenerateConsoleCtrlEvent
