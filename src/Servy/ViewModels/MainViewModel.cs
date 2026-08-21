@@ -37,7 +37,7 @@ namespace Servy.ViewModels
         private bool _isManagerAppAvailable;
         private readonly IAppConfiguration _appConfig;
         private bool _isBusy;
-        private bool _isDisposed;
+        private bool _disposed;
 
         #endregion
 
@@ -796,6 +796,11 @@ namespace Servy.ViewModels
         public IAsyncCommand OpenDocumentationCommand { get; }
 
         /// <summary>
+        /// Command to open security hardening guide.
+        /// </summary>
+        public IAsyncCommand OpenSecurityHardeningGuideCommand { get; }
+
+        /// <summary>
         /// Command to check for updates.
         /// </summary>
         public IAsyncCommand CheckUpdatesCommand { get; }
@@ -914,6 +919,7 @@ namespace Servy.ViewModels
             BrowsePostStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostStopStartupDirectory());
 
             OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
+            OpenSecurityHardeningGuideCommand = new AsyncCommand(OpenSecurityHardeningGuideAsync, name: nameof(OpenSecurityHardeningGuideCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
 
@@ -1364,6 +1370,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Opens the security hardening guide in the default web browser.
+        /// </summary>
+        private async Task OpenSecurityHardeningGuideAsync(object parameter)
+        {
+            await ServiceCommands.OpenSecurityHardeningGuideAsync();
+        }
+
+        /// <summary>
         /// Checks for the latest Servy release on GitHub and prompts the user if an update is available.
         /// If a newer version exists, opens the latest release page in the default browser; otherwise shows an informational message.
         /// </summary>
@@ -1620,14 +1634,14 @@ namespace Servy.ViewModels
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed) return;
+            if (_disposed) return;
 
             if (disposing)
             {
                 _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
             }
 
-            _isDisposed = true;
+            _disposed = true;
         }
 
         #endregion

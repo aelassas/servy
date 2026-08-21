@@ -117,5 +117,12 @@ namespace Servy.Services
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenManagerAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Opens the security hardening guide in the default web browser.
+        /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default);
     }
 }

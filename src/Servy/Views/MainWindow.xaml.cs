@@ -68,21 +68,6 @@ namespace Servy.Views
         }
 
         /// <summary>
-        /// Handles navigation requests for hyperlinks by opening the target URI in the user's default web browser.
-        /// </summary>
-        /// <param name="sender">The source of the event, typically a <see cref="System.Windows.Documents.Hyperlink"/> instance.</param>
-        /// <param name="e">A <see cref="RequestNavigateEventArgs"/> containing event data, including the target URI.</param>
-        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = e.Uri.AbsoluteUri,
-                UseShellExecute = true
-            });
-            e.Handled = true;
-        }
-
-        /// <summary>
         /// Handles the <see cref="Window.Closed"/> event.
         /// </summary>
         /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
