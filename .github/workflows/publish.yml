@@ -316,6 +316,10 @@ jobs:
           if (-not (Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.Net48.exe -Force
 
+          $pdb = "src/Servy.Restarter/bin/$env:PLATFORM/$env:BUILD_CONFIG/Servy.Restarter.pdb"
+          if (-not (Test-Path $pdb)) { throw "Servy.Restarter.pdb not found!" }
+          Copy-Item $pdb src/Servy.Service/Resources/Servy.Restarter.Net48.pdb -Force
+
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Service.exe
       # -----------------------------------------------------
@@ -362,17 +366,23 @@ jobs:
           $signed = "signed/Servy.Service/Servy.Service.exe"
           if (-not (Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
 
+          $pdb = "src/Servy.Service/bin/$env:PLATFORM/$env:BUILD_CONFIG/Servy.Service.pdb"
+          if (-not (Test-Path $pdb)) { throw "Servy.Service.pdb not found!" }
+
           $targets = @(
-              @{ Path = "src/Servy/Resources";           Name = "Servy.Service.Net48.exe" },
-              @{ Path = "src/Servy.Manager/Resources";   Name = "Servy.Service.Net48.exe" },
-              @{ Path = "src/Servy.CLI/Resources";       Name = "Servy.Service.CLI.Net48.exe" }
+              @{ Path = "src/Servy/Resources";           ExeName = "Servy.Service.Net48.exe";     PdbName = "Servy.Service.Net48.pdb" },
+              @{ Path = "src/Servy.Manager/Resources";   ExeName = "Servy.Service.Net48.exe";     PdbName = "Servy.Service.Net48.pdb" },
+              @{ Path = "src/Servy.CLI/Resources";       ExeName = "Servy.Service.CLI.Net48.exe"; PdbName = "Servy.Service.CLI.Net48.pdb" }
           )
 
-          # Inject the signed EXE into each resource folder
+          # Inject the signed EXE and matching PDB into each resource folder
           foreach ($t in $targets) {
-              $dst = Join-Path $t.Path $t.Name
-              Write-Host "Injecting SIGNED Servy.Service.exe into $dst"
-              Copy-Item $signed $dst -Force
+              $dstExe = Join-Path $t.Path $t.ExeName
+              $dstPdb = Join-Path $t.Path $t.PdbName
+              Write-Host "Injecting SIGNED Servy.Service.exe into $dstExe"
+              Copy-Item $signed $dstExe -Force
+              Write-Host "Injecting matching Servy.Service.pdb into $dstPdb"
+              Copy-Item $pdb $dstPdb -Force
               Copy-Item "src/Servy.Service/bin/$env:PLATFORM/$env:BUILD_CONFIG/*.dll" $t.Path -Force -ErrorAction Stop
           }
 
