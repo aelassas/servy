@@ -37,6 +37,11 @@ namespace Servy.Core.Config
         public const string DocumentationLink = "https://github.com/aelassas/servy/wiki";
 
         /// <summary>
+        /// Servy's security hardening guide link.
+        /// </summary>
+        public const string SecurityHardeningGuideLink = "https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory";
+
+        /// <summary>
         /// Latest GitHub release link.
         /// </summary>
         public const string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";

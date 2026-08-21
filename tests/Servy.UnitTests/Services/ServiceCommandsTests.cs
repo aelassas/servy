@@ -462,6 +462,69 @@ namespace Servy.UnitTests.Services
 
         #endregion
 
+        #region OpenSecurityHardeningGuide Method Tests
+
+        [Fact]
+        public async Task OpenSecurityHardeningGuide_ProcessStartsSuccessfully_StartsProcessWithCorrectUri()
+        {
+            // Arrange
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
+                _processHelperMock
+                    .Setup(h => h.Start(It.Is<ProcessStartInfo>(psi =>
+                        psi.FileName == Core.Config.AppConfig.SecurityHardeningGuideLink &&
+                        psi.UseShellExecute)))
+                    .Returns(currentProcess);
+
+                var sut = CreateSut();
+
+                // Act
+                await sut.OpenSecurityHardeningGuideAsync(CancellationToken.None);
+
+                // Assert
+                _processHelperMock.Verify(h => h.Start(It.Is<ProcessStartInfo>(psi =>
+                    psi.FileName == Core.Config.AppConfig.SecurityHardeningGuideLink &&
+                    psi.UseShellExecute)), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task OpenSecurityHardeningGuide_ProcessReturnsNull_DisplaysError()
+        {
+            // Arrange
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Returns((Process?)null);
+
+            var sut = CreateSut();
+
+            // Act
+            await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task OpenSecurityHardeningGuide_ProcessStartThrowsException_DisplaysError()
+        {
+            // Arrange
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new System.ComponentModel.Win32Exception("Failed to open browser"));
+
+            var sut = CreateSut();
+
+            // Act
+            await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
+        #endregion
+
         #region ExecuteServiceCommandAsync Unified Pipeline Tests
 
         [Fact]

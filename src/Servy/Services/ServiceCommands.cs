@@ -433,6 +433,38 @@ namespace Servy.Services
             }
         }
 
+        /// <summary>
+        /// Opens the security hardening guide in the default web browser.
+        /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        public async Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = AppConfig.SecurityHardeningGuideLink,
+                    UseShellExecute = true
+                };
+
+                using (var process = _processHelper.Start(psi))
+                {
+                    if (process == null)
+                    {
+                        Logger.Warn($"Failed to start external process for link: '{AppConfig.SecurityHardeningGuideLink}'.");
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error opening security hardening guide link '{AppConfig.SecurityHardeningGuideLink}'", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+            }
+        }
+
         #endregion
 
         #region Private Helpers
