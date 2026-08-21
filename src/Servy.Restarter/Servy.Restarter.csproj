@@ -6,21 +6,25 @@
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
+    
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
     <InvariantGlobalization>true</InvariantGlobalization>
-
+    
     <IsTrimmable>true</IsTrimmable>
     <PublishTrimmed>true</PublishTrimmed>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TrimMode>partial</TrimMode>
-    <DebuggerSupport>false</DebuggerSupport>
     <PublishReadyToRun>false</PublishReadyToRun>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+
+    <DebuggerSupport>true</DebuggerSupport>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <CopyOutputSymbolsToPublishDirectory>true</CopyOutputSymbolsToPublishDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,7 +46,6 @@
   <ItemGroup>
     <!-- Always include the shared base preserves -->
     <TrimmerRootDescriptor Include="..\linker.shared.xml" />
-
     <!-- Include project-specific preserves if the file exists in the project directory -->
     <TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
   </ItemGroup>

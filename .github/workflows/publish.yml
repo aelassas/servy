@@ -251,8 +251,7 @@ jobs:
               -o $publishDir `
               --force `
               --self-contained true `
-              /p:DeleteExistingFiles=true `
-              /p:CopyOutputSymbolsToPublishDirectory=true
+              /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
       # SIGN Servy.Restarter.exe
@@ -308,8 +307,7 @@ jobs:
               -o $publishDir `
               --force `
               --self-contained true `
-              /p:DeleteExistingFiles=true `
-              /p:CopyOutputSymbolsToPublishDirectory=true
+              /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
       # SIGN Servy.Service.exe
@@ -615,7 +613,7 @@ jobs:
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
 
           # Scripts
-          Copy-Item "setup\taskschd\Set-ServyExePermissions.ps1" $pkg -Force
+          Copy-Item "setup\Set-ServyExePermissions.ps1" $pkg -Force
 
           # Task Scheduler setup - Hardened Recursive Copy
           $destPath = Join-Path $pkg "taskschd"
