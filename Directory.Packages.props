@@ -1,12 +1,6 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Prevent Microsoft.Testing.Platform MSBuild targets from importing into VSTest runs -->
-    <ItemDefinitionGroup>
-      <PackageReference>
-        <ExcludeAssets Condition="'%(Identity)' == 'xunit.v3'">build;buildTransitive</ExcludeAssets>
-      </PackageReference>
-    </ItemDefinitionGroup>
   </PropertyGroup>
 
   <ItemGroup>

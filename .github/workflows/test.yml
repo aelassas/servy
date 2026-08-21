@@ -76,13 +76,11 @@ jobs:
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
 
               $dotnetArgs = @(
-                  'test', $projPath,
+                  'test', "--project", $projPath,
                   '--configuration', 'Debug',
                   '--no-build',
-                  '--blame',
-                  '--blame-crash',
-                  '--blame-crash-dump-type', 'full',
-                  '--collect', 'XPlat Code Coverage',
+                  '--coverage',
+                  '--coverage-output-format', 'cobertura',
                   '--results-directory', "./TestResults/$subDirName/$projName"
               )
 
