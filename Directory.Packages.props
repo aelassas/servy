@@ -1,10 +1,12 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Disable Microsoft.Testing.Platform VSTest enforcement for .NET 10.0+ -->
-    <EnableMicrosoftTestingPlatform>false</EnableMicrosoftTestingPlatform>
-    <TestingPlatformDotnetTestSupport>false</TestingPlatformDotnetTestSupport>
-    <UseVSTest>true</UseVSTest>
+    <!-- Prevent Microsoft.Testing.Platform MSBuild targets from importing into VSTest runs -->
+    <ItemDefinitionGroup>
+      <PackageReference>
+        <ExcludeAssets Condition="'%(Identity)' == 'xunit.v3'">build;buildTransitive</ExcludeAssets>
+      </PackageReference>
+    </ItemDefinitionGroup>
   </PropertyGroup>
 
   <ItemGroup>
