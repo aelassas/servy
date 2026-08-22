@@ -561,6 +561,28 @@ begin
     SetLength(Result, Length(Result) - 1);
 end;
 
+function PathContainsFolder(const OldPath, NormalizedFolder: string): Boolean;
+var
+  Parts: TStringList;
+  i: Integer;
+begin
+  Result := False;
+  Parts := TStringList.Create;
+  try
+    Parts.StrictDelimiter := True;
+    Parts.Delimiter := ';';
+    Parts.DelimitedText := OldPath;
+    for i := 0 to Parts.Count - 1 do
+      if CompareText(NormalizeFolder(Trim(Parts[i])), NormalizedFolder) = 0 then
+      begin
+        Result := True;
+        Exit;
+      end;
+  finally
+    Parts.Free;
+  end;
+end;
+
 procedure AddToPath(const Folder: string);
 var
   OldPath, NewPath, NormalizedFolder: string;
@@ -569,11 +591,9 @@ begin
   if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
     OldPath := '';
 
-  // Only add if it's not already there
   NormalizedFolder := NormalizeFolder(Folder);
 
-  // Append semicolons to both sides for reliable checking against other entries (e.g., 'C:\A' vs 'C:\A B')
-  if Pos(';' + LowerCase(NormalizedFolder) + ';', ';' + LowerCase(OldPath) + ';') = 0 then
+  if not PathContainsFolder(OldPath, NormalizedFolder) then
   begin
     if OldPath <> '' then
         NewPath := OldPath + ';' + NormalizedFolder
@@ -592,13 +612,21 @@ begin
   end;
 end;
 
+function XmlEscape(const S: string): string;
+begin
+  Result := S;
+  StringChangeEx(Result, '&', '&amp;', True);   // must run first
+  StringChangeEx(Result, '<', '&lt;', True);
+  StringChangeEx(Result, '>', '&gt;', True);
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   InstallDir: string;
   FileLines: TArrayOfString;
   FilesToFix: array[0..1] of String;
   I, J: Integer;
-  InstallPath: String;
+  InstallPath, XmlInstallPath: String;
 begin
   if CurStep = ssPostInstall then
   begin
@@ -615,6 +643,7 @@ begin
 
     // 3. Resolve Hardcoded Paths in Task Scheduler XMLs
     InstallPath := ExpandConstant('{app}');
+    XmlInstallPath := XmlEscape(InstallPath);
     FilesToFix[0] := InstallPath + '\taskschd\ServyFailureNotification.xml';
     FilesToFix[1] := InstallPath + '\taskschd\ServyFailureEmail.xml';
 
@@ -626,14 +655,17 @@ begin
         begin
           for J := 0 to GetArrayLength(FileLines) - 1 do
           begin
-            // Perform the replacement on the decoded Unicode string
-            StringChangeEx(FileLines[J], '{SERVY_INSTALL_PATH}', InstallPath, True);
+            // Perform the replacement on the decoded Unicode string using the XML-escaped path
+            StringChangeEx(FileLines[J], '{SERVY_INSTALL_PATH}', XmlInstallPath, True);
           end;
 
           // SaveStringsToUTF8File writes a standard UTF-8 file.
           // Because we updated the header to UTF-8, Task Scheduler will read it perfectly.
-          SaveStringsToUTF8File(FilesToFix[I], FileLines, False);
-        end;
+          if not SaveStringsToUTF8File(FilesToFix[I], FileLines, False) then
+            Log('Failed to save updated Task Scheduler XML: ' + FilesToFix[I]);
+        end
+        else
+          Log('Failed to load Task Scheduler XML for substitution: ' + FilesToFix[I]);
       end;
     end;
   end;
@@ -648,39 +680,43 @@ procedure RemoveFromPath(const Folder: string);
 var
   OldPath, NewPath: string;
   Parts: TStringList;
-  i: Integer;
+  i, InitialCount: Integer;
   NormalizedFolder: string;
 begin
   NormalizedFolder := NormalizeFolder(Folder);
 
   if RegQueryStringValue(
-       HKLM64,
-       'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
-       'Path',
-       OldPath) then
+        HKLM64,
+        'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
+        'Path',
+        OldPath) then
   begin
     Parts := TStringList.Create;
     try
       Parts.StrictDelimiter := True;
       Parts.Delimiter := ';';
       Parts.DelimitedText := OldPath;
+      InitialCount := Parts.Count;
 
       for i := Parts.Count - 1 downto 0 do
         if CompareText(NormalizeFolder(Trim(Parts[i])), NormalizedFolder) = 0 then
           Parts.Delete(i);
 
-      NewPath := Parts.DelimitedText;
+      if Parts.Count <> InitialCount then
+      begin
+        NewPath := Parts.DelimitedText;
 
-      RegWriteExpandStringValue(
-        HKLM64,
-        'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
-        'Path',
-        NewPath
-      );
+        RegWriteExpandStringValue(
+          HKLM64,
+          'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
+          'Path',
+          NewPath
+        );
 
-      RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 0);
+        RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 0);
 
-      RefreshEnvironment();
+        RefreshEnvironment();
+      end;
     finally
       Parts.Free;
     end;

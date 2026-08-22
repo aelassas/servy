@@ -456,7 +456,7 @@ namespace Servy.Infrastructure.Data
             // --------------------------------------------------------------------------------------------------------
 
             connection.Execute($"CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));", transaction: transaction);
-    
+
             var existingColumns = GetExistingColumnNames(connection, transaction);
 
             // --- Intercept ambiguous legacy column and rename before dynamic column mapping ---
@@ -758,7 +758,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Identifies orphan column names by returning elements from the source collection 
+        /// Identifies orphan column names by returning elements from the source collection
         /// that do not exist in the reference set using a case-insensitive comparison.
         /// </summary>
         private static IEnumerable<string> GetOrphanColumns(this IEnumerable<string> source, HashSet<string> references)

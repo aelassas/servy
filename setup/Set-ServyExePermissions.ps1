@@ -75,8 +75,8 @@ $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Sec
 $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
 
 # Discover all .dll files in %ProgramData%\Servy (PS 2.0 compatible file discovery without -File flag)
-$dllFiles = Get-ChildItem -Path $programDataDir -Filter "*.dll" -ErrorAction SilentlyContinue | 
-    Where-Object { -not $_.PSIsContainer } | 
+$dllFiles = Get-ChildItem -Path $programDataDir -Filter "*.dll" -ErrorAction SilentlyContinue |
+    Where-Object { -not $_.PSIsContainer } |
     Select-Object -ExpandProperty Name
 
 # Combine static executables and discovered DLLs

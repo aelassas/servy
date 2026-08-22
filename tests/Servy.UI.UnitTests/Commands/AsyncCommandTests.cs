@@ -154,7 +154,7 @@ namespace Servy.UI.UnitTests.Commands
         #region Helper Classes
 
         /// <summary>
-        /// A custom <see cref="SynchronizationContext"/> implementation designed to track 
+        /// A custom <see cref="SynchronizationContext"/> implementation designed to track
         /// async void operation completions and capture any unhandled exceptions during unit testing.
         /// </summary>
         private class TestSynchronizationContext : SynchronizationContext

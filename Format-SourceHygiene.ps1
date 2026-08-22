@@ -11,7 +11,8 @@
     2. Ensures every file ends with a trailing newline (insert_final_newline = true).
 
     Note: .resx files are explicitly excluded because trailing whitespace within XML <value> elements
-    can be meaningful string content.
+    can be meaningful string content. Additionally, trailing whitespace is preserved on .md files to respect
+    .editorconfig's [*.md] section where trim_trailing_whitespace = false (as two trailing spaces denote Markdown hard line breaks).
 
 .PARAMETER DryRun
     If specified, previews the files that violate whitespace hygiene rules without modifying them on disk.
@@ -97,6 +98,10 @@ foreach ($file in $filesToScan) {
     $filePath = $file.FullName
     $rawText = [System.IO.File]::ReadAllText($filePath)
 
+    # .editorconfig [*.md] sets trim_trailing_whitespace = false: two trailing
+    # spaces are a Markdown hard line break, not stray whitespace.
+    $trimAllowed = $file.Extension -ne '.md'
+
     # Check 1: Missing final newline (CRLF)
     $lacksFinalNewline = ($rawText.Length -gt 0) -and (-not $rawText.EndsWith("`r`n"))
 
@@ -104,11 +109,15 @@ foreach ($file in $filesToScan) {
     $hasTrailingWhitespace = $false
     $lines = Get-Content -Path $filePath -Encoding UTF8
     $trimmedLines = foreach ($line in $lines) {
-        $t = $line.TrimEnd()
-        if ($t -ne $line) {
-            $hasTrailingWhitespace = $true
+        if ($trimAllowed) {
+            $t = $line.TrimEnd()
+            if ($t -ne $line) {
+                $hasTrailingWhitespace = $true
+            }
+            $t
+        } else {
+            $line
         }
-        $t
     }
 
     if ($hasTrailingWhitespace -or $lacksFinalNewline) {
