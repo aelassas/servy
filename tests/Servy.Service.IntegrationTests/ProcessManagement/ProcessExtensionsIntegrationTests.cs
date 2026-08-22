@@ -331,7 +331,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 return $@"
                     $psi = New-Object System.Diagnostics.ProcessStartInfo
                     $psi.FileName = 'powershell.exe'
-                    $psi.Arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encodedInner}'
+                    $psi.Arguments = '-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand {encodedInner}'
                     $psi.UseShellExecute = $false
                     $psi.CreateNoWindow = $true
                     $p = [System.Diagnostics.Process]::Start($psi)
@@ -345,7 +345,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var psi = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encodedRoot}",
+                Arguments = $"-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand {encodedRoot}",
                 CreateNoWindow = true,
                 UseShellExecute = false,
             };
