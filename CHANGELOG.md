@@ -119,13 +119,13 @@ This release brings ARM64 support to the Patch My PC Enterprise catalog, bug fix
 * fix: resolve DeepInstinct false positives for net48 and ARM64 builds
 * fix(core): log and report legacy DPAPI unprotect fallback
 * fix(core): validate path buffer size bounds before uint to int cast in PathSecurityGuard.cs
-* fix(core): ProcessHelper.cs -move RAM sampling inside per-PID lock for consistent metrics snapshot
+* fix(core): ProcessHelper.cs - move RAM sampling inside per-PID lock for consistent metrics snapshot
 * fix(core): Logger.cs - ensure old log writer is disposed in try-finally during swap
 * fix(core): EventLogReader.cs - Event log field failures swallowed without diagnostics
 * fix(core): ServiceManager.cs - StartServiceAsync's inline timeout calc omits PreLaunchRetryAttempts, reintroducing the #2211 false-timeout bug (#5043)
 * fix(core): AppConfig.cs - HandleExeRegexTimeout uses FromSeconds on a millisecond constant, yielding a 2000-second timeout (#5104)
 * fix(core): ServiceAccounts.cs - alias hash-sets carry case-only-duplicate literals redundant under OrdinalIgnoreCase (#5105)
-* fix(core): ServiceHelper.cs - CalculateStartTimeout can throw OverflowException from two individually-valid PreLaunch field (#5106)
+* fix(core): ServiceHelper.cs - CalculateStartTimeout can throw OverflowException from two individually-valid PreLaunch fields (#5106)
 * fix(core): EventLogLogger.cs - ScopedEventLogLogger's own log level is never consulted for Info/Warn/Error (residual of #1443) (#5107)
 * fix(core): ProtectedKeyProvider.cs - InvalidateCache wipes both cached Key and IV even when only one material migrates (#5109)
 * fix(core): ServiceManager.cs - Unicode-casing rename silently reverts when the legacy OS service is already gone (#5110)
@@ -187,7 +187,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.4...v9.5
 * feat(config): add [EnableSizeRotation](https://github.com/aelassas/servy/wiki/Advanced-Configuration#settings-reference) option to control log size rotation for Servy's internal log files
 * fix(core): correct property ordering in XML and JSON exports
 * fix(core): ServiceDependenciesValidator.cs - dependency names are charset-checked but never length-checked, unlike Helper.IsServiceNameValid (#5038)
-* fix(service): add debug logs for heatbeat ping URLs
+* fix(service): add debug logs for heartbeat ping URLs
 * fix(desktop): resolve PasswordBox styling issues
 * fix(desktop): crisp textbox cursor on low resolutions
 * fix(setup/net48): prevent uninstall conflict between x64 and ARM64 installers (#4990)
@@ -702,7 +702,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(core): Logger.FormatException - only walks AggregateException.InnerException (first); siblings via InnerExceptions are silently dropped (#2183)
 * fix(core): ServiceDtoHelper.ApplyDefaultsAndResetIdentity silently discards UserAccount/Password from XML/JSON imports with no operator-visible warning (#2184)
 * fix(core): ProcessKiller.CriticalSystemProcesses - missing Windows 10+ pseudo-system processes (Registry, MemCompression) (#2187)
-* fix(core): SecureData - v1 legacy keying material (_v1MasterKey, _v1StaticIv) is loaded, cloned, and zeroed on every instance even though AllowLegacyV1Decryption is hard-coded false  (#2193)
+* fix(core): SecureData - v1 legacy keying material (_v1MasterKey, _v1StaticIv) is loaded, cloned, and zeroed on every instance even though AllowLegacyV1Decryption is hard-coded false (#2193)
 * fix(core): ImportGuard.ValidatePathSecurity - handle-resolution validation block is silently skipped when GetFinalPathNameByHandle returns 0, bypassing the UNC re-check (#2196)
 * fix(core): LogonAsServiceGrant.GrantLogonAsService - inconsistent handling of LsaClose return value vs HasLogonAsService (#2020)
 * fix(core): ServiceHelper.StartServices - StopPending/PausePending services skip Start()/Continue() and then time out polling for Running (#2025)
@@ -976,7 +976,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(ui): ICursorService.SetWaitCursor returns IDisposable that two callers discard, then manually call ResetCursor in finally (API misuse / contract drift) (#1593)
 * fix(ui): AppBootstrapper.cs - direct CLI invocation 'Servy.exe MyService' silently drops the service name when first positional arg isn't 'true'/'false' (#1719)
 * fix(ui): App.xaml.cs - ServiceProvider singletons never disposed on OnExit (#1749)
-* fix(ui): AppBootstrapper.cs -DispatcherUnhandledException handler shows MessageBox unconditionally; recurring background-tick faults cause modal-dialog spam (#1762)
+* fix(ui): AppBootstrapper.cs - DispatcherUnhandledException handler shows MessageBox unconditionally; recurring background-tick faults cause modal-dialog spam (#1762)
 * fix(ui): ServiceConfigurationValidator.cs (Servy & Servy.Manager) - XML doc references warnings, but ValidationResult has no Warnings and the code only shows errors (#1775)
 * fix(ui): AppBootstrapper.cs - InitializeAppAsync catch block calls app.Shutdown() with no exit code; critical startup failures exit 0 and look green to CI/service wrappers (#1787)
 * fix(ui): ImportGuard.cs - ValidateFileSizeAsync silently returns false when Path.GetFullPath throws, leaving the user with no feedback (#1803)
@@ -1459,7 +1459,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 * fix(core): ServiceHelper.cs (Core) - StartServices ignores PreLaunchTimeoutSeconds, start wait too short when pre-launch hook configured (#1242)
 * fix(core): ServiceHelper.cs - Hardcoded 'defaultTimeoutInSeconds = 30' should reference AppConfig.DefaultServiceStartTimeoutSeconds (#1243)
 * fix(core): ServiceManager.cs - UninstallServiceAsync GetByNameAsync call drops cancellationToken (#1244)
-* fix(core): ProcessKiller.cs - WalkAndKillChildren recursive walk has no cycle/visited-set protection (DFS)  (#1247)
+* fix(core): ProcessKiller.cs - WalkAndKillChildren recursive walk has no cycle/visited-set protection (DFS) (#1247)
 * fix(core): ResourceHelper.cs - GetHostProcessLastWriteTimeUTC fallback to UtcNow forces unconditional re-extraction every startup (#1248)
 * fix(core): ResourceHelper.cs - Constructor instantiates concrete ServiceHelper instead of accepting an abstraction; tightly couples and blocks unit testing (#1249)
 * fix(core): ProcessHelper.cs - ValidatePath swallows InvalidOperationException, losing diagnostic context for unexpanded environment variables (#1250)
@@ -2343,7 +2343,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(service): post-launch, failure program, and post-stop hooks don't expand custom environment variables (#260)
 * fix(service): main process env var assignment missing null coalescing (inconsistent with pre-launch) (#261)
 * fix(service): OutputDataReceived race - writer disposed while event handler still in-flight (#262)
-* fix(service); hardcoded timeout constants should be configurable via appsettings (#268)
+* fix(service): hardcoded timeout constants should be configurable via appsettings (#268)
 * fix(service): command injection: service name passed unquoted to Servy.Restarter process arguments (#352)
 * fix(service): environment variable override: no blocklist for critical system variables (#353)
 * fix(service): EnableDebugLogs writes environment variables (may contain secrets) to log file in cleartext (#376)
@@ -3956,7 +3956,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.2...v2.3
 
 * feat(manager): enhance DataGrid virtualization and performance
 * fix(manager): prevent resizing DataGrid rows
-* fix(service): service install not working when Windows is installed on a drive letter other than `C:` #16
+* fix(service): service install not working when Windows is installed on a drive letter other than `C:` (#16)
 * fix(service): reorganize and clean up startup parameters log
 
 ### Downloads
@@ -3973,8 +3973,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.1...v2.2
 
 **Date:** 2025-10-09 | **Tag:** [`v2.1`](https://github.com/aelassas/servy/tree/v2.1)
 
-* fix(clients): `Servy.Service.exe` not copied when Windows is installed on a drive letter other than `C:` #16
-* fix(clients): load `appsettings.json` from project root in debug and exe directory in release #16
+* fix(clients): `Servy.Service.exe` not copied when Windows is installed on a drive letter other than `C:` (#16)
+* fix(clients): load `appsettings.json` from project root in debug and exe directory in release (#16)
 * fix(configurator): export XML and JSON not working when password is supplied
 
 ### Downloads
@@ -3991,7 +3991,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.0...v2.1
 
 **Date:** 2025-10-07 | **Tag:** [`v2.0`](https://github.com/aelassas/servy/tree/v2.0)
 
-* fix(clients): prevent loading stray `appsettings.json` at runtime #16
+* fix(clients): prevent loading stray `appsettings.json` at runtime (#16)
 * fix(core): robust and accurate CPU usage calculation
 * fix(service): avoid stopping services when copying `Servy.Restarter.exe` from resources
 * fix(service): add missing log for post-launch options
@@ -4028,7 +4028,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.8...v1.9
 
 **Date:** 2025-10-01 | **Tag:** [`v1.8`](https://github.com/aelassas/servy/tree/v1.8)
 
-* fix(core): using the same file for `stdout` and `stderr` prevents log rotation #14
+* fix(core): using the same file for `stdout` and `stderr` prevents log rotation (#14)
 * fix(installer): manager and cli apps not killed on uninstall
 * fix(core): use `ConcurrentDictionary` for thread-safe CPU usage tracking of services
 * fix(core): prevent `NullReferenceException` in CPU usage retrieval
@@ -4107,7 +4107,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.4...v1.5
 
 **Date:** 2025-09-18 | **Tag:** [`v1.4`](https://github.com/aelassas/servy/tree/v1.4)
 
-* fix(cli,psm1): add `--quiet` and `-q` options to CLI and `-Quiet` switch to PowerShell module #11
+* fix(cli,psm1): add `--quiet` and `-q` options to CLI and `-Quiet` switch to PowerShell module (#11)
 * fix(cli): rotation size calculation
 * fix(configurator): make failure program path optional instead of required
 
