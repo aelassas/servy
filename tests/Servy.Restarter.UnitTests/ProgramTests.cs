@@ -19,6 +19,7 @@ namespace Servy.Restarter.UnitTests
         private const string SharedInMemoryConnectionString = "Data Source=RestarterTestDb;Mode=Memory;Cache=Shared;Version=3;";
 
         private readonly string _tempConfigPath;
+        private readonly string _tempLogDir;
         private readonly string _expectedLogFilePath;
         private readonly SQLiteConnection _dbKeepAliveConnection;
 
@@ -27,9 +28,15 @@ namespace Servy.Restarter.UnitTests
             // Reset exit code before each execution run
             Environment.ExitCode = 0;
 
-            // Generate an appsettings layout in the local output context
+            // Generate isolated test-run directories for configuration and log storage
             _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
-            _expectedLogFilePath = Path.Combine(Logger.LogsPath, LogFileName);
+            _tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_tempLogDir);
+
+            _expectedLogFilePath = Path.Combine(_tempLogDir, LogFileName);
+
+            // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
+            Logger.Initialize(LogFileName, logDirectory: _tempLogDir);
 
             File.WriteAllText(_tempConfigPath, BuildConfigJson("30"));
 
@@ -75,7 +82,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_EmptyOrWhitespaceServiceName_SetsExitCodeTo1AndExitsEarly(string invalidName)
         {
             // Arrange
-            string[] args = new string[] { invalidName }; // Triggers if (string.IsNullOrWhiteSpace(serviceName))
+            string[] args = new string[] { invalidName, _tempLogDir }; // Triggers if (string.IsNullOrWhiteSpace(serviceName))
 
             // Act
             Program.Main(args);
@@ -115,7 +122,7 @@ namespace Servy.Restarter.UnitTests
             // We provide a dummy service name that doesn't exist in our initialized memory database.
             // This triggers the serviceRepository.GetByName(...) == null failure branch cleanly.
             string serviceName = "GhostUnmanagedService";
-            string[] args = new string[] { serviceName };
+            string[] args = new string[] { serviceName, _tempLogDir };
 
             // Act
             Program.Main(args);
@@ -150,7 +157,7 @@ namespace Servy.Restarter.UnitTests
                 // 2. Build a structurally complete configuration payload where only the timeout option is corrupted.
                 File.WriteAllText(_tempConfigPath, BuildConfigJson("NotAnInteger"));
 
-                string[] args = new string[] { serviceName };
+                string[] args = new string[] { serviceName, _tempLogDir };
 
                 // Act
                 Program.Main(args);
@@ -203,7 +210,7 @@ namespace Servy.Restarter.UnitTests
             // Pass a target service name argument. The broken DefaultConnection string makes
             // the SQLite open fail inside GetByName, after the scoped logger exists - exercising
             // the scoped-logger arm of the catch-all block.
-            string[] args = new string[] { "Invalid\\Service/Path:Characters" };
+            string[] args = new string[] { "Invalid\\Service/Path:Characters", _tempLogDir };
 
             // Act
             Program.Main(args);
@@ -226,7 +233,7 @@ namespace Servy.Restarter.UnitTests
             // Force the static logger to flush its handle completely to disk
             Logger.Shutdown();
 
-            Assert.True(File.Exists(_expectedLogFilePath), "The diagnostic restarter log file was never initialized on disk.");
+            Assert.True(File.Exists(_expectedLogFilePath), $"The diagnostic restarter log file was never initialized on disk at '{_expectedLogFilePath}'.");
 
             string logContent = File.ReadAllText(_expectedLogFilePath);
             Assert.Contains(expectedMessage, logContent);
@@ -250,9 +257,9 @@ namespace Servy.Restarter.UnitTests
                     File.Delete(_tempConfigPath);
                 }
 
-                if (File.Exists(_expectedLogFilePath))
+                if (Directory.Exists(_tempLogDir))
                 {
-                    File.Delete(_expectedLogFilePath);
+                    Directory.Delete(_tempLogDir, true);
                 }
 
                 if (File.Exists(KeyFileName)) File.Delete(KeyFileName);

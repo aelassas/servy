@@ -216,7 +216,7 @@ namespace Servy.Restarter.UnitTests
                 _restarter.RestartService("MyService", TimeSpan.Zero));
 
             Assert.Contains("Timeout expired while waiting for service", ex.Message);
-            _mockController.Verify(c => c.Start(), Times.Once());
+            _mockController.Verify(c => c.Start(), Times.Once);
 
             // Ensure start timeouts pass the object disposal verification check
             _mockController.Verify(c => c.Dispose(), Times.Once);
