@@ -22,11 +22,13 @@ namespace Servy.Restarter
     {
         /// <summary>
         /// Main method. Expects a single argument: the service name to restart.
+        /// An optional second argument can specify a custom logging directory (primarily for testing isolation).
         /// </summary>
-        /// <param name="args">Command line arguments. args[0] must be the service name.</param>
+        /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies custom log directory.</param>
         public static void Main(string[] args)
         {
-            Logger.Initialize("Servy.Restarter.log");
+            string customLogDir = args.Length > 1 ? args[1] : null;
+            Logger.Initialize("Servy.Restarter.log", logDirectory: customLogDir);
 
             IServiceRestarter restarter = new ServiceRestarter();
             IServyLogger rootLogger = null; // Declare as nullable for safe finally disposal

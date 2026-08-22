@@ -44,10 +44,16 @@ namespace Servy.Core.Logging
         private static volatile int _currentLogLevel = (int)LogLevel.Info;
 
         private static string _fileName;
+        private static string _logDirectory;
         private static bool _enableSizeRotation = AppConfig.DefaultEnableInternalLogSizeRotation;
         private static int _logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
         private static DateRotationType _dateRotationType;
         private static bool _useLocalTimeForRotation;
+
+        /// <summary>
+        /// Gets the effective directory path where active log output is currently written.
+        /// </summary>
+        public static string EffectiveLogsPath => !string.IsNullOrEmpty(_logDirectory) ? _logDirectory : LogsPath;
 
         /// <summary>
         /// The maximum number of backup log files to keep.
@@ -88,6 +94,7 @@ namespace Servy.Core.Logging
         /// </param>
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
         /// <param name="maxBackupLogFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
+        /// <param name="logDirectory">An optional custom directory path for log files. Defaults to <see cref="LogsPath"/> when null or empty.</param>
         public static void Initialize(
             string fileName,
             LogLevel logLevel = LogLevel.Info,
@@ -95,12 +102,19 @@ namespace Servy.Core.Logging
             int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
-            int maxBackupLogFiles = AppConfig.LoggerDefaultMaxBackupLogFiles
+            int maxBackupLogFiles = AppConfig.LoggerDefaultMaxBackupLogFiles,
+            string logDirectory = null
             )
         {
             lock (_lock)
             {
                 _fileName = fileName;
+
+                // Only override _logDirectory when a non-null custom path is explicitly provided.
+                if (logDirectory != null)
+                {
+                    _logDirectory = logDirectory;
+                }
 
                 if (string.IsNullOrEmpty(_fileName))
                 {
@@ -175,7 +189,7 @@ namespace Servy.Core.Logging
             {
                 EnsureLogsDir();
 
-                string logPath = Path.Combine(LogsPath, _fileName);
+                string logPath = Path.Combine(EffectiveLogsPath, _fileName);
 
                 // Convert MB to Bytes for the underlying writer
                 long rotationSizeInBytes = AppConfig.ToBytes(_logRotationSizeMB);
@@ -217,7 +231,7 @@ namespace Servy.Core.Logging
                     if (Interlocked.Increment(ref _initFallbackWriteCount) <= AppConfig.LoggerMaxFallbackWrites)
                     {
                         EnsureLogsDir();
-                        File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
+                        File.AppendAllText(Path.Combine(EffectiveLogsPath, "LoggerInitializationErrors.log"),
                             $"{FormatTimestampPrefix()} Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                     }
                 }
@@ -425,7 +439,7 @@ namespace Servy.Core.Logging
                     if (Interlocked.Increment(ref _logFallbackWriteCount) <= AppConfig.LoggerMaxFallbackWrites)
                     {
                         EnsureLogsDir();
-                        File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
+                        File.AppendAllText(Path.Combine(EffectiveLogsPath, "LoggerWriteErrors.log"),
                             $"{FormatTimestampPrefix()} RE-ENTRANT LOGGER AVOIDED: {message}{Environment.NewLine}");
                     }
                 }
@@ -469,7 +483,7 @@ namespace Servy.Core.Logging
                     if (Interlocked.Increment(ref _logFallbackWriteCount) <= AppConfig.LoggerMaxFallbackWrites)
                     {
                         EnsureLogsDir();
-                        File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
+                        File.AppendAllText(Path.Combine(EffectiveLogsPath, "LoggerWriteErrors.log"),
                             $"{FormatTimestampPrefix()} Failed to write log entry: {ex.Message}{Environment.NewLine}");
                     }
                 }
@@ -531,7 +545,7 @@ namespace Servy.Core.Logging
         private static void EnsureLogsDir()
         {
             // Uses SecurityHelper to create the directory with specific permissions
-            SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
+            SecurityHelper.CreateSecureDirectory(EffectiveLogsPath, breakInheritance: false);
         }
 
         /// <summary>

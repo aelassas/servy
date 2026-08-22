@@ -14,6 +14,7 @@ namespace Servy.Restarter.UnitTests
         // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
         private const string LogFileName = "Servy.Restarter.log";
 
+        private readonly string _tempLogDir;
         private readonly string _expectedLogFilePath;
         private readonly SQLiteConnection _dbKeepAliveConnection;
         private readonly string _defaultConnection;
@@ -26,12 +27,19 @@ namespace Servy.Restarter.UnitTests
             // Reset global exit code before each test execution block
             Environment.ExitCode = 0;
 
-            _expectedLogFilePath = Path.Combine(Logger.LogsPath, LogFileName);
+            // Isolate logging writes directly into a dynamic, unique temporary folder per test run
+            _tempLogDir = Path.Combine(Path.GetTempPath(), "ServyNet48TestLogs", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_tempLogDir);
+
+            _expectedLogFilePath = Path.Combine(_tempLogDir, LogFileName);
+
+            // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
+            Logger.Initialize(LogFileName, logDirectory: _tempLogDir);
 
             // Capture the baseline configuration states to allow perfect recovery state rollback during Dispose
             _defaultConnection = ConfigurationManager.AppSettings["DefaultConnection"];
             _restartTimeoutSeconds = ConfigurationManager.AppSettings["RestartTimeoutSeconds"];
-            _aesKeyFilePath = ConfigurationManager.AppSettings["Security:AESKeyFilePat"];
+            _aesKeyFilePath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
             _aesIvFilePath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
 
             // Open the persistent handle to anchor the shared memory segment lifecycle
@@ -64,7 +72,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_EmptyOrWhitespaceServiceName_SetsExitCodeTo1AndExitsEarly(string invalidName)
         {
             // Arrange
-            string[] args = new string[] { invalidName }; // Triggers: if (string.IsNullOrWhiteSpace(serviceName))
+            string[] args = new string[] { invalidName, _tempLogDir }; // Triggers: if (string.IsNullOrWhiteSpace(serviceName))
 
             // Act
             Program.Main(args);
@@ -104,7 +112,7 @@ namespace Servy.Restarter.UnitTests
             // We pass an unmanaged service identifier string. Since the memory database is fresh and empty,
             // serviceRepository.GetByName(...) will return null, exercising the managed validation check.
             string serviceName = "UnmanagedNet48Service";
-            string[] args = new string[] { serviceName };
+            string[] args = new string[] { serviceName, _tempLogDir };
 
             // Act
             Program.Main(args);
@@ -118,12 +126,12 @@ namespace Servy.Restarter.UnitTests
         public void Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
         {
             // Arrange
-            // Inject an unparseable non-integer token token directly into the runtime configuration matrix
+            // Inject an unparseable non-integer token directly into the runtime configuration matrix
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "NotAnInteger";
 
             string connString = ConfigurationManager.AppSettings["DefaultConnection"];
             string serviceName = "UnmanagedNet48Service";
-            string[] args = new string[] { serviceName };
+            string[] args = new string[] { serviceName, _tempLogDir };
 
             using (var connection = new SQLiteConnection(connString))
             {
@@ -178,7 +186,7 @@ namespace Servy.Restarter.UnitTests
             // Force the static logger to flush its handle completely to disk
             Logger.Shutdown();
 
-            Assert.True(File.Exists(_expectedLogFilePath), "The diagnostic restarter log file was never initialized on disk.");
+            Assert.True(File.Exists(_expectedLogFilePath), $"The diagnostic restarter log file was never initialized on disk at '{_expectedLogFilePath}'.");
 
             string logContent = File.ReadAllText(_expectedLogFilePath);
             Assert.Contains(expectedMessage, logContent);
@@ -201,9 +209,13 @@ namespace Servy.Restarter.UnitTests
             // Clean up temporary local workspace state file markers if generated
             try
             {
-                if (File.Exists(_expectedLogFilePath)) File.Delete(_expectedLogFilePath);
-                if (File.Exists(_aesKeyFilePath)) File.Delete(_aesKeyFilePath);
-                if (File.Exists(_aesIvFilePath)) File.Delete(_aesIvFilePath);
+                if (Directory.Exists(_tempLogDir))
+                {
+                    Directory.Delete(_tempLogDir, true);
+                }
+
+                if (!string.IsNullOrEmpty(_aesKeyFilePath) && File.Exists(_aesKeyFilePath)) File.Delete(_aesKeyFilePath);
+                if (!string.IsNullOrEmpty(_aesIvFilePath) && File.Exists(_aesIvFilePath)) File.Delete(_aesIvFilePath);
             }
             catch
             {
