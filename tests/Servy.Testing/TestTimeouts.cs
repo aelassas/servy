@@ -17,6 +17,16 @@ namespace Servy.Testing
         public static readonly TimeSpan CiGenerous = TimeSpan.FromSeconds(20);
 
         /// <summary>
+        /// General generous timeout budget for CI operations (in seconds).
+        /// </summary>
+        public const int CiGenerousSeconds = 5;
+
+        /// <summary>
+        /// General generous timeout budget for CI operations (in milliseconds).
+        /// </summary>
+        public const int CiGenerousMs = 5000;
+
+        /// <summary>
         /// How long (15 seconds) a spawned PowerShell leaf process in a process tree fixture stays alive.
         /// </summary>
         /// <remarks>
@@ -104,5 +114,20 @@ namespace Servy.Testing
         /// </summary>
         /// <seealso cref="ServiceRestarterMidLoopExpiryBudget"/>
         public static readonly TimeSpan ServiceRestarterMidLoopExpiryBurn = TimeSpan.FromMilliseconds(750);
+
+        /// <summary>
+        /// Standard wait time in milliseconds for process teardown and kill cleanup operations.
+        /// </summary>
+        public const int CleanupWaitMs = 2000;
+
+        /// <summary>
+        /// Default interval in milliseconds between retry polls.
+        /// </summary>
+        public const int PollIntervalMs = 500;
+
+        /// <summary>
+        /// Default maximum number of attempts for polling loops.
+        /// </summary>
+        public const int MaxPollAttempts = 10;
     }
 }
