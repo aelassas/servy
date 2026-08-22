@@ -87,11 +87,11 @@ function Assert-Encoding {
 function Test-ReflectionField {
     param([object]$Object, [string]$FieldName)
     $flags = [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic
-    
+
     # Try the exact field name first, followed by standard .NET Core leading-underscore backing field conventions
     $candidateNames = @($FieldName, "_$FieldName", "_is$FieldName", "is$FieldName")
     $type = $Object.GetType()
-    
+
     foreach ($name in $candidateNames) {
         $field = $type.GetField($name, $flags)
         if ($null -ne $field) {

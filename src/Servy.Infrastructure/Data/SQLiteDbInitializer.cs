@@ -755,7 +755,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Identifies orphan column names by returning elements from the source collection 
+        /// Identifies orphan column names by returning elements from the source collection
         /// that do not exist in the reference set using a case-insensitive comparison.
         /// </summary>
         private static IEnumerable<string> GetOrphanColumns(this IEnumerable<string> source, HashSet<string> references)

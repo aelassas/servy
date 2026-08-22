@@ -762,7 +762,7 @@
                        Height="80" MinHeight="80" MaxHeight="80"
                        TextWrapping="Wrap" AcceptsReturn="False"
                        MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
-                       VerticalScrollBarVisibility="Auto"                      
+                       VerticalScrollBarVisibility="Auto"
                        AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxFailureProgramParams_Name}"
                        AutomationProperties.AutomationId="TextBoxFailureProgramParams"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxFailureProgramParams_HelpText}" />
@@ -1008,7 +1008,7 @@
                        Height="80" MinHeight="80" MaxHeight="80"
                        TextWrapping="Wrap" AcceptsReturn="False"
                        MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
-                       VerticalScrollBarVisibility="Auto"                      
+                       VerticalScrollBarVisibility="Auto"
                        AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxPreLaunchParams_Name}"
                        AutomationProperties.AutomationId="TextBoxPreLaunchParams"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxPreLaunchParams_HelpText}" />

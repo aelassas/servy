@@ -10,7 +10,7 @@
     <OutputType>Exe</OutputType>
 
     <!-- Enable MTP Runner Mode -->
-    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>    
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
   <PropertyGroup>
