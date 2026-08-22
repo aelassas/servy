@@ -1,7 +1,8 @@
 using Servy.Service.ProcessManagement;
+using Servy.Testing;
 using System.Diagnostics;
 
-namespace Servy.Testing
+namespace Servy.Service.IntegrationTests
 {
     /// <summary>
     /// Provides unified helper functions for killing and disposing processes safely during test teardowns.

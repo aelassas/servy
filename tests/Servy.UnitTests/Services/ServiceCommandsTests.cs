@@ -397,9 +397,12 @@ namespace Servy.UnitTests.Services
             string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
             File.WriteAllText(tempTrackingFile, string.Empty);
 
+            ProcessStartInfo captured = null;
             _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
             _processHelperMock
                 .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Callback<ProcessStartInfo>(psi => captured = psi)
                 .Throws(new UnauthorizedAccessException("Access denied when starting process"));
 
             var sut = CreateSut();
@@ -410,6 +413,11 @@ namespace Servy.UnitTests.Services
                 await sut.OpenManagerAsync(cancellationToken: CancellationToken.None);
 
                 // Assert
+                Assert.NotNull(captured);
+                Assert.Equal(tempTrackingFile, captured.FileName);
+                Assert.True(captured.UseShellExecute);
+                Assert.Equal($"\"{Core.Config.AppConfig.SkipSplashArgument}\"", captured.Arguments);
+
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(
                     Resources.Strings.Msg_AdminRightsRequired,
                     UiAppConfig.Caption),
@@ -1332,6 +1340,139 @@ namespace Servy.UnitTests.Services
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_AdminRightsRequired, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        #endregion
+
+        #region OperationCanceledException Propagation Tests
+
+        [Fact]
+        public async Task InstallService_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "CancelledInstallService" };
+            var dto = new ServiceDto { Name = "CancelledInstallService" };
+
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled("CancelledInstallService", It.IsAny<CancellationToken>())).Returns(false);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.InstallServiceAsync(config, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task UninstallService_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "CancelledUninstallService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.UninstallServiceAsync(serviceName, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExecuteServiceCommand_StartService_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "CancelledStartService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
+            _serviceManagerMock.Setup(m => m.StartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.StartServiceAsync(serviceName, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OpenManager_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new OperationCanceledException());
+
+            var sut = CreateSut();
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(
+                    () => sut.OpenManagerAsync(cancellationToken: CancellationToken.None));
+
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ManagerAppLaunchFailed, UiAppConfig.Caption), Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    File.Delete(tempTrackingFile);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ExportConfig_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
+            _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
+
+            var dto = new ServiceDto { Name = "CancelledExport" };
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.ExportXmlConfigAsync("password", cancellationToken: CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ImportConfig_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+                var sut = CreateSut();
+
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(
+                    () => sut.ImportXmlConfigAsync(cancellationToken: cts.Token));
+
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+                _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            }
         }
 
         #endregion
