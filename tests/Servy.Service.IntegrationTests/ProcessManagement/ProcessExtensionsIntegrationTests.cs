@@ -140,7 +140,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             try
             {
                 // Control: descendants are visible with the genuine start time
-                descendants = ProcessExtensions.GetAllDescendants(root.Id, root.StartTime);
+                descendants = WaitForProcessName(root, "powershell", ProcessExtensions.GetAllDescendants);
                 Assert.NotEmpty(descendants);
 
                 // Act & Assert: DateTime.MinValue must suppress the same descendants
