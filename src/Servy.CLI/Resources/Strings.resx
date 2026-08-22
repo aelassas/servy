@@ -153,7 +153,7 @@
     <value>{0}: Service operation completed successfully, but post-success repository synchronization failed for '{1}': {2}</value>
   </data>
   <data name="Msg_ServiceOperationFailed" xml:space="preserve">
-    <value>{0}: failed to {1} for '{2}': {3}</value>
+    <value>{0}: failed to {1}: {2}</value>
   </data>
   <data name="Msg_LogFailedUnauthorized" xml:space="preserve">
     <value>Failed to {0} (Unauthorized)</value>

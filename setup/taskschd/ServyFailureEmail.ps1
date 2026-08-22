@@ -143,9 +143,9 @@ function Send-NotificationEmail {
         return 'PermanentFailure'
     }
 
-    $smtpServer = $configRoot.Server
-    $from        = $configRoot.From
-    $to          = $configRoot.To
+    $smtpServer = ([string]$configRoot.Server).Trim()
+    $from       = ([string]$configRoot.From).Trim()
+    $to         = ([string]$configRoot.To).Trim()
 
     $rawPort    = ([string]$configRoot.Port).Trim()
     $rawUseSsl  = ([string]$configRoot.UseSsl).Trim()
