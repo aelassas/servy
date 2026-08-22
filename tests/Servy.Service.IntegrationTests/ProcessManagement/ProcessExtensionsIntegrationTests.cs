@@ -1,4 +1,3 @@
-using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System;
@@ -6,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Management;
 using System.Threading;
 using Xunit;
 
@@ -68,14 +68,14 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             try { systemProcess = Process.GetProcessById(4); }
             catch (ArgumentException) { /* Ignore */ }
 
-            if (systemProcess is null) return; // PID 4 (System) is not resolvable on this host.
+            if (systemProcess is null) return; // Skip - PID 4 (System) is not resolvable on this host.
 
             using (systemProcess)
             {
                 // Precondition: the property access must actually be denied, otherwise this
                 // test is exercising the success path, not the Win32Exception fallback.
                 var denied = Record.Exception(() => _ = systemProcess.ProcessName);
-                if (!(denied is Win32Exception)) return; // ProcessName on PID 4 did not raise Win32Exception; runner is likely elevated.
+                if (!(denied is Win32Exception)) return; // Skip ProcessName on PID 4 did not raise Win32Exception; runner is likely elevated
 
                 // Act & Assert
                 Assert.Equal($"(PID {systemProcess.Id})", systemProcess.Format());
@@ -101,11 +101,23 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void GetChildren_InvalidStartTime_ReturnsEmptyList()
         {
-            // Arrange & Act
-            var children = ProcessExtensions.GetChildren(123, DateTime.MinValue);
+            // Arrange
+            var root = SpawnProcessTree(1);
+            List<Process> realChildren = new List<Process>();
 
-            // Assert
-            Assert.Empty(children);
+            try
+            {
+                // Control: children are visible with the genuine start time
+                realChildren = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
+                Assert.NotEmpty(realChildren);
+
+                // Act & Assert: DateTime.MinValue must suppress the same children
+                Assert.Empty(ProcessExtensions.GetChildren(root.Id, DateTime.MinValue));
+            }
+            finally
+            {
+                foreach (var child in realChildren) child.Dispose();
+            }
         }
 
         [Theory]
@@ -125,11 +137,23 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void GetAllDescendants_InvalidStartTime_ReturnsEmptyList()
         {
-            // Arrange & Act
-            var descendants = ProcessExtensions.GetAllDescendants(1, DateTime.MinValue);
+            // Arrange
+            var root = SpawnProcessTree(1);
+            List<Process> descendants = new List<Process>();
 
-            // Assert
-            Assert.Empty(descendants);
+            try
+            {
+                // Control: descendants are visible with the genuine start time
+                descendants = ProcessExtensions.GetAllDescendants(root.Id, root.StartTime);
+                Assert.NotEmpty(descendants);
+
+                // Act & Assert: DateTime.MinValue must suppress the same descendants
+                Assert.Empty(ProcessExtensions.GetAllDescendants(root.Id, DateTime.MinValue));
+            }
+            finally
+            {
+                foreach (var d in descendants) d.Dispose();
+            }
         }
 
         [Fact]
@@ -154,8 +178,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // 2. Immediate Child Verification: Verify the direct child is found and maps back to root
                 var directChild = children.FirstOrDefault(p =>
-                    p.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase) &&
-                    GetParentPidViaWmi(p) == root.Id);
+                    GetSafeProcessName(p).Equals("powershell", StringComparison.OrdinalIgnoreCase) &&
+                    GetSafeParentPid(p) == root.Id);
 
                 Assert.NotNull(directChild);
 
@@ -240,6 +264,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 // Cleanup transient child process handles
                 foreach (var c in realChildren)
+                {
+                    c.Dispose();
+                }
+                foreach (var c in childrenWithReusedPid)
                 {
                     c.Dispose();
                 }
@@ -365,10 +393,26 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         private int GetParentPidViaWmi(Process process)
         {
-            using (var mo = new System.Management.ManagementObject($"win32_process.handle='{process.Id}'"))
+            using (var mo = new ManagementObject($"win32_process.handle='{process.Id}'"))
             {
                 mo.Get();
                 return Convert.ToInt32(mo["ParentProcessId"]);
+            }
+        }
+
+        private int GetSafeParentPid(Process process)
+        {
+            try
+            {
+                return GetParentPidViaWmi(process);
+            }
+            catch (ManagementException)
+            {
+                return -1;
+            }
+            catch (InvalidOperationException)
+            {
+                return -1;
             }
         }
 
@@ -398,19 +442,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         private void CleanupRoot(Process root)
         {
-            try
-            {
-                if (root != null && !root.HasExited)
-                {
-                    ProcessHelper.KillProcessTree(root);
-                    root.WaitForExit(3000);
-                }
-            }
-            catch { }
-            finally
-            {
-                root?.Dispose();
-            }
+            TestProcessCleanup.KillAndDispose(root, TestTimeouts.CleanupWaitMs);
         }
 
         public void Dispose()

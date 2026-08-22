@@ -35,19 +35,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             foreach (var wrapper in _spawnedWrappers)
             {
-                try
-                {
-                    if (!wrapper.HasExited)
-                    {
-                        wrapper.Kill(entireProcessTree: true);
-                        wrapper.WaitForExit(2000);
-                    }
-                }
-                catch { /* Ignore cleanup exceptions on spawned process handles */ }
-                finally
-                {
-                    wrapper.Dispose();
-                }
+                TestProcessCleanup.KillAndDispose(wrapper, TestTimeouts.CleanupWaitMs);
             }
 
             foreach (var file in _tempFiles)
@@ -82,7 +70,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_EmptyExecutable_ThrowsArgumentException(string exePath)
         {
             // Arrange
-            var options = CreateOptions(exePath, string.Empty, false, 10_000);
+            var options = CreateOptions(exePath, string.Empty, false, TestTimeouts.ProcessLauncherTimeoutMs);
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => ProcessLauncher.Start(options, _realFactory, _logger));
@@ -123,7 +111,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_FireAndForget_ReturnsImmediately()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 3\"", fireAndForget: true, timeoutMs: 0);
+            var options = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.CiGenerousSeconds}\"", fireAndForget: true, timeoutMs: 0);
 
             // Act
             var wrapper = ProcessLauncher.Start(options, _realFactory, _logger);
@@ -224,7 +212,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
 
-            var envVarInstance = new Servy.Core.EnvironmentVariables.EnvironmentVariable
+            var envVarInstance = new EnvironmentVariable
             {
                 Name = "CUSTOM_TEST_ENV_PADDED",
                 Value = null // Triggers target coverage branch: envVar.Value ?? string.Empty
@@ -280,7 +268,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 bool logged = SpinWait.SpinUntil(
                     () => _logger.Errors.Any(m => m.Contains("Disabling stdout capture for")),
-                    TimeSpan.FromSeconds(5));
+                    TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
 
                 // Assert
                 Assert.True(wrapper.HasExited);
@@ -293,14 +281,21 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Language Fixes & Regex Timeout Coverage
 
         [Theory]
-        [InlineData("python.exe", true)]
-        [InlineData("pythonw.exe", true)]
-        [InlineData("python3.exe", true)]
-        [InlineData("py.exe", true)]
-        [InlineData("java.exe", false)]
-        [InlineData("javaw.exe", false)]
-        [InlineData("javac.exe", false)]
-        public void ApplyLanguageFixes_RuntimesDetection_AppliesExpectedArgumentsAndVariables(string fileName, bool isPython)
+        [InlineData("python.exe", true, "1", "utf-8", "0", "1", "-version")]
+        [InlineData("pythonw.exe", true, "1", "utf-8", "0", "1", "-version")]
+        [InlineData("python3.exe", true, "1", "utf-8", "0", "1", "-version")]
+        [InlineData("py.exe", true, "1", "utf-8", "0", "1", "-version")]
+        [InlineData("java.exe", false, null, null, null, null, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("javaw.exe", false, null, null, null, null, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("javac.exe", false, null, null, null, null, "-J-Dfile.encoding=UTF-8 -version")]
+        public void ApplyLanguageFixes_RuntimesDetection_AppliesExpectedArgumentsAndVariables(
+            string fileName,
+            bool isPython,
+            string expectedUtf8,
+            string expectedIoEncoding,
+            string expectedLegacyStdio,
+            string expectedUnbuffered,
+            string expectedArguments)
         {
             // Arrange
             var psi = new ProcessStartInfo { FileName = fileName, Arguments = "-version" };
@@ -309,14 +304,14 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             ProcessLauncher.ApplyLanguageFixes(psi, logger: null);
 
             // Assert
+            Assert.Equal(expectedArguments, psi.Arguments);
+
             if (isPython)
             {
-                Assert.Equal("1", psi.Environment["PYTHONUTF8"]);
-                Assert.Equal("utf-8", psi.Environment["PYTHONIOENCODING"]);
-            }
-            else
-            {
-                Assert.Contains("-Dfile.encoding=UTF-8", psi.Arguments);
+                Assert.Equal(expectedUtf8, psi.Environment["PYTHONUTF8"]);
+                Assert.Equal(expectedIoEncoding, psi.Environment["PYTHONIOENCODING"]);
+                Assert.Equal(expectedLegacyStdio, psi.Environment["PYTHONLEGACYWINDOWSSTDIO"]);
+                Assert.Equal(expectedUnbuffered, psi.Environment["PYTHONUNBUFFERED"]);
             }
         }
 
@@ -390,7 +385,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             string content = string.Empty;
             bool containsBoth = false;
 
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < TestTimeouts.MaxPollAttempts; i++)
             {
                 try { content = File.ReadAllText(logPath); }
                 catch (IOException) { /* writer still holds the handle - retry */ }
@@ -399,7 +394,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     containsBoth = true;
                     break;
                 }
-                Thread.Sleep(150);
+                Thread.Sleep(TestTimeouts.PollIntervalMs);
             }
 
             // Assert
