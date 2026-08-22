@@ -26,20 +26,20 @@
     - Active Directory user/group: 'DOMAIN\Username'
     - Local computer user/group: 'COMPUTERNAME\Username'
     - Local computer relative notation: '.\Username'
+    - Built-in Windows principals: 'NT AUTHORITY\LocalService', 'NT AUTHORITY\NetworkService'
     - Group Managed Service Account (gMSA): 'DOMAIN\gMSAAccount$' or 'gMSAAccount$'
 
 .EXAMPLE
     .\Set-ServyExePermissions.ps1 -TargetAccount "MYDOMAIN\svc-servy"
 
 .EXAMPLE
-    .\Set-ServyExePermissions.ps1 -TargetAccount ".\test_svc"
+    .\Set-ServyExePermissions.ps1 -TargetAccount "NT AUTHORITY\LocalService"
 #>
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = "Specify target account (e.g., 'DOMAIN\User', '.\User', or 'DOMAIN\gMSA$').")]
+    [Parameter(Mandatory = $true, HelpMessage = "Specify target account (e.g., 'DOMAIN\User', 'NT AUTHORITY\LocalService', or 'DOMAIN\gMSA$').")]
     [ValidateNotNullOrEmpty()]
-    [ValidatePattern('^(?i)(?:(?:\.|[a-z0-9_.-]+)\\)?[a-z0-9_.-]+\$?$')]
     [string]$TargetAccount
 )
 
@@ -62,13 +62,33 @@ if (-not (Test-Path -Path $programDataDir)) {
     exit 0
 }
 
-# Resolve relative notation '.\User' to actual computer name
+# Normalize relative notation '.\User' while preserving built-in NT AUTHORITY accounts
+$builtInNames = @(
+    'LocalSystem', 'System',
+    'LocalService', 'Local Service',
+    'NetworkService', 'Network Service'
+)
+
 if ($TargetAccount.StartsWith(".\")) {
-    $TargetAccount = "$env:COMPUTERNAME\" + $TargetAccount.Substring(2)
+    $bare = $TargetAccount.Substring(2)
+    $TargetAccount = if ($builtInNames -contains $bare) {
+        $bare
+    } else {
+        "$env:COMPUTERNAME\$bare"
+    }
 }
 
-# Strict-mode safe instantiation of NTAccount
-$targetNTAccount = New-Object System.Security.Principal.NTAccount($TargetAccount)
+# Validate account existence using Windows API resolution rather than regex pattern matching.
+# Translating to a SecurityIdentifier (SID) ensures the account resolves on this machine/domain.
+try {
+    $targetNTAccount = New-Object System.Security.Principal.NTAccount($TargetAccount)
+    [void]$targetNTAccount.Translate([System.Security.Principal.SecurityIdentifier])
+}
+catch {
+    throw "Account '$TargetAccount' could not be resolved on this machine. " +
+          "Use the form shown by services.msc, e.g. 'NT AUTHORITY\LocalService', " +
+          "'DOMAIN\svc-servy', or 'DOMAIN\gMSAAccount$'."
+}
 
 # Define Well-Known SIDs for language-agnostic administrative control
 $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)

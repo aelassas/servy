@@ -1,21 +1,22 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Enforces whitespace hygiene (trailing whitespace removal and final newline insertion) across repository source files.
+    Enforces whitespace hygiene (trailing whitespace removal, final newline insertion, and UTF-8 no BOM encoding) across repository source files.
 
 .DESCRIPTION
     Scans source code, project configurations, PowerShell scripts, YAML workflows, and markdown files
     across the repository (excluding build outputs like bin/obj, version control folders, and generated files like *.g.cs, *.g.i.cs, *.Designer.cs),
-    enforcing two EditorConfig rules:
+    enforcing three EditorConfig rules:
     1. Trims trailing whitespace from all lines (trim_trailing_whitespace = true).
     2. Ensures every file ends with a trailing newline (insert_final_newline = true).
+    3. Enforces UTF-8 without BOM encoding (charset = utf-8).
 
     Note: .resx files are explicitly excluded because trailing whitespace within XML <value> elements
     can be meaningful string content. Additionally, trailing whitespace is preserved on .md files to respect
     .editorconfig's [*.md] section where trim_trailing_whitespace = false (as two trailing spaces denote Markdown hard line breaks).
 
 .PARAMETER DryRun
-    If specified, previews the files that violate whitespace hygiene rules without modifying them on disk.
+    If specified, previews the files that violate whitespace hygiene or charset rules without modifying them on disk.
 
 .EXAMPLE
     .\Format-SourceHygiene.ps1
@@ -25,7 +26,7 @@ Formats all applicable repository files in-place.
 .EXAMPLE
     .\Format-SourceHygiene.ps1 -DryRun
 
-Previews files needing whitespace trimming or missing a final newline without writing changes to disk.
+Previews files needing formatting or encoding corrections without writing changes to disk.
 
 .NOTES
     File Name : Format-SourceHygiene.ps1
@@ -53,18 +54,18 @@ $exclusionRegex = if ($script:BuildArtifactExclusionRegex) {
 }
 
 if ($DryRun) {
-    Write-Host "DRY-RUN: Previewing files violating whitespace hygiene..." -ForegroundColor Yellow
+    Write-Host "DRY-RUN: Previewing files violating whitespace hygiene and charset rules..." -ForegroundColor Yellow
 } else {
-    Write-Host "Scanning and formatting files for whitespace hygiene..." -ForegroundColor Cyan
+    Write-Host "Scanning and formatting files for whitespace hygiene and UTF-8 no-BOM encoding..." -ForegroundColor Cyan
 }
 
 $scannedCount = 0
 $modifiedCount = 0
 $trimmedOnlyCount = 0
 $newlineOnlyCount = 0
-$bothCount = 0
+$bomOnlyCount = 0
 
-# Extensions governed by .editorconfig whitespace rules
+# Extensions governed by .editorconfig whitespace and charset rules
 # NOTE: .resx files are deliberately omitted because trailing spaces inside XML <value> elements
 # represent localized string data rather than code formatting.
 $textExtensions = @(
@@ -96,6 +97,11 @@ $filesToScan = Get-ChildItem -Path $baseDir -Recurse -File -ErrorAction Silently
 foreach ($file in $filesToScan) {
     $scannedCount++
     $filePath = $file.FullName
+
+    # Check 0: Check for UTF-8 Byte Order Mark (BOM: 0xEF, 0xBB, 0xBF)
+    $bytes = [System.IO.File]::ReadAllBytes($filePath)
+    $hasBom = ($bytes.Length -ge 3) -and ($bytes[0] -eq 0xEF) -and ($bytes[1] -eq 0xBB) -and ($bytes[2] -eq 0xBF)
+
     $rawText = [System.IO.File]::ReadAllText($filePath)
 
     # .editorconfig [*.md] sets trim_trailing_whitespace = false: two trailing
@@ -120,30 +126,34 @@ foreach ($file in $filesToScan) {
         }
     }
 
-    if ($hasTrailingWhitespace -or $lacksFinalNewline) {
+    if ($hasTrailingWhitespace -or $lacksFinalNewline -or $hasBom) {
         $modifiedCount++
         $relativePath = $file.FullName.Replace($baseDir, '')
 
-        # Detail categorization for progress output
-        $reason = if ($hasTrailingWhitespace -and $lacksFinalNewline) {
-            $bothCount++
-            "trailing whitespace & missing final newline"
-        } elseif ($hasTrailingWhitespace) {
+        # Build precise issue categorization reasons for reporting
+        $reasons = @()
+        if ($hasTrailingWhitespace) {
             $trimmedOnlyCount++
-            "trailing whitespace"
-        } else {
-            $newlineOnlyCount++
-            "missing final newline"
+            $reasons += "trailing whitespace"
         }
+        if ($lacksFinalNewline) {
+            $newlineOnlyCount++
+            $reasons += "missing final newline"
+        }
+        if ($hasBom) {
+            $bomOnlyCount++
+            $reasons += "UTF-8 BOM detected"
+        }
+        $reasonStr = $reasons -join " & "
 
         if ($DryRun) {
-            Write-Host "Would format ($reason): $relativePath" -ForegroundColor Yellow
+            Write-Host "Would format ($reasonStr): $relativePath" -ForegroundColor Yellow
         } else {
             # UTF8Encoding($false) = no BOM, on both Windows PowerShell 5.1 and PowerShell 7+
             $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
             $content   = ($trimmedLines -join "`r`n") + "`r`n"
             [System.IO.File]::WriteAllText($filePath, $content, $utf8NoBom)
-            Write-Host "Formatted ($reason): $relativePath" -ForegroundColor Gray
+            Write-Host "Formatted ($reasonStr): $relativePath" -ForegroundColor Gray
         }
     }
 }

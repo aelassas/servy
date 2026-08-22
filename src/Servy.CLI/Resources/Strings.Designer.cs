@@ -340,7 +340,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0}: failed to {1} for &apos;{2}&apos;: {3}.
+        ///   Looks up a localized string similar to {0}: failed to {1}: {2}.
         /// </summary>
         public static string Msg_ServiceOperationFailed {
             get {
