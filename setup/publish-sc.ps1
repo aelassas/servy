@@ -123,7 +123,7 @@ foreach ($project in $projects) {
 # Step 2: Build & Sign Installer
 # ========================
 Remove-ItemSafely -Path $installerPath
-Build-Installer -InnoCompiler $innoCompiler -IssFile $issFile -Version $Version -Arch $arch
+Invoke-BuildInstaller -InnoCompiler $innoCompiler -IssFile $issFile -Version $Version -Arch $arch -BuildConfiguration $BuildConfiguration -Tfm $Tfm
 
 # Validate the installer exists before attempting to sign
 if (Test-Path $installerPath) {

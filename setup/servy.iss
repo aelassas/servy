@@ -16,6 +16,14 @@
   #define Arch "x64"
 #endif
 
+#ifndef BuildConfiguration
+  #define BuildConfiguration "Release"
+#endif
+
+#ifndef Tfm
+  #define Tfm "net10.0-windows"
+#endif
+
 #if Arch == "arm64"
   #define AppIdGuid    "8343B121-BE1C-463F-AA5B-FD237DD2F8D1"
   #define ArchAllowed  "arm64"
@@ -86,13 +94,13 @@ Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional
 
 [Files]
 ; Main app EXE
-Source: "..\src\Servy\bin\Release\net10.0-windows\{#Runtime}\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
+Source: "..\src\Servy\bin\{#BuildConfiguration}\{#Tfm}\{#Runtime}\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
 
 ; appsettings.desktop.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy\appsettings.desktop.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_main_app
 
 ; CLI
-Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\{#Runtime}\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\bin\{#BuildConfiguration}\{#Tfm}\{#Runtime}\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
 
 ; appsettings.cli.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.CLI\appsettings.cli.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_cli
@@ -103,7 +111,7 @@ Source: "..\src\Servy.CLI\Servy.psd1"; DestDir: "{app}"; Flags: ignoreversion; C
 Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 
 ; Manager
-Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\{#Runtime}\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
+Source: "..\src\Servy.Manager\bin\{#BuildConfiguration}\{#Tfm}\{#Runtime}\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
 
 ; appsettings.manager.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.Manager\appsettings.manager.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_manager
@@ -634,10 +642,10 @@ begin
   NormalizedFolder := NormalizeFolder(Folder);
 
   if RegQueryStringValue(
-       HKLM64,
-       'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
-       'Path',
-       OldPath) then
+        HKLM64,
+        'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
+        'Path',
+        OldPath) then
   begin
     Parts := TStringList.Create;
     try

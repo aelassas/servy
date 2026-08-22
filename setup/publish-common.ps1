@@ -84,13 +84,21 @@ function Copy-TaskSchdArtifacts {
 
     .PARAMETER Arch
     The target architecture ("x64" or "arm64") passed to the Inno preprocessor directive.
+
+    .PARAMETER BuildConfiguration
+    The build environment configuration ("Release" or "Debug") passed to the Inno preprocessor directive.
+
+    .PARAMETER Tfm
+    The target framework moniker ("net10.0-windows") passed to the Inno preprocessor directive.
 #>
-function Build-Installer {
+function Invoke-BuildInstaller {
     param (
         [Parameter(Mandatory=$true)][string]$InnoCompiler,
         [Parameter(Mandatory=$true)][string]$IssFile,
         [Parameter(Mandatory=$true)][string]$Version,
         [string]$Arch = "x64",
+        [string]$BuildConfiguration = "Release",
+        [string]$Tfm = "net10.0-windows",
         [int]$MaxRetry = 3,
         [int]$RetryDelaySeconds = 2
     )
@@ -107,7 +115,7 @@ function Build-Installer {
                 Write-Host "Inno Setup retry attempt $currentAttempt..." -ForegroundColor Yellow
             }
 
-            & $InnoCompiler $IssFile "/DMyAppVersion=$Version" "/DArch=$Arch"
+            & $InnoCompiler $IssFile "/DMyAppVersion=$Version" "/DArch=$Arch" "/DBuildConfiguration=$BuildConfiguration" "/DTfm=$Tfm"
 
             # MUST check exit code manually to trigger the 'catch' block
             if ($LASTEXITCODE -eq 0) {

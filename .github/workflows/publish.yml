@@ -518,7 +518,7 @@ jobs:
       - name: Build unsigned installer
         shell: pwsh
         run: |
-          & "$env:ISCC" "$env:ISS_FILE" /DMyAppVersion=$env:VERSION /DArch=$env:ARCH
+          & "$env:ISCC" "$env:ISS_FILE" /DMyAppVersion=$env:VERSION /DArch=$env:ARCH /DBuildConfiguration=$env:CONFIGURATION /DTfm=$env:TFM
 
       # -----------------------------------------------------
       # SIGN installer
