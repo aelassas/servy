@@ -15,7 +15,12 @@
 # ----------------------------------------------------------------
 # Load Validation Pattern
 # ----------------------------------------------------------------
-$scriptPath = Join-Path $PSScriptRoot "Servy.psm1"
+$scriptRoot = if ($PSVersionTable.PSVersion.Major -ge 3) {
+    $PSScriptRoot
+} else {
+    Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+$scriptPath = Join-Path $scriptRoot "Servy.psm1"
 
 if (Test-Path $scriptPath) {
     # Extract $script:EnvVarValidationPattern directly from Servy.psm1
