@@ -1,7 +1,7 @@
 #Requires -Version 2.0
 <#
 .SYNOPSIS
-    Hardens Servy .NET Framework 4.8 executable and library permissions to Read & Execute to prevent privilege escalation and binary tampering (Mandatory Security Hardening).
+    Mandatory Security Hardening: Hardens Servy .NET Framework 4.8 executable and library permissions to Read & Execute to prevent privilege escalation and binary tampering.
 
 .DESCRIPTION
     Mandatory security script for hardening Servy .NET Framework 4.8 service runner accounts. Servy requires
@@ -27,19 +27,19 @@
     - Active Directory user/group: 'DOMAIN\Username'
     - Local computer user/group: 'COMPUTERNAME\Username'
     - Local computer relative notation: '.\Username'
-    - Built-in Windows principals: 'NT AUTHORITY\LocalService', 'NT AUTHORITY\NetworkService'
+    - Built-in Windows principals: 'LocalService', 'NetworkService', 'NT AUTHORITY\LocalService'
     - Group Managed Service Account (gMSA): 'DOMAIN\gMSAAccount$' or 'gMSAAccount$'
 
 .EXAMPLE
     .\Set-ServyExePermissions.ps1 -TargetAccount "MYDOMAIN\svc-servy"
 
 .EXAMPLE
-    .\Set-ServyExePermissions.ps1 -TargetAccount "NT AUTHORITY\LocalService"
+    .\Set-ServyExePermissions.ps1 -TargetAccount "LocalService"
 #>
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = 'Specify target account like DOMAIN\User, NT AUTHORITY\LocalService, or DOMAIN\gMSA$')]
+    [Parameter(Mandatory = $true, HelpMessage = 'Specify target account (e.g., "DOMAIN\User", "LocalService", "NT AUTHORITY\LocalService", or "DOMAIN\gMSA$").')]
     [ValidateNotNullOrEmpty()]
     [string]$TargetAccount
 )
@@ -88,8 +88,8 @@ catch {
 
 if ($null -eq $targetNTAccount) {
     throw "Account '$TargetAccount' could not be resolved on this machine or domain. " +
-          "Use the form shown by services.msc, e.g. 'NT AUTHORITY\LocalService', " +
-          "'DOMAIN\svc-servy', or 'DOMAIN\gMSAAccount$'."
+          "Use the form shown by services.msc (e.g., 'LocalService', 'NT AUTHORITY\LocalService', " +
+          "'DOMAIN\svc-servy', or 'DOMAIN\gMSAAccount$')."
 }
 
 # Define Well-Known SIDs for language-agnostic administrative control
