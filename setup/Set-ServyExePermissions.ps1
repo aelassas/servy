@@ -62,30 +62,32 @@ if (-not (Test-Path -Path $programDataDir)) {
     exit 0
 }
 
-# Normalize relative notation '.\User' while preserving built-in NT AUTHORITY accounts (PS 2.0 compatible)
-$builtInNames = @(
-    'LocalSystem', 'System',
-    'LocalService', 'Local Service',
-    'NetworkService', 'Network Service'
-)
-
-if ($TargetAccount.Length -ge 2 -and $TargetAccount.Substring(0, 2) -eq ".\") {
-    $bare = $TargetAccount.Substring(2)
-    $TargetAccount = if ($builtInNames -contains $bare) {
-        $bare
-    } else {
-        "$env:COMPUTERNAME\$bare"
+# Dynamically validate and resolve account existence via Windows LSA.
+# First attempt: Direct LSA translation handles built-in principals, domain accounts, and standard formats.
+$targetNTAccount = $null
+try {
+    $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($TargetAccount)
+    [void]$ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
+    $targetNTAccount = $ntAccountCandidate
+}
+catch {
+    # Second attempt: Fall back for relative notation ('.\User') pointing to a local machine account (PS 2.0 compatible)
+    if ($TargetAccount.Length -ge 2 -and $TargetAccount.Substring(0, 2) -eq ".\") {
+        $localUser = "$env:COMPUTERNAME\" + $TargetAccount.Substring(2)
+        try {
+            $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($localUser)
+            [void]$ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
+            $targetNTAccount = $ntAccountCandidate
+            $TargetAccount = $localUser
+        }
+        catch {
+            # Let fallback fail through to final error handler below
+        }
     }
 }
 
-# Validate account existence using Windows API resolution rather than regex pattern matching.
-# Translating to a SecurityIdentifier (SID) ensures the account resolves on this machine/domain.
-try {
-    $targetNTAccount = New-Object System.Security.Principal.NTAccount($TargetAccount)
-    [void]$targetNTAccount.Translate([System.Security.Principal.SecurityIdentifier])
-}
-catch {
-    throw "Account '$TargetAccount' could not be resolved on this machine. " +
+if ($null -eq $targetNTAccount) {
+    throw "Account '$TargetAccount' could not be resolved on this machine or domain. " +
           "Use the form shown by services.msc, e.g. 'NT AUTHORITY\LocalService', " +
           "'DOMAIN\svc-servy', or 'DOMAIN\gMSAAccount$'."
 }
