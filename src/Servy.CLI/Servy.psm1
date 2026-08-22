@@ -328,8 +328,10 @@ function Invoke-ServyCli {
   # and account for the executable path length.
   if ($argString.Length -gt 32000) {
     throw "$($ErrorContext): Command-line arguments exceed Windows maximum length ($($argString.Length) characters). " +
-    "To resolve this, shorten your environment variables/parameters or use the 'import' command " +
-    "with a configuration file instead."
+    "To resolve this, shorten the path, directory and description arguments (-Path, -StartupDir, -Stdout, -Stderr, " +
+    "-Description, -Deps and the pre/post-launch and pre/post-stop path parameters), or use the 'import' command " +
+    "with a configuration file instead. Note that -Params, -EnvVars, -PreLaunchEnv and the other sensitive values " +
+    "are passed via environment variables and do not count toward this limit."
   }
 
   $process = $null
@@ -449,6 +451,12 @@ function Invoke-ServyCli {
         break
       }
       Start-Sleep -Milliseconds $script:ServyPollIntervalMs
+    }
+
+    # The process may have exited during the final sleep, after the last poll but
+    # before the stopwatch crossed the timeout. That is a success, not a timeout.
+    if (-not $hasExited -and $process.HasExited) {
+      $hasExited = $true
     }
 
     if (-not $hasExited) {
@@ -985,7 +993,7 @@ function Install-ServyService {
         If a CLI flag is added that does not match the PS parameter name (ignoring casing
         and leading dashes), the $PSBoundParameters.ContainsKey() check
         will fail, and the argument will not be passed to the executable.
-    #>
+  #>
   [CmdletBinding()]
   param(
     # Execution Settings
