@@ -45,8 +45,9 @@ namespace Servy.Restarter.UnitTests
             controller.Dispose();
             Assert.True(TestReflection.GetField<bool>(controller, "_disposed"));
 
-            // A disposed Component raises Disposed only on the transition; a second real
-            // teardown would have to re-enter the disposing branch to do anything at all.
+            // Component raises Disposed on EVERY Dispose(true) call (no transition guard),
+            // so if the wrapper's _disposed short-circuit regresses, the second Dispose
+            // reaches the inner controller and this sentinel fires.
             var innerDisposals = 0;
             inner.Disposed += (s, e) => innerDisposals++;
 

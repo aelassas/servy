@@ -88,15 +88,15 @@ namespace Servy.Restarter.UnitTests
 
         /*
          * Note on Helper.EnsureEventSourceExists Exception Fallback Branch:
-         * The catch block around Helper.EnsureEventSourceExists() (lines 57-66) catches EventLog creation or
+         * The catch block around Helper.EnsureEventSourceExists() (Step 1) catches EventLog creation or
          * access failures and falls back to file-only logging (EventLogLogger(..., isEventLogEnabled: false)).
          * Because AppConfig.EventSource is a compile-time constant ("Servy") and Helper delegates directly to
          * static System.Diagnostics.EventLog calls, triggering this exception in an integration test requires
          * running in an environment without Windows Event Log registry access.
          *
          * Note on DatabaseValidator.IsSqliteVersionSafe False Path:
-         * The false branch of DatabaseValidator.IsSqliteVersionSafe inside Program.Main (lines 92-108)
-         * triggers a fatal exit when the loaded System.Data.SQLite library version is below AppConfig.MinRequiredSqliteVersion.
+         * The false branch of DatabaseValidator.IsSqliteVersionSafe inside Program.Main triggers a fatal exit
+         * when the loaded System.Data.SQLite library version is below AppConfig.MinRequiredSqliteVersion.
          * Forcing this condition at the Program.Main integration level requires substituting the loaded native/managed
          * SQLite provider assembly at runtime. The underlying version validation rules are fully covered in DatabaseValidatorTests.cs.
          */
