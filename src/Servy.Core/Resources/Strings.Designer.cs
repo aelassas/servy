@@ -619,7 +619,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service name contains invalid characters. Avoid using &apos;\&apos;, &apos;/&apos;, &apos;:&apos;, &apos;*&apos;, &apos;?&apos;, &apos;&quot;&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;|&apos;..
+        ///   Looks up a localized string similar to Service name contains invalid characters. Avoid using &apos;\&apos;, &apos;/&apos;, &apos;:&apos;, &apos;*&apos;, &apos;?&apos;, &apos;&quot;&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;|&apos;, and non-printable characters..
         /// </summary>
         public static string Msg_InvalidServiceName {
             get {
@@ -889,6 +889,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service name cannot begin or end with a period..
+        /// </summary>
+        public static string Msg_ServiceNameLeadingTrailingDot {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameLeadingTrailingDot", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Service name exceeds {0} characters..
         /// </summary>
         public static string Msg_ServiceNameLengthReached {
@@ -903,6 +912,15 @@ namespace Servy.Core.Resources {
         public static string Msg_ServiceNameRequired {
             get {
                 return ResourceManager.GetString("Msg_ServiceNameRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; is a name reserved by Windows and cannot be used in a service name..
+        /// </summary>
+        public static string Msg_ServiceNameReservedDeviceName {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameReservedDeviceName", resourceCulture);
             }
         }
         

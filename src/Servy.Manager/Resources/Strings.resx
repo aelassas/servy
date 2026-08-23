@@ -437,9 +437,6 @@ If the service is disabled and marked for deletion, installation will fail until
   </data>
 
   <!-- Miscellaneous -->
-  <data name="Msg_InvalidServiceName" xml:space="preserve">
-    <value>Service name contains invalid characters. Avoid using '\', '/', ':', '*', '?', '"', '&lt;', '&gt;', '|'.</value>
-  </data>
   <data name="Msg_DesktopAppLaunchFailed" xml:space="preserve">
     <value>Failed to launch the Desktop application.</value>
   </data>

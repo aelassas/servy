@@ -545,7 +545,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.False(isValid);
-            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+            Assert.Equal(Strings.Msg_ServiceNameLeadingTrailingDot, error);
         }
 
         /// <summary>
@@ -565,7 +565,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.False(isValid);
-            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+            Assert.Equal(string.Format(Strings.Msg_ServiceNameReservedDeviceName, input), error);
         }
 
         /// <summary>
@@ -582,7 +582,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.False(isValid);
-            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+            Assert.Equal(Strings.Msg_ServiceNameLeadingTrailingDot, error);
         }
 
         /// <summary>

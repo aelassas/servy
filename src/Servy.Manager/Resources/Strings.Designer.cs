@@ -2143,15 +2143,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service name contains invalid characters. Avoid using &apos;\&apos;, &apos;/&apos;, &apos;:&apos;, &apos;*&apos;, &apos;?&apos;, &apos;&quot;&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;|&apos;..
-        /// </summary>
-        public static string Msg_InvalidServiceName {
-            get {
-                return ResourceManager.GetString("Msg_InvalidServiceName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Service wrapper executable not found..
         /// </summary>
         public static string Msg_InvalidWrapperExePath {
