@@ -205,7 +205,7 @@ namespace Servy.Core.Helpers
                     if (!long.TryParse(asString, out _))   // ToString() returned names, not a residual number
                         return result;
                 }
-                else if (Enum.IsDefined(enumType, result))
+                else if (value.IndexOf(',') < 0 && Enum.IsDefined(enumType, result))
                 {
                     return result;
                 }

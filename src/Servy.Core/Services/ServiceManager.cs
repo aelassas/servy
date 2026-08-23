@@ -162,14 +162,19 @@ namespace Servy.Core.Services
         /// Sets the description text for a Windows service.
         /// </summary>
         /// <param name="serviceHandle">A valid handle to the target Windows service.</param>
-        /// <param name="description">The description string to assign. A null value removes the description.</param>
+        /// <param name="description">
+        /// The description to assign. Pass null or an empty string to delete the current description;
+        /// an empty string is marshalled as a non-NULL pointer to "" which Win32 treats as "delete description".
+        /// </param>
         /// <exception cref="Win32Exception">Thrown if the native configuration change fails.</exception>
         internal void SetServiceDescription(SafeServiceHandle serviceHandle, string description)
         {
             IntPtr pDescription = IntPtr.Zero;
             try
             {
-                pDescription = Marshal.StringToHGlobalUni(description?.Trim());
+                // Win32: NULL lpDescription = leave unchanged, "" = delete. Normalise null to "" so a caller
+                // asking to clear the description actually clears it.
+                pDescription = Marshal.StringToHGlobalUni(description?.Trim() ?? string.Empty);
 
                 var desc = new SERVICE_DESCRIPTION
                 {
@@ -353,10 +358,10 @@ namespace Servy.Core.Services
                     string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? ServiceAccounts.LocalSystem : options.Username;
                     string lpPassword = string.IsNullOrEmpty(options.Password) ? null : options.Password;
 
-                    bool isLocalSystem = lpServiceStartName.Equals(ServiceAccounts.LocalSystem, StringComparison.OrdinalIgnoreCase);
-                    var isGmsa = string.IsNullOrEmpty(lpPassword) && lpServiceStartName.EndsWith("$");
+                    bool isBuiltIn = ServiceAccounts.IsBuiltInServiceAccount(lpServiceStartName);
+                    var isGmsa = ServiceAccounts.IsGmsa(lpServiceStartName, lpPassword);
 
-                    if (!isLocalSystem && !isGmsa)
+                    if (!isBuiltIn && !isGmsa)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);

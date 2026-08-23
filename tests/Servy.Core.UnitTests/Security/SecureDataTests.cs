@@ -3,9 +3,6 @@ using Servy.Core.Config;
 using Servy.Core.Security;
 using Servy.Testing;
 using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Security
@@ -150,7 +147,7 @@ namespace Servy.Core.UnitTests.Security
         [Theory]
         // Branch 1: !IsStrictBase64(payload) -> returns the raw plaintext payload string directly.
         [InlineData("Plain_Legacy_Password_123!", false)]
-        // Branch 2: IsStrictBase64(payload) -> blocked while AllowLegacyV1Decryption is false; throws SecureDataIntegrityException.
+        // Branch 2: IsStrictBase64(payload) -> blocked while AllowLegacyV1Decryption is false; throws SecureDataLegacyBlockedException.
         [InlineData(null, true)]
         public void Decrypt_LegacyFormat_HandlesBothBranches(string input, bool isBase64LegacyBranch)
         {
@@ -169,8 +166,8 @@ namespace Servy.Core.UnitTests.Security
                 if (isBase64LegacyBranch && !AppConfig.AllowLegacyV1Decryption)
                 {
                     // Act & Assert
-                    // Raw legacy ciphertext detected with legacy decryption disabled must throw SecureDataIntegrityException
-                    var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+                    // Raw legacy ciphertext detected with legacy decryption disabled must throw SecureDataLegacyBlockedException
+                    var ex = Assert.Throws<SecureDataLegacyBlockedException>(() => sp.Decrypt(input));
                     Assert.Contains("Raw legacy ciphertext detected", ex.Message);
                 }
                 else
@@ -185,7 +182,7 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
-        public void Decrypt_UnmarkedStrictBase64_WhenLegacyDisabled_ThrowsSecureDataIntegrityException()
+        public void Decrypt_UnmarkedStrictBase64_WhenLegacyDisabled_ThrowsSecureDataLegacyBlockedException()
         {
             // Arrange
             if (AppConfig.AllowLegacyV1Decryption)
@@ -200,7 +197,7 @@ namespace Servy.Core.UnitTests.Security
             using (var sp = new SecureData(_mockProvider.Object))
             {
                 // Act & Assert
-                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(rawBase64Ciphertext));
+                var ex = Assert.Throws<SecureDataLegacyBlockedException>(() => sp.Decrypt(rawBase64Ciphertext));
                 Assert.Contains("Raw legacy ciphertext detected", ex.Message);
             }
         }

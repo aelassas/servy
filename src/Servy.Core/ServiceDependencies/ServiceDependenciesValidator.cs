@@ -10,8 +10,10 @@ namespace Servy.Core.ServiceDependencies
     /// </summary>
     public static class ServiceDependenciesValidator
     {
+        // optional load-order group prefix (SC_GROUP_IDENTIFIER, '+'), then
         // letters, digits, hyphen, underscore, period, spaces, and dollar sign ($)
-        private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-$ ]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
+        private static readonly Regex ValidServiceNameRegex = new Regex(@"^\+?[a-zA-Z0-9_.\-$ ]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
+
 
         /// <summary>
         /// Validates the input string containing service dependencies.

@@ -1,8 +1,6 @@
 using Servy.Core.Helpers;
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Configuration;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -302,6 +300,24 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(TestStatus.None, result);
+        }
+
+        [Theory]
+        [InlineData("Active, Paused")]
+        [InlineData("Active, Active")]
+        [InlineData("Active, 2")]
+        public void ParseEnum_String_NonFlagsEnum_CommaSeparatedInput_ReturnsDefault(string commaSeparatedInput)
+        {
+            // Arrange
+            var defaultValue = TestStatus.None;
+
+            // Act
+            // Enum.TryParse bitwise ORs comma-separated enum names even on non-Flags enums;
+            // ConfigParser must reject comma-separated values for non-Flags enums to prevent unintended member mapping.
+            var result = ConfigParser.ParseEnum(commaSeparatedInput, defaultValue);
+
+            // Assert
+            Assert.Equal(defaultValue, result);
         }
 
         #endregion

@@ -69,5 +69,45 @@ namespace Servy.Core.Config
             "Network Service",
             @"BUILTIN\NetworkService"
         );
+
+        /// <summary>
+        /// A safelist of built-in Windows accounts that are actual service runners.
+        /// Combined from all documented LocalSystem, LocalService, and NetworkService aliases.
+        /// </summary>
+        public static readonly ImmutableHashSet<string> RunnableServiceAccounts = LocalSystemAliases
+            .Union(LocalServiceAliases)
+            .Union(NetworkServiceAliases);
+
+        /// <summary>
+        /// True when the account is an OS-managed passwordless service identity: a documented
+        /// built-in alias, a virtual account (NT SERVICE\...) or an IIS AppPool identity.
+        /// These must not be sent through SID translation or LSA privilege assignment.
+        /// </summary>
+        /// <param name="account">The account name to check.</param>
+        /// <returns><c>true</c> if the account is a built-in OS-managed service identity; otherwise, <c>false</c>.</returns>
+        public static bool IsBuiltInServiceAccount(string account)
+        {
+            if (string.IsNullOrWhiteSpace(account)) return false;
+
+            account = account.Trim();
+
+            return RunnableServiceAccounts.Contains(account)
+                || account.StartsWith(@"NT SERVICE\", StringComparison.OrdinalIgnoreCase)
+                || account.StartsWith(@"IIS APPPOOL\", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// True when the account represents a group Managed Service Account (gMSA).
+        /// Identified by a trailing '$' and empty password context.
+        /// </summary>
+        /// <param name="account">The account name to check.</param>
+        /// <param name="password">The account password string.</param>
+        /// <returns><c>true</c> if the account is a gMSA identity; otherwise, <c>false</c>.</returns>
+        public static bool IsGmsa(string account, string password)
+        {
+            if (string.IsNullOrWhiteSpace(account)) return false;
+
+            return string.IsNullOrEmpty(password) && account.Trim().EndsWith("$");
+        }
     }
 }

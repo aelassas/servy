@@ -203,10 +203,13 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
         /// <exception cref="SecureDataIntegrityException">
         /// Thrown when:
-        ///  - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
-        ///  - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
-        ///  - the input has no marker but is strict Base64 and legacy decryption is disabled;
-        ///  - the marker version is unrecognized.
+        ///   - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
+        ///   - the marker version is unrecognized.
+        /// </exception>
+        /// <exception cref="SecureDataLegacyBlockedException">
+        /// Thrown when:
+        ///   - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
+        ///   - the input has no marker but is strict Base64 and legacy decryption is disabled.
         /// </exception>
         /// <exception cref="CryptographicException">Thrown when legacy v1 decryption is enabled but AES decryption fails.</exception>
         public string Decrypt(string cipherText)
@@ -234,7 +237,7 @@ namespace Servy.Core.Security
                         if (!AppConfig.AllowLegacyV1Decryption)
                         {
                             Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Throwing to prevent downgrade attack.");
-                            throw new SecureDataIntegrityException(
+                            throw new SecureDataLegacyBlockedException(
                                 "Legacy v1 decryption is disabled in this version. To migrate older records, " +
                                 "export the configuration using a v1-compatible version of Servy, then import " +
                                 "the resulting file into this version to upgrade to v2 authenticated encryption.");
@@ -272,7 +275,7 @@ namespace Servy.Core.Security
                     if (!AppConfig.AllowLegacyV1Decryption)
                     {
                         Logger.Warn("Security block: Raw legacy payload encountered with legacy decryption disabled.");
-                        throw new SecureDataIntegrityException(
+                        throw new SecureDataLegacyBlockedException(
                             "Raw legacy ciphertext detected. Legacy unauthenticated decryption is permanently disabled in this version. " +
                             "To migrate these records, export the service configuration using an older v1-compatible version of Servy, " +
                             "then import that file into this version to generate a secure v2 authenticated ciphertext.");

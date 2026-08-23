@@ -4,7 +4,8 @@ using System.Security.Cryptography;
 namespace Servy.Core.Security
 {
     /// <summary>
-    /// Thrown when a marked ciphertext fails integrity validation (HMAC or structure).
+    /// Thrown when a marked ciphertext fails integrity validation (HMAC or structure), or when
+    /// a legacy payload is refused by security policy (<see cref="SecureDataLegacyBlockedException"/>).
     /// </summary>
     public class SecureDataIntegrityException : CryptographicException
     {
