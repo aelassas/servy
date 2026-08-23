@@ -501,23 +501,23 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var vm = CreateViewModel();
 
                 // Act - Verify initial state before disposal context
-                bool isDisposedBefore = TestReflection.GetField<bool>(vm, "_isDisposed");
-                Assert.False(isDisposedBefore, "The logs view model wrapper should not initialize in a pre-disposed state.");
+                int isDisposedBefore = TestReflection.GetField<int>(vm, "_isDisposed");
+                Assert.Equal(0, isDisposedBefore);
 
                 // Act - First explicit teardown execution context
                 vm.Dispose();
 
                 // Assert - Guard must be active after primary disposal loop pass
-                bool isDisposedAfterFirst = TestReflection.GetField<bool>(vm, "_isDisposed");
-                Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
+                int isDisposedAfterFirst = TestReflection.GetField<int>(vm, "_isDisposed");
+                Assert.Equal(1, isDisposedAfterFirst);
 
                 // Reset the guard so the second Dispose exercises the full dispose body again
-                TestReflection.SetField(vm, "_isDisposed", false);
+                TestReflection.SetField(vm, "_isDisposed", 0);
                 var doubleDisposeException = Record.Exception(vm.Dispose);
 
                 // Assert
                 Assert.Null(doubleDisposeException);
-                Assert.True(TestReflection.GetField<bool>(vm, "_isDisposed"), "Second Dispose after guard reset did not set _isDisposed back to true.");
+                Assert.Equal(1, TestReflection.GetField<int>(vm, "_isDisposed"));
             }
         }
 

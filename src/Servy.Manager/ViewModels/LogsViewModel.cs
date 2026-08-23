@@ -10,7 +10,6 @@ using Servy.UI.Design;
 using Servy.UI.Services;
 using System.ComponentModel;
 using System.Windows.Data;
-using System.Windows.Input;
 
 namespace Servy.Manager.ViewModels
 {
@@ -18,7 +17,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the Logs tab in Servy Manager.
     /// Provides filtering, searching, and displaying log entries from the event log.
     /// </summary>
-    public class LogsViewModel : SearchableViewModelBase, IDisposable
+    public class LogsViewModel : SearchableViewModelBase
     {
         #region Private Fields
 
@@ -34,7 +33,6 @@ namespace Servy.Manager.ViewModels
         private readonly BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
         private EventLogLevel? _selectedLevel = EventLogLevel.All;
         private string? _selectedLogMessage;
-        private bool _isDisposed;
 
         #endregion
 
@@ -321,30 +319,14 @@ namespace Servy.Manager.ViewModels
             ClearActiveSearchContext(); // Triggers atomic infrastructure base teardown safely
         }
 
-        /// <summary>
-        /// Safely disposes of resources, specifically cancelling and disposing the internal
-        /// <see cref="CancellationTokenSource"/> to prevent memory leaks.
-        /// </summary>
-        /// <param name="disposing">
-        /// <see langword="true"/> when called from <see cref="Dispose()"/>. This type has no finalizer,
-        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
         {
-            if (_isDisposed) return;
             if (disposing)
             {
-                CancelSearch();
                 ScrollLogsToTopRequested = null;
             }
-            _isDisposed = true;
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            base.Dispose(disposing);
         }
 
         #endregion

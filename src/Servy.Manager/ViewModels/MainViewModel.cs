@@ -25,7 +25,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the main window of Servy Manager.
     /// Holds the list of services and exposes commands for managing them.
     /// </summary>
-    public class MainViewModel : SearchableViewModelBase, IDisposable
+    public class MainViewModel : SearchableViewModelBase
     {
         #region Private Fields
 
@@ -48,8 +48,6 @@ namespace Servy.Manager.ViewModels
         private int _isRefreshingFlag = 0; // 0 = false, 1 = true
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
-
-        private bool _isDisposed;
 
         #endregion
 
@@ -647,7 +645,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void CreateAndStartTimer()
         {
-            if (_isDisposed) return;
+            if (Volatile.Read(ref _isDisposed) != 0) return;
 
             // Resync state in case AppConfig changed while the Main tab was deactivated
             IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
@@ -1144,28 +1142,16 @@ namespace Servy.Manager.ViewModels
         #region IDisposable implementation
 
         /// <summary>
-        /// Public dispose method that clients call.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
         /// Protected virtual dispose method following the standard pattern.
         /// </summary>
-        protected virtual void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (_isDisposed) return;
-
             if (disposing)
             {
                 _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
 
                 // Stop the main timer first so no more ticks reach ServiceCommands.
                 StopRefreshTimer();
-                ClearActiveSearchContext();
 
                 // Dispose child VMs so their timers/CTS/tailers stop before we tear down
                 // the shared ServiceCommands instance they still reference.
@@ -1190,7 +1176,7 @@ namespace Servy.Manager.ViewModels
                 ServiceCommands?.Dispose();
             }
 
-            _isDisposed = true;
+            base.Dispose(disposing);
         }
 
         #endregion
