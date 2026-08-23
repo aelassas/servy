@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -25,14 +26,24 @@ namespace Servy.Core.Native
         /// </param>
         /// <exception cref="ArgumentException">Thrown if <paramref name="accountName"/> is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">
-        /// Thrown if the account cannot be resolved to a SID, or if an LSA operation
-        /// (LsaOpenPolicy / LsaEnumerateAccountRights / LsaAddAccountRights) fails -
-        /// e.g. access denied when the caller is not running elevated.
+        /// Thrown if the account cannot be resolved to a SID.
         /// </exception>
         public static void Ensure(string accountName)
         {
+            if (ServiceAccounts.IsBuiltInServiceAccount(accountName)) return;
+
             var sid = AccountToSidOrThrow(accountName);
-            if (!HasLogonAsService(sid)) GrantLogonAsService(sid);
+            if (!HasDirectLogonAsServiceRight(sid))
+            {
+                try
+                {
+                    GrantLogonAsService(sid);
+                }
+                catch (Exception ex) when (ex is InvalidOperationException || ex is UnauthorizedAccessException)
+                {
+                    Logger.Warn($"Could not grant direct 'Log on as a service' right to account '{accountName}'. If the privilege is assigned via Group Policy or group membership, this is expected and service creation will proceed. Details: {ex.Message}");
+                }
+            }
         }
 
         /// <summary>
@@ -119,11 +130,14 @@ namespace Servy.Core.Native
         }
 
         /// <summary>
-        /// Checks whether the specified account already has the "Log on as a service" right.
+        /// Checks whether the specified account has the "Log on as a service" right assigned directly to its LSA account object.
         /// </summary>
+        /// <remarks>
+        /// Note: This method enumerates direct account rights only and does not evaluate indirect rights inherited through Windows group membership.
+        /// </remarks>
         /// <param name="sid">The security identifier of the account.</param>
-        /// <returns>True if the account has the right; otherwise false.</returns>
-        private static bool HasLogonAsService(SecurityIdentifier sid)
+        /// <returns>True if the account has a direct right assignment; otherwise false.</returns>
+        private static bool HasDirectLogonAsServiceRight(SecurityIdentifier sid)
         {
             IntPtr sidPtr = IntPtr.Zero;
             IntPtr policy = IntPtr.Zero;

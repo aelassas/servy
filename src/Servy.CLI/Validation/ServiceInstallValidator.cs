@@ -218,7 +218,7 @@ namespace Servy.CLI.Validation
                         return Convert.ToInt32(result);
                     }
                 }
-                else if (Enum.IsDefined(enumType, result))
+                else if (val.IndexOf(',') < 0 && Enum.IsDefined(enumType, result))
                 {
                     return Convert.ToInt32(result);
                 }

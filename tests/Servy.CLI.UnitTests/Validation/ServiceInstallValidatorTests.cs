@@ -100,6 +100,25 @@ namespace Servy.CLI.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData("RestartService, RestartProcess")]
+        [InlineData("RestartService, RestartComputer")]
+        public void Validate_CommaSeparatedNonFlagsEnum_ReturnsEarlyMappingFailureResult(string commaSeparatedInput)
+        {
+            // Arrange
+            var opts = CreateValidOptions();
+            opts.RecoveryAction = commaSeparatedInput; // Non-[Flags] enum input containing comma
+
+            // Act
+            // Verifies that comma-separated values for non-Flags enums are rejected during option mapping
+            var result = _validator.Validate(opts);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("--recoveryAction", result.Message);
+            _rulesMock.Verify(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Theory]
         [InlineData("")]
         [InlineData("   ")]
         [InlineData(null)]

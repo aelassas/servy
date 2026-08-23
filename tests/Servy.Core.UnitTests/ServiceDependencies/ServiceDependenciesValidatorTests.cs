@@ -20,6 +20,8 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("MSSQL$SQLEXPRESS")]                         // Validate_SingleValidServiceNameWithDollarSign_ReturnsTrue (SQL Server Named Instances)
         [InlineData("clr_optimization_v4.0.30319_32")]           // period is allowed
         [InlineData("My Service;Another Service")]               // internal spaces are allowed (edge spaces are trimmed, internal ones are not)
+        [InlineData("+TDI")]                                     // load-order group dependency prefix (+) is allowed
+        [InlineData("+NetworkProvider;+Base;+PNP_TDI")]          // multiple load-order group dependencies
         public void Validate_ValidInput_ReturnsTrueWithNoErrors(string input)
         {
             // Arrange & Act
@@ -52,9 +54,11 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("Bad#Service")]
         [InlineData("Service@Name")]
         [InlineData("Bad^Service")]
+        [InlineData("TD+I")]                                      // '+' in non-leading position is invalid
+        [InlineData("++TDI")]                                     // multiple leading '+' symbols are invalid
         public void Validate_NameWithInvalidCharacter_ReturnsFalse(string invalidName)
         {
-            // Act
+            // Arrange & Act
             var result = ServiceDependenciesValidator.Validate(invalidName, out var errors);
 
             // Assert

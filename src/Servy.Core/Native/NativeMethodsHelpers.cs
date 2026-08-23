@@ -18,18 +18,6 @@ namespace Servy.Core.Native
         #region Helper Methods
 
         /// <summary>
-        /// A safelist of built-in Windows accounts that are actual service runners.
-        /// These do not have passwords and cannot be validated via LogonUser.
-        /// Constructed dynamically from the canonical alias sets defined in <see cref="ServiceAccounts"/>.
-        /// </summary>
-        private static readonly HashSet<string> RunnableServiceAccounts = new HashSet<string>(
-            ServiceAccounts.LocalSystemAliases
-                .Union(ServiceAccounts.LocalServiceAliases)
-                .Union(ServiceAccounts.NetworkServiceAliases),
-            StringComparer.OrdinalIgnoreCase
-        );
-
-        /// <summary>
         /// Identifies well-known Windows groups or logon contexts that are NOT
         /// valid runnable service accounts, despite being passwordless.
         /// </summary>
@@ -69,14 +57,10 @@ namespace Servy.Core.Native
 
             // The pattern safely allows for 'NT AUTHORITY\Account', 'DOMAIN\Account', or '.\Account'
             const string pattern = @"^[\w \.\-]+\\[\w \.@!\-]+\$?$";
-            var isGmsa = string.IsNullOrEmpty(password) && username.EndsWith('$');
+            var isGmsa = ServiceAccounts.IsGmsa(username, password);
 
-            // 1. Check the static exhaustive list (Case-Insensitive via HashSet comparer).
-            // 2. Catch Virtual Service Accounts (NT SERVICE\...)
-            // 3. Catch IIS AppPool Identities (IIS APPPOOL\...)
-            var isVirtualAccount = username.StartsWith("NT SERVICE\\", StringComparison.OrdinalIgnoreCase)
-                                   || username.StartsWith("IIS APPPOOL\\", StringComparison.OrdinalIgnoreCase);
-            var isBuiltIn = RunnableServiceAccounts.Contains(username) || isVirtualAccount;
+            // Check if the account is an OS-managed built-in service account
+            var isBuiltIn = ServiceAccounts.IsBuiltInServiceAccount(username);
 
             // Logon Validation Guard for Built-in Accounts
             // These accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS.
