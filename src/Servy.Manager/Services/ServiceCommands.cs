@@ -255,7 +255,7 @@ namespace Servy.Manager.Services
 
                 if (string.IsNullOrWhiteSpace(service.Name))
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidServiceName, UiAppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_InvalidServiceName, UiAppConfig.Caption);
                     return;
                 }
 

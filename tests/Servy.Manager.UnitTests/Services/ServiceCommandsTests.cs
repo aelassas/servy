@@ -679,7 +679,7 @@ namespace Servy.Manager.UnitTests.Services
                 await sut.ConfigureServiceAsync(new Service { Name = " " }, CancellationToken.None);
 
                 // Assert
-                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_InvalidServiceName, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_InvalidServiceName, UiAppConfig.Caption), Times.Once);
             }
             finally
             {
