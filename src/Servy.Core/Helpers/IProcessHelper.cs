@@ -17,12 +17,25 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Retrieves both CPU and RAM metrics for a process using a single handle.
         /// </summary>
+        /// <param name="pid">The process ID to sample.</param>
+        /// <returns>
+        /// A <see cref="ProcessMetrics"/> for the process, or a zeroed instance if the process
+        /// has exited or cannot be queried.
+        /// </returns>
         ProcessMetrics GetProcessMetrics(int pid);
 
         /// <summary>
         /// Retrieves combined CPU and RAM metrics for an entire process tree.
-        /// Performs a single pass over the tree to minimize kernel transitions.
         /// </summary>
+        /// <param name="rootPid">The process ID of the tree root.</param>
+        /// <returns>
+        /// A <see cref="ProcessMetrics"/> whose <c>RamUsage</c> is the sum over the tree and whose
+        /// <c>CpuUsage</c> is the summed whole-machine percentage, clamped to 100.
+        /// </returns>
+        /// <remarks>
+        /// The tree is walked once to resolve membership and validate creation times against PID reuse,
+        /// then each member is queried for its metrics, so each process is opened twice per call.
+        /// </remarks>
         ProcessMetrics GetProcessTreeMetrics(int rootPid);
 
         /// <summary>

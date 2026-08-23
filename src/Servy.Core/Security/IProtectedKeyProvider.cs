@@ -12,18 +12,16 @@ namespace Servy.Core.Security
         /// Gets the AES encryption key.
         /// </summary>
         /// <returns>A byte array representing the AES key.</returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if the key cannot be retrieved or generated.
-        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown if the key cannot be retrieved or generated.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if this provider has already been disposed.</exception>
         byte[] GetKey();
 
         /// <summary>
         /// Gets the AES initialization vector (IV).
         /// </summary>
         /// <returns>A byte array representing the AES IV.</returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if the IV cannot be retrieved or generated.
-        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown if the IV cannot be retrieved or generated.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if this provider has already been disposed.</exception>
         byte[] GetIV();
     }
 }

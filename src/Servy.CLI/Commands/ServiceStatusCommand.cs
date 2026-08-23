@@ -48,7 +48,11 @@ namespace Servy.CLI.Commands
                 // 2. Direct execution
                 var status = _serviceManager.GetServiceStatus(opts.ServiceName, cancellationToken: cancellationToken);
 
-                // 3. Log the detailed technical status and return the localized result to the console
+                // 3. Log the status and return it to the console. The status token is deliberately
+                //    invariant (ServiceControllerStatus member name, or "NotInstalled" when absent):
+                //    it is the machine-readable vocabulary published by the status verb's HelpText and
+                //    parsed by callers' scripts. Only the surrounding Msg_ServiceStatusResult template
+                //    is localized - do not localize the token itself.
                 var statusText = status?.ToString() ?? nameof(ServiceStatus.NotInstalled);
                 var statusMsg = string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, statusText);
                 return CommandResult.Ok(statusMsg);

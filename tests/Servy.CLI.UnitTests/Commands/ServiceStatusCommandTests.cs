@@ -3,8 +3,10 @@ using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
+using Servy.Core.Enums;
 using Servy.Core.Services;
 using System;
+using System.Linq;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -114,6 +116,33 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal(expectedMessage, result.Message);
+        }
+
+        /// <summary>
+        /// Pins the expected status token vocabulary against all native ServiceControllerStatus enum member names
+        /// plus the NotInstalled fallback literal, validating that the command options HelpText documentation stays synchronized.
+        /// </summary>
+        [Fact]
+        public void ServiceStatusVocabulary_MatchesServiceControllerStatusAndNotInstalled()
+        {
+            // Arrange
+            var expectedTokens = Enum.GetNames(typeof(ServiceControllerStatus))
+                .Concat(new[] { nameof(ServiceStatus.NotInstalled) })
+                .ToList();
+
+            var verbAttr = typeof(ServiceStatusOptions)
+                .GetCustomAttributes(typeof(CommandLine.VerbAttribute), false)
+                .FirstOrDefault() as CommandLine.VerbAttribute;
+
+            // Act
+            var verbHelpText = verbAttr?.HelpText ?? string.Empty;
+
+            // Assert
+            Assert.NotNull(verbAttr);
+            foreach (var token in expectedTokens)
+            {
+                Assert.Contains(token, verbHelpText);
+            }
         }
     }
 }
