@@ -2,7 +2,7 @@
 
 > **Note:** Packaging and publishing to Chocolatey is automatically handled by the [choco.yml](../../.github/workflows/choco.yml) GitHub Actions workflow whenever a new release is published.
 
-## Local Test
+## Local test
 
 ```powershell
 cd setup/choco/servy
@@ -11,21 +11,21 @@ choco install servy -s . -y
 choco uninstall servy -s . -y
 ```
 
-### Manual Push (Emergency / Backup)
+### Manual push (emergency / backup)
 
 ```powershell
 choco apikey --key="YOUR_API_KEY_HERE" --source="https://community.chocolatey.org/api/v2/package"
 choco push servy.<version>.0.nupkg --source "https://community.chocolatey.org/api/v2/package"
 ```
 
-## Verify Published Package
+## Verify published package
 
 ```powershell
 choco search servy
 choco install servy -y
 ```
 
-## Verification & Uninstallation Checking
+## Check installed registry entries
 
 To verify the installed registry entries for Servy:
 
