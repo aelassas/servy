@@ -670,8 +670,11 @@ namespace Servy.Core.Config
         /// The positional launch argument string passed to indicate whether the splash screen should be bypassed on application startup.
         /// </summary>
         /// <remarks>
-        /// This string value binds the producer contract in <c>ServiceCommands.OpenManager</c> directly with the consumer parsing engine
-        /// in <c>AppBootstrapper.OnStartup</c>. Changing this configuration field guarantees that both boundaries remain synchronized.
+        /// Passed as the first positional argument by <c>ServiceCommands.OpenManagerAsync</c> in
+        /// <c>Servy</c> and by <c>ServiceCommands.ConfigureServiceAsync</c> in <c>Servy.Manager</c>.
+        /// The consumer, <c>AppBootstrapper.OnStartup</c>, parses that argument with
+        /// <see cref="bool.TryParse(string, out bool)"/> and does not read
+        /// this constant, so the value must remain a string <c>bool.TryParse</c> accepts as false.
         /// </remarks>
         public const string SkipSplashArgument = "false";
 

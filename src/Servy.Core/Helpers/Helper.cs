@@ -206,10 +206,18 @@ namespace Servy.Core.Helpers
         public static string EscapeArgs(string? input) => EscapeCore(input, escapeQuotes: true);
 
         /// <summary>
-        /// Escapes only backslashes that appear immediately before double quotes.
+        /// Escapes backslashes that appear immediately before a double quote, leaving the quotes themselves unescaped.
         /// </summary>
-        /// <param name="input">The input string to escape.</param>
-        /// <returns>The escaped string.</returns>
+        /// <param name="input">The argument string to escape. May be <see langword="null"/> or empty.</param>
+        /// <returns>
+        /// The escaped string. If <paramref name="input"/> is <see langword="null"/> or empty, returns an empty string.
+        /// </returns>
+        /// <remarks>
+        /// - Doubles all backslashes preceding a quote; the quote is emitted as-is.
+        /// - Unlike <see cref="EscapeArgs(string?)"/>, trailing backslashes are left unchanged, because the result
+        ///   is not intended to be followed by a closing quote.
+        /// - Replaces any null characters (<c>\0</c>) with the literal sequence <c>\\0</c>.
+        /// </remarks>
         public static string EscapeBackslashes(string? input) => EscapeCore(input, escapeQuotes: false);
 
         /// <summary>

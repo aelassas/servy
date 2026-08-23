@@ -42,16 +42,15 @@ namespace Servy.Core.Services
         /// <returns>The DTO, or <c>null</c> if the input is null, empty, or whitespace-only, or parsing fails.</returns>
         public ServiceDto? Deserialize(string? input)
         {
-            // Initial guard: null/empty input deserializes to null per contract
             if (string.IsNullOrWhiteSpace(input))
                 return null;
 
             try
             {
-                // Delegate to format-specific parsing engine
                 var dto = DeserializeCore(input);
 
-                // If deserialization succeeded, apply defaults (e.g., setting missing timeouts)
+                // Fill in missing timeouts and clear any identity carried in the payload, so an imported
+                // definition can never claim an existing service's Id.
                 if (dto != null)
                 {
                     ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
@@ -69,11 +68,9 @@ namespace Servy.Core.Services
                 }
                 else
                 {
-                    // Log a generic failure message when no line info is available
                     Logger.Error($"{FormatName} Deserialization encountered a failure.", ex);
                 }
 
-                // Returning null fulfills the contract: "returns null if deserialization fails"
                 return null;
             }
         }

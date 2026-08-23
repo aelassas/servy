@@ -643,12 +643,10 @@ begin
         begin
           for J := 0 to GetArrayLength(FileLines) - 1 do
           begin
-            // Perform the replacement on the decoded Unicode string using the XML-escaped path
             StringChangeEx(FileLines[J], '{SERVY_INSTALL_PATH}', XmlInstallPath, True);
           end;
 
-          // SaveStringsToUTF8File writes a standard UTF-8 file.
-          // Because we updated the header to UTF-8, Task Scheduler will read it perfectly.
+          // Written as UTF-8 with a BOM, which Task Scheduler accepts for task XML.
           if not SaveStringsToUTF8File(FilesToFix[I], FileLines, False) then
             Log('Failed to save updated Task Scheduler XML: ' + FilesToFix[I]);
         end
