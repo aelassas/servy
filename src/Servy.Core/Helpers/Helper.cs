@@ -649,7 +649,7 @@ namespace Servy.Core.Helpers
             // Prevent leading or trailing dots, which cause severe filesystem/registry volatility.
             if (serviceName.StartsWith(".", StringComparison.Ordinal) || serviceName.EndsWith(".", StringComparison.Ordinal))
             {
-                return (false, Strings.Msg_InvalidServiceName);
+                return (false, Strings.Msg_ServiceNameLeadingTrailingDot);
             }
 
             // Tokenize the name by dots to scan every structural segment.
@@ -661,7 +661,7 @@ namespace Servy.Core.Helpers
                 // Ensure case-insensitive evaluation against the reserved DOS device names blocklist
                 if (ReservedNames.ReservedDeviceNames.Contains(segment))
                 {
-                    return (false, Strings.Msg_InvalidServiceName);
+                    return (false, string.Format(Strings.Msg_ServiceNameReservedDeviceName, serviceName));
                 }
             }
 
