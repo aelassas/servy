@@ -257,7 +257,7 @@ namespace Servy.Manager.ViewModels
 
                 // 2. Offload the synchronous SCM call to a background thread
                 var root = await Task.Run(() =>
-                    _serviceManager.GetDependencies(serviceName), token);
+                    _serviceManager.GetDependencies(serviceName, cancellationToken: token), token);
 
                 // 3. Check if we are still on the same service/task before updating UI
                 if (token.IsCancellationRequested) return;
