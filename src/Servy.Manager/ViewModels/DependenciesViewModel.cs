@@ -47,11 +47,9 @@ namespace Servy.Manager.ViewModels
                 _selectedService = value;
                 OnPropertyChanged(nameof(SelectedService));
                 OnPropertyChanged(nameof(IsServiceSelected));
-
+                SetPidText(value); // value may be null; SetPidText already falls back to NotAvailable
                 _ = LoadDependencyTreeAsync(null);
-
                 CopyPidCommand.RaiseCanExecuteChanged();
-
                 StopMonitoring();
                 StartMonitoring();
             }

@@ -133,7 +133,7 @@ namespace Servy.Manager.ViewModels
                 _stdoutPath = value?.StdoutPath;
                 _stderrPath = value?.StderrPath;
                 OnPropertyChanged(nameof(SelectedService));
-
+                SetPidText(value); // value may be null; SetPidText already falls back to NotAvailable
                 CopyPidCommand.RaiseCanExecuteChanged();
 
                 // Safe fire-and-forget
