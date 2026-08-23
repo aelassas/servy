@@ -84,21 +84,7 @@ namespace Servy.Core.Security
             }
         }
 
-        /// <summary>
-        /// Encrypts the specified plain text using AES-256-CBC and secures it with an HMAC-SHA256 signature (v2).
-        /// </summary>
-        /// <remarks>
-        /// This method implements an <b>Encrypt-then-MAC (EtM)</b> pattern with zero-copy optimizations:
-        /// <list type="bullet">
-        /// <item><description>Uses <see cref="Span{T}"/> to manipulate a single contiguous buffer for IV, Ciphertext, and HMAC.</description></item>
-        /// <item><description>Leverages <c>string.Create</c> to materialize the final Base64 string directly into memory without intermediate allocations.</description></item>
-        /// <item><description>Calculates exact Base64 length to avoid costly post-processing like <c>.Trim()</c>.</description></item>
-        /// </list>
-        /// </remarks>
-        /// <param name="plainText">The sensitive string to encrypt.</param>
-        /// <returns>A versioned string formatted as: <c>SERVY_ENC:v2:{Base64(IV + Ciphertext + HMAC)}</c></returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="plainText"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="plainText"/> is empty.</exception>
+        /// <inheritdoc />
         public string Encrypt(string plainText)
         {
             ThrowIfDisposed();
@@ -169,39 +155,7 @@ namespace Servy.Core.Security
             }
         }
 
-        /// <summary>
-        /// Decrypts a ciphertext string by automatically detecting the encryption version (v2, v1, or legacy raw).
-        /// </summary>
-        /// <remarks>
-        /// This method implements a high-performance routing logic using <see cref="ReadOnlySpan{T}"/>:
-        /// <list type="bullet">
-        /// <item><term>v2:</term><description>Authenticated AES-256-CBC (Encrypt-then-MAC).</description></item>
-        /// <item><term>v1 (Gated):</term><description>Legacy AES-256-CBC with static IV (No authentication).</description></item>
-        /// <item><term>Fallback (Gated):</term><description>Validates if the input is raw Base64; if so, attempts v1 decryption.</description></item>
-        /// </list>
-        /// <b>Security Note on Downgrade Vectors:</b> Processing v1 or raw legacy ciphertexts introduces an attacker-controllable
-        /// downgrade vector because these formats lack an HMAC integrity check. An attacker with write access to the configuration
-        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is permanently disabled
-        /// via <c>AppConfig.AllowLegacyV1Decryption</c> to safeguard production systems.
-        /// </remarks>
-        /// <param name="cipherText">The versioned ciphertext (with marker) or a raw legacy string.</param>
-        /// <returns>
-        /// The decrypted plain text on success, or the original <paramref name="cipherText"/>
-        /// only when the input has no marker and does not look like Base64.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="cipherText"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
-        /// <exception cref="SecureDataIntegrityException">
-        /// Thrown when:
-        ///    - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
-        ///    - the marker version is unrecognized.
-        /// </exception>
-        /// <exception cref="SecureDataLegacyBlockedException">
-        /// Thrown when:
-        ///    - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
-        ///    - the input has no marker but is strict Base64 and legacy decryption is disabled.
-        /// </exception>
-        /// <exception cref="CryptographicException">Thrown when legacy v1 decryption is enabled but AES decryption fails.</exception>
+        /// <inheritdoc />
         public string Decrypt(string cipherText)
         {
             ThrowIfDisposed();
