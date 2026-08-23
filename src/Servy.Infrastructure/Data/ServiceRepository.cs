@@ -10,9 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 
 namespace Servy.Infrastructure.Data
 {
@@ -28,7 +28,7 @@ namespace Servy.Infrastructure.Data
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
 
         private static readonly Regex DecryptionFailureMarkerRegex = new Regex(
-            @"^\[DECRYPTION FAILED:[^\]]+\] The record's key or payload is corrupt\. Original Description:\s*",
+            @"^(?:\[DECRYPTION FAILED:[^\]]+\] The record's key or payload is corrupt\.|\[LEGACY ENCRYPTION BLOCKED\] This record uses pre-v2 encryption, which is disabled\. Export it with a v1-compatible version of Servy and re-import it here to upgrade\.) Original Description:\s*",
             RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private static readonly (Func<ServiceDto, string> Get, Action<ServiceDto, string> Set, string Name)[] SensitiveFields =
         {
-            (d => d.Parameters,                    (d, v) => d.Parameters = v,                    nameof(ServiceDto.Parameters)),
+            (d => d.Parameters,                     (d, v) => d.Parameters = v,                     nameof(ServiceDto.Parameters)),
             (d => d.FailureProgramParameters,      (d, v) => d.FailureProgramParameters = v,      nameof(ServiceDto.FailureProgramParameters)),
             (d => d.PreLaunchParameters,           (d, v) => d.PreLaunchParameters = v,           nameof(ServiceDto.PreLaunchParameters)),
             (d => d.PostLaunchParameters,          (d, v) => d.PostLaunchParameters = v,          nameof(ServiceDto.PostLaunchParameters)),
@@ -173,33 +173,29 @@ namespace Servy.Infrastructure.Data
                     {
                         if (!string.IsNullOrEmpty(row.Name))
                         {
-                            // CRITICAL: Decrypt the existing DB record back to plain text
-                            // so that ApplyRuntimeState passes clear values to CreateEncryptedClone
-                            SafeDecrypt(row);
+                            // Keep row encrypted: ApplyRuntimeState copies raw ciphertext forward safely
                             existingMap[row.Name] = row;
                         }
                     }
                 }
             }
 
-            // 2. Patch runtime state and credentials on raw plain-text objects,
-            // then create isolated encrypted clones for safe database persistence.
+            // 2. Encrypt input DTOs first, then patch runtime state & existing ciphertext credentials
             var encryptedServices = new List<ServiceDto>();
             foreach (var rawDto in serviceList)
             {
-                var localClone = (ServiceDto)rawDto.Clone();
+                var encryptedClone = CreateEncryptedClone(rawDto);
 
-                if (!string.IsNullOrEmpty(localClone.Name) && existingMap.TryGetValue(localClone.Name, out var existing))
+                if (!string.IsNullOrEmpty(encryptedClone.Name) && existingMap.TryGetValue(encryptedClone.Name, out var existing))
                 {
                     ApplyRuntimeState(
-                        incoming: localClone,
+                        incoming: encryptedClone,
                         existing: existing,
                         preserveExistingRuntimeState: true,
                         preserveExistingCredentials: true);
                 }
 
-                // Encrypt the finalized object properties cleanly right before pushing to disk
-                encryptedServices.Add(CreateEncryptedClone(localClone));
+                encryptedServices.Add(encryptedClone);
             }
 
             var sql = $@"
@@ -355,26 +351,13 @@ namespace Servy.Infrastructure.Data
                 return await GetAllAsync(decrypt, cancellationToken: cancellationToken);
             }
 
-            // Optimized query layout configuration. SQLite executes 'LIKE' operations case-insensitively for standard ASCII
-            // elements inherently by default configuration, but leveraging explicit ESCAPE patterns protects complex paths.
-            var sql = $@"
-                SELECT * FROM {SqlConstants.ServicesTableName}
-                WHERE Name       LIKE @Pattern ESCAPE '\'
-                   OR Description LIKE @Pattern ESCAPE '\'
-                ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
+            var all = await GetAllAsync(decrypt, cancellationToken: cancellationToken);
+            var needle = keyword.Trim();
 
-            var escapedKeyword = keyword.Trim()
-                .Replace(@"\", @"\\")
-                .Replace("%", @"\%")
-                .Replace("_", @"\_");
-
-            var pattern = $"%{escapedKeyword}%";
-
-            var list = (await _dapper.QueryAsync<ServiceDto>(sql, new { Pattern = pattern }, cancellationToken: cancellationToken)).ToList();
-
-            if (decrypt) SafeDecryptAll(list, cancellationToken);
-
-            return list;
+            return all.Where(s =>
+                (s.Name?.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (s.Description?.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0))
+                .ToList();
         }
 
         /// <inheritdoc />
@@ -562,10 +545,29 @@ namespace Servy.Infrastructure.Data
             {
                 DecryptDto(dto);
             }
+            catch (SecureDataLegacyBlockedException ex)
+            {
+                HandleLegacyBlockedDecryption(dto, ex);
+            }
             catch (InvalidOperationException ex)
             {
                 HandleCorruptServiceDecryption(dto, ex);
             }
+        }
+
+        /// <summary>
+        /// Flags a record whose ciphertext was refused by legacy policy. The payload was never examined,
+        /// so the record is intact and the sensitive fields are left as stored ciphertext.
+        /// </summary>
+        private void HandleLegacyBlockedDecryption(ServiceDto dto, SecureDataLegacyBlockedException ex)
+        {
+            if (dto == null) return;
+
+            Logger.Warn($"Legacy ciphertext refused by policy for service '{dto.Name}'. {ex.Message}");
+
+            dto.Description = $"[LEGACY ENCRYPTION BLOCKED] This record uses pre-v2 encryption, which is disabled. " +
+                              $"Export it with a v1-compatible version of Servy and re-import it here to upgrade. " +
+                              $"Original Description: {dto.Description}";
         }
 
         /// <summary>
@@ -739,6 +741,11 @@ namespace Servy.Infrastructure.Data
                 {
                     // DecryptIfPresent handles the null/whitespace check internally
                     set(dto, DecryptIfPresent(get(dto)));
+                }
+                catch (SecureDataLegacyBlockedException)
+                {
+                    // Policy refusal, not a decryption failure - propagate the classification intact.
+                    throw;
                 }
                 catch (Exception ex)
                 {
