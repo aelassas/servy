@@ -153,7 +153,10 @@ namespace Servy.Core.Security
 
                     // Encode the binary payload into the remaining space
                     // TryToBase64Chars writes exactly exactBase64Len chars (with '=' padding if needed)
-                    Convert.TryToBase64Chars(state.binaryPayload, chars.Slice(state.V2Marker.Length), out _);
+                    if (!Convert.TryToBase64Chars(state.binaryPayload, chars.Slice(state.V2Marker.Length), out _))
+                    {
+                        throw new CryptographicException("Failed to Base64 encode the encrypted binary payload.");
+                    }
                 });
             }
             finally
@@ -190,13 +193,13 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
         /// <exception cref="SecureDataIntegrityException">
         /// Thrown when:
-        ///   - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
-        ///   - the marker version is unrecognized.
+        ///    - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
+        ///    - the marker version is unrecognized.
         /// </exception>
         /// <exception cref="SecureDataLegacyBlockedException">
         /// Thrown when:
-        ///   - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
-        ///   - the input has no marker but is strict Base64 and legacy decryption is disabled.
+        ///    - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
+        ///    - the input has no marker but is strict Base64 and legacy decryption is disabled.
         /// </exception>
         /// <exception cref="CryptographicException">Thrown when legacy v1 decryption is enabled but AES decryption fails.</exception>
         public string Decrypt(string cipherText)
@@ -380,7 +383,10 @@ namespace Servy.Core.Security
                 Span<byte> computedHash = stackalloc byte[HmacSize];
 
                 // Compute the hash over [IV + Ciphertext]
-                HMACSHA256.TryHashData(_v2HmacKey, dataToHash, computedHash, out _);
+                if (!HMACSHA256.TryHashData(_v2HmacKey, dataToHash, computedHash, out _))
+                {
+                    throw new SecureDataIntegrityException("Failed to compute HMAC hash over payload.");
+                }
 
                 // Security Critical: Constant-time comparison prevents side-channel timing attacks.
                 if (!CryptographicOperations.FixedTimeEquals(computedHash, expectedHmac))
