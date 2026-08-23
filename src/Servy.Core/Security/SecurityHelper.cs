@@ -48,10 +48,12 @@ namespace Servy.Core.Security
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or whitespace.</exception>
         /// <exception cref="UnauthorizedAccessException">
-        /// Thrown when the process lacks sufficient privileges, except when operating as a non-administrator
-        /// in inheritance mode (breakInheritance: false), where both a failed directory creation and a failed
-        /// in-place ACL write fall back gracefully with a logged warning. Root Vault creation
-        /// (breakInheritance: true) always propagates the exception.
+        /// Thrown when the process lacks sufficient privileges, in two cases:
+        /// (a) Root Vault creation (breakInheritance: true on a missing directory), which is never
+        /// caught, and (b) any failure in an elevated process, since both fallbacks are gated on
+        /// !IsAdministrator(). A non-administrator gets a logged warning instead of an exception for
+        /// a failed non-Root-Vault directory creation and for a failed in-place ACL write on an
+        /// existing directory, whatever the value of breakInheritance.
         /// </exception>
         /// <exception cref="IOException">Thrown when a general I/O error occurs during directory access.</exception>
         public static void CreateSecureDirectory(string path, bool breakInheritance = true)

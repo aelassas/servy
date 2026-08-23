@@ -199,7 +199,6 @@ namespace Servy.Core.Native
                     int freeStatus = LsaFreeMemory(rightsPtr);
                     if (freeStatus != 0)
                     {
-                        // Defensive: Log the leak warning without throwing, preserving any primary exception
                         Logger.Warn($"LsaFreeMemory failed to release unmanaged account rights buffer. (NTSTATUS 0x{freeStatus:X})");
                     }
                 }

@@ -47,7 +47,12 @@ namespace Servy.Core.Services
         /// <summary>Enable size-based log rotation.</summary>
         public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableSizeRotation;
 
-        /// <summary>Size threshold in bytes that triggers a log rotation. Only used when <see cref="EnableSizeRotation"/> is true; the value is clamped to a minimum of 1 MB.</summary>
+        /// <summary>
+        /// Size threshold in bytes that triggers a log rotation. Only used when <see cref="EnableSizeRotation"/> is true.
+        /// Callers are expected to supply a value of at least <see cref="AppConfig.MinRotationSize"/> MB;
+        /// <see cref="Servy.Core.Validation.IServiceValidationRules"/> enforces that bound on the DTO before mapping,
+        /// and a value below 1 MB disables rotation rather than lowering the threshold.
+        /// </summary>
         public long RotationSizeInBytes { get; set; } = AppConfig.ToBytes(AppConfig.DefaultRotationSizeMB);
 
         /// <summary>Use local system time (instead of UTC) for log rotation. Defaults to <see cref="AppConfig.DefaultUseLocalTimeForRotation"/>.</summary>

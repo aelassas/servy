@@ -74,9 +74,9 @@ Get-Content $configPath | ForEach-Object {
         $key = $matches[1].Trim().ToUpperInvariant()
         $val = $matches[2]
 
-        # CONFIG PARSER: Handle inline comments and structural quotes in order of precedence.
-        # Group 1 handles a quoted value followed by an optional trailing inline comment.
-        # Group 2 handles a standard quoted value with no trailing comment.
+        # CONFIG PARSER: strip surrounding quotes and any trailing inline comment.
+        # A quoted value may contain '#' safely; only an unquoted value has its
+        # inline comment stripped, and only when the '#' is preceded by whitespace.
         if ($val -match '^"([^"]*)"(?:\s*#.*)?$') {
             $val = $matches[1]
         }

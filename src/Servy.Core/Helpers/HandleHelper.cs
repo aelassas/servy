@@ -56,6 +56,9 @@ namespace Servy.Core.Helpers
         /// <param name="filePath">Full path of the file to check for open handles.</param>
         /// <returns>A list of <see cref="ProcessHandleInfo"/> objects representing the processes holding the file.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="handleExePath"/> or <paramref name="filePath"/> is null or empty.</exception>
+        /// <exception cref="TimeoutException">Thrown when handle.exe does not exit within <see cref="AppConfig.HandleExeTimeoutMs"/>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when handle.exe cannot be started, or exits with a non-zero code that does not indicate "no matching handles".</exception>
+        /// <exception cref="RegexMatchTimeoutException">Thrown when parsing the handle.exe output exceeds <see cref="AppConfig.HandleExeRegexTimeout"/>.</exception>
         public static List<ProcessHandleInfo> GetProcessesUsingFile(string handleExePath, string filePath)
         {
             if (string.IsNullOrWhiteSpace(handleExePath))
@@ -152,8 +155,8 @@ namespace Servy.Core.Helpers
                                  $"Stdout: {output.Trim()}. Stderr: {error.Trim()}. " +
                                  "Handle detection is unreliable; aborting operation to prevent file corruption.");
 
-                    // Throwing an InvalidOperationException forces the caller (ResourceHelper)
-                    // to catch the error and return 'false', halting the file-replacement pipeline.
+                    // Throwing an InvalidOperationException forces the caller (ProcessKiller.KillProcessesUsingFile)
+                    // to catch the error and return 'false', which halts ResourceHelper's file-replacement pipeline.
                     throw new InvalidOperationException($"Handle detection failed with exit code {process.ExitCode}.");
                 }
 

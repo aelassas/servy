@@ -94,7 +94,11 @@ namespace Servy.Core.Logging
         /// </param>
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
         /// <param name="maxBackupLogFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
-        /// <param name="logDirectory">An optional custom directory path for log files. Defaults to <see cref="LogsPath"/> when null or empty.</param>
+        /// <param name="logDirectory">
+        /// An optional custom directory path for log files. Pass <c>null</c> (the default) to leave the
+        /// currently configured directory unchanged; pass an empty string to reset it to
+        /// <see cref="LogsPath"/>. A non-empty value becomes the new log directory.
+        /// </param>
         public static void Initialize(
             string fileName,
             LogLevel logLevel = LogLevel.Info,
