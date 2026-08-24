@@ -1,5 +1,70 @@
 # Changelog
 
+## [Servy 9.8](https://github.com/aelassas/servy/releases/tag/v9.8)
+
+**Date:** 2026-08-24 | **Tag:** [`v9.8`](https://github.com/aelassas/servy/tree/v9.8)
+
+This release includes bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
+
+### Full Changelog
+<details>
+  <summary>Click to expand release notes!</summary>
+
+* fix(security): Set-ServyExePermissions.ps1 - the -TargetAccount regex forbids spaces, so 11 of the 23 aliases in ServiceAccounts.cs are rejected, including the 'NT AUTHORITY\LocalService' and 'NT AUTHORITY\NetworkService' const values the product itself stores (#5479)
+* fix(core): ConfigParser.cs / ServiceInstallValidator.cs - Enum.TryParse ORs comma-separated names on non-Flags enums, so "RestartService, RestartProcess" silently installs as RestartComputer (#5507)
+* fix(core): ServiceManager.cs / LogonAsServiceGrant.cs - the EnsureLogOnAsServiceRight guard matches 1 of the 23 built-in account aliases ValidateCredentials accepts, so installing under .\NetworkService aborts with a Cannot resolve SID error (#5531)
+* fix(core): LogonAsServiceGrant.cs - HasLogonAsService only sees directly-assigned rights, so an account granted SeServiceLogonRight through a group is treated as lacking it and Ensure attempts a privileged LSA write (#5532)
+* fix(core): SecureData.cs - DecryptV2 discards the TryHashData result and verifies whatever is in the stackalloc buffer; Encrypt discards TryToBase64Chars and would persist a marker followed by NUL characters (#5542)
+* fix(core): SecureDataIntegrityException.cs / ServiceRepository.cs - two of the seven throw sites are policy refusals, not integrity failures, so an intact legacy record is shown to the user as corrupt and has its credential fields scrubbed (#5545)
+* fix(core): ServiceDependenciesValidator.cs - the name regex has no '+', so a load-order group dependency (+TDI) is rejected even though the SCM accepts one in lpDependencies (#5547)
+* fix(core): ServiceManager.cs - SetServiceDescription documents 'a null value removes the description', but a NULL lpDescription is Win32 for 'leave unchanged'; the empty string is what deletes it (#5554)
+* fix(core): Strings.resx / Helper.cs (Core) - Msg_InvalidServiceName is shown for four rejection branches but describes only the character one, so a service named CON is told to avoid nine characters it does not contain (sibling of #5169) (#5583)
+* fix(core): EnvironmentVariableParser.cs / StartOptionsParser.cs - 3 of 4 FormatException arms echo the whole KEY=VALUE record, and SafeParseEnvVars writes it unmasked to the service log (residual of #5029) (#5621)
+* fix(core): Strings.resx / ServiceDependenciesValidator.cs - the '+' load-order prefix added by #5547 reached the regex but none of the four documented character lists, so the rejection message still tells the user '+' is not allowed (#5650)
+* fix(infra): ServiceRepository.cs / SecureDataLegacyBlockedException.cs - the #5545 fix added the policy-refusal exception but no consumer branches on it, so an intact legacy record is still labelled corrupt and still scrubbed (#5568)
+* fix(infra): ServiceRepository.cs - UpsertBatchAsync preserves credentials from a SafeDecrypt-scrubbed row, so a Manager refresh writes NULL over the stored Password of any service whose secrets will not decrypt (#5572)
+* fix(infra): ServiceRepository.cs - SearchAsync is the only name lookup left on SQLite's ASCII-only LIKE, so the Manager search box cannot find a non-ASCII service name typed in the wrong case (#5573)
+* fix(infra): DatabaseInitializer.cs / SQLiteDbInitializer.cs - UNICODE_NOCASE is registered after connection.Open(), so a pooled connection fails every write to Services with 'no such collation sequence' (#5631)
+* fix(service): Servy fails to restart process (#5584)
+* fix(service): ProcessWrapper.cs / ProcessExtensions.cs - StopTree and StopDescendants leak the unvisited Process handles when the Toolhelp32 snapshot throws, and Service.cs swallows the fault without a log line (residual of #3770) (#5625)
+* fix(service): IServiceHelper.cs - LogStartupArguments' Security Note assigns masking to the logger, but all 8 masking calls are in the caller and every mask member is private/internal to ServiceHelper (#5627)
+* fix(service): ProcessLauncher.cs / EnvironmentVariableHelper.cs - PYTHONIOENCODING is on the ProtectedVariables denylist AND set by ApplyLanguageFixes, so the user's value is refused with a security warning and replaced (undoes #1141 for 1 of its 4 keys) (#5629)
+* fix(service): Service.cs - EvaluateExitOutcome's isHealthCheck term can never widen either condition, and the comment above it describes telemetry the code never collects (#5633)
+* fix(restarter): ServiceHelper.cs / Program.cs (Restarter) - the host kills Servy.Restarter.exe at 240s while RestartTimeoutSeconds accepts up to 86400, so a configured budget over 4 minutes aborts mid-restart and leaves the service stopped (#5618)
+* fix(ui): SplashWindow.xaml / AppBootstrapper.cs - the Topmost splash sits over the owner-less extraction-failure MessageBox, so startup blocks on a dialog hidden behind the splash (#5646)
+* fix(desktop): Strings.resx (Servy) / ServiceDto.cs - Info_PreLaunchTimeout says fire-and-forget disables logging, which it does not, and omits that the configured Pre-Launch Stdout/Stderr paths are silently ignored (#5651)
+* fix(desktop): Strings.resx (Servy) - Info_UserAccount omits the built-in and virtual service identities the Log On tab accepts, and the rule that their password fields must be left empty (#5653)
+* fix(desktop): ServiceCommands.cs (Servy) - OpenSecurityHardeningGuideAsync is the 1 of 31 message-box calls not awaited, so the error dialog no longer blocks the caller and a dispatcher fault is lost (#5658)
+* fix(manager): DependenciesViewModel.cs - LoadDependencyTreeAsync cancels its CTS but never passes the token to GetDependencies, so a superseded SCM walk runs to completion (#5560)
+* fix(manager): DependenciesViewModel.cs / ConsoleViewModel.cs - switching from a running service to a stopped one leaves the previous PID on screen; the #3313 latch cannot clear it and only PerformanceViewModel resets on selection (#5591)
+* fix(manager): MainViewModel.cs / LogsViewModel.cs - Dispose(bool) is virtual instead of override, so SearchableViewModelBase.Dispose never runs and its atomic guard stays 0 (#5593)
+* fix(cli): Msg_ServiceOperationFailed duplicates the service name - {1} is the action string, which already embeds it, so start/stop/restart/uninstall failures log "service 'X' for 'X'" (#5490)
+* fix(cli): the install --help paste reproduces the pre-#5547 --deps character set and the incomplete --user account list; the wiki documents load-order group dependencies nowhere (#5656)
+* fix(psm1): Servy.psm1 - the 32,000-character guard tells the user to shorten the environment variables and parameters, which are the only inputs that never reach the command line (#5492)
+* fix(psm1): Servy.psm1 - Invoke-ServyCli never re-checks HasExited after the poll loop, so a CLI that exits during the final sleep is reported as a timeout and a kill (#5493)
+* fix(notifications): ServyFailureEmail.ps1 - Server/From/To are read untrimmed while Port/UseSsl/TimeoutMs are trimmed, so an indented smtp-config.xml value is rejected or silently drops the alert (residual of #1626) (#5484)
+* fix(style): Format-SourceHygiene.ps1 - trims trailing whitespace from .md, which .editorconfig's [*.md] section sets to false; two trailing spaces are a Markdown hard break (residual of #5032) (#5475)
+* fix(style): Servy.CLI.IntegrationTests.csproj - the last of #4944's six BOM'd project files still carries a UTF-8 BOM, and Format-SourceHygiene.ps1 only strips it as a side effect of a whitespace fix the file does not need (#5476)
+* fix(setup): servy.iss / publish-sc.ps1 - the installer's [Files] paths hardcode Release and net10.0-windows, so build-config.ps1's BuildConfiguration key is honoured by the portable package but not by the installer (#5465)
+* fix(setup): servy.iss - the install path is substituted into the Task Scheduler XMLs unescaped, so an install directory containing '&' produces malformed task definitions (residual of #1345) (#5466)
+* fix(setup): servy.iss - AddToPath's presence check does not Trim/NormalizeFolder the existing PATH entries the way RemoveFromPath does, so an entry with a trailing backslash gets a duplicate appended (residual of #4989) (#5467)
+
+</details>
+
+### Downloads
+* [servy-9.8-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-arm64-installer.exe) - 73.31 MB
+* [servy-9.8-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-arm64-portable.7z) - 74.18 MB
+* [servy-9.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-net48-sbom.xml) - 0.03 MB
+* [servy-9.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-net48-x64-installer.exe) - 4.34 MB
+* [servy-9.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-net48-x64-portable.7z) - 2.09 MB
+* [servy-9.8-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-sbom.xml) - 0.04 MB
+* [servy-9.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-x64-installer.exe) - 79.52 MB
+* [servy-9.8-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-x64-portable.7z) - 76.91 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.8.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.8.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.7...v9.8
+
 ## [Servy 9.7](https://github.com/aelassas/servy/releases/tag/v9.7)
 
 **Date:** 2026-08-21 | **Tag:** [`v9.7`](https://github.com/aelassas/servy/tree/v9.7)
