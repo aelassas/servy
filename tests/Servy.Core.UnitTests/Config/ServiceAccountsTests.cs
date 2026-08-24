@@ -99,6 +99,8 @@ namespace Servy.Core.UnitTests.Config
         [InlineData(@"DOMAIN\svc_gmsa$", "", true)]
         [InlineData(@"svc_gmsa$", null, true)]
         [InlineData(@"  DOMAIN\svc_gmsa$  ", "", true)]
+        [InlineData(@"DOMAIN\svc_gmsa$", "   ", true)] // whitespace-only password is still "no password"
+        [InlineData(@"DOMAIN\svc_gmsa$", "\t", true)]
         // Invalid gMSA cases (has password)
         [InlineData(@"DOMAIN\svc_gmsa$", "SecretPassword123!", false)]
         // Invalid gMSA cases (does not end with $)

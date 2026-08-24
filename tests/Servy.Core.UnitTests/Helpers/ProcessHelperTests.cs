@@ -14,6 +14,8 @@ namespace Servy.Core.UnitTests.Helpers
             _processHelper = new ProcessHelper();
         }
 
+        #region FormatCpuUsage Tests
+
         [Theory]
         [InlineData(0, "0.0%")]      // zero case
         [InlineData(0.03, "0.0%")]   // small non-zero rounds down to 0.0%
@@ -35,15 +37,23 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
+        #endregion
+
+        #region FormatRamUsage Tests
+
         [Theory]
         [InlineData(512L, "512.0 B")]                               // < KB
+        [InlineData(1023L, "1023.0 B")]                             // top of B branch, must NOT promote to KB
         [InlineData(2048L, "2.0 KB")]                               // exact KB
         [InlineData(3072L, "3.0 KB")]                               // KB range
+        [InlineData(1048575L, "1.0 MB")]                            // 1 MB - 1, must promote rather than print 1024.0 KB
         [InlineData(1048576L, "1.0 MB")]                            // exact MB
         [InlineData((long)(1.5 * 1024 * 1024), "1.5 MB")]           // MB range
+        [InlineData(1073741823L, "1.0 GB")]                         // 1 GB - 1, must promote rather than print 1024.0 MB
         [InlineData(1073741824L, "1.0 GB")]                         // exact GB
         [InlineData((long)(2.23 * 1024 * 1024 * 1024), "2.2 GB")]   // GB range, non-exact fraction
         [InlineData((long)(2.25 * 1024 * 1024 * 1024), "2.3 GB")]   // GB range
+        [InlineData(1099511627775L, "1.0 TB")]                      // 1 TB - 1, must promote rather than print 1024.0 GB
         [InlineData(1099511627776L, "1.0 TB")]                      // exact TB
         [InlineData((long)(3.75 * 1024 * 1024 * 1024 * 1024), "3.8 TB")] // TB range
         public void FormatRamUsage_ReturnsExpected(long input, string expected)
@@ -55,9 +65,9 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
-        // -------------------------
-        // ResolvePath tests
-        // -------------------------
+        #endregion
+
+        #region ResolvePath Tests
 
         [Fact]
         public void ResolvePath_NullInput_ReturnsNull()
@@ -184,9 +194,9 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(Path.Combine(systemRoot, "System32\\cmd.exe"), result, ignoreCase: true);
         }
 
-        // -------------------------
-        // ValidatePath tests
-        // -------------------------
+        #endregion
+
+        #region ValidatePath Tests
 
         [Fact]
         public void ValidatePath_NullInput_ReturnsFalse()
@@ -360,5 +370,7 @@ namespace Servy.Core.UnitTests.Helpers
                 File.Delete(file);
             }
         }
+
+        #endregion
     }
 }

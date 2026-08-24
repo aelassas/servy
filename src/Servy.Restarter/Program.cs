@@ -95,9 +95,6 @@ namespace Servy.Restarter
                                       $"If this restart is driven by the Servy host service recovery path, it will be force-killed after {maxHostWaitSeconds} seconds.");
                 }
 
-                // 6. Instantiate the database context
-                dbContext = new AppDbContext(connectionString);
-
                 // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
                 if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
                 {
@@ -108,7 +105,8 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 7. Initialize database and helpers
+                // 6. Initialize database and helpers
+                dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
                 protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 secureData = new SecureData(protectedKeyProvider);
@@ -117,7 +115,7 @@ namespace Servy.Restarter
 
                 var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
-                // 8. Validation
+                // 7. Validation
                 if (serviceRepository.GetByName(serviceName, decrypt: false) == null)
                 {
                     scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
@@ -125,7 +123,7 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 9. Execution
+                // 8. Execution
                 scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 var result = restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));

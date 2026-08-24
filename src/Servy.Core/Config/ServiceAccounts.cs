@@ -98,7 +98,7 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// True when the account represents a group Managed Service Account (gMSA).
-        /// Identified by a trailing '$' and empty password context.
+        /// Identified by a trailing '$' and empty or whitespace password context.
         /// </summary>
         /// <param name="account">The account name to check.</param>
         /// <param name="password">The account password string.</param>
@@ -107,7 +107,7 @@ namespace Servy.Core.Config
         {
             if (string.IsNullOrWhiteSpace(account)) return false;
 
-            return string.IsNullOrEmpty(password) && account.Trim().EndsWith("$");
+            return string.IsNullOrWhiteSpace(password) && account.Trim().EndsWith("$");
         }
     }
 }

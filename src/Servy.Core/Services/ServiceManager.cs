@@ -356,6 +356,10 @@ namespace Servy.Core.Services
                 {
                     string lpDependencies = ServiceDependenciesParser.Parse(options.ServiceDependencies);
                     string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? ServiceAccounts.LocalSystem : options.Username;
+
+                    // Use IsNullOrEmpty (not IsNullOrWhiteSpace) to preserve non-null
+                    // whitespace-only passwords verbatim when configured for standard Windows accounts.
+                    // ServiceAccounts.IsGmsa handles internal whitespace normalization for gMSA accounts ($) separately.
                     string lpPassword = string.IsNullOrEmpty(options.Password) ? null : options.Password;
 
                     bool isBuiltIn = ServiceAccounts.IsBuiltInServiceAccount(lpServiceStartName);

@@ -309,34 +309,19 @@ namespace Servy.Core.Helpers
         /// <inheritdoc />
         public string FormatRamUsage(long ramUsage)
         {
-            const double KB = 1024.0;
-            const double MB = KB * 1024.0;
-            const double GB = MB * 1024.0;
-            const double TB = GB * 1024.0;
+            string[] units = { "B", "KB", "MB", "GB", "TB" };
 
-            string result;
-            if (ramUsage < KB)
+            double value = ramUsage;
+            int unit = 0;
+
+            while (unit < units.Length - 1 &&
+                   Math.Round(value, 1, MidpointRounding.AwayFromZero) >= 1024.0)
             {
-                result = $"{ramUsage.ToString("0.0", CultureInfo.InvariantCulture)} B";
-            }
-            else if (ramUsage < MB)
-            {
-                result = $"{(ramUsage / KB).ToString("0.0", CultureInfo.InvariantCulture)} KB";
-            }
-            else if (ramUsage < GB)
-            {
-                result = $"{(ramUsage / MB).ToString("0.0", CultureInfo.InvariantCulture)} MB";
-            }
-            else if (ramUsage < TB)
-            {
-                result = $"{(ramUsage / GB).ToString("0.0", CultureInfo.InvariantCulture)} GB";
-            }
-            else
-            {
-                result = $"{(ramUsage / TB).ToString("0.0", CultureInfo.InvariantCulture)} TB";
+                value /= 1024.0;
+                unit++;
             }
 
-            return result;
+            return $"{value.ToString("0.0", CultureInfo.InvariantCulture)} {units[unit]}";
         }
 
         /// <inheritdoc />

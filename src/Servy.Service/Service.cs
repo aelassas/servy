@@ -297,9 +297,6 @@ namespace Servy.Service
                     $"  WaitChunkMs: {_waitChunkMs}" + Environment.NewLine +
                     $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}");
 
-                // Instantiate the database context
-                _dbContext = new AppDbContext(connectionString);
-
                 // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
                 if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
                 {
@@ -311,6 +308,7 @@ namespace Servy.Service
                 }
 
                 // Initialize database and helpers
+                _dbContext = new AppDbContext(connectionString);
                 DatabaseInitializer.InitializeDatabase(_dbContext, SQLiteDbInitializer.Initialize);
 
                 var dapperExecutor = new DapperExecutor(_dbContext);
