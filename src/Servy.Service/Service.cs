@@ -1802,7 +1802,8 @@ namespace Servy.Service
         /// Atomically registers a health check failure and evaluates if recovery should be initiated.
         /// Assumes the caller has already acquired the _healthCheckSemaphore.
         /// </summary>
-        private bool RegisterFailureAndCheckRecovery()
+        /// <param name="source">The caller context tag for log messages (e.g., "OnProcessExited" or "CheckHealth").</param>
+        private bool RegisterFailureAndCheckRecovery(string source)
         {
             // Gatekeeper: If we are already recovering, do not increment or log more failures
             if (_isRecovering) return false;
@@ -1816,11 +1817,11 @@ namespace Servy.Service
                 _isRecovering = true;
 
                 // Log inside the threshold block to guarantee it prints exactly once per recovery cycle
-                _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}). Initiating recovery.");
+                _logger?.Warn($"[{source}] Health check failed ({_failedChecks}/{_maxFailedChecks}). Initiating recovery.");
                 return true;
             }
 
-            _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
+            _logger?.Warn($"[{source}] Health check failed ({_failedChecks}/{_maxFailedChecks}).");
             return false;
         }
 
@@ -2104,7 +2105,7 @@ namespace Servy.Service
                 if (_options.RecoveryOnCleanExit && (_recoveryActionEnabled || isHealthCheck))
                 {
                     _logger?.Info($"[{source}] Child process exited successfully (Code 0). RecoveryOnCleanExit is ENABLED. Checking recovery...");
-                    return (RegisterFailureAndCheckRecovery(), false);
+                    return (RegisterFailureAndCheckRecovery(source), false);
                 }
 
                 _logger?.Info($"[{source}] Child process exited successfully (Code 0). Service will stop.");
@@ -2115,7 +2116,8 @@ namespace Servy.Service
             // Otherwise, logs an error and initiates a service stop sequence.
             if (_recoveryActionEnabled || isHealthCheck)
             {
-                return (RegisterFailureAndCheckRecovery(), false);
+                _logger?.Warn($"[{source}] Child process exited with code {exitCode?.ToString() ?? "null"} (0x{exitCode:X8}). Recovery is enabled; registering failure...");
+                return (RegisterFailureAndCheckRecovery(source), false);
             }
 
             _logger?.Error($"[{source}] Process exited with code {exitCode?.ToString() ?? "null"} and recovery is disabled.");
