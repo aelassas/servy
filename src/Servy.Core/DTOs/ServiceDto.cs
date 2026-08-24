@@ -329,7 +329,8 @@ namespace Servy.Core.DTOs
         /// </summary>
         /// <value>
         /// The default is synchronous execution. Set to 0 to execute the pre-launch hook
-        /// asynchronously (fire-and-forget), which disables logging and retry support for the hook.
+        /// asynchronously (fire-and-forget), which disables stdout/stderr redirection
+        /// and retry support for the hook.
         /// </value>
         [SqlColumn("INTEGER")]
         public int? PreLaunchTimeoutSeconds { get; set; }
