@@ -610,7 +610,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid service name &apos;{0}&apos;. Only letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($) are allowed..
+        ///   Looks up a localized string similar to Invalid service name &apos;{0}&apos;. Only letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($) are allowed, optionally preceded by &apos;+&apos; to reference a load-order group..
         /// </summary>
         public static string Msg_InvalidServiceDependencyName {
             get {

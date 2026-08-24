@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Navigation;
 
 namespace Servy.Views
 {
@@ -22,7 +21,7 @@ namespace Servy.Views
         private const double FullHdScreenHeightThreshold = 1080;
 
         /// <summary>The minimum window height enforced for displays meeting or exceeding Full HD vertical resolution.</summary>
-        private const double FullHdMinWindowHeight = 790;
+        private const double FullHdMinWindowHeight = 810;
 
         private readonly MainViewModel _mainViewModel;
         private readonly IProcessKiller _processKiller;

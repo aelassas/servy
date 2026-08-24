@@ -310,7 +310,7 @@ namespace Servy.CLI.Options
         /// Gets or sets Windows service dependencies.
         /// Optional.
         /// </summary>
-        [Option("deps", HelpText = "Specify one or more Windows service names (not display names) that this service depends on separated with semicolons (;). Service names may contain letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($). Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start.")]
+        [Option("deps", HelpText = "Specify one or more Windows service names (not display names) that this service depends on separated with semicolons (;). Each service name must contain only letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($), optionally preceded by '+' to reference a load-order group, and must not exceed 256 characters. Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start.")]
         public string ServiceDependencies { get; set; }
 
         /// <summary>

@@ -1834,7 +1834,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Set the timeout to 0 to run in fire-and-forget mode (disables retries and logging)..
+        ///   Looks up a localized string similar to Set the timeout to 0 to run in fire-and-forget mode. Stdout/Stderr redirection and retries are not available in this mode..
         /// </summary>
         public static string Info_PreLaunchTimeout {
             get {
@@ -1916,7 +1916,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Service names may contain letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($). Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start..
+        ///   Looks up a localized string similar to Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Each service name must contain only letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($), optionally preceded by &apos;+&apos; to reference a load-order group, and must not exceed 256 characters. Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this servic [rest of string was truncated]&quot;;.
         /// </summary>
         public static string Info_ServiceDependencies {
             get {
@@ -1961,7 +1961,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$)..
+        ///   Looks up a localized string similar to The service account username (e.g., .\username, DOMAIN\username, DOMAIN\gMSA$, or a built-in identity such as NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, NT SERVICE\MyService or IIS APPPOOL\MyPool). Leave the password fields empty for built-in, virtual and gMSA accounts..
         /// </summary>
         public static string Info_UserAccount {
             get {

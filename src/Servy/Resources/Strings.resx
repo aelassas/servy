@@ -337,7 +337,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Service Dependencies</value>
   </data>
   <data name="Info_ServiceDependencies" xml:space="preserve">
-    <value>Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Service names may contain letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($). Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start.</value>
+    <value>Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Each service name must contain only letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($), optionally preceded by '+' to reference a load-order group, and must not exceed 256 characters. Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start.</value>
   </data>
 
   <!-- User Account -->
@@ -348,7 +348,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>User Account</value>
   </data>
   <data name="Info_UserAccount" xml:space="preserve">
-    <value>The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$).</value>
+    <value>The service account username (e.g., .\username, DOMAIN\username, DOMAIN\gMSA$, or a built-in identity such as NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, NT SERVICE\MyService or IIS APPPOOL\MyPool). Leave the password fields empty for built-in, virtual and gMSA accounts.</value>
   </data>
   <data name="Label_Password" xml:space="preserve">
     <value>Password</value>
@@ -384,7 +384,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Ignore Failure</value>
   </data>
   <data name="Info_PreLaunchTimeout" xml:space="preserve">
-    <value>Set the timeout to 0 to run in fire-and-forget mode (disables retries and logging).</value>
+    <value>Set the timeout to 0 to run in fire-and-forget mode. Stdout/Stderr redirection and retries are not available in this mode.</value>
   </data>
 
   <!-- XML/JSON import -->

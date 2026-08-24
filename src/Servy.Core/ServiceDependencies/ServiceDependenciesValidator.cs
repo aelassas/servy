@@ -14,12 +14,13 @@ namespace Servy.Core.ServiceDependencies
         // letters, digits, hyphen, underscore, period, spaces, and dollar sign ($)
         private static readonly Regex ValidServiceNameRegex = new Regex(@"^\+?[a-zA-Z0-9_.\-$ ]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
-
         /// <summary>
         /// Validates the input string containing service dependencies.
         /// Service names must be separated by semicolons or new lines.
         /// Each service name must contain only letters, digits, hyphens,
-        /// underscores, periods, spaces, or dollar signs ($), and must not exceed 256 characters.
+        /// underscores, periods, spaces, and dollar signs ($) are allowed,
+        /// optionally preceded by '+' to reference a load-order group,
+        /// and must not exceed 256 characters.
         /// </summary>
         /// <param name="input">Raw input string with service dependencies.</param>
         /// <param name="errors">List of validation error messages.</param>
