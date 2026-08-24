@@ -319,7 +319,8 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option(
             "user",
-            HelpText = "The service account username (e.g., .\\username, DOMAIN\\username, or DOMAIN\\gMSA$). " +
+            HelpText = "The service account username (e.g., .\\username, DOMAIN\\username, DOMAIN\\gMSA$, or a built-in identity such as NT AUTHORITY\\LocalService, NT AUTHORITY\\NetworkService, NT SERVICE\\MyService or IIS APPPOOL\\MyPool). " +
+                       "Leave the --password option or SERVY_PASSWORD environment variable empty for built-in, virtual and gMSA accounts. " +
                        "If this option is not set, the service runs under Local System. " +
                        "If the service runs under an account other than Local System, " +
                        "you must grant Modify access to %ProgramData%\\Servy for the account running " +
