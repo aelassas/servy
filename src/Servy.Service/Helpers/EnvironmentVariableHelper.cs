@@ -53,7 +53,7 @@ namespace Servy.Service.Helpers
         /// Protected system variables that should never be overridden by user configuration
         /// to prevent privilege escalation, process hijacking, and system instability.
         /// </summary>
-        private static readonly HashSet<string> ProtectedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        internal static readonly HashSet<string> ProtectedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             // --- System Integrity ---
             "PATH", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "TEMP", "TMP", "PATHEXT",

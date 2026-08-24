@@ -123,6 +123,7 @@
   <ItemGroup>
     <Compile Include="CommandLine\CommandLineProviderTests.cs" />
     <Compile Include="CommandLine\StartOptionsParserTests.cs" />
+    <Compile Include="Documentation\ProtectedVariablesDocumentationTests.cs" />
     <Compile Include="EventHandlerTests.cs" />
     <Compile Include="HealthCheckTests.cs" />
     <Compile Include="Helpers\DataReceivedEventArgsFactory.cs" />
@@ -166,6 +167,7 @@
     <Analyzer Include="..\..\packages\xunit.analyzers.2.0.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
     <Analyzer Include="..\..\packages\xunit.analyzers.2.0.0\analyzers\dotnet\cs\xunit.analyzers.fixes.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
