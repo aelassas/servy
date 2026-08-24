@@ -20,7 +20,8 @@ namespace Servy.Infrastructure.Helpers
             if (dbContext == null) throw new ArgumentNullException(nameof(dbContext));
             if (initializer == null) throw new ArgumentNullException(nameof(initializer));
 
-            // Register before opening the connection to guarantee custom collations bind properly
+            // CRITICAL: Register custom collations process-wide BEFORE opening any connection.
+            // System.Data.SQLite inspects _registeredFunctions during connection.Open() to bind C-handles.
             SQLiteFunction.RegisterFunction(typeof(Data.UnicodeNoCaseCollation));
 
             using (var connection = dbContext.CreateConnection())

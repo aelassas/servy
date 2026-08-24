@@ -15,6 +15,10 @@ namespace Servy.Infrastructure.Data
         private readonly string _connectionString;
         private bool _disposed;
 
+        /// <summary>
+        /// Explicit static constructor guarantees SQLiteFunction metadata is registered
+        /// in _registeredFunctions BEFORE any AppDbContext instance opens a connection.
+        /// </summary>
         static AppDbContext()
         {
             // Register the custom collation sequence process-wide before any connection opens.
