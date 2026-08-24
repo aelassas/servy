@@ -378,13 +378,13 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("KEY=Line1\r\nLine2")]
         public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input)
         {
-            // Arrange & Act
-            const string expectedFragmentInMessage = "Line2";
+            // Act & Assert
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
-            // Assert
-            Assert.Contains($"no unescaped '='", ex.Message);
-            Assert.Contains(expectedFragmentInMessage, ex.Message);
+            // Verify exception message describes missing '=' without echoing raw values
+            Assert.Contains("no unescaped '='", ex.Message);
+            Assert.Contains("position ", ex.Message);
+            Assert.DoesNotContain("Line2", ex.Message);
         }
 
         [Theory]

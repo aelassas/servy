@@ -60,19 +60,20 @@ namespace Servy.Service.Helpers
         /// and environment variables.
         /// </param>
         /// <param name="logger">
-        /// The scoped logger instance used for output. If <see langword="null"/>, diagnostic
+        /// The scoped logger instance used for public output. If <see langword="null"/>, public diagnostic
         /// information will not be recorded.
         /// </param>
         /// <remarks>
         /// <para>
-        /// This method acts as the "black box" recorder for the service startup. It logs the
-        /// transition from raw CLI input to the internal state used by the process launcher.
+        /// This method acts as the "black box" recorder for the service startup. Public parameter metadata is logged
+        /// to both local file logs and the Windows Event Log using <paramref name="logger"/>.
         /// </para>
         /// <para>
-        /// <b>Security Note:</b> Sensitive properties within <paramref name="options"/> (such as
-        /// passwords or encrypted environment variables) are expected to be obfuscated or
-        /// handled securely by the <paramref name="logger"/> implementation to prevent
-        /// plaintext exposure in log files.
+        /// <b>Security Note:</b> Sensitive fields (such as environment variable values and raw executable arguments) are
+        /// only recorded when <see cref="StartOptions.EnableDebugLogs"/> is <see langword="true"/>. Prior to output,
+        /// all sensitive values are redacted directly by this method using <c>ServiceHelper.MaskSensitiveValue</c> and
+        /// <c>ServiceHelper.MaskRawArguments</c>. Sensitive blocks are written exclusively to the local file log
+        /// (<c>Servy.Service.log</c>) via the static logger and are never emitted to the Windows Event Log.
         /// </para>
         /// </remarks>
         void LogStartupArguments(StartOptions options, IServyLogger logger);

@@ -119,13 +119,13 @@ namespace Servy.Service.Helpers
             "PYTHONUSERBASE", "PYTHONEXECUTABLE",
 
             // Ruby & Perl Injection
-            "RUBYOPT", "RUBYLIB", "PERL5OPT", "PERL5LIB",
+            "RUBYOPT", "RUBYLIB", "PERL5OPT", "PERL5LIB", "PERLLIB",
 
             // PHP Injection - Prevents loading malicious extensions or rogue php.ini files
             "PHPRC", "PHP_INI_SCAN_DIR",
 
             // Global/Unix-like fallback (for MinGW/WSL/Cygwin contexts)
-            "LD_PRELOAD", "LD_LIBRARY_PATH",
+            "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT",
 
             // --- Windows AppCompat / Debugger Injection Vectors ---
             "__COMPAT_LAYER", "SHIM_FILE_LOG", "SHIM_DEBUG_LEVEL",

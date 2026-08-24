@@ -441,8 +441,10 @@ namespace Servy.Services
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        public Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
+        public async Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             try
             {
                 var psi = new ProcessStartInfo
@@ -464,13 +466,15 @@ namespace Servy.Services
                     Logger.Debug($"Security hardening guide link handed off to an existing browser process: '{AppConfig.SecurityHardeningGuideLink}'.");
                 }
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Error opening security hardening guide link '{AppConfig.SecurityHardeningGuideLink}'", ex);
-                _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
-
-            return Task.CompletedTask;
         }
 
         #endregion
