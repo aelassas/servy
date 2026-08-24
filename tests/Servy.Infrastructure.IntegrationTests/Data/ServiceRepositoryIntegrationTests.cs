@@ -184,6 +184,82 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void Query_With_Unregistered_Collation_Throws_SQLiteException()
+        {
+            SQLiteConnection.ClearAllPools();
+
+            using (var conn = new SQLiteConnection("Data Source=:memory:"))
+            {
+                conn.Open();
+
+                // Simulates what happens in production when UNICODE_NOCASE auto-discovery fails
+                var ex = Assert.Throws<SQLiteException>(() =>
+                {
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT 1 WHERE 'a' = 'A' COLLATE UNregistered_COLLATION;";
+                        cmd.ExecuteNonQuery();
+                    }
+                });
+
+                Assert.Contains("no such collation sequence", ex.Message, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        [Fact]
+        public void AppDbContext_Ensures_UnicodeNoCaseCollation_Is_Registered()
+        {
+            // 1. Instantiating AppDbContext guarantees static AppDbContext() has executed
+            var context = new AppDbContext("Data Source=:memory:");
+
+            using (var connection = context.CreateConnection())
+            {
+                connection.Open();
+
+                // 2. Verify query requiring UNICODE_NOCASE succeeds without throwing
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT 1 WHERE 'test' = 'TEST' COLLATE UNICODE_NOCASE;";
+                    var result = cmd.ExecuteScalar();
+
+                    Assert.Equal(1L, result);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task UpdateAsync_OnPooledConnectionAfterInitializer_SuccessfullySavesWithoutCollationError()
+        {
+            // Arrange
+            var service = new ServiceDto
+            {
+                Name = $"CollationTest_{Guid.NewGuid():N}",
+                ExecutablePath = @"C:\Windows\System32\cmd.exe",
+                RunAsLocalSystem = true
+            };
+
+            var id = await _repository.AddAsync(service, cancellationToken: CancellationToken.None);
+
+            // Clear connection pools to force next connection request to take a fresh handle from pool
+            SQLiteConnection.ClearAllPools();
+
+            // Act
+            service.Pid = 1234;
+            var rowsAffected = await _repository.UpdateAsync(
+                service,
+                preserveExistingRuntimeState: false,
+                preserveExistingCredentials: false,
+                cancellationToken: CancellationToken.None);
+
+            var updated = await _repository.GetByIdAsync(id, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, rowsAffected);
+            Assert.NotNull(updated);
+            Assert.Equal(1234, updated.Pid);
+        }
+
+        [Fact]
         public async Task UpsertAsync_OnConflict_ExecutesInPlaceUpdate()
         {
             // Arrange
