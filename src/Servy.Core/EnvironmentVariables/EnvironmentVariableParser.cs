@@ -31,24 +31,28 @@ namespace Servy.Core.EnvironmentVariables
             // Sync delimiters with the Validator to support multi-line input
             var parts = EscapedTokenizer.SplitByUnescapedDelimiters(input, EscapedTokenizer.EnvVarRecordDelimiters);
 
-            foreach (var part in parts)
+            for (int i = 0; i < parts.Length; i++)
             {
+                var part = parts[i];
+
                 if (string.IsNullOrWhiteSpace(part))
                     continue;
 
                 // Delegate execution to the centralized validation rules block to maintain perfect logic alignment
                 if (!EnvironmentVariablesValidator.ProcessAndValidateRecord(part, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind))
                 {
-                    // Map the structured validation result to a specific FormatException.
+                    // Map the structured validation result to a specific FormatException without leaking raw record values.
                     // Using the enum (rather than matching localized message text) keeps the
                     // mapping correct regardless of UI culture.
+                    int recordPosition = i + 1;
+
                     switch (resultKind)
                     {
                         case EnvVarValidationResultKind.MissingEquals:
-                            throw new FormatException($"Invalid environment variable (no unescaped '='): {part}");
+                            throw new FormatException($"Invalid environment variable at position {recordPosition} (no unescaped '=').");
 
                         case EnvVarValidationResultKind.EmptyKey:
-                            throw new FormatException($"Environment variable key cannot be empty: {part}");
+                            throw new FormatException($"Environment variable key cannot be empty (record {recordPosition}).");
 
                         case EnvVarValidationResultKind.ForbiddenNewline:
                             throw new FormatException($"Environment variable '{key}' contains a forbidden newline character. Multi-line values are not supported.");
@@ -58,7 +62,7 @@ namespace Servy.Core.EnvironmentVariables
                             // Fallback safely surfaces the validator's native message context if an unmapped rule fails
                             throw new FormatException(!string.IsNullOrWhiteSpace(errorMessage)
                                 ? errorMessage
-                                : $"Environment variable record failed validation tracking: {part}");
+                                : $"Environment variable record {recordPosition} failed validation tracking.");
                     }
                 }
 
