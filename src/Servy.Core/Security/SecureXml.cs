@@ -1,5 +1,6 @@
 using Servy.Core.DTOs;
 using Servy.Core.Resources;
+using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -12,6 +13,17 @@ namespace Servy.Core.Security
     /// </summary>
     internal static class SecureXml
     {
+        /// <summary>
+        /// Dynamically resolves all property names on <see cref="ServiceDto"/> decorated with <see cref="XmlIgnoreAttribute"/>.
+        /// These element names are safely skipped during deserialization to match JSON import behavior.
+        /// </summary>
+        private static readonly HashSet<string> KnownIgnoredElements = new HashSet<string>(
+            typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.GetCustomAttribute<XmlIgnoreAttribute>() != null)
+                .Select(p => p.Name),
+            StringComparer.Ordinal
+        );
+
         /// <summary>
         /// Configures <see cref="XmlReaderSettings"/> to disable DTD processing and external entity resolution.
         /// </summary>
@@ -35,6 +47,7 @@ namespace Servy.Core.Security
         /// <summary>
         /// Creates an <see cref="XmlSerializer"/> configured with strict unknown element and unknown attribute handlers
         /// to prevent unmapped or unexpected XML payloads from deserializing into a <see cref="ServiceDto"/>.
+        /// Properties decorated with <see cref="XmlIgnoreAttribute"/> (such as credentials and runtime state) are ignored.
         /// </summary>
         /// <returns>A new <see cref="XmlSerializer"/> instance configured with strict parsing rules.</returns>
         public static XmlSerializer CreateStrictServiceDtoSerializer()
@@ -43,6 +56,11 @@ namespace Servy.Core.Security
 
             serializer.UnknownElement += (sender, e) =>
             {
+                if (KnownIgnoredElements.Contains(e.Element.Name))
+                {
+                    return;
+                }
+
                 throw new XmlException(string.Format(Strings.Msg_UnknownXmlElement, e.Element.Name), null, e.LineNumber, e.LinePosition);
             };
             serializer.UnknownAttribute += (sender, e) =>
