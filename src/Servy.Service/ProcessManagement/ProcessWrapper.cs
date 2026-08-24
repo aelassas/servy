@@ -358,12 +358,33 @@ namespace Servy.Service.ProcessManagement
             }
 
             // 1. RECURSION: Hunt down grandchildren first
-            foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
+            List<Process> children;
+            try
             {
-                using (child)
+                children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+            }
+            catch (Win32Exception ex)
+            {
+                _logger?.Warn($"Descendant enumeration for PID {parentPid} failed; skipping sub-tree stop: {ex.Message}");
+                children = new List<Process>();
+            }
+
+            try
+            {
+                foreach (var child in children)
                 {
-                    _logger?.Info($"Cascading stop to deeper descendant: {child.Format()}...");
-                    StopTree(child, timeoutMs);
+                    using (child)
+                    {
+                        _logger?.Info($"Cascading stop to deeper descendant: {child.Format()}...");
+                        StopTree(child, timeoutMs);
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var child in children)
+                {
+                    try { child.Dispose(); } catch { }
                 }
             }
 
@@ -411,7 +432,16 @@ namespace Servy.Service.ProcessManagement
 
             _logger?.Info($"Scanning for top-level descendants of PID {parentPid}...");
 
-            var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+            List<Process> children;
+            try
+            {
+                children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+            }
+            catch (Win32Exception ex)
+            {
+                _logger?.Warn($"Descendant enumeration for PID {parentPid} failed; skipping cascaded stop: {ex.Message}");
+                return;
+            }
 
             if (children.Count == 0)
             {
@@ -419,12 +449,22 @@ namespace Servy.Service.ProcessManagement
                 return;
             }
 
-            foreach (var child in children)
+            try
             {
-                using (child) // We no longer need to dispose a native Handle, just the Process object
+                foreach (var child in children)
                 {
-                    _logger?.Info($"Found descendant: {child.Format()}. Initiating cascaded kill...");
-                    StopTree(child, timeoutMs);
+                    using (child) // We no longer need to dispose a native Handle, just the Process object
+                    {
+                        _logger?.Info($"Found descendant: {child.Format()}. Initiating cascaded kill...");
+                        StopTree(child, timeoutMs);
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var child in children)
+                {
+                    try { child.Dispose(); } catch { }
                 }
             }
         }

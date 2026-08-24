@@ -79,8 +79,8 @@ namespace Servy.Restarter
 
                 // 3. Parse the restart timeout
                 var restartTimeout = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds",
-                                                                  AppConfig.DefaultRestarterTimeoutSeconds,
-                                                                  min: 1, max: AppConfig.MaxRestarterTimeoutSeconds);
+                                                                 AppConfig.DefaultRestarterTimeoutSeconds,
+                                                                 min: 1, max: AppConfig.MaxRestarterTimeoutSeconds);
 
                 // 4. PROMOTE / SCOPE the logger
                 // Using the instance logger ensures that 'serviceName' is prepended
@@ -89,6 +89,13 @@ namespace Servy.Restarter
 
                 // 5. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
+
+                var maxHostWaitSeconds = AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond;
+                if (restartTimeout > maxHostWaitSeconds)
+                {
+                    scopedLogger.Warn($"Configured RestartTimeoutSeconds ({restartTimeout}s) exceeds the host service execution wait limit ({maxHostWaitSeconds}s). " +
+                                      $"If this restart is driven by the Servy host service recovery path, it will be force-killed after {maxHostWaitSeconds} seconds.");
+                }
 
                 // 6. Instantiate the database context
                 dbContext = new AppDbContext(connectionString);

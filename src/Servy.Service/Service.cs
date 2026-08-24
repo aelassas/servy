@@ -2092,7 +2092,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="exitCode">The exit code of the terminated process, or null if unreachable.</param>
         /// <param name="source">The caller context tag for log messages (e.g., "OnProcessExited" or "CheckHealth").</param>
-        /// <param name="isHealthCheck">Indicates whether the evaluation originates from periodic health monitoring polling.</param>
+        /// <param name="isHealthCheck">Indicates whether the evaluation originates from periodic health monitoring polling, allowing failure tracking regardless of process exit event state.</param>
         /// <returns>A tuple indicating whether recovery is needed or if the service should stop.</returns>
         private (bool NeedsRecovery, bool ShouldStop) EvaluateExitOutcome(int? exitCode, string source, bool isHealthCheck = false)
         {
@@ -2113,9 +2113,8 @@ namespace Servy.Service
                 return (false, true);
             }
 
-            // Periodic health check ticks always register failures for telemetry and threshold tracking.
-            // Event-driven process exits trigger failure registration if recovery is enabled,
-            // or log an error and initiate a service stop if recovery is disabled.
+            // Registers failure and checks recovery thresholds if recovery is enabled or if invoked from a health check pass.
+            // Otherwise, logs an error and initiates a service stop sequence.
             if (_recoveryActionEnabled || isHealthCheck)
             {
                 return (RegisterFailureAndCheckRecovery(), false);

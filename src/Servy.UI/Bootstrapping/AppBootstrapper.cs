@@ -377,15 +377,24 @@ namespace Servy.UI.Bootstrapping
                     if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", false, cancellationToken: CancellationToken.None))
                     {
                         string resourceName = $"{handleExeFileName}.exe";
-                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
-                            "File-lock diagnostics will be unavailable this session.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName)));
+                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window?)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
+                            _options.SecurityWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
                     }
 
 #if DEBUG
                     if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: CancellationToken.None))
                     {
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyServiceUIFileName}.pdb")));
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window?)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyServiceUIFileName}.pdb"),
+                            _options.SecurityWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
                     }
 #endif
                     stopwatch.Stop();

@@ -113,7 +113,7 @@ namespace Servy.Service.Helpers
 
             // Python Injection - Covers interpreters and package manager wrappers
             "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",
-            "PYTHONIOENCODING", "PYTHONFAULTHANDLER", "PYTHONUSERBASE", "PYTHONEXECUTABLE",
+            "PYTHONUSERBASE", "PYTHONEXECUTABLE",
 
             // Ruby & Perl Injection
             "RUBYOPT", "RUBYLIB", "PERL5OPT", "PERL5LIB",
