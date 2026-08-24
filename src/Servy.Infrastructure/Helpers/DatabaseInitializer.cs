@@ -1,5 +1,6 @@
 using Servy.Core.Data;
 using System.Data.Common;
+using System.Data.SQLite;
 
 namespace Servy.Infrastructure.Helpers
 {
@@ -18,6 +19,9 @@ namespace Servy.Infrastructure.Helpers
         {
             if (dbContext == null) throw new ArgumentNullException(nameof(dbContext));
             if (initializer == null) throw new ArgumentNullException(nameof(initializer));
+
+            // Register before opening the connection to guarantee custom collations bind properly
+            SQLiteFunction.RegisterFunction(typeof(Data.UnicodeNoCaseCollation));
 
             using (var connection = dbContext.CreateConnection())
             {

@@ -90,6 +90,9 @@ namespace Servy.Restarter
                 // 5. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
 
+                // 6. Instantiate the database context
+                dbContext = new AppDbContext(connectionString);
+
                 // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
                 if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
                 {
@@ -100,9 +103,7 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 6. Initialize database and helpers
-                dbContext = new AppDbContext(connectionString);
-
+                // 7. Initialize database and helpers
                 var dapperExecutor = new DapperExecutor(dbContext);
                 protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 secureData = new SecureData(protectedKeyProvider);
@@ -111,7 +112,7 @@ namespace Servy.Restarter
 
                 var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
-                // 7. Validation
+                // 8. Validation
                 if (serviceRepository.GetByName(serviceName, decrypt: false) == null)
                 {
                     scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
@@ -119,7 +120,7 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 8. Execution
+                // 9. Execution
                 scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 var result = restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));

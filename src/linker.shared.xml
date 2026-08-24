@@ -5,6 +5,9 @@
     <type fullname="Servy.Core.DTOs.*" preserve="all" />
   </assembly>
 
+  <!-- Infrastructure components including custom SQLiteFunction implementations -->
+  <assembly fullname="Servy.Infrastructure" preserve="all" />
+
   <!-- Reflection-based JSON configuration and state serialization -->
   <assembly fullname="Newtonsoft.Json" preserve="all" />
 

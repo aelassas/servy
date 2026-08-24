@@ -15,6 +15,12 @@ namespace Servy.Infrastructure.Data
         private readonly string _connectionString;
         private bool _disposed;
 
+        static AppDbContext()
+        {
+            // Register the custom collation sequence process-wide before any connection opens.
+            SQLiteFunction.RegisterFunction(typeof(UnicodeNoCaseCollation));
+        }
+
         /// <summary>
         /// Initializes a new instance of <see cref="AppDbContext"/> with the specified connection string.
         /// </summary>

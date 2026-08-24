@@ -120,6 +120,9 @@ namespace Servy.CLI
 
                     LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
 
+                    // Instantiate the database context
+                    dbContext = new AppDbContext(connectionString);
+
                     if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
                     {
                         Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
@@ -135,7 +138,6 @@ namespace Servy.CLI
                     }
 
                     // Initialize shared dependencies
-                    dbContext = new AppDbContext(connectionString);
                     var dapperExecutor = new DapperExecutor(dbContext);
                     protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                     secureData = new SecureData(protectedKeyProvider);
