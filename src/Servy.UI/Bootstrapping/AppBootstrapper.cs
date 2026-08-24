@@ -364,9 +364,13 @@ namespace Servy.UI.Bootstrapping
                     if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         string resourceName = $"{AppConfig.HandleExeFileName}.exe";
-                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
-                            "File-lock diagnostics will be unavailable this session.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName)));
+                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
+                            _options.SecurityWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
                     }
 
                     var resourceItems = new List<ResourceItem>
@@ -377,7 +381,14 @@ namespace Servy.UI.Bootstrapping
 #if DEBUG
                     if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: CancellationToken.None))
                     {
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyServiceUIFileName}.pdb")));
+                        string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
+                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
+                            _options.SecurityWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
                     }
 #else
                     // Runtime DLL requirements

@@ -1948,7 +1948,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="exitCode">The exit code of the terminated process, or null if unreachable.</param>
         /// <param name="source">The caller context tag for log messages (e.g., "OnProcessExited" or "CheckHealth").</param>
-        /// <param name="isHealthCheck">Indicates whether the evaluation originates from periodic health monitoring polling.</param>
+        /// <param name="isHealthCheck">Indicates whether the evaluation originates from periodic health monitoring polling, allowing failure tracking regardless of process exit event state.</param>
         /// <returns>A tuple indicating whether recovery is needed or if the service should stop.</returns>
         private (bool NeedsRecovery, bool ShouldStop) EvaluateExitOutcome(int? exitCode, string source, bool isHealthCheck = false)
         {

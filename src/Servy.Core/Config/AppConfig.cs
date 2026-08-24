@@ -394,13 +394,14 @@ namespace Servy.Core.Config
         public const int DefaultStopTimeout = 5;
 
         /// <summary>
-        /// The maximum time, in milliseconds, the restarter executable will wait for the
-        /// main service process to terminate.
+        /// The maximum time, in milliseconds, that the Servy service will wait for a launched
+        /// Servy.Restarter.Net48.exe process to exit before force-terminating it.
         /// </summary>
         /// <remarks>
-        /// Defaults to 240,000ms (4 minutes). This provides a significant buffer for
-        /// the service to perform a graceful shutdown, flush logs, and release
-        /// file handles before the restarter attempts to perform maintenance or a restart.
+        /// Defaults to 240,000ms (4 minutes). This is a hard deadline imposed on the restarter
+        /// from outside: a <c>RestartTimeoutSeconds</c> larger than this (see
+        /// <see cref="MaxRestarterTimeoutSeconds"/>) cannot be spent when the restart is driven
+        /// by the service's own recovery path.
         /// </remarks>
         public const int RestarterExeMaxWaitMs = 240_000;
 

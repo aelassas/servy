@@ -10,12 +10,11 @@
         ShowInTaskbar="False"
         Width="300" Height="150"
         Background="White"
-        Cursor="Wait"
-        Topmost="True">
+        Cursor="Wait">
   <Grid>
     <Border BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
-                BorderThickness="1"
-                Padding="10">
+            BorderThickness="1"
+            Padding="10">
       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
         <TextBlock Text="{Binding SplashText, RelativeSource={RelativeSource AncestorType=Window}}"
                    FontSize="16"

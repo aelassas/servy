@@ -48,6 +48,9 @@ namespace Servy.Service.ProcessManagement
         /// <br/><strong>Note:</strong> The caller assumes ownership of these objects and
         /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
+        /// <exception cref="Win32Exception">
+        /// Thrown when the underlying Toolhelp32 snapshot cannot be created; see <see cref="Toolhelp32Snapshot.BuildSnapshotAndChildMap"/>.
+        /// </exception>
         public static List<Process> GetChildren(int parentPid, DateTime parentStartTime)
         {
             var children = new List<Process>();
@@ -87,6 +90,9 @@ namespace Servy.Service.ProcessManagement
         /// <br/><strong>Note:</strong> The caller assumes full ownership of ALL returned objects and
         /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
+        /// <exception cref="Win32Exception">
+        /// Thrown when the underlying Toolhelp32 snapshot cannot be created; see <see cref="Toolhelp32Snapshot.BuildSnapshotAndChildMap"/>.
+        /// </exception>
         public static List<Process> GetAllDescendants(int parentPid, DateTime parentStartTime)
         {
             var allDescendants = new List<Process>();
