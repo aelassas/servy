@@ -129,5 +129,11 @@ namespace Servy.Testing
         /// Default maximum number of attempts for polling loops.
         /// </summary>
         public const int MaxPollAttempts = 10;
+
+        /// <summary>
+        /// The maximum duration allowed for HTTP requests before canceling the request.
+        /// Set to 20 seconds to prevent test suite hangs under latency or network jitter.
+        /// </summary>
+        public static readonly TimeSpan HttpDownloadTimeout = TimeSpan.FromSeconds(20);
     }
 }
