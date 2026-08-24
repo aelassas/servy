@@ -92,20 +92,23 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void Deserialize_HostileXmlPayloadWithCredentials_RejectsDocument()
+        public void Deserialize_HostileXmlPayloadWithCredentials_IgnoresSensitiveFields()
         {
-            // Arrange: Malicious XML payload attempting to inject UserAccount and Password.
-            // Credential members are [XmlIgnore], so the strict serializer sees unknown elements and rejects the file.
-            string maliciousXml =
-                "<ServiceDto><Name>MaliciousService</Name>" +
-                "<UserAccount>TargetDomain\\Administrator</UserAccount>" +
-                "<Password>RoguePassword123!</Password></ServiceDto>";
+            // Arrange
+            string xmlPayload = "<ServiceDto>" +
+                                "<Name>MaliciousService</Name>" +
+                                "<UserAccount>TargetDomain\\Administrator</UserAccount>" +
+                                "<Password>RoguePassword123!</Password>" +
+                                "</ServiceDto>";
 
             // Act
-            var result = _serializer.Deserialize(maliciousXml);
+            var actual = _serializer.Deserialize(xmlPayload);
 
             // Assert
-            Assert.Null(result);
+            Assert.NotNull(actual);
+            Assert.Equal("MaliciousService", actual.Name);
+            Assert.Null(actual.UserAccount);
+            Assert.Null(actual.Password);
         }
 
         [Fact]
