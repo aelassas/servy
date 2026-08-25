@@ -435,18 +435,18 @@ namespace Servy.Manager.ViewModels
                 async (token) =>
                 {
                     // Step 3: fetch data off UI thread
-                    var sw = Stopwatch.StartNew();
+                    var stopwatch = Stopwatch.StartNew();
                     var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
-                    sw.Stop();
-                    Logger.Debug($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
+                    stopwatch.Stop();
+                    Logger.Debug($"Fetched {results.Count} services in {stopwatch.ElapsedMilliseconds} ms");
 
                     // Step 4: fetch data & build VMs off UI thread
-                    sw = Stopwatch.StartNew();
+                    stopwatch = Stopwatch.StartNew();
                     var vms = await Task.Run(() =>
                         results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _cursorService)).ToList()
                     , token);
-                    sw.Stop();
-                    Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
+                    stopwatch.Stop();
+                    Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {stopwatch.ElapsedMilliseconds} ms");
 
                     // Step 5: update collection on UI thread
                     await _dispatcher.InvokeAsync(() =>
@@ -798,7 +798,7 @@ namespace Servy.Manager.ViewModels
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
 #if DEBUG
                 stopwatch.Stop();
-                Logger.Debug($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
+                Logger.Debug($"GetAllServices finished in {stopwatch.ElapsedMilliseconds} ms");
 #endif
                 var allServicesDict = BuildUniqueNameDictionary(allServicesList, s => s.Name);
 

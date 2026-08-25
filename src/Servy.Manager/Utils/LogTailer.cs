@@ -17,16 +17,18 @@ namespace Servy.Manager.Utils
     /// Handles initial history loading, file rotation, and batched updates.
     /// </summary>
     /// <remarks>
-    /// CreationTime Tunneling / Unreliable File System Metadata
-    /// ------------------------------------------------------------------
-    /// On certain file systems (FAT32, Network Shares, NAS) or due to Windows
-    /// "File System Tunneling," the CreationTime might not update if a file is
-    /// deleted and recreated with the same name within the tunneling window
-    /// (default 15s).
+    /// Rotation detection uses three signals, in order of reliability:
+    ///   1. File identity - GetFileInformationByHandle index plus a SHA-256 prefix
+    ///      digest fallback, via NativeMethodsHelpers.GetFileIdentity. Fails safe:
+    ///      an undeterminable identity is reported as "different".
+    ///   2. CreationTimeUtc drift.
+    ///   3. Length < lastPosition, which also covers in-place truncation.
     ///
-    /// We use 'Length < lastPosition' as a secondary safety net for truncation.
-    /// However, if a rotation occurs and the new file immediately becomes larger
-    /// than the old offset, a rotation might be missed on these platforms.
+    /// Signals 2 and 3 are the fallback rather than the primary check because on
+    /// FAT32, network shares and NAS - and under Windows "File System Tunneling",
+    /// where a file deleted and recreated under the same name within the tunneling
+    /// window (default 15s) keeps its original CreationTime - the metadata can be
+    /// stale or absent.
     /// </remarks>
     public class LogTailer : IDisposable
     {

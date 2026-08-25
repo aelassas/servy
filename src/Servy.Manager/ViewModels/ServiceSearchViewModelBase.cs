@@ -106,13 +106,11 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Unused command parameter.</param>
         /// <returns>A task representing the search operation.</returns>
         /// <remarks>
-        /// This method handles:
-        /// <list type="bullet">
-        /// <item><description>Atomic cancellation of previous search tasks.</description></item>
-        /// <item><description>Cursor and UI state transitions.</description></item>
-        /// <item><description>Dispatcher yielding to allow UI repaints.</description></item>
-        /// <item><description>Thread-safe population of the <see cref="Services"/> collection.</description></item>
-        /// </list>
+        /// Supplies the query and collection-update step to
+        /// <see cref="SearchableViewModelBase.ExecuteSearchPipelineAsync"/>, which owns the
+        /// cancellation swap and the cursor and busy-state transitions around it. The dispatcher
+        /// yield passed as <c>onPreFetchYieldAsync</c> lets the UI repaint the search button
+        /// before the query runs.
         /// </remarks>
         private async Task SearchServicesAsync(object parameter)
         {

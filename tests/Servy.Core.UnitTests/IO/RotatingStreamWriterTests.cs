@@ -979,7 +979,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void DailyRotation_UTC_IgnoresSafetyBuffer()
         {
-            // Arrange: Use local time configuration instead of UTC for log rotation, modifying the default setup.
+            // Arrange: UTC mode, where the 23-hour DST safety buffer does not apply.
             // Last rotation was yesterday at 11:59:59 PM
             var lastRotationUtc = new DateTime(2026, 4, 10, 23, 59, 59, DateTimeKind.Utc);
 

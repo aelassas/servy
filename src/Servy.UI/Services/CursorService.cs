@@ -18,7 +18,7 @@ namespace Servy.UI.Services
 
         /// <summary>
         /// Safely sets the cursor, marshaling to the UI thread if necessary,
-        /// and ignoring calls during headless unit tests.
+        /// and doing nothing when no <see cref="Application"/> is running.
         /// </summary>
         [ExcludeFromCodeCoverage] // Flaky on CI
         private static void SetCursorSafe(Cursor cursor)
