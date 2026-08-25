@@ -103,7 +103,11 @@ namespace Servy.Manager.Mappers
         /// Resolves the appropriate display name for a service's logon account based on the raw session string provided by the system.
         /// </summary>
         /// <param name="userSession">The raw account name or session string retrieved from the service configuration or the Windows Service Control Manager (SCM).</param>
-        /// <returns>A localized display string representing the account, defaulting to the localized Local System string if the input matches system-level credentials.</returns>
+        /// <returns>
+        /// The display label for the matched built-in account (Local System, Local Service or Network Service),
+        /// or <paramref name="userSession"/> unchanged when it does not match a built-in alias set.
+        /// A null or empty input is treated as Local System.
+        /// </returns>
         public static string GetLogOnAsDisplayName(string? userSession)
         {
             // Resolving display name for service account identity.

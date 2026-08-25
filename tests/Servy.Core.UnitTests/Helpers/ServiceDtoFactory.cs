@@ -8,7 +8,11 @@ namespace Servy.Core.UnitTests.Helpers
     public static class ServiceDtoFactory
     {
         /// <summary>
-        /// Creates a fully populated DTO containing non-default values for every property context.
+        /// Creates a DTO with non-default values for every writable, serialized property.
+        /// Properties marked [JsonIgnore] and [XmlIgnore] (Id, Pid, PreviousStopTimeout,
+        /// ActiveStdoutPath, ActiveStderrPath) are deliberately left at their defaults, since
+        /// no serializer round-trip covers them. <c>CreateFull_PopulatesEverySerializedProperty</c>
+        /// enforces this.
         /// </summary>
         /// <param name="suffix">An optional string suffix used to vary property text values and numbers for specialized provider lookups (e.g., "Xml").</param>
         /// <returns>A completely populated <see cref="ServiceDto"/> instance with specific non-default configuration criteria.</returns>

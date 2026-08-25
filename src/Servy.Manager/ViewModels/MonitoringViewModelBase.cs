@@ -251,8 +251,10 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Safely retrieves the current monitoring cancellation token.
-        /// If the monitoring source has not been initialized, returns <see cref="CancellationToken.None"/>.
-        /// If the source has been disposed, returns a pre-cancelled token to safely prevent new operations.
+        /// Returns <see cref="CancellationToken.None"/> when no monitoring session has been started yet,
+        /// and also after <see cref="Dispose(bool)"/>, which clears the source rather than leaving it in place.
+        /// Returns a pre-cancelled token if the source is observed mid-swap in <see cref="ResetMonitoringCts"/>
+        /// and has already been disposed by the time its token is read.
         /// </summary>
         /// <returns>A valid <see cref="CancellationToken"/> linked to the current monitoring lifecycle.</returns>
         protected CancellationToken GetCurrentMonitoringToken()

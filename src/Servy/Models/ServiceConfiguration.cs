@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Enums;
 
 namespace Servy.Models
@@ -76,6 +77,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the rotation size in MB.
+        /// Default is <see cref="AppConfig.DefaultRotationSizeMB"/>.
         /// </summary>
         public string? RotationSize { get; set; }
 
@@ -91,6 +93,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.
+        /// Default is <see cref="AppConfig.DefaultMaxRotations"/>.
         /// </summary>
         public string? MaxRotations { get; set; }
 
@@ -113,11 +116,13 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds.
+        /// Default is <see cref="AppConfig.DefaultHeartbeatInterval"/>.
         /// </summary>
         public string? HeartbeatInterval { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of allowed failed health checks.
+        /// Default is <see cref="AppConfig.DefaultMaxFailedChecks"/>.
         /// </summary>
         public string? MaxFailedChecks { get; set; }
 
@@ -133,6 +138,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the maximum number of restart attempts.
+        /// Default is <see cref="AppConfig.DefaultMaxRestartAttempts"/>.
         /// </summary>
         public string? MaxRestartAttempts { get; set; }
 
@@ -143,6 +149,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the maximum time in seconds allowed for the heartbeat URL request to complete before it is cancelled.
+        /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/> (Allowed range: <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> to <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/> seconds).
         /// </summary>
         public string? HeartbeatUrlTimeoutSeconds { get; set; }
 
@@ -231,13 +238,13 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the timeout in seconds for each pre-launch execution attempt.
-        /// Default is 30 seconds.
+        /// Default is <see cref="AppConfig.DefaultPreLaunchTimeoutSeconds"/> seconds.
         /// </summary>
         public string? PreLaunchTimeoutSeconds { get; set; }
 
         /// <summary>
         /// Gets or sets the number of retry attempts if the pre-launch process fails.
-        /// Default is 0.
+        /// Default is <see cref="AppConfig.DefaultPreLaunchRetryAttempts"/>.
         /// </summary>
         public string? PreLaunchRetryAttempts { get; set; }
 
@@ -271,11 +278,13 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// Default is <see cref="AppConfig.DefaultStartTimeout"/> seconds.
         /// </summary>
         public string? StartTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to exit.
+        /// Default is <see cref="AppConfig.DefaultStopTimeout"/> seconds.
         /// </summary>
         public string? StopTimeout { get; set; }
 
@@ -296,6 +305,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the maximum time in seconds to wait for the pre-stop executable to complete.
+        /// Default is <see cref="AppConfig.DefaultPreStopTimeoutSeconds"/> seconds (Allowed range: 0 to 86400 seconds).
         /// </summary>
         public string? PreStopTimeoutSeconds { get; set; }
 

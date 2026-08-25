@@ -228,8 +228,9 @@ namespace Servy.UI.Design
 
         public Task<T> InvokeAsync<T>(Func<T> callback)
         {
-            // Task.FromResult requires a value.
-            // Returning default(T) allows the caller to proceed without a NullReferenceException.
+            // Design-time stand-in: the callback is not invoked, matching the two Action overloads.
+            // Returns default(T), i.e. null for a reference type - the '!' only suppresses the
+            // nullability warning and gives no runtime protection.
             return Task.FromResult(default(T)!);
         }
 

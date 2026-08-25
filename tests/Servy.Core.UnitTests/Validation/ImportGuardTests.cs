@@ -51,7 +51,9 @@ namespace Servy.Core.UnitTests.Validation
             string filePath = Path.Combine(TempDirectory, "huge.json");
             using (var fs = new FileStream(filePath, FileMode.CreateNew))
             {
-                fs.SetLength(AppConfig.MaxConfigFileSizeBytes + 1); // sparse, no real IO cost
+                // SetLength extends the file without writing any data (the tail reads as zeros),
+                // so this costs 10 MiB of allocated disk but no write IO.
+                fs.SetLength(AppConfig.MaxConfigFileSizeBytes + 1);
             }
 
             // Act

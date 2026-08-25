@@ -1092,6 +1092,11 @@ namespace Servy.Manager.ViewModels
         /// Removes a service from the services collection, unsubscribes from its events,
         /// and refreshes the view. This method is thread-safe and dispatches to the UI thread.
         /// </summary>
+        /// <remarks>
+        /// Also cancels any in-flight search via <see cref="SearchableViewModelBase.ClearActiveSearchContext"/>: its results
+        /// would describe a list this removal has already changed. The search is abandoned silently -
+        /// the footer keeps the previous search's row count until the next search runs.
+        /// </remarks>
         public void RemoveService(string serviceName)
         {
             if (string.IsNullOrWhiteSpace(serviceName)) return;
