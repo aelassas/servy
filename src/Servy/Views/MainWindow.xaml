@@ -160,7 +160,7 @@
       </MenuItem>
     </Menu>
 
-    <Grid Style="{x:Null}">
+    <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="*" />
         <RowDefinition Height="Auto" />
@@ -1415,8 +1415,7 @@
         </TabItem>
       </TabControl>
 
-      <!-- Bottom Grid: Style="{x:Null}" prevents inheriting MinHeight="520" -->
-      <Grid Grid.Row="1" Style="{x:Null}" Margin="0,10" VerticalAlignment="Bottom">
+      <Grid Grid.Row="1" Margin="0,10" VerticalAlignment="Bottom">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />

@@ -239,11 +239,11 @@ namespace Servy.Manager.Views
                     if (MainTab.IsSelected)
                         await HandleMainTabSelected(vm);
                     else if (PerformanceTab.IsSelected)
-                        await HandlePerfTabSelected(vm, GetPerformanceVm());
+                        await HandleMonitoringTabSelected(vm, GetPerformanceVm(), TabScope.Performance);
                     else if (ConsoleTab.IsSelected)
-                        await HandleConsoleTabSelected(vm, GetConsoleVm());
+                        await HandleMonitoringTabSelected(vm, GetConsoleVm(), TabScope.Console);
                     else if (DependenciesTab.IsSelected)
-                        await HandleDependenciesTabSelected(vm, GetDependenciesVm());
+                        await HandleMonitoringTabSelected(vm, GetDependenciesVm(), TabScope.Dependencies);
                     else if (LogsTab.IsSelected)
                         await HandleLogsTabSelected(vm, GetLogsVm());
                 }
@@ -314,9 +314,9 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles tasks when the Main tab is selected:
-        /// cleans up logs tab resources, triggers a search for services if needed,
-        /// and starts periodic timer updates in the main tab.
+        /// Handles tasks when the Main tab is selected: stops background monitoring and searches in
+        /// every other tab, triggers a service search if the list is empty, and starts the periodic
+        /// refresh timer.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
         private async Task HandleMainTabSelected(MainViewModel vm)
@@ -333,68 +333,28 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles tasks when the Performance tab is selected:
-        /// cleans up main tab resources and stops search in logs tab.
+        /// Handles state transitions and resource management when a monitoring-based tab (Performance, Console, or Dependencies) is selected.
         /// </summary>
+        /// <remarks>
+        /// This method ensures that only the specified monitoring tab is active by stopping or cleaning up background
+        /// activities across all other tabs.
+        /// </remarks>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="perfVm">
-        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
-        /// </param>
-        private Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel perfVm)
+        /// <param name="monitoringVm">The target <see cref="MonitoringViewModelBase"/> instance, or <c>null</c> if unavailable.</param>
+        /// <param name="scope">The active <see cref="TabScope"/> corresponding to the selected monitoring tab.</param>
+        private Task HandleMonitoringTabSelected(MainViewModel vm, MonitoringViewModelBase monitoringVm, TabScope scope)
         {
-            DeactivateAllExcept(vm, TabScope.Performance);
+            DeactivateAllExcept(vm, scope);
 
-            // Start timers in performance tab
-            perfVm?.StartMonitoring();
+            // Start timers in the selected monitoring tab
+            monitoringVm?.StartMonitoring();
 
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Handles the necessary state transitions and resource management when the Console tab is selected in the user
-        /// interface.
-        /// </summary>
-        /// <remarks>This method ensures that only the Console tab's monitoring is active by stopping or
-        /// cleaning up background activities in other tabs. It should be called whenever the Console tab becomes active
-        /// to maintain correct application state.</remarks>
-        /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="consoleVm">
-        /// The <see cref="ConsoleViewModel"/> instance for the console tab, or <c>null</c> if unavailable.
-        /// </param>
-        private Task HandleConsoleTabSelected(MainViewModel vm, ConsoleViewModel consoleVm)
-        {
-            DeactivateAllExcept(vm, TabScope.Console);
-
-            // Start timers in console tab
-            consoleVm?.StartMonitoring();
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Handles the necessary state transitions and resource management when the Dependencies tab is selected in the user
-        /// interface.
-        /// </summary>
-        /// <remarks>This method ensures that only the Dependencies tab's monitoring is active by stopping or
-        /// cleaning up background activities in other tabs. It should be called whenever the Dependencies tab becomes active
-        /// to maintain correct application state.</remarks>
-        /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="dependenciesVm">
-        /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
-        /// </param>
-        private Task HandleDependenciesTabSelected(MainViewModel vm, DependenciesViewModel dependenciesVm)
-        {
-            DeactivateAllExcept(vm, TabScope.Dependencies);
-
-            // Start timers in dependencies tab
-            dependenciesVm?.StartMonitoring();
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Handles tasks when the Logs tab is selected:
-        /// cleans up main tab resources and triggers a search for logs if the logs collection is empty.
+        /// Handles tasks when the Logs tab is selected: stops background monitoring and timers in
+        /// every other tab, and triggers a search for logs if the logs collection is empty.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
         /// <param name="logsVm">

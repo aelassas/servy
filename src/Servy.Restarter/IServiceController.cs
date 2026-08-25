@@ -24,6 +24,9 @@ namespace Servy.Restarter
         /// <summary>
         /// Starts the service.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">The controller has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The service could not be found, or the SCM rejected the request.</exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">The underlying SCM call failed.</exception>
         void Start();
 
         /// <summary>

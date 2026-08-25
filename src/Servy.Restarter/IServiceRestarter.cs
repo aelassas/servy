@@ -11,7 +11,10 @@ namespace Servy.Restarter
         /// Restarts the specified Windows service by stopping and starting it.
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
-        /// <param name="timeout">The maximum total time allowed for the entire restart (settle + stop + start). A <see cref="System.TimeoutException"/> is thrown if the service does not reach the target state within this budget.</param>
+        /// <param name="timeout">The maximum total time allowed for the entire restart (settle + stop + start).</param>
+        /// <exception cref="System.TimeoutException">
+        /// Thrown if the service does not reach the target state within <paramref name="timeout"/>.
+        /// </exception>
         /// <returns>A <see cref="RestartResult"/> indicating the outcome of the operation.</returns>
         RestartResult RestartService(string serviceName, TimeSpan timeout);
     }

@@ -44,7 +44,7 @@ namespace Servy.Manager.Converters
             var helper = App.Services?.GetService<IProcessHelper>();
             if (helper == null)
             {
-                Logger.Warn($"{GetType().Name}: IProcessHelper could not be resolved from DI; using design-time fallback. Metric values will be placeholders.");
+                Logger.Warn($"{GetType().Name}: IProcessHelper could not be resolved from DI; falling back to a default ProcessHelper instance. Formatting still works, but the configured helper registration is missing.");
                 helper = new DesignTimeProcessHelper();
             }
             ProcessHelper = helper;

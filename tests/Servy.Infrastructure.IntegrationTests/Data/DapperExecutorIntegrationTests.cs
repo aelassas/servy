@@ -478,7 +478,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 await _executor.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TestServices;", cancellationToken: CancellationToken.None);
             });
 
-            Assert.Equal(AppConfig.DbAsyncMaxRetries, busyConnectionSpy.OpenAttempts);
+            Assert.Equal(AppConfig.DbAsyncMaxAttempts, busyConnectionSpy.OpenAttempts);
         }
 
         [Fact]

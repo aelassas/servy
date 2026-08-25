@@ -19,11 +19,6 @@ namespace Servy.UI.Design
     /// Provides a concrete <see cref="ProcessHelper"/> subtype used purely so the designer can instantiate a stand-in
     /// (the real metric methods are simply never invoked at design time).
     /// </summary>
-    /// <remarks>
-    /// This class inherits from <see cref="ProcessHelper"/> to satisfy dependency requirements
-    /// in ViewModels and validators without invoking real Windows process management logic
-    /// during a design-time session.
-    /// </remarks>
     public class DesignTimeProcessHelper : ProcessHelper
     {
         public DesignTimeProcessHelper()

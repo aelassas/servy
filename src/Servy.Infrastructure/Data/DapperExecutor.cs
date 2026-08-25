@@ -159,7 +159,7 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private T ExecuteWithRetry<T>(Func<T> action, string sql = null)
         {
-            for (int i = 0; i < AppConfig.DbSyncMaxRetries; i++)
+            for (int i = 0; i < AppConfig.DbSyncMaxAttempts; i++)
             {
                 try
                 {
@@ -169,7 +169,7 @@ namespace Servy.Infrastructure.Data
                 {
                     string queryContext = FormatSqlForLog(sql);
 
-                    if (i == AppConfig.DbSyncMaxRetries - 1)
+                    if (i == AppConfig.DbSyncMaxAttempts - 1)
                     {
                         Logger.Warn($"Sync database operation exhausted bounded retry budget. Query: [{queryContext}]");
                         throw;
@@ -178,7 +178,7 @@ namespace Servy.Infrastructure.Data
                     // Use the unified helper with Sync-specific configuration
                     int delay = CalculateBackoff(i, AppConfig.DbSyncInitialDelayMs, AppConfig.DbSyncMaxJitterMs);
 
-                    Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxRetries}). Spinning for {delay}ms... Query: [{queryContext}]");
+                    Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxAttempts}). Spinning for {delay}ms... Query: [{queryContext}]");
 
                     Thread.Sleep(delay);
                 }
@@ -192,7 +192,7 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private async Task<T> ExecuteWithRetryAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken, string sql = null)
         {
-            for (int i = 0; i < AppConfig.DbAsyncMaxRetries; i++)
+            for (int i = 0; i < AppConfig.DbAsyncMaxAttempts; i++)
             {
                 // Fail fast if the operation was cancelled before or during the retry loop
                 cancellationToken.ThrowIfCancellationRequested();
@@ -205,7 +205,7 @@ namespace Servy.Infrastructure.Data
                 {
                     string queryContext = FormatSqlForLog(sql);
 
-                    if (i == AppConfig.DbAsyncMaxRetries - 1)
+                    if (i == AppConfig.DbAsyncMaxAttempts - 1)
                     {
                         Logger.Warn($"Async database operation exhausted bounded retry budget. Query: [{queryContext}]");
                         throw;
@@ -213,7 +213,7 @@ namespace Servy.Infrastructure.Data
 
                     // Use the unified helper with Async-specific configuration
                     int delay = CalculateBackoff(i, AppConfig.DbAsyncInitialDelayMs, AppConfig.DbAsyncMaxJitterMs);
-                    Logger.Warn($"Database busy (async attempt {i + 1}/{AppConfig.DbAsyncMaxRetries}). Retrying in {delay}ms... Query: [{queryContext}]");
+                    Logger.Warn($"Database busy (async attempt {i + 1}/{AppConfig.DbAsyncMaxAttempts}). Retrying in {delay}ms... Query: [{queryContext}]");
 
                     // Critical: Pass the token to Task.Delay so we don't hang if cancelled during backoff
                     await Task.Delay(delay, cancellationToken);

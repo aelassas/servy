@@ -1389,9 +1389,10 @@ namespace Servy.Core.Config
         public const int RestarterKillGracePeriodMs = 3_000;
 
         /// <summary>
-        /// Max retries for asynchronous SQLite operations encountering "Database is locked".
+        /// Total attempts (initial call plus retries) for asynchronous SQLite operations
+        /// encountering "Database is locked". A value of 1 disables retrying.
         /// </summary>
-        public const int DbAsyncMaxRetries = 3;
+        public const int DbAsyncMaxAttempts = 3;
 
         /// <summary>
         /// Initial exponential backoff delay for async database retries.
@@ -1404,12 +1405,15 @@ namespace Servy.Core.Config
         public const int DbAsyncMaxJitterMs = 50;
 
         /// <summary>
-        /// Max retries for synchronous SQLite operations (intentionally lower to avoid UI thread hangs).
+        /// Total attempts (initial call plus retries) for synchronous SQLite operations.
+        /// A value of 1 disables retrying.
         /// </summary>
-        public const int DbSyncMaxRetries = 3;
+        public const int DbSyncMaxAttempts = 3;
 
         /// <summary>
-        /// Initial delay for synchronous database retries.
+        /// Initial delay for synchronous database retries. Intentionally a quarter of
+        /// <see cref="DbAsyncInitialDelayMs"/> because the sync path can run on the UI thread:
+        /// this bounds the worst-case block to roughly 95 ms rather than 400 ms.
         /// </summary>
         public const int DbSyncInitialDelayMs = 25;
 

@@ -181,9 +181,11 @@ namespace Servy.Restarter
         /// before the <paramref name="timeout"/> expires.
         /// </exception>
         /// <remarks>
-        /// This method uses an interrogation loop with <see cref="ServiceController.Refresh"/>
-        /// to wait out <see cref="InvalidOperationException"/> errors caused by the Windows SCM
-        /// locking the service during state transitions.
+        /// This method uses an interrogation loop with <see cref="IServiceController.Refresh"/>
+        /// to wait out the <see cref="InvalidOperationException"/>, <see cref="Win32Exception"/>
+        /// and <see cref="System.ServiceProcess.TimeoutException"/> errors raised while the Windows SCM
+        /// holds the service in a state transition. A re-probe after each failure distinguishes a service
+        /// that is still transitioning from one that has been uninstalled.
         /// </remarks>
         private RestartResult? HandleTransitionalError(string serviceName, IServiceController controller, ServiceControllerStatus targetStatus, TimeSpan timeout)
         {
