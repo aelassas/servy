@@ -7,7 +7,8 @@ namespace Servy.Services
 {
     /// <summary>
     /// Defines commands for managing Windows services - install, uninstall, start, stop and restart -
-    /// plus importing/exporting service configuration (XML/JSON) and launching Servy Manager.
+    /// plus importing/exporting service configuration (XML/JSON), launching Servy Manager and
+    /// opening the security hardening guide.
     /// </summary>
     public interface IServiceCommands
     {

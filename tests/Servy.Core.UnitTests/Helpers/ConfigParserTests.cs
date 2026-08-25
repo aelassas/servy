@@ -281,7 +281,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseEnum_String_UndefinedNumericInput_ReturnsDefault(string undefinedNumeric)
         {
             // Act
-            // Numeric values parse successfully but fail Enum.IsDefined verification, triggering the fallback loop
+            // Numeric values parse successfully but fail Enum.IsDefined verification, falling through to the default
             var result = ConfigParser.ParseEnum(undefinedNumeric, TestStatus.None);
 
             // Assert

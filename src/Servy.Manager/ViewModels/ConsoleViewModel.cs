@@ -122,8 +122,8 @@ namespace Servy.Manager.ViewModels
         /// performs asynchronous disk reads to load history, and starts new background tailing tasks.</description>
         /// </item>
         /// <item>
-        /// <description><b>Timer Orchestration:</b> Restarts the performance monitoring loop by calling
-        /// <see cref="StopMonitoring"/> and <see cref="StartMonitoring"/>, resetting the cancellation tokens.</description>
+        /// <description><b>Timer Orchestration:</b> Restarts the console state polling loop by calling
+        /// <see cref="MonitoringViewModelBase.StopMonitoring"/> and <see cref="MonitoringViewModelBase.StartMonitoring"/>, resetting the cancellation tokens.</description>
         /// </item>
         /// </list>
         /// </remarks>
