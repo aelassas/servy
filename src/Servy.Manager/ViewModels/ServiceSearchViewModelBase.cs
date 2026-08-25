@@ -135,15 +135,5 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
-
-        #region IDisposable Implementation
-
-        /// <inheritdoc />
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-        }
-
-        #endregion
     }
 }
