@@ -35,8 +35,11 @@
 
 .EXAMPLE
     .\Set-ServyExePermissions.ps1 -TargetAccount "LocalService"
-#>
 
+.NOTES
+    - Execution Requires Administrator Privileges: Modifying ACLs and breaking permission inheritance in %ProgramData%\Servy
+      requires an elevated PowerShell session.
+#>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, HelpMessage = 'Specify target account (e.g., "DOMAIN\User", "LocalService", "NT AUTHORITY\LocalService", or "DOMAIN\gMSA$").')]
@@ -46,6 +49,16 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# Ensure the script is executing with Administrator privileges (PS 2.0 / .NET Framework compatible)
+$currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+$currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
+$adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
+
+if (-not $currentPrincipal.IsInRole($adminRole)) {
+    Write-Host "Set-ServyExePermissions.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
+    exit 1
+}
 
 # .NET Framework 4.8 executable target list
 $staticExeNames = @(
@@ -78,7 +91,7 @@ catch {
             $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($localUser)
             [void]$ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
             $targetNTAccount = $ntAccountCandidate
-            $TargetAccount = $localUser
+            $TargetAccount   = $localUser
         }
         catch {
             # Let fallback fail through to final error handler below
