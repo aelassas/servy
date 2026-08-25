@@ -6,7 +6,8 @@
 .DESCRIPTION
     This script builds the Servy.Service project following the standard repository
     build pattern. It publishes to the default bin directory and optionally
-    signs the resulting executable using SignPath.
+    signs the published executable with SignPath when -BuildConfiguration is Release
+    and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
 
 .PARAMETER Tfm
     Target framework for the build (default: net10.0-windows).

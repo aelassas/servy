@@ -37,7 +37,6 @@ function Get-FileEncoding {
     }
 
     # 2. Inspect the buffer.
-    # Logic: Check longer BOMs first to avoid misclassification.
 
     # UTF-32 LE (FF FE 00 00)
     # Check this before UTF-16 LE to avoid false positives.

@@ -38,7 +38,7 @@ jobs:
   changelog:
     runs-on: windows-latest
     timeout-minutes: 60
-    # Logic: Only run if manually triggered OR if the automated upstream 'bump-version' run succeeded.
+    # Only run if manually triggered OR if the automated upstream 'bump-version' run succeeded.
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')

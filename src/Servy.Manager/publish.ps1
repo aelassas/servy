@@ -10,7 +10,8 @@
       2. Builds and publishes the Servy.Manager project as a
          self-contained, single-file executable for the specified
          target framework and runtime.
-      3. Optionally signs the resulting executable using SignPath.
+      3. Signs the published executable with SignPath when -BuildConfiguration is Release
+         and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
 
 .PARAMETER Tfm
     Target framework for the build.

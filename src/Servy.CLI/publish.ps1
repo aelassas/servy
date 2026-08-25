@@ -9,8 +9,8 @@
       1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration).
       2. Builds and publishes Servy.CLI as a self-contained, single-file executable
          for the specified target framework and runtime.
-      3. Optionally signs the generated executable using SignPath, when publishing Release
-         and setup/signpath.ps1 is present.
+      3. Signs the published executable with SignPath when -BuildConfiguration is Release
+         and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
 
     This is used as part of the Release build pipeline to produce final CLI artifacts.
 

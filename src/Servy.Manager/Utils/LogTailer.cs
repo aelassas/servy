@@ -435,8 +435,6 @@ namespace Servy.Manager.Utils
                             tempLines.Add(line);
                         }
 
-                        // We work backwards from the LastWriteTime
-                        // Every line gets exactly 1 tick less than the one after it
                         for (int i = 0; i < tempLines.Count; i++)
                         {
                             // Logic: The very last line in the file is 'lastWrite'

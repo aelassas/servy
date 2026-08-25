@@ -7,7 +7,8 @@
     This script performs the following steps:
       1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration).
       2. Builds and publishes `Servy.csproj` as a self-contained executable for the specified runtime
-      3. Signs the published executable using SignPath (if enabled)
+      3. Signs the published executable with SignPath when -BuildConfiguration is Release
+         and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
 
 .PARAMETER Tfm
     Target Framework Moniker (default: "net10.0-windows").

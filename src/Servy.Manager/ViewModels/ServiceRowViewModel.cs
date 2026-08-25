@@ -108,16 +108,59 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        /// <summary>
+        /// Gets the service name, or an empty string when the model has none.
+        /// </summary>
         public string Name => Service.Name ?? string.Empty;
+
+        /// <summary>
+        /// Gets the description of the service, or an empty string when the model has none.
+        /// </summary>
         public string Description => Service.Description ?? string.Empty;
+
+        /// <summary>
+        /// Gets the operational status of the service, or <see langword="null"/> when unknown or unavailable.
+        /// </summary>
         public ServiceStatus? Status => Service.Status;
+
+        /// <summary>
+        /// Gets the startup type of the service, or <see langword="null"/> when unconfigured or unavailable.
+        /// </summary>
         public ServiceStartType? StartupType => Service.StartupType;
+
+        /// <summary>
+        /// Gets the account identity under which the service runs, or an empty string when unconfigured.
+        /// </summary>
         public string LogOnAs => Service.LogOnAs ?? string.Empty;
+
+        /// <summary>
+        /// Gets a value indicating whether the service is currently installed in the Windows Service Control Manager (SCM).
+        /// </summary>
         public bool IsInstalled => Service.IsInstalled;
+
+        /// <summary>
+        /// Gets a value indicating whether an associated desktop application executable is available for this service.
+        /// </summary>
         public bool IsDesktopAppAvailable => Service.IsDesktopAppAvailable;
+
+        /// <summary>
+        /// Gets the Process ID of the service, or <see langword="null"/> when it is not running.
+        /// </summary>
         public int? Pid => Service.Pid;
+
+        /// <summary>
+        /// Gets a value indicating whether the Process ID column display is enabled for this row.
+        /// </summary>
         public bool IsPidEnabled => Service.IsPidEnabled;
+
+        /// <summary>
+        /// Gets the percentage of CPU usage for the service process, or <see langword="null"/> when monitoring is inactive or process is stopped.
+        /// </summary>
         public double? CpuUsage => Service.CpuUsage;
+
+        /// <summary>
+        /// Gets the RAM usage in bytes for the service process, or <see langword="null"/> when monitoring is inactive or process is stopped.
+        /// </summary>
         public long? RamUsage => Service.RamUsage;
 
         #endregion

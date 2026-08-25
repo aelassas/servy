@@ -617,7 +617,8 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// To prevent thread starvation and SCM contention, the actual degree of parallelism is
-        /// throttled by a hardware-aware ceiling: <c>Math.Min(Environment.ProcessorCount * 2, DefaultMaxBulkOperationParallelism)</c>.
+        /// throttled by a hardware-aware ceiling: <c>Math.Max(1, Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism))</c>,
+        /// where <c>MaxBulkOperationParallelism</c> is the configured value and this constant is its default.
         /// </remarks>
         public const int DefaultMaxBulkOperationParallelism = 8;
 
