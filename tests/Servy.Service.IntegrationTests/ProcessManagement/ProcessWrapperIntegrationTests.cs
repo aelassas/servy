@@ -645,10 +645,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopTree_ProcessGracefulExit_LogsCanceledWithCodeInfo()
         {
             // Arrange
-            // Dynamically compile a lightweight Win32 GUI executable to TEMP.
-            // Compiling with -OutputType WindowsApplication ensures the binary has the GUI subsystem header,
-            // so Windows will not spawn a child conhost.exe process. WinForms creates a valid MainWindowHandle
-            // via USER32 even in headless CI sessions, responding cleanly to CloseMainWindow (WM_CLOSE) with exit code 0.
+            // Dynamically compile a Win32 GUI executable (WindowsApplication).
+            // Accessing Form.Handle forces USER32 to create a valid window handle (MainWindowHandle)
+            // even when invisible or running in a headless CI session, enabling CloseMainWindow (WM_CLOSE)
+            // to exit gracefully.
             string tempExe = Path.Combine(Path.GetTempPath(), $"ServyTestWin_{Guid.NewGuid():N}.exe");
 
             try
@@ -656,7 +656,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 var compilePsi = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ Application.Run(new Form()); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
+                    Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ var f = new Form(); var h = f.Handle; Application.Run(f); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                 };
@@ -666,7 +666,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     compileProc?.WaitForExit();
                 }
 
-                Assert.True(File.Exists(tempExe), "Failed to compile temporary WinForms test executable.");
+                Assert.True(File.Exists(tempExe), "Failed to compile temporary test executable.");
 
                 var psi = new ProcessStartInfo
                 {
@@ -681,13 +681,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     wrapper.Start();
                     var process = wrapper.UnderlyingProcess;
 
-                    // Poll dynamically until the WinForms window handle is allocated by USER32
-                    bool windowCreated = SpinWait.SpinUntil(() =>
+                    // Wait until USER32 allocates the MainWindowHandle
+                    bool windowReady = SpinWait.SpinUntil(() =>
                     {
                         try
                         {
                             process.Refresh();
-                            return process.MainWindowHandle != IntPtr.Zero;
+                            return !process.HasExited && process.MainWindowHandle != IntPtr.Zero;
                         }
                         catch
                         {
@@ -695,7 +695,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                         }
                     }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
 
-                    Assert.True(windowCreated, "Test window was not created within the timeout.");
+                    Assert.True(windowReady, "Test process window handle was not initialized within the timeout.");
 
                     // Act
                     TestReflection.InvokeNonPublic(
