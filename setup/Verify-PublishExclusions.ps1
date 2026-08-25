@@ -1,11 +1,12 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates that the Task Scheduler publish.yml exclusion filtering logic works correctly.
+    Validates publish-common.ps1's Copy-TaskSchdArtifacts exclusion filter.
 .DESCRIPTION
-    Creates an ephemeral local sandbox environment, runs the hardened recursive copy block,
-    and verifies that excluded items (*.test.ps1, .dat, .log, smtp-cred.xml) are blocked
-    while standard payloads are preserved.
+    Creates an ephemeral local sandbox, invokes the shared Copy-TaskSchdArtifacts function,
+    and verifies that the five excluded patterns (smtp-cred.xml, temp.ps1, *.dat, *.log,
+    *.test.ps1) are blocked - including inside subdirectories - while standard payloads
+    are preserved.
 #>
 
 $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent

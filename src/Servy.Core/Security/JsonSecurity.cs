@@ -9,8 +9,14 @@ namespace Servy.Core.Security
     public static class JsonSecurity
     {
         /// <summary>
-        /// A canonical settings object used for processing untrusted data, configured to prevent deep recursion, ignore metadata properties, and omit null values for cleaner output.
+        /// The canonical hardened configuration for processing untrusted JSON: no type-name handling,
+        /// a bounded depth, metadata properties ignored, nulls omitted, and unknown members rejected.
         /// </summary>
+        /// <remarks>
+        /// Returns a NEW instance on every access, deliberately. <see cref="JsonSerializerSettings"/> is
+        /// mutable and this member is public, so a shared instance could be weakened process-wide by any
+        /// consumer - see the fix for #3235. Do not convert this to a static readonly field.
+        /// </remarks>
         public static JsonSerializerSettings UntrustedDataSettings => new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.None,

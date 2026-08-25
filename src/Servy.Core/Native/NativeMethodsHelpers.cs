@@ -66,9 +66,10 @@ namespace Servy.Core.Native
             var isBuiltIn = ServiceAccounts.IsBuiltInServiceAccount(username);
 
             // Logon Validation Guard for Built-in Accounts
-            // These accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS.
-            // We short-circuit here to prevent Identity Resolution (Translate) from failing on
-            // dot-prefixed formats like '.\NetworkService' which do not exist in the local SAM.
+            // These accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS and are
+            // returned early for two reasons: Translate() fails on dot-prefixed forms like
+            // '.\NetworkService' that do not exist in the local SAM, and their specialised formats
+            // would be false negatives against the username regex below.
             if (isBuiltIn)
             {
                 if (!string.IsNullOrEmpty(password))
@@ -78,8 +79,6 @@ namespace Servy.Core.Native
                 return;
             }
 
-            // Skip regex validation for known built-in identities to avoid false negatives
-            // on specialized formats.
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or NT AUTHORITY\\ServiceAccount.";
             if (!Regex.IsMatch(username, pattern, RegexOptions.IgnoreCase, AppConfig.InputRegexTimeout))
             {
