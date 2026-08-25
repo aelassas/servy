@@ -22,8 +22,9 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// The number of data points maintained in the performance history buffers.
-        /// A value of 101 ensures the graph line spans the entire horizontal width
-        /// of the UI control (0 to 100 on the X-axis) immediately upon initialization.
+        /// A value of 101 yields 100 intervals across <see cref="GraphWidth"/>, so that the first
+        /// rendered tick already spans the full width of the graph rather than growing in from the
+        /// left over the following 100 ticks.
         /// </summary>
         private const int PerformanceHistoryCapacity = 101;
 

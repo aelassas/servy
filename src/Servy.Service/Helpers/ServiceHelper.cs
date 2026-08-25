@@ -557,12 +557,6 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="args">The raw string of executable arguments.</param>
         /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
-        /// <summary>
-        /// Uses a timed regular expression to identify and mask sensitive credentials
-        /// within a raw command-line argument string.
-        /// </summary>
-        /// <param name="args">The raw string of executable arguments.</param>
-        /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
         internal static string? MaskRawArguments(string? args)
         {
             if (string.IsNullOrWhiteSpace(args)) return args;

@@ -554,7 +554,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 _mockDbContext.Setup(db => db.CreateConnection()).Returns(busyMockConn.Object);
                 _executor.ExecuteScalar<int>("SELECT COUNT(*) FROM TestServices;");
             });
-            Assert.Equal(AppConfig.DbSyncMaxRetries, executedAttempts);
+            Assert.Equal(AppConfig.DbSyncMaxAttempts, executedAttempts);
         }
 
         [Fact]
@@ -571,7 +571,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             });
 
             // Verify the engine systematically retried across the configured loop allocation space
-            Assert.Equal(AppConfig.DbAsyncMaxRetries, busyConnectionSpy.OpenAttempts);
+            Assert.Equal(AppConfig.DbAsyncMaxAttempts, busyConnectionSpy.OpenAttempts);
         }
 
         [Fact]

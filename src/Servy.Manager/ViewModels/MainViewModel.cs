@@ -511,7 +511,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// When overridden in a derived class, provides a hook to display modal alert feedback if the underlying fetch sequence encounters an error.
+        /// Surfaces a search-pipeline failure to the user as a modal warning dialog.
         /// </summary>
         protected override async Task HandleSearchExceptionAsync(Exception ex)
         {
