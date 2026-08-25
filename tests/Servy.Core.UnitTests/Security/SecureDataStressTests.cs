@@ -42,9 +42,12 @@ namespace Servy.Core.UnitTests.Security
 
         [Theory]
         [Trait("Category", "Stress")]
-        [InlineData(1)]  // 1 MB: 1,048,576 chars, ~2 MB of RAM
-        [InlineData(10)] // 10 MB: 10,485,760 chars, ~20 MB of RAM
-        [InlineData(50)] // 50 MB: 52,428,800 chars, ~100 MB of RAM
+        // Peak footprint per row is roughly 7x the MB argument: the UTF-16 plaintext (2x),
+        // the Base64 ciphertext string (~2.7x), and the decrypted copy (2x) are all live at
+        // the final assertion, on top of the UTF-8 and binary-payload buffers inside Encrypt.
+        [InlineData(1)]  // 1 MB payload,  ~8 MB peak
+        [InlineData(10)] // 10 MB payload, ~70 MB peak
+        [InlineData(50)] // 50 MB payload, ~350 MB peak
         public void StressTest_V2_EncryptionDecryption_LargePayload(int sizeInMb)
         {
             // Arrange

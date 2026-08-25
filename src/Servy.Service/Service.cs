@@ -1407,7 +1407,7 @@ namespace Servy.Service
             {
                 try
                 {
-                    // Use native Uri combining rules to insulate from host-level file system path corruption
+                    // Parse the base URL first so a malformed value fails here rather than at request time
                     var baseUri = new Uri(baseUrl);
                     var targetUri = baseUri;
                     if (!string.IsNullOrEmpty(suffix) && enableFlags)

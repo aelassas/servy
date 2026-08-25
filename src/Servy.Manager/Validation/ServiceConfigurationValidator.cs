@@ -38,7 +38,7 @@ namespace Servy.Manager.Validation
             // Delegate core validation logic to the centralized rules engine
             var result = _serviceValidationRules.Validate(dto, importMode: importMode);
 
-            // Display critical errors first
+            // Display the first validation error
             if (!result.IsValid)
             {
                 await _messageBoxService.ShowErrorAsync(result.Errors.First(), UiAppConfig.Caption);

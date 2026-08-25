@@ -5,7 +5,7 @@ namespace Servy.Manager.Converters
 {
     /// <summary>
     /// Converts between <see cref="ServiceStatus"/> values and their localized string
-    /// representations defined in <see cref="Strings.resx"/>.
+    /// representations defined in <see cref="Strings"/>.
     /// </summary>
     public class StatusConverter : EnumLocalizedConverter<ServiceStatus>
     {

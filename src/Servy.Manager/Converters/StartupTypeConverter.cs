@@ -4,8 +4,8 @@ using Servy.Manager.Resources;
 namespace Servy.Manager.Converters
 {
     /// <summary>
-    /// Converts between <see cref="ServiceStartType"/> enum values and their localized string representations
-    /// defined in <see cref="Strings.resx"/>.
+    /// Converts between <see cref="ServiceStartType"/> enum values and their localized string
+    /// representations defined in <see cref="Strings"/>.
     /// </summary>
     public class StartupTypeConverter : EnumLocalizedConverter<ServiceStartType>
     {

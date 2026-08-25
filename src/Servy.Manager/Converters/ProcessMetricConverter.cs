@@ -68,9 +68,8 @@ namespace Servy.Manager.Converters
         /// or the <see cref="UnknownMetricUsage"/> placeholder if the value is null or an incompatible type.
         /// </returns>
         /// <remarks>
-        /// This implementation utilizes C# pattern matching to provide a "fail-silent" guard.
-        /// If the bound property is a null nullable structure, the pattern match fails,
-        /// safely returning the unknown placeholder instead of throwing a <see cref="NullReferenceException"/>.
+        /// The type pattern is deliberate: it folds the null check and the unboxing into one test,
+        /// where a direct cast of a null box would throw.
         /// </remarks>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {

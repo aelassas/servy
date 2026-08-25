@@ -38,7 +38,7 @@ namespace Servy.Validation
             // Delegate logic to the shared Core rules engine
             var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword, importMode: importMode);
 
-            // Display critical errors first
+            // Display the first validation error
             if (!result.IsValid)
             {
                 await _messageBoxService.ShowErrorAsync(result.Errors.First(), UiAppConfig.Caption);

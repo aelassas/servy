@@ -161,13 +161,13 @@ namespace Servy.UI.Services
         /// Opens a URL using the system's default browser or logs the action if running in headless mode.
         /// </summary>
         /// <param name="url">The external web address or file path to open.</param>
-        /// <param name="headlessLabel">A descriptive label used for console output when <see cref="IsHeadlessMode"/> is true.</param>
+        /// <param name="headlessLabel">A descriptive label used for console output when <see cref="UiHeadless.IsEnabled"/> is true.</param>
         /// <param name="fallbackDebug">The debug message to log if the process cannot be tracked (e.g., when handed off to an existing browser instance).</param>
         /// <remarks>
         /// This method handles the non-deterministic return value of <see cref="Process.Start(ProcessStartInfo)"/>.
         /// When a URL is handed off to an existing browser process, the method immediately logs
         /// the <paramref name="fallbackDebug"/> message. In UI environments, any returned process
-        /// handle is disposed immediately to prevent resource leaks in the Manager interface.
+        /// handle is disposed immediately to prevent resource leaks.
         /// </remarks>
         private static void OpenExternalUrl(string url, string headlessLabel, string fallbackDebug)
         {
@@ -184,8 +184,7 @@ namespace Servy.UI.Services
             {
                 using (process)
                 {
-                    // Native handle is closed immediately after launch
-                    // to prevent leaks in the Manager UI.
+                    // Native handle is closed immediately after launch to prevent leaks.
                 }
             }
             else
