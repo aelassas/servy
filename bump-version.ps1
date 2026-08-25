@@ -1,7 +1,7 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Updates the version of Servy across scripts, AppConfig, and Directory.Build.props.
+    Updates the version of Servy across build-config.ps1, Directory.Build.props, and Servy.psd1.
 
 .DESCRIPTION
     This script updates the version of Servy in multiple locations:
@@ -113,6 +113,22 @@ Update-FilesContent `
     -Replacement { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" } `
     -ExpectMatch `
     -DryRun:$DryRun
+
+# -----------------------------
+# Summary Report
+# -----------------------------
+Write-Host "`n========================================="
+Write-Host "            SUMMARY"
+Write-Host "========================================="
+if ($DryRun) {
+    Write-Host "Files scanned:                $script:totalFilesScanned"
+    Write-Host "Files that would be modified: $script:filesModified"
+    Write-Host "Replacements that would be made: $script:totalReplacements"
+} else {
+    Write-Host "Files scanned:                $script:totalFilesScanned"
+    Write-Host "Files modified:               $script:filesModified"
+    Write-Host "Total replacements:           $script:totalReplacements"
+}
 
 if ($script:HadFailure) {
     Write-Host "Version update process completed with errors." -ForegroundColor Red

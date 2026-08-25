@@ -216,9 +216,13 @@ function Format-SecureLogMessage {
 
   # Define all CLI parameters that may contain sensitive data or injected variables
   # WARNING: This list must be kept in sync with the CLI sensitive options.
-  # Any C# option property ending in *Params, *Env, *envVars or starting with password*
-  # MUST be decorated with the [Sensitive] attribute and listed here.
-  # This is enforced by unit tests in Servy.CLI.UnitTests.
+  # Any CLI option whose LongName ends in 'params', 'env' or 'envvars', or contains
+  # 'password', MUST be decorated with the [Sensitive] attribute in Options/*.cs and
+  # listed here.
+  # Both halves are enforced by tests: the attribute by
+  # Servy.CLI.UnitTests SensitiveOptionsTests.SensitiveProperties_MustHaveSensitiveAttribute,
+  # and this array by Servy.CLI.IntegrationTests
+  # SensitiveOptionsTests.SensitiveOptions_MustBeListedInServyPsm1.
   $sensitiveFields = @(
     "params",
     "failureProgramParams",

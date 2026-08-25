@@ -20,9 +20,12 @@ namespace Servy.Core.Services
     /// as they involve long-running process transitions.</description>
     /// </item>
     /// <item>
-    /// <description><b>Sync Reads:</b> State interrogation (Status, Exists) is synchronous because
-    /// the underlying <see cref="System.ServiceProcess.ServiceController"/> and Win32 SCM APIs
-    /// are inherently blocking and execute quickly.</description>
+    /// <description><b>Sync Reads:</b> State interrogation is synchronous because the underlying
+    /// <see cref="ServiceController"/> and Win32 SCM APIs are inherently blocking.
+    /// <see cref="GetServiceStatus"/> and <see cref="GetServiceStartupType"/> are single-service queries
+    /// and cheap. <see cref="IsServiceInstalled"/>, <see cref="GetAllServices"/> and
+    /// <see cref="GetDependencies"/> enumerate or walk the whole SCM and must not be called on a UI
+    /// thread (see #1978, #1996).</description>
     /// </item>
     /// </list>
     /// </remarks>

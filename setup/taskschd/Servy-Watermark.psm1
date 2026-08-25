@@ -258,8 +258,10 @@ function Get-EventsToProcess {
         return $null
     }
 
-    # PRE-FILTER: Prevent feedback loops *before* selecting the most recent event.
-    # This ensures a notification failure doesn't mask a genuine service crash during a first run.
+    # PRE-FILTER BACKSTOP: Secondary guard against feedback loops from legacy event entries (pre-#3160).
+    # Current notification scripts log script failures at Warning (Level 3), which Level = 2 query filters
+    # exclude upfront. This filter ensures remaining legacy feedback entries left by earlier versions on upgraded
+    # hosts do not mask a genuine service crash during a first run.
     $errors = @($rawErrors | Where-Object {
         $_.Message -notmatch "^ServyFailureEmail:" -and
         $_.Message -notmatch "^ServyToast:" -and

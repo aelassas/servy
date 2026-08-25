@@ -34,6 +34,9 @@ foreach ($dep in $RequiredDependencies) {
         # 1. Attempt to log to Event Log for administrator visibility
         try {
             # Best-effort: the 'Servy' event source may not be registered, so guard with try/catch.
+            # NOTE (-EntryType Warning): Written at Warning (Level 3) rather than Error (Level 2) on purpose.
+            # The Task Scheduler notification trigger strictly filters for Level = 2 (Error). Logging a missing
+            # script dependency at Warning prevents the EventTrigger from firing recursively on missing files (see #3160 / #4038).
             Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_DEPENDENCY_ERROR `
                 -EntryType Warning -Message $errorMsg -ErrorAction Stop
         } catch {

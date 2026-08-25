@@ -79,8 +79,7 @@ function Get-ServyLastErrors {
             # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
             $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
         } else {
-            # First run: fetch a wider window to allow the pre-filter to skip feedback
-            # logs and still find a genuine service crash behind them.
+            # First run: fetch a bounded window of recent error events to inspect on initial setup (per #2315).
             $errors = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 20 -ErrorAction Stop)
         }
     }
@@ -94,6 +93,9 @@ function Get-ServyLastErrors {
         $errorMsg = "Servy Notification Error: Failed to query Windows event log for Servy errors: $_"
         try {
             # Fallback A: Try the Event Log
+            # NOTE (-EntryType Warning): Written at Warning (Level 3) rather than Error (Level 2) on purpose.
+            # The Task Scheduler notification trigger strictly filters for Level = 2 (Error). Writing this error at
+            # Warning prevents a query failure from re-triggering the task in an infinite recursive loop (see #3160).
             Write-EventLog -LogName Application -Source "Servy" -EventId $EventLogErrorId -EntryType Warning -Message $errorMsg -ErrorAction Stop
         }
         catch {
