@@ -44,7 +44,6 @@ namespace Servy.Core.Native
             var byParent = new Dictionary<int, List<int>>();
 
             IntPtr snapshot = IntPtr.Zero;
-            int lastError = 0;
 
             // Bounded retry sequence matching Microsoft's explicit optimization guidance for busy systems
             for (int attempt = 0; attempt < AppConfig.Toolhelp32SnapshotMaxRetries; attempt++)
@@ -54,13 +53,12 @@ namespace Servy.Core.Native
                 if (snapshot != IntPtr.Zero && snapshot != INVALID_HANDLE_VALUE)
                     break;
 
-                lastError = Marshal.GetLastWin32Error();
-
                 // If it is a hard structural failure (e.g., Access Denied), abort immediately without wasting time in a loop
-                if (lastError != ERROR_BAD_LENGTH)
+                var error = Marshal.GetLastWin32Error();
+                if (error != ERROR_BAD_LENGTH)
                 {
-                    Logger.Warn($"CreateToolhelp32Snapshot failed with a non-recoverable system error (Win32 error {lastError}).");
-                    throw new Win32Exception(lastError, $"CreateToolhelp32Snapshot failed with Win32 error {lastError}.");
+                    Logger.Warn($"CreateToolhelp32Snapshot failed with a non-recoverable system error (Win32 error {error}).");
+                    throw new Win32Exception(error, $"CreateToolhelp32Snapshot failed with Win32 error {error}.");
                 }
 
                 // Small brief yield thread break to give the system process table time to settle down
@@ -70,7 +68,7 @@ namespace Servy.Core.Native
             if (snapshot == IntPtr.Zero || snapshot == INVALID_HANDLE_VALUE)
             {
                 Logger.Warn("CreateToolhelp32Snapshot kept failing transiently with ERROR_BAD_LENGTH after maximum retries.");
-                throw new Win32Exception(lastError != 0 ? lastError : ERROR_BAD_LENGTH, "CreateToolhelp32Snapshot kept failing transiently after maximum retries.");
+                throw new Win32Exception(ERROR_BAD_LENGTH, "CreateToolhelp32Snapshot kept failing transiently after maximum retries.");
             }
 
             try
