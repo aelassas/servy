@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace Servy.Core.Helpers
 {
@@ -375,10 +376,7 @@ namespace Servy.Core.Helpers
                 throw new IOException($"Could not resolve parent directory for extraction: {targetPath}");
             }
 
-            if (!Directory.Exists(targetPathDir))
-            {
-                Directory.CreateDirectory(targetPathDir!);
-            }
+            Directory.CreateDirectory(targetPathDir);
 
             resourceName = resourceNamespace + "." + fileName + "." + extension;
 

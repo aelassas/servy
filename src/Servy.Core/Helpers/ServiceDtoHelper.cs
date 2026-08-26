@@ -66,6 +66,9 @@ namespace Servy.Core.Helpers
             dto.HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
             dto.EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags;
 
+            // Identity Normalization
+            dto.UserAccount = dto.UserAccount?.Trim();
+
             // Lifecycle Hooks (Pre-Launch)
             dto.PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
             dto.PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts;

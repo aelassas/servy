@@ -587,10 +587,9 @@ namespace Servy.Service
         /// <summary>
         /// Determines whether health monitoring and automated recovery actions are fully enabled based on startup options.
         /// </summary>
-        private static bool IsRecoveryEnabled(StartOptions? options)
+        private static bool IsRecoveryEnabled(StartOptions options)
         {
-            return options != null &&
-                   options.EnableHealthMonitoring &&
+            return options.EnableHealthMonitoring &&
                    options.HeartbeatIntervalInSeconds > 0 &&
                    options.MaxFailedChecks > 0 &&
                    options.RecoveryAction != RecoveryAction.None;
@@ -651,7 +650,7 @@ namespace Servy.Service
             string baseSegment = leadingSegment.TrimStart('_');
 
             // Only escape if the underlying base keyword is an actual hardware reserved name
-            if (ReservedNames.ReservedDeviceNames.Contains(baseSegment))
+            if (ReservedNames.IsReservedDeviceName(baseSegment))
             {
                 // Count how many leading underscores the user already had in their input segment
                 int existingUnderscores = leadingSegment.Length - baseSegment.Length;

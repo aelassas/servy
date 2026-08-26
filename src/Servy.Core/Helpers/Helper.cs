@@ -660,7 +660,7 @@ namespace Servy.Core.Helpers
             foreach (var segment in segments)
             {
                 // Ensure case-insensitive evaluation against the reserved DOS device names blocklist
-                if (ReservedNames.ReservedDeviceNames.Contains(segment))
+                if (ReservedNames.IsReservedDeviceName(segment))
                 {
                     return (false, string.Format(Strings.Msg_ServiceNameReservedDeviceName, serviceName));
                 }

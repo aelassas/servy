@@ -76,7 +76,8 @@ namespace Servy.Core.EnvironmentVariables
                 return false;
             }
 
-            // ROBUSTNESS: Guard the unescaped key against illegal character injections (CR, LF, Null-Terminator)
+            // ROBUSTNESS: Guard the unescaped key against illegal character injections
+            // (CR, LF, Null-Terminator, and '=' which Windows forbids in a variable NAME).
             if (key.Contains("\n") || key.Contains("\r"))
             {
                 errorMessage = string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key);
@@ -84,7 +85,7 @@ namespace Servy.Core.EnvironmentVariables
                 return false;
             }
 
-            if (key.Contains("\0"))
+            if (key.Contains("\0") || key.Contains("="))
             {
                 errorMessage = string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, key);
                 resultKind = EnvVarValidationResultKind.GeneralFailure;

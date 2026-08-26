@@ -168,15 +168,16 @@ namespace Servy.Core.Logging
         {
             if (!raw.HasValue) return DateTimeOffset.MinValue;
 
-            // Guard against edge cases near MinValue that would overflow during local offset shifts
-            if (raw.Value < DateTime.MinValue.AddDays(1))
-                return DateTimeOffset.MinValue;
-
             // Explicitly-UTC values project straight to a Zero offset.
             if (raw.Value.Kind == DateTimeKind.Utc)
             {
+                // Zero offset cannot overflow, so no MinValue guard is needed here.
                 return new DateTimeOffset(raw.Value, TimeSpan.Zero);
             }
+
+            // Local/Unspecified are shifted by the machine's current UTC offset, which overflows near MinValue.
+            if (raw.Value < DateTime.MinValue.AddDays(1))
+                return DateTimeOffset.MinValue;
 
             // Local and Unspecified are both interpreted with the reading machine's current
             // UTC offset by this constructor; Unspecified .evtx timestamps therefore inherit

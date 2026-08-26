@@ -294,7 +294,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
-        #region V6
+        #region V6 Explicit collation index (Name COLLATE UNICODE_NOCASE)
 
         [Fact]
         public void ApplyVersion6_AsciiCasingDuplicates_DeduplicatesAndAppliesNoCaseIndex()
@@ -527,6 +527,50 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Verify that default values for the fresh migration column resolve safely to NULL for historical records
                 var migratedRow = conn.QuerySingle($"SELECT CpuAffinity FROM {SqlConstants.ServicesTableName} WHERE Id = 1;");
                 Assert.Null(migratedRow.CpuAffinity);
+            }
+        }
+
+        #endregion
+
+        #region V9 UserAccount Normalization Migration Branches
+
+        [Fact]
+        public void ApplyVersion9_UpgradesFromVersion8_TrimsPaddedUserAccountsAndLeavesCleanValuesIntact()
+        {
+            // Arrange: Establish schema explicitly at Version 8 configuration checkpoint
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 8);
+
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT COLLATE UNICODE_NOCASE NOT NULL", "UserAccount TEXT" };
+                var seedData = new Dictionary<string, string> { { "Name", "'AppWithPaddedAccount'" }, { "UserAccount", "'  domain\\svc_account  '" } };
+
+                var context = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "UserAccount");
+
+                // Seed row 2 with clean UserAccount value
+                InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithCleanAccount'" }, { "UserAccount", "'domain\\clean_svc'" } });
+
+                // Seed row 3 with NULL UserAccount value
+                InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithNullAccount'" }, { "UserAccount", "NULL" } });
+
+                // Act: Run initialization to trigger V8 -> V9 migration
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
+
+                var rows = conn.Query($"SELECT Id, Name, UserAccount FROM {SqlConstants.ServicesTableName} ORDER BY Id;").ToList();
+                Assert.Equal(3, rows.Count);
+
+                // Row 1: Whitespace-padded UserAccount should be normalized/trimmed
+                Assert.Equal("domain\\svc_account", (string)rows[0].UserAccount);
+
+                // Row 2: Clean UserAccount remains unchanged
+                Assert.Equal("domain\\clean_svc", (string)rows[1].UserAccount);
+
+                // Row 3: NULL UserAccount remains NULL
+                Assert.Null(rows[2].UserAccount);
             }
         }
 

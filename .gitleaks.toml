@@ -1,8 +1,13 @@
 [extend]
 useDefault = true
 
-[allowlist]
-description = "Allowlist false positives for internal variable identifiers"
+[[allowlists]]
+description = "Internal HKDF-derived key field, not a literal secret"
+condition = "AND"
+paths = [
+  '''src/Servy\.Core/Security/SecureData\.cs''',
+  '''tests/Servy\.Core\.UnitTests/Security/SecureDataTests\.cs''',
+]
 regexes = [
-  '''_v2EncryptionKey'''
+  '''_v2EncryptionKey''',
 ]

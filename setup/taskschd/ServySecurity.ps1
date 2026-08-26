@@ -45,37 +45,61 @@ function Protect-SensitiveString {
     # A collection of keywords used to identify potentially sensitive information.
     #
     # WARNING: keep in sync with the parity twin in:
-    #   src/Servy.Service/Helpers/ServiceHelper.cs (SensitiveKeyWords) - same keyword-pattern masker.
+    #    src/Servy.Service/Helpers/ServiceHelper.cs (SensitiveKeyWords) - same keyword-pattern masker.
     #
     # NOTE: src/Servy.CLI/Servy.psm1 (Format-SecureLogMessage) is a SEPARATE mechanism that
     # masks CLI option values (--password=…) and is kept in sync with the [Sensitive]
     # attribute on CLI option properties, not with this keyword list.
-    $sensitiveKeys = @(
+
+    # Long/unambiguous: a letter/digit prefix is allowed (e.g. DBPASSWORD, PGPASSWORD, APITOKEN, APIKEY, MY_PASSWORD)
+    $looseKeys = @(
         # --- Core Credentials ---
-        "PASSWORD", "PWD", "PASSPHRASE", "PIN", "USERPWD",
+        "PASSWORD", "PASSPHRASE", "USERPWD",
 
         # --- Web & Mobile Auth (JWT/OAuth/Personal Tokens) ---
-        "TOKEN", "AUTH", "CREDENTIAL", "BEARER", "JWT",
-        "SESSION", "COOKIE", "CLIENT_SECRET", "PAT",
+        "TOKEN", "CREDENTIAL", "CLIENT_SECRET",
 
         # --- Cloud & Infrastructure (AWS/Azure/GCP) ---
-        "SECRET", "SAS", "ACCOUNTKEY", "ACCESSKEY", "SKEY",
-        "SIGNATURE", "TENANT_ID",
+        "SECRET", "ACCOUNTKEY", "ACCESSKEY", "SIGNATURE",
 
         # --- Databases & Storage ---
-        "CONNECTIONSTRING", "CONNSTR", "DSN", "DATABASE_URL",
+        "CONNECTIONSTRING", "CONNSTR", "DATABASE_URL",
         "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD",
 
         # --- Cryptography & Identity (Specific KEY variants) ---
-        "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY",
-        "CERTIFICATE", "CERT", "THUMBPRINT", "PFX", "PEM", "SALT", "PEPPER",
+        "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY", "APIKEY",
+        "CERTIFICATE", "THUMBPRINT",
 
         # --- API & Integration Tokens ---
-        "API", "APP_SECRET", "BROWSER_KEY", "WEBHOOK_URL",
+        "APP_SECRET", "BROWSER_KEY", "WEBHOOK_URL",
         "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN"
     )
 
-    $keyPattern = [string]::Join('|', ($sensitiveKeys | ForEach-Object { [regex]::Escape($_) }))
+    # Short/ambiguous: keep strict leading boundary to avoid false positives (e.g., COMPAT, CONCERT, ARKANSAS)
+    $strictKeys = @(
+        # --- Short Core Credentials ---
+        "PWD", "PIN",
+
+        # --- Web & Mobile Auth ---
+        "AUTH", "BEARER", "JWT", "SESSION", "COOKIE", "PAT",
+
+        # --- Cloud & Infrastructure ---
+        "SAS", "SKEY", "TENANT_ID",
+
+        # --- Databases & Storage ---
+        "DSN",
+
+        # --- Cryptography & Identity ---
+        "CERT", "PFX", "PEM", "SALT", "PEPPER",
+
+        # --- API Service Identifiers ---
+        "API"
+    )
+
+    $loosePattern  = [string]::Join('|', ($looseKeys  | ForEach-Object { [regex]::Escape($_) }))
+    $strictPattern = [string]::Join('|', ($strictKeys | ForEach-Object { [regex]::Escape($_) }))
+
+    $keyBoundary = "(?i)(?:(?<=^|[^a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:$loosePattern)(?:_[A-Za-z0-9]+)*)|(?<![a-zA-Z0-9])(?<key>(?:$strictPattern)(?:_[A-Za-z0-9]+)*))(?![a-zA-Z0-9])"
 
     # Constructed via concatenation to avoid multi-line here-string whitespace issues.
     # Branch B (space separator) consumes multi-word unquoted values up to the next
@@ -83,7 +107,7 @@ function Protect-SensitiveString {
     # value is fully redacted as ********.
     # Suffix matching logic pulled inside the (?<key>...) group boundary to protect composite keys.
     # Entire choice blocks are wrapped in atomic groups (?>...) to eliminate catastrophic backtracking timeouts.
-    $regexPattern = "(?i)(?<![a-zA-Z0-9])(?<key>(?:$keyPattern)(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
+    $regexPattern = $keyBoundary +
         "(?>(?:" +
             # BRANCH A: Explicit Separators (:, =, /)
             "(?<sep>\s*[:=]\s*|/)" +

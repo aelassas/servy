@@ -118,13 +118,38 @@ Test-EnvVarPattern -InputString ";A=1" -ExpectedMatch $false -Description "Leadi
 Test-EnvVarPattern -InputString "A=1; B" -ExpectedMatch $false -Description "Second record missing equals sign"
 Write-Host ""
 
+# --- 5. Backtracking Guard (regression test for #1091) ---
+Write-Host "[5] Catastrophic Backtracking Guard (#1091)" -ForegroundColor Yellow
+$script:TotalTests++
+if ($script:EnvVarValidationPattern -match '\(\?>') {
+    $script:PassedTests++
+    Write-Host "  [PASS] Atomic groups (?>...) present in regex pattern" -ForegroundColor Green
+} else {
+    $script:FailedTests++
+    Write-Host "  [FAIL] Atomic groups (?>...) missing from regex pattern - potential ReDoS regression (#1091)" -ForegroundColor Red
+}
+
+$evil = "KEY=" + ("\" * 40) + [char]1
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+$null = $evil -match $script:EnvVarValidationPattern
+$sw.Stop()
+$script:TotalTests++
+if ($sw.ElapsedMilliseconds -lt 1000) {
+    $script:PassedTests++
+    Write-Host "  [PASS] Pathological escape run evaluated in $($sw.ElapsedMilliseconds)ms" -ForegroundColor Green
+} else {
+    $script:FailedTests++
+    Write-Host "  [FAIL] Pathological escape run took $($sw.ElapsedMilliseconds)ms - atomic groups may have been removed" -ForegroundColor Red
+}
+Write-Host ""
+
 # ----------------------------------------------------------------
 # Summary Output
 # ----------------------------------------------------------------
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host " Test Summary" -ForegroundColor Cyan
-Write-Host " Total  : $script:TotalTests" -ForegroundColor Gray
-Write-Host " Passed : $script:PassedTests" -ForegroundColor Green
+Write-Host " Total   : $script:TotalTests" -ForegroundColor Gray
+Write-Host " Passed  : $script:PassedTests" -ForegroundColor Green
 
 if ($script:FailedTests -gt 0) {
     Write-Host " Failed : $script:FailedTests" -ForegroundColor Red

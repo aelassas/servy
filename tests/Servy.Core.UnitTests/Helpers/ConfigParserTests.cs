@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Servy.Core.Helpers;
+using System.Globalization;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -19,6 +20,22 @@ namespace Servy.Core.UnitTests.Helpers
             A = 1,
             B = 2,
             Combined = 3
+        }
+
+        [Flags]
+        public enum ULongFlagsEnum : ulong
+        {
+            None = 0UL,
+            LowBit = 1UL,
+            HighBit = 0x8000_0000_0000_0000UL // Exceeds long.MaxValue (9,223,372,036,854,775,807)
+        }
+
+        [Flags]
+        public enum LongFlagsEnum : long
+        {
+            None = 0L,
+            MemberOne = 1L,
+            MemberTwo = 2L
         }
 
         public enum ByteBackedEnum : byte
@@ -271,6 +288,56 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(TestFlags.None, result);
+        }
+
+        [Fact]
+        public void ParseEnum_String_ULongFlagsEnum_ExceedingLongMax_UnmappedBits_ReturnsDefault()
+        {
+            // Arrange
+            // 18446744073709551615 (0xFFFFFFFFFFFFFFFF) exceeds long.MaxValue and contains unmapped bits
+            string unmappedULongString = "18446744073709551615";
+
+            // Act
+            var result = ConfigParser.ParseEnum(unmappedULongString, ULongFlagsEnum.None);
+
+            // Assert
+            Assert.Equal(ULongFlagsEnum.None, result);
+        }
+
+        [Fact]
+        public void ParseEnum_String_ULongFlagsEnum_ExceedingLongMax_ValidValue_ReturnsParsedValue()
+        {
+            // Arrange
+            // 9223372036854775808 (0x8000000000000000) exceeds long.MaxValue but is a valid defined member HighBit
+            string validULongHighBitString = "9223372036854775808";
+
+            // Act
+            var result = ConfigParser.ParseEnum(validULongHighBitString, ULongFlagsEnum.None);
+
+            // Assert
+            Assert.Equal(ULongFlagsEnum.HighBit, result);
+        }
+
+        [Fact]
+        public void ParseEnum_String_FlagsEnum_NegativeUnmappedInput_UnderNonInvariantCulture_ReturnsDefault()
+        {
+            // Arrange
+            var originalCulture = CultureInfo.CurrentCulture;
+            try
+            {
+                // Culture where negative sign is U+2212 instead of standard ASCII '-'
+                CultureInfo.CurrentCulture = new CultureInfo("sv-SE");
+
+                // Act - unmapped negative value "-5" for a long-backed flags enum
+                var result = ConfigParser.ParseEnum("-5", LongFlagsEnum.None);
+
+                // Assert
+                Assert.Equal(LongFlagsEnum.None, result);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+            }
         }
 
         [Theory]

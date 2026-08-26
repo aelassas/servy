@@ -26,23 +26,25 @@ namespace Servy.Core.Native
         /// </param>
         /// <exception cref="ArgumentException">Thrown if <paramref name="accountName"/> is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">
-        /// Thrown if the account cannot be resolved to a SID.
+        /// Thrown if the account cannot be resolved to a SID. LSA policy failures (including access
+        /// denied for a non-elevated caller) are logged as warnings and do not propagate.
         /// </exception>
         public static void Ensure(string accountName)
         {
             if (ServiceAccounts.IsBuiltInServiceAccount(accountName)) return;
 
             var sid = AccountToSidOrThrow(accountName);
-            if (!HasDirectLogonAsServiceRight(sid))
+
+            try
             {
-                try
+                if (!HasDirectLogonAsServiceRight(sid))
                 {
                     GrantLogonAsService(sid);
                 }
-                catch (Exception ex) when (ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                {
-                    Logger.Warn($"Could not grant direct 'Log on as a service' right to account '{accountName}'. If the privilege is assigned via Group Policy or group membership, this is expected and service creation will proceed. Details: {ex.Message}");
-                }
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            {
+                Logger.Warn($"Could not verify or grant the direct 'Log on as a service' right for account '{accountName}'. If the privilege is assigned via Group Policy or group membership, or the caller is not elevated, this is expected and service creation will proceed. Details: {ex.Message}");
             }
         }
 
