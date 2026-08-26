@@ -322,28 +322,28 @@ namespace Servy.Core.Security
         /// </exception>
         private byte[] GetOrGenerate(string path, int length, string materialName)
         {
-            // Double-check locking pattern to ensure only one process or thread generates the file
-            if (!File.Exists(path))
-            {
-                byte[] generatedData = null;
-                RunUnderMutex(path, () =>
-                {
-                    if (!File.Exists(path))
-                    {
-                        generatedData = GenerateRandomBytes(length);
-                        SaveProtected(path, generatedData);
-                    }
-                });
-
-                if (generatedData != null)
-                {
-                    return generatedData;
-                }
-            }
-
             byte[] encrypted = null;
             try
             {
+                // Double-check locking pattern to ensure only one process or thread generates the file
+                if (!File.Exists(path))
+                {
+                    byte[] generatedData = null;
+                    RunUnderMutex(path, () =>
+                    {
+                        if (!File.Exists(path))
+                        {
+                            generatedData = GenerateRandomBytes(length);
+                            SaveProtected(path, generatedData);
+                        }
+                    });
+
+                    if (generatedData != null)
+                    {
+                        return generatedData;
+                    }
+                }
+
                 // Retry with short exponential backoff
                 // Move the safety check to the loop condition
                 for (int attempt = 0; attempt < AppConfig.KeyProviderReadMaxRetries; attempt++)
@@ -459,6 +459,13 @@ namespace Servy.Core.Security
 
                 Logger.Error(msg, ex);
 
+                throw new InvalidOperationException(msg, ex);
+            }
+            catch (Exception ex) when (ex is TimeoutException || ex is System.Security.SecurityException)
+            {
+                var msg = $"Could not acquire the cross-process lock needed to create the {materialName} at '{path}'. " +
+                          "Another Servy process may be holding it, or the global lock could not be established.";
+                Logger.Error(msg, ex);
                 throw new InvalidOperationException(msg, ex);
             }
             finally

@@ -19,6 +19,8 @@ namespace Servy.Core.Security
         private readonly byte[] _v2EncryptionKey;
         private readonly byte[] _v2HmacKey;
 
+        private readonly object _keyLock = new object();
+
         private const int BufferSize = 4096;
         private const string EncryptMarker = "SERVY_ENC:";
         private const string V2Marker = EncryptMarker + "v2:";
@@ -87,10 +89,19 @@ namespace Servy.Core.Security
         /// <inheritdoc />
         public string Encrypt(string plainText)
         {
-            ThrowIfDisposed();
+            byte[] encKey;
+            byte[] hmacKey;
 
-            if (plainText == null) throw new ArgumentNullException(nameof(plainText));
-            if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
+            lock (_keyLock)
+            {
+                ThrowIfDisposed();
+
+                if (plainText == null) throw new ArgumentNullException(nameof(plainText));
+                if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
+
+                encKey = (byte[])_v2EncryptionKey.Clone();
+                hmacKey = (byte[])_v2HmacKey.Clone();
+            }
 
             byte[] plainBytes = null;
 
@@ -109,7 +120,7 @@ namespace Servy.Core.Security
                 {
                     using (var aes = Aes.Create())
                     {
-                        aes.Key = _v2EncryptionKey;
+                        aes.Key = encKey;
                         aes.IV = iv;
                         aes.Mode = CipherMode.CBC;
                         aes.Padding = PaddingMode.PKCS7;
@@ -135,7 +146,7 @@ namespace Servy.Core.Security
                             actualCipherLen = (int)ms.Position;
                         }
 
-                        using (var hmacSha = new HMACSHA256(_v2HmacKey))
+                        using (var hmacSha = new HMACSHA256(hmacKey))
                         {
                             int totalToHash = IvSize + actualCipherLen;
                             hmacSha.TransformBlock(payload, 0, totalToHash, null, 0);
@@ -156,6 +167,9 @@ namespace Servy.Core.Security
             }
             finally
             {
+                Array.Clear(encKey, 0, encKey.Length);
+                Array.Clear(hmacKey, 0, hmacKey.Length);
+
                 // SECURITY HYGIENE: Wipe sensitive buffers from the heap immediately after use
                 // plainBytes contains sensitive text; binaryPayload contains the IV and Ciphertext
                 if (plainBytes != null) Array.Clear(plainBytes, 0, plainBytes.Length);
@@ -165,7 +179,10 @@ namespace Servy.Core.Security
         /// <inheritdoc />
         public string Decrypt(string cipherText)
         {
-            ThrowIfDisposed();
+            lock (_keyLock)
+            {
+                ThrowIfDisposed();
+            }
 
             if (cipherText == null) throw new ArgumentNullException(nameof(cipherText));
             if (cipherText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(cipherText));
@@ -180,7 +197,7 @@ namespace Servy.Core.Security
                 {
                     // Version 2 Routing: Authenticated Encryption
                     if (payload.StartsWith("v2:", StringComparison.Ordinal))
-                        return DecryptV2(payload.Substring(3).ToString());
+                        return DecryptV2(payload.Substring(3));
 
                     // Version 1 Routing: Legacy Encryption
                     if (payload.StartsWith("v1:", StringComparison.Ordinal))
@@ -195,7 +212,7 @@ namespace Servy.Core.Security
                         }
 
                         Logger.Warn("Security audit: Legacy v1 decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
-                        return DecryptV1(payload.Substring(3).ToString());
+                        return DecryptV1(payload.Substring(3));
                     }
 
                     // Take just the version marker portion (up to the first ':' inside the payload, or a fixed cap)
@@ -204,6 +221,12 @@ namespace Servy.Core.Security
                         ? payload.Substring(0, Math.Min(colonIdx, 8))
                         : payload.Substring(0, Math.Min(payload.Length, 8));
                     throw new SecureDataIntegrityException($"Unsupported encryption version marker: '{markerSnippet}'");
+                }
+                catch (SecureDataLegacyBlockedException)
+                {
+                    // Policy refusal, not an integrity failure. Line 192 has already logged it accurately;
+                    // re-throw without a second, contradictory Error entry.
+                    throw;
                 }
                 catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
                 {
@@ -216,7 +239,7 @@ namespace Servy.Core.Security
 
             // --- FALLBACK LOGIC: Handle legacy data that lacks markers or version tags. ---
             // Convert the span to a string once for use in legacy methods.
-            string rawPayload = payload.ToString();
+            string rawPayload = payload;
 
             try
             {
@@ -237,7 +260,7 @@ namespace Servy.Core.Security
                 }
             }
             catch (Exception ex) when ((ex is FormatException || ex is CryptographicException)
-                           && !(ex is SecureDataIntegrityException))
+                                       && !(ex is SecureDataIntegrityException))
             {
                 // For unmarked strings, we preserve the defensive fallback to avoid breaking
                 // fields that were never meant to be encrypted.
@@ -269,13 +292,23 @@ namespace Servy.Core.Security
         /// <exception cref="CryptographicException">Thrown if decryption fails (e.g., due to incorrect keying material or corrupted data).</exception>
         private string DecryptV1(string payload)
         {
+            byte[] masterKey;
+            byte[] staticIv;
+
+            lock (_keyLock)
+            {
+                ThrowIfDisposed();
+                masterKey = (byte[])_v1MasterKey.Clone();
+                staticIv = (byte[])_v1StaticIv.Clone();
+            }
+
             byte[] cipherBytes = Convert.FromBase64String(payload);
             try
             {
                 using (var aes = Aes.Create())
                 {
-                    aes.Key = _v1MasterKey;
-                    aes.IV = _v1StaticIv;
+                    aes.Key = masterKey;
+                    aes.IV = staticIv;
                     using (var decryptor = aes.CreateDecryptor())
                     using (var ms = new MemoryStream(cipherBytes))
                     using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
@@ -285,7 +318,12 @@ namespace Servy.Core.Security
                     }
                 }
             }
-            finally { Array.Clear(cipherBytes, 0, cipherBytes.Length); }
+            finally
+            {
+                Array.Clear(masterKey, 0, masterKey.Length);
+                Array.Clear(staticIv, 0, staticIv.Length);
+                Array.Clear(cipherBytes, 0, cipherBytes.Length);
+            }
         }
 
         /// <summary>
@@ -308,59 +346,77 @@ namespace Servy.Core.Security
         /// </exception>
         private string DecryptV2(string payload)
         {
-            byte[] combined;
-            try { combined = Convert.FromBase64String(payload); }
-            catch (FormatException ex)
+            byte[] encKey;
+            byte[] hmacKey;
+
+            lock (_keyLock)
             {
-                throw new SecureDataIntegrityException("V2 payload is not valid Base64 (corrupted or tampered).", ex);
+                ThrowIfDisposed();
+                encKey = (byte[])_v2EncryptionKey.Clone();
+                hmacKey = (byte[])_v2HmacKey.Clone();
             }
-
-            if (combined.Length < (IvSize + HmacSize))
-                throw new SecureDataIntegrityException("V2 payload length is insufficient.");
-
-            byte[] iv = new byte[IvSize];
-            byte[] expectedHmac = new byte[HmacSize];
 
             try
             {
-                int ciphertextLen = combined.Length - IvSize - HmacSize;
-                Buffer.BlockCopy(combined, 0, iv, 0, IvSize);
-                Buffer.BlockCopy(combined, combined.Length - HmacSize, expectedHmac, 0, HmacSize);
-
-                // Constant-time HMAC verification
-                using (var hmacSha = new HMACSHA256(_v2HmacKey))
+                byte[] combined;
+                try { combined = Convert.FromBase64String(payload); }
+                catch (FormatException ex)
                 {
-                    int totalToHash = IvSize + ciphertextLen;
-                    hmacSha.TransformBlock(combined, 0, totalToHash, null, 0);
-                    hmacSha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-
-                    if (!CryptographicEquals(expectedHmac, hmacSha.Hash))
-                        throw new SecureDataIntegrityException("HMAC integrity check failed.");
+                    throw new SecureDataIntegrityException("V2 payload is not valid Base64 (corrupted or tampered).", ex);
                 }
 
-                using (var aes = Aes.Create())
+                if (combined.Length < (IvSize + HmacSize))
+                    throw new SecureDataIntegrityException("V2 payload length is insufficient.");
+
+                byte[] iv = new byte[IvSize];
+                byte[] expectedHmac = new byte[HmacSize];
+
+                try
                 {
-                    aes.Key = _v2EncryptionKey;
-                    aes.IV = iv;
-                    using (var decryptor = aes.CreateDecryptor())
-                    using (var ms = new MemoryStream(combined, IvSize, ciphertextLen))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var sr = new StreamReader(cs, Encoding.UTF8))
+                    int ciphertextLen = combined.Length - IvSize - HmacSize;
+                    Buffer.BlockCopy(combined, 0, iv, 0, IvSize);
+                    Buffer.BlockCopy(combined, combined.Length - HmacSize, expectedHmac, 0, HmacSize);
+
+                    // Constant-time HMAC verification
+                    using (var hmacSha = new HMACSHA256(hmacKey))
                     {
-                        return sr.ReadToEnd();
+                        int totalToHash = IvSize + ciphertextLen;
+                        hmacSha.TransformBlock(combined, 0, totalToHash, null, 0);
+                        hmacSha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+
+                        if (!CryptographicEquals(expectedHmac, hmacSha.Hash))
+                            throw new SecureDataIntegrityException("HMAC integrity check failed.");
+                    }
+
+                    using (var aes = Aes.Create())
+                    {
+                        aes.Key = encKey;
+                        aes.IV = iv;
+                        using (var decryptor = aes.CreateDecryptor())
+                        using (var ms = new MemoryStream(combined, IvSize, ciphertextLen))
+                        using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                        using (var sr = new StreamReader(cs, Encoding.UTF8))
+                        {
+                            return sr.ReadToEnd();
+                        }
                     }
                 }
-            }
-            catch (CryptographicException ex)
-            {
-                // If the HMAC passed but AES fails (e.g., bad padding), it's still an integrity issue
-                throw new SecureDataIntegrityException($"AES decryption failed: {ex.Message}", ex);
+                catch (CryptographicException ex)
+                {
+                    // If the HMAC passed but AES fails (e.g., bad padding), it's still an integrity issue
+                    throw new SecureDataIntegrityException($"AES decryption failed: {ex.Message}", ex);
+                }
+                finally
+                {
+                    Array.Clear(combined, 0, combined.Length);
+                    Array.Clear(iv, 0, iv.Length);
+                    Array.Clear(expectedHmac, 0, expectedHmac.Length);
+                }
             }
             finally
             {
-                Array.Clear(combined, 0, combined.Length);
-                Array.Clear(iv, 0, iv.Length);
-                Array.Clear(expectedHmac, 0, expectedHmac.Length);
+                Array.Clear(encKey, 0, encKey.Length);
+                Array.Clear(hmacKey, 0, hmacKey.Length);
             }
         }
 
@@ -497,10 +553,13 @@ namespace Servy.Core.Security
         /// <inheritdoc />
         protected override void ZeroSensitiveData()
         {
-            if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
-            if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
-            if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
-            if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
+            lock (_keyLock)
+            {
+                if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
+                if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
+                if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
+                if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
+            }
         }
 
         #endregion
