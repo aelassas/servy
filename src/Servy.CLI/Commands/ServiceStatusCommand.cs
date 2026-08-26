@@ -53,7 +53,10 @@ namespace Servy.CLI.Commands
                 //    it is the machine-readable vocabulary published by the status verb's HelpText and
                 //    parsed by callers' scripts. Only the surrounding Msg_ServiceStatusResult template
                 //    is localized - do not localize the token itself.
-                var statusText = status?.ToString() ?? nameof(ServiceStatus.NotInstalled);
+                var statusText = status?.ToString()
+                    ?? (_serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken)
+                            ? nameof(ServiceStatus.Unknown)
+                            : nameof(ServiceStatus.NotInstalled));
                 var statusMsg = string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, statusText);
                 return CommandResult.Ok(statusMsg);
             });

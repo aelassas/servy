@@ -92,8 +92,13 @@ namespace Servy.Core.Security
                 }
                 catch (UnauthorizedAccessException ex) when (!IsAdministrator())
                 {
-                    HandleNonAdminFallback(ex, $"Could not create directory '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
-                    return;
+                    HandleNonAdminFallback(ex, $"Could not create directory '{path}' as non-admin; it does not exist and no ACL was applied. Create it from an elevated process.");
+
+                    // Verify whether the directory was created before deciding to throw
+                    if (!Directory.Exists(path))
+                    {
+                        throw;
+                    }
                 }
             }
 

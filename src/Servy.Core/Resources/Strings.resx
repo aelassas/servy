@@ -13,6 +13,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <data name="Msg_DetailsUnavailableAccessDenied" xml:space="preserve">
+    <value>(details unavailable: access denied)</value>
+  </data>
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>

@@ -29,6 +29,7 @@ namespace Servy.Manager.UnitTests.Converters
             { ServiceStatus.ContinuePending, nameof(Strings.Status_ContinuePending) },
             { ServiceStatus.PausePending,    nameof(Strings.Status_PausePending) },
             { ServiceStatus.Paused,          nameof(Strings.Status_Paused) },
+            { ServiceStatus.Unknown,         nameof(Strings.Status_Unknown) },
         };
 
         #endregion

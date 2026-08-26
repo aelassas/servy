@@ -179,11 +179,11 @@ namespace Servy.Core.Services
         /// If a cycle is detected, a placeholder node is returned.
         /// </returns>
         private static ServiceDependencyNode BuildDependencyTree(
-            string serviceName,
-            HashSet<string> currentPath,
-            Dictionary<string, ServiceDependencyNode> fullyExpanded,
-            Func<string, IServiceControllerWrapper> serviceFactory = null,
-            CancellationToken cancellationToken = default)
+             string serviceName,
+             HashSet<string> currentPath,
+             Dictionary<string, ServiceDependencyNode> fullyExpanded,
+             Func<string, IServiceControllerWrapper> serviceFactory = null,
+             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -232,8 +232,8 @@ namespace Servy.Core.Services
                             childNodes.Add(BuildDependencyTree(depName, currentPath, fullyExpanded, serviceFactory, cancellationToken));
                         }
 
-                        // 4. SORT and ADD: Order alphabetically by DisplayName
-                        var sortedChildren = childNodes.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase);
+                        // 4. SORT and ADD: Order alphabetically by DisplayName (or ServiceName if unavailable)
+                        var sortedChildren = childNodes.OrderBy(n => n.IsUnavailable ? n.ServiceName : n.DisplayName, StringComparer.OrdinalIgnoreCase);
                         foreach (var child in sortedChildren)
                         {
                             cancellationToken.ThrowIfCancellationRequested();
@@ -258,7 +258,7 @@ namespace Servy.Core.Services
             catch (InvalidOperationException ex)
             {
                 Logger.Debug($"Dependency '{serviceName}' unavailable: {ex.Message}");
-                return new ServiceDependencyNode(serviceName, string.Format(Strings.Msg_DependencyUnavailable, serviceName), false, false);
+                return new ServiceDependencyNode(serviceName, string.Format(Strings.Msg_DependencyUnavailable, serviceName), isRunning: false, isCyclic: false, isUnavailable: true);
             }
             catch (Win32Exception ex)
             {
@@ -268,7 +268,7 @@ namespace Servy.Core.Services
                     ? string.Format(Strings.Msg_DependencyAccessDenied, serviceName)
                     : string.Format(Strings.Msg_DependencyUnavailable, serviceName);
 
-                return new ServiceDependencyNode(serviceName, localizedMessage, false, false);
+                return new ServiceDependencyNode(serviceName, localizedMessage, isRunning: false, isCyclic: false, isUnavailable: true);
             }
         }
 
