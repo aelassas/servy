@@ -18,7 +18,7 @@ namespace Servy.Core.Helpers
         /// Null or whitespace returns <see cref="IntPtr.Zero"/>.
         /// </param>
         /// <returns>An <see cref="IntPtr"/> bitmask representing the CPU affinity mask.</returns>
-        /// <exception cref="ArgumentException">Thrown when a token or hex format is invalid.</exception>
+        /// <exception cref="ArgumentException">Thrown when a token or hex format is invalid, inverted, or empty.</exception>
         /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown when core indices or hexadecimal masks exceed allowed processor bounds (0 to Math.Min(Environment.ProcessorCount, 64) - 1).
         /// </exception>
@@ -38,18 +38,25 @@ namespace Servy.Core.Helpers
             {
                 if (long.TryParse(cleaned.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out mask))
                 {
-                    if (mask == 0 || (mask & ~allowedMask) != 0)
+                    if (mask == 0)
+                    {
+                        throw new ArgumentException(
+                            string.Format(Strings.Msg_EmptyAffinityMask, cleaned),
+                            nameof(affinityInput));
+                    }
+
+                    if ((mask & ~allowedMask) != 0)
                     {
                         throw new ArgumentOutOfRangeException(
                             nameof(affinityInput),
-                            string.Format(Strings.Msg_CoreIndexRangeOutOfBounds, cleaned, maxAllowedCores - 1));
+                            string.Format(Strings.Msg_HexMaskOutOfBounds, cleaned, maxAllowedCores - 1));
                     }
 
                     return new IntPtr(mask);
                 }
 
                 throw new ArgumentException(
-                    string.Format(Strings.Msg_InvalidHexAffinityFormat, affinityInput),
+                    string.Format(Strings.Msg_InvalidHexAffinityFormat, cleaned),
                     nameof(affinityInput));
             }
 
@@ -73,7 +80,14 @@ namespace Servy.Core.Helpers
                         int.TryParse(range[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int start) &&
                         int.TryParse(range[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int end))
                     {
-                        if (end >= maxAllowedCores || start > end)
+                        if (start > end)
+                        {
+                            throw new ArgumentException(
+                                string.Format(Strings.Msg_InvertedCoreRange, token),
+                                nameof(affinityInput));
+                        }
+
+                        if (end >= maxAllowedCores)
                         {
                             throw new ArgumentOutOfRangeException(
                                 nameof(affinityInput),

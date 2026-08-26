@@ -341,6 +341,16 @@
   <data name="Msg_InvalidCoreSpecification" xml:space="preserve">
     <value>Invalid core specification: '{0}'.</value>
   </data>
+  <data name="Msg_InvertedCoreRange" xml:space="preserve">
+    <value>Inverted core range '{0}': the start index is greater than the end index.</value>
+  </data>
+  <data name="Msg_EmptyAffinityMask" xml:space="preserve">
+    <value>Affinity mask '{0}' selects no processor.</value>
+  </data>
+  <data name="Msg_HexMaskOutOfBounds" xml:space="preserve">
+    <value>Affinity mask '{0}' selects processors outside allowable range (0-{1}).</value>
+  </data>
+  
   <data name="Msg_ImportXmlNullOrEmpty" xml:space="preserve">
     <value>XML content cannot be null or empty.</value>
   </data>
