@@ -127,7 +127,7 @@ namespace Servy.CLI.Commands
                     EnvironmentVariables = opts.EnvironmentVariables,
                     ServiceDependencies = opts.ServiceDependencies,
 
-                    Username = opts.User,
+                    Username = opts.User?.Trim(),
                     Password = opts.Password,
 
                     // Pre-Launch

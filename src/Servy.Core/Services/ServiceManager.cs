@@ -355,7 +355,7 @@ namespace Servy.Core.Services
                 try
                 {
                     string lpDependencies = ServiceDependenciesParser.Parse(options.ServiceDependencies);
-                    string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? ServiceAccounts.LocalSystem : options.Username;
+                    string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? ServiceAccounts.LocalSystem : options.Username.Trim();
 
                     // Use IsNullOrEmpty (not IsNullOrWhiteSpace) to preserve non-null
                     // whitespace-only passwords verbatim when configured for standard Windows accounts.
