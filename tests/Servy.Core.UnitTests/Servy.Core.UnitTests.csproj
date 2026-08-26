@@ -138,6 +138,7 @@
     <Compile Include="Helpers\ConfigParserTests.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Helpers\ProcessKillerTests.cs" />
+    <Compile Include="Helpers\ReservedNamesTests.cs" />
     <Compile Include="Security\SecureDataHelper.cs" />
     <Compile Include="Helpers\ServiceDtoFactory.cs" />
     <Compile Include="Helpers\ServiceDtoFactoryTests.cs" />

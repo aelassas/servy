@@ -49,6 +49,7 @@ namespace Servy.Core.Native
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("username cannot be empty or whitespace.", nameof(username));
 
+            // Keep trimming for safety
             username = username.Trim();
 
             // 0. FORBIDDEN GROUP CHECK

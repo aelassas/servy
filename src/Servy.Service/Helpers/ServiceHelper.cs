@@ -179,6 +179,8 @@ namespace Servy.Service.Helpers
             // 1. PUBLIC DATA: Logged to both Local Log and Windows Event Log (logger?.Info)
             logger?.Info(
                   $"[Startup Parameters]\n" +
+                  $"Servy version: {AppConfig.Version}\n\n" +
+
                   "--------Main-------------------\n" +
                   $"- serviceName: {options.ServiceName}\n" +
                   $"- realExePath: {options.ExecutablePath}\n" +

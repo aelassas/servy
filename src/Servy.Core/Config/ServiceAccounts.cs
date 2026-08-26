@@ -31,8 +31,10 @@ namespace Servy.Core.Config
             StringComparer.OrdinalIgnoreCase,
             LocalSystem,
             "System",
+            "Local System",
             @".\LocalSystem",
             @".\System",
+            @".\Local System",
             @"NT AUTHORITY\LocalSystem",
             @"NT AUTHORITY\Local System",
             @"NT AUTHORITY\SYSTEM",
@@ -89,6 +91,7 @@ namespace Servy.Core.Config
         {
             if (string.IsNullOrWhiteSpace(account)) return false;
 
+            // Keep trimming for safety
             account = account.Trim();
 
             return RunnableServiceAccounts.Contains(account)
@@ -107,6 +110,7 @@ namespace Servy.Core.Config
         {
             if (string.IsNullOrWhiteSpace(account)) return false;
 
+            // Keep trimming for safety
             return string.IsNullOrWhiteSpace(password) && account.Trim().EndsWith("$");
         }
     }

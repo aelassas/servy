@@ -25,5 +25,14 @@ namespace Servy.Core.Helpers
             "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
             "LPT¹", "LPT²", "LPT³"
         );
+
+        /// <summary>
+        /// Returns true when <paramref name="segment"/> names a Windows reserved device, applying the
+        /// trailing space/period/tab stripping Win32 performs before resolving a device name.
+        /// </summary>
+        /// <param name="segment">The path segment to evaluate.</param>
+        public static bool IsReservedDeviceName(string segment) =>
+            !string.IsNullOrEmpty(segment) &&
+            ReservedDeviceNames.Contains(segment.TrimEnd(' ', '.', '\t'));
     }
 }

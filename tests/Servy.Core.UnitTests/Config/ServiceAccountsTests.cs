@@ -43,8 +43,10 @@ namespace Servy.Core.UnitTests.Config
         // Standard LocalSystem Aliases
         [InlineData("LocalSystem", true)]
         [InlineData("System", true)]
+        [InlineData("Local System", true)]
         [InlineData(@".\LocalSystem", true)]
         [InlineData(@".\System", true)]
+        [InlineData(@".\Local System", true)]
         [InlineData(@"NT AUTHORITY\LocalSystem", true)]
         [InlineData(@"NT AUTHORITY\Local System", true)]
         [InlineData(@"NT AUTHORITY\SYSTEM", true)]
@@ -70,6 +72,7 @@ namespace Servy.Core.UnitTests.Config
         [InlineData(@".\networkservice", true)]
         [InlineData(@"  .\NetworkService  ", true)]
         [InlineData(@"nt authority\localsystem", true)]
+        [InlineData(@"  Local System  ", true)]
         // Virtual & AppPool Accounts
         [InlineData(@"NT SERVICE\MyService", true)]
         [InlineData(@"nt service\foobar", true)]

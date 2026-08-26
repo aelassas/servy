@@ -1578,7 +1578,7 @@ namespace Servy.ViewModels
 
                 // Credentials
                 RunAsLocalSystem = RunAsLocalSystem,
-                UserAccount = UserAccount,
+                UserAccount = UserAccount?.Trim(),
                 Password = Password,
 
                 // Pre-Launch Configuration

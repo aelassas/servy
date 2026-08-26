@@ -100,7 +100,7 @@ namespace Servy.Core.Validation
             // Strip trailing spaces, periods, and tabs to match Win32's internal behavior
             string normalizedSegment = firstSegment.TrimEnd(' ', '.', '\t');
 
-            if (ReservedNames.ReservedDeviceNames.Contains(normalizedSegment))
+            if (ReservedNames.IsReservedDeviceName(firstSegment))
             {
                 var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, normalizedSegment);
                 Logger.Error(errorMsg);

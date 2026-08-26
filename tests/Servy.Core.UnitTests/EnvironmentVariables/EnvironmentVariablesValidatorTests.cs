@@ -109,7 +109,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         #region Parameterized Escaped Delimiter Evaluation Tests
 
         [Theory]
-        [InlineData(@"KEY\=PART=VALUE")]  // Escaped Equals In Key
         [InlineData(@"KEY\;PART=VALUE")]  // Escaped Semicolon In Key
         [InlineData(@"KEY\\PART=VALUE")]  // Escaped Backslash In Key
         [InlineData(@"KEY=VALUE\=PART")]  // Escaped Equals In Value
@@ -324,6 +323,21 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.False(isValid);
             Assert.NotEmpty(errorMessages);
             Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "KEY\0ATTACK"), errorMessages[0]);
+        }
+
+        [Fact]
+        public void Validate_VariableWithEscapedEqualsInKey_ReturnsFalse()
+        {
+            // Arrange
+            string input = @"PATH\=Z=C:\tools";
+
+            // Act
+            bool isValid = EnvironmentVariablesValidator.Validate(input, out List<string> errorMessages);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.NotEmpty(errorMessages);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "PATH=Z"), errorMessages[0]);
         }
 
         #endregion

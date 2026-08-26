@@ -298,7 +298,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
-        #region V6
+        #region V6 Explicit collation index (Name COLLATE UNICODE_NOCASE)
 
         [Fact]
         public void ApplyVersion6_AsciiCasingDuplicates_DeduplicatesAndAppliesNoCaseIndex()

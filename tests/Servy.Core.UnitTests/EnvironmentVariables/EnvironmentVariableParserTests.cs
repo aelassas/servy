@@ -1,4 +1,5 @@
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Resources;
 using System;
 using Xunit;
 
@@ -152,18 +153,18 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
-        public void Parse_SupportsEscapedEqualsInKey()
+        public void Validate_KeyContainingEquals_ReturnsExpectedErrorMessage()
         {
             // Arrange
-            var input = "K\\=EY=VAL";
+            var input = @"K\=EY=VAL";
 
             // Act
-            var result = EnvironmentVariableParser.Parse(input);
+            var isValid = EnvironmentVariablesValidator.Validate(input, out var errors);
 
             // Assert
-            Assert.Single(result);
-            Assert.Equal("K=EY", result[0].Name);
-            Assert.Equal("VAL", result[0].Value);
+            Assert.False(isValid);
+            Assert.Single(errors);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "K=EY"), errors[0]);
         }
 
         [Fact]
