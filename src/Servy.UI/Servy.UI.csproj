@@ -9,7 +9,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.UI</AssemblyTitle>
-    <AssemblyDescription>Shared components, services and WPF utilities</AssemblyDescription>
+    <Description>Shared components, services and WPF utilities</Description>
     <Product>Servy.UI</Product>
   </PropertyGroup>
 

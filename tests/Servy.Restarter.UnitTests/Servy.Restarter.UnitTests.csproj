@@ -15,7 +15,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Restarter.UnitTests</AssemblyTitle>
-    <AssemblyDescription>Servy.Restarter unit tests</AssemblyDescription>
+    <Description>Servy.Restarter unit tests</Description>
     <Product>Servy.Restarter.UnitTests</Product>
   </PropertyGroup>
 

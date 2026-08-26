@@ -29,7 +29,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.CLI</AssemblyTitle>
-    <AssemblyDescription>Servy Command Line Interface</AssemblyDescription>
+    <Description>Servy Command Line Interface</Description>
     <Product>Servy.CLI</Product>
     <ApplicationIcon>servy.ico</ApplicationIcon>
   </PropertyGroup>

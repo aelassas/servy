@@ -24,7 +24,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy</AssemblyTitle>
-    <AssemblyDescription>A tool to run any app as a Windows Service</AssemblyDescription>
+    <Description>A tool to run any app as a Windows Service</Description>
     <Product>Servy</Product>
   </PropertyGroup>
 

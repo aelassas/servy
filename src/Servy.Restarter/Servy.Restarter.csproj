@@ -39,7 +39,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Restarter</AssemblyTitle>
-    <AssemblyDescription>A tool to restart a Windows Service</AssemblyDescription>
+    <Description>A tool to restart a Windows Service</Description>
     <Product>Servy.Restarter</Product>
   </PropertyGroup>
 

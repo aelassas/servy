@@ -51,5 +51,10 @@ namespace Servy.Core.Enums
         /// Represents a service that is not installed on the system.
         /// </summary>
         NotInstalled = 8,
+
+        /// <summary>
+        /// Represents a service whose status could not be determined.
+        /// </summary>
+        Unknown = 9,
     }
 }

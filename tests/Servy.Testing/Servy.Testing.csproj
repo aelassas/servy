@@ -12,7 +12,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Testing</AssemblyTitle>
-    <AssemblyDescription>Shared testing utilities</AssemblyDescription>
+    <Description>Shared testing utilities</Description>
     <Product>Servy.Testing</Product>
   </PropertyGroup>
 

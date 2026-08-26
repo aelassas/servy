@@ -8,8 +8,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Infrastructure</AssemblyTitle>
-    <AssemblyDescription>Data access, persistence, and integration with external systems (e.g.,
-      SQLite database, configuration files)</AssemblyDescription>
+    <Description>Data access, persistence, and integration with external systems (e.g., SQLite database, configuration files)</Description>
     <Product>Servy.Infrastructure</Product>
   </PropertyGroup>
 

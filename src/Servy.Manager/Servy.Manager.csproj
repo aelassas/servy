@@ -24,7 +24,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Manager</AssemblyTitle>
-    <AssemblyDescription>A tool to manage services installed by Servy</AssemblyDescription>
+    <Description>A tool to manage services installed by Servy</Description>
     <Product>Servy.Manager</Product>
   </PropertyGroup>
 

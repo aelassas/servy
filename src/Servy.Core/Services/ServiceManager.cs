@@ -6,6 +6,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
+using Servy.Core.Resources;
 using Servy.Core.ServiceDependencies;
 using System.Collections.Concurrent;
 using System.ComponentModel;
@@ -242,6 +243,31 @@ namespace Servy.Core.Services
                 if (ptr != IntPtr.Zero)
                     Marshal.FreeHGlobal(ptr);
             }
+        }
+
+        /// <summary>
+        /// Polls the Service Control Manager until the target service transitions to the desired state or times out.
+        /// </summary>
+        /// <param name="sc">The service controller wrapper to monitor.</param>
+        /// <param name="desired">The target status to reach.</param>
+        /// <param name="timeoutSeconds">Maximum wait duration in seconds.</param>
+        /// <param name="cancellationToken">Token to observe while polling.</param>
+        /// <returns><c>true</c> if the service reached the desired status before timing out; otherwise, <c>false</c>.</returns>
+        private static async Task<bool> WaitForStatusAsync(
+            IServiceControllerWrapper sc,
+            ServiceControllerStatus desired,
+            int timeoutSeconds,
+            CancellationToken cancellationToken)
+        {
+            sc.Refresh();
+            var sw = Stopwatch.StartNew();
+            while (sc.Status != desired)
+            {
+                if (sw.Elapsed.TotalSeconds >= timeoutSeconds) return false;
+                await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
+                sc.Refresh();
+            }
+            return true;
         }
 
         #endregion
@@ -587,10 +613,10 @@ namespace Servy.Core.Services
                         cancellationToken.ThrowIfCancellationRequested();
                         SetServiceDescription(serviceHandle!, options.Description);
                         await _serviceRepository.UpsertAsync(
-                                                      dto,
-                                                      preserveExistingRuntimeState: false,
-                                                      preserveExistingCredentials: false,
-                                                      cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
+                                                              dto,
+                                                              preserveExistingRuntimeState: false,
+                                                              preserveExistingCredentials: false,
+                                                              cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
 
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
                         return OperationResult.Success();
@@ -719,24 +745,13 @@ namespace Servy.Core.Services
                     // 2. The Wait Loop: Now fully cancellable
                     using (var sc = _controllerFactory(serviceName))
                     {
-                        sc.Refresh();
-                        var sw = Stopwatch.StartNew();
-
                         var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
                         int waitTimeout = ServiceHelper.CalculateStopTimeout(
                             service?.StopTimeout,
                             service?.PreviousStopTimeout,
                             ServiceHelper.ResolvePreStopTimeout(service));
 
-                        while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < waitTimeout)
-                        {
-                            // Passing the token to Task.Delay makes the loop immediately responsive to cancellation
-                            await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
-                            sc.Refresh();
-                        }
-
-                        sc.Refresh();
-                        if (sc.Status != ServiceControllerStatus.Stopped)
+                        if (!await WaitForStatusAsync(sc, ServiceControllerStatus.Stopped, waitTimeout, cancellationToken))
                         {
                             var msg = $"Service '{serviceName}' did not reach 'Stopped' within the {waitTimeout}s timeout. Aborting uninstall to avoid SCM 'marked for delete' state.";
                             Logger.Warn(msg);
@@ -832,20 +847,11 @@ namespace Servy.Core.Services
                     Logger.Info($"Attempting to start service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Start();
 
-                    // Replace blocking WaitForStatus with an async polling loop to respect cancellation
-                    var stopwatch = Stopwatch.StartNew();
-                    var timeoutSpan = TimeSpan.FromSeconds(timeout);
-
-                    while (sc.Status != ServiceControllerStatus.Running)
+                    if (!await WaitForStatusAsync(sc, ServiceControllerStatus.Running, timeout, cancellationToken))
                     {
-                        if (stopwatch.Elapsed > timeoutSpan)
-                        {
-                            throw new System.ServiceProcess.TimeoutException();
-                        }
-
-                        cancellationToken.ThrowIfCancellationRequested();
-                        await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
-                        sc.Refresh();
+                        string msg = $"Service '{serviceName}' did not reach 'Running' status within the {timeout}s timeout. It may still be initializing.";
+                        Logger.Warn(msg);
+                        return OperationResult.Failure(msg);
                     }
 
                     if (logSuccessfulStart)
@@ -860,13 +866,6 @@ namespace Servy.Core.Services
             {
                 Logger.Info($"Start of '{serviceName}' was cancelled by the user.");
                 throw;
-            }
-            catch (System.ServiceProcess.TimeoutException)
-            {
-                // LOG AS WARN: The service might still be starting, just taking longer than the configured window.
-                string msg = $"Service '{serviceName}' did not reach 'Running' status within the {timeout}s timeout. It may still be initializing.";
-                Logger.Warn(msg);
-                return OperationResult.Failure(msg);
             }
             catch (Exception ex)
             {
@@ -904,20 +903,11 @@ namespace Servy.Core.Services
                     Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Stop();
 
-                    // Replace blocking WaitForStatus with an async polling loop to respect cancellation
-                    var stopwatch = Stopwatch.StartNew();
-                    var timeoutSpan = TimeSpan.FromSeconds(timeout);
-
-                    while (sc.Status != ServiceControllerStatus.Stopped)
+                    if (!await WaitForStatusAsync(sc, ServiceControllerStatus.Stopped, timeout, cancellationToken))
                     {
-                        if (stopwatch.Elapsed > timeoutSpan)
-                        {
-                            throw new System.ServiceProcess.TimeoutException();
-                        }
-
-                        cancellationToken.ThrowIfCancellationRequested();
-                        await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
-                        sc.Refresh();
+                        string msg = $"Service '{serviceName}' did not stop within {timeout} seconds. A forceful termination may be required.";
+                        Logger.Warn(msg);
+                        return OperationResult.Failure(msg);
                     }
 
                     if (logSuccessfulStop)
@@ -932,13 +922,6 @@ namespace Servy.Core.Services
             {
                 Logger.Info($"Stop of '{serviceName}' was cancelled by the user.");
                 throw;
-            }
-            catch (System.ServiceProcess.TimeoutException)
-            {
-                // LOG AS WARN: Common during graceful shutdowns that exceed the SCM window.
-                string msg = $"Service '{serviceName}' did not stop within {timeout} seconds. A forceful termination may be required.";
-                Logger.Warn(msg);
-                return OperationResult.Failure(msg);
             }
             catch (Exception ex)
             {
@@ -1194,7 +1177,13 @@ namespace Servy.Core.Services
             // 2. Open the service handle
             using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, info.Name, SERVICE_QUERY_CONFIG))
             {
-                if (svcHandle.IsInvalid) return;
+                if (svcHandle.IsInvalid)
+                {
+                    int err = _win32ErrorProvider.GetLastWin32Error();
+                    Logger.Debug($"Could not open '{info.Name}' for native details (Win32 {err}); leaving details unset.");
+                    info.Description = string.Format(Strings.Msg_DetailsUnavailableAccessDenied);
+                    return;
+                }
 
                 // 3. Check token before each discrete native query.
                 // If the per-service native-query timeout (AppConfig.PopulateNativeDetailsTimeoutMs)
@@ -1321,19 +1310,17 @@ namespace Servy.Core.Services
                     default: return ServiceStartType.Unknown;
                 }
             }
-            catch (Win32Exception ex)
+            catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
             {
-                // Log the specific error and provide a diagnostic trail.
-                // We use Debug level to avoid bloating logs with expected protected service errors.
+                // Expected for protected services the process cannot open. Debug level keeps a
+                // machine-wide refresh from writing one error line per protected service.
                 Logger.Debug($"Access denied or Win32 error reading StartType for '{service.ServiceName}'. Falling back to Unknown.", ex);
-
                 return ServiceStartType.Unknown;
             }
             catch (Exception ex)
             {
                 // Catch-all for unexpected failures (e.g. ObjectDisposedException)
                 Logger.Error($"Unexpected error mapping startup type for '{service.ServiceName}'.", ex);
-
                 return ServiceStartType.Unknown;
             }
         }

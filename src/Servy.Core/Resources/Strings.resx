@@ -13,6 +13,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <data name="Msg_DetailsUnavailableAccessDenied" xml:space="preserve">
+    <value>(details unavailable: access denied)</value>
+  </data>
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>
@@ -34,10 +37,10 @@
   <data name="Msg_InvalidServiceName" xml:space="preserve">
     <value>Service name contains invalid characters. Avoid using '\', '/', ':', '*', '?', '"', '&lt;', '&gt;', '|', and non-printable characters.</value>
   </data>
-    <data name="Msg_ServiceNameLeadingTrailingDot" xml:space="preserve">
+  <data name="Msg_ServiceNameLeadingTrailingDot" xml:space="preserve">
     <value>Service name cannot begin or end with a period.</value>
   </data>
-    <data name="Msg_ServiceNameReservedDeviceName" xml:space="preserve">
+  <data name="Msg_ServiceNameReservedDeviceName" xml:space="preserve">
     <value>'{0}' is a name reserved by Windows and cannot be used in a service name.</value>
   </data>
 
@@ -350,7 +353,7 @@
   <data name="Msg_HexMaskOutOfBounds" xml:space="preserve">
     <value>Affinity mask '{0}' selects processors outside allowable range (0-{1}).</value>
   </data>
-  
+
   <data name="Msg_ImportXmlNullOrEmpty" xml:space="preserve">
     <value>XML content cannot be null or empty.</value>
   </data>

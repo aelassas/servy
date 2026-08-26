@@ -2125,8 +2125,8 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Verify(c => c.Stop(), Times.Once);
             _mockController.Verify(c => c.Start(), Times.Once);
 
-            // Each phase (stop, start) polls the SCM once -> exactly 2 refreshes
-            _mockController.Verify(c => c.Refresh(), Times.Exactly(2));
+            // Each phase (stop, start) refreshes twice (once pre-loop, once in loop body) -> exactly 4 refreshes
+            _mockController.Verify(c => c.Refresh(), Times.Exactly(4));
         }
 
         [Fact]

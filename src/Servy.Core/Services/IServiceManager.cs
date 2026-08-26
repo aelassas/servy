@@ -95,8 +95,10 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The unique name of the service to interrogate.</param>
         /// <param name="cancellationToken">Optional cancellation token for the status query.</param>
         /// <returns>
-        /// A <see cref="ServiceControllerStatus"/> value representing the current status,
-        /// or <c>null</c> if the service was not found or has been uninstalled.
+        /// A <see cref="ServiceControllerStatus"/> value representing the current status, or <c>null</c>
+        /// if the status could not be determined: the service does not exist, was uninstalled mid-query,
+        /// or could not be opened (for example access denied). A <c>null</c> is not proof of absence;
+        /// use <see cref="IsServiceInstalled"/> to distinguish.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
         ServiceControllerStatus? GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default);

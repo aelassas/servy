@@ -8,7 +8,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Core</AssemblyTitle>
-    <AssemblyDescription>Shared functionality, utilities, and data models</AssemblyDescription>
+    <Description>Shared functionality, utilities, and data models</Description>
     <Product>Servy.Core</Product>
   </PropertyGroup>
 

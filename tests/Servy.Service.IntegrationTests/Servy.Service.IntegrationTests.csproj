@@ -15,7 +15,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Service.IntegrationTests</AssemblyTitle>
-    <AssemblyDescription>Servy.Service integration tests</AssemblyDescription>
+    <Description>Servy.Service integration tests</Description>
     <Product>Servy.Service.IntegrationTests</Product>
   </PropertyGroup>
 

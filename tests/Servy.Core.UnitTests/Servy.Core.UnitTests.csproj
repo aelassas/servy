@@ -15,7 +15,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Core.UnitTests</AssemblyTitle>
-    <AssemblyDescription>Servy.Core unit tests</AssemblyDescription>
+    <Description>Servy.Core unit tests</Description>
     <Product>Servy.Core.UnitTests</Product>
   </PropertyGroup>
 

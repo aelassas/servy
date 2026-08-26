@@ -169,6 +169,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to (details unavailable: access denied).
+        /// </summary>
+        public static string Msg_DetailsUnavailableAccessDenied {
+            get {
+                return ResourceManager.GetString("Msg_DetailsUnavailableAccessDenied", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Display name exceeds {0} characters..
         /// </summary>
         public static string Msg_DisplayNameLengthReached {

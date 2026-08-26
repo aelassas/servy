@@ -197,6 +197,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Status_NotInstalled" xml:space="preserve">
     <value>Not Installed</value>
   </data>
+  <data name="Status_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
 
   <data name="Label_Fetching" xml:space="preserve">
     <value>Fetching...</value>

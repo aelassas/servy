@@ -33,7 +33,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Service</AssemblyTitle>
-    <AssemblyDescription>Servy Wrapper Windows Service</AssemblyDescription>
+    <Description>Servy Wrapper Windows Service</Description>
     <Product>Servy.Service</Product>
   </PropertyGroup>
 
