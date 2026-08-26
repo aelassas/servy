@@ -37,6 +37,22 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Null(stream);
         }
 
+        [Fact]
+        public void ValidatePathOnly_InvalidPathChars_ReturnsFail()
+        {
+            // Arrange
+            string invalidPath = new string(Path.GetInvalidPathChars());
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(invalidPath, FileMode.Open);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Contains(Strings.Msg_InvalidPath, result.ErrorMessage);
+        }
+
         [Theory]
         [InlineData(@"\\server\share\config.json", FileMode.Open, FileAccess.Read, FileShare.Read)]
         [InlineData(@"\\127.0.0.1\c$\config.json", FileMode.Open, FileAccess.Read, FileShare.Read)]
@@ -51,6 +67,26 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
+            var expected = mode == FileMode.Open
+                ? Strings.Msg_SecurityUncPathProhibited
+                : Strings.Msg_SecurityUncPathExportProhibited;
+
+            Assert.Equal(expected, result.ErrorMessage);
+        }
+
+        [Theory]
+        [InlineData(@"\\server\share\config.json", FileMode.Open)]
+        [InlineData(@"\\127.0.0.1\c$\config.json", FileMode.Open)]
+        [InlineData(@"\\server\share\export.json", FileMode.OpenOrCreate)]
+        public void ValidatePathOnly_UncPath_ReturnsFail(string uncPath, FileMode mode)
+        {
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(uncPath, mode);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
             var expected = mode == FileMode.Open
                 ? Strings.Msg_SecurityUncPathProhibited
                 : Strings.Msg_SecurityUncPathExportProhibited;
@@ -85,6 +121,28 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData("CON.json", FileMode.Open)]
+        [InlineData("PRN.xml", FileMode.OpenOrCreate)]
+        [InlineData("COM1.json", FileMode.Open)]
+        [InlineData("LPT1.xml", FileMode.OpenOrCreate)]
+        public void ValidatePathOnly_ReservedDeviceName_ReturnsFail(string fileName, FileMode mode)
+        {
+            // Arrange & Act
+            var result = PathSecurityGuard.ValidatePathOnly(fileName, mode);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.NotNull(result.ErrorMessage);
+
+            bool hitDosGuard = result.ErrorMessage.IndexOf(Path.GetFileNameWithoutExtension(fileName), StringComparison.OrdinalIgnoreCase) >= 0;
+            bool hitUncGuard = result.ErrorMessage.IndexOf("UNC paths", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                               result.ErrorMessage.IndexOf("UNC destination", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            Assert.True(hitDosGuard || hitUncGuard,
+                $"Expected DOS device payload to be intercepted by either the DOS guard or the UNC guard. Actual error: {result.ErrorMessage}");
+        }
+
+        [Theory]
         [InlineData(FileMode.Open, FileAccess.Read, FileShare.Read)]
         [InlineData(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         public void ValidatePath_ProtectedFolder_ReturnsFail(FileMode mode, FileAccess access, FileShare share)
@@ -105,6 +163,25 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData(FileMode.Open)]
+        [InlineData(FileMode.OpenOrCreate)]
+        public void ValidatePathOnly_ProtectedFolder_ReturnsFail(FileMode mode)
+        {
+            // Arrange
+            string protectedDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            string filePath = Path.Combine(protectedDir, "sys_config.json");
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, mode);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Contains(protectedDir, result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
         [InlineData("config.txt", FileMode.Open, FileAccess.Read, FileShare.Read)]
         [InlineData("export.exe", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         [InlineData("config.yaml", FileMode.Open, FileAccess.Read, FileShare.Read)]
@@ -122,6 +199,25 @@ namespace Servy.Core.UnitTests.Validation
             Assert.NotNull(result.ErrorMessage);
             Assert.Contains(Path.GetExtension(fileName).ToLowerInvariant(), result.ErrorMessage);
             Assert.Null(stream);
+        }
+
+        [Theory]
+        [InlineData("config.txt", FileMode.Open)]
+        [InlineData("export.exe", FileMode.OpenOrCreate)]
+        [InlineData("config.yaml", FileMode.Open)]
+        public void ValidatePathOnly_InvalidExtension_ReturnsFail(string fileName, FileMode mode)
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, fileName);
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, mode);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Contains(Path.GetExtension(fileName).ToLowerInvariant(), result.ErrorMessage);
         }
 
         [Fact]
@@ -152,6 +248,35 @@ namespace Servy.Core.UnitTests.Validation
             Assert.NotNull(result.ErrorMessage);
             Assert.Equal(Strings.Msg_SecurityFileReparsePointProhibited, result.ErrorMessage);
             Assert.Null(stream);
+        }
+
+        [Fact]
+        public void ValidatePathOnly_Symlink_ReturnsFail()
+        {
+            // Arrange
+            string targetPath = Path.Combine(TempDirectory, "real_target.json");
+            string symlinkPath = Path.Combine(TempDirectory, "symlink_target.json");
+
+            File.WriteAllText(targetPath, "{}");
+
+            try
+            {
+                Helper.CreateFileSymlink(symlinkPath, targetPath);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                // Skip test gracefully if the runner platform environment lacks symlink creation tokens
+                return;
+            }
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(symlinkPath, FileMode.Open);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Equal(Strings.Msg_SecurityFileReparsePointProhibited, result.ErrorMessage);
         }
 
         [Fact]
@@ -325,6 +450,31 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Null(stream);
         }
 
+        [Fact]
+        public void ValidatePathOnly_AncestorDirectorySymlink_ReturnsFail()
+        {
+            string realDir = Path.Combine(TempDirectory, "real_dir");
+            string linkDir = Path.Combine(TempDirectory, "link_dir");
+            Directory.CreateDirectory(realDir);
+            File.WriteAllText(Path.Combine(realDir, "config.json"), "{}");
+
+            try
+            {
+                Helper.CreateDirectorySymlink(linkDir, linkDir);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                return; // Symlink creation unavailable on this runner
+            }
+
+            var result = PathSecurityGuard.ValidatePathOnly(
+                Path.Combine(linkDir, "config.json"), FileMode.Open);
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Equal(Strings.Msg_SecurityDirReparsePointProhibited, result.ErrorMessage);
+        }
+
         [Fact(Skip = "Requires a physical or virtual mapped network drive (DriveType.Network) mounted in the test runner environment.")]
         public void ValidatePath_MappedNetworkDrive_ReturnsFail()
         {
@@ -340,6 +490,22 @@ namespace Servy.Core.UnitTests.Validation
             Assert.NotNull(result.ErrorMessage);
             Assert.Equal(Strings.Msg_SecurityNetworkDriveProhibited, result.ErrorMessage);
             Assert.Null(stream);
+        }
+
+        [Fact(Skip = "Requires a physical or virtual mapped network drive (DriveType.Network) mounted in the test runner environment.")]
+        public void ValidatePathOnly_MappedNetworkDrive_ReturnsFail()
+        {
+            // Arrange: Path on a mapped network drive (e.g. M:\config.json where M: is DriveType.Network)
+            string networkDrivePath = @"M:\config.json";
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(networkDrivePath, FileMode.Open);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Equal(Strings.Msg_SecurityNetworkDriveProhibited, result.ErrorMessage);
         }
 
         /// <summary>
@@ -418,6 +584,24 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData("missing_import.json")]
+        [InlineData("missing_import.xml")]
+        public void ValidatePathOnly_ImportMode_FileDoesNotExist_ReturnsFail(string fileName)
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, fileName);
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, FileMode.Open);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Contains(filePath, result.ErrorMessage);
+        }
+
+        [Theory]
         [InlineData("new_export.json")]
         [InlineData("new_export.xml")]
         public void ValidatePath_ExportMode_FileDoesNotExist_CreatesHandleAndSucceeds(string fileName)
@@ -439,6 +623,24 @@ namespace Servy.Core.UnitTests.Validation
             {
                 stream?.Dispose();
             }
+        }
+
+        [Theory]
+        [InlineData("new_export.json")]
+        [InlineData("new_export.xml")]
+        public void ValidatePathOnly_ExportMode_FileDoesNotExist_SucceedsWithoutCreatingFile(string fileName)
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, fileName);
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, FileMode.OpenOrCreate);
+
+            // Assert
+            Assert.True(result.IsValid);
+            Assert.NotNull(result.ValidPath);
+            Assert.Equal(filePath, result.ValidPath.ResolvedPath);
+            Assert.False(File.Exists(filePath), "ValidatePathOnly should audit path metadata without creating stub files.");
         }
 
         [Theory]
@@ -468,6 +670,24 @@ namespace Servy.Core.UnitTests.Validation
             {
                 stream?.Dispose();
             }
+        }
+
+        [Theory]
+        [InlineData("valid_engine_config.json", "{}")]
+        [InlineData("valid_engine_config.xml", "<root/>")]
+        public void ValidatePathOnly_ValidLocalAllowedFile_PassesAllGuards(string fileName, string fileContent)
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, fileName);
+            File.WriteAllText(filePath, fileContent);
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, FileMode.Open);
+
+            // Assert
+            Assert.True(result.IsValid);
+            Assert.NotNull(result.ValidPath);
+            Assert.Equal(filePath, result.ValidPath.ResolvedPath);
         }
 
         #endregion

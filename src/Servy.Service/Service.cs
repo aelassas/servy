@@ -431,7 +431,7 @@ namespace Servy.Service
                 _serviceHelper.EnsureValidStartupDirectory(options, _logger);
 
                 _serviceName = options.ServiceName;
-                _recoveryActionEnabled = options.EnableHealthMonitoring && options.HeartbeatIntervalInSeconds > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
+                _recoveryActionEnabled = IsRecoveryEnabled(options);
                 _maxRestartAttempts = options.MaxRestartAttempts;
                 _maxFailedChecks = options.MaxFailedChecks;
                 _recoveryAction = options.RecoveryAction;
@@ -567,8 +567,7 @@ namespace Servy.Service
         /// </summary>
         private static bool IsRecoveryEnabled(StartOptions options)
         {
-            return options != null &&
-                   options.EnableHealthMonitoring &&
+            return options.EnableHealthMonitoring &&
                    options.HeartbeatIntervalInSeconds > 0 &&
                    options.MaxFailedChecks > 0 &&
                    options.RecoveryAction != RecoveryAction.None;

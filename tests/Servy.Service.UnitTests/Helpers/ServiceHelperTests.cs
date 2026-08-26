@@ -457,7 +457,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             var dir = GetTargetRestarterDirectory();
 
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.exe");
 
             // Defensively ensure a dummy restarter file exists in the sandbox if it isn't already present,
             // without modifying or deleting a real build artifact.
@@ -482,7 +482,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Assert
                 // Verify that the start failure branch executed cleanly and surfaced the corresponding error profile
-                mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.Net48.exe.", It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.exe.", It.IsAny<Exception>()), Times.Once);
             }
             finally
             {
@@ -593,7 +593,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void MaskRawArguments_NullOrWhitespace_ReturnsOriginalValue(string input)
         {
             // Act
@@ -634,6 +634,36 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData("MY_PASSWORD=hunter2", "MY_PASSWORD=********")]
         [InlineData("MY_PASSWORD_HASH=hunter2", "MY_PASSWORD_HASH=********")]
         public void MaskRawArguments_WithPrefixAndSuffixModifiers_PreservesKeyContextAndMasksValue(string input, string expected)
+        {
+            // Act
+            var result = ServiceHelper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("PGPASSWORD=abc", "PGPASSWORD=********")]
+        [InlineData("DBPASSWORD=hunter2", "DBPASSWORD=********")]
+        [InlineData("SMTPPASSWORD=s3cr3t", "SMTPPASSWORD=********")]
+        [InlineData("APITOKEN=abc123", "APITOKEN=********")]
+        [InlineData("GITHUBTOKEN=ghp_xxx", "GITHUBTOKEN=********")]
+        [InlineData("AWSSECRET=zz", "AWSSECRET=********")]
+        [InlineData("myapp.exe --apikey KKK", "myapp.exe --apikey ********")]
+        public void MaskRawArguments_PrefixWithoutSeparator_SuccessfullyMasksSecret(string input, string expected)
+        {
+            // Act
+            var result = ServiceHelper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("COMPAT=1", "COMPAT=1")]
+        [InlineData("CONCERT=tonight", "CONCERT=tonight")]
+        [InlineData("ARKANSAS=little_rock", "ARKANSAS=little_rock")]
+        public void MaskRawArguments_ShortKeyFalsePositiveGuards_PreservesNonSensitiveInput(string input, string expected)
         {
             // Act
             var result = ServiceHelper.MaskRawArguments(input);
@@ -727,7 +757,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void MaskUrl_NullOrWhitespaceInput_ShouldReturnEmptyString(string inputUrl)
         {
             // Act
@@ -813,7 +843,7 @@ namespace Servy.Service.UnitTests.Helpers
             // to be located in AppConfig.ProgramDataPath. In Debug, it expects BaseDirectory.
             // We write the file directly where the compiled execution path expects it.
 #if DEBUG
-            return AppDomain.CurrentDomain.BaseDirectory;
+            return AppFoldersHelper.GetAppDirectory();
 #else
             return AppConfig.ProgramDataPath;
 #endif

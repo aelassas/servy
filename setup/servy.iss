@@ -586,6 +586,8 @@ end;
 procedure AddToPath(const Folder: string);
 var
   OldPath, NewPath, NormalizedFolder: string;
+  Parts: TStringList;
+  i: Integer;
 begin
   // Read the current system PATH
   if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
@@ -595,10 +597,22 @@ begin
 
   if not PathContainsFolder(OldPath, NormalizedFolder) then
   begin
-    if OldPath <> '' then
-        NewPath := OldPath + ';' + NormalizedFolder
-    else
-        NewPath := NormalizedFolder;
+    Parts := TStringList.Create;
+    try
+      Parts.StrictDelimiter := True;
+      Parts.Delimiter := ';';
+      Parts.DelimitedText := OldPath;
+
+      // Drop empty elements the existing value may already carry, then append.
+      for i := Parts.Count - 1 downto 0 do
+        if Trim(Parts[i]) = '' then
+          Parts.Delete(i);
+
+      Parts.Add(NormalizedFolder);
+      NewPath := Parts.DelimitedText;
+    finally
+      Parts.Free;
+    end;
 
     // Write the new system PATH preserving REG_EXPAND_SZ type
     if not RegWriteExpandStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
