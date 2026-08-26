@@ -178,6 +178,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Affinity mask &apos;{0}&apos; selects no processor..
+        /// </summary>
+        public static string Msg_EmptyAffinityMask {
+            get {
+                return ResourceManager.GetString("Msg_EmptyAffinityMask", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Environment variable &apos;{0}&apos; contains a forbidden newline character. Multi-line values are not supported..
         /// </summary>
         public static string Msg_EnvironmentVariableForbiddenNewline {
@@ -246,6 +255,15 @@ namespace Servy.Core.Resources {
         public static string Msg_FatalError_Title {
             get {
                 return ResourceManager.GetString("Msg_FatalError_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Affinity mask &apos;{0}&apos; selects processors outside allowable range (0-{1})..
+        /// </summary>
+        public static string Msg_HexMaskOutOfBounds {
+            get {
+                return ResourceManager.GetString("Msg_HexMaskOutOfBounds", resourceCulture);
             }
         }
         
@@ -678,6 +696,15 @@ namespace Servy.Core.Resources {
         public static string Msg_InvalidWrapperExePath {
             get {
                 return ResourceManager.GetString("Msg_InvalidWrapperExePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inverted core range &apos;{0}&apos;: the start index is greater than the end index..
+        /// </summary>
+        public static string Msg_InvertedCoreRange {
+            get {
+                return ResourceManager.GetString("Msg_InvertedCoreRange", resourceCulture);
             }
         }
         

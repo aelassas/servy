@@ -74,16 +74,27 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Contains(expectedPrefix, ex.Message);
         }
 
-        [Theory]
-        [InlineData("0x0")]                    // Zero mask
-        [InlineData("0xFFFFFFFFFFFFFFFF")]     // All bits set / overflow
-        public void ParseAffinity_HexOutOfBoundsOrZero_ThrowsArgumentOutOfRangeException(string input)
+        [Fact]
+        public void ParseAffinity_ZeroHex_ThrowsArgumentException()
+        {
+            // Arrange
+            string expectedPrefix = Strings.Msg_EmptyAffinityMask.Split('{')[0];
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity("0x0"));
+
+            Assert.Contains(expectedPrefix, ex.Message);
+        }
+
+        [Fact]
+        public void ParseAffinity_HexOutOfBounds_ThrowsArgumentOutOfRangeException()
         {
             // Arrange
             int maxCores = Math.Min(Environment.ProcessorCount, 64);
-            if (input == "0xFFFFFFFFFFFFFFFF" && maxCores >= 64) return; // Skip if host has full 64 cores and input is all bits set
+            string input = "0xFFFFFFFFFFFFFFFF";
+            if (maxCores >= 64) return; // Skip if host has full 64 cores and input is all bits set
 
-            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
+            string expectedPrefix = Strings.Msg_HexMaskOutOfBounds.Split('{')[0];
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
@@ -101,7 +112,7 @@ namespace Servy.Core.UnitTests.Helpers
             // Mask that sets a bit beyond host max cores
             long outOfBoundsMask = 1L << maxAllowedCores;
             string input = $"0x{outOfBoundsMask:X}";
-            string expectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
+            string expectedPrefix = Strings.Msg_HexMaskOutOfBounds.Split('{')[0];
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
@@ -132,6 +143,18 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void ParseAffinity_InvertedRange_ThrowsArgumentException()
+        {
+            // Arrange
+            string expectedPrefix = Strings.Msg_InvertedCoreRange.Split('{')[0];
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity("1-0"));
+
+            Assert.Contains(expectedPrefix, ex.Message);
+        }
+
+        [Fact]
         public void ParseAffinity_CoreIndexOutOfRange_ThrowsArgumentOutOfRangeException()
         {
             // Arrange
@@ -143,16 +166,11 @@ namespace Servy.Core.UnitTests.Helpers
             string singleExpectedPrefix = Strings.Msg_CoreIndexOutOfBounds.Split('{')[0];
             Assert.Contains(singleExpectedPrefix, ex1.Message);
 
-            // Act & Assert - Range start out of bounds
+            // Act & Assert - Range start/end out of bounds
             string rangeOutOfBounds = $"{maxAllowedCores}-{maxAllowedCores + 1}";
             var ex2 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(rangeOutOfBounds));
             string rangeExpectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
             Assert.Contains(rangeExpectedPrefix, ex2.Message);
-
-            // Act & Assert - Inverted range (start > end)
-            if (maxAllowedCores < 2) return; // Skip if host has fewer than 2 cores, as inverted range validation requires at least 2 cores
-            var ex3 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity("1-0"));
-            Assert.Contains(rangeExpectedPrefix, ex3.Message);
         }
 
         [Theory]
@@ -187,6 +205,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(",")]
         [InlineData(",,")]
         [InlineData(" , ")]
+        [InlineData("1-0")]
         public void ValidateAffinity_InvalidInput_ReturnsFalseAndPopulatesErrorMessage(string input)
         {
             // Arrange (N/A)
