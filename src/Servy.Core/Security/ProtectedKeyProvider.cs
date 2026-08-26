@@ -242,16 +242,23 @@ namespace Servy.Core.Security
                 // This ensures both the Session 0 SYSTEM service and the interactive user Manager share the exact same lock.
                 var mutexSecurity = new MutexSecurity();
 
-                // Allow everyone (WorldSid) to Synchronize and Modify (Release) the shared Mutex
+                // Both the Session 0 service account (LocalSystem, LocalService, NetworkService or a custom
+                // service account) and the elevated Manager/CLI are authenticated principals, so
+                // AuthenticatedUsers covers every participant while excluding ANONYMOUS LOGON and Guest,
+                // which Everyone would admit. Matches the group policy SecurityHelper.ApplySecurityRules
+                // enforces on the key files this lock guards.
                 var accessRule = new MutexAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
                     MutexRights.Synchronize | MutexRights.Modify,
                     AccessControlType.Allow);
 
-                mutexSecurity.AddAccessRule(accessRule);
-
                 // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
-                mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out _, mutexSecurity);
+                mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out bool createdNew, mutexSecurity);
+
+                if (!createdNew)
+                {
+                    Logger.Debug($"Joined existing cross-process mutex '{mutexName}'; its DACL was set by the creating process.");
+                }
             }
             catch (Exception ex)
             {
