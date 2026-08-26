@@ -551,6 +551,50 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        public void EnforceMaxRotations_PartialDeletionFailure_IncrementsPassCounter()
+        {
+            // Arrange
+            string baseLog = Path.Combine(_testDir, "partial.log");
+            File.WriteAllText(baseLog, "base");
+
+            using (var writer = CreateWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1))
+            {
+                writer.Write(""); // Trigger lazy init
+
+                string oldRotated1 = Path.Combine(_testDir, "partial.20260325_000001.log");
+                string oldRotated2 = Path.Combine(_testDir, "partial.20260325_000002.log");
+                string newestRotated = Path.Combine(_testDir, "partial.20260325_000003.log");
+
+                File.WriteAllText(oldRotated1, "old1");
+                File.WriteAllText(oldRotated2, "old2");
+                File.WriteAllText(newestRotated, "newest");
+
+                File.SetLastWriteTimeUtc(oldRotated1, DateTime.UtcNow.AddMinutes(-20));
+                File.SetLastWriteTimeUtc(oldRotated2, DateTime.UtcNow.AddMinutes(-10));
+                File.SetLastWriteTimeUtc(newestRotated, DateTime.UtcNow);
+
+                // Lock oldRotated2 so its deletion fails, while oldRotated1 can be deleted
+                using (var lockStream = new FileStream(oldRotated2, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    // Act: Run EnforceMaxRotations where maxRotations=1
+                    TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+                    // Assert: Counter should be 1 because oldRotated2 could not be deleted
+                    int consecutiveFailures = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
+                    Assert.Equal(1, consecutiveFailures);
+                    Assert.False(File.Exists(oldRotated1)); // Deleted successfully
+                    Assert.True(File.Exists(oldRotated2));  // Failed to delete
+                }
+
+                // Subsequent successful pass where all expired files are removed
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+                int consecutiveFailuresAfterSuccess = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
+                Assert.Equal(0, consecutiveFailuresAfterSuccess);
+                Assert.False(File.Exists(oldRotated2));
+            }
+        }
+
+        [Fact]
         public void EnforceMaxRotations_NoExtension_CoversIsNullOrEmpty()
         {
             // Arrange
@@ -921,27 +965,42 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
-        public void DailyRotation_Local_DST_SafetyBuffer_PreventsEarlyRotation()
+        public void DailyRotation_Local_RotatesWhenCalendarDayChanges()
         {
-            // Arrange: Fix the timeline to simulate a 22-hour gap across midnight
-            // April 10th, 11:00 PM (23:00)
-            var lastRotationUtc = new DateTime(2026, 4, 10, 23, 0, 0, DateTimeKind.Utc);
-
-            // April 11th, 09:00 PM (21:00) -> 22 hours later
-            var nowUtc = lastRotationUtc.AddHours(22);
+            // Arrange: Simulate a 1-hour gap crossing midnight in local time (23:00 to 00:00 next day)
+            var lastRotation = new DateTime(2026, 4, 10, 23, 0, 0, DateTimeKind.Local);
+            var nextDay = new DateTime(2026, 4, 11, 0, 0, 0, DateTimeKind.Local);
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
             {
-                TestReflection.SetField(writer, "_lastRotationDate", lastRotationUtc);
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotation);
 
                 // Act
-                var args = new object[] { nowUtc };
+                var args = new object[] { nextDay };
                 var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // Assert
-                // Even though it is a new day (April 11 vs April 10),
-                // the 23-hour buffer should block the rotation.
-                Assert.False(shouldRotate, "Should not rotate if < 23 hours have passed, even if the calendar day changed.");
+                Assert.True(shouldRotate, "Daily rotation in local time should trigger when crossing into a new calendar day.");
+            }
+        }
+
+        [Fact]
+        public void DailyRotation_Local_DST_FallBack_DoesNotTriggerDuplicateRotationOnSameDate()
+        {
+            // Arrange: Simulate DST fall-back hours within the same local calendar date
+            var initialRotationTime = new DateTime(2026, 10, 25, 1, 30, 0, DateTimeKind.Unspecified);
+            var repeatedTimeAfterFallBack = new DateTime(2026, 10, 25, 1, 30, 0, DateTimeKind.Unspecified);
+
+            using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
+            {
+                TestReflection.SetField(writer, "_lastRotationDate", initialRotationTime);
+
+                // Act
+                var args = new object[] { repeatedTimeAfterFallBack };
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
+
+                // Assert
+                Assert.False(shouldRotate, "DST fall-back within the same calendar date must not trigger a duplicate daily rotation.");
             }
         }
 

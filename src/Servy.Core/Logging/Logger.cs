@@ -67,13 +67,16 @@ namespace Servy.Core.Logging
 
         /// <summary>
         /// Pre-computed, uppercase string representations of LogLevels.
+        /// Indexed directly by (int)LogLevel, so this array must carry one entry per
+        /// loggable member of <see cref="LogLevel"/> in declaration order.
+        /// LogLevel.None is a threshold sentinel and is never passed to Log().
         /// </summary>
         private static readonly string[] LevelStrings = new[]
         {
-            "DEBUG", // 0
-            "INFO",  // 1
-            "WARN",  // 2
-            "ERROR"  // 3
+            "DEBUG", // LogLevel.Debug = 0
+            "INFO",  // LogLevel.Info  = 1
+            "WARN",  // LogLevel.Warn  = 2
+            "ERROR"  // LogLevel.Error = 3
         };
 
         /// <summary>
@@ -449,9 +452,7 @@ namespace Servy.Core.Logging
 
             // Pre-compute formatting, regex sanitization, and timestamping outside the global lock.
             // This minimizes critical section contention, allowing concurrent log entry formatting.
-            string levelName = (int)level >= 0 && (int)level < LevelStrings.Length
-                ? LevelStrings[(int)level]
-                : level.ToString().ToUpperInvariant(); // Fallback for safety
+            string levelName = LevelStrings[(int)level];
 
             // Sanitize message into a single-line representation for better scannability
             string sanitizedMessage = SanitizeToSingleLine(message);
