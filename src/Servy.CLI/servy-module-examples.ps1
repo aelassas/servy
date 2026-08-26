@@ -1,15 +1,15 @@
 <#
 .SYNOPSIS
-  Example scripts demonstrating the usage of the Servy PowerShell module to manage Windows services.
+    Example scripts demonstrating the usage of the Servy PowerShell module to manage Windows services.
 
 .DESCRIPTION
-  Example scripts demonstrating usage of the Servy PowerShell module.
+    Example scripts demonstrating usage of the Servy PowerShell module.
 
 .NOTES
-  Author: Akram El Assas
-  Module: Servy
-  Requires: PowerShell 2.0 or later
-  Repository: https://github.com/aelassas/servy
+    Author: Akram El Assas
+    Module: Servy
+    Requires: PowerShell 2.0 or later
+    Repository: https://github.com/aelassas/servy
 #>
 
 # ----------------------------------------------------------------
@@ -17,6 +17,17 @@
 # ----------------------------------------------------------------
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Import-Module (Join-Path $scriptDir "Servy.psm1") -Force
+
+# ----------------------------------------------------------------
+# Tune module-level execution settings (optional)
+# ----------------------------------------------------------------
+Set-ServyConfig -TimeoutSeconds 1200 -MaxBufferChars 2097152
+
+# ----------------------------------------------------------------
+# Display CLI help
+# ----------------------------------------------------------------
+# Get-ServyHelp -Command "install" -Quiet
+# Get-ServyHelp -Quiet
 
 # ----------------------------------------------------------------
 # Display the current version of Servy CLI
@@ -27,74 +38,74 @@ Get-ServyVersion -Quiet
 # Install a new Windows service using Servy (splatting)
 # ----------------------------------------------------------------
 $installParams = @{
-    Quiet                     = $true
-    Name                      = "DummyService"
-    DisplayName               = "Dummy Service"
-    Description               = "Dummy Service"
-    Path                      = "C:\Windows\System32\notepad.exe"
-    StartupDir                = "C:\Windows\Temp"
-    Params                    = "--param 2000"
-    StartupType               = "Manual"
-    Priority                  = "BelowNormal"
-    CpuAffinity               = "0x1"
-    StartTimeout              = 15
-    StopTimeout               = 10
-    EnableConsoleUI           = $false
-    EnableSizeRotation        = $true
-    RotationSize              = 1
-    EnableDateRotation        = $true
-    DateRotationType          = "Weekly"
-    MaxRotations              = 3
-    UseLocalTimeForRotation   = $true
+    Quiet                      = $true
+    Name                       = "DummyService"
+    DisplayName                = "Dummy Service"
+    Description                = "Dummy Service"
+    Path                       = "C:\Windows\System32\notepad.exe"
+    StartupDir                 = "C:\Windows\Temp"
+    Params                     = "--param 2000"
+    StartupType                = "Manual"
+    Priority                   = "BelowNormal"
+    CpuAffinity                = "0x1"
+    StartTimeout               = 15
+    StopTimeout                = 10
+    EnableConsoleUI            = $false
+    EnableSizeRotation         = $true
+    RotationSize               = 1
+    EnableDateRotation         = $true
+    DateRotationType           = "Weekly"
+    MaxRotations               = 3
+    UseLocalTimeForRotation    = $true
 
-    Stdout                    = "C:\Windows\Temp\dummy-stdout.log"
-    Stderr                    = "C:\Windows\Temp\dummy-stderr.log"
+    Stdout                     = "C:\Windows\Temp\dummy-stdout.log"
+    Stderr                     = "C:\Windows\Temp\dummy-stderr.log"
 
-    EnableHealth              = $true
-    HeartbeatInterval         = 5
-    MaxFailedChecks           = 1
-    MaxRestartAttempts        = 2
-    HeartbeatUrl              = "http://localhost:8080/heartbeat"
+    EnableHealth               = $true
+    HeartbeatInterval          = 5
+    MaxFailedChecks            = 1
+    MaxRestartAttempts         = 2
+    HeartbeatUrl               = "http://localhost:8080/heartbeat"
     HeartbeatUrlTimeoutSeconds = 5
-    EnableHeartbeatUrlFlags   = $true
+    EnableHeartbeatUrlFlags    = $true
 
-    RecoveryAction            = "RestartService"
-    RecoveryOnCleanExit       = $true
+    RecoveryAction             = "RestartService"
+    RecoveryOnCleanExit        = $true
 
-    FailureProgramPath        = "C:\Windows\System32\cmd.exe"
-    FailureProgramStartupDir  = "C:\Windows\Temp"
-    FailureProgramParams      = "/c exit 0 --param 2001"
+    FailureProgramPath         = "C:\Windows\System32\cmd.exe"
+    FailureProgramStartupDir   = "C:\Windows\Temp"
+    FailureProgramParams       = "/c exit 0 --param 2001"
 
-    EnvVars                   = "var1=val1; var2=val2;"
-    Deps                      = "Tcpip;Dnscache"
-    # User                    = ".\DummySvc"
-    # Password                = ("ChangeMe!" | ConvertTo-SecureString -AsPlainText -Force)
+    EnvVars                    = "var1=val1; var2=val2;"
+    Deps                       = "Tcpip;Dnscache"
+    # User                     = ".\DummySvc"
+    # Password                 = ("ChangeMe!" | ConvertTo-SecureString -AsPlainText -Force)
 
-    PreLaunchPath             = "C:\Windows\System32\cmd.exe"
-    PreLaunchStartupDir       = "C:\Windows\Temp"
-    PreLaunchParams           = "/c exit 0 --param 2002"
-    PreLaunchEnv              = "preVar1=val1; preVar2=val2;"
-    PreLaunchStdout           = "C:\Windows\Temp\dummy-pre-stdout.log"
-    PreLaunchStderr           = "C:\Windows\Temp\dummy-pre-stderr.log"
-    PreLaunchTimeout          = 5
-    PreLaunchRetryAttempts    = 1
-    PreLaunchIgnoreFailure    = $true
+    PreLaunchPath              = "C:\Windows\System32\cmd.exe"
+    PreLaunchStartupDir        = "C:\Windows\Temp"
+    PreLaunchParams            = "/c exit 0 --param 2002"
+    PreLaunchEnv               = "preVar1=val1; preVar2=val2;"
+    PreLaunchStdout            = "C:\Windows\Temp\dummy-pre-stdout.log"
+    PreLaunchStderr            = "C:\Windows\Temp\dummy-pre-stderr.log"
+    PreLaunchTimeout           = 5
+    PreLaunchRetryAttempts     = 1
+    PreLaunchIgnoreFailure     = $true
 
-    PostLaunchPath            = "C:\Windows\System32\cmd.exe"
-    PostLaunchStartupDir      = "C:\Windows\Temp"
-    PostLaunchParams          = "/c exit 0 --param 2003"
+    PostLaunchPath             = "C:\Windows\System32\cmd.exe"
+    PostLaunchStartupDir       = "C:\Windows\Temp"
+    PostLaunchParams           = "/c exit 0 --param 2003"
 
-    EnableDebugLogs           = $true
+    EnableDebugLogs            = $true
 
-    PreStopPath               = "C:\Windows\System32\cmd.exe"
-    PreStopStartupDir         = "C:\Windows\Temp"
-    PreStopParams             = "/c exit 0 --param 2004"
-    PreStopTimeout            = 10
-    PreStopLogAsError         = $true
+    PreStopPath                = "C:\Windows\System32\cmd.exe"
+    PreStopStartupDir          = "C:\Windows\Temp"
+    PreStopParams              = "/c exit 0 --param 2004"
+    PreStopTimeout             = 10
+    PreStopLogAsError          = $true
 
-    PostStopPath              = "C:\Windows\System32\cmd.exe"
-    PostStopStartupDir        = "C:\Windows\Temp"
-    PostStopParams            = "/c exit 0 --param 2005"
+    PostStopPath               = "C:\Windows\System32\cmd.exe"
+    PostStopStartupDir         = "C:\Windows\Temp"
+    PostStopParams             = "/c exit 0 --param 2005"
 }
 
 # $env:SERVY_PASSWORD = "ChangeMe!"
@@ -132,6 +143,7 @@ $importXmlParams = @{
     Quiet          = $true
     ConfigFileType = "xml"
     Path           = "C:\DummyService.xml"
+    Install        = $true
 }
 
 Import-ServyServiceConfig @importXmlParams
@@ -147,10 +159,10 @@ Import-ServyServiceConfig @importJsonParams
 # ----------------------------------------------------------------
 # Service lifecycle
 # ----------------------------------------------------------------
-Start-ServyService   -Name "DummyService" -Quiet
+Start-ServyService    -Name "DummyService" -Quiet
 Get-ServyServiceStatus -Name "DummyService" -Quiet
-Stop-ServyService    -Name "DummyService" -Quiet
-Restart-ServyService -Name "DummyService" -Quiet
+Stop-ServyService     -Name "DummyService" -Quiet
+Restart-ServyService  -Name "DummyService" -Quiet
 
 # ----------------------------------------------------------------
 # Uninstall the service
