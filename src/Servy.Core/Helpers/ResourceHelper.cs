@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace Servy.Core.Helpers
 {
@@ -298,31 +299,43 @@ namespace Servy.Core.Helpers
         #region Shared Internal Logic
 
         /// <summary>
-        /// Attempts to retrieve the existing Access Control List (ACL) for a file before replacement,
-        /// converting inherited rules into explicit Access Control Entries (ACEs).
+        /// Attempts to retrieve explicit (non-inherited) Access Control Entries (ACEs) for a file before replacement.
+        /// Returns <c>null</c> if no explicit permissions exist, allowing the replacement file to inherit vault directory permissions.
         /// </summary>
         /// <param name="filePath">The target file path.</param>
-        /// <returns>The <see cref="FileSecurity"/> of the target file if it exists; otherwise, <c>null</c>.</returns>
+        /// <returns>A <see cref="FileSecurity"/> containing explicit access rules if present; otherwise, <c>null</c>.</returns>
         private FileSecurity? GetExistingFileSecurity(string filePath)
         {
             try
             {
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-                {
-                    var fileInfo = new FileInfo(filePath);
-                    var security = fileInfo.GetAccessControl();
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                    return null;
 
-                    // Protect against re-inheriting parent directory permissions upon atomic file replacement
-                    security.SetAccessRuleProtection(isProtected: true, preserveInheritance: true);
-                    return security;
+                var source = new FileInfo(filePath).GetAccessControl();
+
+                var explicitRules = source
+                    .GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+                    .Cast<FileSystemAccessRule>()
+                    .ToList();
+
+                // Nothing was set on the file itself: let the replacement inherit from the vault, which is
+                // what AppFoldersHelper relies on for manually granted service accounts to cascade down.
+                if (explicitRules.Count == 0)
+                    return null;
+
+                var preserved = new FileSecurity();
+                foreach (var rule in explicitRules)
+                {
+                    preserved.AddAccessRule(rule);
                 }
+
+                return preserved;
             }
             catch (Exception ex)
             {
                 Logger.Warn($"Failed to read existing ACL for file '{filePath}'. Pre-existing security settings may not be preserved upon replacement.", ex);
+                return null;
             }
-
-            return null;
         }
 
         /// <summary>
@@ -375,10 +388,7 @@ namespace Servy.Core.Helpers
                 throw new IOException($"Could not resolve parent directory for extraction: {targetPath}");
             }
 
-            if (!Directory.Exists(targetPathDir))
-            {
-                Directory.CreateDirectory(targetPathDir!);
-            }
+            Directory.CreateDirectory(targetPathDir);
 
             resourceName = resourceNamespace + "." + fileName + "." + extension;
 

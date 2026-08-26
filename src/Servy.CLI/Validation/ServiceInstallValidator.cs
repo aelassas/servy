@@ -136,7 +136,7 @@ namespace Servy.CLI.Validation
                 FailureProgramParameters = opts.FailureProgramParameters,
                 EnvironmentVariables = opts.EnvironmentVariables,
                 ServiceDependencies = opts.ServiceDependencies,
-                UserAccount = opts.User,
+                UserAccount = opts.User?.Trim(),
                 Password = opts.Password,
                 RunAsLocalSystem = string.IsNullOrWhiteSpace(opts.User),
                 PreLaunchExecutablePath = opts.PreLaunchPath,

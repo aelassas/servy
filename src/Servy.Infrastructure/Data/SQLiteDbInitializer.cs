@@ -16,7 +16,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Single Source of Truth for the absolute latest schema migration version sequence.
         /// </summary>
-        public const int LatestSchemaVersion = 8;
+        public const int LatestSchemaVersion = 9;
 
         private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
 
@@ -188,8 +188,16 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 8;
                         }
 
+                        // Version 9 Migration to normalize legacy whitespace-padded UserAccount values
+                        if (currentVersion < 9)
+                        {
+                            ApplyVersion9(connection, transaction);
+                            UpdateSchemaVersion(connection, 9, transaction);
+                            currentVersion = 9;
+                        }
+
                         // --- FUTURE MIGRATIONS GO HERE ---
-                        // if (currentVersion < 9) { ... }
+                        // if (currentVersion < 10) { ... }
 
                         // Double check that the final tracked migration index completely aligns with the central declaration
                         if (currentVersion != LatestSchemaVersion)
@@ -658,6 +666,35 @@ namespace Servy.Infrastructure.Data
         {
             const int version = 8;
             AddColumnIfMissing(connection, transaction, version, "CpuAffinity");
+        }
+
+        /// <summary>
+        /// Applies the Version 9 schema migration, trimming legacy whitespace-padded UserAccount values.
+        /// Safely checks for the column's presence to prevent errors on partial or custom test schemas.
+        /// </summary>
+        private static void ApplyVersion9(DbConnection connection, DbTransaction transaction)
+        {
+            Logger.Info("Migrating database to Version 9: Normalizing whitespace-padded UserAccount values.");
+
+            var existingColumns = GetExistingColumnNames(connection, transaction);
+            if (!existingColumns.Contains("UserAccount"))
+            {
+                Logger.Info("Migration to Version 9 skipped: Column 'UserAccount' was not found in the table layout.");
+                return;
+            }
+
+            int affectedRows = connection.Execute($@"
+                UPDATE {SqlConstants.ServicesTableName}
+                SET UserAccount = TRIM(UserAccount)
+                WHERE UserAccount IS NOT NULL AND UserAccount <> TRIM(UserAccount);",
+                transaction: transaction);
+
+            if (affectedRows > 0)
+            {
+                Logger.Info($"Version 9 Migration: Cleaned and normalized {affectedRows} whitespace-padded UserAccount record(s).");
+            }
+
+            Logger.Info("Database successfully migrated to Version 9.");
         }
 
         #endregion

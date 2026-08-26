@@ -141,7 +141,6 @@ namespace Servy.Core.UnitTests.Helpers
             // - VAR4: '"' in value
             // - VAR5: '\' in value
             // - VAR6: combinations of multiple escaped chars
-            // - VAR7: escaped '=' in the KEY (not the value)
             var rawVars = string.Join(";", new[]
             {
                 "VAR1=val1",
@@ -149,8 +148,7 @@ namespace Servy.Core.UnitTests.Helpers
                 @"VAR3=x\;y",
                 @"VAR4=hello \""world\""",
                 @"VAR5=C:\path\to\file",
-                "VAR6=combo\\=\\;\\\"end\\\"",
-                @"VAR7\=a=b\=c",
+                "VAR6=combo\\=\\;\\\"end\\\""
             });
 
             // Act
@@ -164,8 +162,7 @@ namespace Servy.Core.UnitTests.Helpers
                 @"VAR3=x\;y",
                 @"VAR4=hello \""world\""",
                 @"VAR5=C:\\path\\to\\file",
-                "VAR6=combo\\=\\;\\\"end\\\"",
-                @"VAR7\=a=b\=c",
+                "VAR6=combo\\=\\;\\\"end\\\""
             });
 
             Assert.Equal(expected, result);

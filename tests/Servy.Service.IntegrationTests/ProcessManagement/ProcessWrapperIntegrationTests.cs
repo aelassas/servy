@@ -646,9 +646,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             // Arrange
             // Dynamically compile a Win32 GUI executable (WindowsApplication).
-            // Accessing Form.Handle forces USER32 to create a valid window handle (MainWindowHandle)
-            // even when invisible or running in a headless CI session, enabling CloseMainWindow (WM_CLOSE)
-            // to exit gracefully.
+            // Explicitly set ShowInTaskbar = true and Application.DoEvents() to ensure USER32 
+            // registers a top-level MainWindowHandle on headless CI hosts (ARM64/x64).
             string tempExe = Path.Combine(Path.GetTempPath(), $"ServyTestWin_{Guid.NewGuid():N}.exe");
 
             try
@@ -656,7 +655,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 var compilePsi = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ var f = new Form(); var h = f.Handle; Application.Run(f); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
+                    Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ var f = new Form {{ ShowInTaskbar = true }}; var h = f.Handle; f.Show(); Application.Run(f); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                 };
@@ -681,7 +680,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     wrapper.Start();
                     var process = wrapper.UnderlyingProcess;
 
-                    // Wait until USER32 allocates the MainWindowHandle
+                    // Wait until USER32 allocates the MainWindowHandle.
+                    // Extend spin interval or check process status defensively for ARM64 runner latency.
                     bool windowReady = SpinWait.SpinUntil(() =>
                     {
                         try
@@ -693,7 +693,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                         {
                             return false;
                         }
-                    }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+                    }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds * 2));
 
                     Assert.True(windowReady, "Test process window handle was not initialized within the timeout.");
 

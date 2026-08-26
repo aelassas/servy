@@ -199,9 +199,11 @@ namespace Servy.Core.Helpers
                 // as well as combined numeric variants. We validate string parity to ensure it contains no out-of-range values.
                 if (enumType.IsDefined(typeof(FlagsAttribute), false))
                 {
-                    // Accept any combination whose ToString() is not a bare number (i.e. all bits map to names)
-                    var asString = result.ToString();
-                    if (!long.TryParse(asString, out _))   // ToString() returned names, not a residual number
+                    // ToString() falls back to the raw number when a bit maps to no declared member.
+                    // Comparing result.ToString() with the underlying value's string representation
+                    // provides a culture-invariant and width-agnostic check across all underlying types (e.g. ulong, long, int).
+                    var underlyingValue = Convert.ChangeType(result, Enum.GetUnderlyingType(enumType)).ToString();
+                    if (result.ToString() != underlyingValue)
                         return result;
                 }
                 else if (value.IndexOf(',') < 0 && Enum.IsDefined(enumType, result))
