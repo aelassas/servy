@@ -266,16 +266,9 @@ namespace Servy.Core.IO
             switch (_dateRotationType)
             {
                 case DateRotationType.Daily:
-                    if (now.Date > _lastRotationDate.Date)
-                    {
-                        // If using local time, ensure at least 23 hours have passed to avoid DST duplicate rotations
-                        if (_useLocalTimeForRotation)
-                        {
-                            return (now - _lastRotationDate).TotalHours >= 23;
-                        }
-                        return true;
-                    }
-                    return false;
+                    // A DST transition repeats or skips an hour within a single local date, so it can never
+                    // advance now.Date twice for the same logical day; the date comparison is sufficient.
+                    return now.Date > _lastRotationDate.Date;
 
                 case DateRotationType.Weekly:
                     if (now.Date <= _lastRotationDate.Date) return false;   // backward/same-day clock: never rotate
@@ -484,7 +477,9 @@ namespace Servy.Core.IO
                 int currentFailures = Interlocked.Increment(ref _consecutiveDeletionFailures);
                 Logger.Warn($"Failed to enumerate rotated log files in '{directory}': {ex.Message}. Consecutive failures: {currentFailures}");
                 if (currentFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
-                    Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {currentFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
+                {
+                    Logger.Error($"Persistent failure to enumerate rotated log files for '{_file.FullName}' (consecutive failures: {currentFailures}, max retained: {_maxRotations}). Log retention checks cannot be completed.");
+                }
                 return;
             }
 
@@ -542,24 +537,35 @@ namespace Servy.Core.IO
                 return;
             }
 
+            int failuresThisPass = 0;
+
             foreach (var file in rotatedFiles.Skip(_maxRotations))
             {
                 try
                 {
                     File.Delete(file);
-                    Interlocked.Exchange(ref _consecutiveDeletionFailures, 0); // Reset on any successful deletion
                 }
                 catch (Exception ex)
                 {
-                    int currentFailures = Interlocked.Increment(ref _consecutiveDeletionFailures);
-                    Logger.Warn($"Failed to delete old log file '{file}': {ex.Message}. Consecutive failures: {currentFailures}");
-
-                    // If we hit a threshold (e.g., 10), we log a more severe error to alert operators.
-                    if (currentFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
-                    {
-                        Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {currentFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
-                    }
+                    failuresThisPass++;
+                    Logger.Warn($"Failed to delete old log file '{file}': {ex.Message}");
                 }
+            }
+
+            if (failuresThisPass == 0)
+            {
+                Interlocked.Exchange(ref _consecutiveDeletionFailures, 0);
+                return;
+            }
+
+            int consecutivePassFailures = Interlocked.Increment(ref _consecutiveDeletionFailures);
+            Logger.Warn($"Log retention pass left {failuresThisPass} of {rotatedFiles.Count - _maxRotations} expired file(s) in place for '{_file.FullName}'. Consecutive incomplete passes: {consecutivePassFailures}.");
+
+            if (consecutivePassFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
+            {
+                Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' " +
+                             $"(consecutive incomplete passes: {consecutivePassFailures}, retained: {rotatedFiles.Count}, max retained: {_maxRotations}). " +
+                             "Disk space growth is no longer bounded.");
             }
         }
 
