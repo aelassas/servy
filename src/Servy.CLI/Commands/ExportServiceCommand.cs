@@ -60,7 +60,7 @@ namespace Servy.CLI.Commands
                     SecurityHelper.EnsureAdministrator();
                 }
 
-                var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt:false, cancellationToken: cancellationToken);
+                var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: false, cancellationToken: cancellationToken);
 
                 if (exists == null)
                     return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
@@ -110,6 +110,19 @@ namespace Servy.CLI.Commands
         /// <exception cref="IOException">Thrown if the directory chain cannot be created or the file cannot be written.</exception>
         private void SaveFile(string userPath, string content)
         {
+            // Run path pre-flight security checks BEFORE probing disk or opening network resources
+            var preflight = PathSecurityGuard.ValidatePathOnly(userPath, FileMode.OpenOrCreate);
+            if (!preflight.IsValid)
+            {
+                string preflightError = preflight.ErrorMessage ?? "Security Guard Failure: Target path rejected.";
+                if (preflight.FailureKind == PathSecurityFailureKind.Security)
+                {
+                    throw new SecurityException(preflightError);
+                }
+
+                throw new ArgumentException(preflightError);
+            }
+
             string fullPath = Path.GetFullPath(userPath);
             string? parentDir = Path.GetDirectoryName(fullPath);
 

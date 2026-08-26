@@ -17,18 +17,14 @@ namespace Servy.Core.Validation
         private const string ExtendedUncPrefix = @"\\?\UNC\";
 
         /// <summary>
-        /// Enforces unified validation layers shared across both input and output operations.
-        /// Guarantees that any defensive hardening immediately benefits both import and export workflows.
+        /// Audits path metadata without opening file handles or probing/creating directories.
+        /// Enforces pure path-based security checks (UNC path blocking, network drive detection, reparse points, reserved device names, protected system directories, and allowed file extensions).
         /// </summary>
         /// <param name="path">The unverified relative or absolute file path to audit.</param>
         /// <param name="mode">The <see cref="FileMode"/> configuration tracking contextual intent (e.g., import vs. export semantics).</param>
-        /// <param name="access">The <see cref="FileAccess"/> permissions required for the resolved target stream.</param>
-        /// <param name="share">The <see cref="FileShare"/> rule limits mapping concurrent thread constraints.</param>
-        /// <param name="stream">When this method returns, contains an opened, active <see cref="FileStream"/> instance pointing to the verified file layout if validation succeeded; otherwise, <c>null</c>. <b>On successful validation, the caller assumes absolute ownership of this instance and is responsible for its disposal.</b></param>
-        /// <returns>A <see cref="PathSecurityResult"/> indicating whether the validation pipeline passed or failed, along with outcome tokens.</returns>
-        public static PathSecurityResult ValidatePath(string path, FileMode mode, FileAccess access, FileShare share, out FileStream? stream)
+        /// <returns>A <see cref="PathSecurityResult"/> indicating whether pure path validation passed or failed.</returns>
+        public static PathSecurityResult ValidatePathOnly(string path, FileMode mode)
         {
-            stream = null;
             bool isImport = mode == FileMode.Open;
 
             // Helper local function to pick between import-flavored and export-flavored message strings.
@@ -151,6 +147,53 @@ namespace Servy.Core.Validation
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
             }
+
+            return PathSecurityResult.Success(fullPath);
+        }
+
+        /// <summary>
+        /// Enforces unified validation layers shared across both input and output operations.
+        /// Guarantees that any defensive hardening immediately benefits both import and export workflows.
+        /// </summary>
+        /// <param name="path">The unverified relative or absolute file path to audit.</param>
+        /// <param name="mode">The <see cref="FileMode"/> configuration tracking contextual intent (e.g., import vs. export semantics).</param>
+        /// <param name="access">The <see cref="FileAccess"/> permissions required for the resolved target stream.</param>
+        /// <param name="share">The <see cref="FileShare"/> rule limits mapping concurrent thread constraints.</param>
+        /// <param name="stream">When this method returns, contains an opened, active <see cref="FileStream"/> instance pointing to the verified file layout if validation succeeded; otherwise, <c>null</c>. <b>On successful validation, the caller assumes absolute ownership of this instance and is responsible for its disposal.</b></param>
+        /// <returns>A <see cref="PathSecurityResult"/> indicating whether the validation pipeline passed or failed, along with outcome tokens.</returns>
+        public static PathSecurityResult ValidatePath(string path, FileMode mode, FileAccess access, FileShare share, out FileStream? stream)
+        {
+            stream = null;
+            bool isImport = mode == FileMode.Open;
+
+            // Helper local function to pick between import-flavored and export-flavored message strings.
+            string Pick(string importMsg, string exportMsg) => isImport ? importMsg : exportMsg;
+
+            // Run pure path-only preflight checks upfront
+            var pathOnlyResult = ValidatePathOnly(path, mode);
+            if (!pathOnlyResult.IsValid)
+            {
+                return pathOnlyResult;
+            }
+
+            string fullPath = pathOnlyResult.ValidPath!.ResolvedPath;
+            var fileLinkInfo = new FileInfo(fullPath);
+
+            // Protected directory matcher local function for resolved path check below
+            string[] protectedFolders =
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.GetFolderPath(Environment.SpecialFolder.System),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+            };
+
+            string? FindProtectedFolderViolation(string candidate) =>
+                protectedFolders.FirstOrDefault(folder =>
+                    !string.IsNullOrEmpty(folder) &&
+                    candidate.StartsWith(
+                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                        StringComparison.OrdinalIgnoreCase));
 
             // Handle Resolution (Final Target Verification)
             bool existedBefore = File.Exists(fullPath);

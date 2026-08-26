@@ -18,40 +18,56 @@ namespace Servy.Service.Helpers
         #region Logging Security
 
         /// <summary>
-        /// A collection of keywords used to identify potentially sensitive information
-        /// in configuration keys or environment variable names.
-        /// SYNC WITH: setup/taskschd/ServySecurity.ps1 ($sensitiveKeys)
+        /// Long or unambiguous sensitive keywords where letter/digit prefixes are permitted
+        /// (e.g., PGPASSWORD, DBPASSWORD, APITOKEN, APIKEY, MY_PASSWORD).
         /// </summary>
-        private static readonly HashSet<string> SensitiveKeyWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly string[] LooseKeyWords = new string[]
         {
             // --- Core Credentials ---
-            "PASSWORD", "PWD", "PASSPHRASE", "PIN", "USERPWD",
+            "PASSWORD", "PASSPHRASE", "USERPWD",
 
-            // --- Web & Mobile Auth (JWT/OAuth) ---
-            "TOKEN", "AUTH", "CREDENTIAL", "BEARER", "JWT",
-            "SESSION", "COOKIE", "CLIENT_SECRET", "PAT",
+            // --- Web & Mobile Auth (JWT/OAuth/Personal Tokens) ---
+            "TOKEN", "CREDENTIAL", "CLIENT_SECRET",
 
             // --- Cloud & Infrastructure (AWS/Azure/GCP) ---
-            "SECRET", "SAS", "ACCOUNTKEY", "ACCESSKEY", "SKEY",
-            "SIGNATURE", "TENANT_ID", // Often sensitive when paired with secrets
+            "SECRET", "ACCOUNTKEY", "ACCESSKEY", "SIGNATURE",
 
             // --- Databases & Storage ---
-            "CONNECTIONSTRING", "CONNSTR", "DSN", "DATABASE_URL",
+            "CONNECTIONSTRING", "CONNSTR", "DATABASE_URL",
             "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD",
 
+            // --- Cryptography & Identity (Specific KEY variants) ---
+            "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY", "APIKEY",
+            "CERTIFICATE", "THUMBPRINT",
+
+            // --- API & Integration Tokens ---
+            "APP_SECRET", "BROWSER_KEY", "WEBHOOK_URL",
+            "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN"
+        };
+
+        /// <summary>
+        /// Short or ambiguous sensitive keywords that require a strict leading word boundary
+        /// to prevent false positives (e.g., COMPAT, CONCERT, ARKANSAS).
+        /// </summary>
+        private static readonly string[] StrictKeyWords = new string[]
+        {
+            // --- Short Core Credentials ---
+            "PWD", "PIN",
+
+            // --- Web & Mobile Auth ---
+            "AUTH", "BEARER", "JWT", "SESSION", "COOKIE", "PAT",
+
+            // --- Cloud & Infrastructure ---
+            "SAS", "SKEY", "TENANT_ID",
+
+            // --- Databases & Storage ---
+            "DSN",
+
             // --- Cryptography & Identity ---
-            // Explicitly replaced broad "KEY" with target variants
-            "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY",
-            "CERTIFICATE", "CERT", "THUMBPRINT", "PFX", "PEM", "SALT", "PEPPER",
+            "CERT", "PFX", "PEM", "SALT", "PEPPER",
 
             // --- API Service Identifiers ---
-            "API",          // Catches API_KEY, API_SECRET, etc.
-            "APP_SECRET",
-            "BROWSER_KEY",
-            "WEBHOOK_URL",   // These often contain embedded tokens
-            "KUBE_CONFIG",
-            "TELEGRAM_TOKEN",
-            "DISCORD_TOKEN"
+            "API"
         };
 
         /// <summary>
@@ -59,9 +75,11 @@ namespace Servy.Service.Helpers
         /// word boundaries and alternation maps for sensitive credential keys.
         /// </summary>
         private static readonly string KeywordBoundaryPattern =
-            // Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them.
-            // Suffix group pulled inside the 'key' named capture parenthesis to safeguard composite descriptors.
-            @"(?i)(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])";
+            @"(?i)(?:" +
+                @"(?<=^|[^a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:" + string.Join("|", LooseKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*)" +
+                @"|" +
+                @"(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", StrictKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*)" +
+            @")(?![a-zA-Z0-9])";
 
         /// <summary>
         /// A specialized regex for matching sensitive keys.

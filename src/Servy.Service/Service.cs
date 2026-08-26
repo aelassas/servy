@@ -587,10 +587,9 @@ namespace Servy.Service
         /// <summary>
         /// Determines whether health monitoring and automated recovery actions are fully enabled based on startup options.
         /// </summary>
-        private static bool IsRecoveryEnabled(StartOptions? options)
+        private static bool IsRecoveryEnabled(StartOptions options)
         {
-            return options != null &&
-                   options.EnableHealthMonitoring &&
+            return options.EnableHealthMonitoring &&
                    options.HeartbeatIntervalInSeconds > 0 &&
                    options.MaxFailedChecks > 0 &&
                    options.RecoveryAction != RecoveryAction.None;

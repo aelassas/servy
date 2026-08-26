@@ -27,6 +27,20 @@ $testCases = @(
     @{ Name = "Underscore Prefix: MY_PASSWORD="; Input = "MY_PASSWORD=hunter2"; Expected = "MY_PASSWORD=********" },
     @{ Name = "Underscore Prefix/Suffix Composite"; Input = "MY_PASSWORD_HASH=hunter2"; Expected = "MY_PASSWORD_HASH=********" },
 
+    # --- Prefix Without Separator Tests (Issue #5877) ---
+    @{ Name = "Prefix without separator: PGPASSWORD="; Input = "PGPASSWORD=abc"; Expected = "PGPASSWORD=********" },
+    @{ Name = "Prefix without separator: DBPASSWORD="; Input = "DBPASSWORD=hunter2"; Expected = "DBPASSWORD=********" },
+    @{ Name = "Prefix without separator: SMTPPASSWORD="; Input = "SMTPPASSWORD=s3cr3t"; Expected = "SMTPPASSWORD=********" },
+    @{ Name = "Prefix without separator: APITOKEN="; Input = "APITOKEN=abc123"; Expected = "APITOKEN=********" },
+    @{ Name = "Prefix without separator: GITHUBTOKEN="; Input = "GITHUBTOKEN=ghp_xxx"; Expected = "GITHUBTOKEN=********" },
+    @{ Name = "Prefix without separator: AWSSECRET="; Input = "AWSSECRET=zz"; Expected = "AWSSECRET=********" },
+    @{ Name = "Prefix without separator: --apikey"; Input = "myapp.exe --apikey KKK"; Expected = "myapp.exe --apikey ********" },
+
+    # --- Short-Key False Positive Guards (Issue #5877 Invariants) ---
+    @{ Name = "Short-key false positive stays clean: COMPAT"; Input = "COMPAT=1"; Expected = "COMPAT=1" },
+    @{ Name = "Short-key false positive stays clean: CONCERT"; Input = "CONCERT=tonight"; Expected = "CONCERT=tonight" },
+    @{ Name = "Short-key false positive stays clean: ARKANSAS"; Input = "ARKANSAS=little_rock"; Expected = "ARKANSAS=little_rock" },
+
     # --- Base Component Separator Branch Verifications ---
     @{ Name = "Branch A: Colon Separator"; Input = "API_KEY: my-secret-token"; Expected = "API_KEY: ********" },
     @{ Name = "Branch A: Forward Slash Separator"; Input = "API_KEY/my-secret-token"; Expected = "API_KEY/********" },
@@ -44,19 +58,15 @@ $testCases = @(
     @{ Name = "False Positive Boundary Exemption"; Input = "PASSWORDLESS login attempt"; Expected = "PASSWORDLESS login attempt" }
 )
 
-# --- Keyword coverage sweep: every entry in $sensitiveKeys must redact ---
+# --- Keyword coverage sweep: every entry in $looseKeys and $strictKeys must redact ---
 $allKeys = @(
-    "PASSWORD", "PWD", "PASSPHRASE", "PIN", "USERPWD",
-    "TOKEN", "AUTH", "CREDENTIAL", "BEARER", "JWT",
-    "SESSION", "COOKIE", "CLIENT_SECRET", "PAT",
-    "SECRET", "SAS", "ACCOUNTKEY", "ACCESSKEY", "SKEY",
-    "SIGNATURE", "TENANT_ID",
-    "CONNECTIONSTRING", "CONNSTR", "DSN", "DATABASE_URL",
-    "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD",
-    "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY",
-    "CERTIFICATE", "CERT", "THUMBPRINT", "PFX", "PEM", "SALT", "PEPPER",
-    "API", "APP_SECRET", "BROWSER_KEY", "WEBHOOK_URL",
-    "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN"
+    "PASSWORD", "PASSPHRASE", "USERPWD", "TOKEN", "CREDENTIAL", "CLIENT_SECRET",
+    "SECRET", "ACCOUNTKEY", "ACCESSKEY", "SIGNATURE", "CONNECTIONSTRING", "CONNSTR",
+    "DATABASE_URL", "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD", "PRIVATE_KEY",
+    "SSH_KEY", "SECRET_KEY", "API_KEY", "APIKEY", "CERTIFICATE", "THUMBPRINT", "APP_SECRET",
+    "BROWSER_KEY", "WEBHOOK_URL", "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN",
+    "PWD", "PIN", "AUTH", "BEARER", "JWT", "SESSION", "COOKIE", "PAT", "SAS",
+    "SKEY", "TENANT_ID", "DSN", "CERT", "PFX", "PEM", "SALT", "PEPPER", "API"
 )
 
 foreach ($k in $allKeys) {

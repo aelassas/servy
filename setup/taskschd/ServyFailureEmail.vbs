@@ -12,7 +12,9 @@ ps1Path = fso.BuildPath(scriptDir, "ServyFailureEmail.ps1")
 
 ' Verify the file exists before attempting to run it
 If Not fso.FileExists(ps1Path) Then
-    WScript.Echo "Error: File not found - " & ps1Path
+    ' WScript.Echo is a modal MessageBox under wscript.exe and is invisible in a
+    ' Task Scheduler action, so report through the event log instead.
+    shell.LogEvent 1, "Servy Notification Error: Required script not found - " & ps1Path
     WScript.Quit 1
 End If
 

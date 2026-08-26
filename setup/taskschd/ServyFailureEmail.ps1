@@ -262,11 +262,21 @@ function Send-NotificationEmail {
         # SMTP-level errors: Apply granular classification based on RFC 5321 codes.
         # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
         $status = $_.Exception.StatusCode
+        $inner  = $_.Exception.InnerException
+
+        # GeneralFailure (-1) is reported both for permanent auth/config errors (#2318) and for
+        # every transport-level failure. The inner exception is what separates them.
+        $isTransport = $status -eq [System.Net.Mail.SmtpStatusCode]::GeneralFailure -and (
+               $inner -is [System.Net.Sockets.SocketException] `
+            -or $inner -is [System.Net.WebException] `
+            -or $inner -is [System.IO.IOException] `
+            -or $inner -is [System.TimeoutException])
 
         # 4xx replies are transient per RFC 5321; TransactionFailed (554) is also
         # retried because some servers use it for greylisting-style rejections.
         $isTransient = ($status -ge 400 -and $status -lt 500) `
-            -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed
+            -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed `
+            -or $isTransport
 
         $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"
 
@@ -283,7 +293,7 @@ function Send-NotificationEmail {
         Write-FallbackError -Message "ServyFailureEmail: Permanent format failure: $($_.Exception.Message)" -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
         return 'PermanentFailure'
     } catch [System.IO.IOException], [System.Net.WebException], [System.Net.Sockets.SocketException], [System.TimeoutException] {
-        # ROBUSTNESS: Explicitly isolate known transient/retryable physical infrastructure and network faults.
+        # ROBUSTNESS: Explicitly isolate known transient/retryable physical infrastructure and network faults during pre-send stages (e.g. credential import).
         $errorMsg = "ServyFailureEmail: Transient network I/O failure to $to. Error: $($_.Exception.Message)"
         Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
         return 'TransientFailure'
