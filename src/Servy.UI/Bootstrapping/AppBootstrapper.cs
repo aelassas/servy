@@ -381,7 +381,7 @@ namespace Servy.UI.Bootstrapping
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                             splash ?? (Window?)app.MainWindow,
                             string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                            _options.SecurityWarningTitle,
+                            _options.ResourceExtractionWarningTitle,
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning));
                     }
@@ -392,7 +392,7 @@ namespace Servy.UI.Bootstrapping
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                             splash ?? (Window?)app.MainWindow,
                             string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyServiceUIFileName}.pdb"),
-                            _options.SecurityWarningTitle,
+                            _options.ResourceExtractionWarningTitle,
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning));
                     }
@@ -525,10 +525,7 @@ namespace Servy.UI.Bootstrapping
             // Dispatch to UI thread to safely update data-bound properties from the watcher's background thread
             app.Dispatcher.InvokeAsync(() =>
             {
-                if (!string.IsNullOrEmpty(targetAppPublishPath))
-                {
-                    updateAvailabilityCallback(File.Exists(targetAppPublishPath));
-                }
+                updateAvailabilityCallback(File.Exists(targetAppPublishPath));
             });
         }
 

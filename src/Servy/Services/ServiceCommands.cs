@@ -121,6 +121,7 @@ namespace Servy.Services
 
             if (dto == null)
             {
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ValidationError, Caption);
                 return false;
             }
 

@@ -1174,15 +1174,23 @@ namespace Servy.Service
                     return null;
                 }
 
-                return _streamWriterFactory.Create(
-                    path,
-                    options.EnableSizeRotation,
-                    options.RotationSizeInBytes,
-                    options.EnableDateRotation,
-                    options.DateRotationType,
-                    options.MaxRotations,
-                    options.UseLocalTimeForRotation
-                    );
+                try
+                {
+                    return _streamWriterFactory.Create(
+                        path,
+                        options.EnableSizeRotation,
+                        options.RotationSizeInBytes,
+                        options.EnableDateRotation,
+                        options.DateRotationType,
+                        options.MaxRotations,
+                        options.UseLocalTimeForRotation
+                        );
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Could not open log file '{path}'; continuing without redirection for this stream.", ex);
+                    return null;
+                }
             }
 
             // Always create stdout writer if path is valid
@@ -1706,7 +1714,7 @@ namespace Servy.Service
                 }
 
                 // Determine if this is an error exit that will result in a hard service stop
-                bool isCleanExit = exitCode == 0 && !_options.RecoveryOnCleanExit;
+                bool isCleanExit = exitCode == 0 && !(_options.RecoveryOnCleanExit && _recoveryActionEnabled);
                 bool isErrorStop = shouldStop && !isCleanExit; // True if it's an unrecovered crash or quota hit
 
                 // Trigger failure signal if local recovery handles it OR if recovery is disabled and it's an error exit
@@ -2111,15 +2119,19 @@ namespace Servy.Service
                 return (false, true);
             }
 
+            string exitCodeText = exitCode.HasValue
+                ? $"{exitCode.Value} (0x{exitCode.Value:X8})"
+                : "unavailable";
+
             // Registers failure and checks recovery thresholds if recovery is enabled or if invoked from a health check pass.
             // Otherwise, logs an error and initiates a service stop sequence.
             if (_recoveryActionEnabled || isHealthCheck)
             {
-                _logger?.Warn($"[{source}] Child process exited with code {exitCode?.ToString() ?? "null"} (0x{exitCode:X8}). Recovery is enabled; registering failure...");
+                _logger?.Warn($"[{source}] Child process exited with code {exitCodeText}. Recovery is enabled; registering failure...");
                 return (RegisterFailureAndCheckRecovery(source), false);
             }
 
-            _logger?.Error($"[{source}] Process exited with code {exitCode?.ToString() ?? "null"} and recovery is disabled.");
+            _logger?.Error($"[{source}] Process exited with code {exitCodeText} and recovery is disabled.");
             return (false, true);
         }
 

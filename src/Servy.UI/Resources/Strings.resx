@@ -32,8 +32,13 @@
   <data name="Msg_UpdateCheckFailed" xml:space="preserve">
     <value>Failed to check updates: {0}</value>
   </data>
-
+  <data name="Msg_ReleaseLinkOpenFailed" xml:space="preserve">
+    <value>Failed to open release link: {0}</value>
+  </data>
   <data name="Msg_FailedCopyingEmbeddedResource" xml:space="preserve">
     <value>Failed copying embedded resource: {0}</value>
+  </data>
+  <data name="Msg_ResourceExtractionWarningTitle" xml:space="preserve">
+    <value>Resource Extraction Warning</value>
   </data>
 </root>

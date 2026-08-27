@@ -40,6 +40,11 @@ namespace Servy.UI.Bootstrapping
         public string? SecurityWarningMessage { get; set; }
 
         /// <summary>
+        /// Gets or sets the title for the embedded-resource extraction warning dialog.
+        /// </summary>
+        public string? ResourceExtractionWarningTitle { get; set; }
+
+        /// <summary>
         /// Gets or sets the title for the SQLite version compatibility warning dialog.
         /// </summary>
         public string? SqliteVersionWarningTitle { get; set; }
