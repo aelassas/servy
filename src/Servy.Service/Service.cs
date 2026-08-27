@@ -2415,7 +2415,7 @@ namespace Servy.Service
                         : (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN),
                     dwWin32ExitCode = win32ExitCode,
                     dwServiceSpecificExitCode = specificExitCode,
-                    dwCheckPoint = (int)_checkPoint,
+                    dwCheckPoint = (state == SERVICE_STOPPED || state == SERVICE_RUNNING) ? 0 : (int)_checkPoint,
                     dwWaitHint = waitHint
                 };
 
