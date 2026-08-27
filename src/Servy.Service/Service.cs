@@ -1260,10 +1260,9 @@ namespace Servy.Service
             // Start the process safely
             try
             {
-                if (!_childProcess.Start())
-                {
-                    throw new InvalidOperationException("Process.Start returned false (no process resource started).");
-                }
+                // UseShellExecute is false, so Start() cannot return false (there is no process to reuse):
+                // an unstartable executable surfaces as Win32Exception.
+                _childProcess.Start();
 
                 _logger?.Info($"Started child process with PID: {_childProcess.Id}");
             }
