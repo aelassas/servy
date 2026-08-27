@@ -2,6 +2,7 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
@@ -226,17 +227,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Error Trapping & Fail-Safe Cleanup Branches
 
         [Fact]
-        public void Start_ProcessStartReturnsFalse_ThrowsInvalidOperationException_AndCleansUp()
+        public void Start_ProcessStartThrowsWin32Exception_PropagatesException_AndCleansUp()
         {
             // Arrange
             var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
-            var mockFactory = new MockStartFalseProcessFactory();
+            var mockFactory = new MockThrowingProcessFactory(new Win32Exception(2, "The system cannot find the file specified"));
 
             // Act
-            var ex = Assert.Throws<InvalidOperationException>(() => ProcessLauncher.Start(options, mockFactory, _logger));
+            var ex = Assert.Throws<Win32Exception>(() => ProcessLauncher.Start(options, mockFactory, _logger));
 
             // Assert
-            Assert.Contains("Process.Start returned false", ex.Message);
+            Assert.Equal(2, ex.NativeErrorCode);
             Assert.True(mockFactory.CreatedWrapper.WasDisposed);
         }
 
@@ -411,9 +412,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             };
         }
 
-        private class MockStartFalseProcessFactory : IProcessFactory
+        private class MockThrowingProcessFactory : IProcessFactory
         {
-            public MockStartFalseProcessWrapper CreatedWrapper { get; } = new MockStartFalseProcessWrapper();
+            private readonly Exception _exceptionToThrow;
+
+            public MockThrowingProcessFactory(Exception exceptionToThrow)
+            {
+                _exceptionToThrow = exceptionToThrow;
+                CreatedWrapper = new MockThrowingProcessWrapper(_exceptionToThrow);
+            }
+
+            public MockThrowingProcessWrapper CreatedWrapper { get; }
             public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger) => CreatedWrapper;
         }
 
@@ -460,14 +469,26 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public Task<bool> WaitAndCheckStillRunningAsync(TimeSpan t, CancellationToken c) => Task.FromResult(true);
         }
 
-        private class MockStartFalseProcessWrapper : BaseMockProcessWrapper
+        private class MockThrowingProcessWrapper : BaseMockProcessWrapper
         {
+            private readonly Exception _exceptionToThrow;
+
+            public MockThrowingProcessWrapper(Exception exceptionToThrow)
+            {
+                _exceptionToThrow = exceptionToThrow;
+            }
+
             public bool WasDisposed { get; private set; }
             public override int Id => int.MaxValue;
             public override int ExitCode => -1;
-            public override bool Start() => false; // Trigger structural fallback branch criteria match
+
+            public override bool Start()
+            {
+                throw _exceptionToThrow;
+            }
+
             public override bool HasExited => true;
-            public override string Format() => "MockFalse";
+            public override string Format() => "MockThrowing";
             public override bool WaitForExit(int ms) => true;
 
             public override void Dispose()
