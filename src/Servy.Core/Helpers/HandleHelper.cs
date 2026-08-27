@@ -56,8 +56,9 @@ namespace Servy.Core.Helpers
         /// <param name="filePath">Full path of the file to check for open handles.</param>
         /// <returns>A list of <see cref="ProcessHandleInfo"/> objects representing the processes holding the file.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="handleExePath"/> or <paramref name="filePath"/> is null or empty.</exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">Thrown when the OS refuses to start <paramref name="handleExePath"/>, most commonly because the file does not exist or is not executable. <see cref="ProcessStartInfo.UseShellExecute"/> is false, so this is the failure mode for an unstartable executable.</exception>
         /// <exception cref="TimeoutException">Thrown when handle.exe does not exit within <see cref="AppConfig.HandleExeTimeoutMs"/>.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when handle.exe cannot be started, or exits with a non-zero code that does not indicate "no matching handles".</exception>
+        /// <exception cref="InvalidOperationException">Thrown when handle.exe exits with a non-zero code that does not indicate "no matching handles".</exception>
         /// <exception cref="RegexMatchTimeoutException">Thrown when parsing the handle.exe output exceeds <see cref="AppConfig.HandleExeRegexTimeout"/>.</exception>
         public static List<ProcessHandleInfo> GetProcessesUsingFile(string handleExePath, string filePath)
         {
@@ -87,8 +88,9 @@ namespace Servy.Core.Helpers
                 process.OutputDataReceived += (s, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
                 process.ErrorDataReceived += (s, e) => { if (e.Data != null) errorBuilder.AppendLine(e.Data); };
 
-                if (!process.Start())
-                    throw new InvalidOperationException($"Failed to start process: {handleExePath}");
+                // UseShellExecute is false, so Start() cannot return false (there is no process to reuse):
+                // an unstartable executable surfaces as Win32Exception.
+                process.Start();
 
                 // Start asynchronous reads
                 process.BeginOutputReadLine();

@@ -1,4 +1,4 @@
-﻿#Requires -Version 2.0
+#Requires -Version 2.0
 <#
 .SYNOPSIS
     Servy PowerShell module to manage Windows services using the Servy CLI.
@@ -589,20 +589,21 @@ function Set-ServyConfig {
             Configures module-level execution settings for the Servy CLI.
 
         .DESCRIPTION
-            Updates internal module variables such as the execution timeout and
-            the output buffer limit. This is useful for tuning the module for
-            resource-constrained environments or exceptionally long-running operations.
+            Updates internal module variables such as the execution timeout.
+            This is useful for tuning the module for resource-constrained
+            environments or exceptionally long-running operations.
 
         .PARAMETER TimeoutSeconds
             Maximum time (in seconds) to wait for a CLI command to complete.
             Default: 600 (10 minutes).
 
         .PARAMETER MaxBufferChars
-            Reasonable cap for CLI output character buffering to prevent memory exhaustion.
-            Kept for backward compatibility with caller scripts. Default: 1048576 (1MB).
+            No longer used. The output reader introduced in 9.9 reads streams line by line
+            and does not buffer against a character cap. The parameter is accepted so that
+            caller scripts written against 9.8 and below continue to run unchanged.
 
         .EXAMPLE
-            Set-ServyConfig -TimeoutSeconds 1200 -MaxBufferChars 2097152
+            Set-ServyConfig -TimeoutSeconds 1200
     #>
     [CmdletBinding()]
     param(
