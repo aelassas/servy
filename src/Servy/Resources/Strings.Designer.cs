@@ -1834,7 +1834,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Set the timeout to 0 to run in fire-and-forget mode. Stdout/Stderr redirection and retries are not available in this mode..
+        ///   Looks up a localized string similar to The timeout in seconds to wait for the pre-launch process. Set the timeout to 0 to run in fire-and-forget mode. Stdout/Stderr redirection and retries are not available in this mode..
         /// </summary>
         public static string Info_PreLaunchTimeout {
             get {
@@ -1861,7 +1861,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Set the timeout to 0 to run in fire-and-forget mode..
+        ///   Looks up a localized string similar to The timeout in seconds to wait for the pre-stop process. Set the timeout to 0 to run in fire-and-forget mode..
         /// </summary>
         public static string Info_PreStopTimeout {
             get {

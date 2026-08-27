@@ -363,7 +363,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Link_SecurityHardeningGuide" xml:space="preserve">
     <value>Learn script location and execution usage.</value>
   </data>
-  
+
   <!-- Pre-Launch -->
   <data name="Info_PreLaunch" xml:space="preserve">
     <value>Optional script to run before service start. If it fails, the service won't start unless Ignore Failure is enabled.</value>
@@ -384,7 +384,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Ignore Failure</value>
   </data>
   <data name="Info_PreLaunchTimeout" xml:space="preserve">
-    <value>Set the timeout to 0 to run in fire-and-forget mode. Stdout/Stderr redirection and retries are not available in this mode.</value>
+    <value>The timeout in seconds to wait for the pre-launch process. Set the timeout to 0 to run in fire-and-forget mode. Stdout/Stderr redirection and retries are not available in this mode.</value>
   </data>
 
   <!-- XML/JSON import -->
@@ -523,7 +523,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Log pre-stop failure as error</value>
   </data>
   <data name="Info_PreStopTimeout" xml:space="preserve">
-    <value>Set the timeout to 0 to run in fire-and-forget mode.</value>
+    <value>The timeout in seconds to wait for the pre-stop process. Set the timeout to 0 to run in fire-and-forget mode.</value>
   </data>
 
   <!-- Post-Stop -->
