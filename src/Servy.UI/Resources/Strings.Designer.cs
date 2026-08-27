@@ -88,6 +88,24 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to open release link: {0}.
+        /// </summary>
+        public static string Msg_ReleaseLinkOpenFailed {
+            get {
+                return ResourceManager.GetString("Msg_ReleaseLinkOpenFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resource Extraction Warning.
+        /// </summary>
+        public static string Msg_ResourceExtractionWarningTitle {
+            get {
+                return ResourceManager.GetString("Msg_ResourceExtractionWarningTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A new version of Servy is available. Do you want to download it?.
         /// </summary>
         public static string Msg_UpdateAvailablePrompt {

@@ -182,6 +182,7 @@ namespace Servy.Manager
                 SecurityWarningMessage = Strings.Msg_SecurityWarningMessage,
                 SqliteVersionWarningTitle = Strings.Msg_SqliteVersionWarningTitle,
                 SqliteVersionWarningMessageFormat = Strings.Msg_SqliteVersionWarningMessage,
+                ResourceExtractionWarningTitle = UI.Resources.Strings.Msg_ResourceExtractionWarningTitle,
                 SplashWindowFactory = () => new SplashWindow(Strings.Splash_Text),
                 // CRITICAL: The composition root is here, not in the View.
                 MainWindowFactoryAsync = (serviceName) =>

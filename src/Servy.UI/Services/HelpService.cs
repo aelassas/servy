@@ -116,7 +116,16 @@ namespace Servy.UI.Services
                         {
                             const string headlessLabel = "CheckUpdates";
                             const string fallbackDebug = "Release link opened in an existing process.";
-                            OpenExternalUrl(AppConfig.LatestReleaseLink, headlessLabel, fallbackDebug);
+                            try
+                            {
+                                OpenExternalUrl(AppConfig.LatestReleaseLink, headlessLabel, fallbackDebug);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error($"Failed to open release link: {AppConfig.LatestReleaseLink}", ex);
+                                await _messageBoxService.ShowErrorAsync(
+                                    string.Format(Strings.Msg_ReleaseLinkOpenFailed, ex.Message), caption);
+                            }
                         }
                     }
                     else

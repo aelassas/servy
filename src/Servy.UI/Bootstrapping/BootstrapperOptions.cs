@@ -42,6 +42,11 @@ namespace Servy.UI.Bootstrapping
         public string SqliteVersionWarningTitle { get; set; }
 
         /// <summary>
+        /// Gets or sets the title for the embedded-resource extraction warning dialog.
+        /// </summary>
+        public string ResourceExtractionWarningTitle { get; set; }
+
+        /// <summary>
         /// Gets or sets the composite format string for the SQLite version error.
         /// <c>{0}</c> is the detected version, <c>{1}</c> is the required version.
         /// </summary>
