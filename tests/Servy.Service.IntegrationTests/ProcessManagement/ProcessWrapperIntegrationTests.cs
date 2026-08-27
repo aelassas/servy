@@ -644,8 +644,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void StopTree_ProcessGracefulExit_LogsCanceledWithCodeInfo()
         {
-            // Skip execution on ARM64 environments (native or emulated) where conhost/GenerateConsoleCtrlEvent
-            Assert.SkipWhen(RuntimeInformation.OSArchitecture == Architecture.Arm64, "Skipping StopTree graceful exit test on ARM64 to prevent console IPC pipe crash.");
+            // Skip execution on ARM64 environments (flaky)
+            Assert.SkipWhen(RuntimeInformation.OSArchitecture == Architecture.Arm64, "Skipping StopTree graceful exit test on ARM64 (flaky).");
 
             // Arrange
             // Dynamically compile a Win32 GUI executable (WindowsApplication).
