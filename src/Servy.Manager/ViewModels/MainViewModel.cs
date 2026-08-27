@@ -963,9 +963,10 @@ namespace Servy.Manager.ViewModels
                 update.CpuUsage = cpu;
                 update.RamUsage = ram;
 
-                if (update.StartupType == null && serviceDto != null && serviceDto.StartupType.HasValue)
+                if (update.StartupType == null && serviceDto?.StartupType is int st
+                    && Enum.IsDefined(typeof(ServiceStartType), (ServiceStartType)st))
                 {
-                    update.StartupType = (ServiceStartType)serviceDto.StartupType.Value;
+                    update.StartupType = (ServiceStartType)st;
                 }
 
                 ServiceDto resultDto = null;
