@@ -662,7 +662,7 @@ namespace Servy.UnitTests.ViewModels
 
             // Assert
             Assert.Equal("KeepThisName", _viewModel.ServiceName);
-            _messageBoxService.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
