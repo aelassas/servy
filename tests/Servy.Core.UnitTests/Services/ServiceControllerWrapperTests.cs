@@ -146,15 +146,22 @@ namespace Servy.Core.UnitTests.Services
                 // Act
                 var result = wrapper.GetDependenciesInternal(factory, TestContext.Current.CancellationToken);
 
-                // Assert: ServiceShared should be expanded under both ServiceB and ServiceC, but constructed only once via memoization
+                // Assert: ServiceShared should be expanded under both ServiceB and ServiceC, constructed only once via memoization, but cloned for independent UI state
                 Assert.Equal(2, result.Dependencies.Count);
                 var sharedFromB = result.Dependencies[0].Dependencies.Single();
                 var sharedFromC = result.Dependencies[1].Dependencies.Single();
 
                 Assert.Equal("ServiceShared", sharedFromB.ServiceName);
                 Assert.Equal("ServiceShared", sharedFromC.ServiceName);
-                Assert.Same(sharedFromB, sharedFromC);
+
+                // Memoization proof: SCM factory invoked only once for shared dependency
                 Assert.Equal(1, sharedFactoryInvocations);
+
+                // UI state independence: distinct node instances per tree position so IsExpanded does not mirror
+                Assert.NotSame(sharedFromB, sharedFromC);
+
+                sharedFromB.IsExpanded = true;
+                Assert.False(sharedFromC.IsExpanded);
             }
         }
 
