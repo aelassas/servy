@@ -366,7 +366,10 @@ namespace Servy.Manager.Views
 
             // Run search for logs tab if applicable
             if (logsVm?.LogsView?.IsEmpty ?? false)
+            {
+                logsVm.ResetDateWindowToNow();
                 await logsVm.SearchCommand.ExecuteAsync(null);
+            }
         }
 
         /// <summary>

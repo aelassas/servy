@@ -469,6 +469,9 @@ If the service is disabled and marked for deletion, installation will fail until
   <data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
     <value>Failed to load service dependency tree.</value>
   </data>
+  <data name="Tooltip_DependencyUnavailable" xml:space="preserve">
+    <value>This dependency is unavailable or inaccessible.</value>
+  </data>
 
   <!-- Automation Properties -->
   <data name="Automation_MainWindow_Name" xml:space="preserve">

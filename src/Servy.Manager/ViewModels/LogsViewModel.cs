@@ -241,8 +241,7 @@ namespace Servy.Manager.ViewModels
             _eventLogService = eventLogService ?? throw new ArgumentNullException(nameof(eventLogService));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
 
-            FromDate = DateTime.Now.AddDays(-_appConfig.LogsWindowDays);
-            ToDate = DateTime.Now; // Default to now
+            ResetDateWindowToNow();
 
             LogsView = new ListCollectionView(_logs);
             SearchCommand = new AsyncCommand(Search, name: nameof(SearchCommand));
@@ -331,6 +330,17 @@ namespace Servy.Manager.ViewModels
                 ScrollLogsToTopRequested = null;
             }
             base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Re-seeds the default search window to end at the current moment.
+        /// Called when the Logs tab is activated so a long-running Manager
+        /// does not keep searching the window it started with.
+        /// </summary>
+        public void ResetDateWindowToNow()
+        {
+            FromDate = DateTime.Now.AddDays(-_appConfig.LogsWindowDays);
+            ToDate = DateTime.Now;
         }
 
         #endregion

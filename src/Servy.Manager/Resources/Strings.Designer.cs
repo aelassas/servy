@@ -2515,6 +2515,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This dependency is unavailable or inaccessible..
+        /// </summary>
+        public static string Tooltip_DependencyUnavailable {
+            get {
+                return ResourceManager.GetString("Tooltip_DependencyUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Expand all nodes in the dependency tree.
         /// </summary>
         public static string Tooltip_ExpandAll {

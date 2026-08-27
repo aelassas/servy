@@ -1918,7 +1918,12 @@ namespace Servy.Service
                 case RecoveryAction.RestartProcess:
                     _serviceHelper.RestartProcess(
                         _childProcess,
-                        StartProcess,
+                        (exe, args, dir, envVars, ct) =>
+                        {
+                            StartProcess(exe, args, dir, envVars, ct);
+                            SetProcessPriority(_options?.Priority ?? ProcessPriorityClass.Normal);
+                            SetProcessCpuAffinity(_options?.CpuAffinity);
+                        },
                         _realExePath,
                         _realArgs,
                         _workingDir,
