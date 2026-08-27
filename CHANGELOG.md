@@ -326,8 +326,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.2...v9.3
 * ci(download-with-retry/action.yml): every failure is retried and logged as 'Transient', including permanent 404/403s (sibling of the #1384 class) (#4954)
 * ci(bump-version.yml): pushes to main/net48 via single-shot Invoke-Git push while dot-sourcing the Invoke-PushWithRetry helper its three sibling workflows use for exactly this race (#4959)
 * ci(sbom.yml): generate-sbom.ps1 - BaseVersion is unvalidated (siblings publish.ps1/publish-sc.ps1 call Assert-ServyVersion); a malformed value is stamped silently into the published SBOM (#4984)
-* ci(scoop): setup/scoop/servy.json - description drifted from the README feature sentence: 'CPU affinity' is missing (autoupdate never rewrites the description) (#4987)
-* fix: various code quality, enhancements, and inconsistency issues
+* ci(servy.json): setup/scoop/servy.json - description drifted from the README feature sentence: 'CPU affinity' is missing (autoupdate never rewrites the description) (#4987)
+* chore: various robustness, security, inconsistency and code quality fixes
 
 ### Downloads
 * [servy-9.2-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.2/servy-9.2-arm64-installer.exe) - 70.65 MB
@@ -362,8 +362,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.1...v9.2
 * fix(setup/servy.iss): task XMLs declare UTF-8 but are saved with ANSI SaveStringsToFile; a non-ASCII install path corrupts them (#4780)
 * fix(license): handle64.exe / handle64a.exe - Sysinternals binaries committed and redistributed in four projects with no attribution, version record, or redistribution license (#4756)
 * ci(security.yml): .gitleaks.toml - allowlist-only config without [extend] replaces the default ruleset, so the CI secret scan runs with zero rules (#4749)
-* fix: various code quality, robustness and inconsistency issues
-* docs: fix various issues in the documentation (wiki)
+* chore: various robustness, security, inconsistency and code quality fixes
 
 ### Downloads
 * [servy-9.1-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.1/servy-9.1-arm64-installer.exe) - 76.21 MB
@@ -404,7 +403,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.0...v9.1
 * ci(wiki.yml): the 'workspace files are present' guard uses 'ls -A .', which always lists .git after actions/checkout, so the empty/inaccessible branch is unreachable (#4678)
 * ci(security.yml): the concurrency group falls back to github.sha for push/schedule/dispatch, making it unique per run and inert; all five sibling workflows key on github.ref (residual of #1098) (#4673)
 * ci(download-with-retry/action.yml): output_path is run through ExpandString, which evaluates $(...) subexpressions as code; no caller uses the environment-variable expansion it was added for (#4657)
-* fix: various robustness, security, inconsistency, and code quality issues (check GitHub Issues for more details)
+* chore: various robustness, security, inconsistency and code quality fixes
 
 ### Downloads
 * [servy-9.0-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.0/servy-9.0-arm64-installer.exe) - 76.19 MB
@@ -470,7 +469,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.8...v8.9
 * fix(core): ImportGuard.cs / ServiceDtoImportValidator.cs - the same MaxConfigFileSizeBytes rejection is logged as Error in one half of the import guard and Warn in the other (#4419)
 * fix(service): ProcessLauncher.cs - CreateStartInfo documents a null-or-whitespace working-directory fallback but uses ??, so an empty string silently inherits the service's System32 directory (#4405)
 * fix(service): ProcessWrapper.cs - SendCtrlC's finally clears the service's Ctrl+C ignore flag instead of restoring it, undoing what OnStart set and StartProcess carefully preserves (#4408)
-* fix(service): EnvironmentVariableHelper.cs - a custom variable referencing another whose value holds a system placeholder never resolves it; the class's own <example> documents output the engine cannot produce (#4409)
+* fix(service): EnvironmentVariableHelper.cs - a custom variable referencing another whose value holds a system placeholder never resolves it; the class's own \<example\> documents output the engine cannot produce (#4409)
 * fix(restarter): ServiceRestarter.cs - stop-phase timeout message says 'No time remaining to stop' although Stop() was already issued; the service is left stopped and never started (residual of #949) (#4388)
 * fix(desktop): ServiceConfigurationValidator.cs (Servy vs Manager) - a null DTO is silently swallowed in the desktop validator but reported to the user in the Manager one (#4361)
 * fix(desktop): ServiceValidationRules.cs - an empty Confirm password field skips the mismatch check entirely, so an unconfirmed password installs in the desktop app (#4400)
@@ -486,7 +485,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.8...v8.9
 * fix(psm1): Servy.psm1 - HeartbeatUrlTimeoutSeconds help promises 'Set to 0 for unlimited wait' but ValidateRange(2,30) rejects 0 (#4253)
 * ci: changelog.yml - [datetime]::Parse converts the Z-suffixed published_at to runner-local time; release dates shift by a day on non-UTC runners (#4268)
 * chore(deps): update dependencies
-* other fixes: check GitHub Issues for details.
+* chore: various robustness, security, inconsistency and code quality fixes
 
 ### Downloads
 * [servy-8.8-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-arm64-installer.exe) - 76.22 MB
@@ -510,7 +509,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.7...v8.8
 * fix(service): move constructor guard clauses outside try-catch to prevent premature runner crash
 * fix(service): wrap masking regex value patterns in atomic groups to eliminate ReDoS timeouts
 * fix(service): move state cleanup inside the lock boundary to eliminate telemetry snapshot sync races
-* fix(ui): BulkObservableCollectionTests.cs - TrimToSize_NonListImplementation_UsesManualLoop never reaches the manual-loop branch: every ObservableCollection ctor copies into a List<T> (#3129)
+* fix(ui): BulkObservableCollectionTests.cs - TrimToSize_NonListImplementation_UsesManualLoop never reaches the manual-loop branch: every ObservableCollection ctor copies into a List\<T\> (#3129)
 
 ### Downloads
 * [servy-8.7-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-arm64-installer.exe) - 76.23 MB
@@ -531,7 +530,6 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.6...v8.7
 **Date:** 2026-07-12 | **Tag:** [`v8.6`](https://github.com/aelassas/servy/tree/v8.6)
 
 * fix(core): separate atomic and progressive creation paths to preserve inheritance when breakInheritance is false (#3896)
-* fix(service): wrap masking regex value patterns in atomic groups to eliminate ReDoS timeouts
 * fix(manager): prevent tab switching from prematurely freezing search commands
 * chore(deps): update dependencies
 
@@ -588,8 +586,8 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(core): ProcessKiller.WalkAndKillChildren / KillParentProcesses - generic Logger.Warn drops the Exception (no stack), inconsistent with Logger.Error sites in the same file (#1528)
 * fix(core): StringHelper.cs - XML doc cref points to wrong namespace 'Servy.Core.Security.EnvironmentVariableParser' (#1534)
 * fix(core): ServiceValidationRules.Validate - service-dependency errors are joined into one Errors entry while every other check adds individual strings (#1547)
-* fix(core): RotatingStreamWriter.EnforceMaxRotations - 'consecutiveDeletionFailures >= 10' threshold duplicated as a magic literal across the enumerate-failure and delete-failure paths (#1555)
-* fix(core): RotatingStreamWriter.TripCircuitBreaker - 'CooldownMs / 60000' inline magic number for ms->minutes conversion in error message (same family as #1549) (#1556)
+* fix(core): RotatingStreamWriter.EnforceMaxRotations - 'consecutiveDeletionFailures \>= 10' threshold duplicated as a magic literal across the enumerate-failure and delete-failure paths (#1555)
+* fix(core): RotatingStreamWriter.TripCircuitBreaker - 'CooldownMs / 60000' inline magic number for ms-\>minutes conversion in error message (same family as #1549) (#1556)
 * fix(core): Logger.cs fallback log entries - inconsistent timestamp format vs. main log (no TZ marker) (#1559)
 * fix(core): NativeMethods.ValidateCredentials - 'if (username.Contains("\\"))' is dead-conditional after regex pre-check, plus dead initialisations of 'domain'/'user' (#1563)
 * fix(core): NativeMethods.ValidateCredentials - generic catch wraps Exception in SecurityException without preserving inner exception (#1575)
@@ -638,7 +636,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(core): ProcessKiller.cs - KillChildren skips PID-reuse identity check on first-level children (parentStartTime = DateTime.MinValue) (#1706)
 * fix(core): NativeMethods.cs - class-wide [ExcludeFromCodeCoverage] hides coverage for ValidateCredentials/AtomicSecureMove/GetFileIdentity logic (#1710)
 * fix(core): Helper.cs - EscapeArgs and EscapeBackslashes are ~90% duplicate; extract a shared core (#1712)
-* fix(core): Logger.cs - FormatException truncation skips closing brackets, leaving unmatched [Inner -> markers (#1716)
+* fix(core): Logger.cs - FormatException truncation skips closing brackets, leaving unmatched [Inner -\> markers (#1716)
 * fix(core): Logger.cs - _initFallbackWriteCount / _logFallbackWriteCount never reset; long-running services go silent forever after 10 lifetime failures (#1717)
 * fix(core): SecureData.cs - DecryptV2 HMAC failures bypass Logger.Error in catch filter (#1723)
 * fix(core): HandleHelper.cs - GetProcessesUsingFile ignores handle.exe ExitCode; non-zero exits silently yield an empty list (#1726)
@@ -795,7 +793,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(core): EnvironmentVariablesValidator.Validate - short-circuits on first error, asymmetric with sibling ServiceDependenciesValidator which collects all errors (#2164)
 * fix(core): ProcessHelper.cs - UnexpandedEnvVarRegex static field declared but never referenced (dead code) (#2165)
 * fix(core): EventLogLogger.ScopedEventLogLogger.CreateScoped - nested-prefix bracket-balancing trick ("{Prefix}] [{prefix}") silently breaks when a prefix contains '[' or ']' (#2166)
-* fix(core): Domain/Service.cs - XML doc <returns> on Start/Stop/Restart/Install/Uninstall describe a bool result but methods return OperationResult (#2168)
+* fix(core): Domain/Service.cs - XML doc \<returns\> on Start/Stop/Restart/Install/Uninstall describe a bool result but methods return OperationResult (#2168)
 * fix(core): Logger.FormatException - truncation path emits one unclosed '[' bracket when the size limit triggers on inner exception N (off-by-one) (#2169)
 * fix(core): Domain/Service.cs - IsInstalled() and GetServiceStartupType() do not accept CancellationToken, breaking propagation from callers (#2177)
 * fix(core): Logger.cs - now/tzMarker timestamp formatting duplicated across three sites (DRY) (#2185)
@@ -827,7 +825,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(core): ServiceManager.GetServiceStartupType - inlines delayed-auto-start query that IsDelayedStart already encapsulates (DRY) (#2275)
 * fix(core): ProtectedKeyProvider.SaveProtected - fixed staging file assumes mutex protection, but the v7.8 migration re-save runs outside the mutex (#2276)
 * fix(core): ProcessKiller.cs - reserved system-PID threshold '4' hardcoded inline at four guard sites instead of a named constant (#2277)
-* fix(core): Servy.Core ServiceHelper.CalculateStartTimeout - preLaunchRetryAttempts parameter is undocumented (missing <param> tag) (#2281)
+* fix(core): Servy.Core ServiceHelper.CalculateStartTimeout - preLaunchRetryAttempts parameter is undocumented (missing \<param\> tag) (#2281)
 * fix(core): ConfigParser.ParseEnum(string) - Flags parity check rejects valid canonical comma-separated combinations (asymmetric with int overload) (#2282)
 * fix(core): ServiceManager.cs - AutomaticDelayedStart→Automatic start-type coercion duplicated in CreateService and UpdateServiceConfig (#2288)
 * fix(core): EventLogService.cs - SearchAsync truncates to MaxResults before ordering; with default oldest-first reads the most recent events are never returned (#2295)
@@ -837,7 +835,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(core): ServiceDependenciesValidator.cs - XML doc summary omits the dollar sign '$' that the regex and inline comment allow (#2317)
 * fix(core): IServiceManager.cs - GetDependencies XML doc claims reverse dependencies are returned, but implementation only resolves ServicesDependedOn (#2327)
 * fix(core): IServiceManager.cs / ServiceManager.cs - InstallServiceAsync documents ArgumentNullException but actually throws ArgumentException for missing names/paths (#2328)
-* fix(core): InstallServiceOptions.cs - EnableDateRotation doc uses <paramref name="dateRotationType"> referencing a nonexistent parameter (#2329)
+* fix(core): InstallServiceOptions.cs - EnableDateRotation doc uses \<paramref name="dateRotationType"\> referencing a nonexistent parameter (#2329)
 * fix(core): ServiceManager.cs - StartServiceAsync/StopServiceAsync repository-null guard throws a misleading "Cannot install service" message (copy-paste) (#2330)
 * fix(core): ServiceManager.cs - IsServiceInstalled/GetServiceStartupType throw ArgumentNullException for non-null whitespace names (inconsistent with sibling methods) (#2331)
 * fix(core): XmlServiceSerializer.cs / XmlServiceValidator.cs - duplicated XXE-hardening XmlReaderSettings can drift between the two XML entry points (#2334)
@@ -850,7 +848,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(infra): SQLiteDbInitializer ApplyVersion2/3/5 - 'add column if missing' migration boilerplate duplicated three times with copy-paste try/catch/log (#1611)
 * fix(infra): SQLiteDbInitializer.ReconcileSchema - 'self-healing' only adds missing columns; cannot detect renamed/removed/type-changed columns, silently masking real drift (#1612)
 * fix(infra): DapperExecutor.CalculateBackoff - maxBackoffMs default 5000 is an inline magic number; sibling DB tuning lives in AppConfig (same family as #1556) (#1654)
-* fix(infra): SQLiteDbInitializer.ReconcileSchema - XML doc summary and <param> blocks duplicated verbatim (two identical doc blocks above one method) (#1661)
+* fix(infra): SQLiteDbInitializer.ReconcileSchema - XML doc summary and \<param\> blocks duplicated verbatim (two identical doc blocks above one method) (#1661)
 * fix(infra): DapperExecutor.cs - WrappedDbTransaction.Dispose leaks Connection if Transaction.Dispose throws (#1687)
 * fix(infra): SQLiteDbInitializer.cs - ApplyVersion4 silently drops orphan columns, masking missed rename migrations (#1708)
 * fix(infra): ServiceRepository.cs - UpsertBatchAsync ID sync uses C# ToLowerInvariant against SQLite ASCII LOWER, missing non-ASCII service names (#1714)
@@ -869,7 +867,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(infra): DapperExecutor.cs - Duplicate 'Retry loop exited' guard with identical message in sync and async paths (#2010)
 * fix(infra): ServiceRepository.UpsertBatchAsync - does not preserve runtime state, clobbers Pid/ActiveStdoutPath/ActiveStderrPath/Password on batch import (#2051)
 * fix(infra): DapperExecutor - no BeginTransactionAsync; ServiceRepository.UpsertBatchAsync blocks on synchronous connection.Open inside an async path (#2125)
-* fix(infra): IServiceRepository.UpsertAsync - return-value contract says 'affected records' but impl returns service ID, making consumer 'affected <= 0' checks dead code (#2154)
+* fix(infra): IServiceRepository.UpsertAsync - return-value contract says 'affected records' but impl returns service ID, making consumer 'affected \<= 0' checks dead code (#2154)
 * fix(infra): SQLiteDbInitializer.ReconcileSchema - detects type/nullability mismatches but only warns; 'Self-Healing' claim only covers missing columns (#2180)
 * fix(infra): SQLiteDbInitializer.ApplyVersion4 - table rebuild silently loses every index/trigger/view on Services except idx_services_name_lower (#2181)
 * fix(infra): DapperExecutor - sync methods recompute Unwrap(transaction) inside the retry lambda; async methods correctly hoist it outside (#2233)
@@ -888,7 +886,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(service): Service.cs - dead health check timer disposal in Cleanup() finally block (already disposed in ExecuteTeardown) (#1523)
 * fix(service): ProcessLauncher.Start - subscribes to UnderlyingProcess events directly, bypassing IProcessWrapper abstraction (#1530)
 * fix(service): ProcessLauncher.Start - drain timeout branch is unreachable; warning at line 271 is misleading dead code (#1539)
-* fix(service): ServiceHelper.RestartService - magic numbers '60_000' and '1000' inline for ms->minutes/seconds display conversion (#1549)
+* fix(service): ServiceHelper.RestartService - magic numbers '60_000' and '1000' inline for ms-\>minutes/seconds display conversion (#1549)
 * fix(service): Service.cs ConditionalResetRestartAttemptsAsync - try/catch around Environment.TickCount64 arithmetic is dead error-handling (#1598)
 * fix(service): ServiceHelper.LogStartupArguments - inconsistent 'InSeconds' suffix for timeout fields (#1602)
 * fix(service): Service.cs _cancellationSource may leak if Cancel() throws an exception other than ObjectDisposedException (#1672)
@@ -930,7 +928,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(service): ProcessExtensions.cs - GetChildren duplicates the Toolhelp32 snapshot walk that GetAllDescendants already centralizes via Toolhelp32Snapshot.BuildSnapshotAndChildMap (#1911)
 * fix(service): Servy.Service/Service.cs - ConditionalResetRestartAttemptsAsync adds PreLaunchTimeoutInSeconds AFTER the 1-hour cap, silently breaking the stated ceiling (#1916)
 * fix(service): Servy.Service/Service.cs - OnStart's background restart-attempts reset task captures CancellationToken.None because _cancellationSource is still null at that point (#1917)
-* fix(service): Servy.Service/Service.cs - production constructor xmldoc is missing <param> entries for processHelper and processKiller (#1918)
+* fix(service): Servy.Service/Service.cs - production constructor xmldoc is missing \<param\> entries for processHelper and processKiller (#1918)
 * fix(service): Service.cs - SafeKillProcess's totalTimeoutMs underestimates actual stop budget; each ProcessWrapper.Stop can consume up to 2*timeoutMs (graceful wait + post-kill wait) (#1919)
 * fix(service): Service.cs - RunSynchronousPreLaunch retries with no delay/backoff between attempts (#1921)
 * fix(service): Service.cs - FlushAndShutdownLogger leaves an orphan Task that mutates _logger after the 1.5s timeout returns (#1922)
@@ -940,8 +938,8 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(service): Service.cs - SafeKillProcess reports already-exited child as 'stopped gracefully' instead of 'already exited' (mainExitedGracefully default is true, not null) (#1947)
 * fix(service): Service.cs - StartPreLaunchProcess asymmetric fallback: args expanded with main env vars, but process gets none (#1952)
 * fix(service): Service.cs - RunFailureProgram's ExpandAndAudit call omits the context prefix used by every sibling hook (#1954)
-* fix(service): EnvironmentVariableHelper.cs - ExpandWithDictionary uses both 'IndexOf > -1' and 'IndexOf >= 0' six lines apart (#1958)
-* fix(service): Service.cs - Unnecessary (Func<Task?>) cast on Task.Run lambda (#1962)
+* fix(service): EnvironmentVariableHelper.cs - ExpandWithDictionary uses both 'IndexOf \> -1' and 'IndexOf \>= 0' six lines apart (#1958)
+* fix(service): Service.cs - Unnecessary (Func\<Task?\>) cast on Task.Run lambda (#1962)
 * fix(service): Service.cs - Dead null-conditional on readonly semaphore fields (#1963)
 * fix(service): ProcessLauncher.cs - Finally block calls process.HasExited even when Start() never succeeded (#1968)
 * fix(service): ProcessWrapper.cs - Stop(timeoutMs) uses the same value for graceful timeout and post-kill wait (#1971)
@@ -971,7 +969,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(service): IServiceHelper.RestartProcess - XML doc references nonexistent terminateJobObject parameter; doc step 2 claims behavior that no longer exists (#2102)
 * fix(service): Service.cs Cleanup - stdout/stderr writer Dispose exception leaks the other writer and leaves fields non-null (#2104)
 * fix(service): Service.cs OnProcessExited - unconditional Warn 'Child process exit detected' fires even on configured clean exits (#2105)
-* fix(service): Service.cs MakeFilenameSafe - reserved-name '_' prefix causes collision with user-supplied '_<NAME>' service (#2118)
+* fix(service): Service.cs MakeFilenameSafe - reserved-name '_' prefix causes collision with user-supplied '_\<NAME\>' service (#2118)
 * fix(service): Service.cs ConditionalResetRestartAttemptsAsync - Math.Max/Min clamp silently bypasses the 1-hour cap when detection window exceeds it (#2119)
 * fix(service): Service.cs OnCustomCommand - ExecuteTeardown return value discarded; SERVICE_STOPPED reported to SCM even when cleanup actually failed (#2120)
 * fix(service): ProcessWrapper.TryStopGracefullyOrKill - CloseMainWindow exception returns null (interpreted as 'already exited'), skipping the force-kill path even when the process is still running (#2129)
@@ -1008,11 +1006,11 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(service): Service.cs - RunFailureProgram has a truncated comment "// 1. Prepare Environment and" (#2302)
 * fix(service): Service.cs - PRESHUTDOWN failure path sets ExitCode=1066 but UpdateServiceStatus hardcodes dwWin32ExitCode/dwServiceSpecificExitCode to 0, so SCM records a clean stop (#2305)
 * fix(service): Service.cs - Dispose(bool) has two '// 2.' numbered comment steps (base-class call should be '// 3.') (#2306)
-* fix(service): IServiceHelper.cs - RequestAdditionalTime XML doc uses unresolvable <see cref> to OnStart/OnStop/OnPause/OnContinue (#2340)
+* fix(service): IServiceHelper.cs - RequestAdditionalTime XML doc uses unresolvable \<see cref\> to OnStart/OnStop/OnPause/OnContinue (#2340)
 * fix(service): Service.cs - StartPostLaunchProcess / RunFailureProgram / StartPostStopProcess are near-duplicate fire-and-forget hook launchers (DRY) (#2341)
 * fix(service): IServiceHelper.cs - RestartService XML doc omits the 'serviceName' parameter (#2349)
-* fix(service): IProcessWrapper.cs - Format() has an empty <returns></returns> doc tag (#2350)
-* fix(service): IStreamWriter.cs - Write(string text) is missing its <param> doc (#2351)
+* fix(service): IProcessWrapper.cs - Format() has an empty \<returns\>\</returns\> doc tag (#2350)
+* fix(service): IStreamWriter.cs - Write(string text) is missing its \<param\> doc (#2351)
 * fix(service): StreamWriterFactory.cs - Create return type drops the nullable annotation declared on IStreamWriterFactory (#2352)
 * fix(service): Service.cs - OnCustomCommand hardcodes pre-shutdown pulse interval (2000) instead of an AppConfig constant (#2359)
 * fix(restarter): Program.Main - 'reloadOnChange: true' is wasted on a one-shot console process; spins up a FileSystemWatcher that never reloads (#1565)
@@ -1072,7 +1070,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(ui): DesignTimeMocks.cs (Servy.UI) - DesignTimeCursorService.SetWaitCursor doc says 'Returns a dummy disposable' but the method returns void (#2354)
 * fix(ui): MessageBoxService.cs - Application.Current.Dispatcher dereferenced without null guard (sibling WpfUiDispatcher guards it) (#2361)
 * fix(desktop,manager): SplashWindow.xaml.cs (Servy + Servy.Manager) - leftover French XML doc comment 'Logique d'interaction pour…' inconsistent with English docs (#2339)
-* fix(desktop): ServiceCommands.cs - rotationSizeValue ternary has dead null-coalescing branch (dto.RotationSize already non-null when > 0 is true) (#1478)
+* fix(desktop): ServiceCommands.cs - rotationSizeValue ternary has dead null-coalescing branch (dto.RotationSize already non-null when \> 0 is true) (#1478)
 * fix(desktop): ServiceCommands.cs - XmlServiceSerializer/JsonServiceSerializer instantiated per-call instead of injected (#1491)
 * fix(desktop): MainViewModel.cs - StopTimeout XML doc says 'start timeout' (copy-paste error from StartTimeout) (#1493)
 * fix(desktop): MainViewModel.cs - BrowseFailureProgramPath XML doc references nonexistent property 'FailureProgramExecutablePath' (#1494)
@@ -1107,7 +1105,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(manager): PerformanceViewModel.CopyPidAsync - dead 'ServiceCommands == null' guard; field is set in ctor via '?? throw' (#1580)
 * fix(manager): LogsViewModel.Cleanup - aliased to Dispose() makes the VM single-use; subsequent tab-switches leak CancellationTokenSource instances (#1581)
 * fix(manager): DependenciesViewModel.OnTickAsync - same stale-selection PID bug as PerformanceViewModel (#1579) (#1582)
-* fix(manager): CpuUsageConverter.Convert - XML doc says <param>The PID.</param> but the parameter is a double CPU usage value (#1584)
+* fix(manager): CpuUsageConverter.Convert - XML doc says \<param\>The PID.\</param\> but the parameter is a double CPU usage value (#1584)
 * fix(manager): Servy.Manager Service.CpuUsage - XML doc says 'Values can exceed 100.0 if the tree utilizes multiple cores' but producer ProcessHelper.GetProcessTreeMetrics clamps to 100.0 (#1587)
 * fix(manager): MonitoringViewModelBase.OnTick - 'Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1)' used purely as a read; should be Volatile.Read (#1590)
 * fix(manager): Servy.Manager LogEntryModel.LevelIcon - stale '// LOG: ... using .NET 4.8 switch syntax' comment; project targets modern .NET (#1591)
@@ -1151,7 +1149,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(manager): ServiceCommands.Dispose - disposes SemaphoreSlim instances without guarding against concurrent in-flight operations (#2018)
 * fix(manager): ServiceCommands.GetServiceDomain - drops CancellationToken on the repository fetch, blocking cancel during DB I/O (#2028)
 * fix(manager): LogTailer.cs - Comment claims 'EXPONENTIAL BACKOFF' but the formula is linear (baseDelay * attempts) (#2029)
-* fix(manager): IServiceCommands.cs - <param name="showMessageBox""> has a stray double-quote in three places (#2034)
+* fix(manager): IServiceCommands.cs - \<param name="showMessageBox""\> has a stray double-quote in three places (#2034)
 * fix(manager): DependenciesViewModel.LoadDependencyTreeAsync - DependencyTree.Clear() runs before SelectedService null-check, causing UI flash when no service is selected (#2041)
 * fix(manager): MainViewModel / LogsViewModel / DependenciesViewModel - Interlocked CTS-swap pattern races between Dispose and newCts.Token read, can throw ObjectDisposedException (#2042)
 * fix(manager): LogTailer.RunFromPosition - position tracker uses reader.CurrentEncoding.GetByteCount, mis-counts on non-UTF8 BOM-less files and can drop bytes on transient error (#2064)
@@ -1174,14 +1172,14 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(manager): LogsViewModel.cs - ToDate setter raises redundant/spurious OnPropertyChanged(nameof(FromDateMaxDate)) (#2264)
 * fix(manager): LogTailer.RunFromPosition - per-line byte-offset estimation (incl. unused 'charCount' and per-line GetByteCount) is dead; lastPosition is always overwritten by fs.Position at EOF (#2283)
 * fix(manager): DesignTimeAppConfig.cs - SearchDebounceDelayMs hardcodes literal 300 instead of referencing AppConfig.DefaultSearchDebounceDelayMs (#2325)
-* fix(manager): App.xaml.cs (Manager) - LogLevel uses <inheritdoc/> but IAppConfiguration has no LogLevel member, so docs resolve to nothing (#2333)
+* fix(manager): App.xaml.cs (Manager) - LogLevel uses \<inheritdoc/\> but IAppConfiguration has no LogLevel member, so docs resolve to nothing (#2333)
 * fix(manager): DesignTimeAppConfig.cs - MaxBulkOperationParallelism declared public while all other IAppConfiguration members use explicit interface implementation (#2335)
 * fix(manager): IServiceCommands.cs / ServiceCommands.cs - ExportServiceToXml/JsonAsync lack CancellationToken (asymmetric with Import and every other async command) (#2336)
-* fix(manager): LogsViewModel.cs - Search() XML doc references nonexistent <see cref="Logs"/> member (#2337)
+* fix(manager): LogsViewModel.cs - Search() XML doc references nonexistent \<see cref="Logs"/\> member (#2337)
 * fix(manager): MainViewModel.cs - SearchServicesAsync finally resets IsBusy/cursor/button even when superseded by a newer search (#2338)
 * fix(manager): IServiceCommands.cs / ServiceCommands.cs - CopyPid returns Task but lacks the Async suffix (inconsistent with every other async member) (#2343)
-* fix(manager): IServiceCommands.cs - CopyPid <param> doc says 'The service to configure' (copy-pasted from ConfigureServiceAsync) (#2344)
-* fix(manager): IServiceConfigurationValidator.cs - Validate returns Task<bool> but lacks the Async suffix (#2345)
+* fix(manager): IServiceCommands.cs - CopyPid \<param\> doc says 'The service to configure' (copy-pasted from ConfigureServiceAsync) (#2344)
+* fix(manager): IServiceConfigurationValidator.cs - Validate returns Task\<bool\> but lacks the Async suffix (#2345)
 * fix(manager): DependenciesView.xaml.cs - class summary copy-pasted from ConsoleView (says 'live-monitoring stdout/stderr') (#2346)
 * fix(manager): MainWindow.xaml.cs - HandleMainTabSelected XML doc omits the consoleVm parameter (#2357)
 * fix(manager): Cannot remove service with status "Not Installed" - Uninstall button greyed out (#2904)
@@ -1191,7 +1189,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(cli): Program.cs - 'using System.Diagnostics' under #if !DEBUG is dead; nothing in the file references the namespace in Release (#1649)
 * fix(cli): InstallServiceOptions.cs - XML doc 'Possible values' lists out of sync with [Option] HelpText (missing AutomaticDelayedStart, missing None) (#1656)
 * fix(cli): Servy.CLI/Program.cs - Run() extracts embedded resources on every invocation, including --help and --version (#1760)
-* fix(cli): ImportServiceCommand -> ServiceValidationRules - validator calls NativeMethods.ValidateCredentials (LogonUser) on imported user/password, but the deserializer immediately resets them to LocalSystem; failed imports can lock out the target account for nothing (#1781)
+* fix(cli): ImportServiceCommand -\> ServiceValidationRules - validator calls NativeMethods.ValidateCredentials (LogonUser) on imported user/password, but the deserializer immediately resets them to LocalSystem; failed imports can lock out the target account for nothing (#1781)
 * fix(cli): ImportServiceCommand.cs - input path lacks the UNC block and junction/symlink resolution that ExportServiceCommand applies; admin imports can silently pull from \attacker\share via a junction (#1783)
 * fix(cli): ImportServiceCommand.cs / ExportServiceCommand.cs - UNC infiltration/exfiltration guard bypassed via NTFS junction; check runs on un-resolved path only (#1786)
 * fix(cli): ImportServiceCommand.cs / ExportServiceCommand.cs - file-level symlink bypasses UNC infiltration/exfiltration guard added in #1786; only directory junctions are resolved (#1790)
@@ -1272,7 +1270,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(notifications): ServyFailureNotification.ps1 - Protect-SensitiveString regex timeout in Show-Notification halts the queue and never advances the watermark, producing an infinite retry loop on the poison event (#1811)
 * fix(notifications): Write-ServyLog.ps1 - collision-retry loop's 'while (Test-Path $target -and $attempt -lt 100)' is parsed as a Test-Path command and throws ParameterBindingException (#1899)
 * fix(notifications): ServyFailureNotification.ps1 - Show-Notification returns $true immediately after notifier.Show() (async); watermark advances even when the Failed event later signals delivery failure (#1925)
-* fix(notifications): Servy-Watermark.psm1 - AddTicks(1) + strict > filter can silently drop events whose TimeCreated equals prev+1 tick (#2003)
+* fix(notifications): Servy-Watermark.psm1 - AddTicks(1) + strict \> filter can silently drop events whose TimeCreated equals prev+1 tick (#2003)
 * fix(notifications): ServySecurity.ps1 - 'keep in sync' comment incorrectly lists Servy.psm1's Format-SecureLogMessage (#2026)
 * fix(notifications): ServyFailureNotification.ps1 - $ServiceName not masked in toast title, leaks raw event data (#2032)
 * fix(notifications): ServySecurity.ps1 Protect-SensitiveString - space-separator branch only masks first token, leaking multi-word values (same root cause as #1992 but in this PS1 script) (#2056)
@@ -1312,7 +1310,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(bump-version): no per-file isolation; one bad file aborts the entire version bump (related to #1657) (#1658)
 * fix(bump-version): DESCRIPTION lists publish.ps1/publish-sc.ps1/publish-fd.ps1 as updated targets, but the script never touches them (#1756)
 * fix(bump-version): Update-FileContent silently returns and exits 0 when regex pattern stops matching, allowing stale versions to ship (#1789)
-* fix(bump-version): version-tag regex does not support <Tag Condition="..."> form, silently skipping conditional version metadata (#2086)
+* fix(bump-version): version-tag regex does not support \<Tag Condition="..."\> form, silently skipping conditional version metadata (#2086)
 * fix(publish): publish.ps1 / publish-sc.ps1 / publish-fd.ps1 - Tfm + Version defaults duplicated across three scripts (drift risk on bumps) (#1570)
 * fix(publish): tools-config.ps1 - Resolve-Tool reads undefined $envPath; SERVY_TOOL_* env var lookup is dead code (#1620)
 * fix(publish): signpath.ps1 - 'Write-Error … return' pattern at six sites swallows fatal errors when called inside try/catch (#1629)
@@ -1328,7 +1326,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(publish): publish-common.ps1 - New-PortablePackage passes paths via Start-Process -ArgumentList; breaks the 7z command if the package path contains a space (#1926)
 * fix(publish): publish-common.ps1 Build-Installer - AV-lock retry regex never matches; only retries on the rare LASTEXITCODE=-1 (#2033)
 * fix(publish): signpath.ps1 - failed signing leaves orphan $Path.signed on disk; a later run silently moves the stale artifact over the real binary (#2092)
-* fix(publish): publish-res-{debug,release}.ps1 (×8 files) - builds a self-referential path '..\<SelfDir>\Resources' instead of 'Resources' (#2186)
+* fix(publish): publish-res-{debug,release}.ps1 (×8 files) - builds a self-referential path '..\\<SelfDir\>\Resources' instead of 'Resources' (#2186)
 * fix(publish): signpath.ps1 - inline-comment regex strips '\s+#.*' from inside quoted values, dropping the closing quote and corrupting the value (#2199)
 * fix(publish): signpath.ps1 - 'elif' is not a PowerShell keyword; single-quoted and unquoted config values are never parsed (signing silently mis-skipped) (#2313)
 * fix(publish): publish-res.ps1 - two large commented-out artifact-copy blocks left in the script (#2530)
@@ -1343,12 +1341,12 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * ci(security): security.yml - Third-party actions pinned to mutable tags, supply chain risk in the security-audit workflow itself (same as #607, #1304) (#1309)
 * ci(sonar): sonar.yml SONAR_TOKEN secret interpolated directly into shell command instead of using env var (#1673)
 * ci(publish): publish.yml - Third-party actions pinned to mutable tags, supply chain risk (#607)
-* ci(publish): version extraction reads stale parameter default from publish.ps1, always yields empty string (#1690)
+* ci(publish.ps1): version extraction reads stale parameter default from publish.ps1, always yields empty string (#1690)
 * ci(publish): publish.yml - section comment says 'Extract Version from setup/publish.ps1' but the step reads setup/build-config.ps1 (#2559)
 * ci(bump-version): minor-version rollover at 9 prevents 10+ minor versions; never publishes 8.10, 9.11, etc. (#1648)
 * ci(bump-version): leftover commented-out tag-resolution block in 'Set version vars' step (#1669)
 * ci(bump-version): unchecked 'git push' calls on main and net48 branches; same failure mode as #1729 and #1869 (#1881)
-* ci(bump-version): ./bump-version.ps1 invoked without Invoke-Git/exit-code check; script failure is silently treated as 'no changes to commit' (#2203)
+* ci(bump-version.ps1): ./bump-version.ps1 invoked without Invoke-Git/exit-code check; script failure is silently treated as 'no changes to commit' (#2203)
 * ci(winget): winget.yml - winget-releaser action pinned by SHA with no version comment, unlike every other pinned action in the repo (#2529)
 * ci(choco,scoop,bump-version): choco.yml, scoop.yml & bump-version.yml - identical 'Set version vars' tag-resolution block repeated in three workflows (#2527)
 * ci(choco): chocolateyuninstall.ps1 - Test-Path fails on UninstallString with quoted path or embedded args, silently skips uninstall (#1691)
@@ -1375,7 +1373,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * ci(changelog): 'gh api releases' failure (rate limit / 5xx) is unchecked; workflow reports 'No releases found' and exits 0, silently skipping the changelog update (#1868)
 * ci(changelog): changelog.yml - Duplicate dead-code empty-releases check; second if block is unreachable (#2206)
 * chore(deps): update dependencies
-* other fixes: check commits for more details
+* chore: various robustness, security, inconsistency and code quality fixes
 
 </details>
 
@@ -1625,7 +1623,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 * fix(infra): ServiceRepository.GetServicePidAsync / GetServiceConsoleStateAsync - Name parameter not trimmed (inconsistent with GetByName / DeleteAsync / etc.) (#880)
 * fix(infra): SQLiteDbInitializer.GetSqlType - 13 columns declared NOT NULL in the schema but defined as nullable (int?/bool?) on ServiceDto (#897)
 * fix(infra): ServiceRepository.ExportXmlAsync - bypasses injected IXmlServiceSerializer, asymmetric with ImportXmlAsync (parallel to #822) (#968)
-* fix(infra): DapperExecutor - ThreadLocal<Random> should be Random.Shared on .NET 6+ (correlated jitter, unnecessary allocation) (#994)
+* fix(infra): DapperExecutor - ThreadLocal \<Random\> should be Random.Shared on .NET 6+ (correlated jitter, unnecessary allocation) (#994)
 * fix(infra): ServiceRepository.ExportXmlAsync - XML preamble declares 'utf-16' but the file is written as UTF-8 (encoding mismatch in exports) (#995)
 * fix(infra): ServiceRepository.ImportXml/JsonAsync - UPSERT clobbers Pid / ActiveStdoutPath / ActiveStderrPath of a running service (Manager loses tracking) (#997)
 * fix(infra): DapperExecutor - sync ExecuteWithRetry inlines backoff calculation while async path uses CalculateBackoff helper (DRY) (#1085)
@@ -1767,7 +1765,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 * fix(desktop,manager): AppBootstrapper.cs - When OnStartup calls app.Shutdown() for security/SQLite checks, caller still proceeds to StartAvailabilityMonitor + InitializeAppWithFaultHandlingAsync (#1278)
 * fix(desktop,manager): BulkObservableCollection.cs - TrimToSize(maxItems) throws ArgumentException when maxItems is negative (#1329)
 * fix(desktop,manager): WpfUiDispatcher.cs - YieldAsync uses Dispatcher.CurrentDispatcher (per-thread), not the UI dispatcher; latent bug for any future background-thread caller (#1305)
-* fix(desktop,manager): WpfUiDispatcher.cs - InvokeAsync(Action) silently no-ops on null while InvokeAsync<T>(Func<T>) throws ArgumentNullException (#1333)
+* fix(desktop,manager): WpfUiDispatcher.cs - InvokeAsync(Action) silently no-ops on null while InvokeAsync\<T\>(Func\<T\>) throws ArgumentNullException (#1333)
 * fix(desktop,manager): HelpService.cs - CheckUpdates ReadAsStringAsync ignores cts.Token, body-stage stall bypasses timeout (#1349)
 * fix(desktop,manager): FileDialogService.cs - OpenFolder uses WinForms FolderBrowserDialog (Description is body label, not title); WPF Microsoft.Win32.OpenFolderDialog available since net8.0 (#1350)
 * fix(desktop,manager): AppBootstrapper.cs - StartAvailabilityMonitor is 'async void' on a non-event-handler method; unobserved exceptions can crash the process (#1361)
@@ -2464,7 +2462,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(desktop): MainViewModel constructor does not null-guard most parameters (#308)
 * fix(desktop): validation logic inconsistency - Servy rejects valid configs when features are disabled (#390)
 * fix(desktop): Servy import path skips most validation - only checks env vars and dependencies (#391)
-* fix(desktop): Servy vs Manager: IServiceCommands return type divergence - Task vs Task<bool> (#393)
+* fix(desktop): Servy vs Manager: IServiceCommands return type divergence - Task vs Task\<bool\> (#393)
 * fix(desktop): Magic numbers for defaults in ServiceRepository vs AppConfig constants elsewhere (#398)
 * fix(desktop): Complexity: InstallService method takes 40+ individual parameters (#412)
 * fix(desktop): ServiceCommands.cs - InstallService double-maps config to DTO and options (#488)
@@ -2486,8 +2484,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(desktop,manager): BulkObservableCollection.cs - _suppressNotification not volatile, cross-thread visibility issue (#622)
 * fix(desktop,manager): HelpService.cs - new HttpClient() per call, socket exhaustion anti-pattern (#643)
 * fix(desktop,manager): DependenciesView/PerformanceView/ConsoleView - async void Loaded handlers with no try/catch (#664)
-* fix(desktop,manager): RelayCommand<T> - Unsafe unboxing cast when parameter is null (#668)
-* fix(manager): HistoryResult.cs - Lines property exposes mutable List<LogLine> (#675)
+* fix(desktop,manager): RelayCommand\<T\> - Unsafe unboxing cast when parameter is null (#668)
+* fix(manager): HistoryResult.cs - Lines property exposes mutable List\<LogLine\> (#675)
 * fix(desktop,manager): MessageBoxService.cs - BeginInvoke returns before dialog is dismissed (#676)
 * fix(desktop,manager): AsyncCommand._isExecuting - Not volatile, thread-safety gap (#682)
 * fix(desktop,manager): IAsyncCommand.ExecuteAsync - Non-nullable parameter vs AsyncCommand nullable parameter (#683)
@@ -2600,7 +2598,6 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(cli): ConsoleHelper.cs - Console.WindowWidth throws IOException when stdout is redirected (#681)
 * fix(cli,psm1): ConsoleHelper and Servy.psm1: string concatenation with + instead of interpolation (#129)
 * fix(cli,infra): Mixed case comparison: StringComparison.OrdinalIgnoreCase vs ToLowerInvariant() in same files (#400)
-* fix(psm1): misleading error message when Servy CLI is not found (#50)
 * fix(psm1): typo in PreStopLogAsError parameter documentation (#60)
 * fix(psm1): Test-ServyCliPath: error message shows wrong search path on 64-bit systems (#61)
 * fix(psm1): Invoke-ServyCli: potential deadlock when reading stdout and stderr synchronously (#62)
@@ -2735,7 +2732,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * ci: add security audit workflow for dependency, static, and secret scanning
 * ci(bump-runtime): Get-Item on hardcoded paths throws if files are missing (#316)
 * ci(bump-version): $appConfigPath variable silently reused for unrelated file (#385)
-* ci(bump-version): WriteAllText may add UTF-8 BOM, unlike bump-runtime.ps1 (#502)
+* ci(bump-version.ps1): WriteAllText may add UTF-8 BOM, unlike bump-runtime.ps1 (#502)
 * ci(bump-version): Get-FileEncoding does not detect UTF-16, can corrupt project files (#625)
 * ci(actions): `actions/checkout@v5`, `@v6`, and `upload-artifact@v6` may not exist (#548)
 * ci(actions): Third-party actions pinned to floating `@master/@main` branches (#554)
@@ -2944,7 +2941,6 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.2...v7.3
 * feat(core): change log rotation naming to insert timestamp before extension (#47)
 * feat(core): use local time instead of UTC for log rotation (#47)
 * feat(core): update log cleanup logic (#47)
-* ci(publish): fix VirusTotal 502 timeouts
 
 ### Downloads
 * [servy-7.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-net48-sbom.xml) - 0.02 MB
@@ -3876,7 +3872,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v3.0...v3.1
 * fix(core): allow valid characters in DOMAIN\Username logon
 * fix(core): improve logon validation for gMSA accounts
 * fix(manager): validate credentials when importing a service
-* chore: add [project manifest](https://github.com/aelassas/servy/blob/main/MANIFEST.md)
+* chore: add [project manifest](https://github.com/aelassas/servy/blob/v3.0/MANIFEST.md)
 
 ### Downloads
 * [servy-3.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v3.0/servy-3.0-net48-x64-installer.exe) - 17.15 MB
