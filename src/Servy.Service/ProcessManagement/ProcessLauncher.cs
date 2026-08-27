@@ -114,6 +114,9 @@ namespace Servy.Service.ProcessManagement
         /// <param name="factory">The factory used to create the process wrapper.</param>
         /// <param name="logger">The logger instance for operational telemetry.</param>
         /// <returns>An initialized and started <see cref="IProcessWrapper"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="options"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when the executable path is empty, or a synchronous launch is requested with a non-positive TimeoutMs or WaitChunkMs.</exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">Thrown when the OS refuses to start the executable, most commonly because the path does not exist or is not executable. <see cref="ProcessStartInfo.UseShellExecute"/> is false, so this is the failure mode for an unstartable executable.</exception>
         /// <exception cref="TimeoutException">Thrown if a synchronous wait operation exceeds the configured timeout.</exception>
         public static IProcessWrapper Start(
             ProcessLaunchOptions options,
@@ -185,11 +188,9 @@ namespace Servy.Service.ProcessManagement
             bool processStarted = false;
             try
             {
-                if (!process.Start())
-                {
-                    throw new InvalidOperationException(
-                        $"Process.Start returned false for '{options.ExecutablePath}' (no process resource started).");
-                }
+                // UseShellExecute is false, so Start() cannot return false (there is no process to reuse):
+                // an unstartable executable surfaces as Win32Exception.
+                process.Start();
                 processStarted = true;
 
                 // 3. Handle execution mode
