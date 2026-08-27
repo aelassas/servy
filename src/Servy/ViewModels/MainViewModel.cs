@@ -1424,6 +1424,8 @@ namespace Servy.ViewModels
 
                 if (dto == null)
                 {
+                    Logger.Warn($"No stored configuration found for service '{serviceName}'");
+                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                     return;
                 }
 
@@ -1458,8 +1460,15 @@ namespace Servy.ViewModels
             ProcessPath = dto.ExecutablePath ?? string.Empty;
             StartupDirectory = dto.StartupDirectory ?? string.Empty;
             ProcessParameters = dto.Parameters ?? string.Empty;
-            SelectedStartupType = dto.StartupType == null ? DefaultStartupType : (ServiceStartType)dto.StartupType;
-            SelectedProcessPriority = dto.Priority == null ? DefaultProcessPriority : (ProcessPriority)dto.Priority;
+
+            SelectedStartupType = dto.StartupType is int st && st != (int)ServiceStartType.Unknown && Enum.IsDefined(typeof(ServiceStartType), (ServiceStartType)st)
+                ? (ServiceStartType)st
+                : DefaultStartupType;
+
+            SelectedProcessPriority = dto.Priority is int prio && Enum.IsDefined(typeof(ProcessPriority), (ProcessPriority)prio)
+                ? (ProcessPriority)prio
+                : DefaultProcessPriority;
+
             CpuAffinity = dto.CpuAffinity;
             EnableConsoleUI = dto.EnableConsoleUI ?? DefaultEnableConsoleUI;
             StdoutPath = dto.StdoutPath ?? string.Empty;
@@ -1467,13 +1476,21 @@ namespace Servy.ViewModels
             EnableSizeRotation = dto.EnableSizeRotation ?? DefaultEnableSizeRotation;
             RotationSize = dto.RotationSize == null ? DefaultRotationSizeMB.ToString() : dto.RotationSize.Value.ToString();
             EnableDateRotation = dto.EnableDateRotation ?? DefaultEnableDateRotation;
-            SelectedDateRotationType = dto.DateRotationType == null ? DefaultDateRotationType : (DateRotationType)dto.DateRotationType;
+
+            SelectedDateRotationType = dto.DateRotationType is int drt && Enum.IsDefined(typeof(DateRotationType), (DateRotationType)drt)
+                ? (DateRotationType)drt
+                : DefaultDateRotationType;
+
             MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.Value.ToString();
             UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? DefaultUseLocalTimeForRotation;
             EnableHealthMonitoring = dto.EnableHealthMonitoring ?? DefaultEnableHealthMonitoring;
             HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.Value.ToString();
             MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.Value.ToString();
-            SelectedRecoveryAction = dto.RecoveryAction == null ? DefaultRecoveryAction : (RecoveryAction)dto.RecoveryAction;
+
+            SelectedRecoveryAction = dto.RecoveryAction is int ra && Enum.IsDefined(typeof(RecoveryAction), (RecoveryAction)ra)
+                ? (RecoveryAction)ra
+                : DefaultRecoveryAction;
+
             RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? DefaultRecoveryOnCleanExit;
             MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.Value.ToString();
             HeartbeatUrl = dto.HeartbeatUrl ?? string.Empty;
