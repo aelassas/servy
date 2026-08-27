@@ -4,15 +4,19 @@
 
 ## Local test
 
+Run from the `setup/scoop` directory:
+
 ```powershell
+cd setup/scoop
 scoop install servy.json
 scoop uninstall servy
 ```
 
-Fix encoding:
+If a manual edit introduced a UTF-8 BOM, strip it using an absolute path to avoid `.NET` current-directory resolution issues:
 
 ```powershell
-[System.IO.File]::WriteAllText("servy.json", [System.IO.File]::ReadAllText("servy.json"), (New-Object System.Text.UTF8Encoding($false)))
+$manifest = (Resolve-Path .\servy.json).Path
+[System.IO.File]::WriteAllText($manifest, [System.IO.File]::ReadAllText($manifest), (New-Object System.Text.UTF8Encoding($false)))
 ```
 
 ## Publish

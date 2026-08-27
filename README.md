@@ -50,6 +50,9 @@ scoop install servy
 
 Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
 
+> [!NOTE]
+> **Legacy OS Support (Windows 7 SP1 / 8.x / Server 2008 R2):** Package managers carry the self-contained modern build. For older platforms, download `servy-x.x-net48-x64-installer.exe` or `servy-x.x-net48-x64-portable.7z` directly from [GitHub Releases](https://github.com/aelassas/servy/releases/latest) (requires .NET Framework 4.8).
+
 ## Quick Example
 
 You can manage services using the [desktop app (GUI)](https://github.com/aelassas/servy/wiki/Servy-Desktop-App), the [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI), or [PowerShell](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
@@ -113,7 +116,8 @@ Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examp
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
 * Export/Import service configurations for easy backups and automation
 * Service Event Notification alerts on service failures via Windows notifications and email
-* Compatible with Windows 7 SP1 through 11 (x64/ARM64) and Windows Server editions
+* Modern build (default, self-contained): Windows 10 (1809+), Windows 11 and Windows Server 2016+, on x64 and ARM64
+* Legacy build (`net48`, requires .NET Framework 4.8): Windows 7 SP1, 8.x and Windows Server 2008 R2+, x64 only - see the [version comparison](https://github.com/aelassas/servy/wiki/Installation-Guide#version-comparison)
 
 ## Changelog
 
