@@ -21,7 +21,7 @@ Import-Module (Join-Path $scriptDir "Servy.psm1") -Force
 # ----------------------------------------------------------------
 # Tune module-level execution settings (optional)
 # ----------------------------------------------------------------
-Set-ServyConfig -TimeoutSeconds 1200 -MaxBufferChars 2097152
+Set-ServyConfig -TimeoutSeconds 1200
 
 # ----------------------------------------------------------------
 # Display CLI help

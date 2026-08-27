@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -958,10 +959,9 @@ namespace Servy.Manager.ViewModels
                 update.CpuUsage = cpu;
                 update.RamUsage = ram;
 
-                if (update.StartupType == null && serviceDto?.StartupType is int st
-                   && Enum.IsDefined(typeof(ServiceStartType), (ServiceStartType)st))
+                if (update.StartupType == null && serviceDto != null && serviceDto.StartupType.HasValue)
                 {
-                    update.StartupType = (ServiceStartType)st;
+                    update.StartupType = ConfigParser.ParseEnum(serviceDto.StartupType, AppConfig.DefaultStartupType);
                 }
 
                 ServiceDto? resultDto = null;
