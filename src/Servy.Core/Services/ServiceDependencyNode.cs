@@ -90,7 +90,12 @@ namespace Servy.Core.Services
         /// <param name="isUnavailable">
         /// Set to <see langword="true"/> if this service dependency is unavailable or access is denied.
         /// </param>
-        public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false, bool isCyclic = false, bool isUnavailable = false)
+        public ServiceDependencyNode(
+            string serviceName,
+            string displayName,
+            bool isRunning = false,
+            bool isCyclic = false,
+            bool isUnavailable = false)
         {
             ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
             _displayName = displayName ?? throw new ArgumentNullException(nameof(displayName));

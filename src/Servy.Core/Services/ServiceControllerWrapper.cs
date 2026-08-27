@@ -157,6 +157,27 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
+        /// Recursively creates a deep clone of a resolved subtree so each position in the UI tree
+        /// maintains its own independent UI state (such as IsExpanded).
+        /// </summary>
+        private static ServiceDependencyNode CloneSubtree(ServiceDependencyNode source)
+        {
+            var copy = new ServiceDependencyNode(
+                source.ServiceName,
+                source.DisplayName,
+                source.IsRunning,
+                source.IsCyclic,
+                source.IsUnavailable);
+
+            foreach (var child in source.Dependencies)
+            {
+                copy.Dependencies.Add(CloneSubtree(child));
+            }
+
+            return copy;
+        }
+
+        /// <summary>
         /// Recursively builds a dependency tree for the specified service
         /// sorted alphabetically by Display Name.
         /// </summary>
@@ -179,11 +200,11 @@ namespace Servy.Core.Services
         /// If a cycle is detected, a placeholder node is returned.
         /// </returns>
         private static ServiceDependencyNode BuildDependencyTree(
-             string serviceName,
-             HashSet<string> currentPath,
-             Dictionary<string, ServiceDependencyNode> fullyExpanded,
-             Func<string, IServiceControllerWrapper> serviceFactory = null,
-             CancellationToken cancellationToken = default)
+            string serviceName,
+            HashSet<string> currentPath,
+            Dictionary<string, ServiceDependencyNode> fullyExpanded,
+            Func<string, IServiceControllerWrapper> serviceFactory = null,
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -193,7 +214,7 @@ namespace Servy.Core.Services
             // 2. Check if we've already built the subtree for this service elsewhere
             if (!isCyclic && fullyExpanded.TryGetValue(serviceName, out var cachedNode))
             {
-                return cachedNode;
+                return CloneSubtree(cachedNode);
             }
 
             try

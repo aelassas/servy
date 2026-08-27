@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using System;
@@ -98,7 +99,7 @@ namespace Servy.Core.Logging
             }
             catch (EventLogException ex)
             {
-                provider = "<unavailable>";
+                provider = AppConfig.EventSource;   // keep the record addressable in wildcard mode
                 Logger.Debug($"Failed to read 'ProviderName' from event record: {ex.Message}");
             }
 
@@ -108,7 +109,7 @@ namespace Servy.Core.Logging
             }
             catch (Exception ex) when (ex is EventLogException || ex is InvalidOperationException)
             {
-                message = $"<unavailable: {ex.Message}>";
+                message = $"[{AppConfig.EventSource}] <message unavailable: {ex.Message}>";
                 Logger.Debug($"Failed to format description for event record: {ex.Message}");
             }
 
