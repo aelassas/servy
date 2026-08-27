@@ -2368,7 +2368,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetServiceStartupType_ShouldReturnUnknown_WhenExceptionOccurs()
+        public void GetServiceStartupType_ShouldReturnAutomatic_WhenExceptionOccurs()
         {
             // Arrange
             _mockController.Setup(c => c.StartType).Returns(ServiceStartMode.Automatic);
@@ -2379,7 +2379,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetServiceStartupType("AnyService", CancellationToken.None);
 
             // Assert
-            Assert.Equal(ServiceStartType.Unknown, result);
+            Assert.Equal(ServiceStartType.Automatic, result);
         }
 
         [Fact]

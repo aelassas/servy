@@ -1038,6 +1038,11 @@ namespace Servy.Core.Services
                                 }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            // Best-effort refinement only: keep the start type MapStartupType already resolved.
+                            Logger.Debug($"Delayed auto-start probe failed for '{serviceName}'; reporting {startupType}.", ex);
+                        }
                         finally
                         {
                             if (scmHandle != null)
