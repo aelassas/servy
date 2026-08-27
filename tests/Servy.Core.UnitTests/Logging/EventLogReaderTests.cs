@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using System.Diagnostics.Eventing.Reader;
 using System.Security.Principal;
@@ -162,7 +163,7 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal(0, result.EventId);
             Assert.Equal(DateTimeOffset.MinValue, result.Time);
             Assert.Equal(EventLogLevel.Information, result.Level);
-            Assert.Equal("<unavailable>", result.ProviderName);
+            Assert.Equal(AppConfig.EventSource, result.ProviderName);
             Assert.Equal("Message survives a properties-only failure", result.Message);
         }
 
@@ -185,8 +186,7 @@ namespace Servy.Core.UnitTests.Logging
 
             // Assert
             Assert.Equal(500, result.EventId);
-            Assert.StartsWith("<unavailable:", result.Message);
-            Assert.EndsWith(">", result.Message);
+            Assert.StartsWith($"[{AppConfig.EventSource}] <message unavailable:", result.Message);
         }
 
         #endregion
