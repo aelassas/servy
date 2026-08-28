@@ -49,6 +49,9 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
+# Set pipeline string encoding for external processes while avoiding Win32 console code page changes on PS 2.0
+try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
+
 # Ensure the script is executing with Administrator privileges
 $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
@@ -93,7 +96,7 @@ if (-not (Test-Path -Path $dbPath)) {
 # -----------------------------------------------------------------------------
 # Database Inspection Layer
 # 1. Attempt ADO.NET using System.Data.SQLite.dll (present in Servy net48 build)
-# 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR
+# 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-16
 # -----------------------------------------------------------------------------
 
 $serviceNames = New-Object System.Collections.Generic.List[string]
@@ -136,14 +139,13 @@ if (Test-Path -Path $managedSqliteDll) {
 }
 
 if (-not $usedAdoNet) {
-    if (-not ([System.Management.Automation.PSTypeName]'ServySafePs2Sqlite').Type) {
+    if (-not ([System.Management.Automation.PSTypeName]'ServySafePs2Sqlite16').Type) {
         $sqliteBinding = @"
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
-public static class ServySafePs2Sqlite
+public static class ServySafePs2Sqlite16
 {
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr LoadLibrary(string lpFileName);
@@ -164,20 +166,10 @@ public static class ServySafePs2Sqlite
     private delegate int StepDelegate(IntPtr stmt);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate IntPtr ColumnTextDelegate(IntPtr stmt, int iCol);
+    private delegate IntPtr ColumnText16Delegate(IntPtr stmt, int iCol);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int FinalizeDelegate(IntPtr stmt);
-
-    private static string PtrToStringUtf8(IntPtr ptr)
-    {
-        if (ptr == IntPtr.Zero) return null;
-        int length = 0;
-        while (Marshal.ReadByte(ptr, length) != 0) length++;
-        byte[] buffer = new byte[length];
-        Marshal.Copy(ptr, buffer, 0, length);
-        return Encoding.UTF8.GetString(buffer);
-    }
 
     public static List<string> GetServiceNames(string dbPath, string servyDir)
     {
@@ -205,21 +197,21 @@ public static class ServySafePs2Sqlite
         IntPtr pClose    = GetProcAddress(hModule, "sqlite3_close");
         IntPtr pPrepare  = GetProcAddress(hModule, "sqlite3_prepare_v2");
         IntPtr pStep     = GetProcAddress(hModule, "sqlite3_step");
-        IntPtr pText     = GetProcAddress(hModule, "sqlite3_column_text");
+        IntPtr pText16   = GetProcAddress(hModule, "sqlite3_column_text16");
         IntPtr pFinalize = GetProcAddress(hModule, "sqlite3_finalize");
 
         if (pOpen == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
-            pStep == IntPtr.Zero || pText == IntPtr.Zero || pFinalize == IntPtr.Zero)
+            pStep == IntPtr.Zero || pText16 == IntPtr.Zero || pFinalize == IntPtr.Zero)
         {
             return result;
         }
 
-        OpenV2Delegate openV2       = (OpenV2Delegate)Marshal.GetDelegateForFunctionPointer(pOpen, typeof(OpenV2Delegate));
-        CloseDelegate close         = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
-        PrepareV2Delegate prepareV2 = (PrepareV2Delegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareV2Delegate));
-        StepDelegate step           = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
-        ColumnTextDelegate colText  = (ColumnTextDelegate)Marshal.GetDelegateForFunctionPointer(pText, typeof(ColumnTextDelegate));
-        FinalizeDelegate finalize   = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
+        OpenV2Delegate openV2         = (OpenV2Delegate)Marshal.GetDelegateForFunctionPointer(pOpen, typeof(OpenV2Delegate));
+        CloseDelegate close           = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
+        PrepareV2Delegate prepareV2   = (PrepareV2Delegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareV2Delegate));
+        StepDelegate step             = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
+        ColumnText16Delegate colText16 = (ColumnText16Delegate)Marshal.GetDelegateForFunctionPointer(pText16, typeof(ColumnText16Delegate));
+        FinalizeDelegate finalize     = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
 
         IntPtr db;
         if (openV2(dbPath, out db, 1, IntPtr.Zero) == 0)
@@ -229,10 +221,10 @@ public static class ServySafePs2Sqlite
             {
                 while (step(stmt) == 100)
                 {
-                    IntPtr ptr = colText(stmt, 0);
+                    IntPtr ptr = colText16(stmt, 0);
                     if (ptr != IntPtr.Zero)
                     {
-                        result.Add(PtrToStringUtf8(ptr));
+                        result.Add(Marshal.PtrToStringUni(ptr));
                     }
                 }
                 finalize(stmt);
@@ -247,7 +239,7 @@ public static class ServySafePs2Sqlite
         Add-Type -TypeDefinition $sqliteBinding
     }
 
-    $serviceNames = [ServySafePs2Sqlite]::GetServiceNames($dbPath, $servyBinDir)
+    $serviceNames = [ServySafePs2Sqlite16]::GetServiceNames($dbPath, $servyBinDir)
 }
 
 # Create an isolated temporary directory for staging exported XML files
