@@ -30,8 +30,8 @@ using System.Runtime.InteropServices;
 //      Numéro de build
 //      Révision
 //
-[assembly: AssemblyVersion("9.9.0.0")]
-[assembly: AssemblyFileVersion("9.9.0.0")]
+[assembly: AssemblyVersion("10.0.0.0")]
+[assembly: AssemblyFileVersion("10.0.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.CLI.UnitTests")]
 [assembly: NeutralResourcesLanguage("en", UltimateResourceFallbackLocation.MainAssembly)]
