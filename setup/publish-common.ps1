@@ -181,8 +181,8 @@ function Copy-CommonArtifacts {
         }
     }
 
-    # 3. Include PowerShell Module artifacts with Test-Path guards
-    $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
+    # 3. Include PowerShell Module and Dump/Restore artifacts with Test-Path guards
+    $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1", "Servy-Dump.ps1", "Servy-Restore.ps1")
     foreach ($art in $cliArtifacts) {
         $sourcePath = Join-Path $CliDir $art
         if (Test-Path $sourcePath) {

@@ -607,10 +607,12 @@ jobs:
           # CLI
           Copy-Item (Join-Path $cli 'Servy.CLI.exe') "$pkg\servy-cli.exe" -Force
 
-          # PowerShell module
+          # PowerShell module and Dump/Restore Scripts
           Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
           Copy-Item "src/Servy.CLI/Servy.psd1" $pkg -Force
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy-Dump.ps1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy-Restore.ps1" $pkg -Force
 
           # Scripts
           Copy-Item "setup\Set-ServyExePermissions.ps1" $pkg -Force

@@ -105,10 +105,12 @@ Source: "..\src\Servy.CLI\bin\{#BuildConfiguration}\{#Tfm}\{#Runtime}\publish\Se
 ; appsettings.cli.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.CLI\appsettings.cli.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_cli
 
-; PowerShell Module
+; PowerShell Module and Dump/Restore Scripts
 Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\Servy.psd1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\Servy-Dump.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\Servy-Restore.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 
 ; Manager
 Source: "..\src\Servy.Manager\bin\{#BuildConfiguration}\{#Tfm}\{#Runtime}\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
