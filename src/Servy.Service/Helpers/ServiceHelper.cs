@@ -403,7 +403,8 @@ namespace Servy.Service.Helpers
             try
             {
 #if DEBUG
-                var dir = AppFoldersHelper.GetAppDirectory();
+                // Use BaseDirectory instead of ExecutingAssembly location to stay immune to shadow copying
+                var dir = AppDomain.CurrentDomain.BaseDirectory;
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif
@@ -414,11 +415,11 @@ namespace Servy.Service.Helpers
                     return;
                 }
 
-                var restarter = Path.Combine(dir, "Servy.Restarter.exe");
+                var restarter = Path.Combine(dir, "Servy.Restarter.Net48.exe");
 
                 if (!File.Exists(restarter))
                 {
-                    logger?.Error("Servy.Restarter.exe not found.");
+                    logger?.Error("Servy.Restarter.Net48.exe not found.");
                     return;
                 }
 
@@ -434,14 +435,14 @@ namespace Servy.Service.Helpers
                 {
                     if (process == null)
                     {
-                        logger?.Error("Failed to start Servy.Restarter.exe.");
+                        logger?.Error("Failed to start Servy.Restarter.Net48.exe.");
                         return;
                     }
 
                     // 1. Wait for the restarter to complete the Stop/Start cycle
                     if (!process.WaitForExit(AppConfig.RestarterExeMaxWaitMs))
                     {
-                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / (double)AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"Servy.Restarter.Net48.exe timed out after {AppConfig.RestarterExeMaxWaitMs / (double)AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
@@ -464,11 +465,11 @@ namespace Servy.Service.Helpers
 
                     if (process.ExitCode == 0)
                     {
-                        logger?.Info($"Servy.Restarter.exe exited with code {process.ExitCode}.");
+                        logger?.Info($"Servy.Restarter.Net48.exe exited with code {process.ExitCode}.");
                     }
                     else
                     {
-                        logger?.Error($"Servy.Restarter.exe exited with non-zero code {process.ExitCode}; the service restart likely failed.");
+                        logger?.Error($"Servy.Restarter.Net48.exe exited with non-zero code {process.ExitCode}; the service restart likely failed.");
                     }
                 }
             }
