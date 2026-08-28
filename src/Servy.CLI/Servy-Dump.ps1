@@ -43,7 +43,7 @@
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 10, Windows 11, or Windows Server 2016 and later (requires native %SystemRoot%\System32\winsqlite3.dll).
     - PowerShell Version: Windows PowerShell 5.1 or PowerShell 7+ (Core).
-    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy.
+    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy or portable root.
     - SQLite Engine: Windows native WinRT/Win32 SQLite library (winsqlite3.dll); no external SQLite DLL drivers required.
     - Execution Privileges: Administrator privileges are required to interact with %ProgramData%\Servy and invoke Servy cmdlets.
 #>
@@ -74,8 +74,19 @@ if (-not $currentPrincipal.IsInRole($adminRole)) {
     exit 1
 }
 
-# Validate and import the official Servy PowerShell module
-$servyModulePath = "C:\Program Files\Servy\Servy.psm1"
+# Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
+$moduleCandidates = @(
+    (Join-Path $PSScriptRoot 'Servy.psm1'),
+    (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
+    (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
+) | Where-Object { $_ -and (Test-Path -Path $_) }
+
+$servyModulePath = $moduleCandidates | Select-Object -First 1
+
+if (-not $servyModulePath) {
+    Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
+    exit 2
+}
 
 try {
     Import-Module -Name $servyModulePath -Force -ErrorAction Stop
