@@ -9,6 +9,17 @@
     and exports each service configuration into an individual XML file using the official Servy PowerShell module.
     The exported XML files are then compressed into a single zip archive.
 
+    Per-service export errors are caught gracefully. If at least one service exports successfully, the zip archive
+    is generated and an exit code of 7 is returned to flag an incomplete backup to automated workflows.
+
+    EXIT CODES:
+    - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).
+    - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
+    - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
+    - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
+    - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
+    - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export.
+
     CRITICAL SECURITY NOTICE:
     The generated backup archive is highly sensitive. Exported XML configuration files contain sensitive plain-text
     data including execution parameters, command-line arguments, and process environment variables.
@@ -254,10 +265,13 @@ try {
 
     Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
 
-    # Export each service configuration into individual XML files inside the temporary staging directory
+    $exported = New-Object System.Collections.Generic.List[string]
+    $failed   = New-Object System.Collections.Generic.List[object]
     $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
 
+    # Export each service configuration into individual XML files with per-item exception isolation
     foreach ($serviceName in $serviceNames) {
+        # Sanitize service name for safe filesystem usage
         $safeFileName = $serviceName
         foreach ($char in $invalidChars) {
             $safeFileName = $safeFileName.Replace($char, '_')
@@ -267,8 +281,20 @@ try {
 
         Write-Host "Exporting configuration for '$serviceName' -> '$safeFileName.xml'..." -ForegroundColor Green
 
-        # Invoke Servy cmdlet to generate XML configuration dump
-        Export-ServyServiceConfig -Name $serviceName -ConfigFileType "Xml" -Path $xmlExportPath
+        try {
+            Export-ServyServiceConfig -Name $serviceName -ConfigFileType "Xml" -Path $xmlExportPath
+            $exported.Add($serviceName)
+        }
+        catch {
+            Write-Host "  FAILED to export '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+            $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = $_.Exception.Message })
+        }
+    }
+
+    # If zero configurations succeeded, terminate without creating an empty archive
+    if ($exported.Count -eq 0) {
+        Write-Host "No service configurations could be exported. No dump archive was generated." -ForegroundColor Red
+        exit 6
     }
 
     # Ensure target output directory exists
@@ -302,8 +328,14 @@ try {
     }
 
     # Display completion status and critical security warning
-    Write-Host "`nServy configuration dump completed successfully!" -ForegroundColor Green
+    Write-Host "`nServy configuration dump completed!" -ForegroundColor Green
+    Write-Host "Successfully exported $($exported.Count) of $($serviceNames.Count) service(s)." -ForegroundColor Cyan
     Write-Host "Dump location: $resolvedArchivePath" -ForegroundColor Cyan
+
+    if ($failed.Count -gt 0) {
+        Write-Host "`nThe following service(s) FAILED to export and were NOT included in the dump archive:" -ForegroundColor Red
+        $failed | Format-Table -AutoSize | Out-String | Write-Host
+    }
 
     Write-Host @"
 
@@ -323,6 +355,10 @@ NOTE ON SERVICE RESTORATION:
   require specific custom service runner accounts.
 ================================================================================
 "@ -ForegroundColor Yellow
+
+    if ($failed.Count -gt 0) {
+        exit 7    # Archive generated successfully, but incomplete
+    }
 }
 finally {
     # Clean up temporary staging directory and XML files
