@@ -32,6 +32,7 @@
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 7 SP1, Windows Server 2008 R2, or later.
     - PowerShell Version: Windows PowerShell 2.0 or higher.
+    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy.
     - SQLite Engine: Prefers System.Data.SQLite.dll / e_sqlite3.dll in %ProgramFiles%\Servy (net48), with dynamic fallback to winsqlite3.dll / sqlite3.dll.
     - Execution Privileges: Administrator privileges are required to interact with %ProgramData%\Servy and invoke Servy cmdlets.
 #>
@@ -209,7 +210,7 @@ public static class ServyNativeMultiSqlite
 
     public static List<string> GetServiceNames(string dbPath, string servyDir)
     {
-        var result = new List<string>();
+        List<string> result = new List<string>();
         IntPtr db;
 
         if (!string.IsNullOrEmpty(servyDir))
