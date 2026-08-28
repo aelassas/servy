@@ -52,6 +52,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Force UTF-8 Encoding across external process boundaries and console pipelines
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding           = [System.Text.Encoding]::UTF8
+
 # Ensure the script is executing with Administrator privileges
 $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)

@@ -49,6 +49,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Force UTF-8 Encoding across external process boundaries and console pipelines
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding           = [System.Text.Encoding]::UTF8
+
 # Ensure the script is executing with Administrator privileges
 $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
@@ -89,14 +93,15 @@ if (-not (Test-Path -Path $dbPath)) {
     exit 0
 }
 
-# Register C# P/Invoke wrapper targeting Windows native %SystemRoot%\System32\winsqlite3.dll
-if (-not ([System.Management.Automation.PSTypeName]'ServyNativeWinSqlite').Type) {
+# Register C# P/Invoke wrapper targeting Windows native %SystemRoot%\System32\winsqlite3.dll with explicit UTF-8 decoding
+if (-not ([System.Management.Automation.PSTypeName]'ServyNativeWinSqliteUtf8').Type) {
     $sqliteBinding = @"
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 
-public static class ServyNativeWinSqlite
+public static class ServyNativeWinSqliteUtf8
 {
     [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
     private static extern int sqlite3_open_v2([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr ppDb, int flags, IntPtr zVfs);
@@ -116,9 +121,19 @@ public static class ServyNativeWinSqlite
     [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_finalize", CallingConvention = CallingConvention.Cdecl)]
     private static extern int sqlite3_finalize(IntPtr stmt);
 
+    private static string PtrToStringUtf8(IntPtr ptr)
+    {
+        if (ptr == IntPtr.Zero) return null;
+        int length = 0;
+        while (Marshal.ReadByte(ptr, length) != 0) length++;
+        byte[] buffer = new byte[length];
+        Marshal.Copy(ptr, buffer, 0, length);
+        return Encoding.UTF8.GetString(buffer);
+    }
+
     public static List<string> GetServiceNames(string dbPath)
     {
-        var result = new List<string>();
+        List<string> result = new List<string>();
         IntPtr db;
         // SQLITE_OPEN_READONLY = 1
         if (sqlite3_open_v2(dbPath, out db, 1, IntPtr.Zero) != 0) return result;
@@ -132,7 +147,7 @@ public static class ServyNativeWinSqlite
                 IntPtr ptr = sqlite3_column_text(stmt, 0);
                 if (ptr != IntPtr.Zero)
                 {
-                    result.Add(Marshal.PtrToStringAnsi(ptr));
+                    result.Add(PtrToStringUtf8(ptr));
                 }
             }
             sqlite3_finalize(stmt);
@@ -151,7 +166,7 @@ $tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "Se
 
 try {
     # Query Servy SQLite database via Windows native winsqlite3.dll
-    $serviceNames = [ServyNativeWinSqlite]::GetServiceNames($dbPath)
+    $serviceNames = [ServyNativeWinSqliteUtf8]::GetServiceNames($dbPath)
 
     if ($null -eq $serviceNames -or $serviceNames.Count -eq 0) {
         Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
