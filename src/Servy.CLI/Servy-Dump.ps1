@@ -93,7 +93,7 @@ if (-not (Test-Path -Path $dbPath)) {
 # -----------------------------------------------------------------------------
 # Database Inspection Layer
 # 1. Attempt ADO.NET using System.Data.SQLite.dll (present in Servy net48 build)
-# 2. Fall back to P/Invoke targeting e_sqlite3.dll, winsqlite3.dll, or sqlite3.dll
+# 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR
 # -----------------------------------------------------------------------------
 
 $serviceNames = New-Object System.Collections.Generic.List[string]
@@ -131,158 +131,115 @@ if (Test-Path -Path $managedSqliteDll) {
         }
     }
     catch {
-        # Fall back to native P/Invoke if assembly loading or instantiation fails
         $usedAdoNet = $false
     }
 }
 
 if (-not $usedAdoNet) {
-    if (-not ([System.Management.Automation.PSTypeName]'ServyNativeMultiSqlite').Type) {
+    if (-not ([System.Management.Automation.PSTypeName]'ServySafePs2Sqlite').Type) {
         $sqliteBinding = @"
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 
-public static class ServyNativeMultiSqlite
+public static class ServySafePs2Sqlite
 {
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr LoadLibrary(string lpFileName);
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern bool SetDllDirectory(string lpPathName);
+    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
+    private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
-    // e_sqlite3.dll (Servy binary bundle)
-    [DllImport("e_sqlite3.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int esqlite3_open_v2([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr ppDb, int flags, IntPtr zVfs);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int OpenV2Delegate([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr ppDb, int flags, IntPtr zVfs);
 
-    [DllImport("e_sqlite3.dll", EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int esqlite3_close(IntPtr db);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int CloseDelegate(IntPtr db);
 
-    [DllImport("e_sqlite3.dll", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int esqlite3_prepare_v2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string zSql, int nByte, out IntPtr ppStmt, IntPtr pzTail);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int PrepareV2Delegate(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string zSql, int nByte, out IntPtr ppStmt, IntPtr pzTail);
 
-    [DllImport("e_sqlite3.dll", EntryPoint = "sqlite3_step", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int esqlite3_step(IntPtr stmt);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int StepDelegate(IntPtr stmt);
 
-    [DllImport("e_sqlite3.dll", EntryPoint = "sqlite3_column_text", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr esqlite3_column_text(IntPtr stmt, int iCol);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate IntPtr ColumnTextDelegate(IntPtr stmt, int iCol);
 
-    [DllImport("e_sqlite3.dll", EntryPoint = "sqlite3_finalize", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int esqlite3_finalize(IntPtr stmt);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int FinalizeDelegate(IntPtr stmt);
 
-    // winsqlite3.dll (Windows 10 / Server 2016+)
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int winsqlite3_open_v2([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr ppDb, int flags, IntPtr zVfs);
-
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int winsqlite3_close(IntPtr db);
-
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int winsqlite3_prepare_v2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string zSql, int nByte, out IntPtr ppStmt, IntPtr pzTail);
-
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_step", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int winsqlite3_step(IntPtr stmt);
-
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_column_text", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr winsqlite3_column_text(IntPtr stmt, int iCol);
-
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_finalize", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int winsqlite3_finalize(IntPtr stmt);
-
-    // sqlite3.dll (Standard Fallback)
-    [DllImport("sqlite3.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int sqlite3_open_v2([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr ppDb, int flags, IntPtr zVfs);
-
-    [DllImport("sqlite3.dll", EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int sqlite3_close(IntPtr db);
-
-    [DllImport("sqlite3.dll", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int sqlite3_prepare_v2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string zSql, int nByte, out IntPtr ppStmt, IntPtr pzTail);
-
-    [DllImport("sqlite3.dll", EntryPoint = "sqlite3_step", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int sqlite3_step(IntPtr stmt);
-
-    [DllImport("sqlite3.dll", EntryPoint = "sqlite3_column_text", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr sqlite3_column_text(IntPtr stmt, int iCol);
-
-    [DllImport("sqlite3.dll", EntryPoint = "sqlite3_finalize", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int sqlite3_finalize(IntPtr stmt);
+    private static string PtrToStringUtf8(IntPtr ptr)
+    {
+        if (ptr == IntPtr.Zero) return null;
+        int length = 0;
+        while (Marshal.ReadByte(ptr, length) != 0) length++;
+        byte[] buffer = new byte[length];
+        Marshal.Copy(ptr, buffer, 0, length);
+        return Encoding.UTF8.GetString(buffer);
+    }
 
     public static List<string> GetServiceNames(string dbPath, string servyDir)
     {
         List<string> result = new List<string>();
+        string[] candidates = new string[] {
+            System.IO.Path.Combine(servyDir, "e_sqlite3.dll"),
+            "winsqlite3.dll",
+            "sqlite3.dll"
+        };
+
+        IntPtr hModule = IntPtr.Zero;
+        foreach (string lib in candidates)
+        {
+            try
+            {
+                hModule = LoadLibrary(lib);
+                if (hModule != IntPtr.Zero) break;
+            }
+            catch { }
+        }
+
+        if (hModule == IntPtr.Zero) return result;
+
+        IntPtr pOpen     = GetProcAddress(hModule, "sqlite3_open_v2");
+        IntPtr pClose    = GetProcAddress(hModule, "sqlite3_close");
+        IntPtr pPrepare  = GetProcAddress(hModule, "sqlite3_prepare_v2");
+        IntPtr pStep     = GetProcAddress(hModule, "sqlite3_step");
+        IntPtr pText     = GetProcAddress(hModule, "sqlite3_column_text");
+        IntPtr pFinalize = GetProcAddress(hModule, "sqlite3_finalize");
+
+        if (pOpen == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
+            pStep == IntPtr.Zero || pText == IntPtr.Zero || pFinalize == IntPtr.Zero)
+        {
+            return result;
+        }
+
+        OpenV2Delegate openV2       = (OpenV2Delegate)Marshal.GetDelegateForFunctionPointer(pOpen, typeof(OpenV2Delegate));
+        CloseDelegate close         = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
+        PrepareV2Delegate prepareV2 = (PrepareV2Delegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareV2Delegate));
+        StepDelegate step           = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
+        ColumnTextDelegate colText  = (ColumnTextDelegate)Marshal.GetDelegateForFunctionPointer(pText, typeof(ColumnTextDelegate));
+        FinalizeDelegate finalize   = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
+
         IntPtr db;
-
-        if (!string.IsNullOrEmpty(servyDir))
-        {
-            SetDllDirectory(servyDir);
-        }
-
-        // 1. Try e_sqlite3.dll (Servy net48 installation folder)
-        if (LoadLibrary("e_sqlite3.dll") != IntPtr.Zero)
-        {
-            if (esqlite3_open_v2(dbPath, out db, 1, IntPtr.Zero) == 0)
-            {
-                IntPtr stmt;
-                if (esqlite3_prepare_v2(db, "SELECT Name FROM Services", -1, out stmt, IntPtr.Zero) == 0)
-                {
-                    while (esqlite3_step(stmt) == 100)
-                    {
-                        IntPtr ptr = esqlite3_column_text(stmt, 0);
-                        if (ptr != IntPtr.Zero)
-                        {
-                            result.Add(Marshal.PtrToStringAnsi(ptr));
-                        }
-                    }
-                    esqlite3_finalize(stmt);
-                }
-                esqlite3_close(db);
-                return result;
-            }
-        }
-
-        // 2. Try winsqlite3.dll (Windows 10 / Server 2016+)
-        if (LoadLibrary("winsqlite3.dll") != IntPtr.Zero)
-        {
-            if (winsqlite3_open_v2(dbPath, out db, 1, IntPtr.Zero) == 0)
-            {
-                IntPtr stmt;
-                if (winsqlite3_prepare_v2(db, "SELECT Name FROM Services", -1, out stmt, IntPtr.Zero) == 0)
-                {
-                    while (winsqlite3_step(stmt) == 100)
-                    {
-                        IntPtr ptr = winsqlite3_column_text(stmt, 0);
-                        if (ptr != IntPtr.Zero)
-                        {
-                            result.Add(Marshal.PtrToStringAnsi(ptr));
-                        }
-                    }
-                    winsqlite3_finalize(stmt);
-                }
-                winsqlite3_close(db);
-                return result;
-            }
-        }
-
-        #pragma warning disable 0168
-        // 3. Fallback to standard sqlite3.dll
-        if (sqlite3_open_v2(dbPath, out db, 1, IntPtr.Zero) == 0)
+        if (openV2(dbPath, out db, 1, IntPtr.Zero) == 0)
         {
             IntPtr stmt;
-            if (sqlite3_prepare_v2(db, "SELECT Name FROM Services", -1, out stmt, IntPtr.Zero) == 0)
+            if (prepareV2(db, "SELECT Name FROM Services", -1, out stmt, IntPtr.Zero) == 0)
             {
-                while (sqlite3_step(stmt) == 100)
+                while (step(stmt) == 100)
                 {
-                    IntPtr ptr = sqlite3_column_text(stmt, 0);
+                    IntPtr ptr = colText(stmt, 0);
                     if (ptr != IntPtr.Zero)
                     {
-                        result.Add(Marshal.PtrToStringAnsi(ptr));
+                        result.Add(PtrToStringUtf8(ptr));
                     }
                 }
-                sqlite3_finalize(stmt);
+                finalize(stmt);
             }
-            sqlite3_close(db);
+            close(db);
         }
+
         return result;
     }
 }
@@ -290,7 +247,7 @@ public static class ServyNativeMultiSqlite
         Add-Type -TypeDefinition $sqliteBinding
     }
 
-    $serviceNames = [ServyNativeMultiSqlite]::GetServiceNames($dbPath, $servyBinDir)
+    $serviceNames = [ServySafePs2Sqlite]::GetServiceNames($dbPath, $servyBinDir)
 }
 
 # Create an isolated temporary directory for staging exported XML files
@@ -328,7 +285,7 @@ try {
         [void][System.IO.Directory]::CreateDirectory($parentDir)
     }
 
-    # Compress staging directory into target zip archive (PowerShell 2.0 / .NET Framework compatible compression)
+    # Compress staging directory into target zip archive
     Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
 
     if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {

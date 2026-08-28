@@ -26,10 +26,10 @@
     into the Windows Service Control Manager.
 
 .EXAMPLE
-    .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Backup.zip"
+    .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip"
 
 .EXAMPLE
-    .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Backup.zip" -Install
+    .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip" -Install
 
 .NOTES
     SYSTEM REQUIREMENTS:
@@ -50,6 +50,12 @@ param(
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+
+# Set external process pipeline encoding safely (restricts Win32 console code page mutation to PS 3.0+)
+if ($PSVersionTable.PSVersion.Major -ge 3) {
+    try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
+}
+try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 
 # Ensure the script is executing with Administrator privileges
 $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
