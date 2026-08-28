@@ -636,10 +636,12 @@ jobs:
               Write-Error "Servy.CLI.exe not found in $pkg"
           }
 
-          # PowerShell module
+          # PowerShell module and Dump/Restore Scripts
           Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
           Copy-Item "src/Servy.CLI/Servy.psd1" $pkg -Force
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy-Dump.ps1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy-Restore.ps1" $pkg -Force          
 
           # Remove *.pdb, *.config, *.xml files
           $exts = @("*.pdb", "*.config", "*.xml")

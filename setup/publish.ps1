@@ -183,8 +183,8 @@ try {
             }
         }
 
-        # 5. Include PowerShell Module Artifacts
-        $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
+        # 5. Include PowerShell Module and Dump/Restore artifacts
+        $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1", "Servy-Dump.ps1", "Servy-Restore.ps1")
         foreach ($art in $cliArtifacts) {
             $artPath = Join-Path $cliDir $art
             if (Test-Path $artPath) {

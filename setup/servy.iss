@@ -98,10 +98,12 @@ Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe"; DestDir: "{app}"; Dest
 ; Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe.config"; DestDir: "{app}"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_cli
 Source: "..\src\Servy.CLI\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 
-; PowerShell Module
+; PowerShell Module and Dump/Restore Scripts
 Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\Servy.psd1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\Servy-Dump.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\Servy-Restore.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 
 ; Manager
 Source: "..\src\Servy.Manager\bin\x64\Release\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
