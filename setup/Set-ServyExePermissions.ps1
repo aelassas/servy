@@ -54,7 +54,6 @@ $ErrorActionPreference = 'Stop'
 $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
 $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
-
 if (-not $currentPrincipal.IsInRole($adminRole)) {
     Write-Host "Set-ServyExePermissions.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
     exit 1
@@ -136,33 +135,33 @@ foreach ($fileName in $targetFiles) {
 
     Write-Host "Hardening permissions on '$fileName'..." -ForegroundColor Green
 
-    # Execute two ACL passes: Pass 1 converts inheritance to explicit rules; Pass 2 purges old rules and locks down Read & Execute.
-    for ($pass = 1; $pass -le 2; $pass++) {
-        $acl = Get-Acl -Path $filePath
+    $acl = Get-Acl -Path $filePath
 
-        # 1. Break inheritance and convert existing inherited permissions to explicit ACEs
-        $acl.SetAccessRuleProtection($true, $true)
+    # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
+    $acl.SetOwner($adminSid)
 
-        # 2. Atomic purge of all existing explicit ACEs (Modify, FullControl, etc.) for target account
-        $acl.PurgeAccessRules($targetNTAccount)
+    # 1. Break inheritance and purge existing inherited permissions ($isProtected = $true, $preserveInheritance = $false)
+    $acl.SetAccessRuleProtection($true, $false)
 
-        # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-        $acl.SetAccessRule($adminRule)
-        $acl.SetAccessRule($systemRule)
+    # 2. Purge existing explicit ACEs for target account
+    $acl.PurgeAccessRules($targetNTAccount)
 
-        # 4. Grant explicit ReadAndExecute access to target account
-        $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-            $targetNTAccount,
-            "ReadAndExecute",
-            "Allow"
-        )
-        $acl.SetAccessRule($targetRule)
+    # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
+    $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+    $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+    $acl.SetAccessRule($adminRule)
+    $acl.SetAccessRule($systemRule)
 
-        # Commit ACL pass to disk
-        Set-Acl -Path $filePath -AclObject $acl
-    }
+    # 4. Grant explicit ReadAndExecute access to target account
+    $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+        $targetNTAccount,
+        "ReadAndExecute",
+        "Allow"
+    )
+    $acl.SetAccessRule($targetRule)
+
+    # Commit ACL to disk
+    Set-Acl -Path $filePath -AclObject $acl
 
     Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
 }
