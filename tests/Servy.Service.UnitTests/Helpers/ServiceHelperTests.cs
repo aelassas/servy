@@ -457,7 +457,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             var dir = GetTargetRestarterDirectory();
 
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.exe");
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
 
             // Defensively ensure a dummy restarter file exists in the sandbox if it isn't already present,
             // without modifying or deleting a real build artifact.
@@ -482,7 +482,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Assert
                 // Verify that the start failure branch executed cleanly and surfaced the corresponding error profile
-                mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.exe.", It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.Net48.exe.", It.IsAny<Exception>()), Times.Once);
             }
             finally
             {
@@ -843,7 +843,7 @@ namespace Servy.Service.UnitTests.Helpers
             // to be located in AppConfig.ProgramDataPath. In Debug, it expects BaseDirectory.
             // We write the file directly where the compiled execution path expects it.
 #if DEBUG
-            return AppFoldersHelper.GetAppDirectory();
+            return AppDomain.CurrentDomain.BaseDirectory;
 #else
             return AppConfig.ProgramDataPath;
 #endif
