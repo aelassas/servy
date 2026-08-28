@@ -36,7 +36,7 @@ This release includes bug fixes, security patches, code quality improvements, an
 * fix(core): ServiceManager.cs - MapStartupType's protected-service catch expects Win32Exception, but ServiceController.StartType wraps it in InvalidOperationException, so every protected service logs at Error as 'Unexpected' on each service-list refresh (#5970)
 * fix(core): ServiceManager.cs - StartServiceAsync and StopServiceAsync never refresh before their wait loop, so the first check re-reads the status cached by the pre-flight test and every start and stop sleeps a full 500 ms poll interval it does not need (#5979)
 * fix(core): HandleHelper.cs - the InvalidOperationException guard on Process.Start cannot fire with UseShellExecute=false, and the real unstartable-exe failure is an undocumented Win32Exception the test suite already asserts (#6089)
-* fix(core): EventLogReader.cs / EventLogService.cs - the '<unavailable>' fallbacks that #1295 and #2061 added are unreachable; the bracket filter discards every record carrying one (#6128)
+* fix(core): EventLogReader.cs / EventLogService.cs - the '\<unavailable\>'' fallbacks that #1295 and #2061 added are unreachable; the bracket filter discards every record carrying one (#6128)
 * fix(core): ServiceManager.cs - GetServiceStartupType discards the start type it already resolved when the delayed-auto-start probe throws, while GetAllServices keeps it (#6134)
 * fix(service): Service.cs - a crashing child is the one EvaluateExitOutcome arm that logs no exit code, and its failure counter reports the exit as a failed health check (#5754)
 * fix(service): Service.cs - IsRecoveryEnabled's options != null conjunct is provably always true; OnStart throws on null 39 lines earlier and is its only caller (#5791)
