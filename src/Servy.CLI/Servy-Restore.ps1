@@ -35,7 +35,7 @@
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 7 SP1, Windows Server 2008 R2, or later.
     - PowerShell Version: Windows PowerShell 2.0 or higher.
-    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy.
+    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy or portable root.
     - Execution Privileges: Administrator privileges are required to interact with Servy configurations and managing Windows services.
 #>
 [CmdletBinding()]
@@ -67,8 +67,29 @@ if (-not $currentPrincipal.IsInRole($adminRole)) {
     exit 1
 }
 
-# Validate and import the official Servy PowerShell module
-$servyModulePath = "C:\Program Files\Servy\Servy.psm1"
+# Resolve script directory safely across PowerShell 2.0 ($MyInvocation) and PowerShell 3.0+ ($PSScriptRoot)
+if ($PSVersionTable.PSVersion.Major -ge 3) {
+    # PS3+ has automatic $PSScriptRoot
+    $scriptDir = $PSScriptRoot
+}
+else {
+    # PS2 does not have $PSScriptRoot
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+
+# Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
+$moduleCandidates = @(
+    (Join-Path $scriptDir 'Servy.psm1'),
+    (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
+    (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
+) | Where-Object { $_ -and (Test-Path -Path $_) }
+
+$servyModulePath = $moduleCandidates | Select-Object -First 1
+
+if (-not $servyModulePath) {
+    Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
+    exit 2
+}
 
 try {
     Import-Module -Name $servyModulePath -Force -ErrorAction Stop

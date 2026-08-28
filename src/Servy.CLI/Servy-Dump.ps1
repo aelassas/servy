@@ -43,8 +43,8 @@
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 7 SP1, Windows Server 2008 R2, or later.
     - PowerShell Version: Windows PowerShell 2.0 or higher.
-    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy.
-    - SQLite Engine: Prefers System.Data.SQLite.dll / e_sqlite3.dll in %ProgramFiles%\Servy (net48), with dynamic fallback to winsqlite3.dll / sqlite3.dll.
+    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy or portable root.
+    - SQLite Engine: Prefers System.Data.SQLite.dll / e_sqlite3.dll in Servy directory, with dynamic fallback to winsqlite3.dll / sqlite3.dll.
     - Execution Privileges: Administrator privileges are required to interact with %ProgramData%\Servy and invoke Servy cmdlets.
 #>
 [CmdletBinding()]
@@ -73,8 +73,29 @@ if (-not $currentPrincipal.IsInRole($adminRole)) {
     exit 1
 }
 
-# Validate and import the official Servy PowerShell module
-$servyModulePath = "C:\Program Files\Servy\Servy.psm1"
+# Resolve script directory safely across PowerShell 2.0 ($MyInvocation) and PowerShell 3.0+ ($PSScriptRoot)
+if ($PSVersionTable.PSVersion.Major -ge 3) {
+    # PS3+ has automatic $PSScriptRoot
+    $scriptDir = $PSScriptRoot
+}
+else {
+    # PS2 does not have $PSScriptRoot
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+
+# Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
+$moduleCandidates = @(
+    (Join-Path $scriptDir 'Servy.psm1'),
+    (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
+    (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
+) | Where-Object { $_ -and (Test-Path -Path $_) }
+
+$servyModulePath = $moduleCandidates | Select-Object -First 1
+
+if (-not $servyModulePath) {
+    Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
+    exit 2
+}
 
 try {
     Import-Module -Name $servyModulePath -Force -ErrorAction Stop
@@ -83,6 +104,9 @@ catch {
     Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
     exit 2
 }
+
+# Determine base Servy installation directory for native and managed assembly resolution
+$servyBinDir = [System.IO.Path]::GetDirectoryName($servyModulePath)
 
 # Check if destination dump file already exists
 $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
@@ -111,7 +135,6 @@ if (-not (Test-Path -Path $dbPath)) {
 # -----------------------------------------------------------------------------
 
 $serviceNames = New-Object System.Collections.Generic.List[string]
-$servyBinDir = "C:\Program Files\Servy"
 $managedSqliteDll = [System.IO.Path]::Combine($servyBinDir, "System.Data.SQLite.dll")
 
 $usedAdoNet = $false
