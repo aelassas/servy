@@ -35,6 +35,7 @@
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 10, Windows 11, or Windows Server 2016 and later.
     - PowerShell Version: Windows PowerShell 5.1 or PowerShell 7+ (Core).
+    - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy.
     - Archive Support: Native PowerShell Microsoft.PowerShell.Archive module (Expand-Archive).
     - Execution Privileges: Administrator privileges are required to interact with Servy configurations and managing Windows services.
 #>
