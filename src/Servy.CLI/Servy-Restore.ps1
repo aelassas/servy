@@ -93,8 +93,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Render non-ASCII service names correctly in console output while preserving original session encoding
-$previousOutputEncoding    = [Console]::OutputEncoding
+$previousOutputEncoding   = [Console]::OutputEncoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+$tempExtractDir = $null
 
 try {
     # Ensure the script is executing with Administrator privileges
@@ -162,28 +164,29 @@ try {
         exit 5
     }
 
-    # Create an isolated temporary directory for extracting XML files
+    # Create an isolated temporary directory for extracting XML files inside try/finally scope
     $tempExtractDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyRestore_" + [System.IO.Path]::GetRandomFileName())
-    [void][System.IO.Directory]::CreateDirectory($tempExtractDir)
 
-    # Restrict staging directory permissions to Administrators and SYSTEM exclusively
     try {
-        $acl = Get-Acl -LiteralPath $tempExtractDir
-        $acl.SetAccessRuleProtection($true, $false)
-        foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
-            $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
-            $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
-                $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
+        [void][System.IO.Directory]::CreateDirectory($tempExtractDir)
+
+        # Restrict staging directory permissions to Administrators and SYSTEM exclusively
+        try {
+            $acl = Get-Acl -LiteralPath $tempExtractDir
+            $acl.SetAccessRuleProtection($true, $false)
+            foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
+                $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
+                $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+                    $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
+            }
+            Set-Acl -LiteralPath $tempExtractDir -AclObject $acl
         }
-        Set-Acl -LiteralPath $tempExtractDir -AclObject $acl
-    }
-    catch {
-        Write-Host "WARNING: Could not restrict permissions on the extraction directory '$tempExtractDir': $($_.Exception.Message)" -ForegroundColor Red
-        Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
-        exit 4
-    }
+        catch {
+            Write-Host "WARNING: Could not restrict permissions on the extraction directory '$tempExtractDir': $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
+            exit 4
+        }
 
-    try {
         Write-Host "Extracting dump archive '$resolvedArchivePath'..." -ForegroundColor Cyan
 
         # Entry-path validation and bounded extraction
@@ -322,7 +325,7 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
     }
     finally {
         # Clean up temporary extraction directory and extracted XML files with explicit failure reporting
-        if (Test-Path -LiteralPath $tempExtractDir) {
+        if ($null -ne $tempExtractDir -and (Test-Path -LiteralPath $tempExtractDir)) {
             Remove-Item -LiteralPath $tempExtractDir -Recurse -Force -ErrorAction SilentlyContinue
 
             if (Test-Path -LiteralPath $tempExtractDir) {
