@@ -367,9 +367,10 @@ function Invoke-ServyCli {
         $psi.RedirectStandardError = $true
         $psi.CreateNoWindow = $true
 
+        $encoding = [System.Text.Encoding]::UTF8
         if ($psi.PSObject.Properties.Match('StandardOutputEncoding').Count -gt 0) {
-            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-            $psi.StandardErrorEncoding  = [System.Text.Encoding]::UTF8
+            $psi.StandardOutputEncoding = $encoding
+            $psi.StandardErrorEncoding  = $encoding
         }
 
         # SECURITY: Inject environment variables securely directly into the child process block
@@ -404,6 +405,12 @@ function Invoke-ServyCli {
 
         $outBuf = New-Object byte[] 4096
         $errBuf = New-Object byte[] 4096
+        $outCharBuf = New-Object char[] 4096
+        $errCharBuf = New-Object char[] 4096
+
+        # Stateful decoders maintain UTF-8 state across chunk boundaries
+        $outDecoder = $encoding.GetDecoder()
+        $errDecoder = $encoding.GetDecoder()
 
         $outSb = New-Object System.Text.StringBuilder
         $errSb = New-Object System.Text.StringBuilder
@@ -413,6 +420,7 @@ function Invoke-ServyCli {
 
         $outEof = $false
         $errEof = $false
+        $timedOut = $false
 
         $timeoutStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $timeoutMilliseconds = $script:ServyTimeoutSeconds * 1000
@@ -424,8 +432,8 @@ function Invoke-ServyCli {
             if (-not $outEof -and $outAr.IsCompleted) {
                 $read = $outStream.EndRead($outAr)
                 if ($read -gt 0) {
-                    $chunk = [System.Text.Encoding]::UTF8.GetString($outBuf, 0, $read)
-                    [void]$outSb.Append($chunk)
+                    $chars = $outDecoder.GetChars($outBuf, 0, $read, $outCharBuf, 0)
+                    [void]$outSb.Append($outCharBuf, 0, $chars)
                     $activity = $true
                     $outAr = $outStream.BeginRead($outBuf, 0, $outBuf.Length, $null, $null)
                 } else {
@@ -437,8 +445,8 @@ function Invoke-ServyCli {
             if (-not $errEof -and $errAr.IsCompleted) {
                 $read = $errStream.EndRead($errAr)
                 if ($read -gt 0) {
-                    $chunk = [System.Text.Encoding]::UTF8.GetString($errBuf, 0, $read)
-                    [void]$errSb.Append($chunk)
+                    $chars = $errDecoder.GetChars($errBuf, 0, $read, $errCharBuf, 0)
+                    [void]$errSb.Append($errCharBuf, 0, $chars)
                     $activity = $true
                     $errAr = $errStream.BeginRead($errBuf, 0, $errBuf.Length, $null, $null)
                 } else {
@@ -447,6 +455,7 @@ function Invoke-ServyCli {
             }
 
             if ($timeoutStopwatch.ElapsedMilliseconds -ge $timeoutMilliseconds) {
+                $timedOut = $true
                 break
             }
 
@@ -458,6 +467,7 @@ function Invoke-ServyCli {
         # Synchronous wait for process termination or kill path execution
         while (-not $process.WaitForExit($script:ServyPollIntervalMs)) {
             if ($timeoutStopwatch.ElapsedMilliseconds -ge $timeoutMilliseconds) {
+                $timedOut = $true
                 break
             }
         }
@@ -465,7 +475,8 @@ function Invoke-ServyCli {
         if (-not $process.HasExited) {
             $killed = $false
             try {
-                & taskkill.exe /T /F /PID $process.Id 2>&1 | Out-Null
+                $taskkillPath = Join-Path ([Environment]::GetFolderPath('System')) 'taskkill.exe'
+                & $taskkillPath /T /F /PID $process.Id 2>&1 | Out-Null
                 [void]$process.WaitForExit($script:ServyDrainTimeoutMs)
                 $killed = $process.HasExited
             }
@@ -480,17 +491,38 @@ function Invoke-ServyCli {
             }
         }
 
-        # Final drain of remaining pending stream bytes after process exit
-        if (-not $outEof -and $outAr.IsCompleted) {
-            $read = $outStream.EndRead($outAr)
-            if ($read -gt 0) {
-                [void]$outSb.Append([System.Text.Encoding]::UTF8.GetString($outBuf, 0, $read))
+        # Full bounded final drain loop after process exit until EOF or drain timeout
+        if (-not $outEof) {
+            while (-not $outEof) {
+                if ($outAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
+                    $read = $outStream.EndRead($outAr)
+                    if ($read -gt 0) {
+                        $chars = $outDecoder.GetChars($outBuf, 0, $read, $outCharBuf, 0)
+                        [void]$outSb.Append($outCharBuf, 0, $chars)
+                        $outAr = $outStream.BeginRead($outBuf, 0, $outBuf.Length, $null, $null)
+                    } else {
+                        $outEof = $true
+                    }
+                } else {
+                    break
+                }
             }
         }
-        if (-not $errEof -and $errAr.IsCompleted) {
-            $read = $errStream.EndRead($errAr)
-            if ($read -gt 0) {
-                [void]$errSb.Append([System.Text.Encoding]::UTF8.GetString($errBuf, 0, $read))
+
+        if (-not $errEof) {
+            while (-not $errEof) {
+                if ($errAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
+                    $read = $errStream.EndRead($errAr)
+                    if ($read -gt 0) {
+                        $chars = $errDecoder.GetChars($errBuf, 0, $read, $errCharBuf, 0)
+                        [void]$errSb.Append($errCharBuf, 0, $chars)
+                        $errAr = $errStream.BeginRead($errBuf, 0, $errBuf.Length, $null, $null)
+                    } else {
+                        $errEof = $true
+                    }
+                } else {
+                    break
+                }
             }
         }
 
@@ -520,6 +552,11 @@ function Invoke-ServyCli {
         }
 
         $exitCode = $process.ExitCode
+
+        # Surface warning if execution loop exited due to timeout even if child exited during grace window
+        if ($timedOut) {
+            Write-Warning "Operation timed out after $($script:ServyTimeoutSeconds) seconds. Output may be truncated."
+        }
 
         # Emit stdout lines sequentially in exact order
         if ($stdoutLines.Count -gt 0) {
