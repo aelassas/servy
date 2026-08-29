@@ -397,36 +397,65 @@ function Invoke-ServyCli {
             "Verify the file exists, is not locked, and the current user has execute permissions."
         }
 
-        # Synchronous synchronous pipe reading on the main thread
-        # We read StandardOutput line-by-line in real-time on the calling thread
-        # avoiding all multithreaded script block delegates and PS engine crashes.
-        $outReader = $process.StandardOutput
-        $errReader = $process.StandardError
+        # Non-blocking, concurrent stream reading via BaseStream.BeginRead (.NET 2.0 / PS 2.0 compatible)
+        # Avoids thread-block script delegates and prevents deadlocks on silent or stderr-heavy execution.
+        $outStream = $process.StandardOutput.BaseStream
+        $errStream = $process.StandardError.BaseStream
+
+        $outBuf = New-Object byte[] 4096
+        $errBuf = New-Object byte[] 4096
+
+        $outSb = New-Object System.Text.StringBuilder
+        $errSb = New-Object System.Text.StringBuilder
+
+        $outAr = $outStream.BeginRead($outBuf, 0, $outBuf.Length, $null, $null)
+        $errAr = $errStream.BeginRead($errBuf, 0, $errBuf.Length, $null, $null)
+
+        $outEof = $false
+        $errEof = $false
 
         $timeoutStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $timeoutMilliseconds = $script:ServyTimeoutSeconds * 1000
 
-        # Read output synchronously until EOF
-        while ($null -ne ($line = $outReader.ReadLine())) {
-            [void]$stdoutLines.Add($line)
+        while (-not ($outEof -and $errEof)) {
+            $activity = $false
+
+            # Poll stdout stream
+            if (-not $outEof -and $outAr.IsCompleted) {
+                $read = $outStream.EndRead($outAr)
+                if ($read -gt 0) {
+                    $chunk = [System.Text.Encoding]::UTF8.GetString($outBuf, 0, $read)
+                    [void]$outSb.Append($chunk)
+                    $activity = $true
+                    $outAr = $outStream.BeginRead($outBuf, 0, $outBuf.Length, $null, $null)
+                } else {
+                    $outEof = $true
+                }
+            }
+
+            # Poll stderr stream
+            if (-not $errEof -and $errAr.IsCompleted) {
+                $read = $errStream.EndRead($errAr)
+                if ($read -gt 0) {
+                    $chunk = [System.Text.Encoding]::UTF8.GetString($errBuf, 0, $read)
+                    [void]$errSb.Append($chunk)
+                    $activity = $true
+                    $errAr = $errStream.BeginRead($errBuf, 0, $errBuf.Length, $null, $null)
+                } else {
+                    $errEof = $true
+                }
+            }
 
             if ($timeoutStopwatch.ElapsedMilliseconds -ge $timeoutMilliseconds) {
                 break
             }
-        }
 
-        # Read remaining stderr synchronously after stdout EOF
-        $stderrContent = $errReader.ReadToEnd()
-        if (-not [string]::IsNullOrEmpty($stderrContent)) {
-            $errLines = $stderrContent -split "\r?\n"
-            foreach ($eLine in $errLines) {
-                if ($eLine.Trim() -ne "") {
-                    [void]$stderrLines.Add($eLine)
-                }
+            if (-not $activity -and -not ($outEof -and $errEof)) {
+                Start-Sleep -Milliseconds $script:ServyPollIntervalMs
             }
         }
 
-        # Synchronous wait for exit
+        # Synchronous wait for process termination or kill path execution
         while (-not $process.WaitForExit($script:ServyPollIntervalMs)) {
             if ($timeoutStopwatch.ElapsedMilliseconds -ge $timeoutMilliseconds) {
                 break
@@ -448,6 +477,45 @@ function Invoke-ServyCli {
                 throw "Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
             } else {
                 throw "Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
+            }
+        }
+
+        # Final drain of remaining pending stream bytes after process exit
+        if (-not $outEof -and $outAr.IsCompleted) {
+            $read = $outStream.EndRead($outAr)
+            if ($read -gt 0) {
+                [void]$outSb.Append([System.Text.Encoding]::UTF8.GetString($outBuf, 0, $read))
+            }
+        }
+        if (-not $errEof -and $errAr.IsCompleted) {
+            $read = $errStream.EndRead($errAr)
+            if ($read -gt 0) {
+                [void]$errSb.Append([System.Text.Encoding]::UTF8.GetString($errBuf, 0, $read))
+            }
+        }
+
+        # Parse string buffers into discrete output lines
+        if ($outSb.Length -gt 0) {
+            # Trim trailing newlines before splitting to prevent an empty trailing element
+            $cleanStdout = $outSb.ToString().TrimEnd("`r", "`n")
+            if ($cleanStdout.Length -gt 0) {
+                $parsedOutLines = $cleanStdout -split "\r?\n"
+                foreach ($oLine in $parsedOutLines) {
+                    [void]$stdoutLines.Add($oLine)
+                }
+            }
+        }
+
+        if ($errSb.Length -gt 0) {
+            # Trim trailing newlines before splitting to prevent an empty trailing element
+            $cleanStderr = $errSb.ToString().TrimEnd("`r", "`n")
+            if ($cleanStderr.Length -gt 0) {
+                $parsedErrLines = $cleanStderr -split "\r?\n"
+                foreach ($eLine in $parsedErrLines) {
+                    if ($eLine.Trim() -ne "") {
+                        [void]$stderrLines.Add($eLine)
+                    }
+                }
             }
         }
 
