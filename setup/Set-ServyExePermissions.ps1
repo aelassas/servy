@@ -62,10 +62,14 @@ if (-not $currentPrincipal.IsInRole($adminRole)) {
 $exeNames = @(
     'Servy.Service.exe',
     'Servy.Service.CLI.exe',
-    'Servy.Restarter.exe',
-    'handle64.exe',
-    'handle64a.exe'
+    'Servy.Restarter.exe'
 )
+
+if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
+    $exeNames += 'handle64a.exe'
+} else {
+    $exeNames += 'handle64.exe'
+}
 
 $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
 
@@ -111,45 +115,63 @@ $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Sec
 Write-Host "Securing Servy executable files in: $programDataDir" -ForegroundColor Cyan
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
+$hardened = @()
+$skipped  = @()
 foreach ($exeName in $exeNames) {
     $exePath = [System.IO.Path]::Combine($programDataDir, $exeName)
 
     if (-not (Test-Path -Path $exePath)) {
-        Write-Host "Skipping '$exeName' (file not found)." -ForegroundColor Gray
+        $skipped += $exeName
         continue
     }
 
-    Write-Host "Hardening permissions on '$exeName'..." -ForegroundColor Green
+    try {
+        Write-Host "Hardening permissions on '$exeName'..." -ForegroundColor Green
 
-    $acl = Get-Acl -Path $exePath
+        $acl = Get-Acl -Path $exePath
 
-    # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
-    $acl.SetOwner($adminSid)
+        # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
+        $acl.SetOwner($adminSid)
 
-    # 1. Break inheritance and remove inherited permissions in 1 pass ($isProtected = $true, $preserveInheritance = $false)
-    $acl.SetAccessRuleProtection($true, $false)
+        # 1. Break inheritance and remove inherited permissions in 1 pass ($isProtected = $true, $preserveInheritance = $false)
+        $acl.SetAccessRuleProtection($true, $false)
 
-    # 2. Purge existing explicit ACEs for target account
-    $acl.PurgeAccessRules($targetNTAccount)
+        # 2. Purge existing explicit ACEs for target account
+        $acl.PurgeAccessRules($targetNTAccount)
 
-    # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
-    $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-    $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-    $acl.SetAccessRule($adminRule)
-    $acl.SetAccessRule($systemRule)
+        # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+        $acl.SetAccessRule($adminRule)
+        $acl.SetAccessRule($systemRule)
 
-    # 4. Grant explicit ReadAndExecute access to target account
-    $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-        $targetNTAccount,
-        "ReadAndExecute",
-        "Allow"
-    )
-    $acl.SetAccessRule($targetRule)
+        # 4. Grant explicit ReadAndExecute access to target account
+        $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+            $targetNTAccount,
+            "ReadAndExecute",
+            "Allow"
+        )
+        $acl.SetAccessRule($targetRule)
 
-    # Commit ACL to disk
-    Set-Acl -Path $exePath -AclObject $acl
+        # Commit ACL to disk
+        Set-Acl -Path $exePath -AclObject $acl
 
-    Write-Host "Successfully hardened '$exeName'." -ForegroundColor Green
+        Write-Host "Successfully hardened '$exeName'." -ForegroundColor Green
+        $hardened += $exeName
+    }
+    catch {
+        Write-Host "FAILED to harden '$exeName': $_" -ForegroundColor Red
+        $skipped += $exeName
+    }
 }
 
-Write-Host "`nExecutable permission hardening complete." -ForegroundColor Cyan
+Write-Host "`nHardened $($hardened.Count) of $($exeNames.Count) executables." -ForegroundColor Cyan
+
+if ($skipped.Count -gt 0) {
+    Write-Warning ("Not hardened: {0}" -f ($skipped -join ', '))
+    Write-Warning "These files will inherit Modify access from '$programDataDir' when Servy creates them."
+    Write-Warning "Start the service once so every binary is extracted, then RE-RUN this script."
+    exit 2
+}
+
+Write-Host "Executable permission hardening complete." -ForegroundColor Green
