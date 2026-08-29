@@ -264,6 +264,8 @@ try {
 
         if ($null -ne $zipFileType) {
             $zipFile = $zipFileType::OpenRead($resolvedArchivePath)
+            $seenEntryNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+
             try {
                 if ($zipFile.Entries.Count -gt $MaxAllowedEntries) {
                     Write-Host "Archive contains $($zipFile.Entries.Count) entries, exceeding limit of $MaxAllowedEntries. Aborting." -ForegroundColor Red
@@ -275,6 +277,12 @@ try {
 
                     if ($entry.Name -ne $entry.FullName) {
                         Write-Host "Archive entry '$($entry.FullName)' contains subdirectories. Non-flat dump archives are disallowed. Aborting." -ForegroundColor Red
+                        exit 4
+                    }
+
+                    # Disallow duplicate entry names within the archive
+                    if (-not $seenEntryNames.Add($entry.Name)) {
+                        Write-Host "Archive contains duplicate entry '$($entry.Name)'. Aborting: malformed dump archive." -ForegroundColor Red
                         exit 4
                     }
 
@@ -337,9 +345,15 @@ try {
                 exit 4
             }
 
+            $seenItemNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+
             foreach ($item in $extractedItems) {
                 if ($item.PSIsContainer) {
                     Write-Host "Archive contains subdirectories. Non-flat dump archives are disallowed. Aborting." -ForegroundColor Red
+                    exit 4
+                }
+                if (-not $seenItemNames.Add($item.Name)) {
+                    Write-Host "Archive contains duplicate entry '$($item.Name)'. Aborting: malformed dump archive." -ForegroundColor Red
                     exit 4
                 }
                 if (-not $item.Name.EndsWith('.xml', [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -360,7 +374,7 @@ try {
         # Enumerate all XML configuration files recursively in the extracted dump directory
         $xmlFiles = Get-ChildItem -Path $tempExtractDir -Recurse | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
 
-        if ($null -eq $xmlFiles -or @($xmlFiles).Count -eq 0) {
+        if ($null -eq $xmlFiles) {
             Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
             exit 0
         }
