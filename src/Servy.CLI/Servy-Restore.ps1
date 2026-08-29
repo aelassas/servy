@@ -111,7 +111,7 @@ try {
         (Join-Path $PSScriptRoot 'Servy.psm1'),
         (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
         (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
-    ) | Where-Object { $_ -and (Test-Path -Path $_) }
+    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
 
     $servyModulePath = $moduleCandidates | Select-Object -First 1
 
@@ -128,10 +128,11 @@ try {
         exit 2
     }
 
-    # Validate existence of the specified dump archive file
-    $resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
+    # Resolve against the PowerShell location, not the process working directory:
+    # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
+    $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
 
-    if (-not (Test-Path -Path $resolvedArchivePath)) {
+    if (-not (Test-Path -LiteralPath $resolvedArchivePath)) {
         Write-Host "Specified dump archive file does not exist: '$resolvedArchivePath'." -ForegroundColor Red
         exit 3
     }
@@ -141,7 +142,7 @@ try {
 
     if (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
-        $sidecarText = [System.IO.File]::ReadAllText($sidecarPath)
+        $sidecarText  = [System.IO.File]::ReadAllText($sidecarPath)
         $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
         $actualHash   = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
 
@@ -222,7 +223,7 @@ try {
 
                 $totalUncompressedSize += $entry.Length
                 if ($totalUncompressedSize -gt $MaxUncompressedBytes) {
-                    Write-Host "Uncompressed archive size exceeds limit of 100 MB. Aborting to prevent resource exhaustion." -ForegroundColor Red
+                    Write-Host "Uncompressed archive size ($totalUncompressedSize bytes) exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
                     exit 4
                 }
 
@@ -233,8 +234,8 @@ try {
             $zipFile.Dispose()
         }
 
-        # Enumerate all XML configuration files in the extracted dump directory
-        $xmlFiles = Get-ChildItem -Path $tempExtractDir -Filter "*.xml" -File
+        # Enumerate all XML configuration files recursively in the extracted dump directory
+        $xmlFiles = Get-ChildItem -LiteralPath $tempExtractDir -Filter "*.xml" -File -Recurse
 
         if ($null -eq $xmlFiles -or @($xmlFiles).Count -eq 0) {
             Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
@@ -279,12 +280,15 @@ try {
         }
 
         # Display completion status and critical security notice
-        Write-Host "`nServy configuration restore completed!" -ForegroundColor Green
-        Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
-
         if ($failed.Count -gt 0) {
+            Write-Host "`nServy configuration restore completed with warnings!" -ForegroundColor Yellow
+            Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
             Write-Host "`nThe following service file(s) FAILED to import:" -ForegroundColor Red
             $failed | Format-Table -AutoSize | Out-String | Write-Host
+        }
+        else {
+            Write-Host "`nServy configuration restore completed successfully!" -ForegroundColor Green
+            Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
         }
 
         Write-Host @"

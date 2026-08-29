@@ -86,7 +86,7 @@ try {
         (Join-Path $PSScriptRoot 'Servy.psm1'),
         (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
         (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
-    ) | Where-Object { $_ -and (Test-Path -Path $_) }
+    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
 
     $servyModulePath = $moduleCandidates | Select-Object -First 1
 
@@ -103,8 +103,9 @@ try {
         exit 2
     }
 
-    # Resolve and normalize archive path extension up-front
-    $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
+    # Resolve against the PowerShell location, not the process working directory:
+    # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
+    $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
 
     if ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
         $resolvedArchivePath += '.zip'
@@ -333,8 +334,10 @@ public static class ServyNativeWinSqlite16
         # Compress the staging directory containing XML dumps into the target zip file
         Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
 
+        $stagedItemsToCompress = Get-ChildItem -LiteralPath $tempStagingDir -File | Select-Object -ExpandProperty FullName
+
         $compressParams = @{
-            Path             = "$tempStagingDir\*"
+            LiteralPath      = $stagedItemsToCompress
             DestinationPath  = $resolvedArchivePath
             CompressionLevel = "Optimal"
         }
