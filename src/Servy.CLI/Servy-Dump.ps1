@@ -104,11 +104,28 @@ try {
         exit 2
     }
 
+    # Detect directory-style destination inputs (trailing path separator)
+    $isDirDestination = $false
+    if (-not [string]::IsNullOrEmpty($DestinationArchivePath)) {
+        $trimmedInput = $DestinationArchivePath.TrimEnd()
+        if ($trimmedInput.EndsWith('\') -or $trimmedInput.EndsWith('/')) {
+            $isDirDestination = $true
+        }
+    }
+
     # Resolve against the PowerShell location, not the process working directory:
     # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
     $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
 
-    if ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
+    if (-not $isDirDestination -and (Test-Path -Path $resolvedArchivePath -PathType Container)) {
+        $isDirDestination = $true
+    }
+
+    if ($isDirDestination) {
+        $resolvedArchivePath = [System.IO.Path]::Combine($resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar), 'Servy_Dump.zip')
+        Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
+    }
+    elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
         $resolvedArchivePath += '.zip'
         Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
     }
