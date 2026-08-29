@@ -165,8 +165,8 @@ using System.Runtime.InteropServices;
 
 public static class ServyNativeWinSqlite16
 {
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-    private static extern int sqlite3_open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr ppDb);
+    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
+    private static extern int sqlite3_open_v2(byte[] filenameUtf8, out IntPtr ppDb, int flags, IntPtr zVfs);
 
     [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
     private static extern int sqlite3_close(IntPtr db);
@@ -188,11 +188,12 @@ public static class ServyNativeWinSqlite16
         List<string> result = new List<string>();
         IntPtr db;
         
-        int rc = sqlite3_open16(dbPath, out db);
+        byte[] pathUtf8 = System.Text.Encoding.UTF8.GetBytes(dbPath + "\0");
+        int rc = sqlite3_open_v2(pathUtf8, out db, 0x1 /* SQLITE_OPEN_READONLY */, IntPtr.Zero);
         if (rc != 0)
         {
             if (db != IntPtr.Zero) sqlite3_close(db);
-            throw new InvalidOperationException(string.Format("sqlite3_open16 failed on '{0}' with result code {1}.", dbPath, rc));
+            throw new InvalidOperationException(string.Format("sqlite3_open_v2 failed on '{0}' with result code {1}.", dbPath, rc));
         }
 
         try
