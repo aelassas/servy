@@ -555,7 +555,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -827,7 +827,7 @@ namespace Servy.UnitTests.Services
             await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_SecurityUncPathProhibited, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_SecurityUncPathProhibited, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -954,15 +954,16 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "MissingUninstallService";
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
-
+            string errorMsg = $"Service '{serviceName}' does not exist.";
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Failure(errorMsg));
             // Act
             var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
-            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(errorMsg, UiAppConfig.Caption), Times.Once);
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

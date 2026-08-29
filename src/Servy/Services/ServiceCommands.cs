@@ -278,13 +278,6 @@ namespace Servy.Services
 
             try
             {
-                var exists = _serviceManager.IsServiceInstalled(serviceName, cancellationToken);
-                if (!exists)
-                {
-                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, Caption);
-                    return false;
-                }
-
                 _cursorService.SetWaitCursor();
                 var res = await _serviceManager.UninstallServiceAsync(serviceName, cancellationToken);
 

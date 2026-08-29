@@ -69,22 +69,10 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             const string serviceName = "OrphanedDbService";
             var options = CreateValidOptions(serviceName);
-            var orphanedService = new ServiceDto { Name = serviceName };
 
-            // 1. SCM reports that the service is NOT installed
-            MockServiceManager
-                .Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
-                .Returns(false);
-
-            // 2. Repository finds the leftover record in servy.db
-            _mockRepository
-                .Setup(repo => repo.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(orphanedService);
-
-            // 3. Setup deletion on repository
-            _mockRepository
-                .Setup(repo => repo.DeleteAsync(serviceName, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(1));
+            // Mock IsServiceInstalled to true so ExecuteServiceOperationAsync passes the pre-flight check,
+            // and mock UninstallServiceAsync to return Success (simulating ServiceManager's internal orphan cleanup #6374).
+            SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
             var result = await ExecuteCommandAsync(Command, options);
@@ -92,17 +80,17 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             // Verify that the command reports success
             Assert.True(result.IsSuccess);
-            Assert.Equal(string.Format(Strings.Msg_UninstallServiceNotInstalled, serviceName), result.Message);
+            Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
 
-            // Verify that the database cleanup was actually invoked
+            // Verify that the CLI delegated directly to ServiceManager.UninstallServiceAsync
+            MockServiceManager.Verify(
+                sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            // Verify repository cleanup post-uninstall callback was executed by the command wrapper
             _mockRepository.Verify(
                 repo => repo.DeleteAsync(serviceName, It.IsAny<CancellationToken>()),
                 Times.Once);
-
-            // Verify that SCM uninstall operation was never attempted since it wasn't registered in SCM
-            MockServiceManager.Verify(
-                sm => sm.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-                Times.Never);
         }
     }
 }

@@ -39,5 +39,8 @@ namespace Servy.Core.Native
 
         /// <summary>Access is denied.</summary>
         public const int ERROR_ACCESS_DENIED = 5;
+
+        /// <summary>The specified service does not exist as an installed service.</summary>
+        public const int ERROR_SERVICE_DOES_NOT_EXIST = 1060;
     }
 }

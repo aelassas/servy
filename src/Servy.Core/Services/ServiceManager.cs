@@ -731,7 +731,24 @@ namespace Servy.Core.Services
                 {
                     if (serviceHandle.IsInvalid)
                     {
-                        return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
+                        int openErr = _win32ErrorProvider.GetLastWin32Error();
+
+                        // Handle the case where the Windows service is already removed from SCM (e.g., via sc delete or failed install),
+                        // but leftover database records remain.
+                        if (openErr == ERROR_SERVICE_DOES_NOT_EXIST)
+                        {
+                            var existingDbService = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
+                            if (existingDbService != null)
+                            {
+                                await _serviceRepository.DeleteAsync(serviceName, cancellationToken);
+                                Logger.Info($"Service '{serviceName}' was not found in SCM, but orphan database record was successfully cleaned up.");
+                                return OperationResult.Success();
+                            }
+
+                            return OperationResult.Failure($"Service '{serviceName}' does not exist.");
+                        }
+
+                        return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. Win32 Error: {openErr}.");
                     }
 
                     // Trigger the stop command
