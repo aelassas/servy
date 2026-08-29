@@ -430,7 +430,7 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
     }
     finally {
         # Clean up temporary extraction directory and extracted XML files with explicit failure reporting
-        if ($null -ne $tempExtractDir -and (Test-Path -Path $tempExtractDir)) {
+        if (Test-Path -LiteralPath $tempExtractDir) {
             Remove-Item -Path $tempExtractDir -Recurse -Force -ErrorAction SilentlyContinue
 
             if (Test-Path -Path $tempExtractDir) {
