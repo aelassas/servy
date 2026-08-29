@@ -4,7 +4,8 @@
     Restores Servy service configurations from a consolidated XML dump archive.
 
 .DESCRIPTION
-    Servy-Restore.ps1 extracts a Servy backup archive containing individual service XML configuration files and
+    Servy-Restore.ps1 verifies the integrity of a Servy backup archive against its SHA-256 sidecar file,
+    safely extracts individual service XML configuration files into an ACL-hardened temporary location, and
     imports each configuration into Servy using the official Servy PowerShell module (Import-ServyServiceConfig).
     
     If the -Install switch parameter is supplied, the script also installs each imported service into the Windows
@@ -18,6 +19,8 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Missing. The specified dump archive file does not exist.
+    - 4 : I/O & Extraction Failure. The archive could not be extracted, ACL hardening failed, or malformed entries were detected.
+    - 5 : Checksum Verification Failure. The .sha256 sidecar is missing (without -SkipIntegrityCheck) or hash mismatch detected.
     - 6 : Complete Import Failure. No service configurations could be imported from the archive.
     - 7 : Partial Import Warning. The restore completed, but one or more services failed to import.
 
@@ -36,18 +39,24 @@
     Optional switch parameter. When present, each imported service configuration is automatically installed
     into the Windows Service Control Manager.
 
+.PARAMETER SkipIntegrityCheck
+    Optional switch parameter. Allows restoring from an archive when no .sha256 sidecar hash file exists.
+
 .EXAMPLE
     .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip"
 
 .EXAMPLE
     .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip" -Install
 
+.EXAMPLE
+    .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip" -SkipIntegrityCheck
+
 .NOTES
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 10, Windows 11, or Windows Server 2016 and later.
     - PowerShell Version: Windows PowerShell 5.1 or PowerShell 7+ (Core).
     - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy or portable root.
-    - Archive Support: Native PowerShell Microsoft.PowerShell.Archive module (Expand-Archive).
+    - Archive Support: System.IO.Compression.FileSystem (.NET 4.5+ assembly).
     - Execution Privileges: Administrator privileges are required to interact with Servy configurations and managing Windows services.
 #>
 [CmdletBinding()]
@@ -57,7 +66,10 @@ param(
     [string]$DumpArchivePath,
 
     [Parameter(Mandatory = $false, HelpMessage = 'Optionally install each service into Windows SCM after import.')]
-    [switch]$Install
+    [switch]$Install,
+
+    [Parameter(Mandatory = $false, HelpMessage = 'Skip SHA-256 sidecar checksum verification if sidecar file is absent.')]
+    [switch]$SkipIntegrityCheck
 )
 
 Set-StrictMode -Version Latest
@@ -108,6 +120,30 @@ try {
         exit 3
     }
 
+    # Verify archive integrity against SHA-256 sidecar file if present
+    $sidecarPath = "$resolvedArchivePath.sha256"
+
+    if (Test-Path -LiteralPath $sidecarPath) {
+        Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
+        $sidecarText = [System.IO.File]::ReadAllText($sidecarPath)
+        $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
+        $actualHash   = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
+
+        if (-not [string]::Equals($expectedHash, $actualHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+            Write-Host "Archive checksum mismatch! Expected SHA-256 '$expectedHash', but calculated '$actualHash'. Aborting restore." -ForegroundColor Red
+            exit 5
+        }
+        Write-Host "Archive SHA-256 checksum successfully verified." -ForegroundColor Green
+    }
+    elseif (-not $SkipIntegrityCheck.IsPresent) {
+        Write-Host "No SHA-256 sidecar file found at '$sidecarPath'." -ForegroundColor Red
+        Write-Host "To proceed without integrity verification, re-run with the -SkipIntegrityCheck switch." -ForegroundColor Red
+        exit 5
+    }
+    else {
+        Write-Host "WARNING: Integrity verification skipped (-SkipIntegrityCheck specified)." -ForegroundColor Yellow
+    }
+
     # Create an isolated temporary directory for extracting XML files
     $tempExtractDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyRestore_" + [System.IO.Path]::GetRandomFileName())
     [void][System.IO.Directory]::CreateDirectory($tempExtractDir)
@@ -122,11 +158,66 @@ try {
                 $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
         }
         Set-Acl -LiteralPath $tempExtractDir -AclObject $acl
-    } catch { }
+    }
+    catch {
+        Write-Host "WARNING: Could not restrict permissions on the extraction directory '$tempExtractDir': $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
+        exit 4
+    }
 
     try {
         Write-Host "Extracting dump archive '$resolvedArchivePath'..." -ForegroundColor Cyan
-        Expand-Archive -Path $resolvedArchivePath -DestinationPath $tempExtractDir -Force
+
+        # Entry-path validation and bounded extraction
+        Add-Type -AssemblyName "System.IO.Compression.FileSystem"
+
+        $rootPath = [System.IO.Path]::GetFullPath($tempExtractDir.TrimEnd('\') + '\')
+        $zipFile  = [System.IO.Compression.ZipFile]::OpenRead($resolvedArchivePath)
+
+        $maxAllowedEntries = 1000
+        $maxUncompressedBytes = 104857600 # 100 MB limit against zip bombs
+        $totalUncompressedSize = 0L
+
+        try {
+            if ($zipFile.Entries.Count -gt $maxAllowedEntries) {
+                Write-Host "Archive contains $($zipFile.Entries.Count) entries, exceeding the limit of $maxAllowedEntries. Aborting." -ForegroundColor Red
+                exit 4
+            }
+
+            foreach ($entry in $zipFile.Entries) {
+                # Skip directory entries
+                if ([string]::IsNullOrEmpty($entry.Name)) { continue }
+
+                # Ensure flat archive assumption: entry name must match FullName
+                if ($entry.Name -ne $entry.FullName) {
+                    Write-Host "Archive entry '$($entry.FullName)' contains subdirectories. Non-flat dump archives are disallowed. Aborting." -ForegroundColor Red
+                    exit 4
+                }
+
+                $targetPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($rootPath, $entry.FullName))
+
+                if (-not $targetPath.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    Write-Host "Archive entry '$($entry.FullName)' resolves outside staging directory. Aborting: malformed or hostile archive." -ForegroundColor Red
+                    exit 4
+                }
+
+                if ([System.IO.Path]::GetExtension($entry.Name).ToLowerInvariant() -ne '.xml') {
+                    Write-Host "Archive entry '$($entry.FullName)' is not an XML configuration file. Aborting." -ForegroundColor Red
+                    exit 4
+                }
+
+                $totalUncompressedSize += $entry.Length
+                if ($totalUncompressedSize -gt $maxUncompressedBytes) {
+                    Write-Host "Uncompressed archive size exceeds limit of 100 MB. Aborting to prevent resource exhaustion." -ForegroundColor Red
+                    exit 4
+                }
+
+                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+            }
+        }
+        finally {
+            $zipFile.Dispose()
+        }
 
         # Enumerate all XML configuration files in the extracted dump directory
         $xmlFiles = Get-ChildItem -Path $tempExtractDir -Filter "*.xml" -File
@@ -148,7 +239,7 @@ try {
 
             # Build splatting hashtable for Import-ServyServiceConfig
             $importParams = @{
-                ConfigFileType = "Xml"
+                ConfigFileType = "xml"
                 Path           = $xmlFile.FullName
             }
 
@@ -205,6 +296,10 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
         if ($failed.Count -gt 0) {
             exit 7    # Restore completed successfully, but incomplete
         }
+    }
+    catch {
+        Write-Host "`nServy configuration restore FAILED: $_" -ForegroundColor Red
+        exit 4
     }
     finally {
         # Clean up temporary extraction directory and extracted XML files with explicit failure reporting

@@ -7,7 +7,7 @@
     Servy-Dump.ps1 inspects the local Servy SQLite configuration database (%ProgramData%\Servy\db\Servy.db),
     retrieves all registered service definitions using Windows native winsqlite3.dll, and exports each service
     configuration into an individual XML file using the official Servy PowerShell module. The exported XML files
-    are then compressed into a single zip archive.
+    are then compressed into a single zip archive along with a SHA-256 sidecar file for integrity verification.
 
     Per-service export errors are caught gracefully. If at least one service exports successfully and one or more
     fail, the zip archive is still generated and an exit code of 7 is returned to flag an incomplete backup to
@@ -18,7 +18,8 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
-    - 4 : I/O & Inspection Failure. The database could not be read, or the target destination path/directory is unwritable.
+    - 4 : I/O & Inspection Failure. The database could not be read, the target destination path/directory is unwritable, or ACL hardening failed.
+    - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export.
     - 8 : Archive Staging Mismatch. Staged configuration count does not match exported count; dump aborted.
@@ -228,7 +229,13 @@ public static class ServyNativeWinSqlite16
     }
 }
 "@
-        Add-Type -TypeDefinition $sqliteBinding
+        try {
+            Add-Type -TypeDefinition $sqliteBinding
+        }
+        catch {
+            Write-Host "Failed to compile winsqlite3 P/Invoke binding assembly: $_" -ForegroundColor Red
+            exit 5
+        }
     }
 
     # Create an isolated temporary directory for staging exported XML files
@@ -245,7 +252,12 @@ public static class ServyNativeWinSqlite16
                 $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
         }
         Set-Acl -LiteralPath $tempStagingDir -AclObject $acl
-    } catch { }
+    }
+    catch {
+        Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
+        exit 4
+    }
 
     try {
         # Query Servy SQLite database via Windows native winsqlite3.dll
@@ -264,10 +276,10 @@ public static class ServyNativeWinSqlite16
 
         Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
 
-        $exported     = New-Object System.Collections.Generic.List[string]
-        $failed       = New-Object System.Collections.Generic.List[object]
+        $exported      = New-Object System.Collections.Generic.List[string]
+        $failed        = New-Object System.Collections.Generic.List[object]
         $usedBaseNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
-        $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+        $invalidChars  = [System.IO.Path]::GetInvalidFileNameChars()
 
         # Export each service configuration into individual XML files with per-item exception isolation
         foreach ($serviceName in $serviceNames) {
@@ -294,7 +306,7 @@ public static class ServyNativeWinSqlite16
             Write-Host "Exporting configuration for '$serviceName' -> '$candidateName.xml'..." -ForegroundColor Green
 
             try {
-                Export-ServyServiceConfig -Name $serviceName -ConfigFileType "Xml" -Path $xmlExportPath
+                Export-ServyServiceConfig -Name $serviceName -ConfigFileType "xml" -Path $xmlExportPath
                 $exported.Add($serviceName)
             }
             catch {
@@ -331,7 +343,20 @@ public static class ServyNativeWinSqlite16
             $compressParams['Force'] = $true
         }
 
-        Compress-Archive @compressParams
+        try {
+            Compress-Archive @compressParams
+        }
+        catch {
+            Write-Host "`nServy configuration dump FAILED during compression: $_" -ForegroundColor Red
+            Write-Host "No archive was produced at '$resolvedArchivePath'." -ForegroundColor Red
+            exit 4
+        }
+
+        # Emit SHA-256 sidecar hash file for integrity verification
+        $hashValue = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
+        $sidecarPath = "$resolvedArchivePath.sha256"
+        "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))" | Set-Content -LiteralPath $sidecarPath -Encoding ascii
+        Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
 
         # Display completion status and critical security warning
         Write-Host "`nServy configuration dump completed!" -ForegroundColor Green
