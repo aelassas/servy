@@ -9,14 +9,16 @@
     and exports each service configuration into an individual XML file using the official Servy PowerShell module.
     The exported XML files are then compressed into a single zip archive.
 
-    Per-service export errors are caught gracefully. If at least one service exports successfully, the zip archive
-    is generated and an exit code of 7 is returned to flag an incomplete backup to automated workflows.
+    Per-service export errors are caught gracefully. If at least one service exports successfully and one or more
+    fail, the zip archive is still generated and an exit code of 7 is returned to flag an incomplete backup to
+    automated workflows.
 
     EXIT CODES:
     - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
+    - 4 : I/O & Inspection Failure. The database could not be read, or the target destination path/directory is unwritable.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export.
 
@@ -71,6 +73,8 @@ else {
     try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 }
 
+$createdParentPath = $null
+
 try {
     # Ensure the script is executing with Administrator privileges
     $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -115,22 +119,54 @@ try {
     # Determine base Servy installation directory for native and managed assembly resolution
     $servyBinDir = [System.IO.Path]::GetDirectoryName($servyModulePath)
 
-    # Check if destination dump file already exists
+    # Resolve and normalize archive path extension up-front
     $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
 
-    if (Test-Path -Path $resolvedArchivePath) {
+    if ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
+        $resolvedArchivePath += '.zip'
+        Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
+    }
+
+    # Check if destination dump file already exists
+    if (Test-Path -LiteralPath $resolvedArchivePath) {
         if (-not $Overwrite.IsPresent) {
             Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
             exit 3
         }
         Write-Host "Existing dump archive found. -Overwrite specified; replacing target file." -ForegroundColor Yellow
-        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+    }
+
+    # Prove destination parent directory is created and writable BEFORE exporting
+    $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
+
+    if (-not [string]::IsNullOrEmpty($parentDir)) {
+        if (-not (Test-Path -LiteralPath $parentDir)) {
+            try {
+                [void][System.IO.Directory]::CreateDirectory($parentDir)
+                $createdParentPath = $parentDir
+            }
+            catch {
+                Write-Host "Cannot create target destination directory '$parentDir': $_" -ForegroundColor Red
+                exit 4
+            }
+        }
+
+        # Write probe confirmation
+        $probeFile = [System.IO.Path]::Combine($parentDir, ".servydump_probe_" + [System.IO.Path]::GetRandomFileName())
+        try {
+            [System.IO.File]::WriteAllBytes($probeFile, @())
+            Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
+        }
+        catch {
+            Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
+            exit 4
+        }
     }
 
     # Validate existence of the Servy SQLite database file
     $dbPath = [System.IO.Path]::Combine($env:ProgramData, "Servy\db\Servy.db")
 
-    if (-not (Test-Path -Path $dbPath)) {
+    if (-not (Test-Path -LiteralPath $dbPath)) {
         Write-Host "Servy database not found at '$dbPath'. No services exist to export." -ForegroundColor Yellow
         exit 0
     }
@@ -146,7 +182,7 @@ try {
 
     $usedAdoNet = $false
 
-    if (Test-Path -Path $managedSqliteDll) {
+    if (Test-Path -LiteralPath $managedSqliteDll) {
         try {
             [void][System.Reflection.Assembly]::LoadFrom($managedSqliteDll)
             
@@ -156,7 +192,7 @@ try {
             try {
                 $connection.Open()
                 $command = $connection.CreateCommand()
-                $command.CommandText = "SELECT Name FROM Services"
+                $command.CommandText = "SELECT Name FROM Services ORDER BY Name"
                 $reader = $command.ExecuteReader()
                 
                 while ($reader.Read()) {
@@ -195,7 +231,7 @@ public static class ServySafePs2Sqlite16
     private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int OpenV2Delegate([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr ppDb, int flags, IntPtr zVfs);
+    private delegate int Open16Delegate([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr ppDb);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int CloseDelegate(IntPtr db);
@@ -232,22 +268,25 @@ public static class ServySafePs2Sqlite16
             catch { }
         }
 
-        if (hModule == IntPtr.Zero) return result;
+        if (hModule == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Failed to load native SQLite library (e_sqlite3.dll, winsqlite3.dll, or sqlite3.dll).");
+        }
 
-        IntPtr pOpen     = GetProcAddress(hModule, "sqlite3_open_v2");
+        IntPtr pOpen16   = GetProcAddress(hModule, "sqlite3_open16");
         IntPtr pClose    = GetProcAddress(hModule, "sqlite3_close");
         IntPtr pPrepare  = GetProcAddress(hModule, "sqlite3_prepare_v2");
         IntPtr pStep     = GetProcAddress(hModule, "sqlite3_step");
         IntPtr pText16   = GetProcAddress(hModule, "sqlite3_column_text16");
         IntPtr pFinalize = GetProcAddress(hModule, "sqlite3_finalize");
 
-        if (pOpen == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
+        if (pOpen16 == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
             pStep == IntPtr.Zero || pText16 == IntPtr.Zero || pFinalize == IntPtr.Zero)
         {
-            return result;
+            throw new InvalidOperationException("Failed to resolve native SQLite function exports.");
         }
 
-        OpenV2Delegate openV2         = (OpenV2Delegate)Marshal.GetDelegateForFunctionPointer(pOpen, typeof(OpenV2Delegate));
+        Open16Delegate open16         = (Open16Delegate)Marshal.GetDelegateForFunctionPointer(pOpen16, typeof(Open16Delegate));
         CloseDelegate close           = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
         PrepareV2Delegate prepareV2   = (PrepareV2Delegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareV2Delegate));
         StepDelegate step             = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
@@ -255,11 +294,25 @@ public static class ServySafePs2Sqlite16
         FinalizeDelegate finalize     = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
 
         IntPtr db;
-        if (openV2(dbPath, out db, 1, IntPtr.Zero) == 0)
+        int rc = open16(dbPath, out db);
+        if (rc != 0)
+        {
+            if (db != IntPtr.Zero) close(db);
+            throw new InvalidOperationException(string.Format("sqlite3_open16 failed on '{0}' with result code {1}.", dbPath, rc));
+        }
+
+        try
         {
             IntPtr stmt;
-            if (prepareV2(db, "SELECT Name FROM Services", -1, out stmt, IntPtr.Zero) == 0)
+            rc = prepareV2(db, "SELECT Name FROM Services ORDER BY Name", -1, out stmt, IntPtr.Zero);
+            if (rc != 0)
             {
+                throw new InvalidOperationException(string.Format("sqlite3_prepare_v2 failed with result code {0}.", rc));
+            }
+
+            try
+            {
+                // SQLITE_ROW = 100
                 while (step(stmt) == 100)
                 {
                     IntPtr ptr = colText16(stmt, 0);
@@ -268,8 +321,14 @@ public static class ServySafePs2Sqlite16
                         result.Add(Marshal.PtrToStringUni(ptr));
                     }
                 }
+            }
+            finally
+            {
                 finalize(stmt);
             }
+        }
+        finally
+        {
             close(db);
         }
 
@@ -280,7 +339,13 @@ public static class ServySafePs2Sqlite16
             Add-Type -TypeDefinition $sqliteBinding
         }
 
-        $serviceNames = [ServySafePs2Sqlite16]::GetServiceNames($dbPath, $servyBinDir)
+        try {
+            $serviceNames = [ServySafePs2Sqlite16]::GetServiceNames($dbPath, $servyBinDir)
+        }
+        catch {
+            Write-Host "Failed to query Servy database at '$dbPath': $($_.Exception.Message)" -ForegroundColor Red
+            exit 4
+        }
     }
 
     # Create an isolated temporary directory for staging exported XML files
@@ -339,24 +404,31 @@ public static class ServySafePs2Sqlite16
             exit 6
         }
 
-        # Ensure target output directory exists
-        $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
-        if (-not [string]::IsNullOrEmpty($parentDir) -and -not (Test-Path -Path $parentDir)) {
-            [void][System.IO.Directory]::CreateDirectory($parentDir)
-        }
-
         # Compress staging directory into target zip archive
         Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
 
         if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {
-            Compress-Archive -Path "$tempStagingDir\*" -DestinationPath $resolvedArchivePath -Force
+            $compressParams = @{
+                Path             = "$tempStagingDir\*"
+                DestinationPath  = $resolvedArchivePath
+            }
+            if ($Overwrite.IsPresent) {
+                $compressParams['Force'] = $true
+            }
+            Compress-Archive @compressParams
         }
         else {
             try {
+                if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $resolvedArchivePath)) {
+                    Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+                }
                 [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
                 [System.IO.Compression.ZipFile]::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
             }
             catch {
+                if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $resolvedArchivePath)) {
+                    Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+                }
                 Set-Content -Path $resolvedArchivePath -Value ("PK" + [char]5 + [char]6 + ("`0" * 18))
                 $shellApp = New-Object -ComObject Shell.Application
                 $zipPackage = $shellApp.NameSpace($resolvedArchivePath)
@@ -425,6 +497,14 @@ Please delete this directory manually to prevent credential/config leaks.
     }
 }
 finally {
+    # If parent directory was created during execution but dump failed before creating archive, clean up orphaned folder
+    if ($null -ne $createdParentPath -and (Test-Path -LiteralPath $createdParentPath) -and -not (Test-Path -LiteralPath $resolvedArchivePath)) {
+        $parentItems = Get-ChildItem -LiteralPath $createdParentPath -ErrorAction SilentlyContinue
+        if ($null -eq $parentItems -or @($parentItems).Count -eq 0) {
+            Remove-Item -LiteralPath $createdParentPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     # Restore original console output encoding if altered
     if ($null -ne $previousOutputEncoding) {
         if ($PSVersionTable.PSVersion.Major -ge 3) {
