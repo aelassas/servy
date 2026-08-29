@@ -206,14 +206,18 @@ public static class ServyNativeWinSqlite16
 
             try
             {
-                // SQLITE_ROW = 100
-                while (sqlite3_step(stmt) == 100)
+                int stepRc;
+                while ((stepRc = sqlite3_step(stmt)) == 100) // SQLITE_ROW = 100
                 {
                     IntPtr ptr = sqlite3_column_text16(stmt, 0);
                     if (ptr != IntPtr.Zero)
                     {
                         result.Add(Marshal.PtrToStringUni(ptr));
                     }
+                }
+                if (stepRc != 101) // SQLITE_DONE
+                {
+                    throw new InvalidOperationException(string.Format("sqlite3_step failed with result code {0}; service list may be incomplete.", stepRc));
                 }
             }
             finally
@@ -358,7 +362,7 @@ public static class ServyNativeWinSqlite16
         # Emit SHA-256 sidecar hash file for integrity verification
         $hashValue = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
         $sidecarPath = "$resolvedArchivePath.sha256"
-        "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))" | Set-Content -LiteralPath $sidecarPath -Encoding ascii
+        [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($false)))
         Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
 
         # Display completion status and critical security warning
