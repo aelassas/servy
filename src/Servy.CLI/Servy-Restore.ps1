@@ -10,6 +10,17 @@
     If the -Install switch parameter is supplied, the script also installs each imported service into the Windows
     Service Control Manager (SCM).
 
+    Per-service import errors are caught gracefully. If at least one service imports successfully, remaining files
+    in the archive will continue to process and an exit code of 7 is returned to flag an incomplete restore.
+
+    EXIT CODES:
+    - 0 : Success. All service configurations were successfully imported (or no XML files exist in the archive).
+    - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
+    - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
+    - 3 : Target Missing. The specified dump archive file does not exist.
+    - 6 : Complete Import Failure. No service configurations could be imported from the archive.
+    - 7 : Partial Import Warning. The restore completed, but one or more services failed to import.
+
     CRITICAL SECURITY NOTICE:
     The backup archive being restored contains highly sensitive information, including unencrypted execution
     parameters, command-line arguments, and process environment variables.
@@ -128,7 +139,10 @@ try {
         $xmlFileList = @($xmlFiles)
         Write-Host "Found $($xmlFileList.Count) service configuration file(s) to restore..." -ForegroundColor Cyan
 
-        # Iterate through extracted XML files and import each service configuration
+        $imported = New-Object System.Collections.Generic.List[string]
+        $failed   = New-Object System.Collections.Generic.List[object]
+
+        # Iterate through extracted XML files and import each service configuration with isolated error handling
         foreach ($xmlFile in $xmlFileList) {
             Write-Host "Importing configuration from '$($xmlFile.Name)'..." -ForegroundColor Green
 
@@ -142,12 +156,31 @@ try {
                 $importParams['Install'] = $true
             }
 
-            # Invoke Servy cmdlet to import (and optionally install) the service configuration
-            Import-ServyServiceConfig @importParams
+            try {
+                # Invoke Servy cmdlet to import (and optionally install) the service configuration
+                Import-ServyServiceConfig @importParams
+                $imported.Add($xmlFile.Name)
+            }
+            catch {
+                Write-Host "  FAILED to import '$($xmlFile.Name)': $($_.Exception.Message)" -ForegroundColor Red
+                $failed.Add([PSCustomObject]@{ File = $xmlFile.Name; Reason = $_.Exception.Message })
+            }
+        }
+
+        # If zero configurations succeeded, terminate with complete failure exit code
+        if ($imported.Count -eq 0) {
+            Write-Host "No service configurations could be imported from the archive." -ForegroundColor Red
+            exit 6
         }
 
         # Display completion status and critical security notice
-        Write-Host "`nServy configuration restore completed successfully!" -ForegroundColor Green
+        Write-Host "`nServy configuration restore completed!" -ForegroundColor Green
+        Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
+
+        if ($failed.Count -gt 0) {
+            Write-Host "`nThe following service file(s) FAILED to import:" -ForegroundColor Red
+            $failed | Format-Table -AutoSize | Out-String | Write-Host
+        }
 
         Write-Host @"
 
@@ -168,6 +201,10 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
   custom service runner accounts.
 ================================================================================
 "@ -ForegroundColor Yellow
+
+        if ($failed.Count -gt 0) {
+            exit 7    # Restore completed successfully, but incomplete
+        }
     }
     finally {
         # Clean up temporary extraction directory and extracted XML files with explicit failure reporting
@@ -192,6 +229,8 @@ Please delete this directory manually to prevent credential/config leaks.
     }
 }
 finally {
-    # Restore host console encoding state
-    [Console]::OutputEncoding = $previousOutputEncoding
+    # Restore host console encoding state if previously captured
+    if ($null -ne $previousOutputEncoding) {
+        try { [Console]::OutputEncoding = $previousOutputEncoding } catch { }
+    }
 }
