@@ -212,6 +212,7 @@ try {
         $zipFile  = [System.IO.Compression.ZipFile]::OpenRead($resolvedArchivePath)
 
         $totalUncompressedSize = 0L
+        $seenEntryNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 
         try {
             if ($zipFile.Entries.Count -gt $MaxAllowedEntries) {
@@ -226,6 +227,12 @@ try {
                 # Ensure flat archive assumption: entry name must match FullName
                 if ($entry.Name -ne $entry.FullName) {
                     Write-Host "Archive entry '$($entry.FullName)' contains subdirectories. Non-flat dump archives are disallowed. Aborting." -ForegroundColor Red
+                    exit 4
+                }
+
+                # Disallow duplicate entry names within the archive
+                if (-not $seenEntryNames.Add($entry.Name)) {
+                    Write-Host "Archive contains duplicate entry '$($entry.Name)'. Aborting: malformed dump archive." -ForegroundColor Red
                     exit 4
                 }
 
@@ -268,7 +275,7 @@ try {
         # Enumerate all XML configuration files recursively in the extracted dump directory
         $xmlFiles = Get-ChildItem -LiteralPath $tempExtractDir -Filter "*.xml" -File -Recurse
 
-        if ($null -eq $xmlFiles -or @($xmlFiles).Count -eq 0) {
+        if ($null -eq $xmlFiles) {
             Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
             exit 0
         }
