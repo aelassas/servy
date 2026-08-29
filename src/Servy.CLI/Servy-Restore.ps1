@@ -34,9 +34,8 @@
     module for any services that require specific custom service runner accounts.
 
 .PARAMETER DumpArchivePath
-    Mandatory path specifying the target zip archive file to restore (e.g., 'C:\Backups\Servy_Dump.zip').
-    If a directory path or trailing separator is provided, it writes to `$DumpArchivePath\Servy_Dump.zip`; if no file extension is specified, `.zip` is appended.
-    Use `-Overwrite` to replace an existing archive.
+    Mandatory path specifying the Servy dump zip archive file to restore (e.g., 'C:\Backups\Servy_Dump.zip').
+    The file must exist; otherwise the script exits with code 3.
 
 .PARAMETER Install
     Optional switch parameter. When present, each imported service configuration is automatically installed
