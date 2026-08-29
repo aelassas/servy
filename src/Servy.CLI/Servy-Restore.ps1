@@ -35,6 +35,8 @@
 
 .PARAMETER DumpArchivePath
     Mandatory path specifying the target zip archive file to restore (e.g., 'C:\Backups\Servy_Dump.zip').
+    If a directory path or trailing separator is provided, it writes to `$DumpArchivePath\Servy_Dump.zip`; if no file extension is specified, `.zip` is appended.
+    Use `-Overwrite` to replace an existing archive.
 
 .PARAMETER Install
     Optional switch parameter. When present, each imported service configuration is automatically installed
@@ -45,11 +47,11 @@
 
 .PARAMETER MaxAllowedEntries
     Optional integer parameter. Specifies the maximum number of entries allowed in the dump archive
-    to prevent zip bomb attacks during extraction. Defaults to 1000.
+    to prevent zip bomb attacks during extraction. Defaults to 1000 (range: 1–100,000).
 
 .PARAMETER MaxUncompressedBytes
     Optional 64-bit integer parameter. Specifies the maximum total uncompressed size (in bytes) allowed
-    when extracting the dump archive. Defaults to 104857600 bytes (100 MB).
+    when extracting the dump archive. Defaults to 104857600 bytes / 100 MB (range: 1–10737418240 bytes / 10 GB).
 
 .EXAMPLE
     .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip"
@@ -85,7 +87,7 @@ param(
 
     [Parameter(Mandatory = $false, HelpMessage = 'Maximum total uncompressed byte size permitted during extraction (default: 104857600 = 100 MB).')]
     [ValidateRange(1, 10737418240)] # Up to 10 GB max safety ceiling
-    [long]$MaxUncompressedBytes = 104857600
+    [long]$MaxUncompressedBytes = [long]104857600
 )
 
 Set-StrictMode -Version 2.0
@@ -172,7 +174,6 @@ try {
     elseif (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
         
-        # Read sidecar text using .NET API compatible with PowerShell 2.0
         $sidecarText = [System.IO.File]::ReadAllText($sidecarPath)
         $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
         
@@ -229,19 +230,26 @@ try {
         # Safe entry-path validation and bounded archive extraction
         $rootPath = [System.IO.Path]::GetFullPath($tempExtractDir.TrimEnd('\') + '\')
         
-        $totalUncompressedSize = 0L
+        [long]$totalUncompressedSize = 0L
 
         $zipFileType = $null
-        $zipExtType  = $null
-
-        # Use dynamic string types to prevent PS 2.0 parser from crashing on missing literal assemblies
         try {
             [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
-            $zipFileType = ("System.IO.Compression.ZipFile" -as [type])
-            $zipExtType  = ("System.IO.Compression.ZipFileExtensions" -as [type])
-        } catch { }
+            if ([System.IO.Compression.ZipFile]) {
+                $zipFileType = [System.IO.Compression.ZipFile]
+            }
+        }
+        catch {
+            try {
+                Add-Type -AssemblyName "System.IO.Compression.FileSystem" -ErrorAction SilentlyContinue
+                if ([System.IO.Compression.ZipFile]) {
+                    $zipFileType = [System.IO.Compression.ZipFile]
+                }
+            }
+            catch { }
+        }
 
-        if (($null -ne $zipFileType) -and ($null -ne $zipExtType)) {
+        if ($null -ne $zipFileType) {
             $zipFile = $zipFileType::OpenRead($resolvedArchivePath)
             try {
                 if ($zipFile.Entries.Count -gt $MaxAllowedEntries) {
@@ -269,13 +277,24 @@ try {
                         exit 4
                     }
 
-                    $totalUncompressedSize += $entry.Length
-                    if ($totalUncompressedSize -gt $MaxUncompressedBytes) {
-                        Write-Host "Uncompressed archive size exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
-                        exit 4
+                    # Stream-read and enforce MaxUncompressedBytes on actual decompressed bytes using explicit [long] casting
+                    $in  = $entry.Open()
+                    $out = [System.IO.File]::Create($targetPath)
+                    try {
+                        $buf = New-Object byte[] 81920
+                        while (($n = $in.Read($buf, 0, $buf.Length)) -gt 0) {
+                            $totalUncompressedSize = [long]($totalUncompressedSize + [long]$n)
+                            if ($totalUncompressedSize -gt [long]$MaxUncompressedBytes) {
+                                Write-Host "Uncompressed data exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
+                                exit 4
+                            }
+                            $out.Write($buf, 0, $n)
+                        }
                     }
-
-                    $zipExtType::ExtractToFile($entry, $targetPath, $true)
+                    finally {
+                        $out.Dispose()
+                        $in.Dispose()
+                    }
                 }
             }
             finally {
@@ -300,7 +319,7 @@ try {
 
             # Post-extraction validation fallback for legacy COM extraction
             $extractedItems = Get-ChildItem -Path $tempExtractDir -Recurse
-            if ($extractedItems.Count -gt $MaxAllowedEntries) {
+            if ($null -ne $extractedItems -and @($extractedItems).Count -gt $MaxAllowedEntries) {
                 Write-Host "Extracted archive exceeds limit of $MaxAllowedEntries items. Aborting." -ForegroundColor Red
                 exit 4
             }
@@ -314,6 +333,14 @@ try {
                     Write-Host "Archive entry '$($item.Name)' is not an XML configuration file. Aborting." -ForegroundColor Red
                     exit 4
                 }
+                if (-not $item.PSIsContainer) {
+                    $totalUncompressedSize = [long]($totalUncompressedSize + [long]$item.Length)
+                }
+            }
+
+            if ($totalUncompressedSize -gt [long]$MaxUncompressedBytes) {
+                Write-Host "Uncompressed archive size ($totalUncompressedSize bytes) exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
+                exit 4
             }
         }
 
