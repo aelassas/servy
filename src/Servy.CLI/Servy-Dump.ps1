@@ -186,7 +186,7 @@ try {
     # -----------------------------------------------------------------------------
     # Database Inspection Layer
     # 1. Attempt ADO.NET using System.Data.SQLite.dll (present in Servy net48 build)
-    # 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-16
+    # 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-8 and sqlite3_open_v2 (Read-Only)
     # -----------------------------------------------------------------------------
 
     $serviceNames = New-Object System.Collections.Generic.List[string]
@@ -243,7 +243,7 @@ public static class ServySafePs2Sqlite16
     private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int Open16Delegate([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr ppDb);
+    private delegate int OpenV2Delegate(byte[] filenameUtf8, out IntPtr ppDb, int flags, IntPtr zVfs);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int CloseDelegate(IntPtr db);
@@ -285,32 +285,33 @@ public static class ServySafePs2Sqlite16
             throw new InvalidOperationException("Failed to load native SQLite library (e_sqlite3.dll, winsqlite3.dll, or sqlite3.dll).");
         }
 
-        IntPtr pOpen16   = GetProcAddress(hModule, "sqlite3_open16");
+        IntPtr pOpenV2   = GetProcAddress(hModule, "sqlite3_open_v2");
         IntPtr pClose    = GetProcAddress(hModule, "sqlite3_close");
         IntPtr pPrepare  = GetProcAddress(hModule, "sqlite3_prepare_v2");
         IntPtr pStep     = GetProcAddress(hModule, "sqlite3_step");
         IntPtr pText16   = GetProcAddress(hModule, "sqlite3_column_text16");
         IntPtr pFinalize = GetProcAddress(hModule, "sqlite3_finalize");
 
-        if (pOpen16 == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
+        if (pOpenV2 == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
             pStep == IntPtr.Zero || pText16 == IntPtr.Zero || pFinalize == IntPtr.Zero)
         {
             throw new InvalidOperationException("Failed to resolve native SQLite function exports.");
         }
 
-        Open16Delegate open16         = (Open16Delegate)Marshal.GetDelegateForFunctionPointer(pOpen16, typeof(Open16Delegate));
-        CloseDelegate close           = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
-        PrepareV2Delegate prepareV2   = (PrepareV2Delegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareV2Delegate));
-        StepDelegate step             = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
+        OpenV2Delegate openV2          = (OpenV2Delegate)Marshal.GetDelegateForFunctionPointer(pOpenV2, typeof(OpenV2Delegate));
+        CloseDelegate close            = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
+        PrepareV2Delegate prepareV2    = (PrepareV2Delegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareV2Delegate));
+        StepDelegate step              = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
         ColumnText16Delegate colText16 = (ColumnText16Delegate)Marshal.GetDelegateForFunctionPointer(pText16, typeof(ColumnText16Delegate));
-        FinalizeDelegate finalize     = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
+        FinalizeDelegate finalize      = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
 
         IntPtr db;
-        int rc = open16(dbPath, out db);
+        byte[] pathUtf8 = System.Text.Encoding.UTF8.GetBytes(dbPath + "\0");
+        int rc = openV2(pathUtf8, out db, 0x1 /* SQLITE_OPEN_READONLY */, IntPtr.Zero);
         if (rc != 0)
         {
             if (db != IntPtr.Zero) close(db);
-            throw new InvalidOperationException(string.Format("sqlite3_open16 failed on '{0}' with result code {1}.", dbPath, rc));
+            throw new InvalidOperationException(string.Format("sqlite3_open_v2 failed on '{0}' with result code {1}.", dbPath, rc));
         }
 
         try
