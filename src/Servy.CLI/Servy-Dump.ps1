@@ -135,7 +135,9 @@ try {
     }
 
     if ($isDirDestination) {
-        $resolvedArchivePath = [System.IO.Path]::Combine($resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar), 'Servy_Dump.zip')
+        $dirPart = $resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+        if ($dirPart.EndsWith(':')) { $dirPart += [System.IO.Path]::DirectorySeparatorChar }
+        $resolvedArchivePath = [System.IO.Path]::Combine($dirPart, 'Servy_Dump.zip')
         Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
     }
     elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
