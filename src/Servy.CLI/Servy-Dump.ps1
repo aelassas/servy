@@ -55,6 +55,9 @@
 .EXAMPLE
     .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip" -Uninstall
 
+.EXAMPLE
+    .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip" -Overwrite -Uninstall
+
 .NOTES
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 7 SP1, Windows Server 2008 R2, or later.
