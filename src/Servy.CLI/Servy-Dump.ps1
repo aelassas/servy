@@ -121,8 +121,18 @@ try {
     # Determine base Servy installation directory for native and managed assembly resolution
     $servyBinDir = [System.IO.Path]::GetDirectoryName($servyModulePath)
 
-    # Resolve and normalize archive path extension up-front
-    $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
+    # Resolve path safely across PowerShell 2.0 and 3.0+
+    if ($PSVersionTable.PSVersion.Major -ge 3) {
+        $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
+    }
+    else {
+        if ([System.IO.Path]::IsPathRooted($DestinationArchivePath)) {
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
+        }
+        else {
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DestinationArchivePath))
+        }
+    }
 
     if ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
         $resolvedArchivePath += '.zip'
@@ -420,7 +430,12 @@ public static class ServySafePs2Sqlite16
             }
             catch {
                 Write-Host "  FAILED to export '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = $_.Exception.Message })
+                
+                # PowerShell 2.0 compatible property assignment for error array
+                $errObj = New-Object PSObject
+                $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
+                $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value $_.Exception.Message
+                $failed.Add($errObj)
             }
         }
 
@@ -444,8 +459,9 @@ public static class ServySafePs2Sqlite16
 
         try {
             if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {
+                $stagedItemsToCompress = Get-ChildItem -Path $tempStagingDir | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName
                 $compressParams = @{
-                    Path            = "$tempStagingDir\*"
+                    Path            = $stagedItemsToCompress
                     DestinationPath = $resolvedArchivePath
                 }
                 if ($Overwrite.IsPresent) {
@@ -458,8 +474,17 @@ public static class ServySafePs2Sqlite16
                     if ($Overwrite.IsPresent -and (Test-Path -Path $resolvedArchivePath)) {
                         Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
                     }
+                    
+                    # Use dynamic string types to prevent PS 2.0 parser from crashing on missing literal assemblies
                     [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
-                    [System.IO.Compression.ZipFile]::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
+                    $zipFileType = ("System.IO.Compression.ZipFile" -as [type])
+                    
+                    if ($null -ne $zipFileType) {
+                        $zipFileType::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
+                    }
+                    else {
+                        throw "System.IO.Compression.ZipFile type not available."
+                    }
                 }
                 catch {
                     if ($Overwrite.IsPresent -and (Test-Path -Path $resolvedArchivePath)) {

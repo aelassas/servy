@@ -142,8 +142,18 @@ try {
         exit 2
     }
 
-    # Validate existence of the specified dump archive file
-    $resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
+    # Resolve path safely across PowerShell 2.0 and 3.0+
+    if ($PSVersionTable.PSVersion.Major -ge 3) {
+        $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
+    }
+    else {
+        if ([System.IO.Path]::IsPathRooted($DumpArchivePath)) {
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
+        }
+        else {
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DumpArchivePath))
+        }
+    }
 
     if (-not (Test-Path -Path $resolvedArchivePath)) {
         Write-Host "Specified dump archive file does not exist: '$resolvedArchivePath'." -ForegroundColor Red
@@ -257,7 +267,7 @@ try {
 
                     $totalUncompressedSize += $entry.Length
                     if ($totalUncompressedSize -gt $MaxUncompressedBytes) {
-                        Write-Host "Uncompressed archive size exceeds limit of 100 MB. Aborting to prevent resource exhaustion." -ForegroundColor Red
+                        Write-Host "Uncompressed archive size exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
                         exit 4
                     }
 
@@ -303,8 +313,8 @@ try {
             }
         }
 
-        # Enumerate all XML configuration files in the extracted dump directory
-        $xmlFiles = Get-ChildItem -Path $tempExtractDir | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
+        # Enumerate all XML configuration files recursively in the extracted dump directory
+        $xmlFiles = Get-ChildItem -Path $tempExtractDir -Recurse | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
 
         if ($null -eq $xmlFiles -or @($xmlFiles).Count -eq 0) {
             Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
@@ -348,12 +358,15 @@ try {
         }
 
         # Display completion status and critical security notice
-        Write-Host "`nServy configuration restore completed!" -ForegroundColor Green
-        Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
-
         if ($failed.Count -gt 0) {
+            Write-Host "`nServy configuration restore completed with warnings!" -ForegroundColor Yellow
+            Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
             Write-Host "`nThe following service file(s) FAILED to import:" -ForegroundColor Red
             $failed | Format-Table -AutoSize | Out-String | Write-Host
+        }
+        else {
+            Write-Host "`nServy configuration restore completed successfully!" -ForegroundColor Green
+            Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
         }
 
         Write-Host @"
