@@ -7,7 +7,7 @@
     Servy-Restore.ps1 verifies the integrity of a Servy backup archive against its SHA-256 sidecar file,
     safely extracts individual service XML configuration files into an ACL-hardened temporary location, and
     imports each configuration into Servy using the official Servy PowerShell module (Import-ServyServiceConfig).
-    
+
     If the -Install switch parameter is supplied, the script also installs each imported service into the Windows
     Service Control Manager (SCM).
 
@@ -133,9 +133,16 @@ try {
         exit 2
     }
 
-    # Resolve against the PowerShell location, not the process working directory:
-    # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
-    $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
+    # Catch-all for archive path resolution (e.g. invalid path characters or invalid drive letters)
+    try {
+        # Resolve against the PowerShell location, not the process working directory:
+        # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
+        $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
+    }
+    catch {
+        Write-Host "Invalid dump archive path specified '$DumpArchivePath': $_" -ForegroundColor Red
+        exit 4
+    }
 
     if (-not (Test-Path -LiteralPath $resolvedArchivePath)) {
         Write-Host "Specified dump archive file does not exist: '$resolvedArchivePath'." -ForegroundColor Red
@@ -150,9 +157,16 @@ try {
     }
     elseif (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
-        $sidecarText  = [System.IO.File]::ReadAllText($sidecarPath)
-        $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
-        $actualHash   = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
+        
+        try {
+            $sidecarText  = [System.IO.File]::ReadAllText($sidecarPath)
+            $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
+            $actualHash   = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
+        }
+        catch {
+            Write-Host "Failed to read checksum files or compute hash for verification: $_" -ForegroundColor Red
+            exit 5
+        }
 
         if (-not [string]::Equals($expectedHash, $actualHash, [System.StringComparison]::OrdinalIgnoreCase)) {
             Write-Host "Archive checksum mismatch! Expected SHA-256 '$expectedHash', but calculated '$actualHash'. Aborting restore." -ForegroundColor Red
