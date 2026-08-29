@@ -148,9 +148,16 @@ Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall sh
 ; *S-1-1-0:      Everyone (Purge)
 Filename: "icacls.exe"; \
     Parameters: """{commonappdata}\Servy"" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0"; \
-    Flags: runhidden; StatusMsg: "Securing service data directory..."
+    Flags: runhidden; \
+    StatusMsg: "Securing service data directory..."
 
-; 2. Grant the Current User (The "Manual Key")
+; 2. Removing legacy user permissions
+Filename: "icacls.exe"; \
+    Parameters: """{commonappdata}\Servy"" /remove:g ""{username}"""; \
+    Flags: runhidden; \
+    StatusMsg: "Removing legacy user permissions..."    
+    
+; 3. Grant the Current User (The "Manual Key")
 ; Replicates C# logic: Add current user only if they aren't SYSTEM
 Filename: "icacls.exe"; \
     Parameters: """{commonappdata}\Servy"" /grant ""{username}"":(OI)(CI)F"; \
