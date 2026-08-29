@@ -164,7 +164,10 @@ try {
     # Verify archive integrity against SHA-256 sidecar file if present
     $sidecarPath = "$resolvedArchivePath.sha256"
 
-    if (Test-Path -Path $sidecarPath) {
+    if ($SkipIntegrityCheck.IsPresent) {
+        Write-Host "WARNING: Integrity verification skipped (-SkipIntegrityCheck specified)." -ForegroundColor Yellow
+    }
+    elseif (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
         
         # Read sidecar text using .NET API compatible with PowerShell 2.0
@@ -190,13 +193,10 @@ try {
         }
         Write-Host "Archive SHA-256 checksum successfully verified." -ForegroundColor Green
     }
-    elseif (-not $SkipIntegrityCheck.IsPresent) {
+    else {
         Write-Host "No SHA-256 sidecar file found at '$sidecarPath'." -ForegroundColor Red
         Write-Host "To proceed without integrity verification, re-run with the -SkipIntegrityCheck switch." -ForegroundColor Red
         exit 5
-    }
-    else {
-        Write-Host "WARNING: Integrity verification skipped (-SkipIntegrityCheck specified)." -ForegroundColor Yellow
     }
 
     # Create an isolated temporary directory for extracting XML files
