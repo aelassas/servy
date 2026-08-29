@@ -472,8 +472,8 @@ public static class ServySafePs2Sqlite16
             }
 
             # Prefix reserved Win32 device names to prevent mapping to device handles
-            # Mirror ReservedNames.IsReservedDeviceName: evaluate stem before extension after stripping trailing space/period/tab
-            $stem = $baseFileName.Split('.')[0].TrimEnd(' ', '.', "`t")
+            # Match PathSecurityGuard's stem-before-first-dot evaluation; only trailing spaces can survive the invalid-char sanitization above
+            $stem = $baseFileName.Split('.')[0].TrimEnd(' ')
             if ($reservedNames -contains $stem.ToUpperInvariant()) {
                 $baseFileName = "_$baseFileName"
             }
@@ -526,11 +526,6 @@ public static class ServySafePs2Sqlite16
 
         # Compress staging directory into target zip archive
         Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
-
-        if ($Overwrite.IsPresent) {
-            # Remove pre-existing sidecar to prevent leaving a stale checksum if sidecar write fails later
-            Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
-        }
 
         try {
             if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {
@@ -586,6 +581,13 @@ public static class ServySafePs2Sqlite16
             exit 4
         }
 
+        # Remove pre-existing sidecar only after compression succeeds to avoid corrupting surviving backups on compression failure
+        if ($Overwrite.IsPresent) {
+            Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+        }
+
+        $sidecarWriteFailed = $false
+
         # Emit SHA-256 sidecar hash file for integrity verification
         try {
             $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
@@ -606,6 +608,7 @@ public static class ServySafePs2Sqlite16
             Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
         }
         catch {
+            $sidecarWriteFailed = $true
             Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
             Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
             Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
@@ -619,15 +622,7 @@ public static class ServySafePs2Sqlite16
 
         # If -Uninstall is specified, uninstall successfully exported services from SCM and DB
         if ($Uninstall.IsPresent) {
-            $sidecarFailed = $false
-            foreach ($item in $failed) {
-                if ($item.Service -eq "SHA256 Sidecar") {
-                    $sidecarFailed = $true
-                    break
-                }
-            }
-
-            if ($sidecarFailed) {
+            if ($sidecarWriteFailed) {
                 Write-Host "`nWARNING: Services were NOT uninstalled because the SHA-256 integrity sidecar could not be written." -ForegroundColor Red
                 Write-Host "Regenerate the checksum manually (Get-FileHash) and re-run with -Uninstall." -ForegroundColor Yellow
             }
