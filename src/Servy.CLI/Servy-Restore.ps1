@@ -35,6 +35,8 @@
 
 .PARAMETER DumpArchivePath
     Mandatory path specifying the target zip archive file to restore (e.g., 'C:\Backups\Servy_Dump.zip').
+    If a directory path or trailing separator is provided, it writes to `$DumpArchivePath\Servy_Dump.zip`; if no file extension is specified, `.zip` is appended.
+    Use `-Overwrite` to replace an existing archive.
 
 .PARAMETER Install
     Optional switch parameter. When present, each imported service configuration is automatically installed
@@ -45,11 +47,11 @@
 
 .PARAMETER MaxAllowedEntries
     Optional integer parameter. Specifies the maximum number of entries allowed in the dump archive
-    to prevent zip bomb attacks during extraction. Defaults to 1000.
+    to prevent zip bomb attacks during extraction. Defaults to 1000 (range: 1–100,000).
 
 .PARAMETER MaxUncompressedBytes
     Optional 64-bit integer parameter. Specifies the maximum total uncompressed size (in bytes) allowed
-    when extracting the dump archive. Defaults to 104857600 bytes (100 MB).
+    when extracting the dump archive. Defaults to 104857600 bytes / 100 MB (range: 1–10737418240 bytes / 10 GB).
 
 .EXAMPLE
     .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip"
@@ -225,13 +227,24 @@ try {
                     exit 4
                 }
 
-                $totalUncompressedSize += $entry.Length
-                if ($totalUncompressedSize -gt $MaxUncompressedBytes) {
-                    Write-Host "Uncompressed archive size ($totalUncompressedSize bytes) exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
-                    exit 4
+                # Stream-read and enforce MaxUncompressedBytes on actual decompressed bytes to prevent zip bombs with forged metadata length
+                $in  = $entry.Open()
+                $out = [System.IO.File]::Create($targetPath)
+                try {
+                    $buf = New-Object byte[] 81920
+                    while (($n = $in.Read($buf, 0, $buf.Length)) -gt 0) {
+                        $totalUncompressedSize += $n
+                        if ($totalUncompressedSize -gt $MaxUncompressedBytes) {
+                            Write-Host "Uncompressed data exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
+                            exit 4
+                        }
+                        $out.Write($buf, 0, $n)
+                    }
                 }
-
-                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+                finally {
+                    $out.Dispose()
+                    $in.Dispose()
+                }
             }
         }
         finally {
