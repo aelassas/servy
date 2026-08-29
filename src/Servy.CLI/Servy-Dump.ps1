@@ -9,14 +9,16 @@
     configuration into an individual XML file using the official Servy PowerShell module. The exported XML files
     are then compressed into a single zip archive.
 
-    Per-service export errors are caught gracefully. If at least one service exports successfully, the zip archive
-    is generated and an exit code of 7 is returned to flag an incomplete backup to automated workflows.
+    Per-service export errors are caught gracefully. If at least one service exports successfully and one or more
+    fail, the zip archive is still generated and an exit code of 7 is returned to flag an incomplete backup to
+    automated workflows.
 
     EXIT CODES:
     - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
+    - 4 : I/O & Inspection Failure. The database could not be read, or the target destination path/directory is unwritable.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export.
 
@@ -64,6 +66,8 @@ $ErrorActionPreference = 'Stop'
 $previousOutputEncoding   = [Console]::OutputEncoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+$createdParentPath = $null
+
 try {
     # Ensure the script is executing with Administrator privileges
     $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -97,10 +101,16 @@ try {
         exit 2
     }
 
-    # Check if destination dump file already exists
+    # Resolve and normalize archive path extension up-front
     $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
 
-    if (Test-Path -Path $resolvedArchivePath) {
+    if ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
+        $resolvedArchivePath += '.zip'
+        Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
+    }
+
+    # Check if destination dump file already exists
+    if (Test-Path -LiteralPath $resolvedArchivePath) {
         if (-not $Overwrite.IsPresent) {
             Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
             exit 3
@@ -108,15 +118,42 @@ try {
         Write-Host "Existing dump archive found. -Overwrite specified; target file will be replaced." -ForegroundColor Yellow
     }
 
+    # Prove destination parent directory is created and writable BEFORE exporting
+    $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
+
+    if (-not [string]::IsNullOrEmpty($parentDir)) {
+        if (-not (Test-Path -LiteralPath $parentDir)) {
+            try {
+                [void][System.IO.Directory]::CreateDirectory($parentDir)
+                $createdParentPath = $parentDir
+            }
+            catch {
+                Write-Host "Cannot create target destination directory '$parentDir': $_" -ForegroundColor Red
+                exit 4
+            }
+        }
+
+        # Write probe confirmation
+        $probeFile = [System.IO.Path]::Combine($parentDir, ".servydump_probe_" + [System.IO.Path]::GetRandomFileName())
+        try {
+            [System.IO.File]::WriteAllBytes($probeFile, @())
+            Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
+        }
+        catch {
+            Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
+            exit 4
+        }
+    }
+
     # Validate existence of the Servy SQLite database file
     $dbPath = [System.IO.Path]::Combine($env:ProgramData, "Servy", "db", "Servy.db")
 
-    if (-not (Test-Path -Path $dbPath)) {
+    if (-not (Test-Path -LiteralPath $dbPath)) {
         Write-Host "Servy database not found at '$dbPath'. No services exist to export." -ForegroundColor Yellow
         exit 0
     }
 
-    # Register C# P/Invoke wrapper targeting Windows native %SystemRoot%\System32\winsqlite3.dll with native UTF-16 string marshaling
+    # Register C# P/Invoke wrapper targeting Windows native %SystemRoot%\System32\winsqlite3.dll with UTF-16 marshaling
     if (-not ([System.Management.Automation.PSTypeName]'ServyNativeWinSqlite16').Type) {
         $sqliteBinding = @"
 using System;
@@ -125,8 +162,8 @@ using System.Runtime.InteropServices;
 
 public static class ServyNativeWinSqlite16
 {
-    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int sqlite3_open_v2([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr ppDb, int flags, IntPtr zVfs);
+    [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+    private static extern int sqlite3_open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr ppDb);
 
     [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
     private static extern int sqlite3_close(IntPtr db);
@@ -147,24 +184,45 @@ public static class ServyNativeWinSqlite16
     {
         List<string> result = new List<string>();
         IntPtr db;
-        // SQLITE_OPEN_READONLY = 1
-        if (sqlite3_open_v2(dbPath, out db, 1, IntPtr.Zero) != 0) return result;
-
-        IntPtr stmt;
-        if (sqlite3_prepare_v2(db, "SELECT Name FROM Services", -1, out stmt, IntPtr.Zero) == 0)
+        
+        int rc = sqlite3_open16(dbPath, out db);
+        if (rc != 0)
         {
-            // SQLITE_ROW = 100
-            while (sqlite3_step(stmt) == 100)
+            if (db != IntPtr.Zero) sqlite3_close(db);
+            throw new InvalidOperationException(string.Format("sqlite3_open16 failed on '{0}' with result code {1}.", dbPath, rc));
+        }
+
+        try
+        {
+            IntPtr stmt;
+            rc = sqlite3_prepare_v2(db, "SELECT Name FROM Services ORDER BY Name", -1, out stmt, IntPtr.Zero);
+            if (rc != 0)
             {
-                IntPtr ptr = sqlite3_column_text16(stmt, 0);
-                if (ptr != IntPtr.Zero)
+                throw new InvalidOperationException(string.Format("sqlite3_prepare_v2 failed with result code {0}.", rc));
+            }
+
+            try
+            {
+                // SQLITE_ROW = 100
+                while (sqlite3_step(stmt) == 100)
                 {
-                    result.Add(Marshal.PtrToStringUni(ptr));
+                    IntPtr ptr = sqlite3_column_text16(stmt, 0);
+                    if (ptr != IntPtr.Zero)
+                    {
+                        result.Add(Marshal.PtrToStringUni(ptr));
+                    }
                 }
             }
-            sqlite3_finalize(stmt);
+            finally
+            {
+                sqlite3_finalize(stmt);
+            }
         }
-        sqlite3_close(db);
+        finally
+        {
+            sqlite3_close(db);
+        }
+
         return result;
     }
 }
@@ -190,7 +248,13 @@ public static class ServyNativeWinSqlite16
 
     try {
         # Query Servy SQLite database via Windows native winsqlite3.dll
-        $serviceNames = [ServyNativeWinSqlite16]::GetServiceNames($dbPath)
+        try {
+            $serviceNames = [ServyNativeWinSqlite16]::GetServiceNames($dbPath)
+        }
+        catch {
+            Write-Host "Failed to query Servy database at '$dbPath': $($_.Exception.Message)" -ForegroundColor Red
+            exit 4
+        }
 
         if ($null -eq $serviceNames -or $serviceNames.Count -eq 0) {
             Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
@@ -229,12 +293,6 @@ public static class ServyNativeWinSqlite16
         if ($exported.Count -eq 0) {
             Write-Host "No service configurations could be exported. No dump archive was generated." -ForegroundColor Red
             exit 6
-        }
-
-        # Ensure output parent directory exists before creating zip file
-        $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
-        if (-not [string]::IsNullOrEmpty($parentDir) -and -not (Test-Path -Path $parentDir)) {
-            [void][System.IO.Directory]::CreateDirectory($parentDir)
         }
 
         # Compress the staging directory containing XML dumps into the target zip file
@@ -308,6 +366,14 @@ Please delete this directory manually to prevent credential/config leaks.
     }
 }
 finally {
+    # If parent directory was created during execution but dump failed before creating archive, clean up orphaned folder
+    if ($null -ne $createdParentPath -and (Test-Path -LiteralPath $createdParentPath) -and -not (Test-Path -LiteralPath $resolvedArchivePath)) {
+        $parentItems = Get-ChildItem -LiteralPath $createdParentPath -ErrorAction SilentlyContinue
+        if ($null -eq $parentItems -or @($parentItems).Count -eq 0) {
+            Remove-Item -LiteralPath $createdParentPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     # Restore host console encoding state if previously captured
     if ($null -ne $previousOutputEncoding) {
         try { [Console]::OutputEncoding = $previousOutputEncoding } catch { }
