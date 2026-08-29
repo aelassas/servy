@@ -13,7 +13,8 @@
     executable files and restricting the target runner account to strict 'Read & Execute' rights. This ensures the
     service runner can execute required binaries without being able to overwrite or replace them, protecting against
     unprivileged binary replacement and local privilege escalation vectors. Full Control is explicitly preserved for
-    SYSTEM and Administrators using language-agnostic Well-Known SIDs.
+    SYSTEM and Administrators using language-agnostic Well-Known SIDs. Manually added explicit ACEs for third-party
+    principals are audited and preserved.
 
     Hardened Executable Files:
     - Servy.Service.exe
@@ -111,8 +112,12 @@ if ($null -eq $targetNTAccount) {
 }
 
 # Define Well-Known SIDs for language-agnostic administrative control
-$adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-$systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+$adminSid           = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+$systemSid          = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+$builtinUsersSid    = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+$authUsersSid       = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
+$everyoneSid        = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::WorldSid, $null)
+$targetSid          = $targetNTAccount.Translate([System.Security.Principal.SecurityIdentifier])
 
 Write-Host "Securing Servy executable files in: $programDataDir" -ForegroundColor Cyan
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
@@ -138,8 +143,21 @@ foreach ($exeName in $exeNames) {
         # 1. Break inheritance and remove inherited permissions in 1 pass ($isProtected = $true, $preserveInheritance = $false)
         $acl.SetAccessRuleProtection($true, $false)
 
-        # 2. Purge existing explicit ACEs for target account
-        $acl.PurgeAccessRules($targetNTAccount)
+        # 2. Purge explicit grants for broad unprivileged groups (Users, Authenticated Users, Everyone)
+        # and explicit rules for the target account to ensure a clean state before applying ReadAndExecute.
+        # Manual explicit ACEs for custom third-party principals are intentionally preserved.
+        $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+        foreach ($rule in $explicitRules) {
+            $ruleSid = $rule.IdentityReference
+            if ($rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and (
+                $ruleSid.Equals($builtinUsersSid) -or
+                $ruleSid.Equals($authUsersSid) -or
+                $ruleSid.Equals($everyoneSid) -or
+                $ruleSid.Equals($targetSid)
+            )) {
+                [void]$acl.RemoveAccessRule($rule)
+            }
+        }
 
         # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
         $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
@@ -157,6 +175,40 @@ foreach ($exeName in $exeNames) {
 
         # Commit ACL to disk
         Set-Acl -Path $exePath -AclObject $acl
+
+        # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
+        $postAcl = Get-Acl -Path $exePath
+        $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.NTAccount])
+        $manualRules = @()
+        $appliedTargetRules = @()
+
+        foreach ($rule in $survivingRules) {
+            try {
+                $sid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
+                if ($sid.Equals($targetSid)) {
+                    $appliedTargetRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+                }
+                elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
+                    $manualRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+                }
+            }
+            catch {
+                $manualRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+            }
+        }
+
+        if ($appliedTargetRules.Count -gt 0) {
+            foreach ($tRule in $appliedTargetRules) {
+                Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
+            }
+        }
+
+        if ($manualRules.Count -gt 0) {
+            Write-Host "  [Note] Preserved manual explicit ACE(s) (Users & Groups) on '$exeName':" -ForegroundColor Yellow
+            foreach ($mRule in $manualRules) {
+                Write-Host "    - $mRule" -ForegroundColor Yellow
+            }
+        }
 
         Write-Host "Successfully hardened '$exeName'." -ForegroundColor Green
         $hardened += $exeName
