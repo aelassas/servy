@@ -10,8 +10,8 @@
     The exported XML files are then compressed into a single zip archive along with a SHA-256 sidecar file.
 
     Per-service export errors are caught gracefully. If at least one service exports successfully and one or more
-    fail, the zip archive is still generated and an exit code of 7 is returned to flag an incomplete backup to
-    automated workflows.
+    fail, or if the SHA-256 integrity sidecar could not be written, the zip archive is still generated and an exit
+    code of 7 is returned to flag an incomplete backup to automated workflows.
 
     If the -Uninstall switch parameter is supplied, each successfully exported service is also uninstalled from
     the Windows Service Control Manager (SCM) and removed from the Servy database.
@@ -24,7 +24,7 @@
     - 4 : I/O & Inspection Failure. The database could not be read, destination path is unwritable, or ACL hardening failed.
     - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
-    - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export or uninstall.
+    - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export or uninstall, or the SHA-256 integrity sidecar could not be written.
     - 8 : Archive Staging Mismatch. Staged configuration count does not match exported count; dump aborted.
 
     CRITICAL SECURITY NOTICE:
@@ -453,7 +453,15 @@ public static class ServySafePs2Sqlite16
         $failed        = New-Object System.Collections.Generic.List[object]
         $usedBaseNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
         $invalidChars  = [System.IO.Path]::GetInvalidFileNameChars()
-        $reservedNames = @('CON','PRN','AUX','NUL','COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','LPT1','LPT2','LPT3','LPT4','LPT5','LPT6','LPT7','LPT8','LPT9')
+
+        # Synchronized with ReservedNames.cs canonical definition block
+        $reservedNames = @(
+            'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$',
+            'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+            'COM¹', 'COM²', 'COM³',
+            'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
+            'LPT¹', 'LPT²', 'LPT³'
+        )
 
         # Export each service configuration into individual XML files with per-item exception isolation
         foreach ($serviceName in $serviceNames) {
@@ -464,7 +472,9 @@ public static class ServySafePs2Sqlite16
             }
 
             # Prefix reserved Win32 device names to prevent mapping to device handles
-            if ($reservedNames -contains $baseFileName.ToUpperInvariant()) {
+            # Mirror ReservedNames.IsReservedDeviceName: evaluate stem before extension after stripping trailing space/period/tab
+            $stem = $baseFileName.Split('.')[0].TrimEnd(' ', '.', "`t")
+            if ($reservedNames -contains $stem.ToUpperInvariant()) {
                 $baseFileName = "_$baseFileName"
             }
 
@@ -609,21 +619,35 @@ public static class ServySafePs2Sqlite16
 
         # If -Uninstall is specified, uninstall successfully exported services from SCM and DB
         if ($Uninstall.IsPresent) {
-            Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
-
-            foreach ($serviceName in $exported) {
-                Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
-                try {
-                    Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+            $sidecarFailed = $false
+            foreach ($item in $failed) {
+                if ($item.Service -eq "SHA256 Sidecar") {
+                    $sidecarFailed = $true
+                    break
                 }
-                catch {
-                    Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                    
-                    # PowerShell 2.0 compatible property assignment for error array
-                    $errObj = New-Object PSObject
-                    $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
-                    $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value "Uninstall failed: $($_.Exception.Message)"
-                    $failed.Add($errObj)
+            }
+
+            if ($sidecarFailed) {
+                Write-Host "`nWARNING: Services were NOT uninstalled because the SHA-256 integrity sidecar could not be written." -ForegroundColor Red
+                Write-Host "Regenerate the checksum manually (Get-FileHash) and re-run with -Uninstall." -ForegroundColor Yellow
+            }
+            else {
+                Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+
+                foreach ($serviceName in $exported) {
+                    Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
+                    try {
+                        Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                    }
+                    catch {
+                        Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+                        
+                        # PowerShell 2.0 compatible property assignment for error array
+                        $errObj = New-Object PSObject
+                        $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
+                        $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value "Uninstall failed: $($_.Exception.Message)"
+                        $failed.Add($errObj)
+                    }
                 }
             }
         }
