@@ -232,11 +232,12 @@ begin
   CurrentUserName := GetUserNameString();
   SystemAccountName := GetLocalizedSystemAccountName();
 
-  // Replicate C# logic: currentUserSid != systemSid
-  // We don't check for 'adminSid' here because a User SID is never equal
-  // to the Administrators Group SID.
+  // Replicate SecurityHelper.ApplySecurityRules: skip SYSTEM (already granted in step 1)
+  // AND skip administrators, who are covered by the BUILTIN\Administrators grant. An
+  // explicit personal ACE would outlive the group membership that justified it.
   Result := (CompareText(CurrentUserName, SystemAccountName) <> 0) and
-            (CurrentUserName <> '');
+            (CurrentUserName <> '') and
+            (not IsAdmin);
 end;
 
 [UninstallRun]
