@@ -11,8 +11,9 @@
     If the -Install switch parameter is supplied, the script also installs each imported service into the Windows
     Service Control Manager (SCM).
 
-    Per-service import errors are caught gracefully. If at least one service imports successfully, remaining files
-    in the archive will continue to process and an exit code of 7 is returned to flag an incomplete restore.
+    Per-service import errors are caught gracefully; every file in the archive is processed regardless of earlier
+    failures. If at least one service imports successfully and one or more fail, an exit code of 7 is returned to
+    flag an incomplete restore.
 
     EXIT CODES:
     - 0 : Success. All service configurations were successfully imported (or no XML files exist in the archive).
