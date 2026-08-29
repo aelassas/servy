@@ -21,7 +21,7 @@
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Missing. The specified dump archive file does not exist.
     - 4 : I/O & Extraction Failure. The archive could not be extracted, ACL hardening failed, or malformed entries were detected.
-    - 5 : Checksum Verification Failure. The .sha256 sidecar is missing (without -SkipIntegrityCheck) or hash mismatch detected.
+    - 5 : Checksum Verification Failure. The .sha256 sidecar is missing (without -SkipIntegrityCheck), could not be read, or a hash mismatch was detected.
     - 6 : Complete Import Failure. No service configurations could be imported from the archive.
     - 7 : Partial Import Warning. The restore completed, but one or more services failed to import.
 
@@ -79,7 +79,7 @@ param(
     [Parameter(Mandatory = $false, HelpMessage = 'Optionally install each service into Windows SCM after import.')]
     [switch]$Install,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Skip SHA-256 sidecar checksum verification if sidecar file is absent.')]
+    [Parameter(Mandatory = $false, HelpMessage = 'Skip SHA-256 sidecar verification entirely, whether the sidecar is absent, stale, or mismatching.')]
     [switch]$SkipIntegrityCheck,
 
     [Parameter(Mandatory = $false, HelpMessage = 'Maximum number of entries permitted in the archive (default: 1000).')]
