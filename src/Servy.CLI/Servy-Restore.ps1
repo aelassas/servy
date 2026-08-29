@@ -68,7 +68,7 @@
     - PowerShell Version: Windows PowerShell 5.1 or PowerShell 7+ (Core).
     - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy or portable root.
     - Archive Support: System.IO.Compression.FileSystem (.NET 4.5+ assembly).
-    - Execution Privileges: Administrator privileges are required to interact with Servy configurations and managing Windows services.
+    - Execution Privileges: Administrator privileges are required to interact with Servy configurations and manage Windows services.
 #>
 [CmdletBinding()]
 param(
