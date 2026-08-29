@@ -13,6 +13,9 @@
     fail, the zip archive is still generated and an exit code of 7 is returned to flag an incomplete backup to
     automated workflows.
 
+    If the -Uninstall switch parameter is supplied, each successfully exported service is also uninstalled from
+    the Windows Service Control Manager (SCM) and removed from the Servy database.
+
     EXIT CODES:
     - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
@@ -21,7 +24,7 @@
     - 4 : I/O & Inspection Failure. The database could not be read, destination path is unwritable, or ACL hardening failed.
     - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
-    - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export.
+    - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export or uninstall.
     - 8 : Archive Staging Mismatch. Staged configuration count does not match exported count; dump aborted.
 
     CRITICAL SECURITY NOTICE:
@@ -37,11 +40,18 @@
 .PARAMETER Overwrite
     Optional switch parameter. Forces the script to overwrite the destination dump archive if it already exists.
 
+.PARAMETER Uninstall
+    Optional switch parameter. When present, uninstalls each successfully exported service from the Windows SCM
+    and removes it from the Servy database.
+
 .EXAMPLE
     .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip"
 
 .EXAMPLE
     .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip" -Overwrite
+
+.EXAMPLE
+    .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip" -Uninstall
 
 .NOTES
     SYSTEM REQUIREMENTS:
@@ -58,7 +68,10 @@ param(
     [string]$DestinationArchivePath,
 
     [Parameter(Mandatory = $false, HelpMessage = 'Force overwrite of the target dump archive if it already exists.')]
-    [switch]$Overwrite
+    [switch]$Overwrite,
+
+    [Parameter(Mandatory = $false, HelpMessage = 'Uninstall services from SCM and remove from database after successful export.')]
+    [switch]$Uninstall
 )
 
 Set-StrictMode -Version 2.0
@@ -550,13 +563,34 @@ public static class ServySafePs2Sqlite16
         [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($true)))
         Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
 
+        # If -Uninstall is specified, uninstall successfully exported services from SCM and DB
+        if ($Uninstall.IsPresent) {
+            Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+
+            foreach ($serviceName in $exported) {
+                Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
+                try {
+                    Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                }
+                catch {
+                    Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+                    
+                    # PowerShell 2.0 compatible property assignment for error array
+                    $errObj = New-Object PSObject
+                    $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
+                    $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value "Uninstall failed: $($_.Exception.Message)"
+                    $failed.Add($errObj)
+                }
+            }
+        }
+
         # Display completion status and critical security warning
         Write-Host "`nServy configuration dump completed!" -ForegroundColor Green
         Write-Host "Successfully exported $($exported.Count) of $($serviceNames.Count) service(s)." -ForegroundColor Cyan
         Write-Host "Dump location: $resolvedArchivePath" -ForegroundColor Cyan
 
         if ($failed.Count -gt 0) {
-            Write-Host "`nThe following service(s) FAILED to export and were NOT included in the dump archive:" -ForegroundColor Red
+            Write-Host "`nThe following service(s) encountered errors during export or uninstallation:" -ForegroundColor Red
             $failed | Format-Table -AutoSize | Out-String | Write-Host
         }
 
@@ -580,7 +614,7 @@ NOTE ON SERVICE RESTORATION:
 "@ -ForegroundColor Yellow
 
         if ($failed.Count -gt 0) {
-            exit 7    # Archive generated successfully, but incomplete
+            exit 7    # Archive generated successfully, but incomplete/partial errors occurred
         }
     }
     catch {
