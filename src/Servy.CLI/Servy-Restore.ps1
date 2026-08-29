@@ -42,6 +42,14 @@
 .PARAMETER SkipIntegrityCheck
     Optional switch parameter. Allows restoring from an archive when no .sha256 sidecar hash file exists.
 
+.PARAMETER MaxAllowedEntries
+    Optional integer parameter. Specifies the maximum number of entries allowed in the dump archive
+    to prevent zip bomb attacks during extraction. Defaults to 1000.
+
+.PARAMETER MaxUncompressedBytes
+    Optional 64-bit integer parameter. Specifies the maximum total uncompressed size (in bytes) allowed
+    when extracting the dump archive. Defaults to 104857600 bytes (100 MB).
+
 .EXAMPLE
     .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip"
 
@@ -69,7 +77,15 @@ param(
     [switch]$Install,
 
     [Parameter(Mandatory = $false, HelpMessage = 'Skip SHA-256 sidecar checksum verification if sidecar file is absent.')]
-    [switch]$SkipIntegrityCheck
+    [switch]$SkipIntegrityCheck,
+
+    [Parameter(Mandatory = $false, HelpMessage = 'Maximum number of entries permitted in the archive (default: 1000).')]
+    [ValidateRange(1, 100000)]
+    [int]$MaxAllowedEntries = 1000,
+
+    [Parameter(Mandatory = $false, HelpMessage = 'Maximum total uncompressed byte size permitted during extraction (default: 104857600 = 100 MB).')]
+    [ValidateRange(1, 10737418240)] # Up to 10 GB max safety ceiling
+    [long]$MaxUncompressedBytes = 104857600
 )
 
 Set-StrictMode -Version Latest
@@ -174,13 +190,11 @@ try {
         $rootPath = [System.IO.Path]::GetFullPath($tempExtractDir.TrimEnd('\') + '\')
         $zipFile  = [System.IO.Compression.ZipFile]::OpenRead($resolvedArchivePath)
 
-        $maxAllowedEntries = 1000
-        $maxUncompressedBytes = 104857600 # 100 MB limit against zip bombs
         $totalUncompressedSize = 0L
 
         try {
-            if ($zipFile.Entries.Count -gt $maxAllowedEntries) {
-                Write-Host "Archive contains $($zipFile.Entries.Count) entries, exceeding the limit of $maxAllowedEntries. Aborting." -ForegroundColor Red
+            if ($zipFile.Entries.Count -gt $MaxAllowedEntries) {
+                Write-Host "Archive contains $($zipFile.Entries.Count) entries, exceeding the limit of $MaxAllowedEntries. Aborting." -ForegroundColor Red
                 exit 4
             }
 
@@ -207,7 +221,7 @@ try {
                 }
 
                 $totalUncompressedSize += $entry.Length
-                if ($totalUncompressedSize -gt $maxUncompressedBytes) {
+                if ($totalUncompressedSize -gt $MaxUncompressedBytes) {
                     Write-Host "Uncompressed archive size exceeds limit of 100 MB. Aborting to prevent resource exhaustion." -ForegroundColor Red
                     exit 4
                 }
