@@ -147,17 +147,24 @@ try {
         exit 2
     }
 
-    # Resolve path safely across PowerShell 2.0 and 3.0+
-    if ($PSVersionTable.PSVersion.Major -ge 3) {
-        $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
-    }
-    else {
-        if ([System.IO.Path]::IsPathRooted($DumpArchivePath)) {
-            $resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
+    # Catch-all for archive path resolution (e.g. invalid path characters or invalid drive letters)
+    try {
+        # Resolve path safely across PowerShell 2.0 and 3.0+
+        if ($PSVersionTable.PSVersion.Major -ge 3) {
+            $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
         }
         else {
-            $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DumpArchivePath))
+            if ([System.IO.Path]::IsPathRooted($DumpArchivePath)) {
+                $resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
+            }
+            else {
+                $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DumpArchivePath))
+            }
         }
+    }
+    catch {
+        Write-Host "Invalid dump archive path specified '$DumpArchivePath': $_" -ForegroundColor Red
+        exit 4
     }
 
     if (-not (Test-Path -Path $resolvedArchivePath)) {
@@ -174,20 +181,26 @@ try {
     elseif (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
         
-        $sidecarText = [System.IO.File]::ReadAllText($sidecarPath)
-        $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
-        
-        $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
-        $stream = [System.IO.File]::OpenRead($resolvedArchivePath)
         try {
-            $rawBytes = $hashAlgorithm.ComputeHash($stream)
-            $hashBuilder = New-Object System.Text.StringBuilder
-            foreach ($b in $rawBytes) { [void]$hashBuilder.Append($b.ToString("X2")) }
-            $actualHash = $hashBuilder.ToString()
+            $sidecarText = [System.IO.File]::ReadAllText($sidecarPath)
+            $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
+            
+            $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
+            $stream = [System.IO.File]::OpenRead($resolvedArchivePath)
+            try {
+                $rawBytes = $hashAlgorithm.ComputeHash($stream)
+                $hashBuilder = New-Object System.Text.StringBuilder
+                foreach ($b in $rawBytes) { [void]$hashBuilder.Append($b.ToString("X2")) }
+                $actualHash = $hashBuilder.ToString()
+            }
+            finally {
+                $stream.Close()
+                $stream.Dispose()
+            }
         }
-        finally {
-            $stream.Close()
-            $stream.Dispose()
+        catch {
+            Write-Host "Failed to read checksum files or compute hash for verification: $_" -ForegroundColor Red
+            exit 5
         }
 
         if (-not [string]::Equals($expectedHash, $actualHash, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -430,7 +443,7 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
     }
     finally {
         # Clean up temporary extraction directory and extracted XML files with explicit failure reporting
-        if (Test-Path -LiteralPath $tempExtractDir) {
+        if (Test-Path -Path $tempExtractDir) {
             Remove-Item -Path $tempExtractDir -Recurse -Force -ErrorAction SilentlyContinue
 
             if (Test-Path -Path $tempExtractDir) {
