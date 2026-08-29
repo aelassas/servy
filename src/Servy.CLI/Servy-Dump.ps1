@@ -76,6 +76,7 @@ else {
 }
 
 $createdParentPath = $null
+$tempStagingDir = $null
 
 try {
     # Ensure the script is executing with Administrator privileges
@@ -371,28 +372,29 @@ public static class ServySafePs2Sqlite16
         }
     }
 
-    # Create an isolated temporary directory for staging exported XML files
+    # Create an isolated temporary directory for staging exported XML files inside the try/finally scope
     $tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDump_" + [System.IO.Path]::GetRandomFileName())
-    [void][System.IO.Directory]::CreateDirectory($tempStagingDir)
 
-    # Restrict staging directory permissions to Administrators and SYSTEM exclusively
     try {
-        $acl = Get-Acl -Path $tempStagingDir
-        $acl.SetAccessRuleProtection($true, $false)
-        foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
-            $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
-            $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
-                $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
+        [void][System.IO.Directory]::CreateDirectory($tempStagingDir)
+
+        # Restrict staging directory permissions to Administrators and SYSTEM exclusively
+        try {
+            $acl = Get-Acl -Path $tempStagingDir
+            $acl.SetAccessRuleProtection($true, $false)
+            foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
+                $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
+                $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+                    $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
+            }
+            Set-Acl -Path $tempStagingDir -AclObject $acl
         }
-        Set-Acl -Path $tempStagingDir -AclObject $acl
-    }
-    catch {
-        Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
-        Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
-        exit 4
-    }
+        catch {
+            Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
+            exit 4
+        }
 
-    try {
         if ($null -eq $serviceNames -or $serviceNames.Count -eq 0) {
             Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
             exit 0
@@ -570,7 +572,7 @@ NOTE ON SERVICE RESTORATION:
     }
     finally {
         # Clean up temporary staging directory and XML files with explicit failure reporting
-        if (Test-Path -Path $tempStagingDir) {
+        if ($null -ne $tempStagingDir -and (Test-Path -Path $tempStagingDir)) {
             Remove-Item -Path $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
 
             if (Test-Path -Path $tempStagingDir) {
