@@ -324,14 +324,18 @@ public static class ServySafePs2Sqlite16
 
             try
             {
-                // SQLITE_ROW = 100
-                while (step(stmt) == 100)
+                int stepRc;
+                while ((stepRc = step(stmt)) == 100) // SQLITE_ROW = 100
                 {
                     IntPtr ptr = colText16(stmt, 0);
                     if (ptr != IntPtr.Zero)
                     {
                         result.Add(Marshal.PtrToStringUni(ptr));
                     }
+                }
+                if (stepRc != 101) // SQLITE_DONE
+                {
+                    throw new InvalidOperationException(string.Format("sqlite3_step failed with result code {0}; service list may be incomplete.", stepRc));
                 }
             }
             finally
@@ -523,7 +527,7 @@ public static class ServySafePs2Sqlite16
         }
 
         $sidecarPath = "$resolvedArchivePath.sha256"
-        "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))" | Set-Content -Path $sidecarPath -Encoding ascii
+        [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($true)))
         Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
 
         # Display completion status and critical security warning
