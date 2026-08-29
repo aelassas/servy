@@ -183,24 +183,19 @@ foreach ($fileName in $targetFiles) {
 
         # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
         $postAcl = Get-Acl -Path $filePath
-        $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.NTAccount])
+        $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
         $manualRules = @()
         $appliedTargetRules = @()
 
         foreach ($rule in $survivingRules) {
-            try {
-                # Translate NTAccount to SID to check against core accounts
-                $sid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
-                if ($sid.Equals($targetSid)) {
-                    $appliedTargetRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
-                }
-                elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
-                    $manualRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
-                }
+            $sid = $rule.IdentityReference
+            $name = try { $sid.Translate([System.Security.Principal.NTAccount]).Value } catch { $sid.Value }
+
+            if ($sid.Equals($targetSid)) {
+                $appliedTargetRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
             }
-            catch {
-                # If translation fails (e.g. unresolvable SID), retain raw identity reference
-                $manualRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+            elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
+                $manualRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
             }
         }
 
