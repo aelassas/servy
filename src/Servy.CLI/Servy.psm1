@@ -303,11 +303,10 @@ function Invoke-ServyCli {
             This function is intended for internal use within the Servy PowerShell
             module and is not exported.
 
-            Compatible with PowerShell 2.0 and later.
+            Compatible with PowerShell 2.0 and later across Windows 7 SP1 / Windows Server 2008 R2 and newer.
 
          .EXAMPLE
             Invoke-ServyCli -Command "start" -Arguments @("--name=MyService") -ErrorContext "Failed to start service"
-
     #>
     [CmdletBinding()]
     param(
@@ -383,6 +382,9 @@ function Invoke-ServyCli {
         $process = New-Object System.Diagnostics.Process
         $process.StartInfo = $psi
 
+        $stdoutLines = New-Object System.Collections.ArrayList
+        $stderrLines = New-Object System.Collections.ArrayList
+
         try {
             $started = $process.Start()
         }
@@ -395,28 +397,40 @@ function Invoke-ServyCli {
             "Verify the file exists, is not locked, and the current user has execute permissions."
         }
 
-        # Single-threaded, deterministic output reading to prevent race conditions and truncation
-        $stdoutLines = New-Object System.Collections.ArrayList
-        $stderrLines = New-Object System.Collections.ArrayList
+        # Synchronous synchronous pipe reading on the main thread
+        # We read StandardOutput line-by-line in real-time on the calling thread
+        # avoiding all multithreaded script block delegates and PS engine crashes.
+        $outReader = $process.StandardOutput
+        $errReader = $process.StandardError
 
         $timeoutStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $timeoutMilliseconds = $script:ServyTimeoutSeconds * 1000
 
-        while (-not $process.HasExited) {
+        # Read output synchronously until EOF
+        while ($null -ne ($line = $outReader.ReadLine())) {
+            [void]$stdoutLines.Add($line)
+
             if ($timeoutStopwatch.ElapsedMilliseconds -ge $timeoutMilliseconds) {
                 break
             }
-            # Drain available stdout lines synchronously
-            while (-not $process.StandardOutput.EndOfStream) {
-                $line = $process.StandardOutput.ReadLine()
-                if ($null -ne $line) { [void]$stdoutLines.Add($line) }
+        }
+
+        # Read remaining stderr synchronously after stdout EOF
+        $stderrContent = $errReader.ReadToEnd()
+        if (-not [string]::IsNullOrEmpty($stderrContent)) {
+            $errLines = $stderrContent -split "\r?\n"
+            foreach ($eLine in $errLines) {
+                if ($eLine.Trim() -ne "") {
+                    [void]$stderrLines.Add($eLine)
+                }
             }
-            # Drain available stderr lines synchronously
-            while (-not $process.StandardError.EndOfStream) {
-                $line = $process.StandardError.ReadLine()
-                if ($null -ne $line) { [void]$stderrLines.Add($line) }
+        }
+
+        # Synchronous wait for exit
+        while (-not $process.WaitForExit($script:ServyPollIntervalMs)) {
+            if ($timeoutStopwatch.ElapsedMilliseconds -ge $timeoutMilliseconds) {
+                break
             }
-            Start-Sleep -Milliseconds $script:ServyPollIntervalMs
         }
 
         if (-not $process.HasExited) {
@@ -437,22 +451,9 @@ function Invoke-ServyCli {
             }
         }
 
-        # Read remaining flushed streams after process exit
-        $remainingStdout = $process.StandardOutput.ReadToEnd()
-        if (-not [string]::IsNullOrEmpty($remainingStdout)) {
-            $remainingLines = $remainingStdout -split "\r?\n"
-            foreach ($l in $remainingLines) { [void]$stdoutLines.Add($l) }
-        }
-
-        $remainingStderr = $process.StandardError.ReadToEnd()
-        if (-not [string]::IsNullOrEmpty($remainingStderr)) {
-            $remainingErrLines = $remainingStderr -split "\r?\n"
-            foreach ($l in $remainingErrLines) { [void]$stderrLines.Add($l) }
-        }
-
         $exitCode = $process.ExitCode
 
-        # Emit stdout to pipeline
+        # Emit stdout lines sequentially in exact order
         if ($stdoutLines.Count -gt 0) {
             foreach ($line in $stdoutLines) {
                 $scrubbedLine = Format-SecureLogMessage -Text $line
@@ -460,7 +461,7 @@ function Invoke-ServyCli {
             }
         }
 
-        # Emit stderr as warnings
+        # Emit stderr lines as warnings
         if ($stderrLines.Count -gt 0) {
             $stderrText = $stderrLines -join [Environment]::NewLine
             $scrubbedStderr = Format-SecureLogMessage -Text $stderrText.TrimEnd()
@@ -489,7 +490,9 @@ function Invoke-ServyCli {
     }
 
     if ($exitCode -ne 0) {
-        $stderrTextFinal = if ($null -ne $stderrLines -and $stderrLines.Count -gt 0) { $stderrLines -join [Environment]::NewLine } else { "" }
+        $stderrTextFinal = if ($null -ne $stderrLines -and $stderrLines.Count -gt 0) {
+            $stderrLines -join [Environment]::NewLine
+        } else { "" }
         $scrubbedStderrFinal = Format-SecureLogMessage -Text $stderrTextFinal
         $errorMessage = if ($null -ne $scrubbedStderrFinal -and $scrubbedStderrFinal.Trim() -ne "") { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
 
@@ -1066,7 +1069,7 @@ function Install-ServyService {
         })]
         [string] $EnvVars,
 
-        [ValidatePattern('^[a-zA-Z0-9_.\s;$-]+$')]
+        [ValidatePattern('^[a-zA-Z0-9_.\s;$+-]+$')]
         [string] $Deps,
 
         # Identity
