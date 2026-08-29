@@ -43,7 +43,7 @@
     into the Windows Service Control Manager.
 
 .PARAMETER SkipIntegrityCheck
-    Optional switch parameter. Allows restoring from an archive when no .sha256 sidecar hash file exists.
+    Optional switch parameter. Allows restoring from an archive whether or not a .sha256 sidecar exists.
 
 .PARAMETER MaxAllowedEntries
     Optional integer parameter. Specifies the maximum number of entries allowed in the dump archive

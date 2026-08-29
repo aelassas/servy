@@ -81,8 +81,9 @@ $ErrorActionPreference = 'Stop'
 $previousOutputEncoding   = [Console]::OutputEncoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$createdParentPath = $null
-$tempStagingDir = $null
+$createdParentPath   = $null
+$createdRootBoundary = $null
+$tempStagingDir      = $null
 
 try {
     # Ensure the script is executing with Administrator privileges
@@ -117,68 +118,80 @@ try {
         exit 2
     }
 
-    # Detect directory-style destination inputs (trailing path separator)
-    $isDirDestination = $false
-    if (-not [string]::IsNullOrEmpty($DestinationArchivePath)) {
+    # Catch-all for destination resolution (e.g. invalid path characters or invalid drive letters)
+    try {
+        # Detect directory-style destination inputs (trailing path separator)
+        $isDirDestination = $false
         $trimmedInput = $DestinationArchivePath.TrimEnd()
         if ($trimmedInput.EndsWith('\') -or $trimmedInput.EndsWith('/')) {
             $isDirDestination = $true
         }
-    }
 
-    # Resolve against the PowerShell location, not the process working directory:
-    # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
-    $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
+        # Resolve against the PowerShell location, not the process working directory:
+        # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
+        $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
 
-    if (-not $isDirDestination -and (Test-Path -Path $resolvedArchivePath -PathType Container)) {
-        $isDirDestination = $true
-    }
-
-    if ($isDirDestination) {
-        $dirPart = $resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-        if ($dirPart.EndsWith(':')) { $dirPart += [System.IO.Path]::DirectorySeparatorChar }
-        $resolvedArchivePath = [System.IO.Path]::Combine($dirPart, 'Servy_Dump.zip')
-        Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
-    }
-    elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
-        $resolvedArchivePath += '.zip'
-        Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
-    }
-
-    # Check if destination dump file already exists
-    if (Test-Path -LiteralPath $resolvedArchivePath) {
-        if (-not $Overwrite.IsPresent) {
-            Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
-            exit 3
+        if (-not $isDirDestination -and (Test-Path -LiteralPath $resolvedArchivePath -PathType Container)) {
+            $isDirDestination = $true
         }
-        Write-Host "Existing dump archive found. -Overwrite specified; target file will be replaced." -ForegroundColor Yellow
-    }
 
-    # Prove destination parent directory is created and writable BEFORE exporting
-    $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
+        if ($isDirDestination) {
+            $dirPart = $resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+            if ($dirPart.EndsWith(':')) { $dirPart += [System.IO.Path]::DirectorySeparatorChar }
+            $resolvedArchivePath = [System.IO.Path]::Combine($dirPart, 'Servy_Dump.zip')
+            Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
+        }
+        elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
+            $resolvedArchivePath += '.zip'
+            Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
+        }
 
-    if (-not [string]::IsNullOrEmpty($parentDir)) {
-        if (-not (Test-Path -LiteralPath $parentDir)) {
+        # Check if destination dump file already exists
+        if (Test-Path -LiteralPath $resolvedArchivePath) {
+            if (-not $Overwrite.IsPresent) {
+                Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
+                exit 3
+            }
+            Write-Host "Existing dump archive found. -Overwrite specified; target file will be replaced." -ForegroundColor Yellow
+        }
+
+        # Prove destination parent directory is created and writable BEFORE exporting
+        $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
+
+        if (-not [string]::IsNullOrEmpty($parentDir)) {
+            if (-not (Test-Path -LiteralPath $parentDir)) {
+                try {
+                    # Determine deepest ancestor that already exists to prevent leaving empty ancestor dirs on failure
+                    $existingAncestor = $parentDir
+                    while (-not [string]::IsNullOrEmpty($existingAncestor) -and -not (Test-Path -LiteralPath $existingAncestor)) {
+                        $existingAncestor = [System.IO.Path]::GetDirectoryName($existingAncestor)
+                    }
+
+                    [void][System.IO.Directory]::CreateDirectory($parentDir)
+                    $createdParentPath   = $parentDir
+                    $createdRootBoundary = $existingAncestor
+                }
+                catch {
+                    Write-Host "Cannot create target destination directory '$parentDir': $_" -ForegroundColor Red
+                    exit 4
+                }
+            }
+
+            # Write probe confirmation
+            $probeFile = [System.IO.Path]::Combine($parentDir, ".servydump_probe_" + [System.IO.Path]::GetRandomFileName())
             try {
-                [void][System.IO.Directory]::CreateDirectory($parentDir)
-                $createdParentPath = $parentDir
+                [System.IO.File]::WriteAllBytes($probeFile, @())
+                Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
             }
             catch {
-                Write-Host "Cannot create target destination directory '$parentDir': $_" -ForegroundColor Red
+                Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
                 exit 4
             }
         }
-
-        # Write probe confirmation
-        $probeFile = [System.IO.Path]::Combine($parentDir, ".servydump_probe_" + [System.IO.Path]::GetRandomFileName())
-        try {
-            [System.IO.File]::WriteAllBytes($probeFile, @())
-            Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
-        }
-        catch {
-            Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
-            exit 4
-        }
+    }
+    catch {
+        Write-Host "Invalid destination path specified '$DestinationArchivePath': $_" -ForegroundColor Red
+        exit 4
     }
 
     # Validate existence of the Servy SQLite database file
@@ -309,7 +322,7 @@ public static class ServyNativeWinSqlite16
             exit 4
         }
 
-        if ($null -eq $serviceNames -or $serviceNames.Count -eq 0) {
+        if ($serviceNames.Count -eq 0) {
             Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
             exit 0
         }
@@ -320,6 +333,7 @@ public static class ServyNativeWinSqlite16
         $failed        = New-Object System.Collections.Generic.List[object]
         $usedBaseNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
         $invalidChars  = [System.IO.Path]::GetInvalidFileNameChars()
+        $reservedNames = @('CON','PRN','AUX','NUL','COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','LPT1','LPT2','LPT3','LPT4','LPT5','LPT6','LPT7','LPT8','LPT9')
 
         # Export each service configuration into individual XML files with per-item exception isolation
         foreach ($serviceName in $serviceNames) {
@@ -327,6 +341,11 @@ public static class ServyNativeWinSqlite16
             $baseFileName = $serviceName
             foreach ($char in $invalidChars) {
                 $baseFileName = $baseFileName.Replace($char, '_')
+            }
+
+            # Prefix reserved Win32 device names to prevent mapping to device handles
+            if ($reservedNames -contains $baseFileName.ToUpperInvariant()) {
+                $baseFileName = "_$baseFileName"
             }
 
             # Disambiguate names that sanitize onto an existing file
@@ -373,7 +392,7 @@ public static class ServyNativeWinSqlite16
         # Compress the staging directory containing XML dumps into the target zip file
         Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
 
-        $stagedItemsToCompress = Get-ChildItem -LiteralPath $tempStagingDir -File | Select-Object -ExpandProperty FullName
+        $stagedItemsToCompress = $stagedXmlFiles | Select-Object -ExpandProperty FullName
 
         $compressParams = @{
             LiteralPath      = $stagedItemsToCompress
@@ -383,6 +402,8 @@ public static class ServyNativeWinSqlite16
 
         if ($Overwrite.IsPresent) {
             $compressParams['Force'] = $true
+            # Remove pre-existing sidecar to prevent leaving a stale checksum if sidecar write fails later
+            Remove-Item -LiteralPath "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
         }
 
         try {
@@ -395,10 +416,18 @@ public static class ServyNativeWinSqlite16
         }
 
         # Emit SHA-256 sidecar hash file for integrity verification
-        $hashValue = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
-        $sidecarPath = "$resolvedArchivePath.sha256"
-        [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($false)))
-        Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
+        try {
+            $hashValue = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
+            $sidecarPath = "$resolvedArchivePath.sha256"
+            [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($false)))
+            Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
+        }
+        catch {
+            Remove-Item -LiteralPath "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+            Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
+            $failed.Add([PSCustomObject]@{ Service = "SHA256 Sidecar"; Reason = "Sidecar write failed: $($_.Exception.Message)" })
+        }
 
         # If -Uninstall is specified, uninstall successfully exported services from SCM and DB
         if ($Uninstall.IsPresent) {
@@ -455,7 +484,7 @@ NOTE ON SERVICE RESTORATION:
     }
     finally {
         # Clean up temporary staging directory and XML files with explicit failure reporting
-        if ($null -ne $tempStagingDir -and (Test-Path -LiteralPath $tempStagingDir)) {
+        if (Test-Path -LiteralPath $tempStagingDir) {
             Remove-Item -LiteralPath $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
 
             if (Test-Path -LiteralPath $tempStagingDir) {
@@ -476,11 +505,14 @@ Please delete this directory manually to prevent credential/config leaks.
     }
 }
 finally {
-    # If parent directory was created during execution but dump failed before creating archive, clean up orphaned folder
+    # If parent directory was created during execution but dump failed before creating archive, clean up orphaned folders bottom-up
     if ($null -ne $createdParentPath -and (Test-Path -LiteralPath $createdParentPath) -and -not (Test-Path -LiteralPath $resolvedArchivePath)) {
-        $parentItems = Get-ChildItem -LiteralPath $createdParentPath -ErrorAction SilentlyContinue
-        if ($null -eq $parentItems -or @($parentItems).Count -eq 0) {
-            Remove-Item -LiteralPath $createdParentPath -Force -ErrorAction SilentlyContinue
+        $dir = $createdParentPath
+        while ($null -ne $dir -and $dir -ne $createdRootBoundary -and (Test-Path -LiteralPath $dir)) {
+            $items = Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue
+            if ($null -ne $items -and @($items).Count -gt 0) { break }
+            Remove-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue
+            $dir = [System.IO.Path]::GetDirectoryName($dir)
         }
     }
 
