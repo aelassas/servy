@@ -57,7 +57,7 @@
 
 .EXAMPLE
     .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip" -Overwrite -Uninstall
-
+    
 .NOTES
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 10, Windows 11, or Windows Server 2016 and later (requires native %SystemRoot%\System32\winsqlite3.dll).
@@ -81,6 +81,142 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+<#
+.SYNOPSIS
+    Resolves and normalizes the target zip archive destination path for Servy-Dump.
+
+.DESCRIPTION
+    Detects directory-style inputs (trailing slashes or existing directories) and normalizes missing extensions to .zip.
+
+.PARAMETER DestinationArchivePath
+    Mandatory path specifying the target zip archive destination file or directory.
+
+.PARAMETER PSCmdletContext
+    Optional PSCmdlet context for provider path resolution.
+
+.OUTPUTS
+    System.String - The resolved absolute archive destination path.
+#>
+function Resolve-ServyDumpDestinationPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$DestinationArchivePath,
+
+        [Parameter(Mandatory = $false)]
+        $PSCmdletContext
+    )
+
+    # Detect directory-style destination inputs (trailing path separator)
+    $isDirDestination = $false
+    $trimmedInput = $DestinationArchivePath.TrimEnd()
+    if ($trimmedInput.EndsWith('\') -or $trimmedInput.EndsWith('/')) {
+        $isDirDestination = $true
+    }
+
+    # Resolve against the PowerShell location, not the process working directory:
+    # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
+    if ($null -ne $PSCmdletContext) {
+        $resolvedArchivePath = $PSCmdletContext.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
+    }
+    else {
+        if ([System.IO.Path]::IsPathRooted($DestinationArchivePath)) {
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
+        }
+        else {
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DestinationArchivePath))
+        }
+    }
+
+    if (-not $isDirDestination -and (Test-Path -LiteralPath $resolvedArchivePath -PathType Container)) {
+        $isDirDestination = $true
+    }
+
+    if ($isDirDestination) {
+        $dirPart = $resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+        if ($dirPart.EndsWith(':')) { $dirPart += [System.IO.Path]::DirectorySeparatorChar }
+        $resolvedArchivePath = [System.IO.Path]::Combine($dirPart, 'Servy_Dump.zip')
+        Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
+    }
+    elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
+        $resolvedArchivePath += '.zip'
+        Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
+    }
+
+    return $resolvedArchivePath
+}
+
+<#
+.SYNOPSIS
+    Sanitizes a service name into a safe, valid filesystem filename for XML exports.
+
+.DESCRIPTION
+    Replaces invalid characters, guards against reserved Win32 device names, and disambiguates collisions using a suffix counter.
+
+.PARAMETER ServiceName
+    Mandatory raw service name string to sanitize.
+
+.PARAMETER InvalidChars
+    Mandatory array of characters invalid in Win32 filenames.
+
+.PARAMETER ReservedNames
+    Mandatory array of reserved Win32 device names.
+
+.PARAMETER UsedBaseNames
+    Mandatory HashSet tracking already assigned base filenames to detect and resolve collisions.
+
+.OUTPUTS
+    System.String - Sanitized and collision-free base filename (without .xml extension).
+#>
+function Get-ServySanitizedFileName {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ServiceName,
+
+        [Parameter(Mandatory = $true)]
+        [char[]]$InvalidChars,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$ReservedNames,
+
+        [Parameter(Mandatory = $true)]
+        $UsedBaseNames
+    )
+
+    # Sanitize service name for safe filesystem usage
+    $baseFileName = $ServiceName
+    foreach ($char in $InvalidChars) {
+        $baseFileName = $baseFileName.Replace($char, '_')
+    }
+
+    # Prefix reserved Win32 device names to prevent mapping to device handles
+    # Match PathSecurityGuard's stem-before-first-dot evaluation; only trailing spaces can survive the invalid-char sanitization above
+    $stem = $baseFileName.Split('.')[0].TrimEnd(' ')
+    if ($ReservedNames -contains $stem.ToUpperInvariant()) {
+        $baseFileName = "_$baseFileName"
+    }
+
+    # Disambiguate names that sanitize onto an existing file
+    $candidateName = $baseFileName
+    $suffixCounter = 1
+    while (-not $UsedBaseNames.Add($candidateName)) {
+        $candidateName = "{0}_{1}" -f $baseFileName, $suffixCounter
+        $suffixCounter++
+    }
+
+    if ($candidateName -ne $baseFileName) {
+        Write-Host "  Name collision: '$ServiceName' sanitizes to '$baseFileName'; writing '$candidateName.xml' instead." -ForegroundColor Yellow
+    }
+
+    return $candidateName
+}
+
+# If dot-sourced for testing, return immediately without executing main script body
+if ($MyInvocation.InvocationName -eq '.') {
+    return
+}
 
 # Render non-ASCII service names correctly in console output while preserving original session encoding
 $previousOutputEncoding   = [Console]::OutputEncoding
@@ -125,31 +261,7 @@ try {
 
     # Catch-all for destination resolution (e.g. invalid path characters or invalid drive letters)
     try {
-        # Detect directory-style destination inputs (trailing path separator)
-        $isDirDestination = $false
-        $trimmedInput = $DestinationArchivePath.TrimEnd()
-        if ($trimmedInput.EndsWith('\') -or $trimmedInput.EndsWith('/')) {
-            $isDirDestination = $true
-        }
-
-        # Resolve against the PowerShell location, not the process working directory:
-        # [Environment]::CurrentDirectory does not follow Set-Location on Windows PowerShell 5.1.
-        $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
-
-        if (-not $isDirDestination -and (Test-Path -LiteralPath $resolvedArchivePath -PathType Container)) {
-            $isDirDestination = $true
-        }
-
-        if ($isDirDestination) {
-            $dirPart = $resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-            if ($dirPart.EndsWith(':')) { $dirPart += [System.IO.Path]::DirectorySeparatorChar }
-            $resolvedArchivePath = [System.IO.Path]::Combine($dirPart, 'Servy_Dump.zip')
-            Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
-        }
-        elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
-            $resolvedArchivePath += '.zip'
-            Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
-        }
+        $resolvedArchivePath = Resolve-ServyDumpDestinationPath -DestinationArchivePath $DestinationArchivePath -PSCmdletContext $PSCmdlet
 
         # Check if destination dump file already exists
         if (Test-Path -LiteralPath $resolvedArchivePath) {
@@ -350,30 +462,7 @@ public static class ServyNativeWinSqlite16
 
         # Export each service configuration into individual XML files with per-item exception isolation
         foreach ($serviceName in $serviceNames) {
-            # Sanitize service name for safe filesystem usage
-            $baseFileName = $serviceName
-            foreach ($char in $invalidChars) {
-                $baseFileName = $baseFileName.Replace($char, '_')
-            }
-
-            # Prefix reserved Win32 device names to prevent mapping to device handles
-            # Match PathSecurityGuard's stem-before-first-dot evaluation; only trailing spaces can survive the invalid-char sanitization above
-            $stem = $baseFileName.Split('.')[0].TrimEnd(' ')
-            if ($reservedNames -contains $stem.ToUpperInvariant()) {
-                $baseFileName = "_$baseFileName"
-            }
-
-            # Disambiguate names that sanitize onto an existing file
-            $candidateName = $baseFileName
-            $suffixCounter = 1
-            while (-not $usedBaseNames.Add($candidateName)) {
-                $candidateName = "{0}_{1}" -f $baseFileName, $suffixCounter
-                $suffixCounter++
-            }
-
-            if ($candidateName -ne $baseFileName) {
-                Write-Host "  Name collision: '$serviceName' sanitizes to '$baseFileName'; writing '$candidateName.xml' instead." -ForegroundColor Yellow
-            }
+            $candidateName = Get-ServySanitizedFileName -ServiceName $serviceName -InvalidChars $invalidChars -ReservedNames $reservedNames -UsedBaseNames $usedBaseNames
 
             $xmlExportPath = [System.IO.Path]::Combine($tempStagingDir, "$candidateName.xml")
 
