@@ -65,7 +65,9 @@ $exeNames = @(
     'Servy.Restarter.exe'
 )
 
-if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
+$isArm64 = ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') -or ($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64')
+
+if ($isArm64) {
     $exeNames += 'handle64a.exe'
 } else {
     $exeNames += 'handle64.exe'
