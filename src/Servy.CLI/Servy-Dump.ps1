@@ -7,7 +7,7 @@
     Servy-Dump.ps1 inspects the local Servy SQLite configuration database (%ProgramData%\Servy\db\Servy.db),
     retrieves all registered service definitions using local Servy SQLite assemblies or native Win32 APIs,
     and exports each service configuration into an individual XML file using the official Servy PowerShell module.
-    The exported XML files are then compressed into a single zip archive.
+    The exported XML files are then compressed into a single zip archive along with a SHA-256 sidecar file.
 
     Per-service export errors are caught gracefully. If at least one service exports successfully and one or more
     fail, the zip archive is still generated and an exit code of 7 is returned to flag an incomplete backup to
@@ -18,7 +18,8 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
-    - 4 : I/O & Inspection Failure. The database could not be read, or the target destination path/directory is unwritable.
+    - 4 : I/O & Inspection Failure. The database could not be read, destination path is unwritable, or ACL hardening failed.
+    - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export.
     - 8 : Archive Staging Mismatch. Staged configuration count does not match exported count; dump aborted.
@@ -129,7 +130,7 @@ try {
     }
 
     # Check if destination dump file already exists
-    if (Test-Path -LiteralPath $resolvedArchivePath) {
+    if (Test-Path -Path $resolvedArchivePath) {
         if (-not $Overwrite.IsPresent) {
             Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
             exit 3
@@ -141,7 +142,7 @@ try {
     $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
 
     if (-not [string]::IsNullOrEmpty($parentDir)) {
-        if (-not (Test-Path -LiteralPath $parentDir)) {
+        if (-not (Test-Path -Path $parentDir)) {
             try {
                 [void][System.IO.Directory]::CreateDirectory($parentDir)
                 $createdParentPath = $parentDir
@@ -156,7 +157,7 @@ try {
         $probeFile = [System.IO.Path]::Combine($parentDir, ".servydump_probe_" + [System.IO.Path]::GetRandomFileName())
         try {
             [System.IO.File]::WriteAllBytes($probeFile, @())
-            Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $probeFile -Force -ErrorAction SilentlyContinue
         }
         catch {
             Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
@@ -167,7 +168,7 @@ try {
     # Validate existence of the Servy SQLite database file
     $dbPath = [System.IO.Path]::Combine($env:ProgramData, "Servy\db\Servy.db")
 
-    if (-not (Test-Path -LiteralPath $dbPath)) {
+    if (-not (Test-Path -Path $dbPath)) {
         Write-Host "Servy database not found at '$dbPath'. No services exist to export." -ForegroundColor Yellow
         exit 0
     }
@@ -183,7 +184,7 @@ try {
 
     $usedAdoNet = $false
 
-    if (Test-Path -LiteralPath $managedSqliteDll) {
+    if (Test-Path -Path $managedSqliteDll) {
         try {
             [void][System.Reflection.Assembly]::LoadFrom($managedSqliteDll)
             
@@ -337,7 +338,13 @@ public static class ServySafePs2Sqlite16
     }
 }
 "@
-            Add-Type -TypeDefinition $sqliteBinding
+            try {
+                Add-Type -TypeDefinition $sqliteBinding
+            }
+            catch {
+                Write-Host "Failed to compile native SQLite P/Invoke assembly bindings: $_" -ForegroundColor Red
+                exit 5
+            }
         }
 
         try {
@@ -355,15 +362,20 @@ public static class ServySafePs2Sqlite16
 
     # Restrict staging directory permissions to Administrators and SYSTEM exclusively
     try {
-        $acl = Get-Acl -LiteralPath $tempStagingDir
+        $acl = Get-Acl -Path $tempStagingDir
         $acl.SetAccessRuleProtection($true, $false)
         foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
             $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
             $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
                 $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
         }
-        Set-Acl -LiteralPath $tempStagingDir -AclObject $acl
-    } catch { }
+        Set-Acl -Path $tempStagingDir -AclObject $acl
+    }
+    catch {
+        Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
+        exit 4
+    }
 
     try {
         if ($null -eq $serviceNames -or $serviceNames.Count -eq 0) {
@@ -403,7 +415,7 @@ public static class ServySafePs2Sqlite16
             Write-Host "Exporting configuration for '$serviceName' -> '$candidateName.xml'..." -ForegroundColor Green
 
             try {
-                Export-ServyServiceConfig -Name $serviceName -ConfigFileType "Xml" -Path $xmlExportPath
+                Export-ServyServiceConfig -Name $serviceName -ConfigFileType "xml" -Path $xmlExportPath
                 $exported.Add($serviceName)
             }
             catch {
@@ -419,7 +431,7 @@ public static class ServySafePs2Sqlite16
         }
 
         # Assert staged configuration count matches successful exports before compressing
-        $stagedXmlFiles = Get-ChildItem -LiteralPath $tempStagingDir | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
+        $stagedXmlFiles = Get-ChildItem -Path $tempStagingDir | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
         $stagedCount    = if ($null -eq $stagedXmlFiles) { 0 } else { @($stagedXmlFiles).Count }
 
         if ($stagedCount -ne $exported.Count) {
@@ -430,39 +442,64 @@ public static class ServySafePs2Sqlite16
         # Compress staging directory into target zip archive
         Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
 
-        if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {
-            $compressParams = @{
-                Path             = "$tempStagingDir\*"
-                DestinationPath  = $resolvedArchivePath
-            }
-            if ($Overwrite.IsPresent) {
-                $compressParams['Force'] = $true
-            }
-            Compress-Archive @compressParams
-        }
-        else {
-            try {
-                if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $resolvedArchivePath)) {
-                    Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+        try {
+            if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {
+                $compressParams = @{
+                    Path            = "$tempStagingDir\*"
+                    DestinationPath = $resolvedArchivePath
                 }
-                [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
-                [System.IO.Compression.ZipFile]::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
-            }
-            catch {
-                if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $resolvedArchivePath)) {
-                    Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+                if ($Overwrite.IsPresent) {
+                    $compressParams['Force'] = $true
                 }
-                Set-Content -Path $resolvedArchivePath -Value ("PK" + [char]5 + [char]6 + ("`0" * 18))
-                $shellApp = New-Object -ComObject Shell.Application
-                $zipPackage = $shellApp.NameSpace($resolvedArchivePath)
-                $sourceItems = $shellApp.NameSpace($tempStagingDir).Items()
-                $zipPackage.CopyHere($sourceItems)
+                Compress-Archive @compressParams
+            }
+            else {
+                try {
+                    if ($Overwrite.IsPresent -and (Test-Path -Path $resolvedArchivePath)) {
+                        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+                    }
+                    [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
+                    [System.IO.Compression.ZipFile]::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
+                }
+                catch {
+                    if ($Overwrite.IsPresent -and (Test-Path -Path $resolvedArchivePath)) {
+                        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+                    }
+                    Set-Content -Path $resolvedArchivePath -Value ("PK" + [char]5 + [char]6 + ("`0" * 18))
+                    $shellApp = New-Object -ComObject Shell.Application
+                    $zipPackage = $shellApp.NameSpace($resolvedArchivePath)
+                    $sourceItems = $shellApp.NameSpace($tempStagingDir).Items()
+                    $zipPackage.CopyHere($sourceItems)
 
-                while ($zipPackage.Items().Count -lt $sourceItems.Count) {
-                    Start-Sleep -Milliseconds 500
+                    while ($zipPackage.Items().Count -lt $sourceItems.Count) {
+                        Start-Sleep -Milliseconds 500
+                    }
                 }
             }
         }
+        catch {
+            Write-Host "`nServy configuration dump FAILED during compression: $_" -ForegroundColor Red
+            Write-Host "No archive was produced at '$resolvedArchivePath'." -ForegroundColor Red
+            exit 4
+        }
+
+        # Emit SHA-256 sidecar hash file for integrity verification
+        $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
+        $stream = [System.IO.File]::OpenRead($resolvedArchivePath)
+        try {
+            $rawBytes = $hashAlgorithm.ComputeHash($stream)
+            $hashBuilder = New-Object System.Text.StringBuilder
+            foreach ($b in $rawBytes) { [void]$hashBuilder.Append($b.ToString("X2")) }
+            $hashValue = $hashBuilder.ToString()
+        }
+        finally {
+            $stream.Close()
+            $stream.Dispose()
+        }
+
+        $sidecarPath = "$resolvedArchivePath.sha256"
+        "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))" | Set-Content -Path $sidecarPath -Encoding ascii
+        Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
 
         # Display completion status and critical security warning
         Write-Host "`nServy configuration dump completed!" -ForegroundColor Green
@@ -497,12 +534,16 @@ NOTE ON SERVICE RESTORATION:
             exit 7    # Archive generated successfully, but incomplete
         }
     }
+    catch {
+        Write-Host "`nServy configuration dump FAILED: $_" -ForegroundColor Red
+        exit 4
+    }
     finally {
         # Clean up temporary staging directory and XML files with explicit failure reporting
-        if (Test-Path -LiteralPath $tempStagingDir) {
-            Remove-Item -LiteralPath $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path -Path $tempStagingDir) {
+            Remove-Item -Path $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
 
-            if (Test-Path -LiteralPath $tempStagingDir) {
+            if (Test-Path -Path $tempStagingDir) {
                 Write-Host @"
 
 ================================================================================
@@ -521,10 +562,10 @@ Please delete this directory manually to prevent credential/config leaks.
 }
 finally {
     # If parent directory was created during execution but dump failed before creating archive, clean up orphaned folder
-    if ($null -ne $createdParentPath -and (Test-Path -LiteralPath $createdParentPath) -and -not (Test-Path -LiteralPath $resolvedArchivePath)) {
-        $parentItems = Get-ChildItem -LiteralPath $createdParentPath -ErrorAction SilentlyContinue
+    if ($null -ne $createdParentPath -and (Test-Path -Path $createdParentPath) -and -not (Test-Path -Path $resolvedArchivePath)) {
+        $parentItems = Get-ChildItem -Path $createdParentPath -ErrorAction SilentlyContinue
         if ($null -eq $parentItems -or @($parentItems).Count -eq 0) {
-            Remove-Item -LiteralPath $createdParentPath -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $createdParentPath -Force -ErrorAction SilentlyContinue
         }
     }
 
