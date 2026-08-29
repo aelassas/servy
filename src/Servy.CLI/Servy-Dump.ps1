@@ -55,6 +55,9 @@
 .EXAMPLE
     .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip" -Uninstall
 
+.EXAMPLE
+    .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip" -Overwrite -Uninstall
+
 .NOTES
     SYSTEM REQUIREMENTS:
     - Operating System: Windows 10, Windows 11, or Windows Server 2016 and later (requires native %SystemRoot%\System32\winsqlite3.dll).
