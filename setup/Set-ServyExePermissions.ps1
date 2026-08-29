@@ -119,51 +119,65 @@ $targetFiles = @($staticExeNames) + @($dllFiles)
 Write-Host "Securing Servy (.NET Framework 4.8) binary and library files in: $programDataDir" -ForegroundColor Cyan
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
+$hardened = @()
+$skipped  = @()
 foreach ($fileName in $targetFiles) {
     if ([string]::IsNullOrEmpty($fileName)) { continue }
 
     $filePath = [System.IO.Path]::Combine($programDataDir, $fileName)
 
     if (-not (Test-Path -Path $filePath)) {
-        if ($fileName -eq 'Servy.Restarter.Net48.exe') {
-            Write-Host "Skipping '$fileName' (file not found). Note: Start the service once so Servy.Restarter.Net48.exe gets copied to %ProgramData%\Servy." -ForegroundColor Yellow
-        } else {
-            Write-Host "Skipping '$fileName' (file not found)." -ForegroundColor Gray
-        }
+        $skipped += $fileName
         continue
     }
 
-    Write-Host "Hardening permissions on '$fileName'..." -ForegroundColor Green
+    try {
+        Write-Host "Hardening permissions on '$fileName'..." -ForegroundColor Green
 
-    $acl = Get-Acl -Path $filePath
+        $acl = Get-Acl -Path $filePath
 
-    # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
-    $acl.SetOwner($adminSid)
+        # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
+        $acl.SetOwner($adminSid)
 
-    # 1. Break inheritance and purge existing inherited permissions ($isProtected = $true, $preserveInheritance = $false)
-    $acl.SetAccessRuleProtection($true, $false)
+        # 1. Break inheritance and purge existing inherited permissions ($isProtected = $true, $preserveInheritance = $false)
+        $acl.SetAccessRuleProtection($true, $false)
 
-    # 2. Purge existing explicit ACEs for target account
-    $acl.PurgeAccessRules($targetNTAccount)
+        # 2. Purge existing explicit ACEs for target account
+        $acl.PurgeAccessRules($targetNTAccount)
 
-    # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
-    $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-    $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-    $acl.SetAccessRule($adminRule)
-    $acl.SetAccessRule($systemRule)
+        # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+        $acl.SetAccessRule($adminRule)
+        $acl.SetAccessRule($systemRule)
 
-    # 4. Grant explicit ReadAndExecute access to target account
-    $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-        $targetNTAccount,
-        "ReadAndExecute",
-        "Allow"
-    )
-    $acl.SetAccessRule($targetRule)
+        # 4. Grant explicit ReadAndExecute access to target account
+        $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+            $targetNTAccount,
+            "ReadAndExecute",
+            "Allow"
+        )
+        $acl.SetAccessRule($targetRule)
 
-    # Commit ACL to disk
-    Set-Acl -Path $filePath -AclObject $acl
+        # Commit ACL to disk
+        Set-Acl -Path $filePath -AclObject $acl
 
-    Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
+        Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
+        $hardened += $fileName
+    }
+    catch {
+        Write-Host "FAILED to harden '$fileName': $_" -ForegroundColor Red
+        $skipped += $fileName
+    }
 }
 
-Write-Host "`nExecutable and library permission hardening complete." -ForegroundColor Cyan
+Write-Host "`nHardened $($hardened.Count) of $($targetFiles.Count) files." -ForegroundColor Cyan
+
+if ($skipped.Count -gt 0) {
+    Write-Warning ("Not hardened: {0}" -f ($skipped -join ', '))
+    Write-Warning "These files will inherit Modify access from '$programDataDir' when Servy creates them."
+    Write-Warning "Start the service once so every binary is extracted, then RE-RUN this script."
+    exit 2
+}
+
+Write-Host "Executable and library permission hardening complete." -ForegroundColor Cyan
