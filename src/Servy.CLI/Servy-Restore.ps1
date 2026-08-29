@@ -93,7 +93,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Render non-ASCII service names correctly in console output while preserving original session encoding
-$previousOutputEncoding   = [Console]::OutputEncoding
+$previousOutputEncoding    = [Console]::OutputEncoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 try {
@@ -141,7 +141,10 @@ try {
     # Verify archive integrity against SHA-256 sidecar file if present
     $sidecarPath = "$resolvedArchivePath.sha256"
 
-    if (Test-Path -LiteralPath $sidecarPath) {
+    if ($SkipIntegrityCheck.IsPresent) {
+        Write-Host "WARNING: Integrity verification skipped (-SkipIntegrityCheck specified)." -ForegroundColor Yellow
+    }
+    elseif (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
         $sidecarText  = [System.IO.File]::ReadAllText($sidecarPath)
         $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
@@ -153,13 +156,10 @@ try {
         }
         Write-Host "Archive SHA-256 checksum successfully verified." -ForegroundColor Green
     }
-    elseif (-not $SkipIntegrityCheck.IsPresent) {
+    else {
         Write-Host "No SHA-256 sidecar file found at '$sidecarPath'." -ForegroundColor Red
         Write-Host "To proceed without integrity verification, re-run with the -SkipIntegrityCheck switch." -ForegroundColor Red
         exit 5
-    }
-    else {
-        Write-Host "WARNING: Integrity verification skipped (-SkipIntegrityCheck specified)." -ForegroundColor Yellow
     }
 
     # Create an isolated temporary directory for extracting XML files
