@@ -178,22 +178,19 @@ foreach ($exeName in $exeNames) {
 
         # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
         $postAcl = Get-Acl -Path $exePath
-        $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.NTAccount])
+        $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
         $manualRules = @()
         $appliedTargetRules = @()
 
         foreach ($rule in $survivingRules) {
-            try {
-                $sid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
-                if ($sid.Equals($targetSid)) {
-                    $appliedTargetRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
-                }
-                elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
-                    $manualRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
-                }
+            $sid = $rule.IdentityReference
+            $name = try { $sid.Translate([System.Security.Principal.NTAccount]).Value } catch { $sid.Value }
+
+            if ($sid.Equals($targetSid)) {
+                $appliedTargetRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
             }
-            catch {
-                $manualRules += "$($rule.IdentityReference.Value) [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+            elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
+                $manualRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
             }
         }
 
