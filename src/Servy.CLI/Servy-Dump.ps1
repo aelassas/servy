@@ -60,121 +60,128 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-# Set pipeline string encoding for external processes while avoiding Win32 console code page changes on PS 2.0
-try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
-
-# Ensure the script is executing with Administrator privileges
-$currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-$currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
-$adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
-
-if (-not $currentPrincipal.IsInRole($adminRole)) {
-    Write-Host "Servy-Dump.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
-    exit 1
-}
-
-# Resolve script directory safely across PowerShell 2.0 ($MyInvocation) and PowerShell 3.0+ ($PSScriptRoot)
+# Render non-ASCII service names correctly on PS3+ while using $OutputEncoding on PS2
+$previousOutputEncoding = $null
 if ($PSVersionTable.PSVersion.Major -ge 3) {
-    # PS3+ has automatic $PSScriptRoot
-    $scriptDir = $PSScriptRoot
+    try { $previousOutputEncoding = [Console]::OutputEncoding } catch { }
+    try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 }
 else {
-    # PS2 does not have $PSScriptRoot
-    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-}
-
-# Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
-$moduleCandidates = @(
-    (Join-Path $scriptDir 'Servy.psm1'),
-    (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
-    (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
-) | Where-Object { $_ -and (Test-Path -Path $_) }
-
-$servyModulePath = $moduleCandidates | Select-Object -First 1
-
-if (-not $servyModulePath) {
-    Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
-    exit 2
+    try { $previousOutputEncoding = $OutputEncoding } catch { }
+    try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 }
 
 try {
-    Import-Module -Name $servyModulePath -Force -ErrorAction Stop
-}
-catch {
-    Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
-    exit 2
-}
+    # Ensure the script is executing with Administrator privileges
+    $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
+    $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
 
-# Determine base Servy installation directory for native and managed assembly resolution
-$servyBinDir = [System.IO.Path]::GetDirectoryName($servyModulePath)
-
-# Check if destination dump file already exists
-$resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
-
-if (Test-Path -Path $resolvedArchivePath) {
-    if (-not $Overwrite.IsPresent) {
-        Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
-        exit 3
+    if (-not $currentPrincipal.IsInRole($adminRole)) {
+        Write-Host "Servy-Dump.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
+        exit 1
     }
-    Write-Host "Existing dump archive found. -Overwrite specified; replacing target file." -ForegroundColor Yellow
-    Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
-}
 
-# Validate existence of the Servy SQLite database file
-$dbPath = [System.IO.Path]::Combine($env:ProgramData, "Servy\db\Servy.db")
+    # Resolve script directory safely across PowerShell 2.0 ($MyInvocation) and PowerShell 3.0+ ($PSScriptRoot)
+    if ($PSVersionTable.PSVersion.Major -ge 3) {
+        $scriptDir = $PSScriptRoot
+    }
+    else {
+        $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+    }
 
-if (-not (Test-Path -Path $dbPath)) {
-    Write-Host "Servy database not found at '$dbPath'. No services exist to export." -ForegroundColor Yellow
-    exit 0
-}
+    # Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
+    $moduleCandidates = @(
+        (Join-Path $scriptDir 'Servy.psm1'),
+        (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
+    ) | Where-Object { $_ -and (Test-Path -Path $_) }
 
-# -----------------------------------------------------------------------------
-# Database Inspection Layer
-# 1. Attempt ADO.NET using System.Data.SQLite.dll (present in Servy net48 build)
-# 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-16
-# -----------------------------------------------------------------------------
+    $servyModulePath = $moduleCandidates | Select-Object -First 1
 
-$serviceNames = New-Object System.Collections.Generic.List[string]
-$managedSqliteDll = [System.IO.Path]::Combine($servyBinDir, "System.Data.SQLite.dll")
+    if (-not $servyModulePath) {
+        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
+        exit 2
+    }
 
-$usedAdoNet = $false
-
-if (Test-Path -Path $managedSqliteDll) {
     try {
-        [void][System.Reflection.Assembly]::LoadFrom($managedSqliteDll)
-        
-        $connectionString = "Data Source=$dbPath;Version=3;Read Only=True;"
-        $connection = New-Object System.Data.SQLite.SQLiteConnection($connectionString)
-        
-        try {
-            $connection.Open()
-            $command = $connection.CreateCommand()
-            $command.CommandText = "SELECT Name FROM Services"
-            $reader = $command.ExecuteReader()
-            
-            while ($reader.Read()) {
-                if (-not $reader.IsDBNull(0)) {
-                    $serviceNames.Add($reader.GetString(0))
-                }
-            }
-            $reader.Close()
-            $usedAdoNet = $true
-        }
-        finally {
-            if ($connection.State -eq [System.Data.ConnectionState]::Open) {
-                $connection.Close()
-            }
-            $connection.Dispose()
-        }
+        Import-Module -Name $servyModulePath -Force -ErrorAction Stop
     }
     catch {
-        $usedAdoNet = $false
+        Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
+        exit 2
     }
-}
 
-if (-not $usedAdoNet) {
-    if (-not ([System.Management.Automation.PSTypeName]'ServySafePs2Sqlite16').Type) {
-        $sqliteBinding = @"
+    # Determine base Servy installation directory for native and managed assembly resolution
+    $servyBinDir = [System.IO.Path]::GetDirectoryName($servyModulePath)
+
+    # Check if destination dump file already exists
+    $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
+
+    if (Test-Path -Path $resolvedArchivePath) {
+        if (-not $Overwrite.IsPresent) {
+            Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
+            exit 3
+        }
+        Write-Host "Existing dump archive found. -Overwrite specified; replacing target file." -ForegroundColor Yellow
+        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+    }
+
+    # Validate existence of the Servy SQLite database file
+    $dbPath = [System.IO.Path]::Combine($env:ProgramData, "Servy\db\Servy.db")
+
+    if (-not (Test-Path -Path $dbPath)) {
+        Write-Host "Servy database not found at '$dbPath'. No services exist to export." -ForegroundColor Yellow
+        exit 0
+    }
+
+    # -----------------------------------------------------------------------------
+    # Database Inspection Layer
+    # 1. Attempt ADO.NET using System.Data.SQLite.dll (present in Servy net48 build)
+    # 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-16
+    # -----------------------------------------------------------------------------
+
+    $serviceNames = New-Object System.Collections.Generic.List[string]
+    $managedSqliteDll = [System.IO.Path]::Combine($servyBinDir, "System.Data.SQLite.dll")
+
+    $usedAdoNet = $false
+
+    if (Test-Path -Path $managedSqliteDll) {
+        try {
+            [void][System.Reflection.Assembly]::LoadFrom($managedSqliteDll)
+            
+            $connectionString = "Data Source=$dbPath;Version=3;Read Only=True;"
+            $connection = New-Object System.Data.SQLite.SQLiteConnection($connectionString)
+            
+            try {
+                $connection.Open()
+                $command = $connection.CreateCommand()
+                $command.CommandText = "SELECT Name FROM Services"
+                $reader = $command.ExecuteReader()
+                
+                while ($reader.Read()) {
+                    if (-not $reader.IsDBNull(0)) {
+                        $serviceNames.Add($reader.GetString(0))
+                    }
+                }
+                $reader.Close()
+                $usedAdoNet = $true
+            }
+            finally {
+                if ($connection.State -eq [System.Data.ConnectionState]::Open) {
+                    $connection.Close()
+                }
+                $connection.Dispose()
+            }
+        }
+        catch {
+            $usedAdoNet = $false
+        }
+    }
+
+    if (-not $usedAdoNet) {
+        if (-not ([System.Management.Automation.PSTypeName]'ServySafePs2Sqlite16').Type) {
+            $sqliteBinding = @"
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -270,97 +277,109 @@ public static class ServySafePs2Sqlite16
     }
 }
 "@
-        Add-Type -TypeDefinition $sqliteBinding
-    }
-
-    $serviceNames = [ServySafePs2Sqlite16]::GetServiceNames($dbPath, $servyBinDir)
-}
-
-# Create an isolated temporary directory for staging exported XML files
-$tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDump_" + [System.IO.Path]::GetRandomFileName())
-[void][System.IO.Directory]::CreateDirectory($tempStagingDir)
-
-try {
-    if ($null -eq $serviceNames -or $serviceNames.Count -eq 0) {
-        Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
-        exit 0
-    }
-
-    Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
-
-    $exported = New-Object System.Collections.Generic.List[string]
-    $failed   = New-Object System.Collections.Generic.List[object]
-    $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
-
-    # Export each service configuration into individual XML files with per-item exception isolation
-    foreach ($serviceName in $serviceNames) {
-        # Sanitize service name for safe filesystem usage
-        $safeFileName = $serviceName
-        foreach ($char in $invalidChars) {
-            $safeFileName = $safeFileName.Replace($char, '_')
+            Add-Type -TypeDefinition $sqliteBinding
         }
 
-        $xmlExportPath = [System.IO.Path]::Combine($tempStagingDir, "$safeFileName.xml")
+        $serviceNames = [ServySafePs2Sqlite16]::GetServiceNames($dbPath, $servyBinDir)
+    }
 
-        Write-Host "Exporting configuration for '$serviceName' -> '$safeFileName.xml'..." -ForegroundColor Green
+    # Create an isolated temporary directory for staging exported XML files
+    $tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDump_" + [System.IO.Path]::GetRandomFileName())
+    [void][System.IO.Directory]::CreateDirectory($tempStagingDir)
 
-        try {
-            Export-ServyServiceConfig -Name $serviceName -ConfigFileType "Xml" -Path $xmlExportPath
-            $exported.Add($serviceName)
+    # Restrict staging directory permissions to Administrators and SYSTEM exclusively
+    try {
+        $acl = Get-Acl -LiteralPath $tempStagingDir
+        $acl.SetAccessRuleProtection($true, $false)
+        foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
+            $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
+            $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
         }
-        catch {
-            Write-Host "  FAILED to export '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-            $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = $_.Exception.Message })
+        Set-Acl -LiteralPath $tempStagingDir -AclObject $acl
+    } catch { }
+
+    try {
+        if ($null -eq $serviceNames -or $serviceNames.Count -eq 0) {
+            Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
+            exit 0
         }
-    }
 
-    # If zero configurations succeeded, terminate without creating an empty archive
-    if ($exported.Count -eq 0) {
-        Write-Host "No service configurations could be exported. No dump archive was generated." -ForegroundColor Red
-        exit 6
-    }
+        Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
 
-    # Ensure target output directory exists
-    $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
-    if (-not [string]::IsNullOrEmpty($parentDir) -and -not (Test-Path -Path $parentDir)) {
-        [void][System.IO.Directory]::CreateDirectory($parentDir)
-    }
+        $exported = New-Object System.Collections.Generic.List[string]
+        $failed   = New-Object System.Collections.Generic.List[object]
+        $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
 
-    # Compress staging directory into target zip archive
-    Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
+        # Export each service configuration into individual XML files with per-item exception isolation
+        foreach ($serviceName in $serviceNames) {
+            # Sanitize service name for safe filesystem usage
+            $safeFileName = $serviceName
+            foreach ($char in $invalidChars) {
+                $safeFileName = $safeFileName.Replace($char, '_')
+            }
 
-    if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {
-        Compress-Archive -Path "$tempStagingDir\*" -DestinationPath $resolvedArchivePath -Force
-    }
-    else {
-        try {
-            [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
-            [System.IO.Compression.ZipFile]::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
-        }
-        catch {
-            Set-Content -Path $resolvedArchivePath -Value ("PK" + [char]5 + [char]6 + ("`0" * 18))
-            $shellApp = New-Object -ComObject Shell.Application
-            $zipPackage = $shellApp.NameSpace($resolvedArchivePath)
-            $sourceItems = $shellApp.NameSpace($tempStagingDir).Items()
-            $zipPackage.CopyHere($sourceItems)
+            $xmlExportPath = [System.IO.Path]::Combine($tempStagingDir, "$safeFileName.xml")
 
-            while ($zipPackage.Items().Count -lt $sourceItems.Count) {
-                Start-Sleep -Milliseconds 500
+            Write-Host "Exporting configuration for '$serviceName' -> '$safeFileName.xml'..." -ForegroundColor Green
+
+            try {
+                Export-ServyServiceConfig -Name $serviceName -ConfigFileType "Xml" -Path $xmlExportPath
+                $exported.Add($serviceName)
+            }
+            catch {
+                Write-Host "  FAILED to export '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+                $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = $_.Exception.Message })
             }
         }
-    }
 
-    # Display completion status and critical security warning
-    Write-Host "`nServy configuration dump completed!" -ForegroundColor Green
-    Write-Host "Successfully exported $($exported.Count) of $($serviceNames.Count) service(s)." -ForegroundColor Cyan
-    Write-Host "Dump location: $resolvedArchivePath" -ForegroundColor Cyan
+        # If zero configurations succeeded, terminate without creating an empty archive
+        if ($exported.Count -eq 0) {
+            Write-Host "No service configurations could be exported. No dump archive was generated." -ForegroundColor Red
+            exit 6
+        }
 
-    if ($failed.Count -gt 0) {
-        Write-Host "`nThe following service(s) FAILED to export and were NOT included in the dump archive:" -ForegroundColor Red
-        $failed | Format-Table -AutoSize | Out-String | Write-Host
-    }
+        # Ensure target output directory exists
+        $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
+        if (-not [string]::IsNullOrEmpty($parentDir) -and -not (Test-Path -Path $parentDir)) {
+            [void][System.IO.Directory]::CreateDirectory($parentDir)
+        }
 
-    Write-Host @"
+        # Compress staging directory into target zip archive
+        Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
+
+        if (Get-Command -Name "Compress-Archive" -ErrorAction SilentlyContinue) {
+            Compress-Archive -Path "$tempStagingDir\*" -DestinationPath $resolvedArchivePath -Force
+        }
+        else {
+            try {
+                [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
+                [System.IO.Compression.ZipFile]::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
+            }
+            catch {
+                Set-Content -Path $resolvedArchivePath -Value ("PK" + [char]5 + [char]6 + ("`0" * 18))
+                $shellApp = New-Object -ComObject Shell.Application
+                $zipPackage = $shellApp.NameSpace($resolvedArchivePath)
+                $sourceItems = $shellApp.NameSpace($tempStagingDir).Items()
+                $zipPackage.CopyHere($sourceItems)
+
+                while ($zipPackage.Items().Count -lt $sourceItems.Count) {
+                    Start-Sleep -Milliseconds 500
+                }
+            }
+        }
+
+        # Display completion status and critical security warning
+        Write-Host "`nServy configuration dump completed!" -ForegroundColor Green
+        Write-Host "Successfully exported $($exported.Count) of $($serviceNames.Count) service(s)." -ForegroundColor Cyan
+        Write-Host "Dump location: $resolvedArchivePath" -ForegroundColor Cyan
+
+        if ($failed.Count -gt 0) {
+            Write-Host "`nThe following service(s) FAILED to export and were NOT included in the dump archive:" -ForegroundColor Red
+            $failed | Format-Table -AutoSize | Out-String | Write-Host
+        }
+
+        Write-Host @"
 
 ================================================================================
 CRITICAL SECURITY WARNING:
@@ -379,13 +398,40 @@ NOTE ON SERVICE RESTORATION:
 ================================================================================
 "@ -ForegroundColor Yellow
 
-    if ($failed.Count -gt 0) {
-        exit 7    # Archive generated successfully, but incomplete
+        if ($failed.Count -gt 0) {
+            exit 7    # Archive generated successfully, but incomplete
+        }
+    }
+    finally {
+        # Clean up temporary staging directory and XML files with explicit failure reporting
+        if (Test-Path -LiteralPath $tempStagingDir) {
+            Remove-Item -LiteralPath $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
+
+            if (Test-Path -LiteralPath $tempStagingDir) {
+                Write-Host @"
+
+================================================================================
+WARNING: STAGING CLEANUP FAILURE DETECTED
+================================================================================
+The temporary staging directory could not be fully removed:
+  $tempStagingDir
+
+It contains UNENCRYPTED PLAIN-TEXT service configurations.
+Please delete this directory manually to prevent credential/config leaks.
+================================================================================
+"@ -ForegroundColor Red
+            }
+        }
     }
 }
 finally {
-    # Clean up temporary staging directory and XML files
-    if (Test-Path -Path $tempStagingDir) {
-        Remove-Item -Path $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
+    # Restore original console output encoding if altered
+    if ($null -ne $previousOutputEncoding) {
+        if ($PSVersionTable.PSVersion.Major -ge 3) {
+            try { [Console]::OutputEncoding = $previousOutputEncoding } catch { }
+        }
+        else {
+            try { $OutputEncoding = $previousOutputEncoding } catch { }
+        }
     }
 }

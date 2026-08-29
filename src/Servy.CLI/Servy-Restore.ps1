@@ -51,122 +51,138 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-# Set external process pipeline encoding safely (restricts Win32 console code page mutation to PS 3.0+)
+# Render non-ASCII service names correctly on PS3+ while using $OutputEncoding on PS2
+$previousOutputEncoding = $null
 if ($PSVersionTable.PSVersion.Major -ge 3) {
+    try { $previousOutputEncoding = [Console]::OutputEncoding } catch { }
     try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 }
-try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
-
-# Ensure the script is executing with Administrator privileges
-$currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-$currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
-$adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
-
-if (-not $currentPrincipal.IsInRole($adminRole)) {
-    Write-Host "Servy-Restore.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
-    exit 1
-}
-
-# Resolve script directory safely across PowerShell 2.0 ($MyInvocation) and PowerShell 3.0+ ($PSScriptRoot)
-if ($PSVersionTable.PSVersion.Major -ge 3) {
-    # PS3+ has automatic $PSScriptRoot
-    $scriptDir = $PSScriptRoot
-}
 else {
-    # PS2 does not have $PSScriptRoot
-    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-}
-
-# Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
-$moduleCandidates = @(
-    (Join-Path $scriptDir 'Servy.psm1'),
-    (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
-    (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
-) | Where-Object { $_ -and (Test-Path -Path $_) }
-
-$servyModulePath = $moduleCandidates | Select-Object -First 1
-
-if (-not $servyModulePath) {
-    Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
-    exit 2
+    try { $previousOutputEncoding = $OutputEncoding } catch { }
+    try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 }
 
 try {
-    Import-Module -Name $servyModulePath -Force -ErrorAction Stop
-}
-catch {
-    Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
-    exit 2
-}
+    # Ensure the script is executing with Administrator privileges
+    $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
+    $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
 
-# Validate existence of the specified dump archive file
-$resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
-
-if (-not (Test-Path -Path $resolvedArchivePath)) {
-    Write-Host "Specified dump archive file does not exist: '$resolvedArchivePath'." -ForegroundColor Red
-    exit 3
-}
-
-# Create an isolated temporary directory for extracting XML files
-$tempExtractDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyRestore_" + [System.IO.Path]::GetRandomFileName())
-[void][System.IO.Directory]::CreateDirectory($tempExtractDir)
-
-try {
-    Write-Host "Extracting dump archive '$resolvedArchivePath'..." -ForegroundColor Cyan
-
-    # 1. Attempt PowerShell 5.0+ Expand-Archive if available
-    if (Get-Command -Name "Expand-Archive" -ErrorAction SilentlyContinue) {
-        Expand-Archive -Path $resolvedArchivePath -DestinationPath $tempExtractDir -Force
+    if (-not $currentPrincipal.IsInRole($adminRole)) {
+        Write-Host "Servy-Restore.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
+        exit 1
     }
-    # 2. Attempt .NET Framework 4.5+ System.IO.Compression.ZipFile
-    else {
-        try {
-            [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
-            [System.IO.Compression.ZipFile]::ExtractToDirectory($resolvedArchivePath, $tempExtractDir)
-        }
-        catch {
-            # 3. Fallback for Windows 7 / PowerShell 2.0 native COM Shell.Application zip extraction
-            $shellApp = New-Object -ComObject Shell.Application
-            $zipPackage = $shellApp.NameSpace($resolvedArchivePath)
-            $destinationFolder = $shellApp.NameSpace($tempExtractDir)
-            
-            # CopyHere flags: 4 = Do not display progress dialog, 16 = Respond with "Yes to All" for any dialog
-            $destinationFolder.CopyHere($zipPackage.Items(), 20)
 
-            # Wait for asynchronous COM extraction operation to finalize
-            while ($destinationFolder.Items().Count -lt $zipPackage.Items().Count) {
-                Start-Sleep -Milliseconds 500
+    # Resolve script directory safely across PowerShell 2.0 ($MyInvocation) and PowerShell 3.0+ ($PSScriptRoot)
+    if ($PSVersionTable.PSVersion.Major -ge 3) {
+        $scriptDir = $PSScriptRoot
+    }
+    else {
+        $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+    }
+
+    # Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
+    $moduleCandidates = @(
+        (Join-Path $scriptDir 'Servy.psm1'),
+        (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
+    ) | Where-Object { $_ -and (Test-Path -Path $_) }
+
+    $servyModulePath = $moduleCandidates | Select-Object -First 1
+
+    if (-not $servyModulePath) {
+        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
+        exit 2
+    }
+
+    try {
+        Import-Module -Name $servyModulePath -Force -ErrorAction Stop
+    }
+    catch {
+        Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
+        exit 2
+    }
+
+    # Validate existence of the specified dump archive file
+    $resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
+
+    if (-not (Test-Path -Path $resolvedArchivePath)) {
+        Write-Host "Specified dump archive file does not exist: '$resolvedArchivePath'." -ForegroundColor Red
+        exit 3
+    }
+
+    # Create an isolated temporary directory for extracting XML files
+    $tempExtractDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyRestore_" + [System.IO.Path]::GetRandomFileName())
+    [void][System.IO.Directory]::CreateDirectory($tempExtractDir)
+
+    # Restrict staging directory permissions to Administrators and SYSTEM exclusively
+    try {
+        $acl = Get-Acl -LiteralPath $tempExtractDir
+        $acl.SetAccessRuleProtection($true, $false)
+        foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
+            $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
+            $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
+        }
+        Set-Acl -LiteralPath $tempExtractDir -AclObject $acl
+    } catch { }
+
+    try {
+        Write-Host "Extracting dump archive '$resolvedArchivePath'..." -ForegroundColor Cyan
+
+        # 1. Attempt PowerShell 5.0+ Expand-Archive if available
+        if (Get-Command -Name "Expand-Archive" -ErrorAction SilentlyContinue) {
+            Expand-Archive -Path $resolvedArchivePath -DestinationPath $tempExtractDir -Force
+        }
+        # 2. Attempt .NET Framework 4.5+ System.IO.Compression.ZipFile
+        else {
+            try {
+                [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
+                [System.IO.Compression.ZipFile]::ExtractToDirectory($resolvedArchivePath, $tempExtractDir)
+            }
+            catch {
+                # 3. Fallback for Windows 7 / PowerShell 2.0 native COM Shell.Application zip extraction
+                $shellApp = New-Object -ComObject Shell.Application
+                $zipPackage = $shellApp.NameSpace($resolvedArchivePath)
+                $destinationFolder = $shellApp.NameSpace($tempExtractDir)
+                
+                # CopyHere flags: 4 = Do not display progress dialog, 16 = Respond with "Yes to All" for any dialog
+                $destinationFolder.CopyHere($zipPackage.Items(), 20)
+
+                # Wait for asynchronous COM extraction operation to finalize
+                while ($destinationFolder.Items().Count -lt $zipPackage.Items().Count) {
+                    Start-Sleep -Milliseconds 500
+                }
             }
         }
-    }
 
-    # Enumerate all XML configuration files in the extracted dump directory (PS 2.0 compatible filter)
-    $xmlFiles = Get-ChildItem -Path $tempExtractDir | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
+        # Enumerate all XML configuration files in the extracted dump directory (PS 2.0 compatible filter)
+        $xmlFiles = Get-ChildItem -Path $tempExtractDir | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
 
-    if ($null -eq $xmlFiles -or @($xmlFiles).Count -eq 0) {
-        Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
-        exit 0
-    }
-
-    $xmlFileList = @($xmlFiles)
-    Write-Host "Found $($xmlFileList.Count) service configuration file(s) to restore..." -ForegroundColor Cyan
-
-    # Iterate through extracted XML files and import each service configuration
-    foreach ($xmlFile in $xmlFileList) {
-        Write-Host "Importing configuration from '$($xmlFile.Name)'..." -ForegroundColor Green
-
-        if ($Install.IsPresent) {
-            Import-ServyServiceConfig -ConfigFileType "Xml" -Path $xmlFile.FullName -Install
+        if ($null -eq $xmlFiles -or @($xmlFiles).Count -eq 0) {
+            Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
+            exit 0
         }
-        else {
-            Import-ServyServiceConfig -ConfigFileType "Xml" -Path $xmlFile.FullName
+
+        $xmlFileList = @($xmlFiles)
+        Write-Host "Found $($xmlFileList.Count) service configuration file(s) to restore..." -ForegroundColor Cyan
+
+        # Iterate through extracted XML files and import each service configuration
+        foreach ($xmlFile in $xmlFileList) {
+            Write-Host "Importing configuration from '$($xmlFile.Name)'..." -ForegroundColor Green
+
+            if ($Install.IsPresent) {
+                Import-ServyServiceConfig -ConfigFileType "Xml" -Path $xmlFile.FullName -Install
+            }
+            else {
+                Import-ServyServiceConfig -ConfigFileType "Xml" -Path $xmlFile.FullName
+            }
         }
-    }
 
-    # Display completion status and critical security notice
-    Write-Host "`nServy configuration restore completed successfully!" -ForegroundColor Green
+        # Display completion status and critical security notice
+        Write-Host "`nServy configuration restore completed successfully!" -ForegroundColor Green
 
-    Write-Host @"
+        Write-Host @"
 
 ================================================================================
 CRITICAL SECURITY NOTICE:
@@ -185,10 +201,37 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
   custom service runner accounts.
 ================================================================================
 "@ -ForegroundColor Yellow
+    }
+    finally {
+        # Clean up temporary extraction directory and extracted XML files with explicit failure reporting
+        if (Test-Path -LiteralPath $tempExtractDir) {
+            Remove-Item -LiteralPath $tempExtractDir -Recurse -Force -ErrorAction SilentlyContinue
+
+            if (Test-Path -LiteralPath $tempExtractDir) {
+                Write-Host @"
+
+================================================================================
+WARNING: EXTRACTION CLEANUP FAILURE DETECTED
+================================================================================
+The temporary extraction directory could not be fully removed:
+  $tempExtractDir
+
+It contains UNENCRYPTED PLAIN-TEXT service configurations.
+Please delete this directory manually to prevent credential/config leaks.
+================================================================================
+"@ -ForegroundColor Red
+            }
+        }
+    }
 }
 finally {
-    # Clean up temporary extraction directory and extracted XML files
-    if (Test-Path -Path $tempExtractDir) {
-        Remove-Item -Path $tempExtractDir -Recurse -Force -ErrorAction SilentlyContinue
+    # Restore original console output encoding if altered
+    if ($null -ne $previousOutputEncoding) {
+        if ($PSVersionTable.PSVersion.Major -ge 3) {
+            try { [Console]::OutputEncoding = $previousOutputEncoding } catch { }
+        }
+        else {
+            try { $OutputEncoding = $previousOutputEncoding } catch { }
+        }
     }
 }
