@@ -100,6 +100,7 @@ namespace Servy.CLI.Commands
         /// <param name="successMessageFormatter">Function used to format the success message string.</param>
         /// <param name="preCheck">Optional delegate performing pre-flight checks before the main operation runs.</param>
         /// <param name="onSuccess">Optional asynchronous callback executed after a successful operation to synchronize repository state (e.g. DB upsert). Failures are caught and logged as a warning without failing the command.</param>
+        /// <param name="skipInstalledCheck">Optional flag to bypass the <see cref="IServiceManager.IsServiceInstalled"/> pre-flight check, allowing operations (like uninstall) to clean up orphan database records when the SCM service is gone.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>A task returning a <see cref="CommandResult"/> representing the operation outcome.</returns>
         protected async Task<CommandResult> ExecuteServiceOperationAsync(
@@ -112,6 +113,7 @@ namespace Servy.CLI.Commands
             Func<string, string> successMessageFormatter,
             Func<CancellationToken, CommandResult> preCheck = null,
             Func<CancellationToken, Task> onSuccess = null,
+            bool skipInstalledCheck = false,
             CancellationToken cancellationToken = default)
         {
             return await ExecuteWithHandlingAsync(commandName, action, suggestion, async () =>
@@ -124,10 +126,13 @@ namespace Servy.CLI.Commands
                     SecurityHelper.EnsureAdministrator();
                 }
 
-                var exists = serviceManager.IsServiceInstalled(serviceName, cancellationToken: cancellationToken);
-                if (!exists)
+                if (!skipInstalledCheck)
                 {
-                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
+                    var exists = serviceManager.IsServiceInstalled(serviceName, cancellationToken: cancellationToken);
+                    if (!exists)
+                    {
+                        return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
+                    }
                 }
 
                 if (preCheck != null)

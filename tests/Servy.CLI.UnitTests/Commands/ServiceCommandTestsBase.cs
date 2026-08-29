@@ -1,6 +1,7 @@
 using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
+using Servy.Core.Common;
 using Servy.Core.Resources;
 using Servy.Core.Services;
 using System;
@@ -91,7 +92,7 @@ namespace Servy.CLI.UnitTests.Commands
         /// <returns>The expected service not found error message.</returns>
         protected virtual string ExpectedServiceNotFoundMessage(string serviceName)
         {
-            return Core.Resources.Strings.Msg_ServiceNotFound;
+            return Strings.Msg_ServiceNotFound;
         }
 
         /// <summary>
@@ -126,6 +127,10 @@ namespace Servy.CLI.UnitTests.Commands
         protected virtual void SetupServiceNotInstalled(Mock<IServiceManager> mockManager, string serviceName)
         {
             mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
+
+            mockManager
+                    .Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(OperationResult.Failure(Strings.Msg_ServiceNotFound));
         }
 
         /// <summary>
@@ -203,7 +208,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Core.Resources.Strings.Msg_ServiceNameRequired, result.Message);
+            Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
 
         /// <summary>
