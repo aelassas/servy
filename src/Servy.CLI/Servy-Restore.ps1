@@ -359,8 +359,6 @@ Please delete this directory manually to prevent credential/config leaks.
     }
 }
 finally {
-    # Restore host console encoding state if previously captured
-    if ($null -ne $previousOutputEncoding) {
-        try { [Console]::OutputEncoding = $previousOutputEncoding } catch { }
-    }
+    # Restore host console encoding
+    try { [Console]::OutputEncoding = $previousOutputEncoding } catch { }
 }
