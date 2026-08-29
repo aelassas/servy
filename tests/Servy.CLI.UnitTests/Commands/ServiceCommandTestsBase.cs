@@ -1,6 +1,8 @@
 using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
+using Servy.Core.Common;
+using Servy.Core.Resources;
 using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
@@ -79,6 +81,17 @@ namespace Servy.CLI.UnitTests.Commands
         protected abstract string ExpectedGenericActionMessage(string serviceName);
 
         /// <summary>
+        /// When overridden in a derived class, returns the expected error message when the target service is not installed.
+        /// Defaults to <see cref="Strings.Msg_ServiceNotFound"/>.
+        /// </summary>
+        /// <param name="serviceName">The target service name.</param>
+        /// <returns>The expected service not found error message.</returns>
+        protected virtual string ExpectedServiceNotFoundMessage(string serviceName)
+        {
+            return Strings.Msg_ServiceNotFound;
+        }
+
+        /// <summary>
         /// When overridden in a derived class, configures the mock service manager to return success for the specified service name.
         /// </summary>
         /// <param name="mockManager">The mock service manager.</param>
@@ -100,6 +113,21 @@ namespace Servy.CLI.UnitTests.Commands
         /// <param name="mockManager">The mock service manager.</param>
         /// <param name="serviceName">The target service name.</param>
         protected abstract void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName) where TException : Exception, new();
+
+        /// <summary>
+        /// When overridden in a derived class, configures the mock service manager to simulate an uninstalled or missing service.
+        /// Defaults to setting up <see cref="IServiceManager.IsServiceInstalled"/> to return <c>false</c>.
+        /// </summary>
+        /// <param name="mockManager">The mock service manager.</param>
+        /// <param name="serviceName">The target service name.</param>
+        protected virtual void SetupServiceNotInstalled(Mock<IServiceManager> mockManager, string serviceName)
+        {
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
+
+            mockManager
+                    .Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(OperationResult.Failure(Strings.Msg_ServiceNotFound));
+        }
 
         /// <summary>
         /// Executes the command under test with the provided options.
@@ -246,14 +274,14 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             const string serviceName = "MissingService";
             var options = CreateValidOptions(serviceName);
-            MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
+            SetupServiceNotInstalled(MockServiceManager, serviceName);
 
             // Act
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Core.Resources.Strings.Msg_ServiceNotFound, result.Message);
+            Assert.Equal(ExpectedServiceNotFoundMessage(serviceName), result.Message);
         }
 
         #endregion

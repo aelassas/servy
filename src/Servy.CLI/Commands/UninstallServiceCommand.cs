@@ -40,29 +40,17 @@ namespace Servy.CLI.Commands
             var action = string.Format(Strings.Msg_UninstallServiceAction, opts.ServiceName);
             var suggestion = Strings.Msg_UninstallServiceSuggestion;
 
-            return await ExecuteWithHandlingAsync("uninstall", action, suggestion, async () =>
-            {
-                if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                {
-                    return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNameRequired);
-                }
-
-                if (!BypassElevationCheck)
-                {
-                    SecurityHelper.EnsureAdministrator();
-                }
-
-                return await ExecuteServiceOperationAsync(
-                    commandName: "uninstall",
-                    action: action,
-                    suggestion: suggestion,
-                    serviceName: opts.ServiceName,
-                    serviceManager: _serviceManager,
-                    operation: (token) => _serviceManager.UninstallServiceAsync(opts.ServiceName, cancellationToken: token),
-                    successMessageFormatter: (name) => string.Format(Strings.Msg_UninstallSuccess, name),
-                    onSuccess: (token) => _serviceRepository.DeleteAsync(opts.ServiceName, cancellationToken: token),
-                    cancellationToken: cancellationToken);
-            });
+            return await ExecuteServiceOperationAsync(
+                commandName: "uninstall",
+                action: action,
+                suggestion: suggestion,
+                serviceName: opts.ServiceName,
+                serviceManager: _serviceManager,
+                operation: (token) => _serviceManager.UninstallServiceAsync(opts.ServiceName, cancellationToken: token),
+                successMessageFormatter: (name) => string.Format(Strings.Msg_UninstallSuccess, name),
+                onSuccess: (token) => _serviceRepository.DeleteAsync(opts.ServiceName, cancellationToken: token),
+                skipInstalledCheck: true,
+                cancellationToken: cancellationToken);
         }
     }
 }
