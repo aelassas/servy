@@ -157,20 +157,20 @@ Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall sh
 ; *S-1-5-32-545: Users (Purge)
 ; *S-1-5-11:     Authenticated Users (Purge)
 ; *S-1-1-0:      Everyone (Purge)
-Filename: "icacls.exe"; \
+Filename: "{sys}\icacls.exe"; \
     Parameters: """{commonappdata}\Servy"" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0"; \
     Flags: runhidden; \
     StatusMsg: "Securing service data directory..."
 
 ; 2. Removing legacy user permissions
-Filename: "icacls.exe"; \
+Filename: "{sys}\icacls.exe"; \
     Parameters: """{commonappdata}\Servy"" /remove:g ""{username}"""; \
     Flags: runhidden; \
     StatusMsg: "Removing legacy user permissions..."    
     
 ; 3. Grant the Current User (The "Manual Key")
 ; Replicates C# logic: Add current user only if they aren't SYSTEM
-Filename: "icacls.exe"; \
+Filename: "{sys}\icacls.exe"; \
     Parameters: """{commonappdata}\Servy"" /grant ""{username}"":(OI)(CI)F"; \
     Flags: runhidden; \
     Check: ShouldAddCurrentUser; \
@@ -248,9 +248,9 @@ begin
 end;
 
 [UninstallRun]
-Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
-Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
-Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
+Filename: "{sys}\taskkill.exe"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
+Filename: "{sys}\taskkill.exe"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
+Filename: "{sys}\taskkill.exe"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
 
 [UninstallDelete]
 ; Type: filesandordirs; Name: "{app}\taskschd"
