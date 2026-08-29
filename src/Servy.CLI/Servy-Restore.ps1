@@ -42,7 +42,8 @@
     into the Windows Service Control Manager.
 
 .PARAMETER SkipIntegrityCheck
-    Optional switch parameter. Allows restoring from an archive whether or not a .sha256 sidecar exists.
+    Optional switch parameter. Skips SHA-256 sidecar verification entirely: the archive is restored
+    without an integrity check, whether the .sha256 sidecar is absent, stale, or mismatching.
 
 .PARAMETER MaxAllowedEntries
     Optional integer parameter. Specifies the maximum number of entries allowed in the dump archive
@@ -328,7 +329,7 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
 "@ -ForegroundColor Yellow
 
         if ($failed.Count -gt 0) {
-            exit 7    # Restore completed successfully, but incomplete
+            exit 7    # Restore completed, but one or more services failed to import
         }
     }
     catch {
