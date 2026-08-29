@@ -21,6 +21,7 @@
     - 4 : I/O & Inspection Failure. The database could not be read, or the target destination path/directory is unwritable.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export.
+    - 8 : Archive Staging Mismatch. Staged configuration count does not match exported count; dump aborted.
 
     CRITICAL SECURITY NOTICE:
     The generated backup archive is highly sensitive. Exported XML configuration files contain sensitive plain-text
@@ -372,21 +373,34 @@ public static class ServySafePs2Sqlite16
 
         Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
 
-        $exported = New-Object System.Collections.Generic.List[string]
-        $failed   = New-Object System.Collections.Generic.List[object]
-        $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+        $exported      = New-Object System.Collections.Generic.List[string]
+        $failed        = New-Object System.Collections.Generic.List[object]
+        $usedBaseNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+        $invalidChars  = [System.IO.Path]::GetInvalidFileNameChars()
 
         # Export each service configuration into individual XML files with per-item exception isolation
         foreach ($serviceName in $serviceNames) {
             # Sanitize service name for safe filesystem usage
-            $safeFileName = $serviceName
+            $baseFileName = $serviceName
             foreach ($char in $invalidChars) {
-                $safeFileName = $safeFileName.Replace($char, '_')
+                $baseFileName = $baseFileName.Replace($char, '_')
             }
 
-            $xmlExportPath = [System.IO.Path]::Combine($tempStagingDir, "$safeFileName.xml")
+            # Disambiguate names that sanitize onto an existing file
+            $candidateName = $baseFileName
+            $suffixCounter = 1
+            while (-not $usedBaseNames.Add($candidateName)) {
+                $candidateName = "{0}_{1}" -f $baseFileName, $suffixCounter
+                $suffixCounter++
+            }
 
-            Write-Host "Exporting configuration for '$serviceName' -> '$safeFileName.xml'..." -ForegroundColor Green
+            if ($candidateName -ne $baseFileName) {
+                Write-Host "  Name collision: '$serviceName' sanitizes to '$baseFileName'; writing '$candidateName.xml' instead." -ForegroundColor Yellow
+            }
+
+            $xmlExportPath = [System.IO.Path]::Combine($tempStagingDir, "$candidateName.xml")
+
+            Write-Host "Exporting configuration for '$serviceName' -> '$candidateName.xml'..." -ForegroundColor Green
 
             try {
                 Export-ServyServiceConfig -Name $serviceName -ConfigFileType "Xml" -Path $xmlExportPath
@@ -402,6 +416,15 @@ public static class ServySafePs2Sqlite16
         if ($exported.Count -eq 0) {
             Write-Host "No service configurations could be exported. No dump archive was generated." -ForegroundColor Red
             exit 6
+        }
+
+        # Assert staged configuration count matches successful exports before compressing
+        $stagedXmlFiles = Get-ChildItem -LiteralPath $tempStagingDir | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
+        $stagedCount    = if ($null -eq $stagedXmlFiles) { 0 } else { @($stagedXmlFiles).Count }
+
+        if ($stagedCount -ne $exported.Count) {
+            Write-Host "Expected $($exported.Count) exported configuration(s) but staged $stagedCount. Refusing to write an incomplete archive." -ForegroundColor Red
+            exit 8
         }
 
         # Compress staging directory into target zip archive
