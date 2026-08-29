@@ -165,8 +165,10 @@
     <None Include="publish-res-release.ps1" />
     <None Include="publish.ps1" />
     <None Include="Servy-Dump.ps1" />
+    <None Include="Servy-Dump.test.ps1" />
     <None Include="servy-module-examples.ps1" />
     <None Include="Servy-Restore.ps1" />
+    <None Include="Servy-Restore.test.ps1" />
     <None Include="Servy.psd1" />
     <None Include="Servy.psm1" />
     <None Include="Servy.test.ps1" />

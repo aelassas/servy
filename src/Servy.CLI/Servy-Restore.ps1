@@ -93,6 +93,141 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
+<#
+.SYNOPSIS
+    Resolves and normalizes the target dump archive path for Servy-Restore.
+
+.DESCRIPTION
+    Resolves relative paths safely across PowerShell 2.0 and 3.0+.
+
+.PARAMETER DumpArchivePath
+    Mandatory path specifying the Servy dump zip archive file to restore.
+
+.PARAMETER PSCmdletContext
+    Optional PSCmdlet context for provider path resolution.
+
+.OUTPUTS
+    System.String - The resolved absolute archive path.
+#>
+function Resolve-ServyRestoreDumpPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$DumpArchivePath,
+
+        [Parameter(Mandatory = $false)]
+        $PSCmdletContext
+    )
+
+    if ($null -ne $PSCmdletContext -and $PSVersionTable.PSVersion.Major -ge 3) {
+        return $PSCmdletContext.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
+    }
+    else {
+        if ([System.IO.Path]::IsPathRooted($DumpArchivePath)) {
+            return [System.IO.Path]::GetFullPath($DumpArchivePath)
+        }
+        else {
+            return [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DumpArchivePath))
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Parses the expected SHA-256 checksum string from sidecar file content.
+
+.DESCRIPTION
+    Extracts the leading hex checksum token from sidecar text content formatted as '<hash> *<filename>'.
+
+.PARAMETER SidecarText
+    Mandatory sidecar file text content string.
+
+.OUTPUTS
+    System.String - The extracted expected SHA-256 hash string.
+#>
+function Get-ServySidecarExpectedHash {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SidecarText
+    )
+
+    if ($null -eq $SidecarText -or [string]::IsNullOrEmpty($SidecarText.Trim())) {
+        return $null
+    }
+
+    return ($SidecarText.Trim() -split '\s+')[0]
+}
+
+<#
+.SYNOPSIS
+    Validates an individual zip archive entry against security and format rules.
+
+.DESCRIPTION
+    Verifies flat directory structure, duplicate entry prevention, path traversal safety, and .xml extension requirements.
+
+.PARAMETER EntryName
+    Mandatory entry short name within the archive.
+
+.PARAMETER EntryFullName
+    Mandatory full path name of the entry within the archive.
+
+.PARAMETER RootPath
+    Mandatory full target extraction root directory path.
+
+.PARAMETER SeenEntryNames
+    Mandatory HashSet tracking previously seen entry names for duplicate detection.
+
+.OUTPUTS
+    Hashtable containing 'IsValid', 'IsDirectory', 'TargetPath', and 'ErrorMessage'.
+#>
+function Test-ServyDumpArchiveEntry {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
+        [string]$EntryName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$EntryFullName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RootPath,
+
+        [Parameter(Mandatory = $true)]
+        $SeenEntryNames
+    )
+
+    if ([string]::IsNullOrEmpty($EntryName)) {
+        return @{ IsValid = $true; IsDirectory = $true; TargetPath = $null; ErrorMessage = $null }
+    }
+
+    if ($EntryName -ne $EntryFullName) {
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive entry '$EntryFullName' contains subdirectories. Non-flat dump archives are disallowed. Aborting." }
+    }
+
+    if (-not $SeenEntryNames.Add($EntryName)) {
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive contains duplicate entry '$EntryName'. Aborting: malformed dump archive." }
+    }
+
+    $targetPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($RootPath, $EntryFullName))
+
+    if (-not $targetPath.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive entry '$EntryFullName' resolves outside staging directory. Aborting: malformed or hostile archive." }
+    }
+
+    if (-not $EntryName.EndsWith('.xml', [System.StringComparison]::OrdinalIgnoreCase)) {
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive entry '$EntryFullName' is not an XML configuration file. Aborting." }
+    }
+
+    return @{ IsValid = $true; IsDirectory = $false; TargetPath = $targetPath; ErrorMessage = $null }
+}
+
+# If dot-sourced for testing, return immediately without executing main script body
+if ($MyInvocation.InvocationName -eq '.') {
+    return
+}
+
 # Render non-ASCII service names correctly on PS3+ while using $OutputEncoding on PS2
 $previousOutputEncoding = $null
 if ($PSVersionTable.PSVersion.Major -ge 3) {
@@ -149,18 +284,7 @@ try {
 
     # Catch-all for archive path resolution (e.g. invalid path characters or invalid drive letters)
     try {
-        # Resolve path safely across PowerShell 2.0 and 3.0+
-        if ($PSVersionTable.PSVersion.Major -ge 3) {
-            $resolvedArchivePath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($DumpArchivePath)
-        }
-        else {
-            if ([System.IO.Path]::IsPathRooted($DumpArchivePath)) {
-                $resolvedArchivePath = [System.IO.Path]::GetFullPath($DumpArchivePath)
-            }
-            else {
-                $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DumpArchivePath))
-            }
-        }
+        $resolvedArchivePath = Resolve-ServyRestoreDumpPath -DumpArchivePath $DumpArchivePath -PSCmdletContext $PSCmdlet
     }
     catch {
         Write-Host "Invalid dump archive path specified '$DumpArchivePath': $_" -ForegroundColor Red
@@ -183,7 +307,7 @@ try {
         
         try {
             $sidecarText = [System.IO.File]::ReadAllText($sidecarPath)
-            $expectedHash = ($sidecarText.Trim() -split '\s+')[0]
+            $expectedHash = Get-ServySidecarExpectedHash -SidecarText $sidecarText
             
             $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
             $stream = [System.IO.File]::OpenRead($resolvedArchivePath)
@@ -273,30 +397,16 @@ try {
                 }
 
                 foreach ($entry in $zipFile.Entries) {
-                    if ([string]::IsNullOrEmpty($entry.Name)) { continue }
+                    $validation = Test-ServyDumpArchiveEntry -EntryName $entry.Name -EntryFullName $entry.FullName -RootPath $rootPath -SeenEntryNames $seenEntryNames
 
-                    if ($entry.Name -ne $entry.FullName) {
-                        Write-Host "Archive entry '$($entry.FullName)' contains subdirectories. Non-flat dump archives are disallowed. Aborting." -ForegroundColor Red
+                    if (-not $validation.IsValid) {
+                        Write-Host $validation.ErrorMessage -ForegroundColor Red
                         exit 4
                     }
 
-                    # Disallow duplicate entry names within the archive
-                    if (-not $seenEntryNames.Add($entry.Name)) {
-                        Write-Host "Archive contains duplicate entry '$($entry.Name)'. Aborting: malformed dump archive." -ForegroundColor Red
-                        exit 4
-                    }
+                    if ($validation.IsDirectory) { continue }
 
-                    $targetPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($rootPath, $entry.FullName))
-
-                    if (-not $targetPath.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                        Write-Host "Archive entry '$($entry.FullName)' resolves outside staging directory. Aborting: malformed or hostile archive." -ForegroundColor Red
-                        exit 4
-                    }
-
-                    if (-not $entry.Name.EndsWith('.xml', [System.StringComparison]::OrdinalIgnoreCase)) {
-                        Write-Host "Archive entry '$($entry.FullName)' is not an XML configuration file. Aborting." -ForegroundColor Red
-                        exit 4
-                    }
+                    $targetPath = $validation.TargetPath
 
                     # Stream-read and enforce MaxUncompressedBytes on actual decompressed bytes using explicit [long] casting
                     $in  = $entry.Open()
