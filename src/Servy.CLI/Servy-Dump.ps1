@@ -418,6 +418,10 @@ NOTE ON SERVICE RESTORATION:
             exit 7    # Archive generated successfully, but incomplete
         }
     }
+    catch {
+        Write-Host "`nServy configuration dump FAILED: $_" -ForegroundColor Red
+        exit 4
+    }
     finally {
         # Clean up temporary staging directory and XML files with explicit failure reporting
         if ($null -ne $tempStagingDir -and (Test-Path -LiteralPath $tempStagingDir)) {
