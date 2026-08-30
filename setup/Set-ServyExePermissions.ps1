@@ -78,10 +78,11 @@ if (-not (Test-Path -Path $programDataDir)) {
 # Dynamically validate and resolve account existence via Windows LSA.
 # First attempt: Direct LSA translation handles built-in principals, domain accounts, and standard formats.
 $targetNTAccount = $null
+$targetSid       = $null
 try {
     $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($TargetAccount)
-    [void]$ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
-    $targetNTAccount = $ntAccountCandidate
+    $targetSid          = $ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
+    $targetNTAccount    = $ntAccountCandidate
 }
 catch {
     # Second attempt: Fall back for relative notation ('.\User') pointing to a local machine account (PS 2.0 compatible)
@@ -89,9 +90,9 @@ catch {
         $localUser = "$env:COMPUTERNAME\" + $TargetAccount.Substring(2)
         try {
             $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($localUser)
-            [void]$ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
-            $targetNTAccount = $ntAccountCandidate
-            $TargetAccount   = $localUser
+            $targetSid          = $ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
+            $targetNTAccount    = $ntAccountCandidate
+            $TargetAccount       = $localUser
         }
         catch {
             # Let fallback fail through to final error handler below
@@ -111,7 +112,6 @@ $systemSid          = New-Object System.Security.Principal.SecurityIdentifier([S
 $builtinUsersSid    = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
 $authUsersSid       = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
 $everyoneSid        = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::WorldSid, $null)
-$targetSid          = $targetNTAccount.Translate([System.Security.Principal.SecurityIdentifier])
 
 # Discover all .dll files in %ProgramData%\Servy (PS 2.0 compatible file discovery without -File flag)
 $dllFiles = Get-ChildItem -Path $programDataDir -Filter "*.dll" -ErrorAction SilentlyContinue |
@@ -154,11 +154,12 @@ foreach ($fileName in $targetFiles) {
         $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
         foreach ($rule in $explicitRules) {
             $ruleSid = $rule.IdentityReference
-            if ($rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and (
-                $ruleSid.Equals($builtinUsersSid) -or
-                $ruleSid.Equals($authUsersSid) -or
-                $ruleSid.Equals($everyoneSid) -or
-                $ruleSid.Equals($targetSid)
+            if ($ruleSid.Equals($targetSid) -or (
+                $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and (
+                    $ruleSid.Equals($builtinUsersSid) -or
+                    $ruleSid.Equals($authUsersSid) -or
+                    $ruleSid.Equals($everyoneSid)
+                )
             )) {
                 [void]$acl.RemoveAccessRule($rule)
             }
@@ -184,7 +185,8 @@ foreach ($fileName in $targetFiles) {
         # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
         $postAcl = Get-Acl -Path $filePath
         $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-        $manualRules = @()
+        $manualAllowRules = @()
+        $manualDenyRules  = @()
         $appliedTargetRules = @()
 
         foreach ($rule in $survivingRules) {
@@ -195,7 +197,12 @@ foreach ($fileName in $targetFiles) {
                 $appliedTargetRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
             }
             elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
-                $manualRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+                $ruleEntry = "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+                if ($rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Deny) {
+                    $manualDenyRules += $ruleEntry
+                } else {
+                    $manualAllowRules += $ruleEntry
+                }
             }
         }
 
@@ -205,10 +212,17 @@ foreach ($fileName in $targetFiles) {
             }
         }
 
-        if ($manualRules.Count -gt 0) {
+        if ($manualAllowRules.Count -gt 0) {
             Write-Host "  [Note] Preserved manual explicit ACE(s) (Users & Groups) on '$fileName':" -ForegroundColor Yellow
-            foreach ($mRule in $manualRules) {
+            foreach ($mRule in $manualAllowRules) {
                 Write-Host "    - $mRule" -ForegroundColor Yellow
+            }
+        }
+
+        if ($manualDenyRules.Count -gt 0) {
+            Write-Host "  [WARNING] Preserved manual explicit Deny ACE(s) on '$fileName':" -ForegroundColor Red
+            foreach ($dRule in $manualDenyRules) {
+                Write-Host "    - $dRule" -ForegroundColor Red
             }
         }
 
