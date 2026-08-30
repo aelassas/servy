@@ -9,6 +9,10 @@ $scriptDir = $PSScriptRoot
 $configPath = Join-Path $scriptDir "build-config.ps1"
 
 Write-Host "Testing build-config.ps1..." -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host " Running build-config.ps1 Unit Tests                " -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host ""
 
 if (-not (Test-Path $configPath)) {
     Write-Host "FAIL: build-config.ps1 was not found at path: $configPath" -ForegroundColor Red
@@ -62,9 +66,13 @@ try {
         exit 1
     }
 
-    Write-Host "SUCCESS: build-config.ps1 loaded and validated successfully!" -ForegroundColor Green
+    Write-Host "`n====================================================" -ForegroundColor Cyan
+    Write-Host "SUCCESS: build-config.ps1 validated successfully!" -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor Cyan
 }
 catch {
+    Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "FAIL: Unexpected error during execution: $_" -ForegroundColor Red
+    Write-Host "====================================================" -ForegroundColor Cyan
     exit 1
 }

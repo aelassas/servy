@@ -1,4 +1,10 @@
 #Requires -Version 5.1
+
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host " Running Write-ServyLog.ps1 Unit Tests              " -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host ""
+
 # Ensure the log function is loaded in the main script thread
 $ScriptDir = $PSScriptRoot
 $LogScriptPath = Join-Path $ScriptDir "Write-ServyLog.ps1"
@@ -130,11 +136,13 @@ for ($i = 1; $i -le 8; $i++) {
 $backups = Get-ChildItem -Path $ScriptDir -Filter "test_prune_*.log"
 if ($backups.Count -ne 3) {
     Write-Host "FAIL: Expected 3 retained backups for pruning test, found $($backups.Count)." -ForegroundColor Red
+    Write-Host "====================================================" -ForegroundColor Cyan
     Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
     exit 1
 }
 
 Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
 Write-Host "PASS: Retention pruning successfully maintained exactly 3 backup files." -ForegroundColor Green
+Write-Host "====================================================" -ForegroundColor Cyan
 
 exit 0
