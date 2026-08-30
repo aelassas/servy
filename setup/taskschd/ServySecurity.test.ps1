@@ -6,7 +6,7 @@
 # TEST SUITE HARNESS
 # ---------------------------------------------------------------------
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running ServySecurity.ps1 Unit Tests               " -ForegroundColor Cyan
+Write-Host " Running ServySecurity.ps1 Tests               " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 

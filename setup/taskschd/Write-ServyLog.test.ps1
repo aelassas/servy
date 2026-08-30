@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Write-ServyLog.ps1 Unit Tests              " -ForegroundColor Cyan
+Write-Host " Running Write-ServyLog.ps1 Tests              " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 

@@ -77,7 +77,7 @@ function Test-EnvVarPattern {
 # ----------------------------------------------------------------
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Servy EnvVarValidationPattern Unit Tests    " -ForegroundColor Cyan
+Write-Host " Running Servy EnvVarValidationPattern Tests    " -ForegroundColor Cyan
 Write-Host " Pattern: $script:EnvVarValidationPattern" -ForegroundColor DarkGray
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""

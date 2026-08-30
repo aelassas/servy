@@ -10,7 +10,7 @@ $configPath = Join-Path $scriptDir "build-config.ps1"
 
 Write-Host "Testing build-config.ps1..." -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running build-config.ps1 Unit Tests                " -ForegroundColor Cyan
+Write-Host " Running build-config.ps1 Tests                " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
