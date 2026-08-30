@@ -492,39 +492,42 @@ function Invoke-ServyCli {
         }
 
         # Full bounded final drain loop after process exit until EOF or drain timeout
-        if (-not $outEof) {
-            while (-not $outEof) {
-                if ($outAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
-                    $read = $outStream.EndRead($outAr)
-                    if ($read -gt 0) {
-                        $chars = $outDecoder.GetChars($outBuf, 0, $read, $outCharBuf, 0)
-                        [void]$outSb.Append($outCharBuf, 0, $chars)
-                        $outAr = $outStream.BeginRead($outBuf, 0, $outBuf.Length, $null, $null)
-                    } else {
-                        $outEof = $true
-                    }
+        $drainDeadline = [System.Diagnostics.Stopwatch]::StartNew()
+        while (-not $outEof -and $drainDeadline.ElapsedMilliseconds -lt $script:ServyDrainTimeoutMs) {
+            if ($outAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
+                $read = $outStream.EndRead($outAr)
+                if ($read -gt 0) {
+                    $chars = $outDecoder.GetChars($outBuf, 0, $read, $outCharBuf, 0)
+                    [void]$outSb.Append($outCharBuf, 0, $chars)
+                    $outAr = $outStream.BeginRead($outBuf, 0, $outBuf.Length, $null, $null)
                 } else {
-                    break
+                    $outEof = $true
                 }
+            } else {
+                break
             }
         }
+        $chars = $outDecoder.GetChars($outBuf, 0, 0, $outCharBuf, 0, $true)
+        if ($chars -gt 0) { [void]$outSb.Append($outCharBuf, 0, $chars) }
 
-        if (-not $errEof) {
-            while (-not $errEof) {
-                if ($errAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
-                    $read = $errStream.EndRead($errAr)
-                    if ($read -gt 0) {
-                        $chars = $errDecoder.GetChars($errBuf, 0, $read, $errCharBuf, 0)
-                        [void]$errSb.Append($errCharBuf, 0, $chars)
-                        $errAr = $errStream.BeginRead($errBuf, 0, $errBuf.Length, $null, $null)
-                    } else {
-                        $errEof = $true
-                    }
+        $drainDeadline.Reset()
+        $drainDeadline.Start()
+        while (-not $errEof -and $drainDeadline.ElapsedMilliseconds -lt $script:ServyDrainTimeoutMs) {
+            if ($errAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
+                $read = $errStream.EndRead($errAr)
+                if ($read -gt 0) {
+                    $chars = $errDecoder.GetChars($errBuf, 0, $read, $errCharBuf, 0)
+                    [void]$errSb.Append($errCharBuf, 0, $chars)
+                    $errAr = $errStream.BeginRead($errBuf, 0, $errBuf.Length, $null, $null)
                 } else {
-                    break
+                    $errEof = $true
                 }
+            } else {
+                break
             }
         }
+        $chars = $errDecoder.GetChars($errBuf, 0, 0, $errCharBuf, 0, $true)
+        if ($chars -gt 0) { [void]$errSb.Append($errCharBuf, 0, $chars) }
 
         # Parse string buffers into discrete output lines
         if ($outSb.Length -gt 0) {
