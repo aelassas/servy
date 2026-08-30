@@ -18,6 +18,7 @@ $ScriptDir = $PSScriptRoot
 $TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "ServyEncodingTests_$([Guid]::NewGuid().ToString('N'))"
 [void](New-Item -ItemType Directory -Path $TestDir -Force)
 
+$TotalCount = 0
 $PassCount = 0
 $FailCount = 0
 
@@ -76,10 +77,12 @@ function Assert-Encoding {
 
         Write-Host "  [PASS] $TestName" -ForegroundColor Green
         $script:PassCount++
+        $script:TotalCount++
     }
     catch {
         Write-Host "  [FAIL] $TestName - $_" -ForegroundColor Red
         $script:FailCount++
+        $script:TotalCount++
     }
 }
 
@@ -102,7 +105,10 @@ function Test-ReflectionField {
     throw "Reflection seam broken: '$($type.FullName)' has no non-public field matching '$FieldName' on this runtime."
 }
 
-Write-Host "=== Running Get-FileEncoding.ps1 Tests ===" -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host " Running Get-FileEncoding.ps1 Tests                 " -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host ""
 
 try {
     # -----------------------------------------------------
@@ -184,10 +190,19 @@ finally {
     }
 }
 
-Write-Host "`n=== Test Summary ===" -ForegroundColor Cyan
-Write-Host "Passed: $PassCount" -ForegroundColor Green
-Write-Host "Failed: $FailCount" -ForegroundColor $(if ($FailCount -gt 0) { "Red" } else { "Gray" })
-
-if ($FailCount -gt 0) {
+# ----------------------------------------------------------------
+# Summary Output
+# ----------------------------------------------------------------
+Write-Host "`n====================================================" -ForegroundColor Cyan
+Write-Host " Test Summary" -ForegroundColor Cyan
+Write-Host " Total   : $script:TotalCount" -ForegroundColor Gray
+Write-Host " Passed  : $script:PassCount" -ForegroundColor Green
+if ($script:FailCount -gt 0) {
+    Write-Host " Failed  : $script:FailCount" -ForegroundColor Red
+    Write-Host "====================================================" -ForegroundColor Cyan
     exit 1
+} else {
+    Write-Host " Failed  : 0" -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor Cyan
+    exit 0
 }
