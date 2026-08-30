@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Tests path resolution, destination normalization, service name sanitization,
-    Win32 reserved device name prefixing, and collision disambiguation.
+    Win32 reserved device name prefixing, collision disambiguation, and ACL hardening.
 #>
 
 Set-StrictMode -Version Latest
@@ -14,6 +14,7 @@ $ErrorActionPreference = 'Stop'
 # Dot-source Servy-Dump.ps1 to load its helper functions without executing the main script body.
 # Pass a dummy string for mandatory parameters to satisfy [ValidateNotNullOrEmpty()].
 $scriptPath = Join-Path $PSScriptRoot 'Servy-Dump.ps1'
+
 if (-not (Test-Path -LiteralPath $scriptPath)) {
     Write-Host "FAILED: Could not find Servy-Dump.ps1 at '$scriptPath'." -ForegroundColor Red
     exit 1
@@ -27,8 +28,14 @@ catch {
     exit 1
 }
 
-$testsPassed = 0
-$testsFailed = 0
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host " Running Servy-Dump.ps1 Unit Tests                  " -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host ""
+
+$script:TotalTests  = 0
+$script:PassedTests = 0
+$script:FailedTests = 0
 
 function Assert-Equal {
     param(
@@ -36,20 +43,35 @@ function Assert-Equal {
         $Actual,
         $Expected
     )
+    $script:TotalTests++
     if ($Actual -eq $Expected) {
         Write-Host "  [PASS] $TestName" -ForegroundColor Green
-        $script:testsPassed++
+        $script:PassedTests++
     }
     else {
         Write-Host "  [FAIL] $TestName - Expected: '$Expected', Actual: '$Actual'" -ForegroundColor Red
-        $script:testsFailed++
+        $script:FailedTests++
     }
 }
 
-Write-Host "Running Servy-Dump.ps1 function unit tests..." -ForegroundColor Cyan
+function Assert-True {
+    param(
+        [string]$TestName,
+        [bool]$Condition
+    )
+    $script:TotalTests++
+    if ($Condition) {
+        Write-Host "  [PASS] $TestName" -ForegroundColor Green
+        $script:PassedTests++
+    }
+    else {
+        Write-Host "  [FAIL] $TestName - Expected condition to be True" -ForegroundColor Red
+        $script:FailedTests++
+    }
+}
 
 # --- 1. Destination Path Resolution & Normalization Tests ---
-Write-Host "`n1. Testing Resolve-ServyDumpDestinationPath..." -ForegroundColor Yellow
+Write-Host "1. Testing Resolve-ServyDumpDestinationPath..." -ForegroundColor Yellow
 
 $res1 = Resolve-ServyDumpDestinationPath -DestinationArchivePath "C:\Backups\MyDump"
 Assert-Equal "Appends .zip to extension-less file path" $res1 "C:\Backups\MyDump.zip"
@@ -102,11 +124,76 @@ Assert-Equal "First collision appends _1 suffix" $col1 "MyService_1"
 $col2 = Get-ServySanitizedFileName -ServiceName "MyService" -InvalidChars $invalidChars -ReservedNames $reservedNames -UsedBaseNames $usedSetCollision
 Assert-Equal "Second collision appends _2 suffix" $col2 "MyService_2"
 
-# Summary
-$summaryColor = if ($testsFailed -eq 0) { 'Green' } else { 'Red' }
-Write-Host "`nTest Summary: $testsPassed passed, $testsFailed failed." -ForegroundColor $summaryColor
+# --- 3. ACL Hardening Helper Tests ---
+Write-Host "`n3. Testing Set-ServyHardenedFileAcl..." -ForegroundColor Yellow
 
-if ($testsFailed -gt 0) {
-    exit 1
+$tempTestFile = [System.IO.Path]::GetTempFileName()
+$tempTestDir  = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyAclTest_" + [System.IO.Path]::GetRandomFileName())
+
+try {
+    [void][System.IO.Directory]::CreateDirectory($tempTestDir)
+
+    # Hardening test on File
+    Set-ServyHardenedFileAcl -Path $tempTestFile
+    $fileAcl = Get-Acl -LiteralPath $tempTestFile
+
+    Assert-True "File permission inheritance is protected/broken" $fileAcl.AreAccessRulesProtected
+
+    $fileRules = $fileAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    Assert-Equal "File ACL contains exactly 2 access control entries" $fileRules.Count 2
+
+    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+
+    $hasAdmin  = $false
+    $hasSystem = $false
+
+    foreach ($rule in $fileRules) {
+        if ($rule.IdentityReference.Equals($adminSid) -and $rule.FileSystemRights -eq "FullControl")  { $hasAdmin  = $true }
+        if ($rule.IdentityReference.Equals($systemSid) -and $rule.FileSystemRights -eq "FullControl") { $hasSystem = $true }
+    }
+
+    Assert-True "File ACL grants FullControl to Builtin Administrators" $hasAdmin
+    Assert-True "File ACL grants FullControl to Local SYSTEM" $hasSystem
+
+    # Hardening test on Directory
+    Set-ServyHardenedFileAcl -Path $tempTestDir -IsDirectory
+    $dirAcl = Get-Acl -LiteralPath $tempTestDir
+
+    Assert-True "Directory permission inheritance is protected/broken" $dirAcl.AreAccessRulesProtected
+
+    $dirRules = $dirAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    Assert-Equal "Directory ACL contains exactly 2 access control entries" $dirRules.Count 2
+
+    $hasDirAdmin  = $false
+    $hasDirSystem = $false
+
+    foreach ($rule in $dirRules) {
+        if ($rule.IdentityReference.Equals($adminSid) -and $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit") { $hasDirAdmin  = $true }
+        if ($rule.IdentityReference.Equals($systemSid) -and $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit") { $hasDirSystem = $true }
+    }
+
+    Assert-True "Directory ACL grants ContainerInherit+ObjectInherit to Administrators" $hasDirAdmin
+    Assert-True "Directory ACL grants ContainerInherit+ObjectInherit to SYSTEM" $hasDirSystem
 }
-exit 0
+finally {
+    if (Test-Path -LiteralPath $tempTestFile) { Remove-Item -LiteralPath $tempTestFile -Force -ErrorAction SilentlyContinue }
+    if (Test-Path -LiteralPath $tempTestDir)  { Remove-Item -LiteralPath $tempTestDir -Recurse -Force -ErrorAction SilentlyContinue }
+}
+
+# ----------------------------------------------------------------
+# Summary Output
+# ----------------------------------------------------------------
+Write-Host "`n====================================================" -ForegroundColor Cyan
+Write-Host " Test Summary" -ForegroundColor Cyan
+Write-Host " Total   : $script:TotalTests" -ForegroundColor Gray
+Write-Host " Passed  : $script:PassedTests" -ForegroundColor Green
+if ($script:FailedTests -gt 0) {
+    Write-Host " Failed  : $script:FailedTests" -ForegroundColor Red
+    Write-Host "====================================================" -ForegroundColor Cyan
+    exit 1
+} else {
+    Write-Host " Failed  : 0" -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor Cyan
+    exit 0
+}
