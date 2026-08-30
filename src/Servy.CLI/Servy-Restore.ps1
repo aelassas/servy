@@ -67,7 +67,7 @@
     - Operating System: Windows 7 SP1, Windows Server 2008 R2, or later.
     - PowerShell Version: Windows PowerShell 2.0 or higher.
     - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy or portable root.
-    - Execution Privileges: Administrator privileges are required to interact with Servy configurations and managing Windows services.
+    - Execution Privileges: Administrator privileges are required to interact with Servy configurations and manage Windows services.
 #>
 [CmdletBinding()]
 param(
@@ -263,8 +263,7 @@ try {
     # Resolve Servy PowerShell module location dynamically (supports portable and non-standard installs)
     $moduleCandidates = @(
         (Join-Path $scriptDir 'Servy.psm1'),
-        (Join-Path $env:ProgramFiles 'Servy\Servy.psm1'),
-        (Join-Path ${env:ProgramFiles(x86)} 'Servy\Servy.psm1')
+        (Join-Path $env:ProgramFiles 'Servy\Servy.psm1')
     ) | Where-Object { $_ -and (Test-Path -Path $_) }
 
     $servyModulePath = $moduleCandidates | Select-Object -First 1
