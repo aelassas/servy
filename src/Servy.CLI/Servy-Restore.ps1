@@ -4,7 +4,7 @@
     Restores Servy service configurations from a consolidated XML dump archive.
 
 .DESCRIPTION
-    Servy-Restore.ps1 verifies the integrity of a Servy backup archive against its SHA-256 sidecar file,
+    Servy-Restore.ps1 verifies the integrity of a Servy dump archive against its SHA-256 sidecar file,
     safely extracts individual service XML configuration files into an ACL-hardened temporary location, and
     imports each configuration into Servy using the official Servy PowerShell module (Import-ServyServiceConfig).
 
@@ -26,7 +26,7 @@
     - 7 : Partial Import Warning. The restore completed, but one or more services failed to import.
 
     CRITICAL SECURITY NOTICE:
-    The backup archive being restored contains highly sensitive information, including unencrypted execution
+    The dump archive being restored contains highly sensitive information, including unencrypted execution
     parameters, command-line arguments, and process environment variables.
     Service logon credentials (Usernames and Passwords) are intentionally excluded from configuration exports.
     Importing configurations resets all service logon accounts to 'LocalSystem' by default.

@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Generates a consolidated Servy backup archive containing all service configurations in XML format.
+    Generates a consolidated Servy dump archive containing all service configurations in XML format.
 
 .DESCRIPTION
     Servy-Dump.ps1 inspects the local Servy SQLite configuration database (%ProgramData%\Servy\db\Servy.db),
@@ -28,7 +28,7 @@
     - 8 : Archive Staging Mismatch. Staged configuration count does not match exported count; dump aborted.
 
     CRITICAL SECURITY NOTICE:
-    The generated backup archive is highly sensitive. Exported XML configuration files contain sensitive plain-text
+    The generated dump archive is highly sensitive. Exported XML configuration files contain sensitive plain-text
     data including execution parameters, command-line arguments, and process environment variables.
     Note that Windows Service Account credentials (Usernames and Passwords) are intentionally excluded from exports.
     When restoring configurations via Servy Manager, servy-cli, or Servy-Restore.ps1, all imported services will
