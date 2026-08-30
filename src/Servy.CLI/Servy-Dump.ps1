@@ -128,7 +128,7 @@ function Resolve-ServyDumpDestinationPath {
         }
     }
 
-    if (-not $isDirDestination -and (Test-Path -LiteralPath $resolvedArchivePath -PathType Container)) {
+    if (-not $isDirDestination -and (Test-Path -Path $resolvedArchivePath -PathType Container)) {
         $isDirDestination = $true
     }
 
@@ -210,6 +210,61 @@ function Get-ServySanitizedFileName {
     }
 
     return $candidateName
+}
+
+<#
+.SYNOPSIS
+    Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
+
+.DESCRIPTION
+    Breaks permission inheritance ($isProtected = $true, $preserveInheritance = $false), purges all existing ACEs,
+    and grants Full Control exclusively to Builtin Administrators and Local SYSTEM using language-agnostic Well-Known SIDs.
+
+.PARAMETER Path
+    Mandatory literal filesystem path of the target file or directory.
+
+.PARAMETER IsDirectory
+    Optional switch indicating if the path is a directory (controls container/object inheritance flags).
+#>
+function Set-ServyHardenedFileAcl {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$IsDirectory
+    )
+
+    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+
+    # Use -Path for PowerShell 2.0 compatibility
+    $acl = Get-Acl -Path $Path
+
+    # 1. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
+    $acl.SetAccessRuleProtection($true, $false)
+
+    # 2. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
+    $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    foreach ($rule in $explicitRules) {
+        [void]$acl.RemoveAccessRule($rule)
+    }
+
+    # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
+    if ($IsDirectory.IsPresent) {
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    }
+    else {
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+    }
+
+    $acl.SetAccessRule($adminRule)
+    $acl.SetAccessRule($systemRule)
+
+    Set-Acl -Path $Path -AclObject $acl
 }
 
 # If dot-sourced for testing, return immediately without executing main script body
@@ -530,16 +585,9 @@ public static class ServySafePs2Sqlite16
     try {
         [void][System.IO.Directory]::CreateDirectory($tempStagingDir)
 
-        # Restrict staging directory permissions to Administrators and SYSTEM exclusively
+        # Restrict staging directory permissions to Administrators and SYSTEM exclusively using language-agnostic Well-Known SIDs
         try {
-            $acl = Get-Acl -Path $tempStagingDir
-            $acl.SetAccessRuleProtection($true, $false)
-            foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
-                $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
-                $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
-                    $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
-            }
-            Set-Acl -Path $tempStagingDir -AclObject $acl
+            Set-ServyHardenedFileAcl -Path $tempStagingDir -IsDirectory
         }
         catch {
             Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
@@ -656,9 +704,11 @@ public static class ServySafePs2Sqlite16
                     }
                 }
             }
+
+            Set-ServyHardenedFileAcl -Path $resolvedArchivePath
         }
         catch {
-            Write-Host "`nServy configuration dump FAILED during compression: $_" -ForegroundColor Red
+            Write-Host "`nServy configuration dump FAILED during compression or ACL hardening: $_" -ForegroundColor Red
             Write-Host "No archive was produced at '$resolvedArchivePath'." -ForegroundColor Red
             exit 4
         }
@@ -687,6 +737,7 @@ public static class ServySafePs2Sqlite16
 
             $sidecarPath = "$resolvedArchivePath.sha256"
             [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($true)))
+            Set-ServyHardenedFileAcl -Path $sidecarPath
             Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
         }
         catch {

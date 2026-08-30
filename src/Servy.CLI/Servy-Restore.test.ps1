@@ -22,7 +22,8 @@ else {
 # Dot-source Servy-Restore.ps1 to load its helper functions without executing the main script body.
 # Pass dummy string for mandatory parameter to satisfy [ValidateNotNullOrEmpty()].
 $scriptPath = Join-Path $scriptDir 'Servy-Restore.ps1'
-if (-not (Test-Path -LiteralPath $scriptPath)) {
+
+if (-not (Test-Path -Path $scriptPath)) {
     Write-Host "FAILED: Could not find Servy-Restore.ps1 at '$scriptPath'." -ForegroundColor Red
     exit 1
 }
@@ -35,8 +36,14 @@ catch {
     exit 1
 }
 
-$testsPassed = 0
-$testsFailed = 0
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host " Running Servy-Restore.ps1 Unit Tests (net48)       " -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host ""
+
+$script:TotalTests  = 0
+$script:PassedTests = 0
+$script:FailedTests = 0
 
 function Assert-Equal {
     param(
@@ -44,13 +51,14 @@ function Assert-Equal {
         $Actual,
         $Expected
     )
+    $script:TotalTests++
     if ($Actual -eq $Expected) {
         Write-Host "  [PASS] $TestName" -ForegroundColor Green
-        $script:testsPassed++
+        $script:PassedTests++
     }
     else {
         Write-Host "  [FAIL] $TestName - Expected: '$Expected', Actual: '$Actual'" -ForegroundColor Red
-        $script:testsFailed++
+        $script:FailedTests++
     }
 }
 
@@ -59,20 +67,19 @@ function Assert-True {
         [string]$TestName,
         [bool]$Condition
     )
+    $script:TotalTests++
     if ($Condition) {
         Write-Host "  [PASS] $TestName" -ForegroundColor Green
-        $script:testsPassed++
+        $script:PassedTests++
     }
     else {
         Write-Host "  [FAIL] $TestName - Expected condition to be True" -ForegroundColor Red
-        $script:testsFailed++
+        $script:FailedTests++
     }
 }
 
-Write-Host "Running Servy-Restore.ps1 function unit tests..." -ForegroundColor Cyan
-
 # --- 1. Dump Path Resolution Tests ---
-Write-Host "`n1. Testing Resolve-ServyRestoreDumpPath..." -ForegroundColor Yellow
+Write-Host "1. Testing Resolve-ServyRestoreDumpPath..." -ForegroundColor Yellow
 
 $path1 = Resolve-ServyRestoreDumpPath -DumpArchivePath "C:\Backups\Servy_Dump.zip"
 Assert-Equal "Absolute path resolution" $path1 "C:\Backups\Servy_Dump.zip"
@@ -119,11 +126,19 @@ $seenEntries3 = New-Object 'System.Collections.Generic.HashSet[string]' ([String
 $e6 = Test-ServyDumpArchiveEntry -EntryName "Malware.exe" -EntryFullName "Malware.exe" -RootPath $rootPath -SeenEntryNames $seenEntries3
 Assert-True "Non-XML archive entry rejected" (-not $e6.IsValid -and $e6.ErrorMessage.Contains("not an XML configuration file"))
 
-# Summary
-$summaryColor = if ($testsFailed -eq 0) { 'Green' } else { 'Red' }
-Write-Host "`nTest Summary: $testsPassed passed, $testsFailed failed." -ForegroundColor $summaryColor
-
-if ($testsFailed -gt 0) {
+# ----------------------------------------------------------------
+# Summary Output
+# ----------------------------------------------------------------
+Write-Host "`n====================================================" -ForegroundColor Cyan
+Write-Host " Test Summary" -ForegroundColor Cyan
+Write-Host " Total   : $script:TotalTests" -ForegroundColor Gray
+Write-Host " Passed  : $script:PassedTests" -ForegroundColor Green
+if ($script:FailedTests -gt 0) {
+    Write-Host " Failed  : $script:FailedTests" -ForegroundColor Red
+    Write-Host "====================================================" -ForegroundColor Cyan
     exit 1
+} else {
+    Write-Host " Failed  : 0" -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor Cyan
+    exit 0
 }
-exit 0
