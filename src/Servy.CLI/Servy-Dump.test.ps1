@@ -37,7 +37,7 @@ catch {
 }
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Servy-Dump.ps1 Unit Tests (net48)          " -ForegroundColor Cyan
+Write-Host " Running Servy-Dump.ps1 Tests (net48)          " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
