@@ -37,6 +37,7 @@
 * [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
 * [ ] Add resource-based restart policies (e.g., trigger restart on RAM/CPU usage thresholds)
 * [ ] Add scheduled uptime windows and maintenance mode at specific times (start/stop services and pause health checks)
+* [x] Add dump and restore scripts for migration and VM cloning
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Desktop App for full edits
