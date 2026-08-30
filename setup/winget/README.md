@@ -48,7 +48,7 @@ git push origin servy-<version>
 
 Open a pull request from your branch against `microsoft/winget-pkgs`:
 
-[https://github.com/microsoft/winget-pkgs/compare/master...:servy-<version>](https://github.com/microsoft/winget-pkgs/compare/master...%3Cyour-user%3E:servy-%3Cversion%3E)
+`https://github.com/microsoft/winget-pkgs/compare/master...<your-user>:servy-<version>`
 
 ## Test
 
