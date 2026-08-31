@@ -51,6 +51,8 @@ function Copy-TaskSchdArtifacts {
         [Parameter(Mandatory=$true)][string]$DestPath
     )
 
+    $root = (Resolve-Path $SourcePath).Path.TrimEnd('\')
+
     Get-ChildItem -Path $SourcePath -Recurse -File |
         Where-Object {
             $_.Name -notin @('smtp-cred.xml', 'temp.ps1') -and
@@ -58,7 +60,7 @@ function Copy-TaskSchdArtifacts {
             $_.Name -notlike '*.test.ps1'
         } |
         ForEach-Object {
-            $rel    = $_.FullName.Substring((Resolve-Path $SourcePath).Path.Length + 1)
+            $rel    = $_.FullName.Substring($root.Length + 1)
             $target = Join-Path $DestPath $rel
             $parent = Split-Path $target -Parent
             if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
@@ -163,7 +165,11 @@ function Copy-CommonArtifacts {
     )
 
     # 1. Copy scripts
-    Copy-Item (Join-Path $ScriptDir "Set-ServyExePermissions.ps1") -Destination "$DestFolder" -Force
+    $permissionsScript = Join-Path $ScriptDir "Set-ServyExePermissions.ps1"
+    if (-not (Test-Path $permissionsScript)) {
+        throw "Required setup script missing: $permissionsScript"
+    }
+    Copy-Item -Path $permissionsScript -Destination $DestFolder -Force
 
     # 2. Include Task Scheduler hooks
     $taskSchdSource = Join-Path $ScriptDir "taskschd"
