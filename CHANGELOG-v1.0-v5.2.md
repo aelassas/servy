@@ -1,4 +1,4 @@
-# Changelog Archive (v1.0 - v5.2)
+# Changelog (v1.0 - v5.2)
 
 ## [Servy 5.2](https://github.com/aelassas/servy/releases/tag/v5.2)
 

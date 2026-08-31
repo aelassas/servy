@@ -3485,4 +3485,4 @@ Compare changes: https://github.com/aelassas/servy/compare/v5.2...v5.3
 
 ---
 
-Looking for older releases? See the archive: [CHANGELOG-v1.0-v5.2.md](./CHANGELOG-v1.0-v5.2.md)
+Looking for older releases? See: [CHANGELOG-v1.0-v5.2.md](./CHANGELOG-v1.0-v5.2.md)
