@@ -69,6 +69,7 @@ jobs:
           $repo = $env:GITHUB_REPOSITORY
           $changelogPath = "CHANGELOG.md"
           $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+          $maxBytes = 400 * 1024 # Target ~400 KB cutoff threshold per file
 
           Write-Host "Fetching releases for $repo..."
           # Use --slurp to combine paginated responses into a single JSON array,
@@ -143,18 +144,92 @@ jobs:
               return $md
           }
 
+          Function Save-ChangelogFiles {
+              param($Releases)
+
+              # Chunk release history into blocks of ~400 KB
+              $chunks = [System.Collections.Generic.List[System.Collections.Generic.List[object]]]::new()
+              $currentChunk = [System.Collections.Generic.List[object]]::new()
+              $currentBytes = $utf8NoBom.GetByteCount("# Changelog`n`n")
+
+              for ($i = 0; $i -lt $Releases.Count; $i++) {
+                  $prev = if ($i + 1 -lt $Releases.Count) { $Releases[$i+1] } else { $null }
+                  $entry = Get-ReleaseEntry -Release $Releases[$i] -PrevRelease $prev
+                  $entryBytes = $utf8NoBom.GetByteCount($entry)
+
+                  if ($currentChunk.Count -gt 0 -and ($currentBytes + $entryBytes) -gt $maxBytes) {
+                      $chunks.Add($currentChunk)
+                      $currentChunk = [System.Collections.Generic.List[object]]::new()
+                      $currentBytes = $utf8NoBom.GetByteCount("# Changelog Archive`n`n")
+                  }
+
+                  $currentChunk.Add($Releases[$i])
+                  $currentBytes += $entryBytes
+              }
+
+              if ($currentChunk.Count -gt 0) {
+                  $chunks.Add($currentChunk)
+              }
+
+              # Determine archive filenames and links from newest to oldest chunk
+              $archiveFileNames = [System.Collections.Generic.List[string]]::new()
+              for ($c = 1; $c -lt $chunks.Count; $c++) {
+                  $chunk = $chunks[$c]
+                  $newestInChunk = $chunk[0].tag_name
+                  $oldestInChunk = $chunk[$chunk.Count - 1].tag_name
+                  $archiveFileNames.Add("CHANGELOG-$oldestInChunk-$newestInChunk.md")
+              }
+
+              # Write primary CHANGELOG.md (Chunk 0)
+              $mainChunk = $chunks[0]
+              $mainContent = "# Changelog`n`n"
+              for ($i = 0; $i -lt $mainChunk.Count; $i++) {
+                  $rel = $mainChunk[$i]
+                  $globalIdx = $i
+                  $prev = if ($globalIdx + 1 -lt $Releases.Count) { $Releases[$globalIdx + 1] } else { $null }
+                  $mainContent += Get-ReleaseEntry -Release $rel -PrevRelease $prev
+              }
+
+              if ($archiveFileNames.Count -gt 0) {
+                  $firstArchive = $archiveFileNames[0]
+                  $mainContent += "---`n`nLooking for older releases? See the archive: [$firstArchive](./$firstArchive)`n"
+              }
+              [System.IO.File]::WriteAllText("CHANGELOG.md", $mainContent, $utf8NoBom)
+
+              # Write each archive file recursively with 400 KB bounds
+              $runningGlobalIdx = $mainChunk.Count
+              for ($c = 1; $c -lt $chunks.Count; $c++) {
+                  $chunk = $chunks[$c]
+                  $fileName = $archiveFileNames[$c - 1]
+                  $newestTag = $chunk[0].tag_name
+                  $oldestTag = $chunk[$chunk.Count - 1].tag_name
+
+                  $archiveContent = "# Changelog Archive ($oldestTag - $newestTag)`n`n"
+                  for ($i = 0; $i -lt $chunk.Count; $i++) {
+                      $rel = $chunk[$i]
+                      $globalIdx = $runningGlobalIdx + $i
+                      $prev = if ($globalIdx + 1 -lt $Releases.Count) { $Releases[$globalIdx + 1] } else { $null }
+                      $archiveContent += Get-ReleaseEntry -Release $rel -PrevRelease $prev
+                  }
+
+                  if ($c -lt $archiveFileNames.Count) {
+                      $nextArchive = $archiveFileNames[$c]
+                      $archiveContent += "---`n`nLooking for older releases? See the next archive: [$nextArchive](./$nextArchive)`n"
+                  }
+
+                  [System.IO.File]::WriteAllText($fileName, $archiveContent, $utf8NoBom)
+                  $runningGlobalIdx += $chunk.Count
+              }
+          }
+
           $isReset = ($env:IS_RESET -eq 'true')
           $bt = [char]96
           $header = "# Changelog"
 
           if ($isReset) {
-              Write-Host "Reset flag is true. Rebuilding full CHANGELOG.md..."
-              $fullLog = "$header`n`n"
-              for ($i = 0; $i -lt $releases.Count; $i++) {
-                  $prev = if ($i + 1 -lt $releases.Count) { $releases[$i+1] } else { $null }
-                  $fullLog += Get-ReleaseEntry -Release $releases[$i] -PrevRelease $prev
-              }
-              [System.IO.File]::WriteAllText($changelogPath, $fullLog, $utf8NoBom)
+              Write-Host "Reset flag is true. Deleting all existing CHANGELOG*.md files and rebuilding..."
+              Get-ChildItem -Path . -Filter "CHANGELOG*.md" | Remove-Item -Force
+              Save-ChangelogFiles -Releases $releases
           } else {
               $latest = $releases[0]
               $tag = $latest.tag_name
@@ -192,14 +267,14 @@ jobs:
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Scope the check to CHANGELOG.md so unrelated working-tree changes don't trigger a commit
-          $hasChanges = (Invoke-Git status --porcelain CHANGELOG.md) -join "`n"
+          # Scope the check to CHANGELOG files so unrelated working-tree changes don't trigger a commit
+          $hasChanges = (Invoke-Git status --porcelain CHANGELOG*.md) -join "`n"
           if ([string]::IsNullOrWhiteSpace($hasChanges)) {
-              Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
+              Write-Host "No changes detected in CHANGELOG files. Nothing to update."
               exit 0
           }
 
-          Invoke-Git add CHANGELOG.md
+          Invoke-Git add CHANGELOG*.md
 
           git diff --staged --quiet
           if ($LASTEXITCODE -ne 0) {
