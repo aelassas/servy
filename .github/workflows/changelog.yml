@@ -192,7 +192,7 @@ jobs:
 
               if ($archiveFileNames.Count -gt 0) {
                   $firstArchive = $archiveFileNames[0]
-                  $mainContent += "---`n`nLooking for older releases? See the archive: [$firstArchive](./$firstArchive)`n"
+                  $mainContent += "---`n`nLooking for older releases? See: [$firstArchive](./$firstArchive)`n"
               }
               [System.IO.File]::WriteAllText("CHANGELOG.md", $mainContent, $utf8NoBom)
 
@@ -204,7 +204,7 @@ jobs:
                   $newestTag = $chunk[0].tag_name
                   $oldestTag = $chunk[$chunk.Count - 1].tag_name
 
-                  $archiveContent = "# Changelog Archive ($oldestTag - $newestTag)`n`n"
+                  $archiveContent = "# Changelog ($oldestTag - $newestTag)`n`n"
                   for ($i = 0; $i -lt $chunk.Count; $i++) {
                       $rel = $chunk[$i]
                       $globalIdx = $runningGlobalIdx + $i
