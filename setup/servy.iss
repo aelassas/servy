@@ -24,12 +24,15 @@
   #define Tfm "net10.0-windows"
 #endif
 
+#define AppIdGuidX64   "8343B121-BE1C-463F-AA5B-FD237DD2F8D0"
+#define AppIdGuidArm64 "8343B121-BE1C-463F-AA5B-FD237DD2F8D1"
+
 #if Arch == "arm64"
-  #define AppIdGuid    "8343B121-BE1C-463F-AA5B-FD237DD2F8D1"
+  #define AppIdGuid    AppIdGuidArm64
   #define ArchAllowed  "arm64"
   #define Runtime      "win-arm64"
 #else
-  #define AppIdGuid    "8343B121-BE1C-463F-AA5B-FD237DD2F8D0"
+  #define AppIdGuid    AppIdGuidX64
   #define ArchAllowed  "x64compatible"
   #define Runtime      "win-x64"
 #endif
@@ -71,6 +74,7 @@ ArchitecturesInstallIn64BitMode={#ArchAllowed}
 WizardStyle=modern dynamic
 
 UsePreviousTasks=no
+UsePreviousSetupType=no
 AlwaysRestart=no
 
 [Messages]
@@ -151,102 +155,6 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 ; Filename: "{app}\{#ManagerAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(ManagerAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_manager
 Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall shellexec skipifsilent unchecked
 
-; 1. Reset inheritance, grant Admins/System, and PURGE broad groups
-; *S-1-5-32-544: Administrators
-; *S-1-5-18:     Local System
-; *S-1-5-32-545: Users (Purge)
-; *S-1-5-11:     Authenticated Users (Purge)
-; *S-1-1-0:      Everyone (Purge)
-Filename: "{sys}\icacls.exe"; \
-    Parameters: """{commonappdata}\Servy"" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0"; \
-    Flags: runhidden; \
-    StatusMsg: "Securing service data directory..."
-
-; 2. Removing legacy user permissions
-Filename: "{sys}\icacls.exe"; \
-    Parameters: """{commonappdata}\Servy"" /remove:g ""{username}"""; \
-    Flags: runhidden; \
-    StatusMsg: "Removing legacy user permissions..."    
-    
-; 3. Grant the Current User (The "Manual Key")
-; Replicates C# logic: Add current user only if they aren't SYSTEM
-Filename: "{sys}\icacls.exe"; \
-    Parameters: """{commonappdata}\Servy"" /grant ""{username}"":(OI)(CI)F"; \
-    Flags: runhidden; \
-    Check: ShouldAddCurrentUser; \
-    StatusMsg: "Assigning user permissions..."
-
-[Code]
-function ConvertStringSidToSid(
-  StringSid: String;
-  var Sid: UINT_PTR
-): Boolean;
-  external 'ConvertStringSidToSidW@advapi32.dll stdcall';
-
-function LookupAccountSid(
-  SystemName: String;
-  Sid: UINT_PTR;
-  Name: String;
-  var NameSize: DWORD;
-  ReferencedDomainName: String;
-  var ReferencedDomainNameSize: DWORD;
-  var Use: DWORD
-): Boolean;
-  external 'LookupAccountSidW@advapi32.dll stdcall';
-
-function LocalFree(hMem: UINT_PTR): UINT_PTR;
-  external 'LocalFree@kernel32.dll stdcall';
-
-function GetLocalizedSystemAccountName(): String;
-var
-  pSid: UINT_PTR;
-  Name, Domain: String;
-  NameSize, DomainSize, Use: DWORD;
-  NullPos: Integer;
-begin
-  Result := 'SYSTEM'; // Fallback
-  pSid := 0;
-  if ConvertStringSidToSid('S-1-5-18', pSid) then
-  begin
-    try
-      NameSize := 0;
-      DomainSize := 0;
-      LookupAccountSid('', pSid, Name, NameSize, Domain, DomainSize, Use);
-      if NameSize > 0 then
-      begin
-        SetLength(Name, NameSize);
-        SetLength(Domain, DomainSize);
-        if LookupAccountSid('', pSid, Name, NameSize, Domain, DomainSize, Use) then
-        begin
-          // Strip null terminator returned by Win32 API
-          NullPos := Pos(#0, Name);
-          if NullPos > 0 then
-            SetLength(Name, NullPos - 1);
-          Result := Trim(Name);
-        end;
-      end;
-    finally
-      if pSid <> 0 then
-        LocalFree(pSid);
-    end;
-  end;
-end;
-
-function ShouldAddCurrentUser(): Boolean;
-var
-  CurrentUserName, SystemAccountName: String;
-begin
-  CurrentUserName := GetUserNameString();
-  SystemAccountName := GetLocalizedSystemAccountName();
-
-  // Replicate SecurityHelper.ApplySecurityRules: skip SYSTEM (already granted in step 1)
-  // AND skip administrators, who are covered by the BUILTIN\Administrators grant. An
-  // explicit personal ACE would outlive the group membership that justified it.
-  Result := (CompareText(CurrentUserName, SystemAccountName) <> 0) and
-            (CurrentUserName <> '') and
-            (not IsAdmin);
-end;
-
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
 Filename: "{sys}\taskkill.exe"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
@@ -307,29 +215,38 @@ begin
   Result := sValue;
 end;
 
-function GetUninstallString(): String;
+function QueryUninstallValueAnyArch(const ValueName: String): String;
 var
   AppIdGuids: array[0..1] of String;
   i: Integer;
   sResult: String;
 begin
-  AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
-  if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
-    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
+  Result := '';
+  AppIdGuids[0] := '{#AppIdGuid}';
+  if AppIdGuids[0] = '{#AppIdGuidArm64}' then
+    AppIdGuids[1] := '{#AppIdGuidX64}'
   else
-    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D1';
+    AppIdGuids[1] := '{#AppIdGuidArm64}';
 
   for i := 0 to High(AppIdGuids) do
   begin
-    sResult := QueryUninstallRegistry(AppIdGuids[i], 'UninstallString');
+    sResult := QueryUninstallRegistry(AppIdGuids[i], ValueName);
     if sResult <> '' then
     begin
       Result := sResult;
       Exit;
     end;
   end;
+end;
 
-  Result := '';
+function GetUninstallString(): String;
+begin
+  Result := QueryUninstallValueAnyArch('UninstallString');
+end;
+
+function GetInstalledVersion(): String;
+begin
+  Result := QueryUninstallValueAnyArch('DisplayVersion');
 end;
 
 function IsUpgrade(): Boolean;
@@ -372,32 +289,6 @@ begin
   Log('UnInstallOldVersion.Result = ' + IntToStr(Result));
 end;
 
-function GetInstalledVersion(): String;
-var
-  AppIdGuids: array[0..1] of String;
-  i: Integer;
-  sResult: String;
-begin
-  Result := '';
-  AppIdGuids[0] := ExpandConstant('{#AppIdGuid}');
-  if AppIdGuids[0] = '8343B121-BE1C-463F-AA5B-FD237DD2F8D1' then
-    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D0'
-  else
-    AppIdGuids[1] := '8343B121-BE1C-463F-AA5B-FD237DD2F8D1';
-
-  for i := 0 to High(AppIdGuids) do
-  begin
-    sResult := QueryUninstallRegistry(AppIdGuids[i], 'DisplayVersion');
-    if sResult <> '' then
-    begin
-      Result := sResult;
-      Exit;
-    end;
-  end;
-
-  Result := '';
-end;
-
 function NumericVersion(const Version: string): Int64;
 var
   Parts: TStringList;
@@ -428,10 +319,6 @@ var
   sInstalledVersion, message: String;
   installedVersion, myAppVersion: Int64;
   v: Integer;
-  UninstKey: String;
-  Hives: array[0..2] of Integer;
-  Values: array[0..4] of String;
-  i, j: Integer;
 begin
   Result := True;
   sInstalledVersion := GetInstalledVersion();
@@ -472,25 +359,6 @@ begin
       Result := False;
     end;
   end;
-
-  // Uninstall key path
-  UninstKey := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
-
-  // Define the hives and value names to delete
-  Hives[0] := HKLM64;
-  Hives[1] := HKLM32;
-  Hives[2] := HKCU;
-  Values[0] := 'Inno Setup: Selected Tasks';
-  Values[1] := 'Inno Setup: Deselected Tasks';
-  Values[2] := 'Inno Setup: Selected Components';
-  Values[3] := 'Inno Setup: Deselected Components';
-  Values[4] := 'Inno Setup: Setup Type';
-
-  // Loop over hives and values to delete
-  for i := 0 to High(Hives) do
-    for j := 0 to High(Values) do
-      if RegValueExists(Hives[i], UninstKey, Values[j]) then
-        RegDeleteValue(Hives[i], UninstKey, Values[j]);
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
@@ -559,6 +427,18 @@ begin
     SetLength(Result, Length(Result) - 1);
 end;
 
+procedure SplitPath(const Value: string; Parts: TStringList);
+begin
+  Parts.StrictDelimiter := True;
+  Parts.Delimiter := ';';
+  Parts.DelimitedText := Value;
+end;
+
+function IsSameFolder(const Entry, NormalizedFolder: string): Boolean;
+begin
+  Result := CompareText(NormalizeFolder(Trim(Entry)), NormalizedFolder) = 0;
+end;
+
 function PathContainsFolder(const OldPath, NormalizedFolder: string): Boolean;
 var
   Parts: TStringList;
@@ -567,11 +447,9 @@ begin
   Result := False;
   Parts := TStringList.Create;
   try
-    Parts.StrictDelimiter := True;
-    Parts.Delimiter := ';';
-    Parts.DelimitedText := OldPath;
+    SplitPath(OldPath, Parts);
     for i := 0 to Parts.Count - 1 do
-      if CompareText(NormalizeFolder(Trim(Parts[i])), NormalizedFolder) = 0 then
+      if IsSameFolder(Parts[i], NormalizedFolder) then
       begin
         Result := True;
         Exit;
@@ -593,34 +471,34 @@ begin
 
   NormalizedFolder := NormalizeFolder(Folder);
 
-  if not PathContainsFolder(OldPath, NormalizedFolder) then
-  begin
-    Parts := TStringList.Create;
-    try
-      Parts.StrictDelimiter := True;
-      Parts.Delimiter := ';';
-      Parts.DelimitedText := OldPath;
+  Parts := TStringList.Create;
+  try
+    SplitPath(OldPath, Parts);
 
-      // Drop empty elements the existing value may already carry, then append.
-      for i := Parts.Count - 1 downto 0 do
-        if Trim(Parts[i]) = '' then
-          Parts.Delete(i);
+    // Drop empty elements the existing value may already carry
+    for i := Parts.Count - 1 downto 0 do
+      if Trim(Parts[i]) = '' then
+        Parts.Delete(i);
 
+    if not PathContainsFolder(OldPath, NormalizedFolder) then
+    begin
       Parts.Add(NormalizedFolder);
       NewPath := Parts.DelimitedText;
-    finally
-      Parts.Free;
-    end;
 
-    // Write the new system PATH preserving REG_EXPAND_SZ type
-    if not RegWriteExpandStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
-    begin
-      MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
-      Exit;
-    end;
+      // Write the new system PATH preserving REG_EXPAND_SZ type
+      if not RegWriteExpandStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
+      begin
+        Log('Failed to update system PATH environment variable.');
+        if not WizardSilent then
+          MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
+        Exit;
+      end;
 
-    // Notify the system about the environment change
-    RefreshEnvironment();
+      // Notify the system about the environment change
+      RefreshEnvironment();
+    end;
+  finally
+    Parts.Free;
   end;
 end;
 
@@ -630,6 +508,58 @@ begin
   StringChangeEx(Result, '&', '&amp;', True);   // must run first
   StringChangeEx(Result, '<', '&lt;', True);
   StringChangeEx(Result, '>', '&gt;', True);
+end;
+
+procedure SecureDataDirectory();
+var
+  DataDir, Params: string;
+  ResultCode: Integer;
+begin
+  DataDir := ExpandConstant('{commonappdata}\Servy');
+
+  // Reset inheritance, grant Admins/System, and PURGE broad groups
+  // *S-1-5-32-544: Administrators
+  // *S-1-5-18:     Local System
+  // *S-1-5-32-545: Users (Purge)
+  // *S-1-5-11:     Authenticated Users (Purge)
+  // *S-1-1-0:      Everyone (Purge)
+  //
+  // NOTE: Replicates SecurityHelper.ApplySecurityRules: No personal user ACE is granted here
+  // because an elevated installer's user is always covered by the BUILTIN\Administrators grant.
+  Params := Format('"%s" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0 /remove:g "%s"', [DataDir, ExpandConstant('{username}')]);
+
+  Log('Securing service data directory: icacls.exe ' + Params);
+  if not Exec(ExpandConstant('{sys}\icacls.exe'), Params, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  begin
+    Log(Format('WARNING: icacls.exe failed with exit code %d while hardening data directory "%s".', [ResultCode, DataDir]));
+    if not WizardSilent then
+      MsgBox('Failed to secure service data directory permissions. Please review system ACLs manually.', mbInformation, MB_OK);
+  end;
+end;
+
+procedure CleanupOldSetupRegistryState();
+var
+  UninstKey: String;
+  Hives: array[0..2] of Integer;
+  Values: array[0..4] of String;
+  i, j: Integer;
+begin
+  UninstKey := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
+
+  Hives[0] := HKLM64;
+  Hives[1] := HKLM32;
+  Hives[2] := HKCU;
+
+  Values[0] := 'Inno Setup: Selected Tasks';
+  Values[1] := 'Inno Setup: Deselected Tasks';
+  Values[2] := 'Inno Setup: Selected Components';
+  Values[3] := 'Inno Setup: Deselected Components';
+  Values[4] := 'Inno Setup: Setup Type';
+
+  for i := 0 to High(Hives) do
+    for j := 0 to High(Values) do
+      if RegValueExists(Hives[i], UninstKey, Values[j]) then
+        RegDeleteValue(Hives[i], UninstKey, Values[j]);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -645,21 +575,28 @@ begin
     // 1. Refresh icon cache
     RefreshIconCache();
 
-    // 2. Add to PATH logic (if selected)
+    // 2. Secure service data directory
+    SecureDataDirectory();
+
+    // 3. Clean up legacy remembered setup state post-install
+    CleanupOldSetupRegistryState();
+
+    // 4. Add to PATH logic (if selected)
     if WizardIsTaskSelected('addpath') and WizardIsComponentSelected('install_cli') then
     begin
       InstallDir := NormalizeFolder(ExpandConstant('{app}'));
       AddToPath(InstallDir);
-      RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 1);
+      if not RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 1) then
+        Log('WARNING: Failed to write AddedToPath registry marker.');
     end;
 
-    // 3. Resolve Hardcoded Paths in Task Scheduler XMLs
+    // 5. Resolve Hardcoded Paths in Task Scheduler XMLs
     InstallPath := ExpandConstant('{app}');
     XmlInstallPath := XmlEscape(InstallPath);
     FilesToFix[0] := InstallPath + '\taskschd\ServyFailureNotification.xml';
     FilesToFix[1] := InstallPath + '\taskschd\ServyFailureEmail.xml';
 
-    for I := 0 to 1 do
+    for I := 0 to High(FilesToFix) do
     begin
       if FileExists(FilesToFix[I]) then
       begin
@@ -703,25 +640,24 @@ begin
   begin
     Parts := TStringList.Create;
     try
-      Parts.StrictDelimiter := True;
-      Parts.Delimiter := ';';
-      Parts.DelimitedText := OldPath;
+      SplitPath(OldPath, Parts);
       InitialCount := Parts.Count;
 
       for i := Parts.Count - 1 downto 0 do
-        if CompareText(NormalizeFolder(Trim(Parts[i])), NormalizedFolder) = 0 then
+        if IsSameFolder(Parts[i], NormalizedFolder) then
           Parts.Delete(i);
 
       if Parts.Count <> InitialCount then
       begin
         NewPath := Parts.DelimitedText;
 
-        RegWriteExpandStringValue(
+        if not RegWriteExpandStringValue(
           HKLM64,
           'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
           'Path',
           NewPath
-        );
+        ) then
+          Log('WARNING: Failed to write updated PATH environment variable during uninstall.');
 
         RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 0);
 
