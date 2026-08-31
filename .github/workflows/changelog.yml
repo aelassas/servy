@@ -160,7 +160,7 @@ jobs:
                   if ($currentChunk.Count -gt 0 -and ($currentBytes + $entryBytes) -gt $maxBytes) {
                       $chunks.Add($currentChunk)
                       $currentChunk = [System.Collections.Generic.List[object]]::new()
-                      $currentBytes = $utf8NoBom.GetByteCount("# Changelog Archive`n`n")
+                      $currentBytes = $utf8NoBom.GetByteCount("# Changelog`n`n")
                   }
 
                   $currentChunk.Add($Releases[$i])
@@ -245,7 +245,7 @@ jobs:
               if ($existing.Contains($tagLine)) {
                   Write-Host "Release $tag is already in the CHANGELOG. No updates needed."
               } else {
-                  Write-Host "Appending latest release ($tag) to top of CHANGELOG.md..."
+                  Write-Host "Prepending latest release ($tag) to top of CHANGELOG.md..."
                   $prev = if ($releases.Count -gt 1) { $releases[1] } else { $null }
                   $entry = Get-ReleaseEntry -Release $latest -PrevRelease $prev
 
@@ -256,6 +256,12 @@ jobs:
                       $newLog = "$header`n`n$entry$existing"
                   }
                   [System.IO.File]::WriteAllText($changelogPath, $newLog, $utf8NoBom)
+
+                  # Auto-split if appending pushed CHANGELOG.md past 400 KB
+                  if ($utf8NoBom.GetByteCount($newLog) -gt $maxBytes) {
+                      Write-Host "CHANGELOG.md exceeds 400 KB ($($utf8NoBom.GetByteCount($newLog)) bytes). Re-chunking archives..."
+                      Save-ChangelogFiles -Releases $releases
+                  }
               }
           }
 
