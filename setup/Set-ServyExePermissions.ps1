@@ -13,14 +13,20 @@
     executable files and restricting the target runner account to strict 'Read & Execute' rights. This ensures the
     service runner can execute required binaries without being able to overwrite or replace them, protecting against
     unprivileged binary replacement and local privilege escalation vectors. Full Control is explicitly preserved for
-    SYSTEM and Administrators using language-agnostic Well-Known SIDs. Manually added explicit ACEs for third-party
-    principals are audited and preserved.
+    SYSTEM and Administrators using language-agnostic Well-Known SIDs. The owner of each hardened binary is set
+    to Builtin Administrators. Manually added explicit ACEs for third-party principals are audited and preserved.
 
     Hardened Executable Files:
     - Servy.Service.exe
     - Servy.Service.CLI.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.exe gets copied to %ProgramData%\Servy)
     - Servy.Restarter.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.exe gets copied to %ProgramData%\Servy)
     - handle64.exe / handle64a.exe
+
+    EXIT CODES:
+    - 0 : Success. All present target executables were successfully hardened.
+    - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
+    - 2 : Directory or Binary Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target executables are missing and must be extracted before hardening.
+    - 3 : Hardening Error. One or more present target executables failed ACL modification due to locks, owner change failures, or security exceptions.
 
 .PARAMETER TargetAccount
     Mandatory account identifier receiving Read & Execute permissions. Supported formats:
@@ -78,7 +84,8 @@ $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
 
 if (-not (Test-Path -Path $programDataDir)) {
     Write-Warning "Directory '$programDataDir' does not exist. No changes applied."
-    exit 0
+    Write-Warning "Start the service once so %ProgramData%\Servy and its binaries are extracted, then RE-RUN this script."
+    exit 2
 }
 
 # Dynamically validate and resolve account existence via Windows LSA.
@@ -123,12 +130,14 @@ Write-Host "Securing Servy executable files in: $programDataDir" -ForegroundColo
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
 $hardened = @()
-$skipped  = @()
+$missing  = @()
+$failed   = @()
+
 foreach ($exeName in $exeNames) {
     $exePath = [System.IO.Path]::Combine($programDataDir, $exeName)
 
     if (-not (Test-Path -Path $exePath)) {
-        $skipped += $exeName
+        $missing += $exeName
         continue
     }
 
@@ -136,6 +145,13 @@ foreach ($exeName in $exeNames) {
         Write-Host "Hardening permissions on '$exeName'..." -ForegroundColor Green
 
         $acl = Get-Acl -Path $exePath
+
+        # Audit owner changes prior to setting Builtin Administrators owner
+        $previousOwnerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
+        if (-not $previousOwnerSid.Equals($adminSid)) {
+            $previousOwnerName = try { $previousOwnerSid.Translate([System.Security.Principal.NTAccount]).Value } catch { $previousOwnerSid.Value }
+            Write-Host "  [Owner] replaced '$previousOwnerName' -> 'BUILTIN\Administrators'" -ForegroundColor Cyan
+        }
 
         # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
         $acl.SetOwner($adminSid)
@@ -167,12 +183,16 @@ foreach ($exeName in $exeNames) {
         $acl.SetAccessRule($systemRule)
 
         # 4. Grant explicit ReadAndExecute access to target account
-        $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-            $targetNTAccount,
-            "ReadAndExecute",
-            "Allow"
-        )
-        $acl.SetAccessRule($targetRule)
+        if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
+            Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no ReadAndExecute downgrade applied." -ForegroundColor Yellow
+        } else {
+            $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $targetNTAccount,
+                "ReadAndExecute",
+                "Allow"
+            )
+            $acl.SetAccessRule($targetRule)
+        }
 
         # Commit ACL to disk
         Set-Acl -Path $exePath -AclObject $acl
@@ -201,10 +221,8 @@ foreach ($exeName in $exeNames) {
             }
         }
 
-        if ($appliedTargetRules.Count -gt 0) {
-            foreach ($tRule in $appliedTargetRules) {
-                Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
-            }
+        foreach ($tRule in $appliedTargetRules) {
+            Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
         }
 
         if ($manualAllowRules.Count -gt 0) {
@@ -226,14 +244,20 @@ foreach ($exeName in $exeNames) {
     }
     catch {
         Write-Host "FAILED to harden '$exeName': $_" -ForegroundColor Red
-        $skipped += $exeName
+        $failed += $exeName
     }
 }
 
 Write-Host "`nHardened $($hardened.Count) of $($exeNames.Count) executables." -ForegroundColor Cyan
 
-if ($skipped.Count -gt 0) {
-    Write-Warning ("Not hardened: {0}" -f ($skipped -join ', '))
+if ($failed.Count -gt 0) {
+    Write-Warning ("Hardening failed on: {0}" -f ($failed -join ', '))
+    Write-Warning "Check file locks, permissions, or system security settings before re-running this script."
+    exit 3
+}
+
+if ($missing.Count -gt 0) {
+    Write-Warning ("Not hardened (missing): {0}" -f ($missing -join ', '))
     Write-Warning "These files will inherit Modify access from '$programDataDir' when Servy creates them."
     Write-Warning "Start the service once so every binary is extracted, then RE-RUN this script."
     exit 2
