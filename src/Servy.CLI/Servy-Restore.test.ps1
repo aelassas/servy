@@ -84,8 +84,8 @@ Assert-True "Whitespace-only sidecar yields null" ($null -eq (Get-ServySidecarEx
 # --- 3. ACL Hardening Helper Tests ---
 Write-Host "`n3. Testing Set-ServyHardenedFileAcl..." -ForegroundColor Yellow
 
-$tempPath = [System.IO.Path]::GetTempPath()
-$randName = "ServyRestore_AclTest_" + [System.IO.Path]::GetRandomFileName()
+$tempPath   = [System.IO.Path]::GetTempPath()
+$randName   = "ServyRestore_AclTest_" + [System.IO.Path]::GetRandomFileName()
 $testTempDir = Join-Path $tempPath $randName
 [void][System.IO.Directory]::CreateDirectory($testTempDir)
 
@@ -102,22 +102,24 @@ try {
     $dirRules = $dirAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
     Assert-Equal "Directory has exactly 2 explicit ACEs" $dirRules.Count 2
 
-    $adminSid  = (New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)).Value
-    $systemSid = (New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)).Value
+    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
 
     $foundAdmin  = $false
     $foundSystem = $false
 
     foreach ($rule in $dirRules) {
-        if ($rule.IdentityReference.Value -eq $adminSid) {
-            if ($rule.FileSystemRights -match "FullControl" -and $rule.InheritanceFlags -match "ContainerInherit, ObjectInherit") {
-                $foundAdmin = $true
-            }
+        if ($rule.IdentityReference.Equals($adminSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit" -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
+            $foundAdmin = $true
         }
-        elseif ($rule.IdentityReference.Value -eq $systemSid) {
-            if ($rule.FileSystemRights -match "FullControl" -and $rule.InheritanceFlags -match "ContainerInherit, ObjectInherit") {
-                $foundSystem = $true
-            }
+        elseif ($rule.IdentityReference.Equals($systemSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit" -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
+            $foundSystem = $true
         }
     }
 
@@ -140,10 +142,14 @@ try {
     $foundFileSystem = $false
 
     foreach ($rule in $fileRules) {
-        if ($rule.IdentityReference.Value -eq $adminSid -and $rule.FileSystemRights -match "FullControl") {
+        if ($rule.IdentityReference.Equals($adminSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
             $foundFileAdmin = $true
         }
-        elseif ($rule.IdentityReference.Value -eq $systemSid -and $rule.FileSystemRights -match "FullControl") {
+        elseif ($rule.IdentityReference.Equals($systemSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
             $foundFileSystem = $true
         }
     }
