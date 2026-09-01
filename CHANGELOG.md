@@ -3278,7 +3278,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v6.1...v6.2
 
 **Date:** 2026-02-03 | **Tag:** [`v6.1`](https://github.com/aelassas/servy/tree/v6.1)
 
-* feat(manager): add [Dependencies tab](https://github.com/aelassas/servy/wiki/Servy-Manager#dependencies-tab) to show service dependency tree with status indicators
+* feat(manager): add [Dependencies tab](https://github.com/aelassas/servy/wiki/Servy-Manager#dependencies) to show service dependency tree with status indicators
 * refactor(manager): extract service list into a reusable control
 * refactor(manager): move UI constants to Servy.UI for reuse
 * chore(psm1): replace backticks with splatting in PowerShell samples
