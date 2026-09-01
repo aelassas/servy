@@ -11,6 +11,14 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Dot-source test harness shared utilities
+$testCommonPath = Join-Path $PSScriptRoot 'TestCommon.ps1'
+if (-not (Test-Path -LiteralPath $testCommonPath)) {
+    Write-Host "FAILED: Could not find TestCommon.ps1 at '$testCommonPath'." -ForegroundColor Red
+    exit 1
+}
+. $testCommonPath
+
 # Dot-source Servy-Restore.ps1 to load its helper functions without executing the main script body.
 # Pass a dummy string for mandatory parameters to satisfy [ValidateNotNullOrEmpty()].
 $scriptPath = Join-Path $PSScriptRoot 'Servy-Restore.ps1'
@@ -29,52 +37,30 @@ catch {
 }
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Servy-Restore.ps1 Tests               " -ForegroundColor Cyan
+Write-Host " Running Servy-Restore.ps1 Tests                   " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
-
-$script:TotalTests  = 0
-$script:PassedTests = 0
-$script:FailedTests = 0
-
-function Assert-Equal {
-    param(
-        [string]$TestName,
-        $Actual,
-        $Expected
-    )
-    $script:TotalTests++
-    if ($Actual -eq $Expected) {
-        Write-Host "  [PASS] $TestName" -ForegroundColor Green
-        $script:PassedTests++
-    }
-    else {
-        Write-Host "  [FAIL] $TestName - Expected: '$Expected', Actual: '$Actual'" -ForegroundColor Red
-        $script:FailedTests++
-    }
-}
-
-function Assert-True {
-    param(
-        [string]$TestName,
-        [bool]$Condition
-    )
-    $script:TotalTests++
-    if ($Condition) {
-        Write-Host "  [PASS] $TestName" -ForegroundColor Green
-        $script:PassedTests++
-    }
-    else {
-        Write-Host "  [FAIL] $TestName - Expected condition to be True" -ForegroundColor Red
-        $script:FailedTests++
-    }
-}
 
 # --- 1. Dump Path Resolution Tests ---
 Write-Host "1. Testing Resolve-ServyRestoreDumpPath..." -ForegroundColor Yellow
 
 $path1 = Resolve-ServyRestoreDumpPath -DumpArchivePath "C:\Backups\Servy_Dump.zip"
-Assert-Equal "Absolute path resolution" $path1 "C:\Backups\Servy_Dump.zip"
+Assert-Equal "Absolute path resolution without PSCmdlet" $path1 "C:\Backups\Servy_Dump.zip"
+
+$expectedRelativePath = Join-Path (Get-Location).ProviderPath "Servy_Dump.zip"
+$path2 = Resolve-ServyRestoreDumpPath -DumpArchivePath "Servy_Dump.zip"
+Assert-Equal "Relative path resolves against PowerShell location without PSCmdlet" $path2 $expectedRelativePath
+
+# Verify production $PSCmdlet context path resolution via CmdletBinding wrapper
+function Test-ResolveWithCmdletContext {
+    [CmdletBinding()]
+    param([string]$Path)
+
+    return Resolve-ServyRestoreDumpPath -DumpArchivePath $Path -PSCmdletContext $PSCmdlet
+}
+
+$path3 = Test-ResolveWithCmdletContext -Path "Servy_Dump.zip"
+Assert-Equal "Relative path resolves via PSCmdletContext" $path3 $expectedRelativePath
 
 # --- 2. Sidecar Expected Hash Extraction Tests ---
 Write-Host "`n2. Testing Get-ServySidecarExpectedHash..." -ForegroundColor Yellow
@@ -83,8 +69,10 @@ $sidecarContent = "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B
 $hash1 = Get-ServySidecarExpectedHash -SidecarText $sidecarContent
 Assert-Equal "Extracts hash from sidecar text" $hash1 "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
 
-$hash2 = Get-ServySidecarExpectedHash -SidecarText "  ABCD1234EF   somefile.zip"
+$hash2 = Get-ServySidecarExpectedHash -SidecarText "   ABCD1234EF   somefile.zip"
 Assert-Equal "Trims leading whitespace and extracts hash" $hash2 "ABCD1234EF"
+
+Assert-True "Whitespace-only sidecar yields null" ($null -eq (Get-ServySidecarExpectedHash -SidecarText "   `t`n"))
 
 # --- 3. Archive Entry Security & Validation Guard Tests ---
 Write-Host "`n3. Testing Test-ServyDumpArchiveEntry..." -ForegroundColor Yellow
@@ -118,19 +106,4 @@ $seenEntries3 = New-Object 'System.Collections.Generic.HashSet[string]' ([String
 $e6 = Test-ServyDumpArchiveEntry -EntryName "Malware.exe" -EntryFullName "Malware.exe" -RootPath $rootPath -SeenEntryNames $seenEntries3
 Assert-True "Non-XML archive entry rejected" (-not $e6.IsValid -and $e6.ErrorMessage.Contains("not an XML configuration file"))
 
-# ----------------------------------------------------------------
-# Summary Output
-# ----------------------------------------------------------------
-Write-Host "`n====================================================" -ForegroundColor Cyan
-Write-Host " Test Summary" -ForegroundColor Cyan
-Write-Host " Total   : $script:TotalTests" -ForegroundColor Gray
-Write-Host " Passed  : $script:PassedTests" -ForegroundColor Green
-if ($script:FailedTests -gt 0) {
-    Write-Host " Failed  : $script:FailedTests" -ForegroundColor Red
-    Write-Host "====================================================" -ForegroundColor Cyan
-    exit 1
-} else {
-    Write-Host " Failed  : 0" -ForegroundColor Green
-    Write-Host "====================================================" -ForegroundColor Cyan
-    exit 0
-}
+Invoke-TestSummary
