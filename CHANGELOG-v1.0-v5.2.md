@@ -1,5 +1,7 @@
 # Changelog (v1.0 - v5.2)
 
+This is the archived release history. For newer releases, see [CHANGELOG.md](./CHANGELOG.md).
+
 ## [Servy 5.2](https://github.com/aelassas/servy/releases/tag/v5.2)
 
 **Date:** 2026-01-13 | **Tag:** [`v5.2`](https://github.com/aelassas/servy/tree/v5.2)
