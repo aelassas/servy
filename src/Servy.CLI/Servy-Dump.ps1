@@ -36,7 +36,7 @@
 
 .PARAMETER DestinationArchivePath
     Mandatory path specifying the target zip archive destination file (e.g., 'C:\Backups\Servy_Dump.zip').
-    If a directory path or trailing separator is provided, it writes to `$DumpArchivePath\Servy_Dump.zip`; if no file extension is specified, `.zip` is appended.
+    If a directory path or trailing separator is provided, it writes to '$DestinationArchivePath\Servy_Dump.zip'; if no file extension is specified, `.zip` is appended.
     Use `-Overwrite` to replace an existing archive.
 
 .PARAMETER Overwrite
