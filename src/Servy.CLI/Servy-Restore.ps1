@@ -529,7 +529,7 @@ try {
         }
 
         # Enumerate the XML configuration files in the extracted dump directory (archive layout is enforced flat)
-        $xmlFiles = Get-ChildItem -LiteralPath $tempExtractDir -Filter "*.xml" -File
+        $xmlFiles = Get-ChildItem -Path $tempExtractDir | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
 
         if ($null -eq $xmlFiles) {
             Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
