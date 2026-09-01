@@ -315,7 +315,7 @@ try {
     $servyModulePath = $moduleCandidates | Select-Object -First 1
 
     if (-not $servyModulePath) {
-        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
+        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script or in %ProgramFiles%\Servy." -ForegroundColor Red
         exit 2
     }
 

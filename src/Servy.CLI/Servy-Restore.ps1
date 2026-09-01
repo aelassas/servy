@@ -7,7 +7,7 @@
     Servy-Restore.ps1 verifies the integrity of a Servy dump archive against its SHA-256 sidecar file,
     safely extracts individual service XML configuration files into an ACL-hardened temporary location, and
     imports each configuration into Servy using the official Servy PowerShell module (Import-ServyServiceConfig).
-    
+
     If the -Install switch parameter is supplied, the script also installs each imported service into the Windows
     Service Control Manager (SCM).
 
@@ -20,7 +20,7 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Missing. The specified dump archive file does not exist.
-    - 4 : I/O & Extraction Failure. The archive could not be extracted, ACL hardening failed, or malformed entries were detected.
+    - 4 : I/O & Extraction Failure. The archive path is invalid, the archive could not be extracted, ACL hardening failed, malformed entries were detected, the -MaxAllowedEntries or -MaxUncompressedBytes safety limit was exceeded, or an unexpected runtime error occurred.
     - 5 : Checksum Verification Failure. The .sha256 sidecar is missing (without -SkipIntegrityCheck), could not be read, or a hash mismatch was detected.
     - 6 : Complete Import Failure. No service configurations could be imported from the archive.
     - 7 : Partial Import Warning. The restore completed, but one or more services failed to import.
@@ -223,6 +223,61 @@ function Test-ServyDumpArchiveEntry {
     return @{ IsValid = $true; IsDirectory = $false; TargetPath = $targetPath; ErrorMessage = $null }
 }
 
+<#
+.SYNOPSIS
+    Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
+
+.DESCRIPTION
+    Breaks permission inheritance ($isProtected = $true, $preserveInheritance = $false), purges all existing ACEs,
+    and grants Full Control exclusively to Builtin Administrators and Local SYSTEM using language-agnostic Well-Known SIDs.
+
+.PARAMETER Path
+    Mandatory literal filesystem path of the target file or directory.
+
+.PARAMETER IsDirectory
+    Optional switch indicating if the path is a directory (controls container/object inheritance flags).
+#>
+function Set-ServyHardenedFileAcl {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$IsDirectory
+    )
+
+    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+
+    # Use -Path for PowerShell 2.0 compatibility
+    $acl = Get-Acl -Path $Path
+
+    # 1. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
+    $acl.SetAccessRuleProtection($true, $false)
+
+    # 2. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
+    $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    foreach ($rule in $explicitRules) {
+        [void]$acl.RemoveAccessRule($rule)
+    }
+
+    # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
+    if ($IsDirectory.IsPresent) {
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    }
+    else {
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+    }
+
+    $acl.SetAccessRule($adminRule)
+    $acl.SetAccessRule($systemRule)
+
+    Set-Acl -Path $Path -AclObject $acl
+}
+
 # If dot-sourced for testing, return immediately without executing main script body
 if ($MyInvocation.InvocationName -eq '.') {
     return
@@ -269,7 +324,7 @@ try {
     $servyModulePath = $moduleCandidates | Select-Object -First 1
 
     if (-not $servyModulePath) {
-        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script, in %ProgramFiles%\Servy, or in %ProgramFiles(x86)%\Servy." -ForegroundColor Red
+        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script or in %ProgramFiles%\Servy." -ForegroundColor Red
         exit 2
     }
 
@@ -346,14 +401,7 @@ try {
 
         # Restrict staging directory permissions to Administrators and SYSTEM exclusively
         try {
-            $acl = Get-Acl -Path $tempExtractDir
-            $acl.SetAccessRuleProtection($true, $false)
-            foreach ($sid in @('S-1-5-32-544', 'S-1-5-18')) {
-                $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
-                $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
-                    $id, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')))
-            }
-            Set-Acl -Path $tempExtractDir -AclObject $acl
+            Set-ServyHardenedFileAcl -Path $tempExtractDir -IsDirectory
         }
         catch {
             Write-Host "WARNING: Could not restrict permissions on the extraction directory '$tempExtractDir': $($_.Exception.Message)" -ForegroundColor Red
@@ -480,8 +528,8 @@ try {
             }
         }
 
-        # Enumerate all XML configuration files recursively in the extracted dump directory
-        $xmlFiles = Get-ChildItem -Path $tempExtractDir -Recurse | Where-Object { -not $_.PSIsContainer -and $_.Name.EndsWith(".xml", [System.StringComparison]::OrdinalIgnoreCase) }
+        # Enumerate the XML configuration files in the extracted dump directory (archive layout is enforced flat)
+        $xmlFiles = Get-ChildItem -LiteralPath $tempExtractDir -Filter "*.xml" -File
 
         if ($null -eq $xmlFiles) {
             Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
