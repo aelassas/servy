@@ -103,10 +103,14 @@ Write-Host ""
 # --- 3. Escaped Characters ---
 Write-Host "[3] Escaped Character Handling" -ForegroundColor Yellow
 Test-EnvVarPattern -InputString 'KEY=VAL\;UE' -ExpectedMatch $true -Description 'Escaped semicolon in value (\;)'
+# Note: \= and \" illustrate escaping grammar compatibility alongside [^;]
 Test-EnvVarPattern -InputString 'KEY=VAL\=UE' -ExpectedMatch $true -Description 'Escaped equals sign in value (\=)'
 Test-EnvVarPattern -InputString 'KEY=VAL\"UE' -ExpectedMatch $true -Description 'Escaped quote in value (\")'
 Test-EnvVarPattern -InputString 'KEY=VAL\\\\UE' -ExpectedMatch $true -Description 'Escaped backslash in value (\\\\)'
 Test-EnvVarPattern -InputString 'K1=V1\;;K2=V2' -ExpectedMatch $true -Description "Escaped semicolon preceding record separator"
+# Discriminate load-bearing interaction between \\\\ and record separators (\\ followed by ;)
+Test-EnvVarPattern -InputString 'K1=a\\;b' -ExpectedMatch $false -Description 'Escaped backslash then separator: key-less second record must be rejected'
+Test-EnvVarPattern -InputString 'K1=a\\;K2=b' -ExpectedMatch $true -Description 'Escaped backslash immediately before a record separator'
 Write-Host ""
 
 # --- 4. Invalid Formats (Should Fail) ---
@@ -152,11 +156,11 @@ Write-Host " Total   : $script:TotalTests" -ForegroundColor Gray
 Write-Host " Passed  : $script:PassedTests" -ForegroundColor Green
 
 if ($script:FailedTests -gt 0) {
-    Write-Host " Failed : $script:FailedTests" -ForegroundColor Red
+    Write-Host " Failed  : $script:FailedTests" -ForegroundColor Red
     Write-Host "====================================================" -ForegroundColor Cyan
     exit 1
 } else {
-    Write-Host " Failed : 0" -ForegroundColor Green
+    Write-Host " Failed  : 0" -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
     exit 0
 }
