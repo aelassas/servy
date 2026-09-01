@@ -320,6 +320,7 @@ try {
     # Catch-all for destination resolution (e.g. invalid path characters or invalid drive letters)
     try {
         $resolvedArchivePath = Resolve-ServyDumpDestinationPath -DestinationArchivePath $DestinationArchivePath -PSCmdletContext $PSCmdlet
+        $sidecarPath         = "$resolvedArchivePath.sha256"
 
         # Check if destination dump file already exists
         if (Test-Path -LiteralPath $resolvedArchivePath) {
@@ -331,7 +332,6 @@ try {
         }
 
         # Verify existing sidecar file can be written/overwritten under -Overwrite before proceeding with exports
-        $sidecarPath = "$resolvedArchivePath.sha256"
         if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
             try {
                 $fs = [System.IO.File]::Open($sidecarPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
@@ -598,10 +598,10 @@ public static class ServyNativeWinSqlite16
                 Write-Host "The archive was removed because it contains unencrypted plain-text service configurations and could not be protected." -ForegroundColor Red
             }
 
-            if ($Overwrite.IsPresent -and (Test-Path -LiteralPath "$resolvedArchivePath.sha256")) {
-                Remove-Item -LiteralPath "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
-                if (Test-Path -LiteralPath "$resolvedArchivePath.sha256") {
-                    Write-Host "WARNING: A pre-existing SHA-256 sidecar file could NOT be removed and remains at '$resolvedArchivePath.sha256' - delete or update it manually." -ForegroundColor Red
+            if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
+                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
+                if (Test-Path -LiteralPath $sidecarPath) {
+                    Write-Host "WARNING: A pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
                 }
             }
 
@@ -609,10 +609,10 @@ public static class ServyNativeWinSqlite16
         }
 
         # Remove pre-existing sidecar only after compression and hardening succeed to avoid corrupting surviving backups
-        if ($Overwrite.IsPresent -and (Test-Path -LiteralPath "$resolvedArchivePath.sha256")) {
-            Remove-Item -LiteralPath "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
-            if (Test-Path -LiteralPath "$resolvedArchivePath.sha256") {
-                Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$resolvedArchivePath.sha256' - delete or update it manually." -ForegroundColor Red
+        if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
+            Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $sidecarPath) {
+                Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
             }
         }
 
@@ -621,20 +621,19 @@ public static class ServyNativeWinSqlite16
         # Emit SHA-256 sidecar hash file for integrity verification
         try {
             $hashValue = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
-            $sidecarPath = "$resolvedArchivePath.sha256"
             [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($false)))
             Set-ServyHardenedFileAcl -Path $sidecarPath
             Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
         }
         catch {
             $sidecarWriteFailed = $true
-            if (Test-Path -LiteralPath "$resolvedArchivePath.sha256") {
-                Remove-Item -LiteralPath "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $sidecarPath) {
+                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
             }
             Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
 
-            if (Test-Path -LiteralPath "$resolvedArchivePath.sha256") {
-                Write-Host "A stale SHA-256 sidecar could NOT be removed and remains at '$resolvedArchivePath.sha256' - delete or regenerate it (Get-FileHash) before restoring, or restore verification will reject the archive." -ForegroundColor Red
+            if (Test-Path -LiteralPath $sidecarPath) {
+                Write-Host "A stale SHA-256 sidecar could NOT be removed and remains at '$sidecarPath' - delete or regenerate it (Get-FileHash) before restoring, or restore verification will reject the archive." -ForegroundColor Red
             }
             else {
                 Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
