@@ -32,12 +32,12 @@
 * [x] Provide ARM64 binaries ([#2243](https://github.com/aelassas/servy/issues/2243))
 * [x] External Heartbeat Ping URL ([#2700](https://github.com/aelassas/servy/issues/2700))
 * [x] Allow configuring CPU affinity in service definitions ([#4436](https://github.com/aelassas/servy/issues/4436))
+* [x] Add dump and restore scripts for migration and VM cloning
 * [ ] Add a management-only REST API for status, health metrics, and lifecycle control (start/stop/restart)
 * [ ] Add a web dashboard for remote service control and real-time performance graphs
 * [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
 * [ ] Add resource-based restart policies (e.g., trigger restart on RAM/CPU usage thresholds)
 * [ ] Add scheduled uptime windows and maintenance mode at specific times (start/stop services and pause health checks)
-* [x] Add dump and restore scripts for migration and VM cloning
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Desktop App for full edits
