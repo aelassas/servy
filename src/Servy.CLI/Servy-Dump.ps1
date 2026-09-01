@@ -703,16 +703,32 @@ public static class ServySafePs2Sqlite16
                     }
                 }
             }
-
-            Set-ServyHardenedFileAcl -Path $resolvedArchivePath
         }
         catch {
-            Write-Host "`nServy configuration dump FAILED during compression or ACL hardening: $_" -ForegroundColor Red
-            Write-Host "No archive was produced at '$resolvedArchivePath'." -ForegroundColor Red
+            Write-Host "`nServy configuration dump FAILED during compression: $_" -ForegroundColor Red
+            Write-Host "No valid archive was produced at '$resolvedArchivePath'." -ForegroundColor Red
             exit 4
         }
 
-        # Remove pre-existing sidecar only after compression succeeds to avoid corrupting surviving backups on compression failure
+        # Apply ACL hardening to the newly created archive
+        try {
+            Set-ServyHardenedFileAcl -Path $resolvedArchivePath
+        }
+        catch {
+            Write-Host "`nWARNING: Could not restrict permissions on the archive '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "The archive was REMOVED because it contains UNENCRYPTED PLAIN-TEXT service configurations and could not be protected." -ForegroundColor Red
+
+            # Best-effort removal of the unprotected archive
+            Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+
+            if ($Overwrite.IsPresent) {
+                Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+            }
+
+            exit 4
+        }
+
+        # Remove pre-existing sidecar only after compression and hardening succeed to avoid corrupting surviving backups
         if ($Overwrite.IsPresent) {
             Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
         }
