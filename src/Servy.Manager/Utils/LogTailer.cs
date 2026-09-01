@@ -218,7 +218,7 @@ namespace Servy.Manager.Utils
                                             {
                                                 // If we hit threshold at EOF and the file has an unterminated tail,
                                                 // hold back the torn line in carryOverFragment instead of publishing it.
-                                                if (fs.Position >= fs.Length && fs.Length > 0 && !EndsWithNewline(fs))
+                                                if (reader.Peek() == -1 && fs.Length > 0 && !EndsWithNewline(fs))
                                                 {
                                                     batch.RemoveAt(batch.Count - 1);
                                                     carryOverFragment = line;

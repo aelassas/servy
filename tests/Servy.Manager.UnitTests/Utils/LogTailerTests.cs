@@ -322,6 +322,55 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task RunFromPosition_ThresholdFlushMidBuffer_DoesNotHoldBackCompleteLines()
+        {
+            // Arrange: Reproduce issue #6471 where a burst of lines exceeding threshold sits in the StreamReader's
+            // internal buffer while the underlying FileStream is at EOF and lacks a trailing newline at the end of the file.
+            // Complete lines sitting mid-buffer during a threshold flush must NOT be mistaken for the unterminated tail line.
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                File.WriteAllText(_tempFilePath, string.Empty);
+                var fileInfo = new FileInfo(_tempFilePath);
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedLines) capturedLines.AddRange(lines);
+                };
+
+                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                await WaitForLoopStartAsync(tailer, CancellationToken.None);
+
+                int threshold = AppConfig.LogTailerBatchFlushThreshold;
+                int totalLinesWritten = threshold + 20;
+
+                // Write 'totalLinesWritten' lines where line 'threshold' is complete, but the very last line (totalLinesWritten) lacks a newline
+                var fullLines = Enumerable.Range(1, totalLinesWritten - 1).Select(i => $"MidBufferLine_{i}");
+                string burstContent = string.Join("\n", fullLines) + "\nUNTERMINATED_FINAL_BURST_TAIL";
+
+                // Act
+                File.WriteAllText(_tempFilePath, burstContent);
+
+                // Wait for the threshold batch to publish
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedLines) return capturedLines.Count >= threshold;
+                }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+
+                // Assert - Line 'threshold' must be published in the threshold batch and NOT held back or merged
+                lock (capturedLines)
+                {
+                    Assert.Equal($"MidBufferLine_{threshold}", capturedLines[threshold - 1].Text);
+                    Assert.DoesNotContain(capturedLines, l => l.Text.Contains("UNTERMINATED_FINAL_BURST_TAIL"));
+                }
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+            }
+        }
+
+        [Fact]
         public async Task RunFromPosition_ThresholdBatchWithUnterminatedLine_HoldsBackTornFragmentUntilNewline()
         {
             // Arrange
