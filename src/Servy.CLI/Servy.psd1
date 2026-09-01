@@ -18,7 +18,7 @@
     CompanyName       = 'Akram El Assas'
 
     # Copyright statement for this module
-    Copyright         = '(c) Akram El Assas. All rights reserved.'
+    Copyright         = 'Copyright © 2026 Akram El Assas. All rights reserved.'
 
     # Description of the functionality provided by this module
     Description       = 'PowerShell module to manage Windows services using the Servy CLI. Provides functions to install, uninstall, start, stop, restart, export and import configurations, and check the status of Windows services. Works with both installed and portable versions of Servy.'
