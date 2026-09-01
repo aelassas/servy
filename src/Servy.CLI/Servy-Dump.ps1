@@ -68,7 +68,7 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = 'Specify target archive output file path (e.g., "C:\Backups\Servy_Backup.zip").')]
+    [Parameter(Mandatory = $true, HelpMessage = 'Specify target archive output file path (e.g., "C:\Backups\Servy_Dump.zip").')]
     [ValidateNotNullOrEmpty()]
     [string]$DestinationArchivePath,
 
