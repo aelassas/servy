@@ -343,6 +343,16 @@ try {
             Write-Host "Existing dump archive found. -Overwrite specified; replacing target file." -ForegroundColor Yellow
         }
 
+        # Verify existing sidecar file can be removed under -Overwrite before proceeding with exports
+        $sidecarPath = "$resolvedArchivePath.sha256"
+        if ($Overwrite.IsPresent -and (Test-Path -Path $sidecarPath)) {
+            Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue
+            if (Test-Path -Path $sidecarPath) {
+                Write-Host "Existing SHA-256 sidecar file '$sidecarPath' is locked or unwritable and could not be removed. Operation aborted to prevent stale checksum mismatches." -ForegroundColor Red
+                exit 4
+            }
+        }
+
         # Prove destination parent directory is created and writable BEFORE exporting
         $parentDir = [System.IO.Path]::GetDirectoryName($resolvedArchivePath)
 
@@ -727,16 +737,22 @@ public static class ServySafePs2Sqlite16
                 Write-Host "The archive was removed because it contains unencrypted plain-text service configurations and could not be protected." -ForegroundColor Red
             }
 
-            if ($Overwrite.IsPresent) {
+            if ($Overwrite.IsPresent -and (Test-Path -Path "$resolvedArchivePath.sha256")) {
                 Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+                if (Test-Path -Path "$resolvedArchivePath.sha256") {
+                    Write-Host "WARNING: A pre-existing SHA-256 sidecar file could NOT be removed and remains at '$resolvedArchivePath.sha256' - delete or update it manually." -ForegroundColor Red
+                }
             }
 
             exit 4
         }
 
         # Remove pre-existing sidecar only after compression and hardening succeed to avoid corrupting surviving backups
-        if ($Overwrite.IsPresent) {
+        if ($Overwrite.IsPresent -and (Test-Path -Path "$resolvedArchivePath.sha256")) {
             Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+            if (Test-Path -Path "$resolvedArchivePath.sha256") {
+                Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$resolvedArchivePath.sha256' - delete or update it manually." -ForegroundColor Red
+            }
         }
 
         $sidecarWriteFailed = $false
@@ -763,9 +779,17 @@ public static class ServySafePs2Sqlite16
         }
         catch {
             $sidecarWriteFailed = $true
-            Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+            if (Test-Path -Path "$resolvedArchivePath.sha256") {
+                Remove-Item -Path "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
+            }
             Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
-            Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
+
+            if (Test-Path -Path "$resolvedArchivePath.sha256") {
+                Write-Host "A stale SHA-256 sidecar could NOT be removed and remains at '$resolvedArchivePath.sha256' - delete or regenerate it (Get-FileHash) before restoring, or restore verification will reject the archive." -ForegroundColor Red
+            }
+            else {
+                Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
+            }
             
             # PowerShell 2.0 compatible property assignment for error array
             $errObj = New-Object PSObject
