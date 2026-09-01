@@ -19,6 +19,14 @@ else {
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
 
+# Dot-source test harness shared utilities
+$testCommonPath = Join-Path $scriptDir 'TestCommon.ps1'
+if (-not (Test-Path -Path $testCommonPath)) {
+    Write-Host "FAILED: Could not find TestCommon.ps1 at '$testCommonPath'." -ForegroundColor Red
+    exit 1
+}
+. $testCommonPath
+
 # Dot-source Servy-Dump.ps1 to load its helper functions without executing the main script body.
 # Pass dummy string for mandatory parameter to satisfy [ValidateNotNullOrEmpty()].
 $scriptPath = Join-Path $scriptDir 'Servy-Dump.ps1'
@@ -40,43 +48,6 @@ Write-Host "====================================================" -ForegroundCol
 Write-Host " Running Servy-Dump.ps1 Tests (net48)          " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
-
-$script:TotalTests  = 0
-$script:PassedTests = 0
-$script:FailedTests = 0
-
-function Assert-Equal {
-    param(
-        [string]$TestName,
-        $Actual,
-        $Expected
-    )
-    $script:TotalTests++
-    if ($Actual -eq $Expected) {
-        Write-Host "  [PASS] $TestName" -ForegroundColor Green
-        $script:PassedTests++
-    }
-    else {
-        Write-Host "  [FAIL] $TestName - Expected: '$Expected', Actual: '$Actual'" -ForegroundColor Red
-        $script:FailedTests++
-    }
-}
-
-function Assert-True {
-    param(
-        [string]$TestName,
-        [bool]$Condition
-    )
-    $script:TotalTests++
-    if ($Condition) {
-        Write-Host "  [PASS] $TestName" -ForegroundColor Green
-        $script:PassedTests++
-    }
-    else {
-        Write-Host "  [FAIL] $TestName - Expected condition to be True" -ForegroundColor Red
-        $script:FailedTests++
-    }
-}
 
 # --- 1. Destination Path Resolution & Normalization Tests ---
 Write-Host "1. Testing Resolve-ServyDumpDestinationPath..." -ForegroundColor Yellow
@@ -157,12 +128,17 @@ try {
     $hasSystem = $false
 
     foreach ($rule in $fileRules) {
-        if ($rule.IdentityReference.Equals($adminSid) -and $rule.FileSystemRights -eq "FullControl")  { $hasAdmin  = $true }
-        if ($rule.IdentityReference.Equals($systemSid) -and $rule.FileSystemRights -eq "FullControl") { $hasSystem = $true }
+        if ($rule.IdentityReference.Equals($adminSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) { $hasAdmin = $true }
+
+        if ($rule.IdentityReference.Equals($systemSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) { $hasSystem = $true }
     }
 
-    Assert-True "File ACL grants FullControl to Builtin Administrators" $hasAdmin
-    Assert-True "File ACL grants FullControl to Local SYSTEM" $hasSystem
+    Assert-True "File ACL grants Allow FullControl to Builtin Administrators" $hasAdmin
+    Assert-True "File ACL grants Allow FullControl to Local SYSTEM" $hasSystem
 
     # Hardening test on Directory
     Set-ServyHardenedFileAcl -Path $tempTestDir -IsDirectory
@@ -177,31 +153,23 @@ try {
     $hasDirSystem = $false
 
     foreach ($rule in $dirRules) {
-        if ($rule.IdentityReference.Equals($adminSid) -and $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit") { $hasDirAdmin  = $true }
-        if ($rule.IdentityReference.Equals($systemSid) -and $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit") { $hasDirSystem = $true }
+        if ($rule.IdentityReference.Equals($adminSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit" -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) { $hasDirAdmin = $true }
+
+        if ($rule.IdentityReference.Equals($systemSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit" -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) { $hasDirSystem = $true }
     }
 
-    Assert-True "Directory ACL grants ContainerInherit+ObjectInherit to Administrators" $hasDirAdmin
-    Assert-True "Directory ACL grants ContainerInherit+ObjectInherit to SYSTEM" $hasDirSystem
+    Assert-True "Directory ACL grants Allow FullControl ContainerInherit+ObjectInherit to Administrators" $hasDirAdmin
+    Assert-True "Directory ACL grants Allow FullControl ContainerInherit+ObjectInherit to SYSTEM" $hasDirSystem
 }
 finally {
     if (Test-Path -Path $tempTestFile) { Remove-Item -Path $tempTestFile -Force -ErrorAction SilentlyContinue }
     if (Test-Path -Path $tempTestDir)  { Remove-Item -Path $tempTestDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
-# ----------------------------------------------------------------
-# Summary Output
-# ----------------------------------------------------------------
-Write-Host "`n====================================================" -ForegroundColor Cyan
-Write-Host " Test Summary" -ForegroundColor Cyan
-Write-Host " Total   : $script:TotalTests" -ForegroundColor Gray
-Write-Host " Passed  : $script:PassedTests" -ForegroundColor Green
-if ($script:FailedTests -gt 0) {
-    Write-Host " Failed  : $script:FailedTests" -ForegroundColor Red
-    Write-Host "====================================================" -ForegroundColor Cyan
-    exit 1
-} else {
-    Write-Host " Failed  : 0" -ForegroundColor Green
-    Write-Host "====================================================" -ForegroundColor Cyan
-    exit 0
-}
+Invoke-TestSummary

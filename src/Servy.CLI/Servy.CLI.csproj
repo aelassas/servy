@@ -172,6 +172,7 @@
     <None Include="Servy.psd1" />
     <None Include="Servy.psm1" />
     <None Include="Servy.test.ps1" />
+    <None Include="TestCommon.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="servy.ico" />
