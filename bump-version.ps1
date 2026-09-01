@@ -1,12 +1,12 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Updates the Servy version across all project files.
+    Updates the Servy version and copyright notices across all project files.
 
 .DESCRIPTION
-    This script updates version numbers in several Servy files based on a provided
+    This script updates version numbers and copyright years in several Servy files based on a provided
     short version (e.g. 1.4). It expands the version into full semantic versions
-    and rewrites script variables, and assembly metadata.
+    and rewrites script variables, assembly metadata, and module manifests.
 
 .PARAMETER Version
     The new version to apply in 'Major.Minor' format (e.g., "8.0").
@@ -26,7 +26,6 @@
     Author: Akram El Assas
     Project: Servy
 #>
-
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
@@ -38,9 +37,11 @@ param(
 $ErrorActionPreference = "Stop"
 $script:HadFailure     = $false
 
-# Convert short version to full versions
+# Convert short version to full versions and current year
 $fullVersion = "$Version.0"
 $fileVersion = "$Version.0.0"
+$currentYear = (Get-Date).Year
+$copyrightChar = [char]0x00A9
 
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing Servy version update to $Version..." -ForegroundColor Yellow
@@ -140,7 +141,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
 
         # LOGIC: Track total replacements to prevent silent failures in recursive loops.
         $totalReplacements = 0
-        $assemblyTags = @('AssemblyVersion', 'AssemblyFileVersion')
+        $assemblyTags = @('AssemblyVersion', 'AssemblyFileVersion', 'AssemblyCopyright')
 
         foreach ($tag in $assemblyTags) {
             $replacementValue = ""
@@ -154,17 +155,33 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
                     $replacementValue = $fileVersion
                     break
                 }
+                "AssemblyCopyright" {
+                    $replacementValue = "Copyright $copyrightChar $currentYear Akram El Assas. All rights reserved."
+                    break
+                }
             }
 
-            # Case-insensitive pattern for [assembly: AssemblyVersion("...")]
-            $pattern = "(\[assembly:\s*$tag\(\"")[^""]*(\""\)\])"
-            $regexMatches = [regex]::Matches($content, $pattern, "IgnoreCase")
+            # Case-insensitive pattern for [assembly: AssemblyTag("...")]
+            if ($tag -eq "AssemblyCopyright") {
+                $pattern = "(\[assembly:\s*AssemblyCopyright\(\""Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+)\d{4}(\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.\""\)\])"
+                $regexMatches = [regex]::Matches($content, $pattern, "IgnoreCase")
 
-            if ($regexMatches.Count -gt 0) {
-                $totalReplacements += $regexMatches.Count
-                $content = [regex]::Replace($content, $pattern, {
-                    param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)"
-                }, "IgnoreCase")
+                if ($regexMatches.Count -gt 0) {
+                    $totalReplacements += $regexMatches.Count
+                    $content = [regex]::Replace($content, $pattern, {
+                        param($m) "$($m.Groups[1].Value)$currentYear$($m.Groups[2].Value)"
+                    }, "IgnoreCase")
+                }
+            } else {
+                $pattern = "(\[assembly:\s*$tag\(\"")[^""]*(\""\)\])"
+                $regexMatches = [regex]::Matches($content, $pattern, "IgnoreCase")
+
+                if ($regexMatches.Count -gt 0) {
+                    $totalReplacements += $regexMatches.Count
+                    $content = [regex]::Replace($content, $pattern, {
+                        param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)"
+                    }, "IgnoreCase")
+                }
             }
         }
 
@@ -178,7 +195,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
             }
         } else {
             # LOG: Alert the operator if an AssemblyInfo file exists but lacks version metadata.
-            Write-Warning "No version attributes found in: $path"
+            Write-Warning "No version or copyright attributes found in: $path"
         }
     }
     catch {
@@ -191,10 +208,17 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
 # -------------------------------------------------------------
 # 3. Update src\Servy.CLI\Servy.psd1
 # -------------------------------------------------------------
+$psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
+
 Update-FileContent `
-    -Path (Join-Path $baseDir "src\Servy.CLI\Servy.psd1") `
+    -Path $psd1Path `
     -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `
     -Replacement $fullVersion
+
+Update-FileContent `
+    -Path $psd1Path `
+    -Pattern "(Copyright\s*=\s*')(?:Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+\d{4}|\(c\))\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.(')" `
+    -Replacement "Copyright $copyrightChar $currentYear Akram El Assas. All rights reserved."
 
 if ($script:HadFailure) {
     Write-Host "Version update process completed with errors." -ForegroundColor Red
