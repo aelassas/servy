@@ -1,4 +1,4 @@
-#Requires -Version 2.0
+﻿#Requires -Version 2.0
 <#
 .SYNOPSIS
     Unit tests for $script:EnvVarValidationPattern in Servy.psm1.

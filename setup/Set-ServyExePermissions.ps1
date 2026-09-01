@@ -1,4 +1,4 @@
-#Requires -Version 2.0
+﻿#Requires -Version 2.0
 <#
 .SYNOPSIS
     Mandatory Security Hardening: Hardens Servy .NET Framework 4.8 executable and library permissions to Read & Execute to prevent privilege escalation and binary tampering.

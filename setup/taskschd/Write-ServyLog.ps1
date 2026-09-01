@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Safely writes log messages with UTF-8 encoding and performs size-based rotation.
 #>

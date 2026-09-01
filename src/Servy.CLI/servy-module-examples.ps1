@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Example scripts demonstrating the usage of the Servy PowerShell module to manage Windows services.
 

@@ -1,4 +1,4 @@
-<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+﻿<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Author>Servy</Author>
     <Description>Show Windows notifications when a Servy-managed service fails.</Description>

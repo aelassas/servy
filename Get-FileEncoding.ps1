@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Detects the encoding of a file based on its Byte Order Mark (BOM).
 

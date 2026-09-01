@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # Project: Servy
 # Script:  tools-config.ps1
 # Purpose: Dynamic tool path resolution with environment and fallback support.

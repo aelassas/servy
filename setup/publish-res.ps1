@@ -1,4 +1,4 @@
-#Requires -Version 5.0
+﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
     Builds a Servy project (.NET Framework 4.8) and copies the binaries to the Resources folder.

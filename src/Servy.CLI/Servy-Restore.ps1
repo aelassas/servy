@@ -1,4 +1,4 @@
-#Requires -Version 2.0
+﻿#Requires -Version 2.0
 <#
 .SYNOPSIS
     Restores Servy service configurations from a consolidated XML dump archive.
@@ -47,11 +47,11 @@
 
 .PARAMETER MaxAllowedEntries
     Optional integer parameter. Specifies the maximum number of entries allowed in the dump archive
-    to prevent zip bomb attacks during extraction. Defaults to 1000 (range: 1–100,000).
+    to prevent zip bomb attacks during extraction. Defaults to 1000 (range: 1-100,000).
 
 .PARAMETER MaxUncompressedBytes
     Optional 64-bit integer parameter. Specifies the maximum total uncompressed size (in bytes) allowed
-    when extracting the dump archive. Defaults to 104857600 bytes / 100 MB (range: 1–10737418240 bytes / 10 GB).
+    when extracting the dump archive. Defaults to 104857600 bytes / 100 MB (range: 1-10737418240 bytes / 10 GB).
 
 .EXAMPLE
     .\Servy-Restore.ps1 -DumpArchivePath "C:\Backups\Servy_Dump.zip"

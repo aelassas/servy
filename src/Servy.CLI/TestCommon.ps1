@@ -1,4 +1,4 @@
-#Requires -Version 2.0
+﻿#Requires -Version 2.0
 <#
 .SYNOPSIS
     Shared testing utilities and assertion harness for Servy CLI unit test suites (net48 / PS 2.0).
