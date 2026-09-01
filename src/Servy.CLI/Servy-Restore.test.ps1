@@ -159,7 +159,7 @@ Assert-True "Directory entry skipped safely" ($e1.IsValid -and $e1.IsDirectory)
 
 # Test 4.2: Valid XML entry
 $e2 = Test-ServyDumpArchiveEntry -EntryName "MyService.xml" -EntryFullName "MyService.xml" -RootPath $rootPath -SeenEntryNames $seenEntries
-Assert-True "Valid flat XML entry accepted" ($e2.IsValid -and -not $e2.IsDirectory -and $e2.TargetPath.EndsWith("MyService.xml"))
+Assert-Equal "Valid flat XML entry maps into the staging root" $e2.TargetPath ([System.IO.Path]::Combine($rootPath, "MyService.xml"))
 
 # Test 4.3: Non-flat entry (subdirectory)
 $e3 = Test-ServyDumpArchiveEntry -EntryName "MyService.xml" -EntryFullName "folder/MyService.xml" -RootPath $rootPath -SeenEntryNames $seenEntries
@@ -178,5 +178,10 @@ Assert-True "Path traversal entry rejected" (-not $e5.IsValid -and ($e5.ErrorMes
 $seenEntries3 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $e6 = Test-ServyDumpArchiveEntry -EntryName "Malware.exe" -EntryFullName "Malware.exe" -RootPath $rootPath -SeenEntryNames $seenEntries3
 Assert-True "Non-XML archive entry rejected" (-not $e6.IsValid -and $e6.ErrorMessage.Contains("not an XML configuration file"))
+
+# Test 4.7: Absolute-path entry
+$seenEntries4 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+$e7 = Test-ServyDumpArchiveEntry -EntryName "C:\evil.xml" -EntryFullName "C:\evil.xml" -RootPath $rootPath -SeenEntryNames $seenEntries4
+Assert-True "Absolute-path archive entry rejected" (-not $e7.IsValid -and $e7.ErrorMessage.Contains("outside staging directory"))
 
 Invoke-TestSummary
