@@ -1,14 +1,14 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Recursively converts text files in the current folder and subfolders to UTF-8 (with BOM for PowerShell scripts/manifests and XML files, no BOM for others) with Windows (CRLF) line endings.
+    Recursively converts text files in the current folder and subfolders to UTF-8 (with BOM for PowerShell scripts/manifests, XML, and config files; no BOM for others) with Windows (CRLF) line endings.
 
 .DESCRIPTION
     Traverses the current directory recursively, skipping specified directories (e.g., bin, obj,
     node_modules) and file types/names (e.g., .exe, .7z, .coverage.xml, coverage.cobertura.xml).
     Normalizes line endings to Windows CRLF (`r`n) and re-writes file content using
-    [System.IO.File]::WriteAllText. PowerShell files (.ps1, .psm1, .psd1) and XML files (.xml) are saved
-    as UTF-8 with BOM for compatibility, while all other text files are saved as UTF-8 (no BOM).
+    [System.IO.File]::WriteAllText. PowerShell files (.ps1, .psm1, .psd1), XML files (.xml), and configuration files (.config)
+    are saved as UTF-8 with BOM for compatibility, while all other text files are saved as UTF-8 (no BOM).
 
 .PARAMETER ExcludeDirs
     Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'.
@@ -48,7 +48,7 @@ if (Test-Path $helperPath) {
     }
 }
 
-# Construct UTF-8 encoding objects (With BOM for .ps1/.psm1/.psd1/.xml, No BOM for other files)
+# Construct UTF-8 encoding objects (With BOM for .ps1/.psm1/.psd1/.xml/.config, No BOM for other files)
 $utf8WithBom = New-Object System.Text.UTF8Encoding($true)
 $utf8NoBom   = New-Object System.Text.UTF8Encoding($false)
 
@@ -128,8 +128,8 @@ foreach ($file in $files) {
         # Normalize all line returns (CRLF, LF, CR) to Windows CRLF (`r`n)
         $crlfContent = $content.Replace("`r`n", "`n").Replace("`r", "`n").Replace("`n", "`r`n")
 
-        # Select UTF-8 with BOM for PowerShell files (.ps1, .psm1, .psd1) and XML files (.xml), UTF-8 without BOM for all other files
-        $requiresBom = $file.Extension -match '^\.(ps1|psm1|psd1|xml)$'
+        # Select UTF-8 with BOM for PowerShell (.ps1, .psm1, .psd1), XML (.xml), and config (.config) files; UTF-8 without BOM for all other files
+        $requiresBom = $file.Extension -match '^\.(ps1|psm1|psd1|xml|config)$'
         $targetEncoding = if ($requiresBom) { $utf8WithBom } else { $utf8NoBom }
 
         # Write back file content
