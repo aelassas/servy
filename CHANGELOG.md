@@ -1,5 +1,92 @@
 # Changelog
 
+## [Servy 9.9](https://github.com/aelassas/servy/releases/tag/v9.9)
+
+**Date:** 2026-08-28 | **Tag:** [`v9.9`](https://github.com/aelassas/servy/tree/v9.9)
+
+This release includes bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
+
+### Full Changelog
+<details>
+  <summary>Click to expand release notes!</summary>
+
+* fix(security): explicitly assign admin owner and streamline single-pass ACL hardening in Set-ServyExePermissions.ps1
+* fix(security): add admin privilege check to Set-ServyExePermissions.ps1
+* fix(core): ServiceAccounts.cs - IsGmsa trims and whitespace-checks the account but not the password, so a gMSA with a whitespace-only password is sent through the LSA privilege assignment its own doc forbids (#5702)
+* fix(core): ProcessHelper.cs - FormatRamUsage prints 1024.0 KB/MB/GB just below each unit boundary because the unit is chosen before rounding (#5716)
+* fix(core): SecureXml.cs / JsonSecurity.cs - the eight ignored ServiceDto fields are silently dropped by a JSON import but abort an XML import, and the wiki documents only the JSON behaviour (#5751)
+* fix(core): ServiceAccounts.cs - LocalSystemAliases omits the bare 'Local System' and '.\Local System' forms its two sibling sets gained in #4713/#5021, so the Manager's own display label fails IsBuiltInServiceAccount (#5900)
+* fix(core): EnvironmentVariablesValidator.cs - the key guard covers CR, LF and NUL but not '=', so an escaped \= smuggles an equals sign into a variable NAME and slips past the ProtectedVariables check (third case of #3768/#4716) (#5905)
+* fix(core): ServiceAccounts.cs / NativeMethodsHelpers.cs / ServiceManager.cs - three consumers trim the service account name, no producer does, so a padded name passes validation as built-in and reaches CreateService un-trimmed (#5909)
+* fix(core): AffinityHelper.cs - an inverted range and a zero hex mask are both reported as "Core index in range ... is out of bounds", which is false for both (#5911)
+* fix(core): ConfigParser.cs - the Flags parity check in ParseEnum(string) uses long.TryParse, which fails open for ulong-backed values and is culture-sensitive; the third site the #1341 invariant sweep missed (#5913)
+* fix(core): ReservedNames.cs - the list is shared but the normalisation is not: "CON .txt" is blocked by PathSecurityGuard, accepted by IsServiceNameValid and left unescaped by MakeFilenameSafe (residual of #2141) (#5921)
+* fix(core): ResourceHelper.cs - every re-extraction freezes the vault ACL onto the extracted binaries, so a grant or revocation on the vault root never reaches Servy.Service.exe again (#5922)
+* fix(core): EventLogReader.cs - SafeToOffset's DateTimeKind.Utc branch is unreachable from its only caller (EventRecord.TimeCreated comes from DateTime.FromFileTime, always Local), and the MinValue guard precedes the one path that cannot overflow (#5939)
+* fix(core): LogonAsServiceGrant.cs - #5532's 'this is expected, service creation will proceed' catch guards only the grant; the LSA check one line above throws the same exception uncaught, and #3218's exception docs are gone again (#5943)
+* fix(core): RotatingStreamWriter.cs - EnforceMaxRotations resets the failure counter on every successful delete, so the 'disk space growth is no longer bounded' alarm can never fire in the partial-failure case that actually grows the disk (#5944)
+* fix(core): RotatingStreamWriter.cs - the Daily arm's 23-hour DST guard measures from the last rotation rather than from midnight, so local-time daily rotation walks an hour earlier each day instead of aligning to calendar days (#5945)
+* fix(core): Logger.cs - the levelName bounds check in Log() is provably always true and its 'Fallback for safety' arm is unreachable (sibling of #5156) (#5946)
+* fix(core): ProtectedKeyProvider.cs - the #1854 mutex DACL grants WorldSid Synchronize on the lock guarding the key vault, the same SID SecurityHelper.ApplySecurityRules purges from that vault by name (#5953)
+* fix(core): ProtectedKeyProvider.cs - GetOrGenerate's key-generation block sits outside the try that wraps every other failure, so a first-run DPAPI Protect error skips the workaround message the read path gets (#5954)
+* fix(core): SecureData.cs - Decrypt's marked-payload catch logs SecureDataLegacyBlockedException as 'Integrity failure', the classification #5545/#5568 exist to prevent, and duplicates the correct Warn two lines above the throw (#5955)
+* fix(core): SecureData.cs - Encrypt/Decrypt read the key arrays with no lock against ZeroSensitiveData, the TOCTOU the sibling ProtectedKeyProvider takes _cacheLock to prevent; a racing Dispose persists a blob encrypted under a zeroed key (#5956)
+* fix(core): SecurityHelper.cs - the non-admin create fallback returns success with no directory on disk, and its warning promises inherited permissions that cannot exist (#5957)
+* fix(core): ServiceControllerWrapper.cs - unresolvable dependencies sort under the first letter of the localized error sentence, because Msg_DependencyUnavailable is written into DisplayName and DisplayName is the sort key (residual of #1828) (#5966)
+* fix(core): ServiceManager.cs - MapStartupType's protected-service catch expects Win32Exception, but ServiceController.StartType wraps it in InvalidOperationException, so every protected service logs at Error as 'Unexpected' on each service-list refresh (#5970)
+* fix(core): ServiceManager.cs - StartServiceAsync and StopServiceAsync never refresh before their wait loop, so the first check re-reads the status cached by the pre-flight test and every start and stop sleeps a full 500 ms poll interval it does not need (#5979)
+* fix(core): HandleHelper.cs - the InvalidOperationException guard on Process.Start cannot fire with UseShellExecute=false, and the real unstartable-exe failure is an undocumented Win32Exception the test suite already asserts (#6089)
+* fix(core): EventLogReader.cs / EventLogService.cs - the '\<unavailable\>' fallbacks that #1295 and #2061 added are unreachable; the bracket filter discards every record carrying one (#6128)
+* fix(core): ServiceManager.cs - GetServiceStartupType discards the start type it already resolved when the delayed-auto-start probe throws, while GetAllServices keeps it (#6134)
+* fix(service): Service.cs - a crashing child is the one EvaluateExitOutcome arm that logs no exit code, and its failure counter reports the exit as a failed health check (#5754)
+* fix(service): Service.cs - IsRecoveryEnabled's options != null conjunct is provably always true; OnStart throws on null 39 lines earlier and is its only caller (#5791)
+* fix(service): ServySecurity.ps1 / ServiceHelper.cs - a sensitive keyword preceded by letters with no separator is never masked, so PGPASSWORD= and APITOKEN= leak in full (prefix mirror of #3765) (#5877)
+* fix(service): Service.cs - the RestartProcess recovery action never re-applies Priority or CpuAffinity, so every automatic restart silently drops both settings (#6044)
+* fix(service): Service.cs - the heartbeat fail-flag still reads RecoveryOnCleanExit without the health-monitoring gate #5235 added, so a clean exit-0 stop pings /fail (residual of #5235) (#6045)
+* fix(service): Service.cs - UpdateServiceStatus zeroes dwControlsAccepted for SERVICE_STOPPED but reports the accumulated dwCheckPoint, so a pre-shutdown teardown ends on a stopped-but-progressing status (#6050)
+* fix(service): Service.cs / StreamWriterFactory.cs - a syntactically-bad log path degrades gracefully, but an unreachable one throws out of the factory and aborts OnStart before the child process is launched (residual of #2068) (#6054)
+* fix(service): ProcessLauncher.cs / Service.cs - the !Start() guards cannot fire with UseShellExecute=false, and the real unstartable-exe failure (Win32Exception) is undocumented on ProcessLauncher.Start (residual of #6089) (#6097)
+* fix(ui): AppBootstrapper.cs - the embedded-resource extraction failure dialog is captioned 'Elevation Required', a cause the admin check twelve steps earlier has already ruled out (#6052)
+* fix(ui): AppBootstrapper.cs - the splash floor pads by a fixed 500 ms instead of by the time remaining, so a 50 ms start shows it for 550 ms and a 1001 ms start shows it for less than a 999 ms one (#6053)
+* fix(ui): HelpService.cs - a failed browser launch after a successful update check is reported as 'Failed to check updates', while the sibling documentation path has a purpose-built message (residual of #1585) (#6055)
+* fix(ui): AppBootstrapper.cs - UpdateAvailabilityState re-tests a path its only caller already pinned to non-empty, so the guard is provably always true (class of #1943 / #2007) (#6056)
+* fix(desktop): Strings.resx / MainWindow.xaml (Servy) - the Pre-Launch and Pre-Stop timeouts are the only two second-valued fields whose unit appears nowhere on screen, though their screen-reader text states it (#6061)
+* fix(desktop): ServiceCommands.cs / IServiceCommands.cs (Servy) - the Install path's null-DTO guard returns false without the error report its contract promises, while Export routes the same null into the validator (#6062)
+* fix(desktop): MainViewModel.cs (Servy) - LoadServiceConfigurationAsync's not-found exit is silent, so opening the desktop app for an unknown service shows a defaults form as if it were that service's configuration (#6068)
+* fix(desktop): MainViewModel.cs (Servy) - BindServiceDtoToModel casts all four enum settings from int with no membership check, so an imported out-of-range value renders as a blank ComboBox and still installs (#6069)
+* fix(manager): LogsViewModel.cs - the default log-search window is computed once in the constructor, so a Manager left running past midnight keeps searching a window that ends on the day it started (#6007)
+* fix(manager): DependenciesView.xaml - an unavailable dependency renders as a stopped service, tooltip included; IsUnavailable is the one node flag the template never binds (#6020)
+* fix(manager): MainViewModel.cs (Servy.Manager) - GetServiceUpdateInfo casts the DB StartupType with no membership check, so a not-installed row with an out-of-range value renders as a raw number (residual of #319/#6069) (#6073)
+* fix(manager): ServiceControllerWrapper.cs / DependenciesView.xaml - a shared (diamond) dependency is one node instance at two tree positions, so the TwoWay-bound IsExpanded mirrors between them (residual of #578/#1400) (#6131)
+* fix(cli): ExportServiceCommand.cs - SaveFile probes and creates the directory chain before the UNC guard runs, so an elevated export to a UNC target authenticates to the remote host first (residual of #3162) (#5885)
+* fix(cli): InstallServiceCommand.cs - the #5909 trim landed on the validator's throwaway DTO, not on the InstallServiceOptions that reaches CreateService, so 'servy install --user' still writes a padded account name (#5949)
+* fix(cli): IServiceManager.cs / ServiceStatusCommand.cs - GetServiceStatus returns null for access-denied and unexpected failures as well as for 'not installed', and the CLI publishes every null as the machine-readable token NotInstalled (residual of #5153) (#5976)
+* fix(psm1): Servy.psm1 / servy-module-examples.ps1 - the only 2 of 48 PowerShell files indented by 2 spaces, against .editorconfig's indent_size = 4, and Format-SourceHygiene.ps1 does not check that rule (#5494)
+* fix(psm1): Servy.psm1 - 7 of 20 ValidateScript blocks fall back to PowerShell's generic error, including -EnvVars and -PreLaunchEnv whose format is a 92-character escaping regex (#5894)
+* fix(psm1): Servy.psm1 - the parent-directory ValidateScript block is copied verbatim at 5 sites, the same defect #1029 consolidated for the env-var pattern (and the sites #2289 had to patch one by one) (#5895)
+* fix(psm1): servy-module-examples.ps1 - never demonstrates Import-ServyServiceConfig -Install, which its wiki counterpart shows and annotates, and omits 2 of the 11 exported functions the module header calls complete (#5497)
+* fix(psm1): Servy.psm1 - $script:ServyMaxBufferChars is written twice and never read, so Set-ServyConfig -MaxBufferChars is a no-op and the buffers it documents a cap for grow unbounded (#6088)
+* fix(notifications): ServyFailureEmail.ps1 - after #2318 every transport-level SMTP failure is classified PermanentFailure and the alert is discarded; the network catch arm below can never fire for the send (#5878)
+* fix(notifications): ServyFailureEmail.vbs / ServyFailureNotification.vbs - the missing-script error uses WScript.Echo, which is an invisible modal dialog under wscript.exe and blocks the queued task until the 5-minute limit kills it (#5879)
+* fix(setup): servy.iss - AddToPath concatenates onto the raw PATH, so a machine PATH ending in a semicolon gains an empty ';;' element; RemoveFromPath rebuilds through the list (residual of #5467) (#5873)
+* fix: All 22 csproj - AssemblyDescription is not an SDK property, so every assembly ships with a blank Description while its AssemblyTitle neighbour binds (#5988)
+* chore(deps): update dependencies
+</details>
+
+### Downloads
+* [servy-9.9-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-arm64-installer.exe) - 73.30 MB
+* [servy-9.9-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-arm64-portable.7z) - 74.14 MB
+* [servy-9.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-net48-sbom.xml) - 0.03 MB
+* [servy-9.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-net48-x64-installer.exe) - 4.36 MB
+* [servy-9.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-net48-x64-portable.7z) - 2.09 MB
+* [servy-9.9-sbom.xml](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-sbom.xml) - 0.04 MB
+* [servy-9.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-x64-installer.exe) - 79.55 MB
+* [servy-9.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-x64-portable.7z) - 76.95 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v9.9.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v9.9.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.8...v9.9
+
 ## [Servy 9.8](https://github.com/aelassas/servy/releases/tag/v9.8)
 
 **Date:** 2026-08-24 | **Tag:** [`v9.8`](https://github.com/aelassas/servy/tree/v9.8)
