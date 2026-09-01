@@ -42,7 +42,7 @@ PrivilegesRequired=admin
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{{#AppIdGuid}}
-SetupMutex=SetupMutex{#SetupSetting("AppId")}
+SetupMutex=ServySetupMutex
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -533,7 +533,7 @@ begin
   begin
     Log(Format('WARNING: icacls.exe failed with exit code %d while hardening data directory "%s".', [ResultCode, DataDir]));
     if not WizardSilent then
-      MsgBox('Failed to secure service data directory permissions. Please review system ACLs manually.', mbInformation, MB_OK);
+      MsgBox('Failed to secure service data directory permissions. Please review system ACLs manually.', mbError, MB_OK);
   end;
 end;
 
