@@ -13,8 +13,8 @@
     executable files and DLL assemblies, restricting the target runner account to strict 'Read & Execute' rights.
     This ensures the service runner can execute required binaries without being able to overwrite, replace, or DLL-hijack
     them, protecting against unprivileged binary replacement and local privilege escalation vectors. Full Control is
-    explicitly preserved for SYSTEM and Administrators using language-agnostic Well-Known SIDs. Manually added explicit ACEs
-    for third-party principals (both users and groups) are audited and preserved.
+    explicitly preserved for SYSTEM and Administrators using language-agnostic Well-Known SIDs. The owner of each hardened
+    binary is set to Builtin Administrators. Manually added explicit ACEs for third-party principals (both users and groups) are audited and preserved.
 
     Hardened Target Files:
     - Servy.Service.Net48.exe
@@ -22,6 +22,12 @@
     - Servy.Restarter.Net48.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.Net48.exe gets copied to %ProgramData%\Servy)
     - handle64.exe
     - All *.dll files in %ProgramData%\Servy
+
+    EXIT CODES:
+    - 0 : Success. All present target files were successfully hardened.
+    - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
+    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target binaries/libraries are missing and must be extracted before hardening.
+    - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
 
 .PARAMETER TargetAccount
     Mandatory account identifier receiving Read & Execute permissions. Supported formats:
@@ -72,7 +78,8 @@ $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
 
 if (-not (Test-Path -Path $programDataDir)) {
     Write-Warning "Directory '$programDataDir' does not exist. No changes applied."
-    exit 0
+    Write-Warning "Start the service once so %ProgramData%\Servy and its binaries are extracted, then RE-RUN this script."
+    exit 2
 }
 
 # Dynamically validate and resolve account existence via Windows LSA.
@@ -125,7 +132,8 @@ Write-Host "Securing Servy (.NET Framework 4.8) binary and library files in: $pr
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
 $hardened = @()
-$skipped  = @()
+$missing  = @()
+$failed   = @()
 
 foreach ($fileName in $targetFiles) {
     if ([string]::IsNullOrEmpty($fileName)) { continue }
@@ -133,7 +141,7 @@ foreach ($fileName in $targetFiles) {
     $filePath = [System.IO.Path]::Combine($programDataDir, $fileName)
 
     if (-not (Test-Path -Path $filePath)) {
-        $skipped += $fileName
+        $missing += $fileName
         continue
     }
 
@@ -141,6 +149,13 @@ foreach ($fileName in $targetFiles) {
         Write-Host "Hardening permissions on '$fileName'..." -ForegroundColor Green
 
         $acl = Get-Acl -Path $filePath
+
+        # Audit owner changes prior to setting Builtin Administrators owner
+        $previousOwnerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
+        if (-not $previousOwnerSid.Equals($adminSid)) {
+            $previousOwnerName = try { $previousOwnerSid.Translate([System.Security.Principal.NTAccount]).Value } catch { $previousOwnerSid.Value }
+            Write-Host "  [Owner] replaced '$previousOwnerName' -> 'BUILTIN\Administrators'" -ForegroundColor Cyan
+        }
 
         # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
         $acl.SetOwner($adminSid)
@@ -172,12 +187,16 @@ foreach ($fileName in $targetFiles) {
         $acl.SetAccessRule($systemRule)
 
         # 4. Grant explicit ReadAndExecute access to target account
-        $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-            $targetNTAccount,
-            "ReadAndExecute",
-            "Allow"
-        )
-        $acl.SetAccessRule($targetRule)
+        if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
+            Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no ReadAndExecute downgrade applied." -ForegroundColor Yellow
+        } else {
+            $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $targetNTAccount,
+                "ReadAndExecute",
+                "Allow"
+            )
+            $acl.SetAccessRule($targetRule)
+        }
 
         # Commit ACL to disk
         Set-Acl -Path $filePath -AclObject $acl
@@ -206,10 +225,8 @@ foreach ($fileName in $targetFiles) {
             }
         }
 
-        if ($appliedTargetRules.Count -gt 0) {
-            foreach ($tRule in $appliedTargetRules) {
-                Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
-            }
+        foreach ($tRule in $appliedTargetRules) {
+            Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
         }
 
         if ($manualAllowRules.Count -gt 0) {
@@ -231,14 +248,20 @@ foreach ($fileName in $targetFiles) {
     }
     catch {
         Write-Host "FAILED to harden '$fileName': $_" -ForegroundColor Red
-        $skipped += $fileName
+        $failed += $fileName
     }
 }
 
 Write-Host "`nHardened $($hardened.Count) of $($targetFiles.Count) files." -ForegroundColor Cyan
 
-if ($skipped.Count -gt 0) {
-    Write-Warning ("Not hardened: {0}" -f ($skipped -join ', '))
+if ($failed.Count -gt 0) {
+    Write-Warning ("Hardening failed on: {0}" -f ($failed -join ', '))
+    Write-Warning "Check file locks, permissions, or system security settings before re-running this script."
+    exit 3
+}
+
+if ($missing.Count -gt 0) {
+    Write-Warning ("Not hardened (missing): {0}" -f ($missing -join ', '))
     Write-Warning "These files will inherit Modify access from '$programDataDir' when Servy creates them."
     Write-Warning "Start the service once so every binary is extracted, then RE-RUN this script."
     exit 2
