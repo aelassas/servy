@@ -1545,7 +1545,7 @@ function Get-ServyServiceStatus {
 
         .DESCRIPTION
             Wraps the Servy CLI `status` command to get the status of a service by its name.
-            Possible status results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused, NotInstalled.
+            Possible status results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused, NotInstalled, Unknown.
 
         .PARAMETER Quiet
             Suppress spinner and run in non-interactive mode. Optional.
