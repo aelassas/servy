@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Centralized build configuration defaults for Servy publishing scripts.
 .DESCRIPTION

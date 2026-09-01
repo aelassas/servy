@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
     Common error-handling helper shared across all Servy publish and packaging scripts.
 

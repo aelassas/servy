@@ -1,4 +1,4 @@
-# chocolateyinstall.ps1 contains URLs and checksums for the latest release available on GitHub releases page.
+﻿# chocolateyinstall.ps1 contains URLs and checksums for the latest release available on GitHub releases page.
 # URLs and checksums are auto-updated on each new release on GitHub through choco.yml workflow.
 
 $ErrorActionPreference = 'Stop'

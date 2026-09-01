@@ -1,4 +1,4 @@
-#Requires -Version 5.0
+﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
     Updates the version and copyright notice of Servy across build-config.ps1, Directory.Build.props, and Servy.psd1.

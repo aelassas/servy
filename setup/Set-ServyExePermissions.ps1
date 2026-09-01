@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Mandatory Security Hardening: Hardens Servy executable permissions to Read & Execute to prevent privilege escalation and binary tampering.

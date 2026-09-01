@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Validates publish-common.ps1's Copy-TaskSchdArtifacts exclusion filter.

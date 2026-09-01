@@ -1,4 +1,4 @@
-#Requires -Version 5.0
+﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
     Publishes a Servy project and copies its build artifacts into a target Resources folder.
