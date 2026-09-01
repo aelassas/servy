@@ -569,10 +569,16 @@ public static class ServyNativeWinSqlite16
         }
         catch {
             Write-Host "`nWARNING: Could not restrict permissions on the archive '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
-            Write-Host "The archive was REMOVED because it contains UNENCRYPTED PLAIN-TEXT service configurations and could not be protected." -ForegroundColor Red
 
             # Best-effort removal of the unprotected archive
             Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+
+            if (Test-Path -LiteralPath $resolvedArchivePath) {
+                Write-Host "The archive could NOT be removed. It EXISTS UNPROTECTED at '$resolvedArchivePath' and contains plain-text service configurations - delete or protect it manually." -ForegroundColor Red
+            }
+            else {
+                Write-Host "The archive was removed because it contains unencrypted plain-text service configurations and could not be protected." -ForegroundColor Red
+            }
 
             if ($Overwrite.IsPresent) {
                 Remove-Item -LiteralPath "$resolvedArchivePath.sha256" -Force -ErrorAction SilentlyContinue
