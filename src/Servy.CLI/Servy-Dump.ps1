@@ -349,12 +349,15 @@ try {
             Write-Host "Existing dump archive found. -Overwrite specified; replacing target file." -ForegroundColor Yellow
         }
 
-        # Verify existing sidecar file can be removed under -Overwrite before proceeding with exports
+        # Verify existing sidecar file can be written/overwritten under -Overwrite before proceeding with exports
         $sidecarPath = "$resolvedArchivePath.sha256"
         if ($Overwrite.IsPresent -and (Test-Path -Path $sidecarPath)) {
-            Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue
-            if (Test-Path -Path $sidecarPath) {
-                Write-Host "Existing SHA-256 sidecar file '$sidecarPath' is locked or unwritable and could not be removed. Operation aborted to prevent stale checksum mismatches." -ForegroundColor Red
+            try {
+                $fs = [System.IO.File]::Open($sidecarPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+                $fs.Dispose()
+            }
+            catch {
+                Write-Host "Existing SHA-256 sidecar file '$sidecarPath' is locked or unwritable and could not be replaced. Operation aborted to prevent stale checksum mismatches." -ForegroundColor Red
                 exit 4
             }
         }
