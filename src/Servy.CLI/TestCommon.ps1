@@ -23,12 +23,50 @@ function Assert-Equal {
         $Expected
     )
     $script:TotalTests++
-    if ($Actual -eq $Expected) {
+
+    $isActualCollection   = ($Actual -is [System.Collections.IEnumerable] -and $Actual -isnot [string])
+    $isExpectedCollection = ($Expected -is [System.Collections.IEnumerable] -and $Expected -isnot [string])
+
+    $isEqual = $false
+
+    if ($isActualCollection -or $isExpectedCollection) {
+        # If both are collections, compare array element count and elements pairwise
+        if ($isActualCollection -and $isExpectedCollection) {
+            $actualArray   = @($Actual)
+            $expectedArray = @($Expected)
+
+            if ($actualArray.Count -eq $expectedArray.Count) {
+                $isEqual = $true
+                for ($i = 0; $i -lt $actualArray.Count; $i++) {
+                    $a = $actualArray[$i]
+                    $e = $expectedArray[$i]
+                    if ($a -is [string] -and $e -is [string]) {
+                        if ($a -cne $e) { $isEqual = $false; break }
+                    }
+                    elseif ($a -ne $e) {
+                        $isEqual = $false; break
+                    }
+                }
+            }
+        }
+    }
+    elseif ($Actual -is [string] -and $Expected -is [string]) {
+        # Case-sensitive string equality comparison
+        $isEqual = ($Actual -ceq $Expected)
+    }
+    else {
+        # General scalar equality check
+        $isEqual = ($Actual -eq $Expected)
+    }
+
+    if ($isEqual) {
         Write-Host "  [PASS] $TestName" -ForegroundColor Green
         $script:PassedTests++
     }
     else {
-        Write-Host "  [FAIL] $TestName - Expected: '$Expected', Actual: '$Actual'" -ForegroundColor Red
+        $actualDisplay   = if ($isActualCollection) { "@(" + (($Actual | ForEach-Object { "'$_'" }) -join ", ") + ")" } else { "'$Actual'" }
+        $expectedDisplay = if ($isExpectedCollection) { "@(" + (($Expected | ForEach-Object { "'$_'" }) -join ", ") + ")" } else { "'$Expected'" }
+        Write-Host "  [FAIL] $TestName - Expected: $expectedDisplay, Actual: $actualDisplay" -ForegroundColor Red
         $script:FailedTests++
     }
 }
