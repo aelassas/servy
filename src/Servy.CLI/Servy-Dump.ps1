@@ -21,7 +21,7 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
-    - 4 : I/O & Inspection Failure. The database could not be read, destination path is unwritable, or ACL hardening failed.
+    - 4 : I/O & Inspection Failure. The database could not be read, the destination path is invalid or unwritable, archive compression or ACL hardening failed, or an unexpected runtime error occurred.
     - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export or uninstall, or the SHA-256 integrity sidecar could not be written.
@@ -87,7 +87,7 @@ $ErrorActionPreference = 'Stop'
     Resolves and normalizes the target zip archive destination path for Servy-Dump.
 
 .DESCRIPTION
-    Detects directory-style inputs (trailing slashes or existing directories) and normalizes missing extensions to .zip.
+    Detects directory-style inputs (trailing slashes, bare drive roots, or existing directories) and normalizes missing extensions to .zip.
 
 .PARAMETER DestinationArchivePath
     Mandatory path specifying the target zip archive destination file or directory.
@@ -108,23 +108,29 @@ function Resolve-ServyDumpDestinationPath {
         $PSCmdletContext
     )
 
+    $targetPath = $DestinationArchivePath.Trim()
+
+    # Normalize bare drive-root inputs (e.g., 'C:' or 'c:') to 'C:\' before path resolution
+    if ($targetPath -match '^[a-zA-Z]:$') {
+        $targetPath += '\'
+    }
+
     # Detect directory-style destination inputs (trailing path separator)
     $isDirDestination = $false
-    $trimmedInput = $DestinationArchivePath.TrimEnd()
-    if ($trimmedInput.EndsWith('\') -or $trimmedInput.EndsWith('/')) {
+    if ($targetPath.EndsWith('\') -or $targetPath.EndsWith('/')) {
         $isDirDestination = $true
     }
 
     # Resolve path safely across PowerShell 2.0 and 3.0+
     if ($null -ne $PSCmdletContext -and $PSVersionTable.PSVersion.Major -ge 3) {
-        $resolvedArchivePath = $PSCmdletContext.GetUnresolvedProviderPathFromPSPath($DestinationArchivePath)
+        $resolvedArchivePath = $PSCmdletContext.GetUnresolvedProviderPathFromPSPath($targetPath)
     }
     else {
-        if ([System.IO.Path]::IsPathRooted($DestinationArchivePath)) {
-            $resolvedArchivePath = [System.IO.Path]::GetFullPath($DestinationArchivePath)
+        if ([System.IO.Path]::IsPathRooted($targetPath)) {
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath($targetPath)
         }
         else {
-            $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $DestinationArchivePath))
+            $resolvedArchivePath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $targetPath))
         }
     }
 
