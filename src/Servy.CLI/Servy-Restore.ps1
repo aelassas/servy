@@ -71,7 +71,7 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = 'Specify path to the Servy dump zip archive (e.g., "C:\Backups\Servy_Backup.zip").')]
+    [Parameter(Mandatory = $true, HelpMessage = 'Specify path to the Servy dump zip archive (e.g., "C:\Backups\Servy_Dump.zip").')]
     [ValidateNotNullOrEmpty()]
     [string]$DumpArchivePath,
 
