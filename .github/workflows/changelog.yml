@@ -147,6 +147,9 @@ jobs:
           Function Save-ChangelogFiles {
               param($Releases)
 
+              # Clean up any existing archive files to prevent orphaned/duplicate archives when chunk boundaries shift
+              Get-ChildItem -Path . -Filter "CHANGELOG-*.md" | Remove-Item -Force
+
               # Chunk release history into blocks of ~400 KB
               $chunks = [System.Collections.Generic.List[System.Collections.Generic.List[object]]]::new()
               $currentChunk = [System.Collections.Generic.List[object]]::new()
@@ -204,7 +207,15 @@ jobs:
                   $newestTag = $chunk[0].tag_name
                   $oldestTag = $chunk[$chunk.Count - 1].tag_name
 
-                  $archiveContent = "# Changelog ($oldestTag - $newestTag)`n`n"
+                  $archiveHeader = "# Changelog ($oldestTag - $newestTag)`n`n"
+                  if ($c -eq 1) {
+                      $archiveHeader += "This is the archived release history. For newer releases, see [CHANGELOG.md](./CHANGELOG.md).`n`n"
+                  } else {
+                      $newerArchive = $archiveFileNames[$c - 2]
+                      $archiveHeader += "This is an archived release history. For newer releases, see [$newerArchive](./$newerArchive) and [CHANGELOG.md](./CHANGELOG.md).`n`n"
+                  }
+
+                  $archiveContent = $archiveHeader
                   for ($i = 0; $i -lt $chunk.Count; $i++) {
                       $rel = $chunk[$i]
                       $globalIdx = $runningGlobalIdx + $i
@@ -227,8 +238,7 @@ jobs:
           $header = "# Changelog"
 
           if ($isReset) {
-              Write-Host "Reset flag is true. Deleting all existing CHANGELOG*.md files and rebuilding..."
-              Get-ChildItem -Path . -Filter "CHANGELOG*.md" | Remove-Item -Force
+              Write-Host "Reset flag is true. Rebuilding all changelog files..."
               Save-ChangelogFiles -Releases $releases
           } else {
               $latest = $releases[0]
