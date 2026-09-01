@@ -36,7 +36,7 @@ catch {
 }
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Servy-Restore.ps1 Tests                   " -ForegroundColor Cyan
+Write-Host " Running Servy-Restore.ps1 Tests                    " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -68,7 +68,7 @@ $sidecarContent = "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B
 $hash1 = Get-ServySidecarExpectedHash -SidecarText $sidecarContent
 Assert-Equal "Extracts hash from sidecar text" $hash1 "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
 
-$hash2 = Get-ServySidecarExpectedHash -SidecarText "   ABCD1234EF   somefile.zip"
+$hash2 = Get-ServySidecarExpectedHash -SidecarText "    ABCD1234EF   somefile.zip"
 Assert-Equal "Trims leading whitespace and extracts hash" $hash2 "ABCD1234EF"
 
 Assert-True "Whitespace-only sidecar yields null" ($null -eq (Get-ServySidecarExpectedHash -SidecarText "   `t`n"))
@@ -92,22 +92,24 @@ try {
     $dirRules = $dirAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
     Assert-Equal "Directory has exactly 2 explicit ACEs" $dirRules.Count 2
 
-    $adminSid  = (New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)).Value
-    $systemSid = (New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)).Value
+    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
 
     $foundAdmin  = $false
     $foundSystem = $false
 
     foreach ($rule in $dirRules) {
-        if ($rule.IdentityReference.Value -eq $adminSid) {
-            if ($rule.FileSystemRights -match "FullControl" -and $rule.InheritanceFlags -match "ContainerInherit, ObjectInherit") {
-                $foundAdmin = $true
-            }
+        if ($rule.IdentityReference.Equals($adminSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit" -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
+            $foundAdmin = $true
         }
-        elseif ($rule.IdentityReference.Value -eq $systemSid) {
-            if ($rule.FileSystemRights -match "FullControl" -and $rule.InheritanceFlags -match "ContainerInherit, ObjectInherit") {
-                $foundSystem = $true
-            }
+        elseif ($rule.IdentityReference.Equals($systemSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.InheritanceFlags -eq "ContainerInherit, ObjectInherit" -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
+            $foundSystem = $true
         }
     }
 
@@ -130,10 +132,14 @@ try {
     $foundFileSystem = $false
 
     foreach ($rule in $fileRules) {
-        if ($rule.IdentityReference.Value -eq $adminSid -and $rule.FileSystemRights -match "FullControl") {
+        if ($rule.IdentityReference.Equals($adminSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
             $foundFileAdmin = $true
         }
-        elseif ($rule.IdentityReference.Value -eq $systemSid -and $rule.FileSystemRights -match "FullControl") {
+        elseif ($rule.IdentityReference.Equals($systemSid) -and
+            $rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
             $foundFileSystem = $true
         }
     }
