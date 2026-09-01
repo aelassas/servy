@@ -37,7 +37,7 @@ catch {
 }
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Servy-Dump.ps1 Tests                       " -ForegroundColor Cyan
+Write-Host " Running Servy-Dump.ps1 Tests                        " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -55,6 +55,52 @@ Assert-Equal "Appends Servy_Dump.zip to trailing slash directory path" $res3 "C:
 
 $res4 = Resolve-ServyDumpDestinationPath -DestinationArchivePath "C:\Backups\TargetDir/"
 Assert-Equal "Appends Servy_Dump.zip to trailing forward-slash directory path" $res4 "C:\Backups\TargetDir\Servy_Dump.zip"
+
+# Test production PSCmdlet context branch via cmdlet wrapper
+function Test-ResolveWithCmdletContext {
+    [CmdletBinding()]
+    param([string]$Path)
+
+    return Resolve-ServyDumpDestinationPath -DestinationArchivePath $Path -PSCmdletContext $PSCmdlet
+}
+
+$resCmdlet1 = Test-ResolveWithCmdletContext -Path "C:\Backups\MyDump"
+Assert-Equal "Resolves via PSCmdletContext branch" $resCmdlet1 "C:\Backups\MyDump.zip"
+
+# Test relative path resolution across both PSCmdlet and fallback branches
+$expectedRelativePath = [System.IO.Path]::Combine((Get-Location).ProviderPath, "MyDump.zip")
+
+$resRelativeFallback = Resolve-ServyDumpDestinationPath -DestinationArchivePath "MyDump"
+Assert-Equal "Resolves relative path via fallback branch against location" $resRelativeFallback $expectedRelativePath
+
+$resRelativeCmdlet = Test-ResolveWithCmdletContext -Path "MyDump"
+Assert-Equal "Resolves relative path via PSCmdletContext branch against location" $resRelativeCmdlet $expectedRelativePath
+
+# Test existing directory promotion without trailing slash (#6299 regression check)
+$tempExistingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDumpTestDir_" + [System.IO.Path]::GetRandomFileName())
+try {
+    [void][System.IO.Directory]::CreateDirectory($tempExistingDir)
+    $expectedExistingDirDumpPath = [System.IO.Path]::Combine($tempExistingDir, "Servy_Dump.zip")
+
+    $resExistingDir = Resolve-ServyDumpDestinationPath -DestinationArchivePath $tempExistingDir
+    Assert-Equal "Existing directory without trailing slash promotes to Servy_Dump.zip" $resExistingDir $expectedExistingDirDumpPath
+}
+finally {
+    if (Test-Path -LiteralPath $tempExistingDir) {
+        Remove-Item -LiteralPath $tempExistingDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Test drive-root destination guard (#6311 regression check)
+$resDriveRootSlash = Resolve-ServyDumpDestinationPath -DestinationArchivePath "C:\"
+Assert-Equal "Drive root C:\ resolves to C:\Servy_Dump.zip" $resDriveRootSlash "C:\Servy_Dump.zip"
+
+$resDriveRootNoSlash = Resolve-ServyDumpDestinationPath -DestinationArchivePath "C:"
+Assert-Equal "Drive root C: resolves to C:\Servy_Dump.zip" $resDriveRootNoSlash "C:\Servy_Dump.zip"
+
+# Test trailing-whitespace directory path normalization
+$resTrailingSpaceDir = Resolve-ServyDumpDestinationPath -DestinationArchivePath "C:\Backups\TargetDir\  "
+Assert-Equal "Trims trailing whitespace on directory-style path" $resTrailingSpaceDir "C:\Backups\TargetDir\Servy_Dump.zip"
 
 # --- 2. Service Name Sanitization & Collision Disambiguation Tests ---
 Write-Host "`n2. Testing Get-ServySanitizedFileName..." -ForegroundColor Yellow
