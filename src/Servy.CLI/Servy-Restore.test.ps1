@@ -4,7 +4,8 @@
     Unit test harness for Servy-Restore.ps1 helper functions.
 
 .DESCRIPTION
-    Tests path resolution, sidecar expected hash extraction, and archive entry validation guards
+    Tests path resolution, sidecar expected hash extraction, ACL hardening (inheritance break,
+    explicit ACE purging, Administrators/SYSTEM exclusive FullControl), and archive entry validation guards
     (flat archive enforcement, path traversal defense, XML extension verification, and duplicate entry detection).
 #>
 
@@ -22,12 +23,10 @@ if (-not (Test-Path -LiteralPath $testCommonPath)) {
 # Dot-source Servy-Restore.ps1 to load its helper functions without executing the main script body.
 # Pass a dummy string for mandatory parameters to satisfy [ValidateNotNullOrEmpty()].
 $scriptPath = Join-Path $PSScriptRoot 'Servy-Restore.ps1'
-
 if (-not (Test-Path -LiteralPath $scriptPath)) {
     Write-Host "FAILED: Could not find Servy-Restore.ps1 at '$scriptPath'." -ForegroundColor Red
     exit 1
 }
-
 try {
     . $scriptPath -DumpArchivePath "dummy"
 }
@@ -74,34 +73,108 @@ Assert-Equal "Trims leading whitespace and extracts hash" $hash2 "ABCD1234EF"
 
 Assert-True "Whitespace-only sidecar yields null" ($null -eq (Get-ServySidecarExpectedHash -SidecarText "   `t`n"))
 
-# --- 3. Archive Entry Security & Validation Guard Tests ---
-Write-Host "`n3. Testing Test-ServyDumpArchiveEntry..." -ForegroundColor Yellow
+# --- 3. ACL Hardening Helper Tests ---
+Write-Host "`n3. Testing Set-ServyHardenedFileAcl..." -ForegroundColor Yellow
+
+$testTempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("ServyRestore_AclTest_" + [System.IO.Path]::GetRandomFileName())
+[void][System.IO.Directory]::CreateDirectory($testTempDir)
+
+try {
+    # Test 3.1: Hardening a Directory
+    $testSubDir = Join-Path $testTempDir "StagingDir"
+    [void][System.IO.Directory]::CreateDirectory($testSubDir)
+
+    Set-ServyHardenedFileAcl -Path $testSubDir -IsDirectory
+
+    $dirAcl = Get-Acl -LiteralPath $testSubDir
+    Assert-True "Directory inheritance is protected" $dirAcl.AreAccessRulesProtected
+
+    $dirRules = $dirAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    Assert-Equal "Directory has exactly 2 explicit ACEs" $dirRules.Count 2
+
+    $adminSid  = (New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)).Value
+    $systemSid = (New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)).Value
+
+    $foundAdmin  = $false
+    $foundSystem = $false
+
+    foreach ($rule in $dirRules) {
+        if ($rule.IdentityReference.Value -eq $adminSid) {
+            if ($rule.FileSystemRights -match "FullControl" -and $rule.InheritanceFlags -match "ContainerInherit, ObjectInherit") {
+                $foundAdmin = $true
+            }
+        }
+        elseif ($rule.IdentityReference.Value -eq $systemSid) {
+            if ($rule.FileSystemRights -match "FullControl" -and $rule.InheritanceFlags -match "ContainerInherit, ObjectInherit") {
+                $foundSystem = $true
+            }
+        }
+    }
+
+    Assert-True "Directory grants FullControl with container/object inheritance to Administrators" $foundAdmin
+    Assert-True "Directory grants FullControl with container/object inheritance to SYSTEM" $foundSystem
+
+    # Test 3.2: Hardening a File & Purging Pre-existing ACEs
+    $testFile = Join-Path $testTempDir "TargetFile.xml"
+    [System.IO.File]::WriteAllText($testFile, "<configuration />")
+
+    Set-ServyHardenedFileAcl -Path $testFile
+
+    $fileAcl = Get-Acl -LiteralPath $testFile
+    Assert-True "File inheritance is protected" $fileAcl.AreAccessRulesProtected
+
+    $fileRules = $fileAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    Assert-Equal "File has exactly 2 explicit ACEs after purging" $fileRules.Count 2
+
+    $foundFileAdmin  = $false
+    $foundFileSystem = $false
+
+    foreach ($rule in $fileRules) {
+        if ($rule.IdentityReference.Value -eq $adminSid -and $rule.FileSystemRights -match "FullControl") {
+            $foundFileAdmin = $true
+        }
+        elseif ($rule.IdentityReference.Value -eq $systemSid -and $rule.FileSystemRights -match "FullControl") {
+            $foundFileSystem = $true
+        }
+    }
+
+    Assert-True "File grants FullControl to Administrators" $foundFileAdmin
+    Assert-True "File grants FullControl to SYSTEM" $foundFileSystem
+}
+finally {
+    if (Test-Path -LiteralPath $testTempDir) {
+        Remove-Item -LiteralPath $testTempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# --- 4. Archive Entry Security & Validation Guard Tests ---
+Write-Host "`n4. Testing Test-ServyDumpArchiveEntry..." -ForegroundColor Yellow
 
 $rootPath = [System.IO.Path]::GetFullPath("C:\Temp\ServyRestore_Staging\")
 $seenEntries = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 
-# Test 3.1: Directory entry (empty Name)
+# Test 4.1: Directory entry (empty Name)
 $e1 = Test-ServyDumpArchiveEntry -EntryName "" -EntryFullName "subfolder/" -RootPath $rootPath -SeenEntryNames $seenEntries
 Assert-True "Directory entry skipped safely" ($e1.IsValid -and $e1.IsDirectory)
 
-# Test 3.2: Valid XML entry
+# Test 4.2: Valid XML entry
 $e2 = Test-ServyDumpArchiveEntry -EntryName "MyService.xml" -EntryFullName "MyService.xml" -RootPath $rootPath -SeenEntryNames $seenEntries
 Assert-True "Valid flat XML entry accepted" ($e2.IsValid -and -not $e2.IsDirectory -and $e2.TargetPath.EndsWith("MyService.xml"))
 
-# Test 3.3: Non-flat entry (subdirectory)
+# Test 4.3: Non-flat entry (subdirectory)
 $e3 = Test-ServyDumpArchiveEntry -EntryName "MyService.xml" -EntryFullName "folder/MyService.xml" -RootPath $rootPath -SeenEntryNames $seenEntries
 Assert-True "Non-flat archive entry rejected" (-not $e3.IsValid -and $e3.ErrorMessage.Contains("contains subdirectories"))
 
-# Test 3.4: Duplicate entry detection
+# Test 4.4: Duplicate entry detection
 $e4 = Test-ServyDumpArchiveEntry -EntryName "MyService.xml" -EntryFullName "MyService.xml" -RootPath $rootPath -SeenEntryNames $seenEntries
 Assert-True "Duplicate archive entry rejected" (-not $e4.IsValid -and $e4.ErrorMessage.Contains("duplicate entry"))
 
-# Test 3.5: Path traversal attack
+# Test 4.5: Path traversal attack
 $seenEntries2 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $e5 = Test-ServyDumpArchiveEntry -EntryName "..\..\Evil.xml" -EntryFullName "..\..\Evil.xml" -RootPath $rootPath -SeenEntryNames $seenEntries2
 Assert-True "Path traversal entry rejected" (-not $e5.IsValid -and ($e5.ErrorMessage.Contains("outside staging directory") -or $e5.ErrorMessage.Contains("subdirectories")))
 
-# Test 3.6: Non-XML file extension
+# Test 4.6: Non-XML file extension
 $seenEntries3 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $e6 = Test-ServyDumpArchiveEntry -EntryName "Malware.exe" -EntryFullName "Malware.exe" -RootPath $rootPath -SeenEntryNames $seenEntries3
 Assert-True "Non-XML archive entry rejected" (-not $e6.IsValid -and $e6.ErrorMessage.Contains("not an XML configuration file"))
