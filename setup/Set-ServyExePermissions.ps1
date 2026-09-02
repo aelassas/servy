@@ -1,36 +1,40 @@
 ﻿#Requires -Version 2.0
 <#
 .SYNOPSIS
-    Mandatory Security Hardening: Hardens Servy .NET Framework 4.8 executable and library permissions to Read & Execute to prevent privilege escalation and binary tampering.
+    Mandatory Security Hardening: Hardens Servy .NET Framework 4.8 executable, library, and configuration permissions to prevent privilege escalation, binary tampering, and unauthorized configuration modification.
 
 .DESCRIPTION
     Mandatory security script for hardening Servy .NET Framework 4.8 service runner accounts. Servy requires
     directory-level 'Modify' permissions on %ProgramData%\Servy to write database logs, process state, and runtime
-    recovery files. However, leaving binaries and loaded assemblies with inherited 'Modify' access allows a
-    compromised service process or unprivileged runner account to tamper with, replace, or hijack core executables and DLLs.
+    recovery files. However, leaving binaries, loaded assemblies, and configuration files with inherited 'Modify' access
+    allows a compromised service process or unprivileged runner account to tamper with, replace, or hijack core executables, DLLs, or app settings.
 
     This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
-    executable files and DLL assemblies, restricting the target runner account to strict 'Read & Execute' rights.
-    This ensures the service runner can execute required binaries without being able to overwrite, replace, or DLL-hijack
-    them, protecting against unprivileged binary replacement and local privilege escalation vectors. Full Control is
+    executable files, DLL assemblies, and configuration files (*.exe.config), restricting the target runner account to strict 'Read & Execute'
+    rights for executables/DLLs and 'Read' rights for configuration files.
+    This ensures the service runner can execute required binaries and read settings without being able to overwrite, replace,
+    or DLL-hijack them, protecting against unprivileged binary replacement and local privilege escalation vectors. Full Control is
     explicitly preserved for SYSTEM and Administrators using language-agnostic Well-Known SIDs. The owner of each hardened
-    binary is set to Builtin Administrators. Manually added explicit ACEs for third-party principals (both users and groups) are audited and preserved.
+    file is set to Builtin Administrators. Manually added explicit ACEs for third-party principals (both users and groups) are audited and preserved.
 
     Hardened Target Files:
     - Servy.Service.Net48.exe
     - Servy.Service.CLI.Net48.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.Net48.exe gets copied to %ProgramData%\Servy)
     - Servy.Restarter.Net48.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.Net48.exe gets copied to %ProgramData%\Servy)
     - handle64.exe
+    - Servy.Service.Net48.exe.config
+    - Servy.Service.CLI.Net48.exe.config
+    - Servy.Restarter.Net48.exe.config
     - All *.dll files in %ProgramData%\Servy
 
     EXIT CODES:
     - 0 : Success. All present target files were successfully hardened.
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
-    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target binaries/libraries are missing and must be extracted before hardening.
+    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target binaries/libraries/configs are missing and must be extracted before hardening.
     - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
 
 .PARAMETER TargetAccount
-    Mandatory account identifier receiving Read & Execute permissions. Supported formats:
+    Mandatory account identifier receiving Read & Execute (for binaries/libraries) or Read (for configuration) permissions. Supported formats:
     - Active Directory user/group: 'DOMAIN\Username'
     - Local computer user/group: 'COMPUTERNAME\Username'
     - Local computer relative notation: '.\Username'
@@ -72,6 +76,13 @@ $staticExeNames = @(
     'Servy.Service.CLI.Net48.exe',
     'Servy.Restarter.Net48.exe',
     'handle64.exe'
+)
+
+# .NET Framework 4.8 configuration target list
+$staticConfigNames = @(
+    'Servy.Service.Net48.exe.config',
+    'Servy.Service.CLI.Net48.exe.config',
+    'Servy.Restarter.Net48.exe.config'
 )
 
 $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
@@ -125,17 +136,34 @@ $dllFiles = Get-ChildItem -Path $programDataDir -Filter "*.dll" -ErrorAction Sil
     Where-Object { -not $_.PSIsContainer } |
     Select-Object -ExpandProperty Name
 
-# Combine static executables and discovered DLLs
-$targetFiles = @($staticExeNames) + @($dllFiles)
+# Build unified target map with respective permissions
+$targetFiles = @()
 
-Write-Host "Securing Servy (.NET Framework 4.8) binary and library files in: $programDataDir" -ForegroundColor Cyan
+foreach ($exe in $staticExeNames) {
+    $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
+}
+
+foreach ($dll in $dllFiles) {
+    if (-not [string]::IsNullOrEmpty($dll)) {
+        $targetFiles += @{ Name = $dll; Rights = "ReadAndExecute" }
+    }
+}
+
+foreach ($cfg in $staticConfigNames) {
+    $targetFiles += @{ Name = $cfg; Rights = "Read" }
+}
+
+Write-Host "Securing Servy (.NET Framework 4.8) binary, library, and configuration files in: $programDataDir" -ForegroundColor Cyan
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
 $hardened = @()
 $missing  = @()
 $failed   = @()
 
-foreach ($fileName in $targetFiles) {
+foreach ($item in $targetFiles) {
+    $fileName       = $item.Name
+    $requiredRights = $item.Rights
+
     if ([string]::IsNullOrEmpty($fileName)) { continue }
 
     $filePath = [System.IO.Path]::Combine($programDataDir, $fileName)
@@ -146,7 +174,7 @@ foreach ($fileName in $targetFiles) {
     }
 
     try {
-        Write-Host "Hardening permissions on '$fileName'..." -ForegroundColor Green
+        Write-Host "Hardening permissions on '$fileName' ($requiredRights)..." -ForegroundColor Green
 
         $acl = Get-Acl -Path $filePath
 
@@ -164,7 +192,7 @@ foreach ($fileName in $targetFiles) {
         $acl.SetAccessRuleProtection($true, $false)
 
         # 2. Purge explicit grants for broad unprivileged groups (Users, Authenticated Users, Everyone)
-        # and explicit rules for the target account to ensure a clean state before applying ReadAndExecute.
+        # and explicit rules for the target account to ensure a clean state before applying target rights.
         # Manual explicit ACEs for custom third-party principals (both users and groups) are intentionally preserved.
         $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
         foreach ($rule in $explicitRules) {
@@ -186,13 +214,13 @@ foreach ($fileName in $targetFiles) {
         $acl.SetAccessRule($adminRule)
         $acl.SetAccessRule($systemRule)
 
-        # 4. Grant explicit ReadAndExecute access to target account
+        # 4. Grant explicit ReadAndExecute or Read access to target account
         if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
-            Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no ReadAndExecute downgrade applied." -ForegroundColor Yellow
+            Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
         } else {
             $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
                 $targetNTAccount,
-                "ReadAndExecute",
+                $requiredRights,
                 "Allow"
             )
             $acl.SetAccessRule($targetRule)
@@ -267,4 +295,4 @@ if ($missing.Count -gt 0) {
     exit 2
 }
 
-Write-Host "Executable and library permission hardening complete." -ForegroundColor Cyan
+Write-Host "Executable, library, and configuration permission hardening complete." -ForegroundColor Cyan
