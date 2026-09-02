@@ -99,7 +99,7 @@ function Protect-SensitiveString {
     $loosePattern  = [string]::Join('|', ($looseKeys  | ForEach-Object { [regex]::Escape($_) }))
     $strictPattern = [string]::Join('|', ($strictKeys | ForEach-Object { [regex]::Escape($_) }))
 
-    $keyBoundary = "(?i)(?:(?<=^|[^a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:$loosePattern)(?:_[A-Za-z0-9]+)*S?)(?![a-zA-Z0-9])|(?<![a-zA-Z0-9])(?<key>(?:$strictPattern)(?:_[A-Za-z0-9]+)*S?)(?![a-zA-Z0-9]))"
+    $keyBoundary = "(?i)(?:(?<=^|[^a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:$loosePattern)S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])|(?<![a-zA-Z0-9])(?<key>(?:$strictPattern)S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9]))"
 
     # Constructed via concatenation to avoid multi-line here-string whitespace issues.
     # Branch B (space separator) consumes multi-word unquoted values up to the next

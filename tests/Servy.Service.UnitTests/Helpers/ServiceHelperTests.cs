@@ -687,6 +687,9 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData("CERTIFICATES=cert_data", "CERTIFICATES=********")]
         [InlineData("COOKIES=session_cookie_val", "COOKIES=********")]
         [InlineData("myapp.exe --secrets=secret_payload", "myapp.exe --secrets=********")]
+        [InlineData("SECRETS_FILE=/etc/x", "SECRETS_FILE=********")]
+        [InlineData("TOKENS_PATH=/x", "TOKENS_PATH=********")]
+        [InlineData("DB_PASSWORDS_ENC=xx", "DB_PASSWORDS_ENC=********")]
         public void MaskRawArguments_PluralKeywords_SuccessfullyMasksSecrets(string input, string expected)
         {
             // Act
