@@ -492,9 +492,12 @@ function Invoke-ServyCli {
         }
 
         # Full bounded final drain loop after process exit until EOF or drain timeout
+        # WaitOne is capped to the budget REMAINING in the deadline (not the full window each time),
+        # so a late-arriving chunk that re-arms the loop can't reset the wait back to the full timeout.
         $drainDeadline = [System.Diagnostics.Stopwatch]::StartNew()
         while (-not $outEof -and $drainDeadline.ElapsedMilliseconds -lt $script:ServyDrainTimeoutMs) {
-            if ($outAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
+            $remaining = $script:ServyDrainTimeoutMs - $drainDeadline.ElapsedMilliseconds
+            if ($remaining -gt 0 -and $outAr.AsyncWaitHandle.WaitOne([int]$remaining)) {
                 $read = $outStream.EndRead($outAr)
                 if ($read -gt 0) {
                     $chars = $outDecoder.GetChars($outBuf, 0, $read, $outCharBuf, 0)
@@ -513,7 +516,8 @@ function Invoke-ServyCli {
         $drainDeadline.Reset()
         $drainDeadline.Start()
         while (-not $errEof -and $drainDeadline.ElapsedMilliseconds -lt $script:ServyDrainTimeoutMs) {
-            if ($errAr.AsyncWaitHandle.WaitOne($script:ServyDrainTimeoutMs)) {
+            $remaining = $script:ServyDrainTimeoutMs - $drainDeadline.ElapsedMilliseconds
+            if ($remaining -gt 0 -and $errAr.AsyncWaitHandle.WaitOne([int]$remaining)) {
                 $read = $errStream.EndRead($errAr)
                 if ($read -gt 0) {
                     $chars = $errDecoder.GetChars($errBuf, 0, $read, $errCharBuf, 0)
@@ -577,14 +581,25 @@ function Invoke-ServyCli {
         }
     }
     catch {
+        # $stdoutLines/$stderrLines are only populated on the success path (after the parse step below
+        # the timeout throw), so fall back to the raw StringBuilder content for any exception raised
+        # earlier (timeout, broken pipe EndRead, taskkill failure) - it's the only captured output there is.
         $partialOutput = ""
-        if ($null -ne $stdoutLines -and $stdoutLines.Count -gt 0) {
-            $stdout = $stdoutLines -join [Environment]::NewLine
+        $stdout = if ($null -ne $stdoutLines -and $stdoutLines.Count -gt 0) {
+            $stdoutLines -join [Environment]::NewLine
+        } elseif ($null -ne $outSb -and $outSb.Length -gt 0) {
+            $outSb.ToString()
+        } else { $null }
+        if ($stdout) {
             $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
             $partialOutput += " Stdout: $scrubbedStdout"
         }
-        if ($null -ne $stderrLines -and $stderrLines.Count -gt 0) {
-            $stderr = $stderrLines -join [Environment]::NewLine
+        $stderr = if ($null -ne $stderrLines -and $stderrLines.Count -gt 0) {
+            $stderrLines -join [Environment]::NewLine
+        } elseif ($null -ne $errSb -and $errSb.Length -gt 0) {
+            $errSb.ToString()
+        } else { $null }
+        if ($stderr) {
             $scrubbedStderr = Format-SecureLogMessage -Text $stderr.TrimEnd()
             $partialOutput += " Stderr: $scrubbedStderr"
         }
@@ -662,6 +677,10 @@ function Invoke-ServyServiceCommand {
         .PARAMETER SkipElevationCheck
             If set, skips the Administrator elevation assertion. Useful for read-only commands like 'status'.
 
+        .PARAMETER ErrorContext
+            Overrides the default "Failed to $Command service '$Name'" error message. Use this when
+            $Command doesn't read as a verb in that template (e.g. 'status').
+
         .EXAMPLE
             Invoke-ServyServiceCommand -Command "start" -Name "Wexflow" -Quiet
             Starts the 'Wexflow' service silently.
@@ -678,16 +697,22 @@ function Invoke-ServyServiceCommand {
 
         [switch] $Quiet,
 
-        [switch] $SkipElevationCheck
+        [switch] $SkipElevationCheck,
+
+        [string] $ErrorContext
     )
     if (-not $SkipElevationCheck) {
         Assert-Administrator
     }
 
+    if (-not $ErrorContext) {
+        $ErrorContext = "Failed to $Command service '$Name'"
+    }
+
     $argsList = @()
     $argsList = Add-Arg $argsList "--name" $Name
 
-    Invoke-ServyCli -Command $Command -Quiet:$Quiet -Arguments $argsList -ErrorContext "Failed to $Command service '$Name'"
+    Invoke-ServyCli -Command $Command -Quiet:$Quiet -Arguments $argsList -ErrorContext $ErrorContext
 }
 
 # ----------------------------------------------------------------
@@ -1619,7 +1644,7 @@ function Get-ServyServiceStatus {
         [string] $Name
     )
 
-    Invoke-ServyServiceCommand -Command "status" -Name $Name -Quiet:$Quiet -SkipElevationCheck
+    Invoke-ServyServiceCommand -Command "status" -Name $Name -Quiet:$Quiet -SkipElevationCheck -ErrorContext "Failed to get status of service '$Name'"
 }
 
 function Export-ServyServiceConfig {
