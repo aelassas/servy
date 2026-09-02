@@ -667,6 +667,7 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData("CONCERT=tonight", "CONCERT=tonight")]
         [InlineData("ARKANSAS=little_rock", "ARKANSAS=little_rock")]
         [InlineData("SECRETARY=john_doe", "SECRETARY=john_doe")]
+        [InlineData("SECRETSAUCE=recipe", "SECRETSAUCE=recipe")]
         public void MaskRawArguments_ShortKeyFalsePositiveGuards_PreservesNonSensitiveInput(string input, string expected)
         {
             // Act
@@ -690,6 +691,7 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData("SECRETS_FILE=/etc/x", "SECRETS_FILE=********")]
         [InlineData("TOKENS_PATH=/x", "TOKENS_PATH=********")]
         [InlineData("DB_PASSWORDS_ENC=xx", "DB_PASSWORDS_ENC=********")]
+        [InlineData("myapp.exe --api_keys_file secret.json", "myapp.exe --api_keys_file ********")]
         public void MaskRawArguments_PluralKeywords_SuccessfullyMasksSecrets(string input, string expected)
         {
             // Act
