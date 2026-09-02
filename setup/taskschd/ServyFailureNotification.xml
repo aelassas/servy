@@ -37,7 +37,7 @@
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>wscript.exe</Command>
+      <Command>%SystemRoot%\System32\wscript.exe</Command>
       <Arguments>"{SERVY_INSTALL_PATH}\taskschd\ServyFailureNotification.vbs"</Arguments>
     </Exec>
   </Actions>
