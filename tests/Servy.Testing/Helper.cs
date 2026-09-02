@@ -360,6 +360,17 @@ namespace Servy.Testing
         }
 
         /// <summary>
+        /// Gets the absolute filesystem path to the Servy-Dump.ps1 PowerShell script within the repository.
+        /// </summary>
+        /// <returns>The absolute path to the Servy-Dump.ps1 file.</returns>
+        public static string GetServyDumpPs1Path()
+        {
+            string startDir = AppDomain.CurrentDomain.BaseDirectory;
+            string repoRoot = AppConfig.FindRepoRoot(startDir);
+            return Path.Combine(repoRoot, "src", "Servy.CLI", "Servy-Dump.ps1");
+        }
+
+        /// <summary>
         /// Asynchronously polls a predicate until it returns true or a specified timeout deadline is surpassed.
         /// </summary>
         /// <param name="predicate">The conditional expression to evaluate.</param>

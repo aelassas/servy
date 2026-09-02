@@ -106,13 +106,9 @@ Assert-Equal "Trims trailing whitespace on directory-style path" $resTrailingSpa
 Write-Host "`n2. Testing Get-ServySanitizedFileName..." -ForegroundColor Yellow
 
 $invalidChars  = [System.IO.Path]::GetInvalidFileNameChars()
-$reservedNames = @(
-    'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$',
-    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-    'COM¹', 'COM²', 'COM³',
-    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
-    'LPT¹', 'LPT²', 'LPT³'
-)
+
+# Dynamically pull $reservedNames from the production script context to guarantee parity
+$reservedNames = $script:reservedNames
 
 $usedSet = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 

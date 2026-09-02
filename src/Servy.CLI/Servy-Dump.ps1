@@ -272,6 +272,16 @@ function Set-ServyHardenedFileAcl {
     Set-Acl -LiteralPath $Path -AclObject $acl
 }
 
+# Centralized reserved Win32 device names array, accessible across dot-sourced test harnesses.
+# Synchronized with ReservedNames.cs canonical definition block.
+$script:reservedNames = @(
+    'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$',
+    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+    'COM¹', 'COM²', 'COM³',
+    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
+    'LPT¹', 'LPT²', 'LPT³'
+)
+
 # If dot-sourced for testing, return immediately without executing main script body
 if ($MyInvocation.InvocationName -eq '.') {
     return
@@ -515,18 +525,9 @@ public static class ServyNativeWinSqlite16
         $usedBaseNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
         $invalidChars  = [System.IO.Path]::GetInvalidFileNameChars()
 
-        # Synchronized with ReservedNames.cs canonical definition block
-        $reservedNames = @(
-            'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$',
-            'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-            'COM¹', 'COM²', 'COM³',
-            'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
-            'LPT¹', 'LPT²', 'LPT³'
-        )
-
         # Export each service configuration into individual XML files with per-item exception isolation
         foreach ($serviceName in $serviceNames) {
-            $candidateName = Get-ServySanitizedFileName -ServiceName $serviceName -InvalidChars $invalidChars -ReservedNames $reservedNames -UsedBaseNames $usedBaseNames
+            $candidateName = Get-ServySanitizedFileName -ServiceName $serviceName -InvalidChars $invalidChars -ReservedNames $script:reservedNames -UsedBaseNames $usedBaseNames
 
             $xmlExportPath = [System.IO.Path]::Combine($tempStagingDir, "$candidateName.xml")
 
