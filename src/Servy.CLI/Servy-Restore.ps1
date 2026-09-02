@@ -356,7 +356,7 @@ try {
     if ($SkipIntegrityCheck.IsPresent) {
         Write-Host "WARNING: Integrity verification skipped (-SkipIntegrityCheck specified)." -ForegroundColor Yellow
     }
-    elseif (Test-Path -LiteralPath $sidecarPath) {
+    elseif (Test-Path -Path $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
 
         try {

@@ -66,7 +66,7 @@
     - SQLite Engine: Prefers System.Data.SQLite.dll / e_sqlite3.dll in Servy directory, with dynamic fallback to winsqlite3.dll / sqlite3.dll.
     - Execution Privileges: Administrator privileges are required to interact with %ProgramData%\Servy and invoke Servy cmdlets.
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
     [Parameter(Mandatory = $true, HelpMessage = 'Specify target archive output file path (e.g., "C:\Backups\Servy_Dump.zip").')]
     [ValidateNotNullOrEmpty()]
@@ -218,61 +218,6 @@ function Get-ServySanitizedFileName {
     return $candidateName
 }
 
-<#
-.SYNOPSIS
-    Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
-
-.DESCRIPTION
-    Breaks permission inheritance ($isProtected = $true, $preserveInheritance = $false), purges all existing ACEs,
-    and grants Full Control exclusively to Builtin Administrators and Local SYSTEM using language-agnostic Well-Known SIDs.
-
-.PARAMETER Path
-    Mandatory literal filesystem path of the target file or directory.
-
-.PARAMETER IsDirectory
-    Optional switch indicating if the path is a directory (controls container/object inheritance flags).
-#>
-function Set-ServyHardenedFileAcl {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Path,
-
-        [Parameter(Mandatory = $false)]
-        [switch]$IsDirectory
-    )
-
-    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-
-    # Use -Path for PowerShell 2.0 compatibility
-    $acl = Get-Acl -Path $Path
-
-    # 1. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
-    $acl.SetAccessRuleProtection($true, $false)
-
-    # 2. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
-    $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-    foreach ($rule in $explicitRules) {
-        [void]$acl.RemoveAccessRule($rule)
-    }
-
-    # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
-    if ($IsDirectory.IsPresent) {
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-    }
-    else {
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-    }
-
-    $acl.SetAccessRule($adminRule)
-    $acl.SetAccessRule($systemRule)
-
-    Set-Acl -Path $Path -AclObject $acl
-}
-
 # Centralized reserved Win32 device names array, accessible across dot-sourced test harnesses.
 # Synchronized with ReservedNames.cs canonical definition block.
 $script:reservedNames = @(
@@ -422,10 +367,10 @@ try {
     # -----------------------------------------------------------------------------
     # Database Inspection Layer
     # 1. Attempt ADO.NET using System.Data.SQLite.dll (present in Servy net48 build)
-    # 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-8 and sqlite3_open_v2 (Read-Only)
+    # 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-16 and sqlite3_open_v2 (Read-Only)
     # -----------------------------------------------------------------------------
 
-    $serviceNames = New-Object System.Collections.Generic.List[string]
+    $servicesList = New-Object System.Collections.Generic.List[object]
     $managedSqliteDll = [System.IO.Path]::Combine($servyBinDir, "System.Data.SQLite.dll")
 
     $usedAdoNet = $false
@@ -440,12 +385,15 @@ try {
             try {
                 $connection.Open()
                 $command = $connection.CreateCommand()
-                $command.CommandText = "SELECT Name FROM Services ORDER BY Name"
+                $command.CommandText = "SELECT Name, UserAccount FROM Services ORDER BY Name"
                 $reader = $command.ExecuteReader()
 
                 while ($reader.Read()) {
                     if (-not $reader.IsDBNull(0)) {
-                        $serviceNames.Add($reader.GetString(0))
+                        $svcObj = New-Object PSObject
+                        $svcObj | Add-Member -MemberType NoteProperty -Name "Name" -Value ($reader.GetString(0))
+                            $svcObj | Add-Member -MemberType NoteProperty -Name "UserAccount" -Value $(if (-not $reader.IsDBNull(1)) { $reader.GetString(1) } else { $null })
+                        $servicesList.Add($svcObj)
                     }
                 }
                 $reader.Close()
@@ -464,13 +412,31 @@ try {
     }
 
     if (-not $usedAdoNet) {
-        if (-not ([System.Management.Automation.PSTypeName]'ServySafePs2Sqlite16').Type) {
+        if (-not ([System.Management.Automation.PSTypeName]'ServySafePs2SqliteRecord').Type) {
             $sqliteBinding = @"
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-public static class ServySafePs2Sqlite16
+public class ServyServiceRecord
+{
+    private string name;
+    private string userAccount;
+
+    public string Name
+    {
+        get { return name; }
+        set { name = value; }
+    }
+
+    public string UserAccount
+    {
+        get { return userAccount; }
+        set { userAccount = value; }
+    }
+}
+
+public static class ServySafePs2SqliteRecord
 {
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr LoadLibrary(string lpFileName);
@@ -479,13 +445,13 @@ public static class ServySafePs2Sqlite16
     private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int OpenV2Delegate(byte[] filenameUtf8, out IntPtr ppDb, int flags, IntPtr zVfs);
+    private delegate int OpenDelegate(byte[] filenameUtf8, out IntPtr ppDb, int flags, IntPtr zVfs);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int CloseDelegate(IntPtr db);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int PrepareV2Delegate(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string zSql, int nByte, out IntPtr ppStmt, IntPtr pzTail);
+    private delegate int PrepareDelegate(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string zSql, int nByte, out IntPtr ppStmt, IntPtr pzTail);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int StepDelegate(IntPtr stmt);
@@ -496,9 +462,9 @@ public static class ServySafePs2Sqlite16
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int FinalizeDelegate(IntPtr stmt);
 
-    public static List<string> GetServiceNames(string dbPath, string servyDir)
+    public static List<ServyServiceRecord> GetServices(string dbPath, string servyDir)
     {
-        List<string> result = new List<string>();
+        List<ServyServiceRecord> result = new List<ServyServiceRecord>();
         string[] candidates = new string[] {
             System.IO.Path.Combine(servyDir, "e_sqlite3.dll"),
             "winsqlite3.dll",
@@ -521,29 +487,29 @@ public static class ServySafePs2Sqlite16
             throw new InvalidOperationException("Failed to load native SQLite library (e_sqlite3.dll, winsqlite3.dll, or sqlite3.dll).");
         }
 
-        IntPtr pOpenV2   = GetProcAddress(hModule, "sqlite3_open_v2");
-        IntPtr pClose    = GetProcAddress(hModule, "sqlite3_close");
-        IntPtr pPrepare  = GetProcAddress(hModule, "sqlite3_prepare_v2");
-        IntPtr pStep     = GetProcAddress(hModule, "sqlite3_step");
-        IntPtr pText16   = GetProcAddress(hModule, "sqlite3_column_text16");
+        IntPtr pOpen    = GetProcAddress(hModule, "sqlite3_open_v2");
+        IntPtr pClose   = GetProcAddress(hModule, "sqlite3_close");
+        IntPtr pPrepare = GetProcAddress(hModule, "sqlite3_prepare_v2");
+        IntPtr pStep    = GetProcAddress(hModule, "sqlite3_step");
+        IntPtr pText16  = GetProcAddress(hModule, "sqlite3_column_text16");
         IntPtr pFinalize = GetProcAddress(hModule, "sqlite3_finalize");
 
-        if (pOpenV2 == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
+        if (pOpen == IntPtr.Zero || pClose == IntPtr.Zero || pPrepare == IntPtr.Zero ||
             pStep == IntPtr.Zero || pText16 == IntPtr.Zero || pFinalize == IntPtr.Zero)
         {
             throw new InvalidOperationException("Failed to resolve native SQLite function exports.");
         }
 
-        OpenV2Delegate openV2          = (OpenV2Delegate)Marshal.GetDelegateForFunctionPointer(pOpenV2, typeof(OpenV2Delegate));
-        CloseDelegate close            = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
-        PrepareV2Delegate prepareV2    = (PrepareV2Delegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareV2Delegate));
-        StepDelegate step              = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
+        OpenDelegate open          = (OpenDelegate)Marshal.GetDelegateForFunctionPointer(pOpen, typeof(OpenDelegate));
+        CloseDelegate close        = (CloseDelegate)Marshal.GetDelegateForFunctionPointer(pClose, typeof(CloseDelegate));
+        PrepareDelegate prepare    = (PrepareDelegate)Marshal.GetDelegateForFunctionPointer(pPrepare, typeof(PrepareDelegate));
+        StepDelegate step          = (StepDelegate)Marshal.GetDelegateForFunctionPointer(pStep, typeof(StepDelegate));
         ColumnText16Delegate colText16 = (ColumnText16Delegate)Marshal.GetDelegateForFunctionPointer(pText16, typeof(ColumnText16Delegate));
-        FinalizeDelegate finalize      = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
+        FinalizeDelegate finalize  = (FinalizeDelegate)Marshal.GetDelegateForFunctionPointer(pFinalize, typeof(FinalizeDelegate));
 
         IntPtr db;
         byte[] pathUtf8 = System.Text.Encoding.UTF8.GetBytes(dbPath + "\0");
-        int rc = openV2(pathUtf8, out db, 0x1 /* SQLITE_OPEN_READONLY */, IntPtr.Zero);
+        int rc = open(pathUtf8, out db, 0x1 /* SQLITE_OPEN_READONLY */, IntPtr.Zero);
         if (rc != 0)
         {
             if (db != IntPtr.Zero) close(db);
@@ -553,7 +519,7 @@ public static class ServySafePs2Sqlite16
         try
         {
             IntPtr stmt;
-            rc = prepareV2(db, "SELECT Name FROM Services ORDER BY Name", -1, out stmt, IntPtr.Zero);
+            rc = prepare(db, "SELECT Name, UserAccount FROM Services ORDER BY Name", -1, out stmt, IntPtr.Zero);
             if (rc != 0)
             {
                 throw new InvalidOperationException(string.Format("sqlite3_prepare_v2 failed with result code {0}.", rc));
@@ -564,10 +530,14 @@ public static class ServySafePs2Sqlite16
                 int stepRc;
                 while ((stepRc = step(stmt)) == 100) // SQLITE_ROW = 100
                 {
-                    IntPtr ptr = colText16(stmt, 0);
-                    if (ptr != IntPtr.Zero)
+                    IntPtr namePtr = colText16(stmt, 0);
+                    IntPtr accountPtr = colText16(stmt, 1);
+                    if (namePtr != IntPtr.Zero)
                     {
-                        result.Add(Marshal.PtrToStringUni(ptr));
+                        ServyServiceRecord record = new ServyServiceRecord();
+                        record.Name = Marshal.PtrToStringUni(namePtr);
+                        record.UserAccount = accountPtr != IntPtr.Zero ? Marshal.PtrToStringUni(accountPtr) : null;
+                        result.Add(record);
                     }
                 }
                 if (stepRc != 101) // SQLITE_DONE
@@ -599,13 +569,35 @@ public static class ServySafePs2Sqlite16
         }
 
         try {
-            $serviceNames = [ServySafePs2Sqlite16]::GetServiceNames($dbPath, $servyBinDir)
+            $rawList = [ServySafePs2SqliteRecord]::GetServices($dbPath, $servyBinDir)
+            foreach ($item in $rawList) {
+                $svcObj = New-Object PSObject
+                $svcObj | Add-Member -MemberType NoteProperty -Name "Name" -Value $item.Name
+                $svcObj | Add-Member -MemberType NoteProperty -Name "UserAccount" -Value $item.UserAccount
+                $servicesList.Add($svcObj)
+            }
         }
         catch {
             Write-Host "Failed to query Servy database at '$dbPath': $($_.Exception.Message)" -ForegroundColor Red
             exit 4
         }
     }
+
+    # Extract raw service names list
+    $serviceNames = New-Object System.Collections.Generic.List[string]
+    foreach ($s in $servicesList) { $serviceNames.Add($s.Name) }
+
+    # Display registered services table
+    $serviceTable = New-Object System.Collections.Generic.List[object]
+    foreach ($svc in $servicesList) {
+        $tblObj = New-Object PSObject
+        $tblObj | Add-Member -MemberType NoteProperty -Name "Service Name" -Value $svc.Name
+            $tblObj | Add-Member -MemberType NoteProperty -Name "User Account" -Value $(if ($null -ne $svc.UserAccount -and $svc.UserAccount.ToString().Trim().Length -gt 0) { $svc.UserAccount } else { '[LocalSystem]' })
+        $serviceTable.Add($tblObj)
+    }
+
+    Write-Host "`nRegistered Servy Services:" -ForegroundColor Cyan
+    $serviceTable | Format-Table -AutoSize | Out-String | Write-Host
 
     # Create an isolated temporary directory for staging exported XML files inside the try/finally scope
     $tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDump_" + [System.IO.Path]::GetRandomFileName())
@@ -635,7 +627,7 @@ public static class ServySafePs2Sqlite16
         $usedBaseNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
         $invalidChars  = [System.IO.Path]::GetInvalidFileNameChars()
 
-       # Export each service configuration into individual XML files with per-item exception isolation
+        # Export each service configuration into individual XML files with per-item exception isolation
         foreach ($serviceName in $serviceNames) {
             $candidateName = Get-ServySanitizedFileName -ServiceName $serviceName -InvalidChars $invalidChars -ReservedNames $script:reservedNames -UsedBaseNames $usedBaseNames
 
@@ -814,21 +806,53 @@ public static class ServySafePs2Sqlite16
                 Write-Host "Regenerate the checksum manually (Get-FileHash) and re-run with -Uninstall." -ForegroundColor Yellow
             }
             else {
-                Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+                # Check for custom accounts that will lose credentials
+                $customAccountServices = New-Object System.Collections.Generic.List[object]
+                foreach ($svc in $servicesList) {
+                    $svcName = $svc.Name
+                    $account = if ($null -ne $svc.UserAccount) { $svc.UserAccount.ToString().Trim() } else { "" }
 
-                foreach ($serviceName in $exported) {
-                    Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
-                    try {
-                        Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                    $isExported = $exported.Contains($svcName)
+                    $isCustomAccount = (-not [string]::IsNullOrEmpty($account)) -and
+                                       (-not $account.EndsWith('LocalSystem', [System.StringComparison]::OrdinalIgnoreCase)) -and
+                                       (-not $account.EndsWith('SYSTEM', [System.StringComparison]::OrdinalIgnoreCase))
+
+                    if ($isExported -and $isCustomAccount) {
+                        $customAccountServices.Add($svc)
                     }
-                    catch {
-                        Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+                }
 
-                        # PowerShell 2.0 compatible property assignment for error array
-                        $errObj = New-Object PSObject
-                        $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
-                        $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value "Uninstall failed: $($_.Exception.Message)"
-                        $failed.Add($errObj)
+                if ($customAccountServices.Count -gt 0) {
+                    Write-Host "`nWARNING: $($customAccountServices.Count) of $($exported.Count) service(s) use a custom logon account; their credentials are NOT in the archive and will be deleted from the database upon uninstallation (re-enter them manually after restore):" -ForegroundColor Yellow
+
+                    $affectedTable = New-Object System.Collections.Generic.List[object]
+                    foreach ($svc in $customAccountServices) {
+                        $affObj = New-Object PSObject
+                        $affObj | Add-Member -MemberType NoteProperty -Name "Service Name" -Value $svc.Name
+                        $affObj | Add-Member -MemberType NoteProperty -Name "User Account" -Value $svc.UserAccount
+                        $affectedTable.Add($affObj)
+                    }
+
+                    $affectedTable | Format-Table -AutoSize | Out-String | Write-Host
+                }
+
+                if ($PSCmdlet.ShouldProcess("$($exported.Count) exported service(s)", "Uninstall from SCM and delete from the Servy database")) {
+                    Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+
+                    foreach ($serviceName in $exported) {
+                        Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
+                        try {
+                            Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                        }
+                        catch {
+                            Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+
+                            # PowerShell 2.0 compatible property assignment for error array
+                            $errObj = New-Object PSObject
+                            $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
+                            $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value "Uninstall failed: $($_.Exception.Message)"
+                            $failed.Add($errObj)
+                        }
                     }
                 }
             }

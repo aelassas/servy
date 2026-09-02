@@ -35,7 +35,7 @@ if (-not (Test-Path -Path $scriptPath)) {
     exit 1
 }
 try {
-    . $scriptPath -DestinationArchivePath "dummy"
+    . $scriptPath -DestinationArchivePath "dummy" -Confirm:$false
 }
 catch {
     Write-Host "FAILED to dot-source Servy-Dump.ps1: $_" -ForegroundColor Red

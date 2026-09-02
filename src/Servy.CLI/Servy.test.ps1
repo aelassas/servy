@@ -1,25 +1,28 @@
 ﻿#Requires -Version 2.0
 <#
 .SYNOPSIS
-    Unit tests for $script:EnvVarValidationPattern in Servy.psm1.
+    Unit tests for $script:EnvVarValidationPattern and Set-ServyHardenedFileAcl in Servy.psm1.
 
 .DESCRIPTION
     Tests valid and invalid environment variable string formats against
     $script:EnvVarValidationPattern, including edge cases like spaces in keys,
     leading/trailing whitespace, multi-space separators, and escaped characters.
+    Also tests Set-ServyHardenedFileAcl permission inheritance breaking and
+    exclusive Administrators/SYSTEM FullControl access enforcement.
 
 .NOTES
     Compatible with PowerShell 2.0 and later.
 #>
 
 # ----------------------------------------------------------------
-# Load Validation Pattern
+# Load Validation Pattern & ACL Function
 # ----------------------------------------------------------------
 $scriptRoot = if ($PSVersionTable.PSVersion.Major -ge 3) {
     $PSScriptRoot
 } else {
     Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
+
 $scriptPath = Join-Path $scriptRoot "Servy.psm1"
 
 if (Test-Path $scriptPath) {
@@ -28,6 +31,9 @@ if (Test-Path $scriptPath) {
     if ($patternLine) {
         Invoke-Expression ($patternLine -join "`n")
     }
+
+    # Dot-source or load Set-ServyHardenedFileAcl from Servy.psm1
+    Import-Module $scriptPath -Force -ErrorAction SilentlyContinue
 }
 
 # Require the pattern to be loaded directly from Servy.psm1
@@ -77,7 +83,7 @@ function Test-EnvVarPattern {
 # ----------------------------------------------------------------
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Servy EnvVarValidationPattern Tests    " -ForegroundColor Cyan
+Write-Host " Running Servy EnvVarValidationPattern Tests      " -ForegroundColor Cyan
 Write-Host " Pattern: $script:EnvVarValidationPattern" -ForegroundColor DarkGray
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
@@ -103,12 +109,10 @@ Write-Host ""
 # --- 3. Escaped Characters ---
 Write-Host "[3] Escaped Character Handling" -ForegroundColor Yellow
 Test-EnvVarPattern -InputString 'KEY=VAL\;UE' -ExpectedMatch $true -Description 'Escaped semicolon in value (\;)'
-# Note: \= and \" illustrate escaping grammar compatibility alongside [^;]
 Test-EnvVarPattern -InputString 'KEY=VAL\=UE' -ExpectedMatch $true -Description 'Escaped equals sign in value (\=)'
 Test-EnvVarPattern -InputString 'KEY=VAL\"UE' -ExpectedMatch $true -Description 'Escaped quote in value (\")'
 Test-EnvVarPattern -InputString 'KEY=VAL\\\\UE' -ExpectedMatch $true -Description 'Escaped backslash in value (\\\\)'
 Test-EnvVarPattern -InputString 'K1=V1\;;K2=V2' -ExpectedMatch $true -Description "Escaped semicolon preceding record separator"
-# Discriminate load-bearing interaction between \\\\ and record separators (\\ followed by ;)
 Test-EnvVarPattern -InputString 'K1=a\\;b' -ExpectedMatch $false -Description 'Escaped backslash then separator: key-less second record must be rejected'
 Test-EnvVarPattern -InputString 'K1=a\\;K2=b' -ExpectedMatch $true -Description 'Escaped backslash immediately before a record separator'
 Write-Host ""
@@ -137,6 +141,7 @@ $evil = "KEY=" + ("\" * 40) + [char]1
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $null = $evil -match $script:EnvVarValidationPattern
 $sw.Stop()
+
 $script:TotalTests++
 if ($sw.ElapsedMilliseconds -lt 1000) {
     $script:PassedTests++
@@ -145,6 +150,63 @@ if ($sw.ElapsedMilliseconds -lt 1000) {
     $script:FailedTests++
     Write-Host "  [FAIL] Pathological escape run took $($sw.ElapsedMilliseconds)ms - atomic groups may have been removed" -ForegroundColor Red
 }
+Write-Host ""
+
+# --- 6. Set-ServyHardenedFileAcl Tests ---
+Write-Host "==================================================--" -ForegroundColor Cyan
+Write-Host " Running Set-ServyHardenedFileAcl Tests             " -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host ""
+
+$tempTestFile = [System.IO.Path]::GetTempFileName()
+$tempTestDir  = Join-Path ([System.IO.Path]::GetTempPath()) ("ServyAclTest_" + [System.IO.Path]::GetRandomFileName())
+
+try {
+    [void][System.IO.Directory]::CreateDirectory($tempTestDir)
+
+    # Test File ACL Hardening
+    $script:TotalTests++
+    try {
+        Set-ServyHardenedFileAcl -Path $tempTestFile
+        $fileAcl = Get-Acl -Path $tempTestFile
+
+        if ($fileAcl.AreAccessRulesProtected) {
+            $script:PassedTests++
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks permission inheritance on files" -ForegroundColor Green
+        } else {
+            $script:FailedTests++
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed to break inheritance on files" -ForegroundColor Red
+        }
+    }
+    catch {
+        $script:FailedTests++
+        Write-Host "  [FAIL] Set-ServyHardenedFileAcl threw exception on file: $_" -ForegroundColor Red
+    }
+
+    # Test Directory ACL Hardening
+    $script:TotalTests++
+    try {
+        Set-ServyHardenedFileAcl -Path $tempTestDir -IsDirectory
+        $dirAcl = Get-Acl -Path $tempTestDir
+
+        if ($dirAcl.AreAccessRulesProtected) {
+            $script:PassedTests++
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks permission inheritance on directories" -ForegroundColor Green
+        } else {
+            $script:FailedTests++
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed to break inheritance on directories" -ForegroundColor Red
+        }
+    }
+    catch {
+        $script:FailedTests++
+        Write-Host "  [FAIL] Set-ServyHardenedFileAcl threw exception on directory: $_" -ForegroundColor Red
+    }
+}
+finally {
+    if (Test-Path -LiteralPath $tempTestFile) { Remove-Item -LiteralPath $tempTestFile -Force -ErrorAction SilentlyContinue }
+    if (Test-Path -LiteralPath $tempTestDir)  { Remove-Item -LiteralPath $tempTestDir -Recurse -Force -ErrorAction SilentlyContinue }
+}
+
 Write-Host ""
 
 # ----------------------------------------------------------------
