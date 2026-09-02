@@ -2,6 +2,8 @@ using Servy.Core.Resources;
 using Servy.Core.Validation;
 using Servy.Testing;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace Servy.Core.UnitTests.Validation
 {
@@ -765,6 +767,21 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void IsSafelyContainedWithinAppDirectory_AbsoluteChildPath_ReturnsTrue()
+        {
+            // Arrange
+            string baseDir = Path.Combine(TempDirectory, "App");
+            Directory.CreateDirectory(baseDir);
+            string targetPath = Path.Combine(baseDir, "Servy.Manager.exe");
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetPath, baseDir);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
         public void IsSafelyContainedWithinAppDirectory_ExternalRootedPath_ReturnsFalse()
         {
             // Arrange
@@ -795,6 +812,33 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void IsSafelyContainedWithinAppDirectory_SiblingDirectoryWithBasePrefix_ReturnsFalse()
+        {
+            // Arrange
+            string baseDir = Path.Combine(TempDirectory, "App");
+            string siblingDir = Path.Combine(TempDirectory, "AppEvil");
+            Directory.CreateDirectory(baseDir);
+            Directory.CreateDirectory(siblingDir);
+            string targetPath = Path.Combine(siblingDir, "payload.exe");
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetPath, baseDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsSafelyContainedWithinAppDirectory_InvalidPathChars_ReturnsFalse()
+        {
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory("Servy.Manager\0.exe", TempDirectory);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
         public void IsSafelyContainedWithinAppDirectory_ReparsePointInPath_ReturnsFalse()
         {
             // Arrange
@@ -815,6 +859,30 @@ namespace Servy.Core.UnitTests.Validation
 
             // Act
             bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetFile, linkDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsSafelyContainedWithinAppDirectory_FileSymlink_ReturnsFalse()
+        {
+            // Arrange
+            string targetFile = Path.Combine(TempDirectory, "target.exe");
+            string linkFile = Path.Combine(TempDirectory, "Servy.Manager.exe");
+            File.WriteAllText(targetFile, "placeholder");
+
+            try
+            {
+                File.CreateSymbolicLink(linkFile, targetFile);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Assert.Skip("Symlink creation unavailable on this runner");
+            }
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(linkFile, TempDirectory);
 
             // Assert
             Assert.False(result);
@@ -851,17 +919,43 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
-        public void IsDirectoryAclHardened_ValidTempDirectory_EvaluatesAclWithoutException()
+        public void IsDirectoryAclHardened_UsersReadExecuteOnly_ReturnsTrue()
         {
             // Arrange
-            string testDir = Path.Combine(TempDirectory, "acl_check_dir");
+            string testDir = Path.Combine(TempDirectory, "acl_read_execute_dir");
             Directory.CreateDirectory(testDir);
+            SetBuiltinUsersAccessRule(testDir, FileSystemRights.ReadAndExecute);
 
-            // Act & Assert
-            // The method inspects the underlying ACL on the created temp directory and returns true or false
-            // depending on local runner execution rights, without throwing unhandled security exceptions.
-            var exception = Record.Exception(() => PathSecurityGuard.IsDirectoryAclHardened(testDir));
-            Assert.Null(exception);
+            // Act
+            bool result = PathSecurityGuard.IsDirectoryAclHardened(testDir);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsDirectoryAclHardened_UsersModify_ReturnsFalse()
+        {
+            // Arrange
+            string testDir = Path.Combine(TempDirectory, "acl_modify_dir");
+            Directory.CreateDirectory(testDir);
+            SetBuiltinUsersAccessRule(testDir, FileSystemRights.Modify);
+
+            // Act
+            bool result = PathSecurityGuard.IsDirectoryAclHardened(testDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        private static void SetBuiltinUsersAccessRule(string directoryPath, FileSystemRights rights)
+        {
+            var security = new DirectorySecurity();
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            var usersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            security.AddAccessRule(new FileSystemAccessRule(usersSid, rights, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(WindowsIdentity.GetCurrent().User!, FileSystemRights.FullControl, AccessControlType.Allow));
+            new DirectoryInfo(directoryPath).SetAccessControl(security);
         }
 
         #endregion
