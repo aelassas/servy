@@ -27,6 +27,27 @@ if (-not (Test-Path -Path $testCommonPath)) {
 }
 . $testCommonPath
 
+# Dynamically locate and import Servy.psm1 BEFORE dot-sourcing Servy-Dump.ps1
+$moduleCandidates = @(
+    (Join-Path $scriptDir 'Servy.psm1'),
+    (Join-Path $env:ProgramFiles 'Servy\Servy.psm1')
+) | Where-Object { $_ -and (Test-Path -Path $_) }
+
+$servyModulePath = $moduleCandidates | Select-Object -First 1
+
+if (-not $servyModulePath) {
+    Write-Host "FAILED: Servy PowerShell module (Servy.psm1) was not found next to test harness or in %ProgramFiles%\Servy." -ForegroundColor Red
+    exit 1
+}
+
+try {
+    Import-Module -Name $servyModulePath -Force -ErrorAction Stop
+}
+catch {
+    Write-Host "FAILED to import Servy module from '$servyModulePath': $_" -ForegroundColor Red
+    exit 1
+}
+
 # Dot-source Servy-Dump.ps1 to load its helper functions without executing the main script body.
 # Pass dummy string for mandatory parameter to satisfy [ValidateNotNullOrEmpty()].
 $scriptPath = Join-Path $scriptDir 'Servy-Dump.ps1'
@@ -43,7 +64,7 @@ catch {
 }
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Servy-Dump.ps1 Tests                       " -ForegroundColor Cyan
+Write-Host " Running Servy-Dump.ps1 Tests                        " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
