@@ -11,6 +11,12 @@ on:
     branches:
       - net48
   workflow_dispatch:
+    inputs:
+      upload_coverage:
+        description: 'Upload coverage metrics to Codecov and Coveralls'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -252,12 +258,14 @@ jobs:
           if-no-files-found: ignore
 
       - name: Install ReportGenerator
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         shell: pwsh
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
           if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator install failed (exit $LASTEXITCODE)" }
 
       - name: Merge coverage reports
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         shell: pwsh
         run: |
           # Find all newly generated cobertura files dynamically
@@ -278,6 +286,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed (exit $LASTEXITCODE)" }
 
       - name: Normalize coverage paths (PowerShell)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         shell: pwsh
         run: |
           $fixedDir = "CoverageMerged\fixed"
@@ -304,6 +313,7 @@ jobs:
           $content | Set-Content $normalizedFile -Encoding utf8
 
       - name: Import Codecov Public GPG Key
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         continue-on-error: true
         shell: bash
         run: |
@@ -318,6 +328,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         id: codecov
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
         with:
@@ -331,6 +342,7 @@ jobs:
 
       - name: Upload coverage to Coveralls
         id: coveralls
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         continue-on-error: true
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
         with:
@@ -344,7 +356,7 @@ jobs:
           COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
 
       - name: Notify Metrics Platform Status in case of failure
-        if: ${{ (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
+        if: ${{ (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #v9.0.0
         with:
           script: |
