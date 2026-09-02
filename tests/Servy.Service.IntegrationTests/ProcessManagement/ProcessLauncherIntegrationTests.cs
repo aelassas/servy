@@ -1,3 +1,4 @@
+using Moq;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
@@ -8,6 +9,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -360,6 +363,97 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Assert
             // Verify the helper branch rule 'if (!psi.Environment.ContainsKey(key))' bypassed replacing it
             Assert.Equal("CUSTOM_USER_VALUE", psi.Environment["PYTHONUTF8"]);
+        }
+
+        #endregion
+
+        #region TryOpenAppendWriter Tests
+
+        private static StreamWriter InvokeTryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger)
+        {
+            var method = typeof(ProcessLauncher).GetMethod("TryOpenAppendWriter", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+            return (StreamWriter)method.Invoke(null, new object[] { path, encoding, exePath, scope, logger });
+        }
+
+        [Fact]
+        public void TryOpenAppendWriter_ValidPath_SuccessfullyOpensWriter()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), $"Servy_Test_{Guid.NewGuid():N}");
+            string logPath = Path.Combine(tempDir, "hooks", "pre-launch.log");
+            var mockLogger = new Mock<IServyLogger>();
+
+            try
+            {
+                // Act
+                using (var writer = InvokeTryOpenAppendWriter(logPath, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
+                {
+                    // Assert
+                    Assert.NotNull(writer);
+                    Assert.True(File.Exists(logPath));
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, recursive: true); } catch { }
+                }
+            }
+        }
+
+        [Fact]
+        public void TryOpenAppendWriter_EmptyOrNullPath_ReturnsNullAndLogsError()
+        {
+            // Arrange
+            var mockLogger = new Mock<IServyLogger>();
+
+            // Act
+            using (var writer = InvokeTryOpenAppendWriter("", Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
+            {
+                // Assert
+                Assert.Null(writer);
+                mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("log path is empty")), It.IsAny<Exception>()), Times.Once);
+            }
+        }
+
+        [Fact]
+        public void TryOpenAppendWriter_TargetFileIsReparsePoint_RefusesToOpenAndLogsError()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), $"Servy_Test_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempDir);
+            string targetFile = Path.Combine(tempDir, "target.log");
+            string linkFile = Path.Combine(tempDir, "symlink.log");
+            File.WriteAllText(targetFile, "content");
+
+            var mockLogger = new Mock<IServyLogger>();
+
+            try
+            {
+                // Create file reparse point/symlink
+                Helper.CreateFileSymlink(linkFile, targetFile);
+
+                // Act
+                using (var writer = InvokeTryOpenAppendWriter(linkFile, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
+                {
+                    // Assert
+                    Assert.Null(writer);
+                    mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("is a junction or symbolic link")), It.IsAny<Exception>()), Times.Once);
+                }
+            }
+            catch (IOException)
+            {
+                // Symbolic link creation on Windows may require elevated permissions in non-developer mode environments.
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, recursive: true); } catch { }
+                }
+            }
         }
 
         #endregion

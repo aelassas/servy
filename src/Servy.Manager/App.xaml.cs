@@ -298,29 +298,35 @@ namespace Servy.Manager
                         AppConfig.MinLogsWindowDays,
                         AppConfig.MaxLogsWindowDays);
 
-                    var rawLogLevel = config["LogLevel"];
-                    if (!Enum.TryParse<LogLevel>(rawLogLevel, true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
-                    {
-                        if (!string.IsNullOrEmpty(rawLogLevel))
-                            Logger.Warn($"Invalid configuration entry '{rawLogLevel}' for 'LogLevel'. Using default: {AppConfig.DefaultLogLevel}.");
-                        logLevel = AppConfig.DefaultLogLevel;
-                    }
-                    LogLevel = logLevel;
+                    LogLevel = ConfigParser.ParseEnum(config["LogLevel"], AppConfig.DefaultLogLevel, "LogLevel");
 
 #if DEBUG
                     DesktopAppPublishPath = AppConfig.DesktopAppPublishReleasePath;
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
-                    DesktopAppPublishPath = config["DesktopAppPublishPath"] ?? AppConfig.DefaultDesktopAppPublishPath;
-                    if (!Helper.IsAbsolute(DesktopAppPublishPath))
+                    string configuredPath = config["DesktopAppPublishPath"] ?? AppConfig.DefaultDesktopAppPublishPath;
+
+                    if (PathSecurityGuard.IsSafelyContainedWithinAppDirectory(configuredPath, baseDirectory))
                     {
-                        DesktopAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, DesktopAppPublishPath));
+                        DesktopAppPublishPath = Helper.IsAbsolute(configuredPath)
+                            ? Path.GetFullPath(configuredPath)
+                            : Path.GetFullPath(Path.Combine(baseDirectory, configuredPath));
+                    }
+                    else
+                    {
+                        Logger.Warn($"Security refusal: DesktopAppPublishPath '{configuredPath}' is not contained within application directory '{baseDirectory}'.");
+                        DesktopAppPublishPath = string.Empty;
                     }
 #endif
                     IsDesktopAppAvailable = !string.IsNullOrEmpty(DesktopAppPublishPath) && File.Exists(DesktopAppPublishPath);
                     if (!IsDesktopAppAvailable)
                     {
                         Logger.Warn($"Desktop app executable not found: {DesktopAppPublishPath}");
+                    }
+                    else
+                    {
+                        // Perform diagnostic ACL check on target executable directory
+                        PathSecurityGuard.IsDirectoryAclHardened(DesktopAppPublishPath);
                     }
                 }
             };

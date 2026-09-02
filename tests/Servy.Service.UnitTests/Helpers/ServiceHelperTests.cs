@@ -127,6 +127,7 @@ namespace Servy.Service.UnitTests.Helpers
                     EnvironmentVariables = new List<EnvironmentVariable>
                     {
                         new EnvironmentVariable { Name = "DB_PASSWORD", Value = "SqlPass123" },
+                        new EnvironmentVariable { Name = "AZURE_CREDENTIALS", Value = "{\"clientSecret\":\"SecretAzureKey\"}" },
                         new EnvironmentVariable { Name = "NORMAL_ENV", Value = "PublicValue" }
                     },
                     PreLaunchExecutableArgs = "connect --jwt=TokenVal",
@@ -167,6 +168,7 @@ namespace Servy.Service.UnitTests.Helpers
                 Assert.DoesNotContain("DB12345", combinedLogOutput);
                 Assert.DoesNotContain("SecretToken123", combinedLogOutput);
                 Assert.DoesNotContain("SqlPass123", combinedLogOutput);
+                Assert.DoesNotContain("SecretAzureKey", combinedLogOutput);
                 Assert.DoesNotContain("TokenVal", combinedLogOutput);
                 Assert.DoesNotContain("JwtSecret", combinedLogOutput);
                 Assert.DoesNotContain("Active Session Id", combinedLogOutput);
@@ -177,6 +179,7 @@ namespace Servy.Service.UnitTests.Helpers
                 Assert.Contains("********", textLogOutput);
                 Assert.Contains("--password=********", textLogOutput);
                 Assert.Contains("DB_PASSWORD", textLogOutput); // key kept for diagnosability
+                Assert.Contains("AZURE_CREDENTIALS=********", textLogOutput);
 
                 // 3. Confirm separation: Sensitive log section is present in text log, but NOT sent to the event logger interface
                 Assert.DoesNotContain("SENSITIVE DATA", publicLogOutput);
@@ -663,7 +666,28 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData("COMPAT=1", "COMPAT=1")]
         [InlineData("CONCERT=tonight", "CONCERT=tonight")]
         [InlineData("ARKANSAS=little_rock", "ARKANSAS=little_rock")]
+        [InlineData("SECRETARY=john_doe", "SECRETARY=john_doe")]
         public void MaskRawArguments_ShortKeyFalsePositiveGuards_PreservesNonSensitiveInput(string input, string expected)
+        {
+            // Act
+            var result = ServiceHelper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("AZURE_CREDENTIALS=my_azure_secret_json", "AZURE_CREDENTIALS=********")]
+        [InlineData("CREDENTIALS=sensitive_blob", "CREDENTIALS=********")]
+        [InlineData("SECRETS=top_secret_val", "SECRETS=********")]
+        [InlineData("DOCKER_SECRETS=token_val", "DOCKER_SECRETS=********")]
+        [InlineData("TOKENS=bearer_123", "TOKENS=********")]
+        [InlineData("GITHUB_TOKENS=ghp_abc", "GITHUB_TOKENS=********")]
+        [InlineData("PASSWORDS=secret123", "PASSWORDS=********")]
+        [InlineData("CERTIFICATES=cert_data", "CERTIFICATES=********")]
+        [InlineData("COOKIES=session_cookie_val", "COOKIES=********")]
+        [InlineData("myapp.exe --secrets=secret_payload", "myapp.exe --secrets=********")]
+        public void MaskRawArguments_PluralKeywords_SuccessfullyMasksSecrets(string input, string expected)
         {
             // Act
             var result = ServiceHelper.MaskRawArguments(input);

@@ -388,11 +388,24 @@ namespace Servy.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (string.IsNullOrWhiteSpace(_appConfig.ManagerAppPublishPath) || !File.Exists(_appConfig.ManagerAppPublishPath))
+            string managerPath = _appConfig.ManagerAppPublishPath;
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            if (string.IsNullOrWhiteSpace(managerPath) || !File.Exists(managerPath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppNotFound, Caption);
                 return;
             }
+
+#if !DEBUG
+            // Security invariant check: re-verify target path is safely contained within application directory
+            if (!PathSecurityGuard.IsSafelyContainedWithinAppDirectory(managerPath, baseDir))
+            {
+                Logger.Error($"Refusing to launch Manager application: Target path '{managerPath}' is not contained within application directory '{baseDir}'.");
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppLaunchFailed, Caption);
+                return;
+            }
+#endif
 
             var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
@@ -400,16 +413,17 @@ namespace Servy.Services
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = _appConfig.ManagerAppPublishPath,
+                    FileName = managerPath,
                     UseShellExecute = true,
-                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
+                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass argument to skip splash screen
+                    WorkingDirectory = baseDir
                 };
 
                 using (var process = _processHelper.Start(psi))
                 {
                     if (process == null)
                     {
-                        Logger.Warn($"Failed to start external process {_appConfig.ManagerAppPublishPath}.");
+                        Logger.Warn($"Failed to start external process {managerPath}.");
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppLaunchFailed, Caption);
                         return;
                     }
@@ -425,7 +439,7 @@ namespace Servy.Services
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to start Manager app at {_appConfig.ManagerAppPublishPath}.", ex);
+                Logger.Error($"Failed to start Manager app at {managerPath}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppLaunchFailed, Caption);
             }
         }
@@ -471,7 +485,7 @@ namespace Servy.Services
             }
         }
 
-        #endregion
+#endregion
 
         #region Private Helpers
 

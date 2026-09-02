@@ -226,19 +226,32 @@ namespace Servy.Manager.Services
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(_appConfig.DesktopAppPublishPath) || !File.Exists(_appConfig.DesktopAppPublishPath))
+                string desktopPath = _appConfig.DesktopAppPublishPath;
+                string baseDir = AppFoldersHelper.GetAppDirectory();
+
+                if (string.IsNullOrWhiteSpace(desktopPath) || !File.Exists(desktopPath))
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppNotFound, UiAppConfig.Caption);
                     return;
                 }
 
+#if !DEBUG
+                // Security invariant check: re-verify target path is safely contained within application directory
+                if (!PathSecurityGuard.IsSafelyContainedWithinAppDirectory(desktopPath, baseDir))
+                {
+                    Logger.Error($"Refusing to launch Desktop application: Target path '{desktopPath}' is not contained within application directory '{baseDir}'.");
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption);
+                    return;
+                }
+#endif
                 var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
                 var psi = new ProcessStartInfo
                 {
-                    FileName = _appConfig.DesktopAppPublishPath,
+                    FileName = desktopPath,
                     Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
                     UseShellExecute = true,
+                    WorkingDirectory = baseDir
                 };
 
                 if (service == null)

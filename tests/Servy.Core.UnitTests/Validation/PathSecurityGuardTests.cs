@@ -691,5 +691,170 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         #endregion
+
+        #region Application Containment Guards
+
+        [Theory]
+        [InlineData(null, @"C:\Program Files\Servy")]
+        [InlineData("", @"C:\Program Files\Servy")]
+        [InlineData("   ", @"C:\Program Files\Servy")]
+        [InlineData("Servy.Manager.exe", null)]
+        [InlineData("Servy.Manager.exe", "")]
+        [InlineData("Servy.Manager.exe", "   ")]
+        public void IsSafelyContainedWithinAppDirectory_NullOrWhitespace_ReturnsFalse(string targetPath, string baseDir)
+        {
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetPath, baseDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData(@"\\server\share\payload.exe")]
+        [InlineData(@"//remote/share/payload.exe")]
+        public void IsSafelyContainedWithinAppDirectory_UncPath_ReturnsFalse(string uncPath)
+        {
+            // Arrange
+            string baseDir = TempDirectory;
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(uncPath, baseDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsSafelyContainedWithinAppDirectory_RelativeChildPath_ReturnsTrue()
+        {
+            // Arrange
+            string baseDir = TempDirectory;
+            string targetPath = "Servy.Manager.exe";
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetPath, baseDir);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsSafelyContainedWithinAppDirectory_SubdirectoryChildPath_ReturnsTrue()
+        {
+            // Arrange
+            string baseDir = TempDirectory;
+            string subDir = Path.Combine(baseDir, "bin");
+            Directory.CreateDirectory(subDir);
+            string targetPath = Path.Combine("bin", "Servy.Manager.exe");
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetPath, baseDir);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsSafelyContainedWithinAppDirectory_ExternalRootedPath_ReturnsFalse()
+        {
+            // Arrange
+            string baseDir = Path.Combine(TempDirectory, "App");
+            Directory.CreateDirectory(baseDir);
+            string externalPath = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(externalPath, baseDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsSafelyContainedWithinAppDirectory_DirectoryTraversal_ReturnsFalse()
+        {
+            // Arrange
+            string baseDir = Path.Combine(TempDirectory, "App");
+            Directory.CreateDirectory(baseDir);
+            string traversalPath = @"..\..\Windows\System32\cmd.exe";
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(traversalPath, baseDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsSafelyContainedWithinAppDirectory_ReparsePointInPath_ReturnsFalse()
+        {
+            // Arrange
+            string realDir = Path.Combine(TempDirectory, "real_app_dir");
+            string linkDir = Path.Combine(TempDirectory, "link_app_dir");
+            Directory.CreateDirectory(realDir);
+
+            try
+            {
+                Helper.CreateDirectorySymlink(linkDir, realDir);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                return; // Skip - Symlink creation unavailable on this runner
+            }
+
+            string targetFile = Path.Combine(linkDir, "Servy.Manager.exe");
+
+            // Act
+            bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetFile, linkDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        #endregion
+
+        #region Directory ACL Hardening Guards
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void IsDirectoryAclHardened_NullOrWhitespace_ReturnsFalse(string path)
+        {
+            // Act
+            bool result = PathSecurityGuard.IsDirectoryAclHardened(path);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsDirectoryAclHardened_NonExistentDirectory_ReturnsTrue()
+        {
+            // Arrange
+            string nonExistent = Path.Combine(TempDirectory, $"missing_dir_{Guid.NewGuid():N}");
+
+            // Act
+            bool result = PathSecurityGuard.IsDirectoryAclHardened(nonExistent);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsDirectoryAclHardened_ValidTempDirectory_EvaluatesAclWithoutException()
+        {
+            // Arrange
+            string testDir = Path.Combine(TempDirectory, "acl_check_dir");
+            Directory.CreateDirectory(testDir);
+
+            // Act & Assert
+            // The method inspects the underlying ACL on the created temp directory and returns true or false
+            // depending on local runner execution rights, without throwing unhandled security exceptions.
+            var exception = Record.Exception(() => PathSecurityGuard.IsDirectoryAclHardened(testDir));
+            Assert.Null(exception);
+        }
+
+        #endregion
     }
 }
