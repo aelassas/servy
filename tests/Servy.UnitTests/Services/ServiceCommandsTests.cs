@@ -389,7 +389,8 @@ namespace Servy.UnitTests.Services
         public async Task OpenManager_ProcessStartThrowsUnauthorizedAccessException_DisplaysAdminRightsRequired()
         {
             // Arrange
-            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
             File.WriteAllText(tempTrackingFile, string.Empty);
 
             ProcessStartInfo? captured = null;
@@ -422,7 +423,7 @@ namespace Servy.UnitTests.Services
             {
                 if (File.Exists(tempTrackingFile))
                 {
-                    File.Delete(tempTrackingFile);
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
                 }
             }
         }
@@ -1412,7 +1413,8 @@ namespace Servy.UnitTests.Services
         public async Task OpenManager_OperationCanceled_PropagatesInsteadOfMasking()
         {
             // Arrange
-            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
             File.WriteAllText(tempTrackingFile, string.Empty);
 
             _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
@@ -1434,7 +1436,7 @@ namespace Servy.UnitTests.Services
             {
                 if (File.Exists(tempTrackingFile))
                 {
-                    File.Delete(tempTrackingFile);
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
                 }
             }
         }
