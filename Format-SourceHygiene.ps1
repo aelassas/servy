@@ -61,6 +61,7 @@ if ($DryRun) {
 
 $scannedCount = 0
 $modifiedCount = 0
+$failedCount = 0
 $trimmedOnlyCount = 0
 $newlineOnlyCount = 0
 $bomOnlyCount = 0
@@ -102,65 +103,74 @@ foreach ($file in $filesToScan) {
     $scannedCount++
     $filePath = $file.FullName
 
-    # Check 0: Check for UTF-8 Byte Order Mark (BOM: 0xEF, 0xBB, 0xBF)
-    $bytes = [System.IO.File]::ReadAllBytes($filePath)
-    $hasBom = ($bytes.Length -ge 3) -and ($bytes[0] -eq 0xEF) -and ($bytes[1] -eq 0xBB) -and ($bytes[2] -eq 0xBF)
+    try {
+        # Check 0: Check for UTF-8 Byte Order Mark (BOM: 0xEF, 0xBB, 0xBF)
+        $bytes = [System.IO.File]::ReadAllBytes($filePath)
+        $hasBom = ($bytes.Length -ge 3) -and ($bytes[0] -eq 0xEF) -and ($bytes[1] -eq 0xBB) -and ($bytes[2] -eq 0xBF)
 
-    $wantsBom = $file.Extension -in $bomRequiredExtensions
-    $bomWrong = $hasBom -ne $wantsBom
+        $wantsBom = $file.Extension -in $bomRequiredExtensions
+        $bomWrong = $hasBom -ne $wantsBom
 
-    $rawText = [System.IO.File]::ReadAllText($filePath)
+        # Inspect encoding strictly; throw exception if file contains undecodable non-UTF-8 bytes
+        $sourceEncoding = Get-FileEncoding $filePath
+        $rawText = [System.IO.File]::ReadAllText($filePath, $sourceEncoding)
 
-    # .editorconfig [*.md] sets trim_trailing_whitespace = false: two trailing
-    # spaces are a Markdown hard line break, not stray whitespace.
-    $trimAllowed = $file.Extension -ne '.md'
+        # .editorconfig [*.md] sets trim_trailing_whitespace = false: two trailing
+        # spaces are a Markdown hard line break, not stray whitespace.
+        $trimAllowed = $file.Extension -ne '.md'
 
-    # Check 1: Missing final newline (CRLF)
-    $lacksFinalNewline = ($rawText.Length -gt 0) -and (-not $rawText.EndsWith("`r`n"))
+        # Check 1: Missing final newline (CRLF)
+        $lacksFinalNewline = ($rawText.Length -gt 0) -and (-not $rawText.EndsWith("`r`n"))
 
-    # Check 2: Trailing whitespace per line
-    $hasTrailingWhitespace = $false
-    $lines = Get-Content -Path $filePath -Encoding UTF8
-    $trimmedLines = foreach ($line in $lines) {
-        if ($trimAllowed) {
-            $t = $line.TrimEnd()
-            if ($t -ne $line) {
-                $hasTrailingWhitespace = $true
+        # Check 2: Trailing whitespace per line (derived from in-memory split)
+        $hasTrailingWhitespace = $false
+        $lines = $rawText -split "`r?`n"
+        $trimmedLines = foreach ($line in $lines) {
+            if ($trimAllowed) {
+                $t = $line.TrimEnd()
+                if ($t -ne $line) {
+                    $hasTrailingWhitespace = $true
+                }
+                $t
+            } else {
+                $line
             }
-            $t
-        } else {
-            $line
+        }
+
+        if ($hasTrailingWhitespace -or $lacksFinalNewline -or $bomWrong) {
+            $modifiedCount++
+            $relativePath = $file.FullName.Replace($baseDir, '')
+
+            # Build precise issue categorization reasons for reporting
+            $reasons = @()
+            if ($hasTrailingWhitespace) {
+                $trimmedOnlyCount++
+                $reasons += "trailing whitespace"
+            }
+            if ($lacksFinalNewline) {
+                $newlineOnlyCount++
+                $reasons += "missing final newline"
+            }
+            if ($bomWrong) {
+                $bomOnlyCount++
+                $reasons += if ($wantsBom) { "missing UTF-8 BOM" } else { "UTF-8 BOM detected" }
+            }
+            $reasonStr = $reasons -join " & "
+
+            if ($DryRun) {
+                Write-Host "Would format ($reasonStr): $relativePath" -ForegroundColor Yellow
+            } else {
+                $encoding = New-Object System.Text.UTF8Encoding($wantsBom)
+                $content   = ($trimmedLines -join "`r`n") + "`r`n"
+                [System.IO.File]::WriteAllText($filePath, $content, $encoding)
+                Write-Host "Formatted ($reasonStr): $relativePath" -ForegroundColor Gray
+            }
         }
     }
-
-    if ($hasTrailingWhitespace -or $lacksFinalNewline -or $bomWrong) {
-        $modifiedCount++
+    catch {
         $relativePath = $file.FullName.Replace($baseDir, '')
-
-        # Build precise issue categorization reasons for reporting
-        $reasons = @()
-        if ($hasTrailingWhitespace) {
-            $trimmedOnlyCount++
-            $reasons += "trailing whitespace"
-        }
-        if ($lacksFinalNewline) {
-            $newlineOnlyCount++
-            $reasons += "missing final newline"
-        }
-        if ($bomWrong) {
-            $bomOnlyCount++
-            $reasons += if ($wantsBom) { "missing UTF-8 BOM" } else { "UTF-8 BOM detected" }
-        }
-        $reasonStr = $reasons -join " & "
-
-        if ($DryRun) {
-            Write-Host "Would format ($reasonStr): $relativePath" -ForegroundColor Yellow
-        } else {
-            $encoding = New-Object System.Text.UTF8Encoding($wantsBom)
-            $content   = ($trimmedLines -join "`r`n") + "`r`n"
-            [System.IO.File]::WriteAllText($filePath, $content, $encoding)
-            Write-Host "Formatted ($reasonStr): $relativePath" -ForegroundColor Gray
-        }
+        Write-Warning "Skipped formatting $relativePath due to invalid UTF-8 encoding: $_"
+        $failedCount++
     }
 }
 
@@ -168,8 +178,14 @@ if ($DryRun) {
     Write-Host "`nDRY-RUN: Scan Complete! (No files modified)" -ForegroundColor Yellow
     Write-Host "Files Scanned        : $scannedCount"
     Write-Host "Files Needing Format : $modifiedCount" -ForegroundColor Yellow
+    if ($failedCount -gt 0) {
+        Write-Host "Files Skipped/Failed : $failedCount" -ForegroundColor Red
+    }
 } else {
     Write-Host "`nFormat Complete!" -ForegroundColor Green
     Write-Host "Files Scanned  : $scannedCount"
     Write-Host "Files Modified : $modifiedCount" -ForegroundColor Green
+    if ($failedCount -gt 0) {
+        Write-Host "Files Skipped/Failed : $failedCount" -ForegroundColor Red
+    }
 }

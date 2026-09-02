@@ -122,8 +122,9 @@ foreach ($file in $files) {
     }
 
     try {
-        # Read content using .NET to preserve raw text structure
-        $content = [System.IO.File]::ReadAllText($file.FullName)
+        # Inspect and validate existing encoding strictly to prevent silent non-UTF-8 character corruption
+        $sourceEncoding = Get-FileEncoding $file.FullName
+        $content = [System.IO.File]::ReadAllText($file.FullName, $sourceEncoding)
 
         # Normalize all line returns (CRLF, LF, CR) to Windows CRLF (`r`n)
         $crlfContent = $content.Replace("`r`n", "`n").Replace("`r", "`n").Replace("`n", "`r`n")
