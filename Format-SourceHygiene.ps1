@@ -161,6 +161,12 @@ foreach ($file in $filesToScan) {
                 Write-Host "Would format ($reasonStr): $relativePath" -ForegroundColor Yellow
             } else {
                 $encoding = New-Object System.Text.UTF8Encoding($wantsBom)
+
+                # Drop trailing empty element produced by splitting text ending with a newline
+                if ($trimmedLines.Count -gt 0 -and $trimmedLines[-1] -eq '') {
+                    $trimmedLines = $trimmedLines[0..($trimmedLines.Count - 2)]
+                }
+
                 $content   = ($trimmedLines -join "`r`n") + "`r`n"
                 [System.IO.File]::WriteAllText($filePath, $content, $encoding)
                 Write-Host "Formatted ($reasonStr): $relativePath" -ForegroundColor Gray
