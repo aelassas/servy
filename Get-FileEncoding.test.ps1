@@ -185,6 +185,30 @@ try {
     [System.IO.File]::WriteAllBytes($fileBareUtf8Bom, [byte[]]@(0xEF, 0xBB, 0xBF))
     Assert-Encoding -TestName "3-byte file with UTF-8 BOM" -FilePath $fileBareUtf8Bom -ExpectedType ([System.Text.UTF8Encoding]) -ExpectedEmitBom $true
 
+    # Bare UTF-16 BE BOM (2 bytes) -> UnicodeEncoding BE
+    $fileBareUtf16Be = Join-Path $TestDir "bare_utf16_be.txt"
+    [System.IO.File]::WriteAllBytes($fileBareUtf16Be, [byte[]]@(0xFE, 0xFF))
+    Assert-Encoding -TestName "2-byte file with UTF-16 BE BOM" -FilePath $fileBareUtf16Be -ExpectedType ([System.Text.UnicodeEncoding]) -ExpectedEmitBom $true -ExpectedBigEndian $true
+
+    # Bare UTF-32 LE BOM (4 bytes) -> UTF32Encoding LE.
+    # This is the three-way overlap: the same bytes are also a UTF-16 LE BOM followed by two NULs,
+    # so it pins the branch order as well as the readCount guard.
+    $fileBareUtf32Le = Join-Path $TestDir "bare_utf32_le.txt"
+    [System.IO.File]::WriteAllBytes($fileBareUtf32Le, [byte[]]@(0xFF, 0xFE, 0x00, 0x00))
+    Assert-Encoding -TestName "4-byte file with UTF-32 LE BOM" -FilePath $fileBareUtf32Le -ExpectedType ([System.Text.UTF32Encoding]) -ExpectedEmitBom $true -ExpectedBigEndian $false
+
+    # Bare UTF-32 BE BOM (4 bytes) -> UTF32Encoding BE
+    $fileBareUtf32Be = Join-Path $TestDir "bare_utf32_be.txt"
+    [System.IO.File]::WriteAllBytes($fileBareUtf32Be, [byte[]]@(0x00, 0x00, 0xFE, 0xFF))
+    Assert-Encoding -TestName "4-byte file with UTF-32 BE BOM" -FilePath $fileBareUtf32Be -ExpectedType ([System.Text.UTF32Encoding]) -ExpectedEmitBom $true -ExpectedBigEndian $true
+
+    # Truncated UTF-32 LE BOM (3 bytes: FF FE 00) -> UTF-16 LE.
+    # The buffer is zero-filled, so bytes 2 and 3 look like a UTF-32 LE BOM to a byte comparison;
+    # only the readCount -ge 4 guard keeps this file on the UTF-16 LE branch.
+    $fileTruncUtf32Le = Join-Path $TestDir "trunc_utf32_le.txt"
+    [System.IO.File]::WriteAllBytes($fileTruncUtf32Le, [byte[]]@(0xFF, 0xFE, 0x00))
+    Assert-Encoding -TestName "3-byte truncated UTF-32 LE BOM falls back to UTF-16 LE" -FilePath $fileTruncUtf32Le -ExpectedType ([System.Text.UnicodeEncoding]) -ExpectedEmitBom $true -ExpectedBigEndian $false
+
 }
 finally {
     # Cleanup workspace
