@@ -495,16 +495,13 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "TestService" };
 
-            // 1. Generate a unique base path template from the OS
-            var baseTmpFile = Path.GetTempFileName();
-            var tempExe = Path.ChangeExtension(baseTmpFile, ".exe");
+            // 1. Generate a unique target executable path inside the application directory
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempExe = Path.Combine(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe");
 
             try
             {
-                // 2. Delete initial empty temp file before writing mock executable payload
-                if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
-
-                // 3. Write our mock executable artifact safely
+                // 2. Write our mock executable artifact safely
                 File.WriteAllText(tempExe, "dummy");
 
                 _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe);
@@ -535,7 +532,7 @@ namespace Servy.Manager.UnitTests.Services
             }
             finally
             {
-                // 4. Clean up our active dummy testing file artifact safely
+                // 3. Clean up our active dummy testing file artifact safely
                 if (File.Exists(tempExe))
                 {
                     try { File.Delete(tempExe); } catch { /* fail-silent */ }
@@ -550,12 +547,11 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "TestService" };
 
-            var baseTmpFile = Path.GetTempFileName();
-            var tempExe = Path.ChangeExtension(baseTmpFile, ".exe");
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempExe = Path.Combine(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe");
 
             try
             {
-                if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
                 File.WriteAllText(tempExe, "dummy");
 
                 _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe);
@@ -608,8 +604,9 @@ namespace Servy.Manager.UnitTests.Services
         public async Task ConfigureServiceAsync_NullServiceParameter_LaunchesAppDirectlyWithoutArguments()
         {
             // Arrange
-            // Create an empty, non-executable tracking file context in temp directory to pass the File.Exists guard
-            string tempTrackingFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.exe");
+            // Create an empty tracking file context in the application directory to satisfy the containment guard across build modes
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe");
 
             try
             {
@@ -666,9 +663,8 @@ namespace Servy.Manager.UnitTests.Services
         {
             // Arrange
             var sut = CreateServiceCommands();
-            var baseTmpFile = Path.GetTempFileName();
-            var tempExe = Path.ChangeExtension(baseTmpFile, ".exe");
-            if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempExe = Path.Combine(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe");
 
             try
             {
@@ -683,7 +679,10 @@ namespace Servy.Manager.UnitTests.Services
             }
             finally
             {
-                if (File.Exists(tempExe)) File.Delete(tempExe);
+                if (File.Exists(tempExe))
+                {
+                    try { File.Delete(tempExe); } catch { /* fail-silent */ }
+                }
             }
         }
 
@@ -692,9 +691,8 @@ namespace Servy.Manager.UnitTests.Services
         {
             // Arrange
             var sut = CreateServiceCommands();
-            var baseTmpFile = Path.GetTempFileName();
-            var tempExe = Path.ChangeExtension(baseTmpFile, ".exe");
-            if (File.Exists(baseTmpFile)) File.Delete(baseTmpFile);
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempExe = Path.Combine(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe");
 
             try
             {
@@ -714,7 +712,10 @@ namespace Servy.Manager.UnitTests.Services
             }
             finally
             {
-                if (File.Exists(tempExe)) File.Delete(tempExe);
+                if (File.Exists(tempExe))
+                {
+                    try { File.Delete(tempExe); } catch { /* fail-silent */ }
+                }
             }
         }
 
