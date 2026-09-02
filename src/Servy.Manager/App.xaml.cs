@@ -302,16 +302,29 @@ namespace Servy.Manager
                     DesktopAppPublishPath = AppConfig.DesktopAppPublishReleasePath;
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
-                    DesktopAppPublishPath = config["DesktopAppPublishPath"] ?? AppConfig.DefaultDesktopAppPublishPath;
-                    if (!Helper.IsAbsolute(DesktopAppPublishPath))
+                    string configuredPath = config["DesktopAppPublishPath"] ?? AppConfig.DefaultDesktopAppPublishPath;
+
+                    if (PathSecurityGuard.IsSafelyContainedWithinAppDirectory(configuredPath, baseDirectory))
                     {
-                        DesktopAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, DesktopAppPublishPath));
+                        DesktopAppPublishPath = Helper.IsAbsolute(configuredPath)
+                            ? Path.GetFullPath(configuredPath)
+                            : Path.GetFullPath(Path.Combine(baseDirectory, configuredPath));
+                    }
+                    else
+                    {
+                        Logger.Warn($"Security refusal: DesktopAppPublishPath '{configuredPath}' is not contained within application directory '{baseDirectory}'.");
+                        DesktopAppPublishPath = string.Empty;
                     }
 #endif
                     IsDesktopAppAvailable = !string.IsNullOrEmpty(DesktopAppPublishPath) && File.Exists(DesktopAppPublishPath);
                     if (!IsDesktopAppAvailable)
                     {
                         Logger.Warn($"Desktop app executable not found: {DesktopAppPublishPath}");
+                    }
+                    else
+                    {
+                        // Perform diagnostic ACL check on target executable directory
+                        PathSecurityGuard.IsDirectoryAclHardened(DesktopAppPublishPath);
                     }
                 }
             };

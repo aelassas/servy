@@ -1,7 +1,9 @@
+using Microsoft.Win32.SafeHandles;
 using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -478,8 +480,46 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <summary>
+        /// Retrieves the normalized volume file path corresponding to an open file handle via Win32 NativeMethods.
+        /// Replaces UNC and volume device prefix representations with standard win32 disk paths.
+        /// </summary>
+        /// <param name="handle">The open SafeFileHandle to evaluate.</param>
+        /// <returns>The resolved absolute target path if successful; otherwise, <see cref="string.Empty"/>.</returns>
+        private static string GetFinalPathNameByHandle(SafeFileHandle handle)
+        {
+            if (handle == null || handle.IsInvalid || handle.IsClosed)
+            {
+                return string.Empty;
+            }
+
+            var sb = new StringBuilder(1024);
+            uint result = NativeMethods.GetFinalPathNameByHandle(handle, sb, (uint)sb.Capacity, 0);
+
+            if (result == 0 || result > sb.Capacity)
+            {
+                return string.Empty;
+            }
+
+            string path = sb.ToString();
+
+            // Strip standard Win32 volume namespace prefixes ("\\?\", "\??\")
+            if (path.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
+            {
+                return @"\\" + path.Substring(8);
+            }
+            if (path.StartsWith(@"\\?\", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith(@"\??\", StringComparison.OrdinalIgnoreCase))
+            {
+                return path.Substring(4);
+            }
+
+            return path;
+        }
+
+        /// <summary>
         /// Attempts to initialize a file log writer in append mode with broad thread-sharing permissions.
         /// Ensures the target directory exists and safely disposes file streams if opening fails.
+        /// Rejects paths traversing directory junctions or symbolic links to prevent privilege escalation attacks.
         /// </summary>
         /// <param name="path">The target destination absolute disk path for log output.</param>
         /// <param name="encoding">The text encoding for the log file.</param>
@@ -492,8 +532,53 @@ namespace Servy.Service.ProcessManagement
             FileStream? fs = null;
             try
             {
-                Helper.EnsureDirectoryExists(path);
-                fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    logger.Error($"Disabling {scope} capture for '{exePath}': log path is empty.");
+                    return null;
+                }
+
+                string fullPath = Path.GetFullPath(path);
+
+                // 1. Check whether any parent or ancestor directory is a reparse point (junction/symlink)
+                if (Helper.HasAncestorReparsePoint(fullPath))
+                {
+                    logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction or symbolic link.");
+                    return null;
+                }
+
+                Helper.EnsureDirectoryExists(fullPath);
+
+                // Re-verify ancestor directories after EnsureDirectoryExists creates any missing paths
+                if (Helper.HasAncestorReparsePoint(fullPath))
+                {
+                    logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction or symbolic link.");
+                    return null;
+                }
+
+                // 2. Check if the target file itself is a reparse point
+                if (File.Exists(fullPath))
+                {
+                    var fileInfo = new FileInfo(fullPath);
+                    if (fileInfo.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    {
+                        logger.Error($"Refusing to write {scope} for '{exePath}': target file '{path}' is a junction or symbolic link.");
+                        return null;
+                    }
+                }
+
+                fs = new FileStream(fullPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+
+                // 3. Verify handle path via NativeMethods matches intended target to defend against race conditions / symlink swaps
+                string handleFinalPath = GetFinalPathNameByHandle(fs.SafeFileHandle);
+                if (!string.IsNullOrEmpty(handleFinalPath) &&
+                    !string.Equals(Path.GetFullPath(handleFinalPath), fullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.Error($"Refusing to write {scope} for '{exePath}': target handle path '{handleFinalPath}' does not match expected path '{fullPath}'.");
+                    fs.Dispose();
+                    return null;
+                }
+
                 return new StreamWriter(fs, encoding) { AutoFlush = true };
             }
             catch (Exception ex)

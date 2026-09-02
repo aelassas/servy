@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.1
+
 # Dot-source the production script from the same directory securely
 . (Join-Path $PSScriptRoot "ServySecurity.ps1")
 
@@ -37,10 +38,23 @@ $testCases = @(
     @{ Name = "Prefix without separator: AWSSECRET="; Input = "AWSSECRET=zz"; Expected = "AWSSECRET=********" },
     @{ Name = "Prefix without separator: --apikey"; Input = "myapp.exe --apikey KKK"; Expected = "myapp.exe --apikey ********" },
 
+    # --- Plural Suffix Keyword Tests (Issue #6511) ---
+    @{ Name = "Plural Suffix: AZURE_CREDENTIALS="; Input = "AZURE_CREDENTIALS=my_azure_secret_json"; Expected = "AZURE_CREDENTIALS=********" },
+    @{ Name = "Plural Suffix: CREDENTIALS="; Input = "CREDENTIALS=sensitive_blob"; Expected = "CREDENTIALS=********" },
+    @{ Name = "Plural Suffix: SECRETS="; Input = "SECRETS=top_secret_val"; Expected = "SECRETS=********" },
+    @{ Name = "Plural Suffix: DOCKER_SECRETS="; Input = "DOCKER_SECRETS=token_val"; Expected = "DOCKER_SECRETS=********" },
+    @{ Name = "Plural Suffix: TOKENS="; Input = "TOKENS=bearer_123"; Expected = "TOKENS=********" },
+    @{ Name = "Plural Suffix: GITHUB_TOKENS="; Input = "GITHUB_TOKENS=ghp_abc"; Expected = "GITHUB_TOKENS=********" },
+    @{ Name = "Plural Suffix: PASSWORDS="; Input = "PASSWORDS=secret123"; Expected = "PASSWORDS=********" },
+    @{ Name = "Plural Suffix: CERTIFICATES="; Input = "CERTIFICATES=cert_data"; Expected = "CERTIFICATES=********" },
+    @{ Name = "Plural Suffix: COOKIES="; Input = "COOKIES=session_cookie_val"; Expected = "COOKIES=********" },
+    @{ Name = "Plural Suffix: CLI --secrets="; Input = "myapp.exe --secrets=secret_payload"; Expected = "myapp.exe --secrets=********" },
+
     # --- Short-Key False Positive Guards (Issue #5877 Invariants) ---
     @{ Name = "Short-key false positive stays clean: COMPAT"; Input = "COMPAT=1"; Expected = "COMPAT=1" },
     @{ Name = "Short-key false positive stays clean: CONCERT"; Input = "CONCERT=tonight"; Expected = "CONCERT=tonight" },
     @{ Name = "Short-key false positive stays clean: ARKANSAS"; Input = "ARKANSAS=little_rock"; Expected = "ARKANSAS=little_rock" },
+    @{ Name = "Short-key false positive stays clean: SECRETARY"; Input = "SECRETARY=john_doe"; Expected = "SECRETARY=john_doe" },
 
     # --- Base Component Separator Branch Verifications ---
     @{ Name = "Branch A: Colon Separator"; Input = "API_KEY: my-secret-token"; Expected = "API_KEY: ********" },
@@ -96,6 +110,7 @@ foreach ($case in $testCases) {
 }
 
 Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
+
 if ($failedCount -eq 0) {
     Write-Host "ALL $passedCount TESTS PASSED SUCCESSFULLY!" -ForegroundColor Green
     Write-Host "==========================================================" -ForegroundColor Cyan

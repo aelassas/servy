@@ -226,16 +226,29 @@ namespace Servy
                     ManagerAppPublishPath = AppConfig.ManagerAppPublishReleasePath;
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
-                    ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
-                    if (!Helper.IsAbsolute(ManagerAppPublishPath))
+                    string configuredPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
+
+                    if (PathSecurityGuard.IsSafelyContainedWithinAppDirectory(configuredPath, baseDirectory))
                     {
-                        ManagerAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, ManagerAppPublishPath));
+                        ManagerAppPublishPath = Helper.IsAbsolute(configuredPath)
+                            ? Path.GetFullPath(configuredPath)
+                            : Path.GetFullPath(Path.Combine(baseDirectory, configuredPath));
+                    }
+                    else
+                    {
+                        Logger.Warn($"Security refusal: ManagerAppPublishPath '{configuredPath}' is not contained within application directory '{baseDirectory}'.");
+                        ManagerAppPublishPath = string.Empty;
                     }
 #endif
                     IsManagerAppAvailable = !string.IsNullOrEmpty(ManagerAppPublishPath) && File.Exists(ManagerAppPublishPath);
                     if (!IsManagerAppAvailable)
                     {
                         Logger.Warn($"Manager app executable not found: {ManagerAppPublishPath}");
+                    }
+                    else
+                    {
+                        // Perform diagnostic ACL check on target executable directory
+                        PathSecurityGuard.IsDirectoryAclHardened(ManagerAppPublishPath);
                     }
                 }
             };

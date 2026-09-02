@@ -3,6 +3,8 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Resources;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 
 namespace Servy.Core.Validation
@@ -291,6 +293,111 @@ namespace Servy.Core.Validation
                 {
                     try { File.Delete(fullPath); } catch { /* Best-effort cleanup of stub files created by OpenOrCreate */ }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Validates that a target file path resolves strictly within the specified base directory,
+        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points.
+        /// </summary>
+        /// <param name="targetPath">The path to validate.</param>
+        /// <param name="baseDirectory">The trusted application directory.</param>
+        /// <returns><c>true</c> if the path is safely contained within the base directory; otherwise, <c>false</c>.</returns>
+        public static bool IsSafelyContainedWithinAppDirectory(string targetPath, string baseDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(targetPath) || string.IsNullOrWhiteSpace(baseDirectory))
+            {
+                Logger.Warn("Path security validation failed: Target path or base directory is empty.");
+                return false;
+            }
+
+            try
+            {
+                // Reject UNC paths immediately
+                if (targetPath.StartsWith(@"\\", StringComparison.Ordinal) || targetPath.StartsWith("//", StringComparison.Ordinal))
+                {
+                    Logger.Warn($"Security refusal: Path '{targetPath}' is a UNC path.");
+                    return false;
+                }
+
+                string fullBaseDir = Path.GetFullPath(baseDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+                string fullTargetPath = Helper.IsAbsolute(targetPath)
+                    ? Path.GetFullPath(targetPath)
+                    : Path.GetFullPath(Path.Combine(fullBaseDir, targetPath));
+
+                // Reject if path traverses outside application directory
+                if (!fullTargetPath.StartsWith(fullBaseDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.Warn($"Security refusal: Path '{fullTargetPath}' resolves outside application directory '{fullBaseDir}'.");
+                    return false;
+                }
+
+                // Reject reparse points (junctions/symlinks)
+                if (Helper.HasAncestorReparsePoint(fullTargetPath))
+                {
+                    Logger.Warn($"Security refusal: Path '{fullTargetPath}' traverses a junction or symbolic link.");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Exception during path containment validation for '{targetPath}': {ex.Message}", ex);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Inspects the target file or directory ACL to verify standard non-admin users do not possess write or modify rights.
+        /// </summary>
+        /// <param name="path">The directory or file path to evaluate.</param>
+        /// <returns><c>true</c> if the ACL is hardened against standard user modification; otherwise, <c>false</c>.</returns>
+        public static bool IsDirectoryAclHardened(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
+
+            try
+            {
+                string targetDir = File.Exists(path) ? Path.GetDirectoryName(path)! : path;
+                if (!Directory.Exists(targetDir))
+                    return true;
+
+                var dirInfo = new DirectoryInfo(targetDir);
+                DirectorySecurity security = dirInfo.GetAccessControl(AccessControlSections.Access);
+                AuthorizationRuleCollection rules = security.GetAccessRules(true, true, typeof(SecurityIdentifier));
+
+                var nonAdminSids = new[]
+                {
+                    new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
+                    new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
+                    new SecurityIdentifier(WellKnownSidType.WorldSid, null) // Everyone
+                };
+
+                foreach (FileSystemAccessRule rule in rules)
+                {
+                    if (nonAdminSids.Contains(rule.IdentityReference as SecurityIdentifier))
+                    {
+                        if (rule.AccessControlType == AccessControlType.Allow)
+                        {
+                            bool hasWriteModify = (rule.FileSystemRights & (FileSystemRights.Write | FileSystemRights.Modify | FileSystemRights.FullControl)) != 0;
+                            if (hasWriteModify)
+                            {
+                                Logger.Warn($"ACL Security Notice: Directory '{targetDir}' grants Write/Modify access to standard users ({rule.IdentityReference.Value}).");
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"ACL security check notice for '{path}': {ex.Message}");
+                return true;
             }
         }
     }
