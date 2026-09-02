@@ -17,13 +17,13 @@ namespace Servy.Core.UnitTests.Helpers
 
             string scriptText = File.ReadAllText(scriptPath);
 
-            // Extract $reservedNames = @( ... ) block contents
+            // Extract $script:reservedNames = @( ... ) block contents
             var match = Regex.Match(
                 scriptText,
-                @"\$reservedNames\s*=\s*@\((?<content>.*?)\)",
+                @"\$script:reservedNames\s*=\s*@\((?<content>.*?)\)",
                 RegexOptions.Singleline);
 
-            Assert.True(match.Success, "Failed to locate $reservedNames array definition in Servy-Dump.ps1");
+            Assert.True(match.Success, "Failed to locate $script:reservedNames array definition in Servy-Dump.ps1");
 
             string arrayContent = match.Groups["content"].Value;
 
