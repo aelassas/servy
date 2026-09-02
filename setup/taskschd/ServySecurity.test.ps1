@@ -49,6 +49,9 @@ $testCases = @(
     @{ Name = "Plural Suffix: CERTIFICATES="; Input = "CERTIFICATES=cert_data"; Expected = "CERTIFICATES=********" },
     @{ Name = "Plural Suffix: COOKIES="; Input = "COOKIES=session_cookie_val"; Expected = "COOKIES=********" },
     @{ Name = "Plural Suffix: CLI --secrets="; Input = "myapp.exe --secrets=secret_payload"; Expected = "myapp.exe --secrets=********" },
+    @{ Name = "Plural composite: SECRETS_FILE="; Input = "SECRETS_FILE=/etc/x"; Expected = "SECRETS_FILE=********" },
+    @{ Name = "Plural composite: TOKENS_PATH="; Input = "TOKENS_PATH=/x"; Expected = "TOKENS_PATH=********" },
+    @{ Name = "Plural composite: DB_PASSWORDS_ENC="; Input = "DB_PASSWORDS_ENC=xx"; Expected = "DB_PASSWORDS_ENC=********" },
 
     # --- Short-Key False Positive Guards (Issue #5877 Invariants) ---
     @{ Name = "Short-key false positive stays clean: COMPAT"; Input = "COMPAT=1"; Expected = "COMPAT=1" },
