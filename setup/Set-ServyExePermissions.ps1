@@ -1,20 +1,21 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Mandatory Security Hardening: Hardens Servy executable permissions to Read & Execute to prevent privilege escalation and binary tampering.
+    Mandatory Security Hardening: Hardens Servy executable and configuration file permissions to prevent privilege escalation, binary tampering, and unauthorized configuration modification.
 
 .DESCRIPTION
     Mandatory security script for hardening Servy service runner accounts. Servy requires directory-level
     'Modify' permissions on %ProgramData%\Servy to write database logs, process state, and runtime recovery files.
-    However, leaving binaries with inherited 'Modify' access allows a compromised service process or unprivileged
-    runner account to tamper with, replace, or hijack core executables.
+    However, leaving binaries and application configurations with inherited 'Modify' access allows a compromised service
+    process or unprivileged runner account to tamper with, replace, or hijack core executables or application settings.
 
     This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
-    executable files and restricting the target runner account to strict 'Read & Execute' rights. This ensures the
-    service runner can execute required binaries without being able to overwrite or replace them, protecting against
-    unprivileged binary replacement and local privilege escalation vectors. Full Control is explicitly preserved for
-    SYSTEM and Administrators using language-agnostic Well-Known SIDs. The owner of each hardened binary is set
-    to Builtin Administrators. Manually added explicit ACEs for third-party principals are audited and preserved.
+    executable and configuration files and restricting the target runner account to strict 'Read & Execute' (for executables)
+    or 'Read' (for configuration files) rights. This ensures the service runner can execute required binaries and read
+    configuration settings without being able to overwrite or replace them, protecting against unprivileged binary/config
+    replacement and local privilege escalation vectors. Full Control is explicitly preserved for SYSTEM and Administrators
+    using language-agnostic Well-Known SIDs. The owner of each hardened file is set to Builtin Administrators. Manually
+    added explicit ACEs for third-party principals are audited and preserved.
 
     Hardened Executable Files:
     - Servy.Service.exe
@@ -22,14 +23,18 @@
     - Servy.Restarter.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.exe gets copied to %ProgramData%\Servy)
     - handle64.exe / handle64a.exe
 
+    Hardened Configuration Files:
+    - appsettings.service.json
+    - appsettings.restarter.json
+
     EXIT CODES:
-    - 0 : Success. All present target executables were successfully hardened.
+    - 0 : Success. All present target executables and configuration files were successfully hardened.
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
-    - 2 : Directory or Binary Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target executables are missing and must be extracted before hardening.
-    - 3 : Hardening Error. One or more present target executables failed ACL modification due to locks, owner change failures, or security exceptions.
+    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target files are missing and must be extracted before hardening.
+    - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
 
 .PARAMETER TargetAccount
-    Mandatory account identifier receiving Read & Execute permissions. Supported formats:
+    Mandatory account identifier receiving Read & Execute (for executables) or Read (for configurations) permissions. Supported formats:
     - Active Directory user/group: 'DOMAIN\Username'
     - Local computer user/group: 'COMPUTERNAME\Username'
     - Local computer relative notation: '.\Username'
@@ -65,7 +70,7 @@ if (-not $currentPrincipal.IsInRole($adminRole)) {
     exit 1
 }
 
-# Modern .NET executable target list
+# Modern .NET target file definitions
 $exeNames = @(
     'Servy.Service.exe',
     'Servy.Service.CLI.exe',
@@ -79,6 +84,11 @@ if ($isArm64) {
 } else {
     $exeNames += 'handle64.exe'
 }
+
+$configNames = @(
+    'appsettings.service.json',
+    'appsettings.restarter.json'
+)
 
 $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
 
@@ -126,25 +136,37 @@ $builtinUsersSid    = New-Object System.Security.Principal.SecurityIdentifier([S
 $authUsersSid       = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
 $everyoneSid        = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::WorldSid, $null)
 
-Write-Host "Securing Servy executable files in: $programDataDir" -ForegroundColor Cyan
+Write-Host "Securing Servy executable and configuration files in: $programDataDir" -ForegroundColor Cyan
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
+
+$targetFiles = @()
+
+foreach ($exe in $exeNames) {
+    $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
+}
+
+foreach ($cfg in $configNames) {
+    $targetFiles += @{ Name = $cfg; Rights = "Read" }
+}
 
 $hardened = @()
 $missing  = @()
 $failed   = @()
 
-foreach ($exeName in $exeNames) {
-    $exePath = [System.IO.Path]::Combine($programDataDir, $exeName)
+foreach ($item in $targetFiles) {
+    $fileName   = $item.Name
+    $requiredRights = $item.Rights
+    $filePath   = [System.IO.Path]::Combine($programDataDir, $fileName)
 
-    if (-not (Test-Path -Path $exePath)) {
-        $missing += $exeName
+    if (-not (Test-Path -Path $filePath)) {
+        $missing += $fileName
         continue
     }
 
     try {
-        Write-Host "Hardening permissions on '$exeName'..." -ForegroundColor Green
+        Write-Host "Hardening permissions on '$fileName' ($requiredRights)..." -ForegroundColor Green
 
-        $acl = Get-Acl -Path $exePath
+        $acl = Get-Acl -Path $filePath
 
         # Audit owner changes prior to setting Builtin Administrators owner
         $previousOwnerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
@@ -160,7 +182,7 @@ foreach ($exeName in $exeNames) {
         $acl.SetAccessRuleProtection($true, $false)
 
         # 2. Purge explicit grants for broad unprivileged groups (Users, Authenticated Users, Everyone)
-        # and explicit rules for the target account to ensure a clean state before applying ReadAndExecute.
+        # and explicit rules for the target account to ensure a clean state before applying required rights.
         # Manual explicit ACEs for custom third-party principals are intentionally preserved.
         $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
         foreach ($rule in $explicitRules) {
@@ -182,23 +204,23 @@ foreach ($exeName in $exeNames) {
         $acl.SetAccessRule($adminRule)
         $acl.SetAccessRule($systemRule)
 
-        # 4. Grant explicit ReadAndExecute access to target account
+        # 4. Grant explicit ReadAndExecute or Read access to target account
         if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
-            Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no ReadAndExecute downgrade applied." -ForegroundColor Yellow
+            Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
         } else {
             $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
                 $targetNTAccount,
-                "ReadAndExecute",
+                $requiredRights,
                 "Allow"
             )
             $acl.SetAccessRule($targetRule)
         }
 
         # Commit ACL to disk
-        Set-Acl -Path $exePath -AclObject $acl
+        Set-Acl -Path $filePath -AclObject $acl
 
         # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
-        $postAcl = Get-Acl -Path $exePath
+        $postAcl = Get-Acl -Path $filePath
         $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
         $manualAllowRules = @()
         $manualDenyRules  = @()
@@ -226,29 +248,29 @@ foreach ($exeName in $exeNames) {
         }
 
         if ($manualAllowRules.Count -gt 0) {
-            Write-Host "  [Note] Preserved manual explicit ACE(s) (Users & Groups) on '$exeName':" -ForegroundColor Yellow
+            Write-Host "  [Note] Preserved manual explicit ACE(s) (Users & Groups) on '$fileName':" -ForegroundColor Yellow
             foreach ($mRule in $manualAllowRules) {
                 Write-Host "    - $mRule" -ForegroundColor Yellow
             }
         }
 
         if ($manualDenyRules.Count -gt 0) {
-            Write-Host "  [WARNING] Preserved manual explicit Deny ACE(s) on '$exeName':" -ForegroundColor Red
+            Write-Host "  [WARNING] Preserved manual explicit Deny ACE(s) on '$fileName':" -ForegroundColor Red
             foreach ($dRule in $manualDenyRules) {
                 Write-Host "    - $dRule" -ForegroundColor Red
             }
         }
 
-        Write-Host "Successfully hardened '$exeName'." -ForegroundColor Green
-        $hardened += $exeName
+        Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
+        $hardened += $fileName
     }
     catch {
-        Write-Host "FAILED to harden '$exeName': $_" -ForegroundColor Red
-        $failed += $exeName
+        Write-Host "FAILED to harden '$fileName': $_" -ForegroundColor Red
+        $failed += $fileName
     }
 }
 
-Write-Host "`nHardened $($hardened.Count) of $($exeNames.Count) executables." -ForegroundColor Cyan
+Write-Host "`nHardened $($hardened.Count) of $($targetFiles.Count) files." -ForegroundColor Cyan
 
 if ($failed.Count -gt 0) {
     Write-Warning ("Hardening failed on: {0}" -f ($failed -join ', '))
@@ -263,4 +285,4 @@ if ($missing.Count -gt 0) {
     exit 2
 }
 
-Write-Host "Executable permission hardening complete." -ForegroundColor Green
+Write-Host "Executable and configuration permission hardening complete." -ForegroundColor Green
