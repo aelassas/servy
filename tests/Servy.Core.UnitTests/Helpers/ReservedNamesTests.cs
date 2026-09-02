@@ -1,10 +1,58 @@
 using Servy.Core.Helpers;
+using System;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
 {
     public class ReservedNamesTests
     {
+        #region Parity Tests
+
+        [Fact]
+        public void ReservedDeviceNames_ParityWithServyDumpScript_MatchesCanonicalSet()
+        {
+            // Arrange
+            string scriptPath = Testing.Helper.GetServyDumpPs1Path();
+            Assert.True(File.Exists(scriptPath), $"Target script missing at path: {scriptPath}");
+
+            string scriptText = File.ReadAllText(scriptPath);
+
+            // Extract $reservedNames = @( ... ) block contents
+            var match = Regex.Match(
+                scriptText,
+                @"\$reservedNames\s*=\s*@\((?<content>.*?)\)",
+                RegexOptions.Singleline);
+
+            Assert.True(match.Success, "Failed to locate $reservedNames array definition in Servy-Dump.ps1");
+
+            string arrayContent = match.Groups["content"].Value;
+
+            // Match all single-quoted or double-quoted strings inside the array
+            var scriptNames = Regex.Matches(arrayContent, "['\"](?<name>[^'\"\\s]+)['\"]")
+                .Cast<Match>()
+                .Select(m => m.Groups["name"].Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var canonicalNames = ReservedNames.ReservedDeviceNames;
+
+            // Act & Assert (Bidirectional Parity Checks)
+            var missingInScript = canonicalNames.Except(scriptNames, StringComparer.OrdinalIgnoreCase).ToList();
+            var extraInScript = scriptNames.Except(canonicalNames, StringComparer.OrdinalIgnoreCase).ToList();
+
+            Assert.True(
+                missingInScript.Count == 0,
+                $"Servy-Dump.ps1 is missing reserved names defined in ReservedNames.cs: {string.Join(", ", missingInScript)}");
+
+            Assert.True(
+                extraInScript.Count == 0,
+                $"Servy-Dump.ps1 contains unexpected reserved names not present in ReservedNames.cs: {string.Join(", ", extraInScript)}");
+        }
+
+        #endregion
+
         #region ReservedDeviceNames Collection Tests
 
         [Fact]
