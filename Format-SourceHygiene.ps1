@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
-    Enforces whitespace hygiene (trailing whitespace removal, final newline insertion, and UTF-8 no BOM encoding) across repository source files.
+    Enforces whitespace hygiene (trailing whitespace removal, final newline insertion, and UTF-8 BOM policy) across repository source files.
 
 .DESCRIPTION
     Scans source code, project configurations, PowerShell scripts, YAML workflows, and markdown files
@@ -9,7 +9,7 @@
     enforcing three EditorConfig rules:
     1. Trims trailing whitespace from all lines (trim_trailing_whitespace = true).
     2. Ensures every file ends with a trailing newline (insert_final_newline = true).
-    3. Enforces UTF-8 without BOM encoding (charset = utf-8).
+    3. Enforces charset encoding policy (UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, .config; UTF-8 without BOM for all others).
 
     Note: .resx files are explicitly excluded because trailing whitespace within XML <value> elements
     can be meaningful string content. Additionally, trailing whitespace is preserved on .md files to respect
@@ -56,7 +56,7 @@ $exclusionRegex = if ($script:BuildArtifactExclusionRegex) {
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing files violating whitespace hygiene and charset rules..." -ForegroundColor Yellow
 } else {
-    Write-Host "Scanning and formatting files for whitespace hygiene and UTF-8 no-BOM encoding..." -ForegroundColor Cyan
+    Write-Host "Scanning and formatting files for whitespace hygiene and charset rules..." -ForegroundColor Cyan
 }
 
 $scannedCount = 0
@@ -65,13 +65,17 @@ $trimmedOnlyCount = 0
 $newlineOnlyCount = 0
 $bomOnlyCount = 0
 
+# File extensions requiring UTF-8 BOM encoding
+$bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
+
 # Extensions governed by .editorconfig whitespace and charset rules
 # NOTE: .resx files are deliberately omitted because trailing spaces inside XML <value> elements
 # represent localized string data rather than code formatting.
 $textExtensions = @(
     '.cs', '.yml', '.yaml', '.ps1', '.psm1', '.psd1',
     '.csproj', '.props', '.targets', '.xaml',
-    '.md', '.iss', '.manifest', '.json', '.sln'
+    '.md', '.iss', '.manifest', '.json', '.sln',
+    '.xml', '.config'
 )
 
 # Collect repository text files excluding build output, version control, and generated files
@@ -102,6 +106,9 @@ foreach ($file in $filesToScan) {
     $bytes = [System.IO.File]::ReadAllBytes($filePath)
     $hasBom = ($bytes.Length -ge 3) -and ($bytes[0] -eq 0xEF) -and ($bytes[1] -eq 0xBB) -and ($bytes[2] -eq 0xBF)
 
+    $wantsBom = $file.Extension -in $bomRequiredExtensions
+    $bomWrong = $hasBom -ne $wantsBom
+
     $rawText = [System.IO.File]::ReadAllText($filePath)
 
     # .editorconfig [*.md] sets trim_trailing_whitespace = false: two trailing
@@ -126,7 +133,7 @@ foreach ($file in $filesToScan) {
         }
     }
 
-    if ($hasTrailingWhitespace -or $lacksFinalNewline -or $hasBom) {
+    if ($hasTrailingWhitespace -or $lacksFinalNewline -or $bomWrong) {
         $modifiedCount++
         $relativePath = $file.FullName.Replace($baseDir, '')
 
@@ -140,19 +147,18 @@ foreach ($file in $filesToScan) {
             $newlineOnlyCount++
             $reasons += "missing final newline"
         }
-        if ($hasBom) {
+        if ($bomWrong) {
             $bomOnlyCount++
-            $reasons += "UTF-8 BOM detected"
+            $reasons += if ($wantsBom) { "missing UTF-8 BOM" } else { "UTF-8 BOM detected" }
         }
         $reasonStr = $reasons -join " & "
 
         if ($DryRun) {
             Write-Host "Would format ($reasonStr): $relativePath" -ForegroundColor Yellow
         } else {
-            # UTF8Encoding($false) = no BOM, on both Windows PowerShell 5.1 and PowerShell 7+
-            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            $encoding = New-Object System.Text.UTF8Encoding($wantsBom)
             $content   = ($trimmedLines -join "`r`n") + "`r`n"
-            [System.IO.File]::WriteAllText($filePath, $content, $utf8NoBom)
+            [System.IO.File]::WriteAllText($filePath, $content, $encoding)
             Write-Host "Formatted ($reasonStr): $relativePath" -ForegroundColor Gray
         }
     }

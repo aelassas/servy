@@ -343,7 +343,7 @@ try {
     }
     elseif (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
-        
+
         try {
             $sidecarText  = [System.IO.File]::ReadAllText($sidecarPath)
             $expectedHash = Get-ServySidecarExpectedHash -SidecarText $sidecarText

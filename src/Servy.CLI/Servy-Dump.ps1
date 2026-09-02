@@ -421,7 +421,7 @@ public static class ServyNativeWinSqlite16
     {
         List<string> result = new List<string>();
         IntPtr db;
-        
+
         byte[] pathUtf8 = System.Text.Encoding.UTF8.GetBytes(dbPath + "\0");
         int rc = sqlite3_open_v2(pathUtf8, out db, 0x1 /* SQLITE_OPEN_READONLY */, IntPtr.Zero);
         if (rc != 0)

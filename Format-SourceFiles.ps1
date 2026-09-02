@@ -1,4 +1,4 @@
-#Requires -Version 5.0
+﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
     Recursively converts text files in the current folder and subfolders to UTF-8 (with BOM for PowerShell scripts/manifests, XML, and config files; no BOM for others) with Windows (CRLF) line endings.
