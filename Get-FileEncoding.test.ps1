@@ -91,8 +91,11 @@ function Test-ReflectionField {
     param([object]$Object, [string]$FieldName)
     $flags = [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic
 
-    # Try the exact field name first, followed by standard .NET Core leading-underscore backing field conventions
-    $candidateNames = @($FieldName, "_$FieldName", "_is$FieldName", "is$FieldName")
+    # Try the exact field name first, then the leading-underscore and boolean 'is' backing-field
+    # conventions. GetField is case-sensitive without BindingFlags.IgnoreCase, so the 'is' forms
+    # must capitalise the field name the way .NET does ('_isBigEndian', not '_isbigEndian').
+    $capitalized = $FieldName.Substring(0, 1).ToUpperInvariant() + $FieldName.Substring(1)
+    $candidateNames = @($FieldName, "_$FieldName", "_is$capitalized", "is$capitalized", "Is$capitalized")
     $type = $Object.GetType()
 
     foreach ($name in $candidateNames) {
