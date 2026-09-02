@@ -66,6 +66,38 @@ try {
         exit 1
     }
 
+    # Version has a contract beyond its shape: bump-version.ps1 keeps it in step with
+    # Directory.Build.props and Servy.psd1, so a hand edit to one of the three must fail here.
+    $repoRoot = Join-Path $scriptDir '..'
+    $expectedFull = "$($cfg.Version).0"
+
+    $mirrors = @(
+        @{
+            Name    = 'Directory.Build.props'
+            Path    = Join-Path $repoRoot 'Directory.Build.props'
+            Pattern = "<Version>$([regex]::Escape($expectedFull))</Version>"
+        },
+        @{
+            Name    = 'Servy.psd1'
+            Path    = Join-Path (Join-Path (Join-Path $repoRoot 'src') 'Servy.CLI') 'Servy.psd1'
+            Pattern = "ModuleVersion\s*=\s*'$([regex]::Escape($expectedFull))'"
+        }
+    )
+
+    foreach ($mirror in $mirrors) {
+        if (-not (Test-Path $mirror.Path)) {
+            Write-Host "FAIL: $($mirror.Name) was not found at path: $($mirror.Path)" -ForegroundColor Red
+            exit 1
+        }
+
+        if ((Get-Content $mirror.Path -Raw) -notmatch $mirror.Pattern) {
+            Write-Host "FAIL: $($mirror.Name) does not carry version $expectedFull, but build-config.ps1 Version is '$($cfg.Version)'; bump-version.ps1 keeps the two in step." -ForegroundColor Red
+            exit 1
+        }
+
+        Write-Host "  [OK] $($mirror.Name) agrees on $expectedFull" -ForegroundColor Gray
+    }
+
     Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "SUCCESS: build-config.ps1 validated successfully!" -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
