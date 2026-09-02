@@ -373,6 +373,14 @@ namespace Servy.Core.Validation
                     return false;
                 }
 
+                var fileLinkInfo = new FileInfo(fullTargetPath);
+                fileLinkInfo.Refresh();
+                if (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    Logger.Warn($"Security refusal: Path '{fullTargetPath}' is a symbolic link.");
+                    return false;
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -408,6 +416,15 @@ namespace Servy.Core.Validation
                     new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
                     new SecurityIdentifier(WellKnownSidType.WorldSid, null) // Everyone
                 };
+                const FileSystemRights WriteClass =
+                    FileSystemRights.WriteData |
+                    FileSystemRights.AppendData |
+                    FileSystemRights.WriteAttributes |
+                    FileSystemRights.WriteExtendedAttributes |
+                    FileSystemRights.Delete |
+                    FileSystemRights.DeleteSubdirectoriesAndFiles |
+                    FileSystemRights.ChangePermissions |
+                    FileSystemRights.TakeOwnership;
 
                 foreach (FileSystemAccessRule rule in rules)
                 {
@@ -415,7 +432,7 @@ namespace Servy.Core.Validation
                     {
                         if (rule.AccessControlType == AccessControlType.Allow)
                         {
-                            bool hasWriteModify = (rule.FileSystemRights & (FileSystemRights.Write | FileSystemRights.Modify | FileSystemRights.FullControl)) != 0;
+                            bool hasWriteModify = (rule.FileSystemRights & WriteClass) != 0;
                             if (hasWriteModify)
                             {
                                 Logger.Warn($"ACL Security Notice: Directory '{targetDir}' grants Write/Modify access to standard users ({rule.IdentityReference.Value}).");
