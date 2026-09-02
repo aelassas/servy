@@ -13,7 +13,7 @@ using Xunit;
 namespace Servy.Service.UnitTests.Documentaion
 {
     /// <summary>
-    /// Verifies that the set of protected environment variables in code aligns 
+    /// Verifies that the set of protected environment variables in code aligns
     /// perfectly with the live published Wiki documentation page.
     /// </summary>
     public class ProtectedVariablesDocumentationTests

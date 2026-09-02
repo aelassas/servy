@@ -423,16 +423,16 @@ try {
     if (Test-Path -Path $managedSqliteDll) {
         try {
             [void][System.Reflection.Assembly]::LoadFrom($managedSqliteDll)
-            
+
             $connectionString = "Data Source=$dbPath;Version=3;Read Only=True;"
             $connection = New-Object System.Data.SQLite.SQLiteConnection($connectionString)
-            
+
             try {
                 $connection.Open()
                 $command = $connection.CreateCommand()
                 $command.CommandText = "SELECT Name FROM Services ORDER BY Name"
                 $reader = $command.ExecuteReader()
-                
+
                 while ($reader.Read()) {
                     if (-not $reader.IsDBNull(0)) {
                         $serviceNames.Add($reader.GetString(0))
@@ -648,7 +648,7 @@ public static class ServySafePs2Sqlite16
             }
             catch {
                 Write-Host "  FAILED to export '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                
+
                 # PowerShell 2.0 compatible property assignment for error array
                 $errObj = New-Object PSObject
                 $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
@@ -695,11 +695,11 @@ public static class ServySafePs2Sqlite16
                     if ($Overwrite.IsPresent -and (Test-Path -Path $resolvedArchivePath)) {
                         Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
                     }
-                    
+
                     # Use dynamic string types to prevent PS 2.0 parser from crashing on missing literal assemblies
                     [void][System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
                     $zipFileType = ("System.IO.Compression.ZipFile" -as [type])
-                    
+
                     if ($null -ne $zipFileType) {
                         $zipFileType::CreateFromDirectory($tempStagingDir, $resolvedArchivePath)
                     }
@@ -798,7 +798,7 @@ public static class ServySafePs2Sqlite16
             else {
                 Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
             }
-            
+
             # PowerShell 2.0 compatible property assignment for error array
             $errObj = New-Object PSObject
             $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value "SHA256 Sidecar"
@@ -822,7 +822,7 @@ public static class ServySafePs2Sqlite16
                     }
                     catch {
                         Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                        
+
                         # PowerShell 2.0 compatible property assignment for error array
                         $errObj = New-Object PSObject
                         $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName

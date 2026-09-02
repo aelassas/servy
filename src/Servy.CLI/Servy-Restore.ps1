@@ -358,11 +358,11 @@ try {
     }
     elseif (Test-Path -LiteralPath $sidecarPath) {
         Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
-        
+
         try {
             $sidecarText = [System.IO.File]::ReadAllText($sidecarPath)
             $expectedHash = Get-ServySidecarExpectedHash -SidecarText $sidecarText
-            
+
             $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
             $stream = [System.IO.File]::OpenRead($resolvedArchivePath)
             try {
@@ -413,7 +413,7 @@ try {
 
         # Safe entry-path validation and bounded archive extraction
         $rootPath = [System.IO.Path]::GetFullPath($tempExtractDir.TrimEnd('\') + '\')
-        
+
         [long]$totalUncompressedSize = 0L
 
         $zipFileType = $null
@@ -557,7 +557,7 @@ try {
             }
             catch {
                 Write-Host "  FAILED to import '$($xmlFile.Name)': $($_.Exception.Message)" -ForegroundColor Red
-                
+
                 # PowerShell 2.0 compatible property assignment for error array
                 $errObj = New-Object PSObject
                 $errObj | Add-Member -MemberType NoteProperty -Name "File" -Value $xmlFile.Name
