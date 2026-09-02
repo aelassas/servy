@@ -625,6 +625,24 @@ namespace Servy.Core.UnitTests.Validation
             }
         }
 
+        [Fact]
+        public void TryGetFinalPathByHandle_OpenLocalFile_ReturnsNormalizedPath()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "resolved_path.json");
+            File.WriteAllText(filePath, "{}");
+
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                // Act
+                bool resolved = PathSecurityGuard.TryGetFinalPathByHandle(stream.SafeFileHandle, out string finalPath);
+
+                // Assert
+                Assert.True(resolved);
+                Assert.Equal(Path.GetFullPath(filePath), Path.GetFullPath(finalPath), ignoreCase: true);
+            }
+        }
+
         [Theory]
         [InlineData("new_export.json")]
         [InlineData("new_export.xml")]
