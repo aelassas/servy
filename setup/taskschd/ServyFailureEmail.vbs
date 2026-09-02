@@ -20,7 +20,9 @@ End If
 
 ' Execute PowerShell hidden (-WindowStyle Hidden) and bypass policy
 ' We use triple-quotes to handle potential spaces in the install path
-command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1Path & """"
+Dim psExe
+psExe = fso.BuildPath(shell.ExpandEnvironmentStrings("%SystemRoot%"), "System32\WindowsPowerShell\v1.0\powershell.exe")
+command = """" & psExe & """ -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1Path & """"
 
 ' Execute the command and capture the exit code
 exitCode = shell.Run(command, 0, True)
