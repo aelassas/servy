@@ -66,7 +66,7 @@
     - SQLite Engine: Windows native WinRT/Win32 SQLite library (winsqlite3.dll); no external SQLite DLL drivers required.
     - Execution Privileges: Administrator privileges are required to interact with %ProgramData%\Servy and invoke Servy cmdlets.
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
     [Parameter(Mandatory = $true, HelpMessage = 'Specify target archive output file path (e.g., "C:\Backups\Servy_Dump.zip").')]
     [ValidateNotNullOrEmpty()]
@@ -218,58 +218,41 @@ function Get-ServySanitizedFileName {
     return $candidateName
 }
 
-<#
-.SYNOPSIS
-    Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
+# Fallback definition when script is dot-sourced without prior module import
+if (-not (Get-Command -Name Set-ServyHardenedFileAcl -ErrorAction SilentlyContinue)) {
+    function Set-ServyHardenedFileAcl {
+        <#
+        .SYNOPSIS
+            Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
+        #>
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory = $true)][string]$Path,
+            [Parameter(Mandatory = $false)][switch]$IsDirectory
+        )
 
-.DESCRIPTION
-    Breaks permission inheritance ($isProtected = $true, $preserveInheritance = $false), purges all existing ACEs,
-    and grants Full Control exclusively to Builtin Administrators and Local SYSTEM using language-agnostic Well-Known SIDs.
+        $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
 
-.PARAMETER Path
-    Mandatory literal filesystem path of the target file or directory.
+        $acl = Get-Acl -LiteralPath $Path
+        $acl.SetAccessRuleProtection($true, $false)
 
-.PARAMETER IsDirectory
-    Optional switch indicating if the path is a directory (controls container/object inheritance flags).
-#>
-function Set-ServyHardenedFileAcl {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Path,
+        $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+        foreach ($rule in $explicitRules) { [void]$acl.RemoveAccessRule($rule) }
 
-        [Parameter(Mandatory = $false)]
-        [switch]$IsDirectory
-    )
+        if ($IsDirectory.IsPresent) {
+            $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+            $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+        }
+        else {
+            $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+            $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+        }
 
-    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-
-    $acl = Get-Acl -LiteralPath $Path
-
-    # 1. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
-    $acl.SetAccessRuleProtection($true, $false)
-
-    # 2. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
-    $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-    foreach ($rule in $explicitRules) {
-        [void]$acl.RemoveAccessRule($rule)
+        $acl.SetAccessRule($adminRule)
+        $acl.SetAccessRule($systemRule)
+        Set-Acl -LiteralPath $Path -AclObject $acl
     }
-
-    # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
-    if ($IsDirectory.IsPresent) {
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-    }
-    else {
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-    }
-
-    $acl.SetAccessRule($adminRule)
-    $acl.SetAccessRule($systemRule)
-
-    Set-Acl -LiteralPath $Path -AclObject $acl
 }
 
 # Centralized reserved Win32 device names array, accessible across dot-sourced test harnesses.
@@ -380,6 +363,9 @@ try {
             try {
                 [System.IO.File]::WriteAllBytes($probeFile, @())
                 Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
+                if (Test-Path -LiteralPath $probeFile) {
+                    Write-Host "WARNING: The write probe '$probeFile' could not be removed from '$parentDir' (create is allowed but delete is not) - delete it manually." -ForegroundColor Yellow
+                }
             }
             catch {
                 Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
@@ -401,13 +387,31 @@ try {
     }
 
     # Register C# P/Invoke wrapper targeting Windows native %SystemRoot%\System32\winsqlite3.dll with UTF-16 marshaling
-    if (-not ([System.Management.Automation.PSTypeName]'ServyNativeWinSqlite16').Type) {
+    if (-not ([System.Management.Automation.PSTypeName]'ServyNativeWinSqliteRecord').Type) {
         $sqliteBinding = @"
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-public static class ServyNativeWinSqlite16
+public class ServyServiceRecord
+{
+    private string name;
+    private string userAccount;
+
+    public string Name
+    {
+        get { return name; }
+        set { name = value; }
+    }
+
+    public string UserAccount
+    {
+        get { return userAccount; }
+        set { userAccount = value; }
+    }
+}
+
+public static class ServyNativeWinSqliteRecord
 {
     [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
     private static extern int sqlite3_open_v2(byte[] filenameUtf8, out IntPtr ppDb, int flags, IntPtr zVfs);
@@ -427,9 +431,9 @@ public static class ServyNativeWinSqlite16
     [DllImport("winsqlite3.dll", EntryPoint = "sqlite3_finalize", CallingConvention = CallingConvention.Cdecl)]
     private static extern int sqlite3_finalize(IntPtr stmt);
 
-    public static List<string> GetServiceNames(string dbPath)
+    public static List<ServyServiceRecord> GetServices(string dbPath)
     {
-        List<string> result = new List<string>();
+        List<ServyServiceRecord> result = new List<ServyServiceRecord>();
         IntPtr db;
 
         byte[] pathUtf8 = System.Text.Encoding.UTF8.GetBytes(dbPath + "\0");
@@ -443,7 +447,7 @@ public static class ServyNativeWinSqlite16
         try
         {
             IntPtr stmt;
-            rc = sqlite3_prepare_v2(db, "SELECT Name FROM Services ORDER BY Name", -1, out stmt, IntPtr.Zero);
+            rc = sqlite3_prepare_v2(db, "SELECT Name, UserAccount FROM Services ORDER BY Name", -1, out stmt, IntPtr.Zero);
             if (rc != 0)
             {
                 throw new InvalidOperationException(string.Format("sqlite3_prepare_v2 failed with result code {0}.", rc));
@@ -454,10 +458,14 @@ public static class ServyNativeWinSqlite16
                 int stepRc;
                 while ((stepRc = sqlite3_step(stmt)) == 100) // SQLITE_ROW = 100
                 {
-                    IntPtr ptr = sqlite3_column_text16(stmt, 0);
-                    if (ptr != IntPtr.Zero)
+                    IntPtr namePtr = sqlite3_column_text16(stmt, 0);
+                    IntPtr accountPtr = sqlite3_column_text16(stmt, 1);
+                    if (namePtr != IntPtr.Zero)
                     {
-                        result.Add(Marshal.PtrToStringUni(ptr));
+                        ServyServiceRecord record = new ServyServiceRecord();
+                        record.Name = Marshal.PtrToStringUni(namePtr);
+                        record.UserAccount = accountPtr != IntPtr.Zero ? Marshal.PtrToStringUni(accountPtr) : null;
+                        result.Add(record);
                     }
                 }
                 if (stepRc != 101) // SQLITE_DONE
@@ -506,7 +514,19 @@ public static class ServyNativeWinSqlite16
 
         # Query Servy SQLite database via Windows native winsqlite3.dll
         try {
-            $serviceNames = [ServyNativeWinSqlite16]::GetServiceNames($dbPath)
+            $servicesList = [ServyNativeWinSqliteRecord]::GetServices($dbPath)
+            $serviceNames = @($servicesList | Select-Object -ExpandProperty Name)
+
+            # Build and display service account table for debugging / diagnostic inspection
+            $serviceTable = foreach ($svc in $servicesList) {
+                [PSCustomObject]@{
+                    'Service Name' = $svc.Name
+                    'User Account' = if ([string]::IsNullOrWhiteSpace($svc.UserAccount)) { '[LocalSystem]' } else { $svc.UserAccount }
+                }
+            }
+
+            Write-Host "`nRegistered Servy Services:" -ForegroundColor Cyan
+            $serviceTable | Format-Table -AutoSize | Out-String | Write-Host
         }
         catch {
             Write-Host "Failed to query Servy database at '$dbPath': $($_.Exception.Message)" -ForegroundColor Red
@@ -649,16 +669,44 @@ public static class ServyNativeWinSqlite16
                 Write-Host "Verify archive protection and sidecar manually before running with -Uninstall." -ForegroundColor Yellow
             }
             else {
-                Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+                # Check for custom accounts that will lose credentials
+                $customAccountServices = @($servicesList | Where-Object {
+                    $svcName = $_.Name
+                    $account = if ($null -ne $_.UserAccount) { $_.UserAccount.ToString().Trim() } else { "" }
 
-                foreach ($serviceName in $exported) {
-                    Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
-                    try {
-                        Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                    $isExported = $exported.Contains($svcName)
+                    $isCustomAccount = (-not [string]::IsNullOrWhiteSpace($account)) -and
+                                       (-not $account.EndsWith('LocalSystem', [System.StringComparison]::OrdinalIgnoreCase)) -and
+                                       (-not $account.EndsWith('SYSTEM', [System.StringComparison]::OrdinalIgnoreCase))
+
+                    $isExported -and $isCustomAccount
+                })
+
+                if ($customAccountServices.Count -gt 0) {
+                    Write-Host "`nWARNING: $($customAccountServices.Count) of $($exported.Count) service(s) use a custom logon account; their credentials are NOT in the archive and will be deleted from the database upon uninstallation (re-enter them manually after restore):" -ForegroundColor Yellow
+
+                    $affectedTable = foreach ($svc in $customAccountServices) {
+                        [PSCustomObject]@{
+                            'Service Name' = $svc.Name
+                            'User Account' = $svc.UserAccount
+                        }
                     }
-                    catch {
-                        Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                        $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = "Uninstall failed: $($_.Exception.Message)" })
+
+                    $affectedTable | Format-Table -AutoSize | Out-String | Write-Host
+                }
+
+                if ($PSCmdlet.ShouldProcess("$($exported.Count) exported service(s)", "Uninstall from SCM and delete from the Servy database")) {
+                    Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+
+                    foreach ($serviceName in $exported) {
+                        Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
+                        try {
+                            Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                        }
+                        catch {
+                            Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+                            $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = "Uninstall failed: $($_.Exception.Message)" })
+                        }
                     }
                 }
             }

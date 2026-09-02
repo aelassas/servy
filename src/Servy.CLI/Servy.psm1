@@ -736,6 +736,60 @@ function Set-ServyConfig {
     }
 }
 
+function Set-ServyHardenedFileAcl {
+    <#
+    .SYNOPSIS
+        Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
+
+    .DESCRIPTION
+        Breaks permission inheritance ($isProtected = $true, $preserveInheritance = $false), purges all existing ACEs,
+        and grants Full Control exclusively to Builtin Administrators and Local SYSTEM using language-agnostic Well-Known SIDs.
+
+    .PARAMETER Path
+        Mandatory literal filesystem path of the target file or directory.
+
+    .PARAMETER IsDirectory
+        Optional switch indicating if the path is a directory (controls container/object inheritance flags).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$IsDirectory
+    )
+
+    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+
+    $acl = Get-Acl -Path $Path
+
+    # 1. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
+    $acl.SetAccessRuleProtection($true, $false)
+
+    # 2. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
+    $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    foreach ($rule in $explicitRules) {
+        [void]$acl.RemoveAccessRule($rule)
+    }
+
+    # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
+    if ($IsDirectory.IsPresent) {
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    }
+    else {
+        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+    }
+
+    $acl.SetAccessRule($adminRule)
+    $acl.SetAccessRule($systemRule)
+
+    Set-Acl -Path $Path -AclObject $acl
+}
+
 function Get-ServyVersion {
     <#
         .SYNOPSIS
@@ -1701,6 +1755,7 @@ function Import-ServyServiceConfig {
 # 1. Define all public functions
 $publicFunctions = @(
     'Set-ServyConfig',
+    'Set-ServyHardenedFileAcl',
     'Get-ServyVersion',
     'Get-ServyHelp',
     'Install-ServyService',
