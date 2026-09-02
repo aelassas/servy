@@ -44,7 +44,8 @@
 
 .PARAMETER Uninstall
     Optional switch parameter. When present, uninstalls each successfully exported service from the Windows SCM
-    and removes it from the Servy database.
+    and removes it from the Servy database. Prompts for confirmation via ShouldProcess before uninstallation
+    unless -Confirm:$false is specified.
 
 .EXAMPLE
     .\Servy-Dump.ps1 -DestinationArchivePath "C:\Backups\Servy_Dump.zip"
