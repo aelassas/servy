@@ -3,6 +3,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Resources;
+using Microsoft.Win32.SafeHandles;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
@@ -219,29 +220,13 @@ namespace Servy.Core.Validation
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, Strings.Msg_SecurityHandleInvalid);
                 }
 
-                uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
-
-                // Fail closed if the win32 character size probe returns 0 or exceeds maximum integer string buffer capacity.
-                // This prevents resolution errors and uint overflow from silently bypassing target checks.
-                if (requiredSize == 0 || requiredSize > int.MaxValue)
+                if (!TryGetFinalPathByHandle(safeHandle, out string finalPathName))
                 {
                     var errorMsg = Strings.Msg_SecurityHandleSizeProbeFailed;
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
 
-                var pathBuilder = new StringBuilder((int)requiredSize);
-                uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
-
-                // Fail closed if the string serialization pass returns 0.
-                if (resultSize == 0)
-                {
-                    var errorMsg = Strings.Msg_SecurityHandleSerializationFailed;
-                    Logger.Error(errorMsg);
-                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
-                }
-
-                string finalPathName = pathBuilder.ToString();
                 string normalizedPath = finalPathName;
                 bool unwrappedUnc = false;
 
@@ -294,6 +279,51 @@ namespace Servy.Core.Validation
                     try { File.Delete(fullPath); } catch { /* Best-effort cleanup of stub files created by OpenOrCreate */ }
                 }
             }
+        }
+
+        /// <summary>
+        /// Resolves an open file handle to its final DOS path, failing closed if the path cannot be determined.
+        /// </summary>
+        /// <param name="handle">The open file handle to resolve.</param>
+        /// <param name="finalPath">When this method returns <c>true</c>, the normalized final path for <paramref name="handle"/>.</param>
+        /// <returns><c>true</c> when the handle path was resolved; otherwise, <c>false</c>.</returns>
+        public static bool TryGetFinalPathByHandle(SafeFileHandle handle, out string finalPath)
+        {
+            finalPath = string.Empty;
+
+            if (handle == null || handle.IsInvalid || handle.IsClosed)
+            {
+                return false;
+            }
+
+            uint requiredSize = NativeMethods.GetFinalPathNameByHandle(handle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
+            if (requiredSize == 0 || requiredSize > int.MaxValue)
+            {
+                return false;
+            }
+
+            var pathBuilder = new StringBuilder((int)requiredSize);
+            uint resultSize = NativeMethods.GetFinalPathNameByHandle(handle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+            if (resultSize == 0 || resultSize >= requiredSize)
+            {
+                return false;
+            }
+
+            string path = pathBuilder.ToString();
+            if (path.StartsWith(ExtendedUncPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                finalPath = @"\\" + path.Substring(ExtendedUncPrefix.Length);
+            }
+            else if (path.StartsWith(ExtendedPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                finalPath = path.Substring(ExtendedPrefix.Length);
+            }
+            else
+            {
+                finalPath = path;
+            }
+
+            return !string.IsNullOrEmpty(finalPath);
         }
 
         /// <summary>
