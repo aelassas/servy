@@ -156,22 +156,32 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             int explicitTimeout = 40;
             int preLaunchTimeout = 5;
-            int highRetryAttempts = 4; // 1 initial attempt + 4 retries = 5 total attempts
+
+            // Dynamically resolve the exact environmental constants used by production code
+            int initialDelayMs = AppConfig.PreLaunchRetryInitialDelayMs;
+            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
+
+            // Enough retries that the per-iteration delay provably crosses the ceiling: the last two
+            // iterations are clamped, so removing the cap in production changes the expected sum.
+            int highRetryAttempts = (int)Math.Ceiling(maxBackoffCapPerIteration * 1000.0 / initialDelayMs) + 2;
 
             int attempts = highRetryAttempts + 1;
             int expectedTotalPreLaunch = attempts * preLaunchTimeout;
 
-            // Dynamically resolve the exact environmental constants used by production code
-            int initialDelaySeconds = AppConfig.PreLaunchRetryInitialDelayMs / 1000;
-            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
+            // Static representation of the loop execution, using the same multiply-then-divide
+            // integer arithmetic as production so the two agree for any initial delay, not only 1000 ms.
+            int expectedTotalBackoff = 0;
+            int clampedIterations = 0;
+            for (int i = 1; i < attempts; i++)
+            {
+                int uncappedBackoff = (i * initialDelayMs) / 1000;
+                if (uncappedBackoff > maxBackoffCapPerIteration)
+                {
+                    clampedIterations++;
+                }
 
-            // Hand-unrolled static representation of the loop execution:
-            // For 4 retries, the loop indexes run precisely through i = 1, 2, 3, 4.
-            int expectedBackoff1 = Math.Min(1 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedBackoff2 = Math.Min(2 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedBackoff3 = Math.Min(3 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedBackoff4 = Math.Min(4 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedTotalBackoff = expectedBackoff1 + expectedBackoff2 + expectedBackoff3 + expectedBackoff4;
+                expectedTotalBackoff += Math.Min(uncappedBackoff, maxBackoffCapPerIteration);
+            }
 
             int expectedTotalTimeout = explicitTimeout + AppConfig.ScmTimeoutBufferSeconds + expectedTotalPreLaunch + expectedTotalBackoff;
 
@@ -182,6 +192,7 @@ namespace Servy.Core.UnitTests.Helpers
                  preLaunchRetryAttempts: highRetryAttempts);
 
             // Assert
+            Assert.True(clampedIterations >= 2, "The arrange step must drive at least two iterations above the cap, otherwise the clamp is not exercised.");
             Assert.Equal(expectedTotalTimeout, actualTimeout);
         }
 
