@@ -21,7 +21,7 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
-    - 4 : I/O & Inspection Failure. The database could not be read, the destination path is invalid or unwritable, archive compression or ACL hardening failed, or an unexpected runtime error occurred.
+    - 4 : I/O & Inspection Failure. The database could not be read, the destination path is invalid or unwritable, an existing SHA-256 sidecar could not be replaced under -Overwrite, archive compression or ACL hardening failed, or an unexpected runtime error occurred.
     - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export or uninstall, or the SHA-256 integrity sidecar could not be written.
@@ -219,43 +219,6 @@ function Get-ServySanitizedFileName {
     return $candidateName
 }
 
-# Fallback definition when script is dot-sourced without prior module import
-if (-not (Get-Command -Name Set-ServyHardenedFileAcl -ErrorAction SilentlyContinue)) {
-    function Set-ServyHardenedFileAcl {
-        <#
-        .SYNOPSIS
-            Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
-        #>
-        [CmdletBinding()]
-        param(
-            [Parameter(Mandatory = $true)][string]$Path,
-            [Parameter(Mandatory = $false)][switch]$IsDirectory
-        )
-
-        $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-
-        $acl = Get-Acl -LiteralPath $Path
-        $acl.SetAccessRuleProtection($true, $false)
-
-        $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-        foreach ($rule in $explicitRules) { [void]$acl.RemoveAccessRule($rule) }
-
-        if ($IsDirectory.IsPresent) {
-            $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-            $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-        }
-        else {
-            $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-            $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-        }
-
-        $acl.SetAccessRule($adminRule)
-        $acl.SetAccessRule($systemRule)
-        Set-Acl -LiteralPath $Path -AclObject $acl
-    }
-}
-
 # Centralized reserved Win32 device names array, accessible across dot-sourced test harnesses.
 # Synchronized with ReservedNames.cs canonical definition block.
 $script:reservedNames = @(
@@ -265,6 +228,18 @@ $script:reservedNames = @(
     'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
     'LPT¹', 'LPT²', 'LPT³'
 )
+
+# Canonical set of built-in passwordless service accounts matching ServiceAccounts.cs
+$script:runnableServiceAccounts = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+foreach ($a in @(
+    'LocalSystem', 'System', 'Local System', '.\LocalSystem', '.\System', '.\Local System',
+    'NT AUTHORITY\LocalSystem', 'NT AUTHORITY\Local System', 'NT AUTHORITY\SYSTEM',
+    'BUILTIN\LocalSystem', 'BUILTIN\System',
+    'LocalService', 'NT AUTHORITY\LocalService', '.\LocalService', '.\Local Service',
+    'NT AUTHORITY\Local Service', 'Local Service', 'BUILTIN\LocalService',
+    'NetworkService', 'NT AUTHORITY\NetworkService', '.\NetworkService', '.\Network Service',
+    'NT AUTHORITY\Network Service', 'Network Service', 'BUILTIN\NetworkService'
+)) { [void]$script:runnableServiceAccounts.Add($a) }
 
 # If dot-sourced for testing, return immediately without executing main script body
 if ($MyInvocation.InvocationName -eq '.') {
@@ -309,6 +284,45 @@ try {
     catch {
         Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
         exit 2
+    }
+
+    # Fallback definition when script is dot-sourced without prior module import
+    if (-not (Get-Command -Name Set-ServyHardenedFileAcl -ErrorAction SilentlyContinue)) {
+        function Set-ServyHardenedFileAcl {
+            <#
+            .SYNOPSIS
+                Hardens ACL permissions on a target file or directory by breaking inheritance,
+                transferring ownership to Builtin Administrators, and enforcing strict Admin-only access.
+            #>
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory = $true)][string]$Path,
+                [Parameter(Mandatory = $false)][switch]$IsDirectory
+            )
+
+            $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+            $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+
+            $acl = Get-Acl -LiteralPath $Path
+            $acl.SetOwner($adminSid)
+            $acl.SetAccessRuleProtection($true, $false)
+
+            $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+            foreach ($rule in $explicitRules) { [void]$acl.RemoveAccessRule($rule) }
+
+            if ($IsDirectory.IsPresent) {
+                $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+                $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+            }
+            else {
+                $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+                $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+            }
+
+            $acl.SetAccessRule($adminRule)
+            $acl.SetAccessRule($systemRule)
+            Set-Acl -LiteralPath $Path -AclObject $acl
+        }
     }
 
     # Catch-all for destination resolution (e.g. invalid path characters or invalid drive letters)
@@ -677,8 +691,7 @@ public static class ServyNativeWinSqliteRecord
 
                     $isExported = $exported.Contains($svcName)
                     $isCustomAccount = (-not [string]::IsNullOrWhiteSpace($account)) -and
-                                       (-not $account.EndsWith('LocalSystem', [System.StringComparison]::OrdinalIgnoreCase)) -and
-                                       (-not $account.EndsWith('SYSTEM', [System.StringComparison]::OrdinalIgnoreCase))
+                                       (-not $script:runnableServiceAccounts.Contains($account))
 
                     $isExported -and $isCustomAccount
                 })

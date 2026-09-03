@@ -273,7 +273,7 @@ foreach ($item in $targetFiles) {
     try {
         Write-Host "Hardening permissions on '$fileName' ($requiredRights)..." -ForegroundColor Green
 
-        $acl = Get-Acl -Path $filePath
+        $acl = Get-Acl -LiteralPath $filePath
 
         # Audit owner changes prior to setting Builtin Administrators owner
         $previousOwnerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
@@ -330,10 +330,10 @@ foreach ($item in $targetFiles) {
         }
 
         # Commit ACL to disk
-        Set-Acl -Path $filePath -AclObject $acl
+        Set-Acl -LiteralPath $filePath -AclObject $acl
 
         # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
-        $postAcl = Get-Acl -Path $filePath
+        $postAcl = Get-Acl -LiteralPath $filePath
         $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
         $manualAllowRules = @()
         $manualDenyRules  = @()
