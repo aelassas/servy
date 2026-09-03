@@ -1312,7 +1312,7 @@ namespace Servy.Service
                 _childProcess.OutputDataReceived += OnOutputDataReceived;
                 _childProcess.ErrorDataReceived += OnErrorDataReceived;
             }
-            _childProcess.Exited += OnProcessExited!;
+            _childProcess.Exited += OnProcessExited;
 
             // Start the process safely
             try
@@ -1457,7 +1457,7 @@ namespace Servy.Service
                 // Unsubscribe from events we attached before calling .Start()
                 _childProcess.OutputDataReceived -= OnOutputDataReceived;
                 _childProcess.ErrorDataReceived -= OnErrorDataReceived;
-                _childProcess.Exited -= OnProcessExited!;
+                _childProcess.Exited -= OnProcessExited;
 
                 _childProcess.Dispose();
             }
@@ -1666,7 +1666,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="sender">The source of the event (the child process).</param>
         /// <param name="e">Event data containing no specific exit information.</param>
-        private async void OnProcessExited(object sender, EventArgs e)
+        private async void OnProcessExited(object? sender, EventArgs e)
         {
             try
             {
@@ -2558,7 +2558,7 @@ namespace Servy.Service
             {
                 // 1. Unhook Exited event early so we don't trigger "unexpected exit" logic
                 if (_childProcess != null)
-                    _childProcess.Exited -= OnProcessExited!;
+                    _childProcess.Exited -= OnProcessExited;
 
                 // 2. Pre-Stop Hook
                 // Even if this fails, we usually want to continue killing the main process
