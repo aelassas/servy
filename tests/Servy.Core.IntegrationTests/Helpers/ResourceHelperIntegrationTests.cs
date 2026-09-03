@@ -20,14 +20,11 @@ namespace Servy.Core.IntegrationTests.Helpers
 
         /// <summary>
         /// A custom implementation of Assembly to bypass Moq's ISerializable limitation in .NET 4.8.
-        /// This allows us to control the Location and embedded streams without Castle.Core proxy errors.
+        /// This allows us to control the embedded streams without Castle.Core proxy errors.
         /// </summary>
         private class FakeAssembly : Assembly
         {
-            public string FakeLocation { get; set; }
             public Func<string, Stream> OnGetManifestResourceStream { get; set; }
-
-            public override string Location => FakeLocation;
 
             public override Stream GetManifestResourceStream(string name)
             {
@@ -44,12 +41,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _tempDirectory = Path.Combine(Path.GetTempPath(), "ServyTests", Guid.NewGuid().ToString());
             Directory.CreateDirectory(_tempDirectory);
 
-            // Setup our fake assembly to point its location to our Temp Directory
-            // (used by DEBUG preprocessor directive in ShouldCopyResource)
-            _fakeAssembly = new FakeAssembly
-            {
-                FakeLocation = Path.Combine(_tempDirectory, "TestAssembly.dll")
-            };
+            _fakeAssembly = new FakeAssembly();
 
             _resourceHelper = new ResourceHelper(_mockServiceHelper.Object, _mockProcessKiller.Object);
 
