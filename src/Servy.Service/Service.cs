@@ -671,7 +671,7 @@ namespace Servy.Service
         /// If the file content is invalid or unreadable, it automatically resets the file to "0"
         /// to maintain a clean recovery state for the managed process.
         /// </remarks>
-        private int EnsureRestartAttemptsFile()
+        private int? EnsureRestartAttemptsFile()
         {
             if (string.IsNullOrEmpty(_restartAttemptsFile)) return 0;
 
@@ -698,8 +698,8 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
-                    return 0;
+                    _logger?.Error($"Restart attempts file '{_restartAttemptsFile}' is unreadable ({ex.Message}); the MaxRestartAttempts cap cannot be enforced.");
+                    return null;
                 }
             }
         }
@@ -1802,7 +1802,15 @@ namespace Servy.Service
                 // _maxRestartAttempts == 0 means unlimited restart attempts
                 if (_maxRestartAttempts > 0)
                 {
-                    currentAttempts = EnsureRestartAttemptsFile();
+                    var ca= EnsureRestartAttemptsFile();
+
+                    if (ca == null)
+                    {
+                        _logger?.Error("Failed to read restart attempts from persistent storage. Aborting recovery.");
+                        return;
+                    }
+
+                    currentAttempts = ca.Value;
 
                     if (currentAttempts >= _maxRestartAttempts)
                     {
