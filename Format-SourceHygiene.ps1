@@ -162,12 +162,17 @@ foreach ($file in $filesToScan) {
             } else {
                 $encoding = New-Object System.Text.UTF8Encoding($wantsBom)
 
-                # Drop trailing empty element produced by splitting text ending with a newline
-                if ($trimmedLines.Count -gt 0 -and $trimmedLines[-1] -eq '') {
-                    $trimmedLines = $trimmedLines[0..($trimmedLines.Count - 2)]
-                }
+                # An empty file needs no final newline (Check 1 exempts it); rewriting must not add one.
+                if ($rawText.Length -eq 0) {
+                    $content = ''
+                } else {
+                    # Drop trailing empty element produced by splitting text ending with a newline
+                    if ($trimmedLines.Count -gt 0 -and $trimmedLines[-1] -eq '') {
+                        $trimmedLines = $trimmedLines[0..($trimmedLines.Count - 2)]
+                    }
 
-                $content   = ($trimmedLines -join "`r`n") + "`r`n"
+                    $content = ($trimmedLines -join "`r`n") + "`r`n"
+                }
                 [System.IO.File]::WriteAllText($filePath, $content, $encoding)
                 Write-Host "Formatted ($reasonStr): $relativePath" -ForegroundColor Gray
             }

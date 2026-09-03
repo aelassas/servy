@@ -57,7 +57,7 @@ Servy is available in the official [Patch My PC catalog](https://patchmypc.com/s
 
 You can manage services using the [desktop app (GUI)](https://github.com/aelassas/servy/wiki/Servy-Desktop-App), the [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI), or [PowerShell](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
-Here's a minimal example using the CLI to run a Node.js app as a Windows service:
+Here's a minimal example using the CLI to run a Node.js app as a Windows service. Run it from an elevated PowerShell prompt: installing, starting and stopping a Windows service all require administrator privileges.
 
 ```powershell
 servy-cli install `
