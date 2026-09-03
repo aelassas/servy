@@ -265,34 +265,34 @@ namespace Servy.Manager.ViewModels
         #region Command Handlers
 
         private async Task StartServiceAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.StartServiceAsync(Service));
+            await ExecuteSafeAsync(nameof(StartCommand), () => _serviceCommands.StartServiceAsync(Service));
 
         private async Task StopServiceAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.StopServiceAsync(Service));
+            await ExecuteSafeAsync(nameof(StopCommand), () => _serviceCommands.StopServiceAsync(Service));
 
         private async Task RestartServiceAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.RestartServiceAsync(Service));
+            await ExecuteSafeAsync(nameof(RestartCommand), () => _serviceCommands.RestartServiceAsync(Service));
 
         private async Task ConfigureServiceAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.ConfigureServiceAsync(Service));
+            await ExecuteSafeAsync(nameof(ConfigureCommand), () => _serviceCommands.ConfigureServiceAsync(Service));
 
         private async Task InstallServiceAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.InstallServiceAsync(Service));
+            await ExecuteSafeAsync(nameof(InstallCommand), () => _serviceCommands.InstallServiceAsync(Service));
 
         private async Task UninstallServiceAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.UninstallServiceAsync(Service));
+            await ExecuteSafeAsync(nameof(UninstallCommand), () => _serviceCommands.UninstallServiceAsync(Service));
 
         private async Task RemoveServiceAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.RemoveServiceAsync(Service));
+            await ExecuteSafeAsync(nameof(RemoveCommand), () => _serviceCommands.RemoveServiceAsync(Service));
 
         private async Task ExportServiceToXmlAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.ExportServiceToXmlAsync(Service));
+            await ExecuteSafeAsync(nameof(ExportXmlCommand), () => _serviceCommands.ExportServiceToXmlAsync(Service));
 
         private async Task ExportServiceToJsonAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.ExportServiceToJsonAsync(Service));
+            await ExecuteSafeAsync(nameof(ExportJsonCommand), () => _serviceCommands.ExportServiceToJsonAsync(Service));
 
         private async Task CopyPidAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.CopyPidAsync(Service));
+            await ExecuteSafeAsync(nameof(CopyPidCommand), () => _serviceCommands.CopyPidAsync(Service));
 
         #endregion
 
@@ -311,17 +311,22 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Executes the given asynchronous action safely and logs any exceptions.
         /// </summary>
+        /// <param name="commandName">The name of the command being executed.</param>
         /// <param name="action">The asynchronous action to execute.</param>
-        private async Task ExecuteSafeAsync(Func<Task> action)
+        private async Task ExecuteSafeAsync(string commandName, Func<Task> action)
         {
             try
             {
                 _cursorService.SetWaitCursor();
                 await action();
             }
+            catch (OperationCanceledException)
+            {
+                // Expected on shutdown / tab switch
+            }
             catch (Exception ex)
             {
-                Logger.Error($"Service command failed for {Service.Name}.", ex);
+                Logger.Error($"{commandName} failed for {Service.Name}.", ex);
             }
             finally
             {
