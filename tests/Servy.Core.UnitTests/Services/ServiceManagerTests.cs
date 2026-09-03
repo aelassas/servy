@@ -2198,11 +2198,15 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(ServiceControllerStatus.Running, result);
         }
 
-        [Fact]
-        public void GetServiceStatus_ShouldThrowArgumentException()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetServiceStatus_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStatus("", CancellationToken.None));
+            var exception = Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStatus(serviceName, CancellationToken.None));
+            Assert.Equal("serviceName", exception.ParamName);
         }
 
         [Fact]
@@ -2229,21 +2233,28 @@ namespace Servy.Core.UnitTests.Services
             Assert.False(_serviceManager.IsServiceInstalled("MyService", CancellationToken.None));
         }
 
-        [Fact]
-        public void IsServiceInstalled_Throws_ArgumentException()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void IsServiceInstalled_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _serviceManager.IsServiceInstalled(string.Empty, CancellationToken.None));
+            var exception = Assert.Throws<ArgumentException>(() => _serviceManager.IsServiceInstalled(serviceName, CancellationToken.None));
+            Assert.Equal("serviceName", exception.ParamName);
         }
 
         #region GetServiceStartupType
 
-        [Fact]
-        public void GetServiceStartupType_ShouldThrowArgumentException_WhenNameIsInvalid()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetServiceStartupType_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStartupType(null, CancellationToken.None));
-            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStartupType(" ", CancellationToken.None));
+            var exception = Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStartupType(serviceName, CancellationToken.None));
+            Assert.Equal("serviceName", exception.ParamName);
         }
 
         [Fact]
@@ -2969,12 +2980,14 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Theory]
+        [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
         public void GetDependencies_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _serviceManager.GetDependencies(serviceName, CancellationToken.None));
+            var exception = Assert.Throws<ArgumentException>(() => _serviceManager.GetDependencies(serviceName, CancellationToken.None));
+            Assert.Equal("serviceName", exception.ParamName);
         }
 
         [Fact]
