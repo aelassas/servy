@@ -138,7 +138,10 @@ if ($script:EnvVarValidationPattern -match '\(\?>') {
     Write-Host "  [FAIL] Atomic groups (?>...) missing from regex pattern - potential ReDoS regression (#1091)" -ForegroundColor Red
 }
 
-$evil = "KEY=" + ("\" * 40) + [char]1
+# The tail must be UNMATCHABLE: ';;' is neither an escaped nor a record-separating semicolon,
+# so a pattern without atomic groups re-splits the 40-backslash run against \\\\ and [^;] before
+# failing. A matchable tail (formerly [char]1) succeeds on the first parse and never backtracks.
+$evil = "KEY=" + ("\" * 40) + ";;x"
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $null = $evil -match $script:EnvVarValidationPattern
 $sw.Stop()
