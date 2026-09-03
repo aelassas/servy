@@ -41,7 +41,6 @@ $script:HadFailure     = $false
 $fullVersion = "$Version.0"
 $fileVersion = "$Version.0.0"
 $currentYear = (Get-Date).Year
-$copyrightChar = [char]0x00A9
 
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing Servy version update to $Version..." -ForegroundColor Yellow
@@ -155,10 +154,6 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
                     $replacementValue = $fileVersion
                     break
                 }
-                "AssemblyCopyright" {
-                    $replacementValue = "Copyright $copyrightChar $currentYear Akram El Assas. All rights reserved."
-                    break
-                }
             }
 
             # Case-insensitive pattern for [assembly: AssemblyTag("...")]
@@ -217,8 +212,8 @@ Update-FileContent `
 
 Update-FileContent `
     -Path $psd1Path `
-    -Pattern "(Copyright\s*=\s*')(?:Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+\d{4}|\(c\))\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.(')" `
-    -Replacement "Copyright $copyrightChar $currentYear Akram El Assas. All rights reserved."
+    -Pattern "(Copyright\s*=\s*'Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+)\d{4}(\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.')" `
+    -Replacement $currentYear
 
 if ($script:HadFailure) {
     Write-Host "Version update process completed with errors." -ForegroundColor Red
