@@ -108,7 +108,14 @@ jobs:
         run: dotnet build Servy.sln --configuration Release --no-restore
 
       - name: Run all tests (Release)
-        run: dotnet test Servy.sln --configuration Release --no-build
+        shell: pwsh
+        run: |
+          dotnet test Servy.sln --configuration Release --no-build `
+            --results-directory "$env:GITHUB_WORKSPACE/TestResults/Release"
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::Release test run failed"
+              Write-Error "Release test run failed."
+          }
 
       - name: Run PowerShell verification and test scripts
         shell: pwsh
