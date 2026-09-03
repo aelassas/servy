@@ -55,8 +55,10 @@ namespace Servy.Core.UnitTests.Helpers
         public void CalculateStartTimeout_WithTimeoutExactlyEqualToFloor_UsesFloorBaseline()
         {
             // Arrange
-            // Drive the evaluation input directly from the real infrastructure floor constant
-            // to explicitly test the strict '>' boundary rule without relying on fragile magic-number assumptions.
+            // Drive the input from the real floor constant rather than a magic number.
+            // At configuredTimeout == floor both ternary branches yield the floor, so this pins
+            // the returned value at the boundary; the below-floor and above-floor sides are
+            // covered by the two neighbouring tests.
             int exactFloorValue = AppConfig.DefaultServiceStartTimeoutSeconds;
             int preLaunchTimeoutSeconds = 0;
             int expected = exactFloorValue + AppConfig.ScmTimeoutBufferSeconds;
@@ -262,7 +264,8 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void CalculateStopTimeout_WithConfiguredExactlyEqualToFloor_UsesFloorBaseline()
         {
-            // Arrange: Strict '>' boundary test when configuredTimeout equals the floor
+            // Arrange: pins the returned value when configuredTimeout equals the floor
+            // (both ternary branches yield the floor there, so no comparison operator is being tested)
             int floor = AppConfig.DefaultStopTimeout;
             int expected = floor + AppConfig.ScmTimeoutBufferSeconds;
 
