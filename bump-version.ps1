@@ -127,8 +127,8 @@ Write-Host "`n========================================="
 Write-Host "                SUMMARY"
 Write-Host "========================================="
 if ($DryRun) {
-    Write-Host "Files scanned:                  $script:totalFilesScanned"
-    Write-Host "Files that would be modified: $script:filesModified"
+    Write-Host "Files scanned:                   $script:totalFilesScanned"
+    Write-Host "Files that would be modified:    $script:filesModified"
     Write-Host "Replacements that would be made: $script:totalReplacements"
 } else {
     Write-Host "Files scanned:                  $script:totalFilesScanned"
