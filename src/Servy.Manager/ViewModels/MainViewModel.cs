@@ -80,14 +80,7 @@ namespace Servy.Manager.ViewModels
         public string? SearchText
         {
             get => _searchText;
-            set
-            {
-                if (_searchText != value)
-                {
-                    _searchText = value;
-                    OnPropertyChanged();
-                }
-            }
+            set => Set(ref _searchText, value);
         }
 
         /// <summary>
@@ -162,14 +155,7 @@ namespace Servy.Manager.ViewModels
         public bool IsConfiguratorEnabled
         {
             get => _isConfiguratorEnabled;
-            set
-            {
-                if (_isConfiguratorEnabled != value)
-                {
-                    _isConfiguratorEnabled = value;
-                    OnPropertyChanged();
-                }
-            }
+            set => Set(ref _isConfiguratorEnabled, value);
         }
 
         #endregion
