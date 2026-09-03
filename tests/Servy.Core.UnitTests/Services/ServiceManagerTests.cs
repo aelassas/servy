@@ -1482,11 +1482,41 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void UpdateServiceConfig_Throws_Win32Exception()
+        public void UpdateServiceConfig_Throws_WhenOpenServiceFails()
         {
             // Arrange
             var scmHandle = CreateScmHandle(123);
-            var serviceHandle = CreateServiceHandle(0);
+            var serviceName = "TestService";
+            var description = "Updated Description";
+            var binPath = "binaryPath";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(CreateServiceHandle(0));
+
+            // Act & Assert
+            var exception = Assert.Throws<Win32Exception>(() =>
+                _serviceManager.UpdateServiceConfig(
+                    scmHandle,
+                    serviceName,
+                    description,
+                    binPath,
+                    ServiceStartType.Automatic,
+                    null,
+                    null,
+                    null,
+                    null
+                    )
+            );
+
+            Assert.Contains("Failed to open existing service", exception.Message);
+        }
+
+        [Fact]
+        public void UpdateServiceConfig_Throws_WhenChangeServiceConfigFails()
+        {
+            // Arrange
+            var scmHandle = CreateScmHandle(123);
+            var serviceHandle = CreateServiceHandle(456);
             var serviceName = "TestService";
             var description = "Updated Description";
             var binPath = "binaryPath";
@@ -1494,6 +1524,8 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
 
+            // The SUT coerces a null displayName to the service name before calling, so the last
+            // argument is matched on that coerced value rather than on null.
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
                 serviceHandle,
                 It.IsAny<uint>(),
@@ -1505,17 +1537,11 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 null,
                 null,
-                null))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
-                serviceHandle,
-                It.IsAny<uint>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
-                .Returns(true);
+                serviceName))
+                .Returns(false);
 
             // Act & Assert
-            Assert.Throws<Win32Exception>(() =>
+            var exception = Assert.Throws<Win32Exception>(() =>
                 _serviceManager.UpdateServiceConfig(
                     scmHandle,
                     serviceName,
@@ -1529,23 +1555,21 @@ namespace Servy.Core.UnitTests.Services
                     )
             );
 
-            serviceHandle = CreateServiceHandle(123);
+            Assert.Contains("Failed to update service config", exception.Message);
 
-            Assert.Throws<Win32Exception>(() =>
-                _serviceManager.UpdateServiceConfig(
-                    scmHandle,
-                    serviceName,
-                    description,
-                    binPath,
-                    ServiceStartType.Automatic,
-                    null,
-                    null,
-                    null,
-                    null
-                    )
-            );
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                binPath,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                serviceName), Times.Once);
         }
-
         [Fact]
         public void SetServiceDescription_AlwaysCallsChangeServiceConfig2_EvenWhenDescriptionIsNullOrEmpty()
         {
