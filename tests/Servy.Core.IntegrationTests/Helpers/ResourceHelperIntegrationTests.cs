@@ -22,9 +22,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             _tempDirectory = Path.Combine(Path.GetTempPath(), "ServyTests", Guid.NewGuid().ToString());
             Directory.CreateDirectory(_tempDirectory);
 
-            // Mock Assembly Location to point to our Temp Directory (used by DEBUG preprocessor directive in ShouldCopyResource)
-            _mockAssembly.Setup(a => a.Location).Returns(Path.Combine(_tempDirectory, "TestAssembly.dll"));
-
             _resourceHelper = new ResourceHelper(_mockServiceHelper.Object, _mockProcessKiller.Object);
 
             // Point the helper to the test-controlled temp directory
