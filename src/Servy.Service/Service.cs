@@ -1845,9 +1845,6 @@ namespace Servy.Service
 
                 if (shouldStop)
                 {
-                    // Emit external notification immediately when stopping due to exhausted quotas
-                    EmitHeartbeatPing(heartbeatUrl, AppConfig.HeartbeatUrlFailFlag, timeout);
-
                     RunFailureProgram();
                     Stop();
                     return;
