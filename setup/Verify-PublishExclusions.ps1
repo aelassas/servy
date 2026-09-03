@@ -42,12 +42,16 @@ try {
         @("ServySecurity.ps1", $true),
         @("TaskConfig.xml", $true),
         @("SubFolder\NestedScript.ps1", $true),
-        @("smtp-cred.xml", $false),          # Blacklisted file rule
-        @("ServySecurity.test.ps1", $false), # Hardened exclusion wildcard rule
-        @("SubFolder\Nested.test.ps1", $false), # Nested wildcard rule
-        @("state.dat", $false),              # Prohibited extension rule
-        @("trace.log", $false),              # Prohibited extension rule
-        @("temp.ps1", $false)                # Prohibited temp.ps1 rule
+        @("smtp-cred.xml", $false),                # Blacklisted file rule
+        @("SubFolder\smtp-cred.xml", $false),      # Nested blacklisted file rule
+        @("ServySecurity.test.ps1", $false),       # Hardened exclusion wildcard rule
+        @("SubFolder\Nested.test.ps1", $false),    # Nested wildcard rule
+        @("state.dat", $false),                    # Prohibited extension rule
+        @("SubFolder\nested.dat", $false),         # Nested extension rule
+        @("trace.log", $false),                    # Prohibited extension rule
+        @("SubFolder\nested.log", $false),         # Nested extension rule
+        @("temp.ps1", $false),                     # Prohibited temp.ps1 rule
+        @("SubFolder\temp.ps1", $false)            # Nested temp.ps1 rule
     )
 
     foreach ($file in $MockFiles) {
