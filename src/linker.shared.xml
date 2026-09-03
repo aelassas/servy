@@ -25,7 +25,7 @@
   <assembly fullname="System.Security.AccessControl" preserve="all" />
   <assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />
 
-  <!-- Native file system, drive inspection, and directory watching P/Invoke dependencies -->
+  <!-- Drive inspection (PathSecurityGuard) and file-system primitives used by the trimmed projects -->
   <assembly fullname="System.IO.FileSystem" preserve="all" />
   <assembly fullname="System.IO.FileSystem.DriveInfo" preserve="all" />
   <assembly fullname="System.IO.FileSystem.Primitives" preserve="all" />
