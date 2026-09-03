@@ -7,8 +7,9 @@
     Tests valid and invalid environment variable string formats against
     $script:EnvVarValidationPattern, including edge cases like spaces in keys,
     leading/trailing whitespace, multi-space separators, and escaped characters.
-    Also tests Set-ServyHardenedFileAcl permission inheritance breaking and
-    exclusive Administrators/SYSTEM FullControl access enforcement.
+    Also tests Set-ServyHardenedFileAcl permission inheritance breaking,
+    exclusive Administrators/SYSTEM FullControl access enforcement, bracketed path handling,
+    and owner transfer to Builtin Administrators.
 
 .NOTES
     Compatible with PowerShell 2.0 and later.
@@ -153,29 +154,34 @@ if ($sw.ElapsedMilliseconds -lt 1000) {
 Write-Host ""
 
 # --- 6. Set-ServyHardenedFileAcl Tests ---
-Write-Host "==================================================--" -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host " Running Set-ServyHardenedFileAcl Tests             " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$tempTestFile = [System.IO.Path]::GetTempFileName()
-$tempTestDir  = Join-Path ([System.IO.Path]::GetTempPath()) ("ServyAclTest_" + [System.IO.Path]::GetRandomFileName())
+$adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+
+$tempTestFile   = [System.IO.Path]::GetTempFileName()
+$tempTestDir    = Join-Path ([System.IO.Path]::GetTempPath()) ("ServyAclTest_" + [System.IO.Path]::GetRandomFileName())
+$bracketTestDir = Join-Path ([System.IO.Path]::GetTempPath()) ("ServyAcl[Test]_" + [System.IO.Path]::GetRandomFileName())
 
 try {
     [void][System.IO.Directory]::CreateDirectory($tempTestDir)
 
-    # Test File ACL Hardening
+    # Test File ACL Hardening & Owner Neutralization
     $script:TotalTests++
     try {
         Set-ServyHardenedFileAcl -Path $tempTestFile
-        $fileAcl = Get-Acl -Path $tempTestFile
+        $fileAcl = if ($PSVersionTable.PSVersion.Major -ge 3) { Get-Acl -LiteralPath $tempTestFile } else { Get-Acl -Path ([Management.Automation.WildcardPattern]::Escape($tempTestFile)) }
 
-        if ($fileAcl.AreAccessRulesProtected) {
+        $ownerSid = $fileAcl.GetOwner([System.Security.Principal.SecurityIdentifier])
+
+        if ($fileAcl.AreAccessRulesProtected -and $ownerSid.Equals($adminSid)) {
             $script:PassedTests++
-            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks permission inheritance on files" -ForegroundColor Green
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks inheritance and sets Builtin Administrators owner on files" -ForegroundColor Green
         } else {
             $script:FailedTests++
-            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed to break inheritance on files" -ForegroundColor Red
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed inheritance or owner assertion on files (Owner: $ownerSid)" -ForegroundColor Red
         }
     }
     catch {
@@ -183,28 +189,56 @@ try {
         Write-Host "  [FAIL] Set-ServyHardenedFileAcl threw exception on file: $_" -ForegroundColor Red
     }
 
-    # Test Directory ACL Hardening
+    # Test Directory ACL Hardening & Owner Neutralization
     $script:TotalTests++
     try {
         Set-ServyHardenedFileAcl -Path $tempTestDir -IsDirectory
-        $dirAcl = Get-Acl -Path $tempTestDir
+        $dirAcl = if ($PSVersionTable.PSVersion.Major -ge 3) { Get-Acl -LiteralPath $tempTestDir } else { Get-Acl -Path ([Management.Automation.WildcardPattern]::Escape($tempTestDir)) }
 
-        if ($dirAcl.AreAccessRulesProtected) {
+        $ownerSid = $dirAcl.GetOwner([System.Security.Principal.SecurityIdentifier])
+
+        if ($dirAcl.AreAccessRulesProtected -and $ownerSid.Equals($adminSid)) {
             $script:PassedTests++
-            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks permission inheritance on directories" -ForegroundColor Green
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks inheritance and sets Builtin Administrators owner on directories" -ForegroundColor Green
         } else {
             $script:FailedTests++
-            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed to break inheritance on directories" -ForegroundColor Red
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed inheritance or owner assertion on directories (Owner: $ownerSid)" -ForegroundColor Red
         }
     }
     catch {
         $script:FailedTests++
         Write-Host "  [FAIL] Set-ServyHardenedFileAcl threw exception on directory: $_" -ForegroundColor Red
     }
+
+	# Test Bracketed / Literal Path ACL Hardening
+    $script:TotalTests++
+    try {
+        [void][System.IO.Directory]::CreateDirectory($bracketTestDir)
+        Set-ServyHardenedFileAcl -Path $bracketTestDir -IsDirectory
+
+        $bracketAcl = if ($PSVersionTable.PSVersion.Major -ge 3) {
+            Get-Acl -LiteralPath $bracketTestDir
+        } else {
+            [System.IO.Directory]::GetAccessControl($bracketTestDir)
+        }
+
+        if ($bracketAcl.AreAccessRulesProtected) {
+            $script:PassedTests++
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl safely hardens paths containing wildcard bracket characters" -ForegroundColor Green
+        } else {
+            $script:FailedTests++
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed to harden bracketed path" -ForegroundColor Red
+        }
+    }
+    catch {
+        $script:FailedTests++
+        Write-Host "  [FAIL] Set-ServyHardenedFileAcl threw exception on bracketed path: $_" -ForegroundColor Red
+    }
 }
 finally {
     if (Test-Path -LiteralPath $tempTestFile) { Remove-Item -LiteralPath $tempTestFile -Force -ErrorAction SilentlyContinue }
     if (Test-Path -LiteralPath $tempTestDir)  { Remove-Item -LiteralPath $tempTestDir -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path -LiteralPath $bracketTestDir) { Remove-Item -LiteralPath $bracketTestDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
 Write-Host ""

@@ -771,7 +771,7 @@ function Set-ServyHardenedFileAcl {
         Transfers object ownership to Builtin Administrators ($adminSid) to revoke implicit WRITE_DAC/READ_CONTROL
         rights from prior owners. Breaks permission inheritance ($isProtected = $true, $preserveInheritance = $false),
         purges all existing ACEs, and grants Full Control exclusively to Builtin Administrators and Local SYSTEM
-        using language-agnostic Well-Known SIDs. Supports wildcard/bracketed paths on PS 2.0+ safely.
+        using language-agnostic Well-Known SIDs. Uses native .NET APIs on PS 2.0 to safely handle literal/bracketed paths.
 
     .PARAMETER Path
         Mandatory literal filesystem path of the target file or directory.
@@ -791,30 +791,35 @@ function Set-ServyHardenedFileAcl {
     $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
     $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
 
-    # PowerShell 3.0+ supports -LiteralPath on Get-Acl/Set-Acl natively.
-    # PowerShell 2.0 requires escaping wildcards (`[` and `]`) for -Path.
+    # 1. Retrieve ACL object safely across PS 2.0 and PS 3.0+
     if ($PSVersionTable.PSVersion.Major -ge 3) {
         $acl = Get-Acl -LiteralPath $Path
     }
     else {
-        # Escape wildcard characters for PS 2.0 -Path binding
-        $escapedPath = [Management.Automation.WildcardPattern]::Escape($Path)
-        $acl = Get-Acl -Path $escapedPath
+        # PowerShell 2.0 fallback: Use native .NET Security objects to bypass Get-Acl wildcard expansion
+        if ($IsDirectory.IsPresent) {
+            $acl = New-Object System.Security.AccessControl.DirectorySecurity
+            $acl.GetSecurityDescriptorBinaryForm() | Out-Null
+            $acl = [System.IO.Directory]::GetAccessControl($Path)
+        }
+        else {
+            $acl = [System.IO.File]::GetAccessControl($Path)
+        }
     }
 
-    # 1. Explicitly set owner to Builtin Administrators group to neutralize pre-existing non-admin ownership (#6692)
+    # 2. Explicitly set owner to Builtin Administrators group to neutralize pre-existing non-admin ownership (#6692)
     $acl.SetOwner($adminSid)
 
-    # 2. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
+    # 3. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
     $acl.SetAccessRuleProtection($true, $false)
 
-    # 3. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
+    # 4. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
     $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
     foreach ($rule in $explicitRules) {
         [void]$acl.RemoveAccessRule($rule)
     }
 
-    # 4. Explicitly grant Full Control exclusively to Administrators and SYSTEM
+    # 5. Explicitly grant Full Control exclusively to Administrators and SYSTEM
     if ($IsDirectory.IsPresent) {
         $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
         $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
@@ -827,11 +832,18 @@ function Set-ServyHardenedFileAcl {
     $acl.SetAccessRule($adminRule)
     $acl.SetAccessRule($systemRule)
 
+    # 6. Apply ACL back to the target file/directory
     if ($PSVersionTable.PSVersion.Major -ge 3) {
         Set-Acl -LiteralPath $Path -AclObject $acl
     }
     else {
-        Set-Acl -Path $escapedPath -AclObject $acl
+        # PowerShell 2.0 fallback: Use native .NET SetAccessControl
+        if ($IsDirectory.IsPresent) {
+            [System.IO.Directory]::SetAccessControl($Path, $acl)
+        }
+        else {
+            [System.IO.File]::SetAccessControl($Path, $acl)
+        }
     }
 }
 
