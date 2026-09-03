@@ -32,7 +32,7 @@
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target binaries/libraries are missing and must be extracted before hardening.
     - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
-    - 4 : Account Error. -TargetAccount could not be resolved by LSA.
+    - 4 : Account Error. -TargetAccount could not be resolved by LSA or is an invalid target.
 
 .PARAMETER TargetAccount
     Mandatory account identifier receiving Read & Execute (for binaries/libraries) or Read (for configuration) permissions. Supported formats:
@@ -69,6 +69,20 @@ $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrato
 if (-not $currentPrincipal.IsInRole($adminRole)) {
     Write-Host "Set-ServyExePermissions.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
     exit 1
+}
+
+function Get-SidDisplayName {
+    <#
+        .SYNOPSIS
+            Translates a SecurityIdentifier to an NTAccount display string with fallback to raw SID.
+    #>
+    param([System.Security.Principal.SecurityIdentifier]$Sid)
+    try {
+        return $Sid.Translate([System.Security.Principal.NTAccount]).Value
+    }
+    catch {
+        return $Sid.Value
+    }
 }
 
 function Test-ServyAdminGroupMember {
@@ -217,6 +231,7 @@ try {
 
     if ($null -eq $targetNTAccount) {
         Write-Host "Account '$TargetAccount' could not be resolved on this machine or domain." -ForegroundColor Red
+        Write-Host "Use the form shown by services.msc (e.g., 'LocalService', 'NT AUTHORITY\LocalService', 'DOMAIN\svc-servy', or 'DOMAIN\gMSAAccount$')." -ForegroundColor Red
         exit 4
     }
 
@@ -226,6 +241,13 @@ try {
     $builtinUsersSid    = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
     $authUsersSid       = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
     $everyoneSid        = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::WorldSid, $null)
+
+    # Refuse broad unprivileged groups that step 2 exists to purge
+    if ($targetSid.Equals($everyoneSid) -or $targetSid.Equals($builtinUsersSid) -or $targetSid.Equals($authUsersSid)) {
+        Write-Host "Account '$TargetAccount' is a broad unprivileged group that this script exists to remove." -ForegroundColor Red
+        Write-Host "Specify the specific service runner account instead." -ForegroundColor Red
+        exit 4
+    }
 
     # A target that is a MEMBER of BUILTIN\Administrators (not just equal to it) still inherits FullControl
     # via the group ACE granted in step 3, regardless of any explicit ReadAndExecute/Read ACE written below.
@@ -296,12 +318,10 @@ try {
 
             $acl = Get-Acl -Path $filePath
 
-            # Audit owner changes prior to setting Builtin Administrators owner
+            # Inspect previous owner prior to setting Builtin Administrators owner
             $previousOwnerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
-            if (-not $previousOwnerSid.Equals($adminSid)) {
-                $previousOwnerName = try { $previousOwnerSid.Translate([System.Security.Principal.NTAccount]).Value } catch { $previousOwnerSid.Value }
-                Write-Host "  [Owner] replaced '$previousOwnerName' -> 'BUILTIN\Administrators'" -ForegroundColor Cyan
-            }
+            $ownerChanged = -not $previousOwnerSid.Equals($adminSid)
+            $previousOwnerName = if ($ownerChanged) { Get-SidDisplayName $previousOwnerSid } else { $null }
 
             # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
             $acl.SetOwner($adminSid)
@@ -353,6 +373,11 @@ try {
             # Commit ACL to disk
             Set-Acl -Path $filePath -AclObject $acl
 
+            # Audit owner replacement only AFTER successful Set-Acl commit
+            if ($ownerChanged) {
+                Write-Host "  [Owner] replaced '$previousOwnerName' -> 'BUILTIN\Administrators'" -ForegroundColor Cyan
+            }
+
             # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
             $postAcl = Get-Acl -Path $filePath
             $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
@@ -362,7 +387,7 @@ try {
 
             foreach ($rule in $survivingRules) {
                 $sid = $rule.IdentityReference
-                $name = try { $sid.Translate([System.Security.Principal.NTAccount]).Value } catch { $sid.Value }
+                $name = Get-SidDisplayName $sid
 
                 if ($sid.Equals($targetSid)) {
                     $appliedTargetRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
