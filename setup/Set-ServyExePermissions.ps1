@@ -28,7 +28,7 @@
     - appsettings.restarter.json
 
     EXIT CODES:
-    - 0 : Success. All present target executables and configuration files were successfully hardened.
+    - 0 : Success. All target files were present and successfully hardened.
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target executables are missing and must be extracted before hardening.
     - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
