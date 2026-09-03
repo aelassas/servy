@@ -671,7 +671,10 @@ namespace Servy.Core.UnitTests.Validation
             {
                 Assert.True(result.IsValid);
                 Assert.NotNull(result.ValidPath);
-                Assert.Equal(filePath, result.ValidPath!.ResolvedPath);
+                // ResolvedPath is the kernel-resolved target (GetFinalPathNameByHandle), not the caller's string:
+                // 8.3 components such as C:\Users\RUNNER~1 are expanded, so assert same file rather than same text.
+                Assert.Equal(Path.GetFileName(filePath), Path.GetFileName(result.ValidPath!.ResolvedPath));
+                Assert.True(File.Exists(result.ValidPath.ResolvedPath));
                 using (var reader = new StreamReader(stream!))
                 {
                     Assert.Equal(fileContent, reader.ReadToEnd());
