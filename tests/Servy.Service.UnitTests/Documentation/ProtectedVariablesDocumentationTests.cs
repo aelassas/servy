@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Servy.Service.UnitTests.Documentaion
+namespace Servy.Service.UnitTests.Documentation
 {
     /// <summary>
     /// Verifies that the set of protected environment variables in code aligns
@@ -50,6 +50,7 @@ namespace Servy.Service.UnitTests.Documentaion
 
                 // 2. Extract variable names strictly from the 2nd column of each markdown table row
                 var documentedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var documentedList = new List<string>(); // every backticked name, duplicates included
                 var backtickRegex = new Regex(@"`([^`]+)`", RegexOptions.Compiled);
 
                 using (var reader = new StringReader(sectionArea))
@@ -74,6 +75,7 @@ namespace Servy.Service.UnitTests.Documentaion
                                     var varName = match.Groups[1].Value.Trim();
                                     if (!string.IsNullOrWhiteSpace(varName))
                                     {
+                                        documentedList.Add(varName);
                                         documentedVariables.Add(varName);
                                     }
                                 }
@@ -101,7 +103,13 @@ namespace Servy.Service.UnitTests.Documentaion
                     $"Variables documented in '### Protected Variables' section but MISSING from code implementation ({missingFromCode.Count}): {string.Join(", ", missingFromCode)}"
                 );
 
-                Assert.Equal(actualProtectedVariables.Count, documentedVariables.Count);
+                // 5. The two Except checks above already imply equal cardinality of the two sets, so a
+                // count comparison between them cannot fail. What CAN drift is a variable listed twice in
+                // the wiki table, which the HashSet would silently collapse - count before de-duplicating.
+                Assert.True(
+                    documentedList.Count == documentedVariables.Count,
+                    $"A protected variable is listed more than once in the wiki table: {string.Join(", ", documentedList.GroupBy(v => v, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).Select(g => g.Key))}"
+                );
             }
         }
     }
