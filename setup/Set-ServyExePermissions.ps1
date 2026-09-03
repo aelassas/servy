@@ -32,6 +32,7 @@
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target executables are missing and must be extracted before hardening.
     - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
+    - 4 : Account Error. -TargetAccount could not be resolved by LSA.
 
 .PARAMETER TargetAccount
     Mandatory account identifier receiving Read & Execute (for executables) or Read (for configurations) permissions. Supported formats:
@@ -155,264 +156,277 @@ function Test-ServyAdminGroupMember {
     }
 }
 
-# Modern .NET target file definitions
-$exeNames = @(
-    'Servy.Service.exe',
-    'Servy.Service.CLI.exe',
-    'Servy.Restarter.exe'
-)
-
-$isArm64 = ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') -or ($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64')
-
-if ($isArm64) {
-    $exeNames += 'handle64a.exe'
-} else {
-    $exeNames += 'handle64.exe'
-}
-
-$configNames = @(
-    'appsettings.service.json',
-    'appsettings.restarter.json'
-)
-
-$programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
-
-if (-not (Test-Path -Path $programDataDir)) {
-    Write-Warning "Directory '$programDataDir' does not exist. No changes applied."
-    Write-Warning "Start the service once so %ProgramData%\Servy and its binaries are extracted, then RE-RUN this script."
-    exit 2
-}
-
-# Dynamically validate and resolve account existence via Windows LSA.
-# First attempt: Direct LSA translation handles built-in principals, domain accounts, and standard formats.
-$targetNTAccount = $null
-$targetSid       = $null
 try {
-    $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($TargetAccount)
-    $targetSid          = $ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
-    $targetNTAccount    = $ntAccountCandidate
-}
-catch {
-    # Second attempt: Fall back for relative notation ('.\User') pointing to a local machine account
-    if ($TargetAccount.StartsWith(".\")) {
-        $localUser = "$env:COMPUTERNAME\" + $TargetAccount.Substring(2)
-        try {
-            $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($localUser)
-            $targetSid          = $ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
-            $targetNTAccount    = $ntAccountCandidate
-            $TargetAccount       = $localUser
-        }
-        catch {
-            # Let fallback fail through to final error handler below
-        }
-    }
-}
+    # Modern .NET target file definitions
+    $exeNames = @(
+        'Servy.Service.exe',
+        'Servy.Service.CLI.exe',
+        'Servy.Restarter.exe'
+    )
 
-if ($null -eq $targetNTAccount) {
-    throw "Account '$TargetAccount' could not be resolved on this machine or domain. " +
-          "Use the form shown by services.msc (e.g., 'LocalService', 'NT AUTHORITY\LocalService', " +
-          "'DOMAIN\svc-servy', or 'DOMAIN\gMSAAccount$')."
-}
+    $configNames = @(
+        'appsettings.service.json',
+        'appsettings.restarter.json'
+    )
 
-# Define Well-Known SIDs for language-agnostic administrative control
-$adminSid           = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-$systemSid          = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-$builtinUsersSid    = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
-$authUsersSid       = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
-$everyoneSid        = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::WorldSid, $null)
+    $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
 
-# A target that is a MEMBER of BUILTIN\Administrators (not just equal to it) still inherits FullControl
-# via the group ACE granted in step 3, regardless of any explicit ReadAndExecute/Read ACE written below.
-$targetIsAdminMember = $null
-if (-not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
-    $targetIsAdminMember = Test-ServyAdminGroupMember -AccountName $TargetAccount -Sid $targetSid -AdminSid $adminSid
-}
-
-if ($targetIsAdminMember -eq $true) {
-    Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
-    Write-Host "          Its effective access will be FullControl, not the ReadAndExecute/Read this script writes." -ForegroundColor Cyan
-    Write-Host "          Use a non-administrative service account for the trust boundary this script establishes." -ForegroundColor Cyan
-}
-elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
-    Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access after hardening."
-}
-
-Write-Host "Securing Servy executable and configuration files in: $programDataDir" -ForegroundColor Cyan
-Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
-
-$targetFiles = @()
-
-foreach ($exe in $exeNames) {
-    $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
-}
-
-foreach ($cfg in $configNames) {
-    $targetFiles += @{ Name = $cfg; Rights = "Read" }
-}
-
-$hardened       = @()
-$missing        = @()
-$failed         = @()
-$skippedConfigs = @()
-
-foreach ($item in $targetFiles) {
-    $fileName       = $item.Name
-    $requiredRights = $item.Rights
-    $filePath       = [System.IO.Path]::Combine($programDataDir, $fileName)
-
-    if (-not (Test-Path -Path $filePath)) {
-        if ($configNames -contains $fileName) {
-            Write-Host "Skipping hardening for missing configuration file '$fileName'." -ForegroundColor Yellow
-            $skippedConfigs += $fileName
-        } else {
-            $missing += $fileName
-        }
-        continue
+    if (-not (Test-Path -Path $programDataDir)) {
+        Write-Warning "Directory '$programDataDir' does not exist. No changes applied."
+        Write-Warning "Start the service once so %ProgramData%\Servy and its binaries are extracted, then RE-RUN this script."
+        exit 2
     }
 
+    # Determine handle executable name based on actual presence in %ProgramData%\Servy (#6472)
+    # Drops environment variable prediction to guarantee correct probe across all host architectures and emulated shell sessions.
+    $handleA64Path = [System.IO.Path]::Combine($programDataDir, 'handle64a.exe')
+    $handleX64Path = [System.IO.Path]::Combine($programDataDir, 'handle64.exe')
+
+    if (Test-Path -Path $handleA64Path) {
+        $exeNames += 'handle64a.exe'
+    }
+    elseif (Test-Path -Path $handleX64Path) {
+        $exeNames += 'handle64.exe'
+    }
+    else {
+        # Neither handle binary is present on disk yet
+        $exeNames += 'handle64.exe / handle64a.exe'
+    }
+
+    # Dynamically validate and resolve account existence via Windows LSA.
+    # First attempt: Direct LSA translation handles built-in principals, domain accounts, and standard formats.
+    $targetNTAccount = $null
+    $targetSid        = $null
     try {
-        Write-Host "Hardening permissions on '$fileName' ($requiredRights)..." -ForegroundColor Green
-
-        $acl = Get-Acl -LiteralPath $filePath
-
-        # Audit owner changes prior to setting Builtin Administrators owner
-        $previousOwnerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
-        if (-not $previousOwnerSid.Equals($adminSid)) {
-            $previousOwnerName = try { $previousOwnerSid.Translate([System.Security.Principal.NTAccount]).Value } catch { $previousOwnerSid.Value }
-            Write-Host "  [Owner] replaced '$previousOwnerName' -> 'BUILTIN\Administrators'" -ForegroundColor Cyan
-        }
-
-        # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
-        $acl.SetOwner($adminSid)
-
-        # 1. Break inheritance and remove inherited permissions in 1 pass ($isProtected = $true, $preserveInheritance = $false)
-        $acl.SetAccessRuleProtection($true, $false)
-
-        # 2. Purge explicit grants for broad unprivileged groups (Users, Authenticated Users, Everyone)
-        # and explicit rules for the target account to ensure a clean state before applying required rights.
-        # Manual explicit ACEs for custom third-party principals are intentionally preserved.
-        $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-        foreach ($rule in $explicitRules) {
-            $ruleSid = $rule.IdentityReference
-            if ($ruleSid.Equals($targetSid) -or (
-                $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and (
-                    $ruleSid.Equals($builtinUsersSid) -or
-                    $ruleSid.Equals($authUsersSid) -or
-                    $ruleSid.Equals($everyoneSid)
-                )
-            )) {
-                [void]$acl.RemoveAccessRule($rule)
-            }
-        }
-
-        # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-        $acl.SetAccessRule($adminRule)
-        $acl.SetAccessRule($systemRule)
-
-        # 4. Grant explicit ReadAndExecute or Read access to target account
-        if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
-            Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
-        } else {
-            $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-                $targetNTAccount,
-                $requiredRights,
-                "Allow"
-            )
-            $acl.SetAccessRule($targetRule)
-
-            # The explicit ACE above does NOT establish the trust boundary if the target is also a member
-            # of BUILTIN\Administrators: that group ACE (step 3) grants FullControl and always wins.
-            if ($targetIsAdminMember -eq $true) {
-                Write-Host "  [WARNING] '$TargetAccount' is a member of BUILTIN\Administrators; effective access is FullControl, not $requiredRights." -ForegroundColor Cyan
-            }
-        }
-
-        # Commit ACL to disk
-        Set-Acl -LiteralPath $filePath -AclObject $acl
-
-        # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
-        $postAcl = Get-Acl -LiteralPath $filePath
-        $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-        $manualAllowRules = @()
-        $manualDenyRules  = @()
-        $appliedTargetRules = @()
-
-        foreach ($rule in $survivingRules) {
-            $sid = $rule.IdentityReference
-            $name = try { $sid.Translate([System.Security.Principal.NTAccount]).Value } catch { $sid.Value }
-
-            if ($sid.Equals($targetSid)) {
-                $appliedTargetRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
-            }
-            elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
-                $ruleEntry = "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
-                if ($rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Deny) {
-                    $manualDenyRules += $ruleEntry
-                } else {
-                    $manualAllowRules += $ruleEntry
-                }
-            }
-        }
-
-        foreach ($tRule in $appliedTargetRules) {
-            if ($targetIsAdminMember -eq $true) {
-                Write-Host "  [Target Granted] $tRule (WARNING: effective access is FullControl via BUILTIN\Administrators membership)" -ForegroundColor Cyan
-            } else {
-                Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
-            }
-        }
-
-        if ($manualAllowRules.Count -gt 0) {
-            Write-Host "  [Note] Preserved manual explicit ACE(s) (Users & Groups) on '$fileName':" -ForegroundColor Yellow
-            foreach ($mRule in $manualAllowRules) {
-                Write-Host "    - $mRule" -ForegroundColor Yellow
-            }
-        }
-
-        if ($manualDenyRules.Count -gt 0) {
-            Write-Host "  [WARNING] Preserved manual explicit Deny ACE(s) on '$fileName':" -ForegroundColor Red
-            foreach ($dRule in $manualDenyRules) {
-                Write-Host "    - $dRule" -ForegroundColor Red
-            }
-        }
-
-        Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
-        $hardened += $fileName
+        $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($TargetAccount)
+        $targetSid          = $ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
+        $targetNTAccount    = $ntAccountCandidate
     }
     catch {
-        Write-Host "FAILED to harden '$fileName': $_" -ForegroundColor Red
-        $failed += $fileName
+        # Second attempt: Fall back for relative notation ('.\User') pointing to a local machine account
+        if ($TargetAccount.StartsWith(".\")) {
+            $localUser = "$env:COMPUTERNAME\" + $TargetAccount.Substring(2)
+            try {
+                $ntAccountCandidate = New-Object System.Security.Principal.NTAccount($localUser)
+                $targetSid          = $ntAccountCandidate.Translate([System.Security.Principal.SecurityIdentifier])
+                $targetNTAccount    = $ntAccountCandidate
+                $TargetAccount       = $localUser
+            }
+            catch {
+                # Let fallback fail through to final error handler below
+            }
+        }
+    }
+
+    if ($null -eq $targetNTAccount) {
+        Write-Host "Account '$TargetAccount' could not be resolved on this machine or domain." -ForegroundColor Red
+        exit 4
+    }
+
+    # Define Well-Known SIDs for language-agnostic administrative control
+    $adminSid           = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    $systemSid          = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+    $builtinUsersSid    = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
+    $authUsersSid       = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
+    $everyoneSid        = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::WorldSid, $null)
+
+    # A target that is a MEMBER of BUILTIN\Administrators (not just equal to it) still inherits FullControl
+    # via the group ACE granted in step 3, regardless of any explicit ReadAndExecute/Read ACE written below.
+    $targetIsAdminMember = $null
+    if (-not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+        $targetIsAdminMember = Test-ServyAdminGroupMember -AccountName $TargetAccount -Sid $targetSid -AdminSid $adminSid
+    }
+
+    if ($targetIsAdminMember -eq $true) {
+        Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
+        Write-Host "          Its effective access will be FullControl, not the ReadAndExecute/Read this script writes." -ForegroundColor Cyan
+        Write-Host "          Use a non-administrative service account for the trust boundary this script establishes." -ForegroundColor Cyan
+    }
+    elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+        Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access after hardening."
+    }
+
+    Write-Host "Securing Servy executable and configuration files in: $programDataDir" -ForegroundColor Cyan
+    Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
+
+    $targetFiles = @()
+
+    foreach ($exe in $exeNames) {
+        $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
+    }
+
+    foreach ($cfg in $configNames) {
+        $targetFiles += @{ Name = $cfg; Rights = "Read" }
+    }
+
+    $hardened       = @()
+    $missing        = @()
+    $failed         = @()
+    $skippedConfigs = @()
+
+    foreach ($item in $targetFiles) {
+        $fileName       = $item.Name
+        $requiredRights = $item.Rights
+        $filePath       = [System.IO.Path]::Combine($programDataDir, $fileName)
+
+        if (-not (Test-Path -Path $filePath)) {
+            if ($configNames -contains $fileName) {
+                Write-Host "Skipping hardening for missing configuration file '$fileName'." -ForegroundColor Yellow
+                $skippedConfigs += $fileName
+            } else {
+                $missing += $fileName
+            }
+            continue
+        }
+
+        try {
+            Write-Host "Hardening permissions on '$fileName' ($requiredRights)..." -ForegroundColor Green
+
+            $acl = Get-Acl -LiteralPath $filePath
+
+            # Audit owner changes prior to setting Builtin Administrators owner
+            $previousOwnerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
+            if (-not $previousOwnerSid.Equals($adminSid)) {
+                $previousOwnerName = try { $previousOwnerSid.Translate([System.Security.Principal.NTAccount]).Value } catch { $previousOwnerSid.Value }
+                Write-Host "  [Owner] replaced '$previousOwnerName' -> 'BUILTIN\Administrators'" -ForegroundColor Cyan
+            }
+
+            # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
+            $acl.SetOwner($adminSid)
+
+            # 1. Break inheritance and remove inherited permissions in 1 pass ($isProtected = $true, $preserveInheritance = $false)
+            $acl.SetAccessRuleProtection($true, $false)
+
+            # 2. Purge explicit grants for broad unprivileged groups (Users, Authenticated Users, Everyone)
+            # and explicit rules for the target account to ensure a clean state before applying required rights.
+            # Manual explicit ACEs for custom third-party principals are intentionally preserved.
+            $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+            foreach ($rule in $explicitRules) {
+                $ruleSid = $rule.IdentityReference
+                if ($ruleSid.Equals($targetSid) -or (
+                    $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and (
+                        $ruleSid.Equals($builtinUsersSid) -or
+                        $ruleSid.Equals($authUsersSid) -or
+                        $ruleSid.Equals($everyoneSid)
+                    )
+                )) {
+                    [void]$acl.RemoveAccessRule($rule)
+                }
+            }
+
+            # 3. Ensure SYSTEM and Administrators retain Full Control via SIDs
+            $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+            $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+            $acl.SetAccessRule($adminRule)
+            $acl.SetAccessRule($systemRule)
+
+            # 4. Grant explicit ReadAndExecute or Read access to target account
+            if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
+                Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
+            } else {
+                $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                    $targetNTAccount,
+                    $requiredRights,
+                    "Allow"
+                )
+                $acl.SetAccessRule($targetRule)
+
+                # The explicit ACE above does NOT establish the trust boundary if the target is also a member
+                # of BUILTIN\Administrators: that group ACE (step 3) grants FullControl and always wins.
+                if ($targetIsAdminMember -eq $true) {
+                    Write-Host "  [WARNING] '$TargetAccount' is a member of BUILTIN\Administrators; effective access is FullControl, not $requiredRights." -ForegroundColor Cyan
+                }
+            }
+
+            # Commit ACL to disk
+            Set-Acl -LiteralPath $filePath -AclObject $acl
+
+            # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
+            $postAcl = Get-Acl -LiteralPath $filePath
+            $survivingRules = $postAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+            $manualAllowRules = @()
+            $manualDenyRules  = @()
+            $appliedTargetRules = @()
+
+            foreach ($rule in $survivingRules) {
+                $sid = $rule.IdentityReference
+                $name = try { $sid.Translate([System.Security.Principal.NTAccount]).Value } catch { $sid.Value }
+
+                if ($sid.Equals($targetSid)) {
+                    $appliedTargetRules += "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+                }
+                elseif (-not ($sid.Equals($adminSid) -or $sid.Equals($systemSid))) {
+                    $ruleEntry = "$name [$($rule.FileSystemRights) - $($rule.AccessControlType)]"
+                    if ($rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Deny) {
+                        $manualDenyRules += $ruleEntry
+                    } else {
+                        $manualAllowRules += $ruleEntry
+                    }
+                }
+            }
+
+            foreach ($tRule in $appliedTargetRules) {
+                if ($targetIsAdminMember -eq $true) {
+                    Write-Host "  [Target Granted] $tRule (WARNING: effective access is FullControl via BUILTIN\Administrators membership)" -ForegroundColor Cyan
+                } else {
+                    Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
+                }
+            }
+
+            if ($manualAllowRules.Count -gt 0) {
+                Write-Host "  [Note] Preserved manual explicit ACE(s) (Users & Groups) on '$fileName':" -ForegroundColor Yellow
+                foreach ($mRule in $manualAllowRules) {
+                    Write-Host "    - $mRule" -ForegroundColor Yellow
+                }
+            }
+
+            if ($manualDenyRules.Count -gt 0) {
+                Write-Host "  [WARNING] Preserved manual explicit Deny ACE(s) on '$fileName':" -ForegroundColor Red
+                foreach ($dRule in $manualDenyRules) {
+                    Write-Host "    - $dRule" -ForegroundColor Red
+                }
+            }
+
+            Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
+            $hardened += $fileName
+        }
+        catch {
+            Write-Host "FAILED to harden '$fileName': $_" -ForegroundColor Red
+            $failed += $fileName
+        }
+    }
+
+    Write-Host "`nHardened $($hardened.Count) of $($targetFiles.Count) files." -ForegroundColor Cyan
+
+    if ($skippedConfigs.Count -gt 0) {
+        Write-Host "Skipped configuration file(s) (not present): $($skippedConfigs -join ', ')" -ForegroundColor Yellow
+    }
+
+    if ($failed.Count -gt 0) {
+        Write-Warning ("Hardening failed on: {0}" -f ($failed -join ', '))
+        Write-Warning "Check file locks, permissions, or system security settings before re-running this script."
+        exit 3
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Warning ("Not hardened (missing): {0}" -f ($missing -join ', '))
+        Write-Warning "These files will inherit Modify access from '$programDataDir' when Servy creates them."
+        Write-Warning "Start the service once so every binary is extracted, then RE-RUN this script."
+        exit 2
+    }
+
+    Write-Host "Executable and configuration permission hardening complete." -ForegroundColor Green
+
+    if ($targetIsAdminMember -eq $true) {
+        Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
+        Write-Host "          The explicit ACEs written above do NOT establish the single trust boundary this" -ForegroundColor Cyan
+        Write-Host "          script promises. Use a non-administrative service account instead." -ForegroundColor Cyan
+    }
+    elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+        Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access."
     }
 }
-
-Write-Host "`nHardened $($hardened.Count) of $($targetFiles.Count) files." -ForegroundColor Cyan
-
-if ($skippedConfigs.Count -gt 0) {
-    Write-Host "Skipped configuration file(s) (not present): $($skippedConfigs -join ', ')" -ForegroundColor Yellow
-}
-
-if ($failed.Count -gt 0) {
-    Write-Warning ("Hardening failed on: {0}" -f ($failed -join ', '))
-    Write-Warning "Check file locks, permissions, or system security settings before re-running this script."
+catch {
+    Write-Host "Unhandled error during execution: $_" -ForegroundColor Red
     exit 3
-}
-
-if ($missing.Count -gt 0) {
-    Write-Warning ("Not hardened (missing): {0}" -f ($missing -join ', '))
-    Write-Warning "These files will inherit Modify access from '$programDataDir' when Servy creates them."
-    Write-Warning "Start the service once so every binary is extracted, then RE-RUN this script."
-    exit 2
-}
-
-Write-Host "Executable and configuration permission hardening complete." -ForegroundColor Green
-
-if ($targetIsAdminMember -eq $true) {
-    Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
-    Write-Host "          The explicit ACEs written above do NOT establish the single trust boundary this" -ForegroundColor Cyan
-    Write-Host "          script promises. Use a non-administrative service account instead." -ForegroundColor Cyan
-}
-elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
-    Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access."
 }
