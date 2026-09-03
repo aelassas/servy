@@ -30,7 +30,7 @@
     EXIT CODES:
     - 0 : Success. All present target files were successfully hardened.
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
-    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target binaries/libraries/configs are missing and must be extracted before hardening.
+    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target binaries/libraries are missing and must be extracted before hardening.
     - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
 
 .PARAMETER TargetAccount
@@ -68,6 +68,101 @@ $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrato
 if (-not $currentPrincipal.IsInRole($adminRole)) {
     Write-Host "Set-ServyExePermissions.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
     exit 1
+}
+
+function Test-ServyAdminGroupMember {
+    <#
+        .SYNOPSIS
+            Determines whether a SID is a member of BUILTIN\Administrators (not merely equal to it).
+
+        .DESCRIPTION
+            Step 4's ACL logic only special-cases a target that IS BUILTIN\Administrators or SYSTEM.
+            A named account that is merely a MEMBER of Administrators still inherits FullControl via
+            the group ACE granted in step 3, regardless of any explicit ReadAndExecute/Read ACE written
+            for that account. This function checks for that membership so the script can report the
+            true effective access instead of the explicit ACE it just wrote.
+
+            Returns $true (confirmed member), $false (confirmed not a member), or $null (could not be
+            determined - e.g. gMSA or remote accounts that cannot be impersonated for an S4U check, or
+            an unreachable/RODC-limited domain controller for the WinNT fallback).
+
+        .PARAMETER AccountName
+            The account identifier as supplied by the caller (e.g. 'DOMAIN\User', 'LocalService').
+
+        .PARAMETER Sid
+            The resolved SecurityIdentifier for AccountName.
+
+        .PARAMETER AdminSid
+            The well-known SecurityIdentifier for BUILTIN\Administrators.
+    #>
+    param(
+        [string]$AccountName,
+        [System.Security.Principal.SecurityIdentifier]$Sid,
+        [System.Security.Principal.SecurityIdentifier]$AdminSid
+    )
+
+    # Fast path: construct a token for the account and ask it directly. This is the only check that
+    # correctly follows nested domain/global group membership, but it requires the "Act as part of the
+    # operating system" privilege and S4U logon support, so it fails for gMSAs and many service accounts.
+    try {
+        $identity = New-Object System.Security.Principal.WindowsIdentity($AccountName)
+        try {
+            $principal = New-Object System.Security.Principal.WindowsPrincipal($identity)
+            return $principal.IsInRole($AdminSid)
+        }
+        finally {
+            $identity.Dispose()
+        }
+    }
+    catch {
+        # Expected for gMSA/service accounts and most non-interactive principals; fall back below.
+    }
+
+    # Fallback: enumerate the local Administrators group's members via ADSI and compare SIDs directly.
+    # This only sees direct members of the local group (no recursive nested-group expansion), but it
+    # requires no special privilege and works for domain accounts added directly to the local group.
+    try {
+        # Resolve the group's CURRENT name from its well-known SID rather than assuming the literal
+        # string "Administrators": the built-in group is commonly renamed as a hardening measure, and
+        # the WinNT provider binds by name, not by well-known SID.
+        $adminGroupName = "Administrators"
+        try {
+            $resolvedName = $AdminSid.Translate([System.Security.Principal.NTAccount]).Value
+            $adminGroupName = $resolvedName -replace '^.*\\', ''
+        }
+        catch {
+            # Translation failed; fall back to the default English name below.
+        }
+
+        $adminGroup = [ADSI]"WinNT://./$adminGroupName,group"
+        foreach ($member in $adminGroup.Invoke("Members")) {
+            try {
+                # Retrieve byte array objectSID directly from ADSI object or compare WinNT Path
+                $sidBytes = $member.GetType().InvokeMember("objectSID", [System.Reflection.BindingFlags]::GetProperty, $null, $member, $null)
+                if ($null -ne $sidBytes) {
+                    $memberSid = New-Object System.Security.Principal.SecurityIdentifier($sidBytes, 0)
+                    if ($memberSid.Equals($Sid)) {
+                        return $true
+                    }
+                }
+            }
+            catch {
+                # Fall back to ADSI WinNT AdsPath string comparison if objectSID is inaccessible
+                try {
+                    $adsPath = $member.GetType().InvokeMember("AdsPath", [System.Reflection.BindingFlags]::GetProperty, $null, $member, $null)
+                    if ($adsPath -like "*/$($AccountName.Replace('\', '/'))" -or $adsPath -like "*/$($Sid.Value)") {
+                        return $true
+                    }
+                }
+                catch { }
+            }
+        }
+        return $false
+    }
+    catch {
+        Write-Warning "Unable to enumerate local Administrators group membership for '$AccountName': $_"
+        return $null
+    }
 }
 
 # .NET Framework 4.8 executable target list
@@ -131,6 +226,22 @@ $builtinUsersSid    = New-Object System.Security.Principal.SecurityIdentifier([S
 $authUsersSid       = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
 $everyoneSid        = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::WorldSid, $null)
 
+# A target that is a MEMBER of BUILTIN\Administrators (not just equal to it) still inherits FullControl
+# via the group ACE granted in step 3, regardless of any explicit ReadAndExecute/Read ACE written below.
+$targetIsAdminMember = $null
+if (-not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+    $targetIsAdminMember = Test-ServyAdminGroupMember -AccountName $TargetAccount -Sid $targetSid -AdminSid $adminSid
+}
+
+if ($targetIsAdminMember -eq $true) {
+    Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
+    Write-Host "          Its effective access will be FullControl, not the ReadAndExecute/Read this script writes." -ForegroundColor Cyan
+    Write-Host "          Use a non-administrative service account for the trust boundary this script establishes." -ForegroundColor Cyan
+}
+elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+    Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access after hardening."
+}
+
 # Discover all .dll files in %ProgramData%\Servy (PS 2.0 compatible file discovery without -File flag)
 $dllFiles = Get-ChildItem -Path $programDataDir -Filter "*.dll" -ErrorAction SilentlyContinue |
     Where-Object { -not $_.PSIsContainer } |
@@ -156,9 +267,10 @@ foreach ($cfg in $staticConfigNames) {
 Write-Host "Securing Servy (.NET Framework 4.8) binary, library, and configuration files in: $programDataDir" -ForegroundColor Cyan
 Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
-$hardened = @()
-$missing  = @()
-$failed   = @()
+$hardened       = @()
+$missing        = @()
+$failed         = @()
+$skippedConfigs = @()
 
 foreach ($item in $targetFiles) {
     $fileName       = $item.Name
@@ -169,7 +281,12 @@ foreach ($item in $targetFiles) {
     $filePath = [System.IO.Path]::Combine($programDataDir, $fileName)
 
     if (-not (Test-Path -Path $filePath)) {
-        $missing += $fileName
+        if ($staticConfigNames -contains $fileName) {
+            Write-Host "Skipping hardening for missing configuration file '$fileName'." -ForegroundColor Yellow
+            $skippedConfigs += $fileName
+        } else {
+            $missing += $fileName
+        }
         continue
     }
 
@@ -224,6 +341,12 @@ foreach ($item in $targetFiles) {
                 "Allow"
             )
             $acl.SetAccessRule($targetRule)
+
+            # The explicit ACE above does NOT establish the trust boundary if the target is also a member
+            # of BUILTIN\Administrators: that group ACE (step 3) grants FullControl and always wins.
+            if ($targetIsAdminMember -eq $true) {
+                Write-Host "  [WARNING] '$TargetAccount' is a member of BUILTIN\Administrators; effective access is FullControl, not $requiredRights." -ForegroundColor Cyan
+            }
         }
 
         # Commit ACL to disk
@@ -254,7 +377,11 @@ foreach ($item in $targetFiles) {
         }
 
         foreach ($tRule in $appliedTargetRules) {
-            Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
+            if ($targetIsAdminMember -eq $true) {
+                Write-Host "  [Target Granted] $tRule (WARNING: effective access is FullControl via BUILTIN\Administrators membership)" -ForegroundColor Cyan
+            } else {
+                Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
+            }
         }
 
         if ($manualAllowRules.Count -gt 0) {
@@ -282,6 +409,10 @@ foreach ($item in $targetFiles) {
 
 Write-Host "`nHardened $($hardened.Count) of $($targetFiles.Count) files." -ForegroundColor Cyan
 
+if ($skippedConfigs.Count -gt 0) {
+    Write-Host "Skipped configuration file(s) (not present): $($skippedConfigs -join ', ')" -ForegroundColor Yellow
+}
+
 if ($failed.Count -gt 0) {
     Write-Warning ("Hardening failed on: {0}" -f ($failed -join ', '))
     Write-Warning "Check file locks, permissions, or system security settings before re-running this script."
@@ -296,3 +427,12 @@ if ($missing.Count -gt 0) {
 }
 
 Write-Host "Executable, library, and configuration permission hardening complete." -ForegroundColor Cyan
+
+if ($targetIsAdminMember -eq $true) {
+    Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
+    Write-Host "          The explicit ACEs written above do NOT establish the single trust boundary this" -ForegroundColor Cyan
+    Write-Host "          script promises. Use a non-administrative service account instead." -ForegroundColor Cyan
+}
+elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+    Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access."
+}
