@@ -870,7 +870,11 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                if (!await _serviceConfigurationValidator.ValidateAsync(dto, importMode: true, cancellationToken: cancellationToken)) return;
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto, importMode: true, cancellationToken: cancellationToken))
+                {
+                    Logger.Warn($"{formatName} file '{path}' is not valid.");
+                    return;
+                }
 
                 var existing = await _serviceRepository.GetByNameAsync(dto.Name, decrypt: false, cancellationToken);
                 if (existing != null)
