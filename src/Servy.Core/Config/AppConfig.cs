@@ -1206,6 +1206,11 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int Toolhelp32SnapshotMaxRetries = 5;
 
+        /// <summary>
+        /// The lifetime, in minutes, for pooled HTTP connections used by the heartbeat client.
+        /// </summary>
+        public const int HeartbeatConnectionLifetimeMinutes = 15;
+
         #endregion
 
         #region Manager Configuration Bounds

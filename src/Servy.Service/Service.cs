@@ -98,7 +98,10 @@ namespace Servy.Service
 
         #region Static Fields
 
-        private static readonly HttpClient SharedPingClient = new HttpClient();
+        private static readonly HttpClient SharedPingClient = new HttpClient(new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(AppConfig.HeartbeatConnectionLifetimeMinutes)
+        });
 
         #endregion
 
