@@ -142,11 +142,6 @@ $convertedCount = 0
 $failedCount = 0
 
 foreach ($file in $files) {
-    # Skip the script itself if executed from within the same directory
-    if ($null -ne $scriptPath -and $file.FullName -eq $scriptPath) {
-        continue
-    }
-
     try {
         # Inspect and validate existing encoding strictly to prevent silent non-UTF-8 character corruption
         $sourceEncoding = Get-FileEncoding $file.FullName
