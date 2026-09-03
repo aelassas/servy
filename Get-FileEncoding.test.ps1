@@ -48,7 +48,7 @@ function Assert-Encoding {
 
         # 3. Check endianness if applicable (UTF16 / UTF32)
         if ($encoding -is [System.Text.UnicodeEncoding] -or $encoding -is [System.Text.UTF32Encoding]) {
-            $isBigEndian = [bool](Test-ReflectionField -Object $encoding -FieldName "bigEndian")
+            $isBigEndian = [bool](Get-ReflectionFieldValue -Object $encoding -FieldName "bigEndian")
             if ($isBigEndian -ne $ExpectedBigEndian) {
                 throw "Endianness mismatch: Expected BigEndian=$ExpectedBigEndian, got BigEndian=$isBigEndian"
             }
@@ -86,8 +86,8 @@ function Assert-Encoding {
     }
 }
 
-# Helper to inspect non-public fields for strict object property assertions across .NET Framework and .NET Core/5+
-function Test-ReflectionField {
+# Helper to inspect non-public field values for strict object property assertions across .NET Framework and .NET Core/5+
+function Get-ReflectionFieldValue {
     param([object]$Object, [string]$FieldName)
     $flags = [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic
 
