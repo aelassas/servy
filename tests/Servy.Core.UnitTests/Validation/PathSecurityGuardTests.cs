@@ -403,7 +403,19 @@ namespace Servy.Core.UnitTests.Validation
 
                 // Assert
                 Assert.False(result.IsValid);
+                Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
                 Assert.Null(stream);
+
+                // The stub must actually have been created before the post-resolution check rejected it
+                // (Msg_SecurityProtectedDirectoryExport names the resolved Windows directory). If the runner
+                // cannot create files under System32, the FileStream constructor throws first and the result
+                // carries Msg_SecurityHandleValidationFailed instead: the cleanup branch was never entered,
+                // and File.Exists would be false for a reason this test is not about, so skip rather than pass.
+                string errorMessage = result.ErrorMessage ?? string.Empty;
+                if (errorMessage.IndexOf(winDir, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    Assert.Skip($"Runner cannot create files under {targetDir}; the stub-cleanup branch is unreachable here. Actual: {errorMessage}");
+                }
 
                 // Verify the stub file created during handle resolution was cleaned up upon validation failure.
                 Assert.False(File.Exists(realFilePath), "Rejected export left a stub file behind in the target directory.");
