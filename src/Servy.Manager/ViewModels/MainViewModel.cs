@@ -1100,8 +1100,13 @@ namespace Servy.Manager.ViewModels
 
                 lock (_servicesLock)
                 {
-                    itemToRemove = _services.FirstOrDefault(s => s.Service?.Name == serviceName);
-                    if (itemToRemove == null) return;
+                    itemToRemove = _services.FirstOrDefault(s =>
+                        string.Equals(s.Service?.Name, serviceName, StringComparison.OrdinalIgnoreCase));
+                    if (itemToRemove == null)
+                    {
+                        Logger.Warn($"RemoveService({serviceName}) called, but no matching service found in the collection.");
+                        return;
+                    }
 
                     itemToRemove.PropertyChanged -= Service_PropertyChanged;
                     _services.Remove(itemToRemove);
