@@ -728,7 +728,7 @@ namespace Servy.Service
         /// <summary>
         /// Ensures the restart attempts tracking file exists and retrieves the current counter value safely.
         /// </summary>
-        private async Task<int> EnsureRestartAttemptsFileAsync(CancellationToken ct = default)
+        private async Task<int?> EnsureRestartAttemptsFileAsync(CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return 0;
 
@@ -744,8 +744,8 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
-                return 0;
+                _logger?.Error($"Restart attempts file '{_restartAttemptsFile}' is unreadable ({ex.Message}); the MaxRestartAttempts cap cannot be enforced.");
+                return null;
             }
             finally
             {
@@ -1920,7 +1920,15 @@ namespace Servy.Service
                     if (_maxRestartAttempts > 0)
                     {
                         var ct = _cancellationSource?.Token ?? CancellationToken.None;
-                        currentAttempts = await EnsureRestartAttemptsFileAsync(ct);
+                        var ca = await EnsureRestartAttemptsFileAsync(ct);
+
+                        if(ca == null)
+                        {
+                            _logger?.Error("Failed to read restart attempts from persistent storage. Aborting recovery.");
+                            return;
+                        }
+
+                        currentAttempts = ca.Value;
 
                         if (currentAttempts >= _maxRestartAttempts)
                         {
