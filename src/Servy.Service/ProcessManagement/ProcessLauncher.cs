@@ -553,7 +553,7 @@ namespace Servy.Service.ProcessManagement
             catch (Exception ex)
             {
                 fs?.Dispose();
-                logger.Error($"Disabling {scope} capture for '{exePath}' after open failure: {ex.Message}", ex);
+                logger.Error($"Disabling {scope} capture for '{exePath}' after open failure.", ex);
                 return null;
             }
         }
