@@ -77,18 +77,79 @@ $testCases = @(
 )
 
 # --- Keyword coverage sweep: every entry in $looseKeys and $strictKeys must redact ---
-$allKeys = @(
-    "PASSWORD", "PASSPHRASE", "USERPWD", "TOKEN", "CREDENTIAL", "CLIENT_SECRET",
-    "SECRET", "ACCOUNTKEY", "ACCESSKEY", "SIGNATURE", "CONNECTIONSTRING", "CONNSTR",
-    "DATABASE_URL", "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD", "PRIVATE_KEY",
-    "SSH_KEY", "SECRET_KEY", "API_KEY", "APIKEY", "CERTIFICATE", "THUMBPRINT", "APP_SECRET",
-    "BROWSER_KEY", "WEBHOOK_URL", "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN",
-    "PWD", "PIN", "AUTH", "BEARER", "JWT", "SESSION", "COOKIE", "PAT", "SAS",
-    "SKEY", "TENANT_ID", "DSN", "CERT", "PFX", "PEM", "SALT", "PEPPER", "API"
-)
+# The two lists are locals of Protect-SensitiveString, so dot-sourcing does not expose them.
+# Parse them out of the production script text instead of keeping a hand-synced copy here:
+# a keyword added to the engine is then swept the moment it exists, and a removed one still fails.
+function Get-KeywordListFromScript {
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [Parameter(Mandatory = $true)][string]$VariableName
+    )
 
-foreach ($k in $allKeys) {
-    $testCases += @{ Name = "Keyword coverage: $k"; Input = "$k=hunter2"; Expected = "$k=********" }
+    # The array is terminated by a ')' at the start of its own line. Anchor on that, NOT on
+    # the first ')': the comments inside $looseKeys contain parentheses, so a [^)]* body would
+    # silently capture only the first few keywords and the sweep would still pass.
+    $pattern = '(?sm)\$' + [regex]::Escape($VariableName) + '\s*=\s*@\((?<body>.*?)^\s*\)'
+    $match = [regex]::Match($Text, $pattern)
+    if (-not $match.Success) {
+        throw "Could not locate `$$VariableName in ServySecurity.ps1 - the sweep would silently test nothing."
+    }
+
+    # Drop comments before harvesting the quoted tokens.
+    $body = [regex]::Replace($match.Groups['body'].Value, '#[^\r\n]*', '')
+    $keys = @([regex]::Matches($body, '"(?<k>[^"]+)"') | ForEach-Object { $_.Groups['k'].Value })
+
+    if ($keys.Count -eq 0) {
+        throw "`$$VariableName parsed to an empty list - the sweep would silently test nothing."
+    }
+
+    return $keys
+}
+
+$securityScriptText = Get-Content (Join-Path $PSScriptRoot "ServySecurity.ps1") -Raw
+$engineLooseKeys  = Get-KeywordListFromScript -Text $securityScriptText -VariableName 'looseKeys'
+$engineStrictKeys = Get-KeywordListFromScript -Text $securityScriptText -VariableName 'strictKeys'
+
+# The loose/strict split is the whole design of the masker, so sweep the two lists apart:
+# a bare keyword matches from either list and cannot tell which one it came from.
+foreach ($k in $engineLooseKeys) {
+    if ($engineStrictKeys -contains $k) { throw "Keyword '$k' appears in both `$looseKeys and `$strictKeys." }
+}
+
+# Classification cannot be derived from the engine: a keyword moved between the two lists moves
+# the derived expectation with it and the sweep stays green. Pin the strict set here so that a
+# move fails loudly in either direction. Adding a NEW strict keyword must update this list (that
+# is a deliberate classification decision); adding a loose keyword needs nothing, it is swept
+# straight from the engine.
+$pinnedStrictKeys = @(
+    "PWD", "PIN", "AUTH", "BEARER", "JWT", "SESSION", "COOKIE", "PAT",
+    "SAS", "SKEY", "TENANT_ID", "DSN", "CERT", "PFX", "PEM", "SALT", "PEPPER", "API"
+)
+$strictDrift = @(Compare-Object -ReferenceObject $pinnedStrictKeys -DifferenceObject $engineStrictKeys)
+if ($strictDrift.Count -gt 0) {
+    $detail = ($strictDrift | ForEach-Object { "$($_.InputObject) $($_.SideIndicator)" }) -join ', '
+    throw "Strict keyword classification drift between ServySecurity.ps1 and the pinned list (<= pinned only, => engine only): $detail"
+}
+
+# The 'XX' prefix must not itself complete a loose keyword, or a strict prefixed case would
+# redact for the wrong reason. Assert it rather than assume it.
+foreach ($k in $engineStrictKeys) {
+    foreach ($loose in $engineLooseKeys) {
+        if ("XX$k" -like "*$loose*") { throw "Prefix probe 'XX$k' contains loose keyword '$loose' - pick another prefix." }
+    }
+}
+
+# A loose keyword must redact bare AND behind a letter/digit prefix (PGPASSWORD, APITOKEN).
+foreach ($k in $engineLooseKeys) {
+    $testCases += @{ Name = "Loose keyword bare: $k"; Input = "$k=hunter2"; Expected = "$k=********" }
+    $testCases += @{ Name = "Loose keyword prefixed: $k"; Input = "XX$k=hunter2"; Expected = "XX$k=********" }
+}
+
+# A strict keyword must redact bare but NOT behind a prefix - that boundary is what keeps
+# COMPAT, CONCERT and ARKANSAS out of the masker.
+foreach ($k in $engineStrictKeys) {
+    $testCases += @{ Name = "Strict keyword bare: $k"; Input = "$k=hunter2"; Expected = "$k=********" }
+    $testCases += @{ Name = "Strict keyword prefixed: $k"; Input = "XX$k=hunter2"; Expected = "XX$k=hunter2" }
 }
 
 $passedCount = 0

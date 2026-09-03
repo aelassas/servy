@@ -8,7 +8,6 @@ $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 $configPath = Join-Path $scriptDir "build-config.ps1"
 
-Write-Host "Testing build-config.ps1..." -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host " Running build-config.ps1 Tests                " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
@@ -70,12 +69,24 @@ try {
     # Directory.Build.props and Servy.psd1, so a hand edit to one of the three must fail here.
     $repoRoot = Join-Path $scriptDir '..'
     $expectedFull = "$($cfg.Version).0"
+    $expectedFile = "$expectedFull.0"
+    $propsPath = Join-Path $repoRoot 'Directory.Build.props'
 
     $mirrors = @(
         @{
-            Name    = 'Directory.Build.props'
-            Path    = Join-Path $repoRoot 'Directory.Build.props'
+            Name    = 'Directory.Build.props <Version>'
+            Path    = $propsPath
             Pattern = "<Version>$([regex]::Escape($expectedFull))</Version>"
+        },
+        @{
+            Name    = 'Directory.Build.props <FileVersion>'
+            Path    = $propsPath
+            Pattern = "<FileVersion>$([regex]::Escape($expectedFile))</FileVersion>"
+        },
+        @{
+            Name    = 'Directory.Build.props <AssemblyVersion>'
+            Path    = $propsPath
+            Pattern = "<AssemblyVersion>$([regex]::Escape($expectedFile))</AssemblyVersion>"
         },
         @{
             Name    = 'Servy.psd1'
