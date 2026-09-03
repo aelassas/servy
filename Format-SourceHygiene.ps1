@@ -1,15 +1,16 @@
 ﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
-    Enforces whitespace hygiene (trailing whitespace removal, final newline insertion, and UTF-8 BOM policy) across repository source files.
+    Enforces whitespace hygiene (trailing whitespace removal, final newline insertion, line-ending normalization, and UTF-8 BOM policy) across repository source files.
 
 .DESCRIPTION
     Scans source code, project configurations, PowerShell scripts, YAML workflows, and markdown files
     across the repository (excluding build outputs like bin/obj, version control folders, and generated files like *.g.cs, *.g.i.cs, *.Designer.cs),
-    enforcing three EditorConfig rules:
+    enforcing EditorConfig rules:
     1. Trims trailing whitespace from all lines (trim_trailing_whitespace = true).
     2. Ensures every file ends with a trailing newline (insert_final_newline = true).
-    3. Enforces charset encoding policy (UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, .config; UTF-8 without BOM for all others).
+    3. Normalizes line endings to CRLF (end_of_line = crlf).
+    4. Enforces charset encoding policy (UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, .config; UTF-8 without BOM for all others).
 
     Note: .resx files are explicitly excluded because trailing whitespace within XML <value> elements
     can be meaningful string content. Additionally, trailing whitespace is preserved on .md files to respect
@@ -102,27 +103,30 @@ $filesToScan = Get-ChildItem -Path $baseDir -Recurse -File -ErrorAction Silently
 foreach ($file in $filesToScan) {
     $scannedCount++
     $filePath = $file.FullName
+    $relativePath = $file.FullName.Replace($baseDir, '')
 
     try {
-        # Check 0: Check for UTF-8 Byte Order Mark (BOM: 0xEF, 0xBB, 0xBF)
-        $bytes = [System.IO.File]::ReadAllBytes($filePath)
-        $hasBom = ($bytes.Length -ge 3) -and ($bytes[0] -eq 0xEF) -and ($bytes[1] -eq 0xBB) -and ($bytes[2] -eq 0xBF)
-
-        $wantsBom = $file.Extension -in $bomRequiredExtensions
-        $bomWrong = $hasBom -ne $wantsBom
-
-        # Inspect encoding strictly; throw exception if file contains undecodable non-UTF-8 bytes
+        # Inspect encoding strictly; throw exception if file contains undecodable bytes
         $sourceEncoding = Get-FileEncoding $filePath
         $rawText = [System.IO.File]::ReadAllText($filePath, $sourceEncoding)
+
+        # Check Charset & BOM policy using single-pass Get-FileEncoding result (#6625)
+        $isUtf8   = $sourceEncoding -is [System.Text.UTF8Encoding]
+        $hasBom   = $isUtf8 -and ($sourceEncoding.GetPreamble().Length -eq 3)
+        $wantsBom = $file.Extension -in $bomRequiredExtensions
+        $bomWrong = (-not $isUtf8) -or ($hasBom -ne $wantsBom)
 
         # .editorconfig [*.md] sets trim_trailing_whitespace = false: two trailing
         # spaces are a Markdown hard line break, not stray whitespace.
         $trimAllowed = $file.Extension -ne '.md'
 
-        # Check 1: Missing final newline (CRLF)
-        $lacksFinalNewline = ($rawText.Length -gt 0) -and (-not $rawText.EndsWith("`r`n"))
+        # Check 1: Missing final newline (insert_final_newline = true) (#6612)
+        $lacksFinalNewline = ($rawText.Length -gt 0) -and (-not $rawText.EndsWith("`n"))
 
-        # Check 2: Trailing whitespace per line (derived from in-memory split)
+        # Check 2: Non-CRLF line endings (end_of_line = crlf) (#6612)
+        $hasLfEndings = $rawText.Contains("`n") -and ($rawText -replace "`r`n", '').Contains("`n")
+
+        # Check 3: Trailing whitespace per line (derived from in-memory split)
         $hasTrailingWhitespace = $false
         $lines = $rawText -split "`r?`n"
         $trimmedLines = foreach ($line in $lines) {
@@ -137,10 +141,7 @@ foreach ($file in $filesToScan) {
             }
         }
 
-        if ($hasTrailingWhitespace -or $lacksFinalNewline -or $bomWrong) {
-            $modifiedCount++
-            $relativePath = $file.FullName.Replace($baseDir, '')
-
+        if ($hasTrailingWhitespace -or $lacksFinalNewline -or $hasLfEndings -or $bomWrong) {
             # Build precise issue categorization reasons for reporting
             $reasons = @()
             if ($hasTrailingWhitespace) {
@@ -151,16 +152,24 @@ foreach ($file in $filesToScan) {
                 $newlineOnlyCount++
                 $reasons += "missing final newline"
             }
+            if ($hasLfEndings) {
+                $reasons += "LF line endings"
+            }
             if ($bomWrong) {
                 $bomOnlyCount++
-                $reasons += if ($wantsBom) { "missing UTF-8 BOM" } else { "UTF-8 BOM detected" }
+                if (-not $isUtf8) {
+                    $reasons += "not UTF-8 ($($sourceEncoding.EncodingName))"
+                } else {
+                    $reasons += if ($wantsBom) { "missing UTF-8 BOM" } else { "UTF-8 BOM detected" }
+                }
             }
             $reasonStr = $reasons -join " & "
 
             if ($DryRun) {
+                $modifiedCount++
                 Write-Host "Would format ($reasonStr): $relativePath" -ForegroundColor Yellow
             } else {
-                $encoding = New-Object System.Text.UTF8Encoding($wantsBom)
+                $targetEncoding = New-Object System.Text.UTF8Encoding($wantsBom)
 
                 # Drop trailing empty element produced by splitting text ending with a newline.
                 # Bounded at > 1 (not > 0): a single-element array here is $trimmedLines -eq @(''),
@@ -174,14 +183,19 @@ foreach ($file in $filesToScan) {
                 # A file that is empty, or becomes empty once trailing whitespace is trimmed, needs
                 # no final newline (Check 1 exempts it); rewriting must not add one.
                 $content = if ($body.Length -eq 0) { '' } else { $body + "`r`n" }
-                [System.IO.File]::WriteAllText($filePath, $content, $encoding)
+
+                [System.IO.File]::WriteAllText($filePath, $content, $targetEncoding)
+                $modifiedCount++
                 Write-Host "Formatted ($reasonStr): $relativePath" -ForegroundColor Gray
             }
         }
     }
+    catch [System.Text.DecoderFallbackException] {
+        Write-Warning "Skipped ${relativePath}: undecodable bytes for detected encoding ($($sourceEncoding.WebName)): $_"
+        $failedCount++
+    }
     catch {
-        $relativePath = $file.FullName.Replace($baseDir, '')
-        Write-Warning "Skipped formatting $relativePath due to invalid UTF-8 encoding: $_"
+        Write-Warning "Failed to process ${relativePath}: $_"
         $failedCount++
     }
 }
