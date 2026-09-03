@@ -201,10 +201,11 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void CalculateStartTimeout_PreLaunchMultiplicationOverflow_ClampsToIntMaxValue()
+        public void CalculateStartTimeout_TotalExceedingIntRange_SaturatesToIntMaxValue()
         {
             // Arrange
-            // Passing bounds that exceed int.MaxValue when multiplied to verify saturation logic
+            // The long total (attempts * preLaunchTimeout) exceeds int range; the method must
+            // clamp on the way back to int rather than let the unchecked narrowing wrap.
             int highTimeout = int.MaxValue / 2;
             int highAttempts = 3;
 
@@ -212,7 +213,8 @@ namespace Servy.Core.UnitTests.Helpers
             int result = ServiceHelper.CalculateStartTimeout(30, highTimeout, highAttempts);
 
             // Assert
-            // Verifies the calculation saturates gracefully to int.MaxValue instead of throwing an OverflowException
+            // Without the Math.Min clamp the cast would wrap to a small or negative second count,
+            // and TimeSpan.FromSeconds would then make the start wait expire immediately.
             Assert.Equal(int.MaxValue, result);
         }
 
