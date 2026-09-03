@@ -305,9 +305,14 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public void SaveFile_ValidationFailsOnProtectedFolder_LeavesPreExistingRootUntouched()
+        public void SaveFile_ValidationFailsOnDisallowedExtension_LeavesPreExistingRootUntouched()
         {
             // Arrange
+            // The path is entirely inside the test's own sandbox, so no protected system folder is
+            // involved: what rejects it is the allowed-extension filter (.json/.xml only), which runs
+            // in the ValidatePathOnly pre-flight BEFORE any directory is created. The property under
+            // test is therefore that a rejected save adds nothing next to a pre-existing root and
+            // leaves that root alone.
             var preExistingRoot = Path.Combine(_tempDir, "stable_corporate_root");
             Directory.CreateDirectory(preExistingRoot);
 
@@ -317,30 +322,12 @@ namespace Servy.CLI.UnitTests.Commands
             // Act & Assert
             var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "content"));
 
-            // Assert
-            Assert.False(Directory.Exists(generatedSubDir), "The dynamic folder leaf created during this call should be cleanly rolled back.");
-            Assert.True(Directory.Exists(preExistingRoot), "The pre-existing folder root must remain untouched by our transaction fallback loop.");
-        }
+            // Assert: pin WHICH guard fired, so a future change that starts rejecting this path for a
+            // different reason (or stops rejecting it) fails here instead of passing silently.
+            Assert.Contains(".log", actualEx.Message);
 
-        [Fact]
-        public void SaveFile_DirectoryCreatedButValidationFailsLater_TriggersFinallyFallbackRollback()
-        {
-            // Arrange
-            // We use a path where the directory chain does NOT exist, forcing SaveFile to create it.
-            var deepSubDir = Path.Combine(_tempDir, "finally_coverage_tree", "nested_leaf");
-
-            // We use an invalid file extension (.log). This ensures that the directory creation pass
-            // succeeds completely, populates 'directoriesCreatedByUs', and THEN PathSecurityGuard
-            // rejects the file layout, throwing an ArgumentException!
-            var filePath = Path.Combine(deepSubDir, "validation_failure_target.log");
-
-            // Act & Assert
-            var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "{ }"));
-
-            // Assert: Verify that the fallback mechanism inside the finally block caught the failure,
-            // executed the loop tracking arrays, and cleanly wiped the orphaned directories!
-            Assert.False(Directory.Exists(deepSubDir), "The nested leaf directory should be rolled back via the finally loop.");
-            Assert.False(Directory.Exists(Path.Combine(_tempDir, "finally_coverage_tree")), "The parent directory root should be swept cleanly.");
+            Assert.False(Directory.Exists(generatedSubDir), "No directory should be left behind next to the pre-existing root when the save is rejected.");
+            Assert.True(Directory.Exists(preExistingRoot), "The pre-existing folder root must remain untouched by a rejected save.");
         }
 
         #endregion
