@@ -57,8 +57,10 @@ namespace Servy.Core.UnitTests.Helpers
         public void CalculateStartTimeout_WithTimeoutExactlyEqualToFloor_UsesFloorBaseline()
         {
             // Arrange
-            // Drive the evaluation input directly from the real infrastructure floor constant
-            // to explicitly test the strict '>' boundary rule without relying on fragile magic-number assumptions.
+            // Drive the input from the real floor constant rather than a magic number.
+            // At configuredTimeout == floor both ternary branches yield the floor, so this pins
+            // the returned value at the boundary; the below-floor and above-floor sides are
+            // covered by the two neighbouring tests.
             int exactFloorValue = AppConfig.DefaultServiceStartTimeoutSeconds;
             int preLaunchTimeoutSeconds = 0;
             int expected = exactFloorValue + AppConfig.ScmTimeoutBufferSeconds;
@@ -158,22 +160,32 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             int explicitTimeout = 40;
             int preLaunchTimeout = 5;
-            int highRetryAttempts = 4; // 1 initial attempt + 4 retries = 5 total attempts
+
+            // Dynamically resolve the exact environmental constants used by production code
+            int initialDelayMs = AppConfig.PreLaunchRetryInitialDelayMs;
+            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
+
+            // Enough retries that the per-iteration delay provably crosses the ceiling: the last two
+            // iterations are clamped, so removing the cap in production changes the expected sum.
+            int highRetryAttempts = (int)Math.Ceiling(maxBackoffCapPerIteration * 1000.0 / initialDelayMs) + 2;
 
             int attempts = highRetryAttempts + 1;
             int expectedTotalPreLaunch = attempts * preLaunchTimeout;
 
-            // Dynamically resolve the exact environmental constants used by production code
-            int initialDelaySeconds = AppConfig.PreLaunchRetryInitialDelayMs / 1000;
-            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
+            // Static representation of the loop execution, using the same multiply-then-divide
+            // integer arithmetic as production so the two agree for any initial delay, not only 1000 ms.
+            int expectedTotalBackoff = 0;
+            int clampedIterations = 0;
+            for (int i = 1; i < attempts; i++)
+            {
+                int uncappedBackoff = (i * initialDelayMs) / 1000;
+                if (uncappedBackoff > maxBackoffCapPerIteration)
+                {
+                    clampedIterations++;
+                }
 
-            // Hand-unrolled static representation of the loop execution:
-            // For 4 retries, the loop indexes run precisely through i = 1, 2, 3, 4.
-            int expectedBackoff1 = Math.Min(1 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedBackoff2 = Math.Min(2 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedBackoff3 = Math.Min(3 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedBackoff4 = Math.Min(4 * initialDelaySeconds, maxBackoffCapPerIteration);
-            int expectedTotalBackoff = expectedBackoff1 + expectedBackoff2 + expectedBackoff3 + expectedBackoff4;
+                expectedTotalBackoff += Math.Min(uncappedBackoff, maxBackoffCapPerIteration);
+            }
 
             int expectedTotalTimeout = explicitTimeout + AppConfig.ScmTimeoutBufferSeconds + expectedTotalPreLaunch + expectedTotalBackoff;
 
@@ -184,14 +196,16 @@ namespace Servy.Core.UnitTests.Helpers
                  preLaunchRetryAttempts: highRetryAttempts);
 
             // Assert
+            Assert.True(clampedIterations >= 2, "The arrange step must drive at least two iterations above the cap, otherwise the clamp is not exercised.");
             Assert.Equal(expectedTotalTimeout, actualTimeout);
         }
 
         [Fact]
-        public void CalculateStartTimeout_PreLaunchMultiplicationOverflow_ClampsToIntMaxValue()
+        public void CalculateStartTimeout_TotalExceedingIntRange_SaturatesToIntMaxValue()
         {
             // Arrange
-            // Passing bounds that exceed int.MaxValue when multiplied to verify saturation logic
+            // The long total (attempts * preLaunchTimeout) exceeds int range; the method must
+            // clamp on the way back to int rather than let the unchecked narrowing wrap.
             int highTimeout = int.MaxValue / 2;
             int highAttempts = 3;
 
@@ -199,7 +213,8 @@ namespace Servy.Core.UnitTests.Helpers
             int result = ServiceHelper.CalculateStartTimeout(30, highTimeout, highAttempts);
 
             // Assert
-            // Verifies the calculation saturates gracefully to int.MaxValue instead of throwing an OverflowException
+            // Without the Math.Min clamp the cast would wrap to a small or negative second count,
+            // and TimeSpan.FromSeconds would then make the start wait expire immediately.
             Assert.Equal(int.MaxValue, result);
         }
 
@@ -253,7 +268,8 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void CalculateStopTimeout_WithConfiguredExactlyEqualToFloor_UsesFloorBaseline()
         {
-            // Arrange: Strict '>' boundary test when configuredTimeout equals the floor
+            // Arrange: pins the returned value when configuredTimeout equals the floor
+            // (both ternary branches yield the floor there, so no comparison operator is being tested)
             int floor = AppConfig.DefaultStopTimeout;
             int expected = floor + AppConfig.ScmTimeoutBufferSeconds;
 
