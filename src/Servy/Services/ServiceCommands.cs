@@ -458,17 +458,13 @@ namespace Servy.Services
                     UseShellExecute = true
                 };
 
-                var process = _processHelper.Start(psi);
-                if (process != null)
+                using (var process = _processHelper.Start(psi))
                 {
-                    using (process)
+                    if (process == null)
                     {
-                        // Native handle disposed safely when a new process instance is spawned
+                        // ShellExecute hands a URL to an already-running browser and returns no Process.
+                        Logger.Debug($"Security hardening guide link handed off to an existing browser process: '{AppConfig.SecurityHardeningGuideLink}'.");
                     }
-                }
-                else
-                {
-                    Logger.Debug($"Security hardening guide link handed off to an existing browser process: '{AppConfig.SecurityHardeningGuideLink}'.");
                 }
             }
             catch (OperationCanceledException)
