@@ -6,7 +6,7 @@
 .DESCRIPTION
     This script updates the version of Servy in multiple locations:
     - setup\build-config.ps1    (Version hashtable key)
-    - Directory.Build.props      (<Version>, <FileVersion>, <AssemblyVersion>, <Copyright>)
+    - Directory.Build.props     (<Version>, <FileVersion>, <AssemblyVersion>, <Copyright>)
     - src\Servy.CLI\Servy.psd1  (ModuleVersion, Copyright)
 
 .PARAMETER Version
@@ -109,10 +109,9 @@ Update-FilesContent `
 # -----------------------------
 $psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
 
-$copyrightChar = [char]0x00A9
 $psd1Edits = @(
     @{ Pattern = "(ModuleVersion\s*=\s*')[^']*(')"; Replacement = { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" } },
-    @{ Pattern = "(Copyright\s*=\s*')(?:Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+\d{4}|\(c\))\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.(')"; Replacement = { param($m) "$($m.Groups[1].Value)Copyright $copyrightChar $currentYear Akram El Assas. All rights reserved.$($m.Groups[2].Value)" } }
+    @{ Pattern = "(Copyright\s*=\s*'Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+)\d{4}(\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.')"; Replacement = { param($m) "$($m.Groups[1].Value)$currentYear$($m.Groups[2].Value)" } }
 )
 
 Update-FilesContent `
@@ -125,16 +124,16 @@ Update-FilesContent `
 # Summary Report
 # -----------------------------
 Write-Host "`n========================================="
-Write-Host "            SUMMARY"
+Write-Host "                SUMMARY"
 Write-Host "========================================="
 if ($DryRun) {
-    Write-Host "Files scanned:                 $script:totalFilesScanned"
+    Write-Host "Files scanned:                  $script:totalFilesScanned"
     Write-Host "Files that would be modified: $script:filesModified"
     Write-Host "Replacements that would be made: $script:totalReplacements"
 } else {
-    Write-Host "Files scanned:                 $script:totalFilesScanned"
-    Write-Host "Files modified:                $script:filesModified"
-    Write-Host "Total replacements:            $script:totalReplacements"
+    Write-Host "Files scanned:                  $script:totalFilesScanned"
+    Write-Host "Files modified:                 $script:filesModified"
+    Write-Host "Total replacements:             $script:totalReplacements"
 }
 
 if ($script:HadFailure) {
