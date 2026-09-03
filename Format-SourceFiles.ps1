@@ -1,14 +1,17 @@
 ﻿#Requires -Version 5.0
 <#
 .SYNOPSIS
-    Recursively converts text files in the current folder and subfolders to UTF-8 (with BOM for PowerShell scripts/manifests, XML, and config files; no BOM for others) with Windows (CRLF) line endings.
+    Recursively converts text files in the repository root to UTF-8 (with BOM for PowerShell scripts/manifests, XML, and config files; no BOM for others) with Windows (CRLF) line endings.
 
 .DESCRIPTION
-    Traverses the current directory recursively, skipping specified directories (e.g., bin, obj,
+    Traverses the repository root recursively, skipping specified directories (e.g., bin, obj,
     node_modules) and file types/names (e.g., .exe, .7z, .coverage.xml, coverage.cobertura.xml).
     Normalizes line endings to Windows CRLF (`r`n) and re-writes file content using
     [System.IO.File]::WriteAllText. PowerShell files (.ps1, .psm1, .psd1), XML files (.xml), and configuration files (.config)
     are saved as UTF-8 with BOM for compatibility, while all other text files are saved as UTF-8 (no BOM).
+
+.PARAMETER DryRun
+    If specified, previews the files that would be converted without performing writes to disk.
 
 .PARAMETER ExcludeDirs
     Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'.
@@ -25,10 +28,15 @@
 
 .EXAMPLE
     .\Format-SourceFiles.ps1
+
+.EXAMPLE
+    .\Format-SourceFiles.ps1 -DryRun
 #>
 
 [CmdletBinding()]
 param(
+    [switch]$DryRun,
+
     [Parameter(Mandatory = $false)]
     [string[]]$ExcludeDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'),
 
@@ -39,12 +47,28 @@ param(
     [string[]]$ExcludeFiles = @('coverage.cobertura.xml')
 )
 
-# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions if available
+$ErrorActionPreference = "Stop"
+$script:HadFailure = $false
+
+# Anchor execution directly to repository root where the script lives
+$baseDir = $PSScriptRoot
+
+if (-not (Test-Path (Join-Path $baseDir 'Servy.sln'))) {
+    throw "Run from the Servy repository root (Servy.sln not found in $baseDir)"
+}
+
+# Default list of BOM-required extensions if Update-FileHelpers.ps1 is unavailable
+$bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
+
+# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions and BOM policy if available
 $helperPath = Join-Path $PSScriptRoot "Update-FileHelpers.ps1"
 if (Test-Path $helperPath) {
     . $helperPath
     if ($script:BuildArtifactExclusionDirs -and -not $PSBoundParameters.ContainsKey('ExcludeDirs')) {
         $ExcludeDirs = $script:BuildArtifactExclusionDirs
+    }
+    if ($script:BomRequiredExtensions) {
+        $bomRequiredExtensions = $script:BomRequiredExtensions
     }
 }
 
@@ -52,11 +76,13 @@ if (Test-Path $helperPath) {
 $utf8WithBom = New-Object System.Text.UTF8Encoding($true)
 $utf8NoBom   = New-Object System.Text.UTF8Encoding($false)
 
-# Get current execution directory and script path
-$currentDir = Get-Location
 $scriptPath = $MyInvocation.MyCommand.Path
 
-Write-Host "Starting UTF-8 & CRLF conversion in: $currentDir" -ForegroundColor Cyan
+if ($DryRun) {
+    Write-Host "DRY-RUN: Previewing UTF-8 & CRLF conversions in: $baseDir" -ForegroundColor Yellow
+} else {
+    Write-Host "Starting UTF-8 & CRLF conversion in: $baseDir" -ForegroundColor Cyan
+}
 Write-Host "Excluding directories     : $($ExcludeDirs -join ', ')" -ForegroundColor Yellow
 Write-Host "Excluding extensions      : $($ExcludeExtensions -join ', ')" -ForegroundColor Yellow
 Write-Host "Excluding specific files  : $($ExcludeFiles -join ', ')" -ForegroundColor Yellow
@@ -107,7 +133,7 @@ function Get-FilteredFiles {
 }
 
 # Collect target files using early directory pruning
-$files = Get-FilteredFiles -Path $currentDir.Path `
+$files = Get-FilteredFiles -Path $baseDir `
                            -DirExclusions $ExcludeDirs `
                            -ExtExclusions $ExcludeExtensions `
                            -FileExclusions $ExcludeFiles
@@ -129,21 +155,35 @@ foreach ($file in $files) {
         # Normalize all line returns (CRLF, LF, CR) to Windows CRLF (`r`n)
         $crlfContent = $content.Replace("`r`n", "`n").Replace("`r", "`n").Replace("`n", "`r`n")
 
-        # Select UTF-8 with BOM for PowerShell (.ps1, .psm1, .psd1), XML (.xml), and config (.config) files; UTF-8 without BOM for all other files
-        $requiresBom = $file.Extension -match '^\.(ps1|psm1|psd1|xml|config)$'
+        # Select UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, and .config files; UTF-8 without BOM for all other files
+        $requiresBom = $file.Extension -in $bomRequiredExtensions
         $targetEncoding = if ($requiresBom) { $utf8WithBom } else { $utf8NoBom }
 
-        # Write back file content
-        [System.IO.File]::WriteAllText($file.FullName, $crlfContent, $targetEncoding)
-
         $encodingLabel = if ($requiresBom) { "UTF-8 with BOM" } else { "UTF-8 (no BOM)" }
-        Write-Host "Converted ($encodingLabel): $($file.FullName)" -ForegroundColor Green
-        $convertedCount++
+
+        if ($DryRun) {
+            Write-Host "Would convert ($encodingLabel): $($file.FullName)" -ForegroundColor Yellow
+            $convertedCount++
+        } else {
+            # Write back file content
+            [System.IO.File]::WriteAllText($file.FullName, $crlfContent, $targetEncoding)
+            Write-Host "Converted ($encodingLabel): $($file.FullName)" -ForegroundColor Green
+            $convertedCount++
+        }
     }
     catch {
         Write-Warning "Failed to convert $($file.FullName): $_"
         $failedCount++
+        $script:HadFailure = $true
     }
 }
 
-Write-Host "`nCompleted: $convertedCount file(s) converted successfully, $failedCount failed." -ForegroundColor Cyan
+if ($DryRun) {
+    Write-Host "`nDRY-RUN: Preview Complete! $convertedCount file(s) would be converted, $failedCount failed." -ForegroundColor Yellow
+} else {
+    Write-Host "`nCompleted: $convertedCount file(s) converted successfully, $failedCount failed." -ForegroundColor Cyan
+}
+
+if ($failedCount -gt 0 -or $script:HadFailure) {
+    exit 1
+}

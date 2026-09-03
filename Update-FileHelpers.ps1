@@ -5,12 +5,16 @@
 
 .DESCRIPTION
     Provides unified file update logic (Update-FilesContent), shared build artifact
-    exclusion patterns, and bootstraps Get-FileEncoding.ps1 for versioning scripts.
+    exclusion patterns, central BOM required extension definitions, and bootstraps
+    Get-FileEncoding.ps1 for versioning and formatting scripts.
 #>
 
 # Shared exclusion array and regex pattern for transient build artifacts, dependencies, and vcs metadata
 $script:BuildArtifactExclusionDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults')
 $script:BuildArtifactExclusionRegex = '[\\/](bin|obj|packages|\.git|\.vs|node_modules|coveragereport|TestResults)[\\/]'
+
+# Centralized list of file extensions that require UTF-8 with BOM encoding (must agree with .editorconfig)
+$script:BomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
 
 # Bootstrap Get-FileEncoding.ps1
 $helperFile = "Get-FileEncoding.ps1"
