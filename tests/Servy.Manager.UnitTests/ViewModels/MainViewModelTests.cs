@@ -566,6 +566,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Act 2: Restore the manager but corrupt the _serviceRepository dependency field slot instead
                 TestReflection.SetField(vm, "_serviceManager", _serviceManagerMock.Object);
                 TestReflection.SetField(vm, "_serviceRepository", null);
+                TestReflection.SetField(vm, "_services",
+                    new BulkObservableCollection<ServiceRowViewModel>()
+                    {
+                        new ServiceRowViewModel(new Service { Name = "TestService" }, _serviceCommandsMock.Object, _cursorServiceMock.Object)
+                    });
 
                 var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
                 await task2;
