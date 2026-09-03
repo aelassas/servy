@@ -188,17 +188,13 @@ namespace Servy.UI.Services
             }
 
             // Process.Start can return null if it hands off to an existing browser instance
-            var process = Process.Start(psi);
-            if (process != null)
+            using (var process = Process.Start(psi))
             {
-                using (process)
+                if (process == null)
                 {
-                    // Native handle is closed immediately after launch to prevent leaks.
+                    // ShellExecute hands a URL to an already-running browser and returns no Process.
+                    Logger.Debug(fallbackDebug);
                 }
-            }
-            else
-            {
-                Logger.Debug(fallbackDebug);
             }
         }
     }
