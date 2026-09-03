@@ -19,6 +19,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -379,6 +380,12 @@ namespace Servy.Service
                 _ = FreeConsole();
                 _ = SetConsoleCtrlHandler(null, true);
 
+                // Prevent thread pool starvation under high concurrent HTTP ping loads
+                if (ServicePointManager.DefaultConnectionLimit < AppConfig.DefaultHttpConnectionLimit)
+                {
+                    ServicePointManager.DefaultConnectionLimit = AppConfig.DefaultHttpConnectionLimit;
+                }
+
                 // Check if we are running in a test context to bypass environment-specific hooks
                 bool isTestMode = args.Length > 0 &&
                                   string.Equals(args[0], TestModeFlag, StringComparison.OrdinalIgnoreCase);
@@ -728,7 +735,7 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Internal unprotected write logic. Assumes _fileSemaphore is held by the caller.
+        /// Internal unprotected write logic.
         /// </summary>
         /// <param name="attempts">The number of restart attempts to persist.</param>
         private void WriteAttemptsInternal(int attempts)
@@ -1358,6 +1365,9 @@ namespace Servy.Service
                 {
                     // Parse the base URL first so a malformed value fails here rather than at request time
                     var baseUri = new Uri(baseUrl);
+
+                    ConfigureEndpointConnectionLease(baseUri, TimeSpan.FromMinutes(AppConfig.HeartbeatConnectionLifetimeMinutes));
+
                     var targetUri = baseUri;
                     if (!string.IsNullOrEmpty(suffix) && enableFlags)
                     {
@@ -1386,6 +1396,25 @@ namespace Servy.Service
                     _logger?.Debug($"Heartbeat ping to base URL '{Helpers.ServiceHelper.MaskUrl(baseUrl)}' failed silently.", ex);
                 }
             });
+        }
+
+        /// <summary>
+        /// Configures connection recycling for a target endpoint URL in .NET Framework 4.8.
+        /// Replaces SocketsHttpHandler.PooledConnectionLifetime.
+        /// </summary>
+        /// <param name="uri">The target endpoint URI for which to configure connection lease timeout.</param>
+        /// <param name="leaseLifetime">The desired connection lease lifetime duration.</param>
+        private static void ConfigureEndpointConnectionLease(Uri uri, TimeSpan leaseLifetime)
+        {
+            try
+            {
+                var sp = ServicePointManager.FindServicePoint(uri);
+                sp.ConnectionLeaseTimeout = (int)leaseLifetime.TotalMilliseconds;
+            }
+            catch
+            {
+                // Ignore errors during ServicePoint lookup
+            }
         }
 
         /// <summary>

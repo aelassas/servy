@@ -1179,6 +1179,17 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int Toolhelp32SnapshotMaxRetries = 5;
 
+        /// <summary>
+        /// Defines the minimum default HTTP connection limit allocated per endpoint for outgoing web requests and heartbeat pings.
+        /// Prevents socket bottlenecking and thread pool starvation under concurrent loads.
+        /// </summary>
+        public const int DefaultHttpConnectionLimit = 50;
+
+        /// <summary>
+        /// The lifetime, in minutes, for pooled HTTP connections used by the heartbeat client.
+        /// </summary>
+        public const int HeartbeatConnectionLifetimeMinutes = 15;
+
         #endregion
 
         #region Manager Configuration Bounds
