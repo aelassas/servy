@@ -749,7 +749,7 @@ namespace Servy.Service
             }
             finally
             {
-                _fileSemaphore.Release();
+                ReleaseSafe(_fileSemaphore);
             }
         }
 
@@ -780,7 +780,7 @@ namespace Servy.Service
             }
             finally
             {
-                _fileSemaphore.Release();
+                ReleaseSafe(_fileSemaphore);
             }
         }
 
@@ -885,7 +885,7 @@ namespace Servy.Service
             }
             finally
             {
-                _fileSemaphore.Release();
+                ReleaseSafe(_fileSemaphore);
             }
         }
 
@@ -3034,5 +3034,14 @@ namespace Servy.Service
             base.Dispose(disposing);
         }
 
+        /// <summary>
+        /// Safely releases a <see cref="SemaphoreSlim"/> instance, catching and ignoring any <see cref="ObjectDisposedException"/>
+        /// </summary>
+        /// <param name="semaphoreSlim">The <see cref="SemaphoreSlim"/> instance to release.</param>
+        private static void ReleaseSafe(SemaphoreSlim semaphoreSlim)
+        {
+            try { semaphoreSlim.Release(); }
+            catch (ObjectDisposedException) { /* teardown disposed it while we held it */ }
+        }
     }
 }
