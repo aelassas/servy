@@ -464,7 +464,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Act
             Func<Task> faultyAction = () => _serviceCommandsMock.Object.ConfigureServiceAsync(service, CancellationToken.None);
 
-            var taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", faultyAction);
+            var taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), faultyAction);
             await taskResult;
 
             // Assert
