@@ -268,7 +268,7 @@ namespace Servy.Service
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
-                if (int.TryParse(config["Timing:WaitChunkMs"], out var waitChunkMs) && waitChunkMs > 0)
+                if (int.TryParse(config["Timing:WaitChunkMs"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var waitChunkMs) && waitChunkMs > 0)
                 {
                     _waitChunkMs = waitChunkMs;
                 }
@@ -277,7 +277,7 @@ namespace Servy.Service
                     _waitChunkMs = AppConfig.DefaultWaitChunkMs;
                 }
 
-                if (int.TryParse(config["Timing:ScmAdditionalTimeMs"], out var scmAdditionalTimeMs) && scmAdditionalTimeMs > 0)
+                if (int.TryParse(config["Timing:ScmAdditionalTimeMs"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var scmAdditionalTimeMs) && scmAdditionalTimeMs > 0)
                 {
                     _scmAdditionalTimeMs = scmAdditionalTimeMs;
                 }
@@ -682,7 +682,7 @@ namespace Servy.Service
                     if (File.Exists(_restartAttemptsFile))
                     {
                         var content = File.ReadAllText(_restartAttemptsFile).Trim();
-                        if (int.TryParse(content, out var attempts) && attempts >= 0)
+                        if (int.TryParse(content, NumberStyles.Integer, CultureInfo.InvariantCulture, out var attempts) && attempts >= 0)
                             return attempts;
 
                         WriteAttemptsInternal(0);
