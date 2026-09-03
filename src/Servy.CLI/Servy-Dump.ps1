@@ -21,7 +21,7 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
-    - 4 : I/O & Inspection Failure. The database could not be read, the destination path is invalid or unwritable, archive compression or ACL hardening failed, or an unexpected runtime error occurred.
+    - 4 : I/O & Inspection Failure. The database could not be read, the destination path is invalid or unwritable, an existing SHA-256 sidecar could not be replaced under -Overwrite, archive compression or ACL hardening failed, or an unexpected runtime error occurred.
     - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export or uninstall, or the SHA-256 integrity sidecar could not be written.
@@ -229,6 +229,18 @@ $script:reservedNames = @(
     'LPT¹', 'LPT²', 'LPT³'
 )
 
+# Canonical set of built-in passwordless service accounts matching ServiceAccounts.cs
+$script:runnableServiceAccounts = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+foreach ($a in @(
+    'LocalSystem', 'System', 'Local System', '.\LocalSystem', '.\System', '.\Local System',
+    'NT AUTHORITY\LocalSystem', 'NT AUTHORITY\Local System', 'NT AUTHORITY\SYSTEM',
+    'BUILTIN\LocalSystem', 'BUILTIN\System',
+    'LocalService', 'NT AUTHORITY\LocalService', '.\LocalService', '.\Local Service',
+    'NT AUTHORITY\Local Service', 'Local Service', 'BUILTIN\LocalService',
+    'NetworkService', 'NT AUTHORITY\NetworkService', '.\NetworkService', '.\Network Service',
+    'NT AUTHORITY\Network Service', 'Network Service', 'BUILTIN\NetworkService'
+)) { [void]$script:runnableServiceAccounts.Add($a) }
+
 # If dot-sourced for testing, return immediately without executing main script body
 if ($MyInvocation.InvocationName -eq '.') {
     return
@@ -287,6 +299,63 @@ try {
     catch {
         Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
         exit 2
+    }
+
+    # Fallback definition when script is dot-sourced without prior module import
+    if (-not (Get-Command -Name Set-ServyHardenedFileAcl -ErrorAction SilentlyContinue)) {
+        function Set-ServyHardenedFileAcl {
+            <#
+            .SYNOPSIS
+                Hardens ACL permissions on a target file or directory by breaking inheritance,
+                transferring ownership to Builtin Administrators, and enforcing strict Admin-only access.
+            #>
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory = $true)][string]$Path,
+                [Parameter(Mandatory = $false)][switch]$IsDirectory
+            )
+
+            $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+            $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+
+            # Use -LiteralPath on PS 3.0+; escape wildcards for -Path on PS 2.0
+            if ($PSVersionTable.PSVersion.Major -ge 3) {
+                $acl = Get-Acl -LiteralPath $Path
+            }
+            else {
+                $escapedPath = [Management.Automation.WildcardPattern]::Escape($Path)
+                $acl = Get-Acl -Path $escapedPath
+            }
+
+            # 1. Explicitly set owner to Builtin Administrators to neutralize pre-existing non-admin ownership (#6692)
+            $acl.SetOwner($adminSid)
+
+            # 2. Break inheritance and purge all explicit/inherited rules
+            $acl.SetAccessRuleProtection($true, $false)
+
+            $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+            foreach ($rule in $explicitRules) { [void]$acl.RemoveAccessRule($rule) }
+
+            # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
+            if ($IsDirectory.IsPresent) {
+                $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+                $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+            }
+            else {
+                $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+                $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+            }
+
+            $acl.SetAccessRule($adminRule)
+            $acl.SetAccessRule($systemRule)
+
+            if ($PSVersionTable.PSVersion.Major -ge 3) {
+                Set-Acl -LiteralPath $Path -AclObject $acl
+            }
+            else {
+                Set-Acl -Path $escapedPath -AclObject $acl
+            }
+        }
     }
 
     # Determine base Servy installation directory for native and managed assembly resolution
@@ -393,7 +462,7 @@ try {
                     if (-not $reader.IsDBNull(0)) {
                         $svcObj = New-Object PSObject
                         $svcObj | Add-Member -MemberType NoteProperty -Name "Name" -Value ($reader.GetString(0))
-                            $svcObj | Add-Member -MemberType NoteProperty -Name "UserAccount" -Value $(if (-not $reader.IsDBNull(1)) { $reader.GetString(1) } else { $null })
+                        $svcObj | Add-Member -MemberType NoteProperty -Name "UserAccount" -Value $(if (-not $reader.IsDBNull(1)) { $reader.GetString(1) } else { $null })
                         $servicesList.Add($svcObj)
                     }
                 }
@@ -593,7 +662,7 @@ public static class ServySafePs2SqliteRecord
     foreach ($svc in $servicesList) {
         $tblObj = New-Object PSObject
         $tblObj | Add-Member -MemberType NoteProperty -Name "Service Name" -Value $svc.Name
-            $tblObj | Add-Member -MemberType NoteProperty -Name "User Account" -Value $(if ($null -ne $svc.UserAccount -and $svc.UserAccount.ToString().Trim().Length -gt 0) { $svc.UserAccount } else { '[LocalSystem]' })
+        $tblObj | Add-Member -MemberType NoteProperty -Name "User Account" -Value $(if ($null -ne $svc.UserAccount -and $svc.UserAccount.ToString().Trim().Length -gt 0) { $svc.UserAccount } else { '[LocalSystem]' })
         $serviceTable.Add($tblObj)
     }
 
@@ -815,8 +884,7 @@ public static class ServySafePs2SqliteRecord
 
                     $isExported = $exported.Contains($svcName)
                     $isCustomAccount = (-not [string]::IsNullOrEmpty($account)) -and
-                                       (-not $account.EndsWith('LocalSystem', [System.StringComparison]::OrdinalIgnoreCase)) -and
-                                       (-not $account.EndsWith('SYSTEM', [System.StringComparison]::OrdinalIgnoreCase))
+                                       (-not $script:runnableServiceAccounts.Contains($account))
 
                     if ($isExported -and $isCustomAccount) {
                         $customAccountServices.Add($svc)

@@ -223,61 +223,6 @@ function Test-ServyDumpArchiveEntry {
     return @{ IsValid = $true; IsDirectory = $false; TargetPath = $targetPath; ErrorMessage = $null }
 }
 
-<#
-.SYNOPSIS
-    Hardens ACL permissions on a target file or directory by breaking inheritance and enforcing strict Admin-only access.
-
-.DESCRIPTION
-    Breaks permission inheritance ($isProtected = $true, $preserveInheritance = $false), purges all existing ACEs,
-    and grants Full Control exclusively to Builtin Administrators and Local SYSTEM using language-agnostic Well-Known SIDs.
-
-.PARAMETER Path
-    Mandatory literal filesystem path of the target file or directory.
-
-.PARAMETER IsDirectory
-    Optional switch indicating if the path is a directory (controls container/object inheritance flags).
-#>
-function Set-ServyHardenedFileAcl {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Path,
-
-        [Parameter(Mandatory = $false)]
-        [switch]$IsDirectory
-    )
-
-    $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-
-    # Use -Path for PowerShell 2.0 compatibility
-    $acl = Get-Acl -Path $Path
-
-    # 1. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
-    $acl.SetAccessRuleProtection($true, $false)
-
-    # 2. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
-    $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-    foreach ($rule in $explicitRules) {
-        [void]$acl.RemoveAccessRule($rule)
-    }
-
-    # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
-    if ($IsDirectory.IsPresent) {
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-    }
-    else {
-        $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
-        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
-    }
-
-    $acl.SetAccessRule($adminRule)
-    $acl.SetAccessRule($systemRule)
-
-    Set-Acl -Path $Path -AclObject $acl
-}
-
 # If dot-sourced for testing, return immediately without executing main script body
 if ($MyInvocation.InvocationName -eq '.') {
     return
@@ -334,6 +279,63 @@ try {
     catch {
         Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
         exit 2
+    }
+
+    # Fallback definition when script is dot-sourced without prior module import
+    if (-not (Get-Command -Name Set-ServyHardenedFileAcl -ErrorAction SilentlyContinue)) {
+        function Set-ServyHardenedFileAcl {
+            <#
+            .SYNOPSIS
+                Hardens ACL permissions on a target file or directory by breaking inheritance,
+                transferring ownership to Builtin Administrators, and enforcing strict Admin-only access.
+            #>
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory = $true)][string]$Path,
+                [Parameter(Mandatory = $false)][switch]$IsDirectory
+            )
+
+            $adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+            $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+
+            # Use -LiteralPath on PS 3.0+; escape wildcards for -Path on PS 2.0
+            if ($PSVersionTable.PSVersion.Major -ge 3) {
+                $acl = Get-Acl -LiteralPath $Path
+            }
+            else {
+                $escapedPath = [Management.Automation.WildcardPattern]::Escape($Path)
+                $acl = Get-Acl -Path $escapedPath
+            }
+
+            # 1. Explicitly set owner to Builtin Administrators to neutralize pre-existing non-admin ownership (#6692)
+            $acl.SetOwner($adminSid)
+
+            # 2. Break inheritance and purge all explicit/inherited rules
+            $acl.SetAccessRuleProtection($true, $false)
+
+            $explicitRules = $acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+            foreach ($rule in $explicitRules) { [void]$acl.RemoveAccessRule($rule) }
+
+            # 3. Explicitly grant Full Control exclusively to Administrators and SYSTEM
+            if ($IsDirectory.IsPresent) {
+                $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+                $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+            }
+            else {
+                $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule($adminSid, "FullControl", "Allow")
+                $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, "FullControl", "Allow")
+            }
+
+            $acl.SetAccessRule($adminRule)
+            $acl.SetAccessRule($systemRule)
+
+            if ($PSVersionTable.PSVersion.Major -ge 3) {
+                Set-Acl -LiteralPath $Path -AclObject $acl
+            }
+            else {
+                Set-Acl -Path $escapedPath -AclObject $acl
+            }
+        }
     }
 
     # Catch-all for archive path resolution (e.g. invalid path characters or invalid drive letters)
