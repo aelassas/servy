@@ -77,15 +77,39 @@ $testCases = @(
 )
 
 # --- Keyword coverage sweep: every entry in $looseKeys and $strictKeys must redact ---
-$allKeys = @(
-    "PASSWORD", "PASSPHRASE", "USERPWD", "TOKEN", "CREDENTIAL", "CLIENT_SECRET",
-    "SECRET", "ACCOUNTKEY", "ACCESSKEY", "SIGNATURE", "CONNECTIONSTRING", "CONNSTR",
-    "DATABASE_URL", "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD", "PRIVATE_KEY",
-    "SSH_KEY", "SECRET_KEY", "API_KEY", "APIKEY", "CERTIFICATE", "THUMBPRINT", "APP_SECRET",
-    "BROWSER_KEY", "WEBHOOK_URL", "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN",
-    "PWD", "PIN", "AUTH", "BEARER", "JWT", "SESSION", "COOKIE", "PAT", "SAS",
-    "SKEY", "TENANT_ID", "DSN", "CERT", "PFX", "PEM", "SALT", "PEPPER", "API"
-)
+# The two lists are locals of Protect-SensitiveString, so dot-sourcing does not expose them.
+# Parse them out of the production script text instead of keeping a hand-synced copy here:
+# a keyword added to the engine is then swept the moment it exists, and a removed one still fails.
+function Get-KeywordListFromScript {
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [Parameter(Mandatory = $true)][string]$VariableName
+    )
+
+    # The array is terminated by a ')' at the start of its own line. Anchor on that, NOT on
+    # the first ')': the comments inside $looseKeys contain parentheses, so a [^)]* body would
+    # silently capture only the first few keywords and the sweep would still pass.
+    $pattern = '(?sm)\$' + [regex]::Escape($VariableName) + '\s*=\s*@\((?<body>.*?)^\s*\)'
+    $match = [regex]::Match($Text, $pattern)
+    if (-not $match.Success) {
+        throw "Could not locate `$$VariableName in ServySecurity.ps1 - the sweep would silently test nothing."
+    }
+
+    # Drop comments before harvesting the quoted tokens.
+    $body = [regex]::Replace($match.Groups['body'].Value, '#[^\r\n]*', '')
+    $keys = @([regex]::Matches($body, '"(?<k>[^"]+)"') | ForEach-Object { $_.Groups['k'].Value })
+
+    if ($keys.Count -eq 0) {
+        throw "`$$VariableName parsed to an empty list - the sweep would silently test nothing."
+    }
+
+    return $keys
+}
+
+$securityScriptText = Get-Content (Join-Path $PSScriptRoot "ServySecurity.ps1") -Raw
+$engineLooseKeys  = Get-KeywordListFromScript -Text $securityScriptText -VariableName 'looseKeys'
+$engineStrictKeys = Get-KeywordListFromScript -Text $securityScriptText -VariableName 'strictKeys'
+$allKeys = $engineLooseKeys + $engineStrictKeys
 
 foreach ($k in $allKeys) {
     $testCases += @{ Name = "Keyword coverage: $k"; Input = "$k=hunter2"; Expected = "$k=********" }
