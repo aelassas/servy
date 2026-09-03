@@ -102,14 +102,17 @@ namespace Servy.Service.UnitTests.Helpers
         public void LogStartupArguments_EnableDebugLogsTrue_LogsMaskedSensitiveDataToTextLog()
         {
             // Arrange
+            // Route the static Logger into a private temp directory (the logDirectory seam from #5459)
+            // so the test never creates or re-ACLs the product's %ProgramData%\Servy\logs directory.
+            string tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
             string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
-            string tempLogFilePath = Path.Combine(Logger.LogsPath, tempLogFileName);
+            string tempLogFilePath = Path.Combine(tempLogDir, tempLogFileName);
 
             try
             {
                 // Re-initialize static Logger cleanly for this test
                 Logger.Shutdown();
-                Logger.Initialize(tempLogFileName, LogLevel.Info);
+                Logger.Initialize(tempLogFileName, LogLevel.Info, logDirectory: tempLogDir);
 
                 var mockEventLog = new Mock<IServyLogger>();
 
@@ -187,9 +190,9 @@ namespace Servy.Service.UnitTests.Helpers
             finally
             {
                 Logger.Shutdown();
-                if (File.Exists(tempLogFilePath))
+                if (Directory.Exists(tempLogDir))
                 {
-                    try { File.Delete(tempLogFilePath); } catch { /* Ignore file cleanup errors */ }
+                    try { Directory.Delete(tempLogDir, recursive: true); } catch { /* Ignore cleanup errors */ }
                 }
             }
         }
