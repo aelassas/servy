@@ -198,8 +198,11 @@ namespace Servy.Manager.Views
                     Clipboard.SetText(text);
                     return;
                 }
-                catch (COMException) { /* clipboard locked */ }
-                catch (ExternalException) { /* generic Win32 failure */ }
+                catch (ExternalException)
+                {
+                    // COMException (clipboard locked by another process) or any other Win32 clipboard
+                    // failure: non-fatal, retry after the configured delay.
+                }
 
                 if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
                 {

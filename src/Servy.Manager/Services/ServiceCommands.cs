@@ -538,15 +538,10 @@ namespace Servy.Manager.Services
                             Clipboard.SetText(pidValue);
                             return true;
                         }
-                        catch (COMException)
-                        {
-                            // Clipboard is likely locked by another process
-                            return false;
-                        }
                         catch (ExternalException)
                         {
-                            // Generic Win32 failure or clipboard access denied by the OS.
-                            // We treat this as a non-fatal UI error to prevent crashing the Manager.
+                            // COMException (clipboard locked by another process) or any other Win32 clipboard
+                            // failure: non-fatal, retry after the configured delay.
                             return false;
                         }
                     });
