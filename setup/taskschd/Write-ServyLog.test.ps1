@@ -129,20 +129,57 @@ Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyCo
 
 . $LogScriptPath
 
-for ($i = 1; $i -le 8; $i++) {
-    Write-ServyLog -FilePath $PrunePath -Message ("X" * 64) -MaxSizeBytes 1 -MaxBackupFiles 3
+# Each write carries its iteration number, so the retained set can be identified rather than
+# only counted. Rotation N moves the file holding payload N, so the rotated segments carry
+# PRUNE-01..PRUNE-07 and the active file keeps PRUNE-08.
+$PruneWrites   = 8
+$PruneBackups  = 3
+for ($i = 1; $i -le $PruneWrites; $i++) {
+    $payload = ("PRUNE-{0:D2} " -f $i) + ("X" * 48)
+    Write-ServyLog -FilePath $PrunePath -Message $payload -MaxSizeBytes 1 -MaxBackupFiles $PruneBackups
+
+    # Keep LastWriteTime strictly increasing: the pruning sort is on LastWriteTime, so equal
+    # stamps would make which-three-survive ambiguous and this assertion flaky.
+    Start-Sleep -Milliseconds 20
 }
 
-$backups = Get-ChildItem -Path $ScriptDir -Filter "test_prune_*.log"
-if ($backups.Count -ne 3) {
-    Write-Host "FAIL: Expected 3 retained backups for pruning test, found $($backups.Count)." -ForegroundColor Red
+# The rotated filename embeds yyyyMMdd-HHmmss-fff, so lexical order is chronological order.
+$backups = Get-ChildItem -Path $ScriptDir -Filter "test_prune_*.log" | Sort-Object Name
+if ($backups.Count -ne $PruneBackups) {
+    Write-Host "FAIL: Expected $PruneBackups retained backups for pruning test, found $($backups.Count)." -ForegroundColor Red
+    Write-Host "====================================================" -ForegroundColor Cyan
+    Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
+    exit 1
+}
+
+# Retention must keep the NEWEST segments. Counting alone cannot see an inverted sort:
+# dropping -Descending in Write-ServyLog.ps1 keeps the three OLDEST and still leaves three files.
+$kept = $backups | ForEach-Object {
+    $raw = Get-Content $_.FullName -Raw
+    if ($raw -match '(PRUNE-\d{2})') { $Matches[1] } else { "<no-payload:$($_.Name)>" }
+}
+$expected = @(($PruneWrites - $PruneBackups)..($PruneWrites - 1) | ForEach-Object { "PRUNE-{0:D2}" -f $_ })
+if (Compare-Object $kept $expected) {
+    Write-Host "FAIL: Retention kept [$($kept -join ', ')] but should have kept the newest three [$($expected -join ', ')]." -ForegroundColor Red
+    Write-Host "      A retention policy that keeps the oldest segments discards exactly the history an operator needs after an incident." -ForegroundColor Red
+    Write-Host "====================================================" -ForegroundColor Cyan
+    Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
+    exit 1
+}
+
+# The active log must survive pruning and hold the final payload; nothing else asserts that
+# the live file is not itself a pruning candidate.
+$activeRaw = if (Test-Path $PrunePath) { Get-Content $PrunePath -Raw } else { "" }
+$lastPayload = "PRUNE-{0:D2}" -f $PruneWrites
+if ($activeRaw -notmatch [regex]::Escape($lastPayload)) {
+    Write-Host "FAIL: Active log '$([System.IO.Path]::GetFileName($PrunePath))' should hold $lastPayload after pruning." -ForegroundColor Red
     Write-Host "====================================================" -ForegroundColor Cyan
     Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
     exit 1
 }
 
 Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
-Write-Host "PASS: Retention pruning successfully maintained exactly 3 backup files." -ForegroundColor Green
+Write-Host "PASS: Retention pruning kept the newest $PruneBackups backups [$($expected -join ', ')] and preserved the active log." -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
 
 exit 0
