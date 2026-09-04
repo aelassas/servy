@@ -132,7 +132,7 @@ namespace Servy.Manager.ViewModels
             try
             {
                 // Step 3 & 4: Clear footer text and present wait state boundaries immediately
-                FooterText = string.Empty; // Clear footer text before search
+                FooterText = string.Empty;
                 _cursorService.SetWaitCursor();
                 SearchButtonText = Strings.Button_Searching;
                 IsBusy = true;
