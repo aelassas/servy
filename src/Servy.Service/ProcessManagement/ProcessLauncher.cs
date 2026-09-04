@@ -389,7 +389,9 @@ namespace Servy.Service.ProcessManagement
 
         /// <summary>
         /// Applies environment variables and command-line flags to ensure consistent UTF-8 I/O behavior for known runtimes.
-        /// Detection is strictly scoped to the executable filename and extension to avoid false positives from directory paths.
+        /// Detection matches the executable's filename stem (extension and directory are ignored) against anchored patterns,
+        /// so directory names containing 'python' or 'java' cannot trigger it. A shim whose stem is one of the recognised
+        /// names, such as java.cmd, is treated as the runtime itself.
         /// </summary>
         /// <param name="psi">The start info to modify.</param>
         /// <param name="logger">The logger instance for operational telemetry.</param>
