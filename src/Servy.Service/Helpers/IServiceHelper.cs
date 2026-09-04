@@ -30,16 +30,26 @@ namespace Servy.Service.Helpers
     public interface IServiceHelper
     {
         /// <summary>
-        /// Retrieves the full command-line arguments for the current process.
+        /// Retrieves the full command-line arguments for the current process, in
+        /// <see cref="Environment.GetCommandLineArgs"/> layout: index 0 is the executable path
+        /// and the caller-supplied arguments start at index 1.
         /// </summary>
-        /// <returns>An array of strings containing the command-line arguments.</returns>
+        /// <returns>
+        /// An array of strings containing the command-line arguments, executable path first.
+        /// See <see cref="ICommandLineProvider.GetArgs"/> for why the layout must be preserved -
+        /// an array taken from <c>Main(string[] args)</c> is offset by one and shifts every
+        /// consumer's indices.
+        /// </returns>
         string[] GetArgs();
 
         /// <summary>
         /// Parses the command-line arguments and loads the service configuration from the repository.
         /// </summary>
         /// <param name="serviceRepository">The repository used to fetch service-specific configurations.</param>
-        /// <param name="fullArgs">The full set of command-line arguments to parse.</param>
+        /// <param name="fullArgs">
+        /// The full set of command-line arguments to parse, as returned by <see cref="GetArgs"/>:
+        /// index 0 is the executable path and index 1 is the service name.
+        /// </param>
         /// <returns>
         /// Returns a populated <see cref="StartOptions"/>.
         /// </returns>
