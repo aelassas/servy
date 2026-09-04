@@ -62,15 +62,18 @@ namespace Servy.Core.IntegrationTests.Logging
             {
                 Assert.False(logger.IsEventLogEnabled);
 
-                // Act: Turn ON (initializes handle)
+                // Act: enable - runs InitializeEventLog and sets _isInitialized
                 logger.SetIsEventLogEnabled(true);
                 Assert.True(logger.IsEventLogEnabled);
 
-                // Act: Turn ON again (exercises the already-initialized branch)
+                // Act: enable again - takes the already-initialized branch, which only
+                // re-sets the flag. This assert reads the same on either branch.
                 logger.SetIsEventLogEnabled(true);
                 Assert.True(logger.IsEventLogEnabled);
 
-                // Act: Turn OFF (disposes handle)
+                // Act: disable - clears the flag only. Nothing is disposed and
+                // _isInitialized survives (only Dispose clears it), so a later
+                // re-enable does not run InitializeEventLog again.
                 logger.SetIsEventLogEnabled(false);
                 Assert.False(logger.IsEventLogEnabled);
             }
@@ -120,8 +123,9 @@ namespace Servy.Core.IntegrationTests.Logging
                 logger.SetLogLevel(targetLevel);
 
                 // Assert
-                // Symmetrical Verification: Extract the internal volatile tracking level state via reflection
-                // to prove that the runtime configuration updates and filters boundaries accurately.
+                // Extract the internal level field via reflection to prove that SetLogLevel
+                // wrote it. This test does not call any log method, so it says nothing about
+                // whether WriteLeveled then filters on that threshold.
                 var actualLogLevelInt = TestReflection.GetField<int>(logger, "_currentLogLevel");
 
                 Assert.Equal((int)targetLevel, actualLogLevelInt);
