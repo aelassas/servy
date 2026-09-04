@@ -22,7 +22,7 @@ namespace Servy.Service.CommandLine
         /// configuration from the repository, and projects it into a <see cref="StartOptions"/> instance.
         /// </summary>
         /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
-        /// <param name="processHelper">The process helper used to format process commands.</param>
+        /// <param name="processHelper">The process helper used to resolve the stored executable and directory paths (environment-variable expansion and normalisation) via <see cref="IProcessHelper.ResolvePath"/>.</param>
         /// <param name="fullArgs">An array of strings representing the command-line arguments. Element 1 is the service name.</param>
         /// <returns>
         /// A <see cref="StartOptions"/> object populated from the stored service configuration.
