@@ -1369,7 +1369,7 @@ namespace Servy.Service
                     ConfigureEndpointConnectionLease(baseUri, TimeSpan.FromMinutes(AppConfig.HeartbeatConnectionLifetimeMinutes));
 
                     var targetUri = baseUri;
-                    if (!string.IsNullOrEmpty(suffix) && enableFlags)
+                    if (!string.IsNullOrEmpty(suffix))
                     {
                         var baseStr = baseUrl.EndsWith("/") ? baseUrl : baseUrl + "/";
                         targetUri = new Uri(baseStr + suffix.TrimStart('/'));

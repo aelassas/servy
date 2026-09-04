@@ -139,6 +139,10 @@
                     BorderThickness="0"
                     Background="Transparent"
                     Padding="5"
+                    VirtualizingStackPanel.IsVirtualizing="True"
+                    VirtualizingStackPanel.VirtualizationMode="Recycling"
+                    VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                    VirtualizingStackPanel.ScrollUnit="Pixel"                       
                     AutomationProperties.Name="{x:Static resx:Strings.Automation_DependenciesTreeView_Name}"
                     AutomationProperties.AutomationId="DependencyTreeView"
                     AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesTreeView_HelpText}">
