@@ -1,8 +1,8 @@
 namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
-    /// Shared abstract base class managing the extraction and registration
-    /// of Sysinternals diagnostic assets across separate integration test containers.
+    /// Base class for integration tests that need handle64.exe: extracts it, keeps its path,
+    /// and accepts the Sysinternals EULA so the tool does not wait for input on a headless runner.
     /// </summary>
     public abstract class HandleExeIntegrationTestBase
     {
@@ -10,17 +10,13 @@ namespace Servy.Core.IntegrationTests.Helpers
 
         protected HandleExeIntegrationTestBase()
         {
-            // 1. Force execution asset extraction to disk
             Testing.Helper.ExtractHandleExe();
-
-            // 2. Fetch the resolved cross-architecture path string token
             _handleExePath = Testing.Helper.HandleExePath;
 
-            // 3. CRITICAL DEFECT GUARD: Assert file physically exists right now
-            // If extraction fails due to directory locks, this stops the test context immediately with an explicit error.
-            Assert.True(File.Exists(_handleExePath), $"Lifecycle Extraction Fault: '{_handleExePath}' could not be verified on the local disk file table.");
+            // Fail here rather than in the first test that runs handle64.exe, and name the path we looked at.
+            Assert.True(File.Exists(_handleExePath), $"handle64.exe was not extracted to '{_handleExePath}'.");
 
-            // Auto-accept Sysinternals EULA in the registry hive context to prevent headless runner hangs
+            // Accepting the EULA up front stops handle64.exe from prompting for it on a headless runner.
             Testing.Helper.AcceptSysinternalsEula();
         }
     }
