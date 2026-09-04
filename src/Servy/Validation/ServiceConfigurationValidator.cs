@@ -17,7 +17,7 @@ namespace Servy.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceConfigurationValidator"/> class.
         /// </summary>
-        /// <param name="messageBoxService">The service used to display validation errors and warnings to the user.</param>
+        /// <param name="messageBoxService">The service used to display the first validation error to the user.</param>
         /// <param name="serviceValidationRules">Shared validation rules for service installation.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="messageBoxService"/> or <paramref name="serviceValidationRules"/> is null.</exception>
         public ServiceConfigurationValidator(IMessageBoxService messageBoxService, IServiceValidationRules serviceValidationRules)
