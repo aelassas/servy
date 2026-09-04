@@ -37,10 +37,26 @@ namespace Servy.Core.Validation
         /// </para>
         /// <list type="bullet">
         /// <item>
-        /// <description><b>Vital Requirements:</b> Checks for null DTOs and missing mandatory fields (Name, ExecutablePath).</description>
+        /// <description>
+        /// <b>Vital Requirements:</b> Checks for a null DTO, missing mandatory fields (Name, ExecutablePath)
+        /// and the service-name format. Each of these returns immediately, so the result carries that
+        /// error alone and no later stage runs.
+        /// </description>
         /// </item>
         /// <item>
-        /// <description><b>Path Integrity:</b> Uses an injected process helper to verify that executables and directories are valid and accessible.</description>
+        /// <description>
+        /// <b>Field Formats:</b> CPU affinity mask, environment variables, pre-launch environment variables
+        /// and service dependencies, each delegated to its own validator. Errors from this stage are
+        /// collected rather than returned early.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// <b>Path Integrity:</b> Input executables and the optional wrapper path are resolved through the
+        /// injected process helper and must exist; output redirection paths (stdout, stderr and their
+        /// pre-launch counterparts) are checked for syntactic validity and directory traversal only,
+        /// since they need not exist yet.
+        /// </description>
         /// </item>
         /// <item>
         /// <description><b>Configuration Bounds:</b> Ensures timeouts, rotation sizes, and health intervals stay within defined application limits.</description>
