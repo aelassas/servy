@@ -28,7 +28,13 @@ namespace Servy.Core.Native
             "Batch", "NT AUTHORITY\\Batch",
             "Interactive", "NT AUTHORITY\\Interactive",
             "Service", "NT AUTHORITY\\Service",
-            "Network", "NT AUTHORITY\\Network"
+            "Network", "NT AUTHORITY\\Network",
+
+            // BUILTIN\ groups: real, resolvable SIDs that can never run a service.
+            // Without these, LogonUser reports them as a bad password (see #ERROR_LOGON_FAILURE path).
+            "BUILTIN\\Administrators", "BUILTIN\\Users", "BUILTIN\\Guests",
+            "BUILTIN\\Power Users", "BUILTIN\\Remote Desktop Users", "BUILTIN\\Backup Operators",
+            "Administrators", "Users", "Guests"
         };
 
         /// <summary>

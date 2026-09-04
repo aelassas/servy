@@ -25,19 +25,21 @@ namespace Servy.Core.UnitTests.Helpers
         #region EnsureFolders Tests
 
         [Theory]
-        [InlineData(null, "key.aes", "iv.aes")]
-        [InlineData("Data Source=db.db;", null, "iv.aes")]
-        [InlineData("Data Source=db.db;", "key.aes", null)]
-        [InlineData("", "key.aes", "iv.aes")]
-        [InlineData("Data Source=db.db;", "", "iv.aes")]
-        [InlineData("Data Source=db.db;", "key.aes", "")]
-        [InlineData("    ", "key.aes", "iv.aes")]
-        [InlineData("Data Source=db.db;", "    ", "iv.aes")]
-        [InlineData("Data Source=db.db;", "key.aes", "    ")]
-        public void EnsureFolders_NullOrWhitespaceArgs_Throws(string? conn, string? key, string? iv)
+        [InlineData(null, "key.aes", "iv.aes", null)]
+        [InlineData("Data Source=db.db;", null, "iv.aes", null)]
+        [InlineData("Data Source=db.db;", "key.aes", null, null)]
+        [InlineData("", "key.aes", "iv.aes", null)]
+        [InlineData("Data Source=db.db;", "", "iv.aes", null)]
+        [InlineData("Data Source=db.db;", "key.aes", "", null)]
+        [InlineData("    ", "key.aes", "iv.aes", null)]
+        [InlineData("Data Source=db.db;", "    ", "iv.aes", null)]
+        [InlineData("Data Source=db.db;", "key.aes", "    ", null)]
+        [InlineData("Data Source=db.db;", "key.aes", "iv.aes", "")]
+        [InlineData("Data Source=db.db;", "key.aes", "iv.aes", "    ")]
+        public void EnsureFolders_NullOrWhitespaceArgs_Throws(string? conn, string? key, string? iv, string? rootVaultPath)
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentException>(() => AppFoldersHelper.EnsureFolders(conn!, key!, iv!));
+            Assert.Throws<ArgumentException>(() => AppFoldersHelper.EnsureFolders(conn!, key!, iv!, rootVaultPath));
         }
 
         [Fact]

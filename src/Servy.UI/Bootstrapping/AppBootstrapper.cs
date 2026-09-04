@@ -330,12 +330,14 @@ namespace Servy.UI.Bootstrapping
                     await Task.Yield(); // Allow the UI thread to pump messages and render the window
                 }
 
-                Helper.EnsureEventSourceExists();
-
                 // 2. Background Initialization (I/O & DB)
                 // Note: Configuration and Logger settings are already loaded synchronously in OnStartup.
                 await Task.Run(async () =>
                 {
+                    // Registry-backed and unbounded; must not run on the UI thread, and must be
+                    // inside the measured window so the splash floor reflects real elapsed time.
+                    Helper.EnsureEventSourceExists();
+
                     if (string.IsNullOrEmpty(ConnectionString) || string.IsNullOrEmpty(AESKeyFilePath) || string.IsNullOrEmpty(AESIVFilePath))
                     {
                         throw new InvalidOperationException(
