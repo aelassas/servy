@@ -1625,7 +1625,8 @@ namespace Servy.Core.Config
         /// <summary>
         /// Gets the full path to the Sysinternals Handle executable (<c>handle64.exe</c> on x64, or
         /// <c>handle64a.exe</c> on ARM64). In DEBUG mode, it looks in the application's base directory;
-        /// in RELEASE mode, it looks in the ProgramData folder.
+        /// in RELEASE mode, it looks there first and falls back to the ProgramData folder when the
+        /// executable is not present locally.
         /// </summary>
         /// <returns>The full path to the Handle executable.</returns>
         public static string GetHandleExePath() =>
@@ -1636,7 +1637,8 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
-        /// In <c>RELEASE</c> builds, the path points to the executable located in the ProgramData folder.
+        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests and
+        /// portable execution work) and the ProgramData folder is used only as a fallback.
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Service.CLI.exe</c>.</returns>
         public static string GetServyCLIServicePath() => ResolveExe(ServyServiceCLIFileName);
@@ -1646,7 +1648,8 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
-        /// In <c>RELEASE</c> builds, the path points to the executable located in the ProgramData folder.
+        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests and
+        /// portable execution work) and the ProgramData folder is used only as a fallback.
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Service.exe</c>.</returns>
         public static string GetServyUIServicePath() => ResolveExe(ServyServiceUIFileName);
