@@ -194,7 +194,8 @@ namespace Servy.Service.Helpers
                   $"- enableDateRotation: {options.EnableDateRotation}\n" +
                   $"- dateRotationType: {options.DateRotationType}\n" +
                   $"- maxRotations: {options.MaxRotations}\n" +
-                  $"- useLocalTimeForRotation: {options.UseLocalTimeForRotation}\n\n" +
+                  $"- useLocalTimeForRotation: {options.UseLocalTimeForRotation}\n" +
+                  $"- enableDebugLogs: {options.EnableDebugLogs}\n\n" +
 
                   "--------Recovery---------------\n" +
                   $"- enableHealthMonitoring: {options.EnableHealthMonitoring}\n" +
@@ -222,13 +223,13 @@ namespace Servy.Service.Helpers
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
                   $"- postLaunchStartupDirectory: {options.PostLaunchStartupDirectory}\n\n" +
 
-                  "--------Pre-Stop-------------\n" +
+                  "--------Pre-Stop---------------\n" +
                   $"- preStopExecutablePath: {options.PreStopExecutablePath}\n" +
                   $"- preStopStartupDirectory: {options.PreStopStartupDirectory}\n" +
                   $"- preStopTimeout: {options.PreStopTimeoutInSeconds}\n" +
                   $"- preStopLogAsError: {options.PreStopLogAsError}\n\n" +
 
-                  "--------Post-Stop-------------\n" +
+                  "--------Post-Stop--------------\n" +
                   $"- postStopExecutablePath: {options.PostStopExecutablePath}\n" +
                   $"- postStopStartupDirectory: {options.PostStopStartupDirectory}\n"
             );

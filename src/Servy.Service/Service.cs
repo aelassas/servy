@@ -1418,7 +1418,7 @@ namespace Servy.Service
                     // Parse the base URL first so a malformed value fails here rather than at request time
                     var baseUri = new Uri(baseUrl);
                     var targetUri = baseUri;
-                    if (!string.IsNullOrEmpty(suffix) && enableFlags)
+                    if (!string.IsNullOrEmpty(suffix))
                     {
                         var baseStr = baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/";
                         targetUri = new Uri(baseStr + suffix.TrimStart('/'));
