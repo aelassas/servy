@@ -247,6 +247,10 @@ finally {
         try {
             [void][System.Console]::ReadKey($true)
         }
+        # ReadKey throws InvalidOperationException when standard input is redirected, a case the
+        # $isInteractive guard above is meant to exclude already, so this catch is a second net.
+        # The pause is cosmetic: a failure here is swallowed deliberately and the exit 1 below
+        # still enforces the build result.
         catch { }
     }
     else {
