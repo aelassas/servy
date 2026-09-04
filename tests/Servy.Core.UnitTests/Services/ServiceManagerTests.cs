@@ -374,7 +374,7 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchStderrPath = "pre-launch-stderr.log",
                 PreLaunchTimeout = 30,
                 PreLaunchIgnoreFailure = true,
-                FailureProgramExecutablePath = @"C:\Apps\App\app.exe",
+                FailureProgramPath = @"C:\Apps\App\app.exe",
                 FailureProgramStartupDirectory = @"C:\Apps\App",
                 FailureProgramExecutableArgs = "--arg1 val1",
                 PostLaunchExePath = @"C:\Apps\App\app.exe",

@@ -602,7 +602,7 @@ namespace Servy.Core.Domain
                 PreLaunchRetryAttempts = PreLaunchRetryAttempts,
                 PreLaunchIgnoreFailure = PreLaunchIgnoreFailure,
 
-                FailureProgramExecutablePath = FailureProgramPath,
+                FailureProgramPath = FailureProgramPath,
                 FailureProgramStartupDirectory = FailureProgramStartupDirectory,
                 FailureProgramExecutableArgs = FailureProgramParameters,
 

@@ -323,7 +323,7 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.PreLaunchTimeoutSeconds, captured.PreLaunchTimeout);
             Assert.Equal(service.PreLaunchRetryAttempts, captured.PreLaunchRetryAttempts);
             Assert.Equal(service.PreLaunchIgnoreFailure, captured.PreLaunchIgnoreFailure);
-            Assert.Equal(service.FailureProgramPath, captured.FailureProgramExecutablePath);
+            Assert.Equal(service.FailureProgramPath, captured.FailureProgramPath);
             Assert.Equal(service.FailureProgramStartupDirectory, captured.FailureProgramStartupDirectory);
             Assert.Equal(service.FailureProgramParameters, captured.FailureProgramExecutableArgs);
             Assert.Equal(service.EnvironmentVariables, captured.EnvironmentVariables);

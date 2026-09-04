@@ -233,7 +233,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Single(result.PreLaunchEnvironmentVariables);
 
             // Assert FailureProgram block
-            Assert.Equal(@"C:\App\alert.exe", result.FailureProgramExecutablePath);
+            Assert.Equal(@"C:\App\alert.exe", result.FailureProgramPath);
             Assert.Equal(@"C:\App\alert", result.FailureProgramStartupDirectory);
             Assert.Equal("--notify admin", result.FailureProgramExecutableArgs);
 

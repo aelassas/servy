@@ -105,7 +105,7 @@ namespace Servy.Service.CommandLine
                 PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
                 // Failure program settings
-                FailureProgramExecutablePath = SafeResolvePath(processHelper, serviceDto.FailureProgramPath, nameof(serviceDto.FailureProgramPath), serviceName),
+                FailureProgramPath = SafeResolvePath(processHelper, serviceDto.FailureProgramPath, nameof(serviceDto.FailureProgramPath), serviceName),
                 FailureProgramStartupDirectory = SafeResolvePath(processHelper, serviceDto.FailureProgramStartupDirectory, nameof(serviceDto.FailureProgramStartupDirectory), serviceName),
                 FailureProgramExecutableArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
 
