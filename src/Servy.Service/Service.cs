@@ -232,7 +232,7 @@ namespace Servy.Service
         /// <remarks>
         /// This is the primary <b>Production Constructor</b>. It automatically initializes the
         /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from
-        /// <c>appsettings.json</c>, and initializes the <see cref="SecureData"/> and database systems.
+        /// <c>App.config</c>, and initializes the <see cref="SecureData"/> and database systems.
         /// </remarks>
         public Service(
             Helpers.IServiceHelper serviceHelper,
