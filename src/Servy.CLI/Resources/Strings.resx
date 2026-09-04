@@ -44,7 +44,7 @@
     <value>Failed to import {0} configuration into the repository.</value>
   </data>
   <data name="Msg_ImportDeserializationFailure" xml:space="preserve">
-    <value>Service configuration was imported, but failed to deserialize for installation.</value>
+    <value>Failed to deserialize the service configuration. Nothing was imported.</value>
   </data>
   <data name="Msg_ImportInstallSuccess" xml:space="preserve">
     <value>{0} configuration saved and service '{1}' installed successfully.</value>
@@ -150,7 +150,7 @@
     <value>Check that the file path is correct, the file format is valid JSON or XML, and you have read permissions.</value>
   </data>
   <data name="Msg_PostSuccessSyncFailed" xml:space="preserve">
-    <value>{0}: Service operation completed successfully, but post-success repository synchronization failed for '{1}': {2}</value>
+    <value>{0}: service operation completed successfully, but post-success repository synchronization failed for '{1}': {2}</value>
   </data>
   <data name="Msg_ServiceOperationFailed" xml:space="preserve">
     <value>{0}: failed to {1}: {2}</value>

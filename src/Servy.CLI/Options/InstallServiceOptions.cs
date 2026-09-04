@@ -72,7 +72,7 @@ namespace Servy.CLI.Options
         /// <item><description>Disabled - Service is disabled and cannot be started.</description></item>
         /// </list>
         /// </summary>
-        [Option("startupType", HelpText = "Service startup type. Options: Automatic, AutomaticDelayedStart, Manual, Disabled.")]
+        [Option("startupType", HelpText = "Service startup type. Options: Automatic, AutomaticDelayedStart, Manual, Disabled. Defaults to Automatic.")]
         public string ServiceStartType { get; set; }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Servy.CLI.Options
         /// <item><description>RealTime</description></item>
         /// </list>
         /// </summary>
-        [Option("priority", HelpText = "Process priority level. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime.")]
+        [Option("priority", HelpText = "Process priority level. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime. Defaults to Normal.")]
         public string ProcessPriority { get; set; }
 
         /// <summary>
@@ -256,7 +256,7 @@ namespace Servy.CLI.Options
         /// Value must be between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
-        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Timeout in seconds for external heartbeat URL requests. Must be between 2 and 30 seconds.")]
+        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Timeout in seconds for external heartbeat URL requests. Must be between 2 and 30 seconds. Defaults to 10 seconds.")]
         public string HeartbeatUrlTimeoutSeconds { get; set; }
 
         /// <summary>

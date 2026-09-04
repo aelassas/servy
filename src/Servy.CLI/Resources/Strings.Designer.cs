@@ -124,7 +124,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service configuration was imported, but failed to deserialize for installation..
+        ///   Looks up a localized string similar to Failed to deserialize the service configuration. Nothing was imported..
         /// </summary>
         public static string Msg_ImportDeserializationFailure {
             get {
@@ -286,7 +286,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0}: Service operation completed successfully, but post-success repository synchronization failed for &apos;{1}&apos;: {2}.
+        ///   Looks up a localized string similar to {0}: service operation completed successfully, but post-success repository synchronization failed for &apos;{1}&apos;: {2}.
         /// </summary>
         public static string Msg_PostSuccessSyncFailed {
             get {
