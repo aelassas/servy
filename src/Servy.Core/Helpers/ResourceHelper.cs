@@ -573,7 +573,7 @@ namespace Servy.Core.Helpers
                 Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
                 Logger.Debug($"Host executable (deployment proxy) for '{resourceName}' last write time: {hostExeWriteTime.ToLocalTime():G}");
 
-                // Only copy if the embedded resource is newer by more than DeltaMinutes
+                // Only copy if the host executable (deployment proxy) is newer by more than AppConfig.ResourceStalenessThresholdMinutes
                 bool shouldCopy = hostExeWriteTime > existingFileTime.AddMinutes(AppConfig.ResourceStalenessThresholdMinutes);
 
                 if (!shouldCopy)
