@@ -146,7 +146,7 @@ namespace Servy.Service.ProcessManagement
         string Format();
 
         /// <summary>
-        /// Immediately stops the associated process and optionally its child/descendent processes.
+        /// Immediately stops the associated process and optionally its child/descendant processes.
         /// </summary>
         /// <param name="entireProcessTree">Kill entire process tree.</param>
         void Kill(bool entireProcessTree = false);
