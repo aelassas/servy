@@ -74,7 +74,7 @@ namespace Servy.Views
         /// from remaining in the system after the application exits.
         ///
         /// The method retrieves the current process ID and passes it to
-        /// <see cref="ProcessKiller.KillChildren(int)"/> to terminate all descendants.
+        /// <see cref="IProcessKiller.KillChildren(int)"/> to terminate all descendants.
         /// Any exceptions thrown during this cleanup are caught and logged for debugging.
         /// </remarks>
         protected override void OnClosed(EventArgs e)
