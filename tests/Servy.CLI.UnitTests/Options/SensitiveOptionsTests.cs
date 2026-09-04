@@ -10,13 +10,9 @@ namespace Servy.CLI.UnitTests.Options
         [Fact]
         public void SensitiveProperties_MustHaveSensitiveAttribute()
         {
-            // Arrange
-            bool foundAnySensitiveFields = false;
-
-            foreach (var type in CliOptionTypes.All)
-            {
-                // Find properties whose CLI Option LongName matches the sensitive patterns
-                var targetProperties = type.GetProperties()
+            // Arrange - every property whose CLI Option LongName matches the sensitive patterns
+            var targetProperties = CliOptionTypes.All
+                .SelectMany(type => type.GetProperties()
                     .Where(p =>
                     {
                         var optionAttr = p.GetCustomAttribute<OptionAttribute>();
@@ -29,24 +25,22 @@ namespace Servy.CLI.UnitTests.Options
                                optName.EndsWith("envvars") ||
                                optName.Contains("password");
                     })
-                    .ToList();
+                    .Select(p => new { TypeName = type.Name, Property = p }))
+                .ToArray();
 
-                if (targetProperties.Any())
-                {
-                    foundAnySensitiveFields = true;
-                }
+            // Act - collect every drifted property, so one run reports the whole family at once
+            // instead of stopping at the first one.
+            var missingAttribute = targetProperties
+                .Where(x => x.Property.GetCustomAttribute<SensitiveAttribute>() == null)
+                .Select(x => $"{x.TypeName}.{x.Property.Name}")
+                .ToArray();
 
-                // Act & Assert
-                foreach (var prop in targetProperties)
-                {
-                    var hasSensitiveAttribute = prop.GetCustomAttribute<SensitiveAttribute>() != null;
-                    Assert.True(hasSensitiveAttribute,
-                        $"Property '{prop.Name}' in '{type.Name}' matches sensitive naming conventions but is missing the [Sensitive] attribute.");
-                }
-            }
+            // Assert
+            Assert.True(missingAttribute.Length == 0,
+                $"Properties matching sensitive naming conventions but missing the [Sensitive] attribute: {string.Join(", ", missingAttribute)}.");
 
             // Sanity check to confirm our naming convention pattern scanner is actively intercepting fields
-            Assert.True(foundAnySensitiveFields,
+            Assert.True(targetProperties.Length > 0,
                 "The sensitive option name heuristic (params/env/envvars/password) matched no properties across the target assembly.");
         }
     }
