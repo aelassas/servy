@@ -77,17 +77,27 @@ namespace Servy.Services
         Task<bool> RestartServiceAsync(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Exports the service configuration to an XML file selected by the user.
+        /// Prompts for an XML file, validates the current configuration
+        /// (including the password confirmation), and writes the file only if validation succeeds.
+        /// If validation fails, the first error is shown and nothing is written.
         /// </summary>
-        /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        /// <param name="confirmPassword">
+        /// The confirmation of the service account password, checked against the configured password
+        /// as part of the validation pass.
+        /// </param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task ExportXmlConfigAsync(string? confirmPassword, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Exports the service configuration to a JSON file selected by the user.
+        /// Prompts for a JSON file, validates the current configuration
+        /// (including the password confirmation), and writes the file only if validation succeeds.
+        /// If validation fails, the first error is shown and nothing is written.
         /// </summary>
-        /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        /// <param name="confirmPassword">
+        /// The confirmation of the service account password, checked against the configured password
+        /// as part of the validation pass.
+        /// </param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task ExportJsonConfigAsync(string? confirmPassword, CancellationToken cancellationToken = default);
