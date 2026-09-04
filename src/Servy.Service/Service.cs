@@ -513,6 +513,8 @@ namespace Servy.Service
                     // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart()
                     // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite
                     // the state to include SERVICE_ACCEPT_PRESHUTDOWN, bypassing .NET's internal limitations.
+                    // Note this REPLACES the accepted-controls mask rather than adding to it: SERVICE_ACCEPT_SHUTDOWN,
+                    // set by CanShutdown = true, is dropped, so OnShutdown becomes a fallback path only (see its remarks).
                     _ = Task.Run(async () =>
                     {
                         try
@@ -2313,7 +2315,20 @@ namespace Servy.Service
         /// Mimics the Stop command to ensure child processes and hooks are cleaned up before the OS terminates the process.
         /// </summary>
         /// <remarks>
-        /// This requires <see cref="ServiceBase.CanShutdown"/> to be set to <see langword="true"/> in the service constructor.
+        /// <para>
+        /// Fallback path, not the normal one. This requires <see cref="ServiceBase.CanShutdown"/> to be set to
+        /// <see langword="true"/> in the service constructor, but once the native PRESHUTDOWN registration in
+        /// <c>OnStart</c> succeeds it publishes <c>SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN</c>, which
+        /// drops the <c>SERVICE_ACCEPT_SHUTDOWN</c> bit that <see cref="ServiceBase.CanShutdown"/> had set - and
+        /// the SCM does not send <c>SERVICE_CONTROL_SHUTDOWN</c> to a service registered for preshutdown anyway.
+        /// The shutdown teardown normally runs from <c>OnCustomCommand</c> instead.
+        /// </para>
+        /// <para>
+        /// This handler therefore fires only where that registration did not take effect: test mode (the service
+        /// handle stays <see cref="IntPtr.Zero"/>), an early stop that cancels the one-second delay before the
+        /// native call, a failing <c>SetServiceStatus</c>, or after <c>ServiceBase</c> re-publishes its own status
+        /// in answer to <c>SERVICE_CONTROL_INTERROGATE</c>. Do not remove it, or those paths lose their cleanup.
+        /// </para>
         /// </remarks>
         protected override void OnShutdown()
         {
