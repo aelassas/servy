@@ -7,8 +7,17 @@ using System.Runtime.ExceptionServices;
 namespace Servy.Testing
 {
     /// <summary>
-    /// Reflection helper methods for tests to access public and non-public fields, properties, constructors, and methods.
+    /// Reflection helpers for tests: non-public instance and static fields (get and set),
+    /// public and non-public constructors, non-public instance and static methods,
+    /// public static methods, and enumeration of public instance properties.
     /// </summary>
+    /// <remarks>
+    /// Field access is non-public only, so a public field is reported as not found. The property
+    /// helper enumerates public instance properties and does not read or write their values, and
+    /// there is no invoker for a public instance method. Lookups walk the base-type chain and throw
+    /// <see cref="ArgumentException"/> rather than returning null, so a renamed member fails the
+    /// test loudly instead of silently no-opping.
+    /// </remarks>
     public static class TestReflection
     {
         private const BindingFlags PrivateInstanceFlags = BindingFlags.NonPublic | BindingFlags.Instance;

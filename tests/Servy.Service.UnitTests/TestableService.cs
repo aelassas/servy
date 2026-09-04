@@ -21,9 +21,13 @@ namespace Servy.Service.UnitTests
     public class TestableService : Service
     {
         /// <summary>
-        /// Caches reflection bindings at class-load time.
-        /// Throws loudly and immediately if the underlying Service class is refactored
-        /// (e.g., variables renamed) ensuring tests don't silently fail.
+        /// Caches reflection bindings to <see cref="Service"/>'s private members.
+        /// Binding runs on first access to this class, not when <see cref="TestableService"/>
+        /// loads, and a failed binding throws (wrapped in a
+        /// <see cref="TypeInitializationException"/>, so the message is one InnerException down)
+        /// rather than letting a renamed member degrade into a silently skipped assertion.
+        /// Members that reach <see cref="Service"/> directly, such as InvokeSetProcessPriority
+        /// and InvokeCheckHealthAsync, do not pass through here and validate nothing.
         /// </summary>
         private static class ServiceReflection
         {
@@ -110,17 +114,16 @@ namespace Servy.Service.UnitTests
         public void InvokeOnProcessExited(object sender, EventArgs e) =>
             ServiceReflection.OnProcessExitedMethod.Invoke(this, new object[] { sender, e });
 
-        // Expose child process for asserts
         public IProcessWrapper GetChildProcess() =>
             (IProcessWrapper)ServiceReflection.ChildProcessField.GetValue(this);
 
-        // Expose StartProcess protected method and allow override logic
+        // Expose the private StartProcess method for direct invocation
         public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables, CancellationToken cancellationToken)
         {
             ServiceReflection.StartProcessMethod.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables, cancellationToken });
         }
 
-        // Expose SafeKillProcess protected method
+        // Expose the private SafeKillProcess method
         public void InvokeSafeKillProcess(IProcessWrapper process) =>
             ServiceReflection.SafeKillProcessMethod.Invoke(this, new object[] { process, 5000 });
 
