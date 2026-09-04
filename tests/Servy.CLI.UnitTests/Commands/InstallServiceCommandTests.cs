@@ -24,6 +24,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         public InstallServiceCommandTests()
         {
+            BaseCommand.BypassElevationCheck = true;
+
             _mockServiceManager = new Mock<IServiceManager>();
             _mockValidator = new Mock<IServiceInstallValidator>();
             _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object);
@@ -50,8 +52,7 @@ namespace Servy.CLI.UnitTests.Commands
             IServiceManager nullManager = null;
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>("serviceManager", () => new InstallServiceCommand(nullManager, _mockValidator.Object));
-            Assert.Equal("serviceManager", ex.ParamName);
+            Assert.Throws<ArgumentNullException>("serviceManager", () => new InstallServiceCommand(nullManager, _mockValidator.Object));
         }
 
         [Fact]
@@ -61,8 +62,7 @@ namespace Servy.CLI.UnitTests.Commands
             IServiceInstallValidator nullValidator = null;
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>("validator", () => new InstallServiceCommand(_mockServiceManager.Object, nullValidator));
-            Assert.Equal("validator", ex.ParamName);
+            Assert.Throws<ArgumentNullException>("validator", () => new InstallServiceCommand(_mockServiceManager.Object, nullValidator));
         }
 
         [Fact]
@@ -80,8 +80,6 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
-            BaseCommand.BypassElevationCheck = true;
-
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
@@ -96,8 +94,6 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new CLI.Options.InstallServiceOptions();
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
-
-            BaseCommand.BypassElevationCheck = true;
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
@@ -119,8 +115,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Validation passes, guiding the runtime flow straight down into the wrapper file check block
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
-
-            BaseCommand.BypassElevationCheck = true;
 
             // Interrupt-Driven Modification: Safely delete the dummy fixture file to emulate a clean missing binary state
             if (File.Exists(_wrapperExePath))
@@ -151,8 +145,6 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
-            BaseCommand.BypassElevationCheck = true;
-
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
@@ -176,8 +168,6 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<UnauthorizedAccessException>();
 
-            BaseCommand.BypassElevationCheck = true;
-
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
@@ -200,8 +190,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<Exception>();
-
-            BaseCommand.BypassElevationCheck = true;
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
@@ -240,6 +228,9 @@ namespace Servy.CLI.UnitTests.Commands
                     // Best-effort recovery catch
                 }
             }
+
+            // Resets process-wide static state altered during test execution.
+            BaseCommand.BypassElevationCheck = false;
         }
     }
 }
