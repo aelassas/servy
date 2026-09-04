@@ -184,7 +184,7 @@ namespace Servy.Manager
                 ResourceExtractionWarningTitle = UI.Resources.Strings.Msg_ResourceExtractionWarningTitle,
                 SplashWindowFactory = () => new SplashWindow(Strings.Splash_Text),
                 // CRITICAL: The composition root is here, not in the View.
-                MainWindowFactoryAsync = (serviceName) =>
+                MainWindowFactoryAsync = (_) =>
                 {
                     // 0. Retrieve DI-managed services
                     var processHelper = Services.GetRequiredService<IProcessHelper>();

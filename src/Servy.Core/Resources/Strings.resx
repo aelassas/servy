@@ -115,10 +115,10 @@
     <value>The specified pre-launch stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
-    <value>pre-launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
+    <value>Pre-launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
   </data>
   <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
-    <value>pre-launch retry attempts must be a number between {0} and {1}.</value>
+    <value>Pre-launch retry attempts must be a number between {0} and {1}.</value>
   </data>
 
   <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
@@ -149,7 +149,7 @@
     <value>The specified pre-stop startup directory is invalid.</value>
   </data>
   <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
-    <value>pre-stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
+    <value>Pre-stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
   </data>
 
   <data name="Msg_InvalidPostStopPath" xml:space="preserve">
@@ -361,7 +361,7 @@
     <value>Failed to deserialize service configuration from XML content.</value>
   </data>
   <data name="Msg_ImportXmlFailed" xml:space="preserve">  
-    <value>Failed to import service from XML: {0}.</value>
+    <value>Failed to import service from XML: {0}</value>
   </data>
   <data name="Msg_ImportJsonNullOrEmpty" xml:space="preserve">
     <value>JSON content cannot be null or empty.</value>

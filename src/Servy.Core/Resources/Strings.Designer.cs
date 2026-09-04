@@ -376,7 +376,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to import service from XML: {0}..
+        ///   Looks up a localized string similar to Failed to import service from XML: {0}.
         /// </summary>
         public static string Msg_ImportXmlFailed {
             get {
@@ -556,7 +556,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to pre-launch retry attempts must be a number between {0} and {1}..
+        ///   Looks up a localized string similar to Pre-launch retry attempts must be a number between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidPreLaunchRetryAttempts {
             get {
@@ -592,7 +592,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to pre-launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
+        ///   Looks up a localized string similar to Pre-launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreLaunchTimeout {
             get {
@@ -619,7 +619,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to pre-stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
+        ///   Looks up a localized string similar to Pre-stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreStopTimeout {
             get {

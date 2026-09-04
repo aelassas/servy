@@ -42,5 +42,8 @@ namespace Servy.Core.Native
 
         /// <summary>The specified service does not exist as an installed service.</summary>
         public const int ERROR_SERVICE_DOES_NOT_EXIST = 1060;
+
+        ///<summary>The specified service has not been started.</summary>
+        public const int ERROR_SERVICE_NOT_ACTIVE = 1062;
     }
 }

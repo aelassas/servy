@@ -36,7 +36,10 @@ namespace Servy.Core.Validation
                 var attr = property.GetCustomAttribute<ServicePathAttribute>();
                 if (attr == null) continue;
 
-                var value = property.GetValue(target) as string;
+                if (property.PropertyType != typeof(string))
+                    throw new InvalidOperationException(
+                        $"[ServicePath] is only valid on string properties; {property.DeclaringType?.Name}.{property.Name} is {property.PropertyType.Name}.");
+                var value = (string?)property.GetValue(target);
                 bool isEmpty = string.IsNullOrWhiteSpace(value);
 
                 // 1. Mandatory presence check

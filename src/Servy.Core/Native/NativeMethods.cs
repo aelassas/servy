@@ -88,12 +88,6 @@ namespace Servy.Core.Native
         /// <summary>Access right to create a service object and add it to the database.</summary>
         public const uint SC_MANAGER_CREATE_SERVICE = 0x0002;
 
-        /// <summary>Required to query the status of a service.</summary>
-        public const int SERVICE_QUERY_STATUS = 0x0004;
-
-        /// <summary>Access right to query the configuration parameters of a service.</summary>
-        public const uint SERVICE_QUERY_CONFIG = 0x0001;
-
         #endregion
 
         #region Service Access Rights
@@ -109,6 +103,12 @@ namespace Servy.Core.Native
 
         /// <summary>Access right to delete the service.</summary>
         public const uint SERVICE_DELETE = 0x00010000;
+
+        /// <summary>Required to query the status of a service.</summary>
+        public const int SERVICE_QUERY_STATUS = 0x0004;
+
+        /// <summary>Access right to query the configuration parameters of a service.</summary>
+        public const uint SERVICE_QUERY_CONFIG = 0x0001;
 
         #endregion
 
