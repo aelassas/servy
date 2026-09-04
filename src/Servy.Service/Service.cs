@@ -406,8 +406,9 @@ namespace Servy.Service
 
                 // PROMOTE LOGGER IMMEDIATELY
                 // Now every log from this point forward (including validation errors) is prefixed.
-                // DO NOT DISPOSE the root logger, as the scoped logger relies on its unmanaged resources
-                // (EventLog handles, FileStreams) to function.
+                // DO NOT DISPOSE the root logger: the scoped logger delegates every write back to it,
+                // and EventLogLogger.Dispose() clears the _isInitialized flag that its write path
+                // checks first, so disposing the root would silence the scoped logger.
                 _logger = _logger?.CreateScoped(options.ServiceName);
 
                 // Log and Validate using the new scoped _logger
