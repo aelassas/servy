@@ -162,7 +162,7 @@ namespace Servy.Core.Validation
         /// <param name="path">The unverified relative or absolute file path to audit.</param>
         /// <param name="mode">The <see cref="FileMode"/> configuration tracking contextual intent (e.g., import vs. export semantics).</param>
         /// <param name="access">The <see cref="FileAccess"/> permissions required for the resolved target stream.</param>
-        /// <param name="share">The <see cref="FileShare"/> rule limits mapping concurrent thread constraints.</param>
+        /// <param name="share">The <see cref="FileShare"/> level granted to other handles while the returned stream is open.</param>
         /// <param name="stream">When this method returns, contains an opened, active <see cref="FileStream"/> instance pointing to the verified file layout if validation succeeded; otherwise, <c>null</c>. <b>On successful validation, the caller assumes absolute ownership of this instance and is responsible for its disposal.</b></param>
         /// <returns>A <see cref="PathSecurityResult"/> indicating whether the validation pipeline passed or failed, along with outcome tokens.</returns>
         public static PathSecurityResult ValidatePath(string path, FileMode mode, FileAccess access, FileShare share, out FileStream? stream)
