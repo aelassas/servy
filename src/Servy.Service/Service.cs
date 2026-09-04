@@ -367,9 +367,12 @@ namespace Servy.Service
         /// runs the optional pre-launch process (if configured), and starts the monitored service process.
         /// Also sets up health monitoring for the service.
         /// <para>
-        /// This method now resets the restart attempt counter at startup to ensure that
-        /// previous restart limits do not persist across service restarts (including
-        /// restarts triggered by <c>Servy.Restarter.Net48.exe</c>).
+        /// When recovery is enabled, this method schedules a background evaluation of the persistent
+        /// restart-attempt counter (see <see cref="ConditionalResetRestartAttemptsAsync"/>). The counter is
+        /// deliberately preserved across reboots and across rapid crash-restart cycles - including restarts
+        /// triggered by <c>Servy.Restarter.Net48.exe</c> - so that recovery quotas such as
+        /// <c>MaxRestartAttempts</c> remain meaningful; it is reset to zero only once the service has run
+        /// stably past the detection window. With recovery disabled, the counter is not touched at startup.
         /// </para>
         /// </summary>
         /// <param name="args">Command-line arguments passed to the service by the Service Control Manager.</param>
