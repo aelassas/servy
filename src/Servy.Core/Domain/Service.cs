@@ -489,8 +489,7 @@ namespace Servy.Core.Domain
         /// </returns>
         public ServiceControllerStatus? GetStatus(CancellationToken cancellationToken = default)
         {
-            // Bypassed independent IsInstalled pre-check to resolve the TOCTOU window vulnerability.
-            // Delegate status resolution directly to a single-query path that returns null safely on missing services.
+            // Single-query path: returns null for missing services, avoiding a check-then-query TOCTOU window.
             return _serviceManager.GetServiceStatus(Name, cancellationToken);
         }
 
