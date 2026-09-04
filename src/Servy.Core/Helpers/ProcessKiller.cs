@@ -202,7 +202,7 @@ namespace Servy.Core.Helpers
                 var (completeSnapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
                 var protectedPids = GetAncestorPids(completeSnapshot);
 
-                // Find target PIDs directly from the snapshot - no Process.GetProcesses() needed.
+                // Find target PIDs directly from the snapshot.
                 var targetPids = new List<int>();
                 var anyProtected = false;
                 foreach (var kvp in completeSnapshot)
@@ -304,8 +304,8 @@ namespace Servy.Core.Helpers
                     int selfPid = GetCurrentPid();
 
                     // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
-                    // Aligned with the string overload to use SafeStartTime wrapper to prevent Win32Exception
-                    // or InvalidOperationException from skipping the subsequent KillProcessTree execution.
+                    // SafeStartTime prevents a Win32Exception or InvalidOperationException from
+                    // skipping the subsequent KillProcessTree execution.
                     if (killParents) KillParentProcesses(target.Id, SafeStartTime(target), protectedPids, completeSnapshot, new HashSet<int>());
                     KillProcessTree(target, selfPid, protectedPids, byParent);
 
