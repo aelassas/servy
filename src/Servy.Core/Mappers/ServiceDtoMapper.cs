@@ -8,10 +8,9 @@ using System;
 namespace Servy.Core.Mappers
 {
     /// <summary>
-    /// Provides mapping methods between the domain <see cref="Service"/> model
-    /// and its corresponding data transfer object <see cref="ServiceDto"/>.
+    /// Maps a persisted <see cref="ServiceDto"/> to the domain <see cref="Service"/> model.
     /// </summary>
-    public static class ServiceMapper
+    public static class ServiceDtoMapper
     {
         /// <summary>
         /// Maps a <see cref="ServiceDto"/> from the database back to the domain <see cref="Service"/> model.

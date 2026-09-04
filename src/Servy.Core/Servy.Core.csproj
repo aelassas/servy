@@ -184,7 +184,7 @@
     <Compile Include="Logging\EventLogReader.cs" />
     <Compile Include="Logging\IEventLogReader.cs" />
     <Compile Include="Logging\IServyLogger.cs" />
-    <Compile Include="Mappers\ServiceMapper.cs" />
+    <Compile Include="Mappers\ServiceDtoMapper.cs" />
     <Compile Include="Domain\Service.cs" />
     <Compile Include="Native\LogonAsServiceGrant.cs" />
     <Compile Include="Native\NativeMethods.cs" />

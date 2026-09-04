@@ -29,7 +29,7 @@ namespace Servy.Core.UnitTests.Mappers
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() =>
-                ServiceMapper.ToDomain(_serviceManagerMock.Object, nullDto)
+                ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, nullDto)
             );
 
             // Verify the parameter name in the exception matches the code
@@ -127,7 +127,7 @@ namespace Servy.Core.UnitTests.Mappers
             };
 
             // Act
-            var service = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
+            var service = ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, dto);
 
             // Assert
             Assert.Equal(dto.Name, service.Name);
@@ -201,7 +201,7 @@ namespace Servy.Core.UnitTests.Mappers
             var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\service.exe" };
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>(() => ServiceMapper.ToDomain(null, dto));
+            var ex = Assert.Throws<ArgumentNullException>(() => ServiceDtoMapper.ToDomain(null, dto));
             Assert.Equal("serviceManager", ex.ParamName);
         }
 
@@ -217,7 +217,7 @@ namespace Servy.Core.UnitTests.Mappers
             };
 
             // Act
-            var service = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
+            var service = ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, dto);
 
             // Assert: Verify every fallback branch was hit correctly
             Assert.Equal(AppConfig.DefaultStartupType, service.StartupType);
@@ -269,7 +269,7 @@ namespace Servy.Core.UnitTests.Mappers
                 .ToList();
 
             // Act
-            _ = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
+            _ = ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, dto);
 
             // Assert: Verify that every nullable DTO field remains null after mapping
             foreach (var prop in nullableProperties)

@@ -170,7 +170,7 @@ namespace Servy.Manager.Services
                     try
                     {
                         return await ServiceMapper.ToModelAsync(
-                            Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
+                            Core.Mappers.ServiceDtoMapper.ToDomain(_serviceManager, r),
                             _appConfig.IsDesktopAppAvailable,
                             calculatePerf,
                             _processHelper,
@@ -741,7 +741,7 @@ namespace Servy.Manager.Services
             }
 
             // Map to the domain engine only if we have a valid data transfer object
-            return Core.Mappers.ServiceMapper.ToDomain(_serviceManager, serviceDto);
+            return Core.Mappers.ServiceDtoMapper.ToDomain(_serviceManager, serviceDto);
         }
 
         /// <summary>
