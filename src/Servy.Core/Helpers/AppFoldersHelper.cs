@@ -91,6 +91,8 @@ namespace Servy.Core.Helpers
                 throw new ArgumentException("aesKeyFilePath cannot be null or whitespace", nameof(aesKeyFilePath));
             if (string.IsNullOrWhiteSpace(aesIVFilePath))
                 throw new ArgumentException("aesIVFilePath cannot be null or whitespace", nameof(aesIVFilePath));
+            if (rootVaultPath != null && string.IsNullOrWhiteSpace(rootVaultPath))
+                throw new ArgumentException("rootVaultPath cannot be whitespace", nameof(rootVaultPath));
 
             // 1. Utilize the BCL's robust connection string builder
             DbConnectionStringBuilder builder;
