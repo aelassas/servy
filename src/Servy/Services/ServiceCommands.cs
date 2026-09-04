@@ -440,11 +440,7 @@ namespace Servy.Services
             }
         }
 
-        /// <summary>
-        /// Opens the security hardening guide in the default web browser.
-        /// </summary>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <inheritdoc />
         public async Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -563,7 +559,7 @@ namespace Servy.Services
         }
 
         /// <summary>
-        /// Validates the service name.
+        /// Validates the service name and displays a warning dialog if it is invalid.
         /// </summary>
         /// <param name="serviceName">Service name.</param>
         /// <returns>Returns true if valid; otherwise, false.</returns>
