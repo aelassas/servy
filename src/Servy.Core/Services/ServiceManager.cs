@@ -761,7 +761,10 @@ namespace Servy.Core.Services
                     if (!_windowsServiceApi.ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status))
                     {
                         int controlErr = _win32ErrorProvider.GetLastWin32Error();
-                        Logger.Warn($"ControlService(STOP) for '{serviceName}' returned false. Win32 error: {controlErr}. Proceeding to wait loop.");
+                        if (controlErr == ERROR_SERVICE_NOT_ACTIVE)
+                            Logger.Info($"Service '{serviceName}' is already stopped; skipping stop command.");
+                        else
+                            Logger.Warn($"ControlService(STOP) for '{serviceName}' returned false. Win32 error: {controlErr}. Proceeding to wait loop.");
                     }
 
                     // 2. The Wait Loop: Now fully cancellable
