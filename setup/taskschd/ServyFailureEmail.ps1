@@ -130,9 +130,9 @@ function Send-NotificationEmail {
         [string]$PlaceholderDomain = "example.com"
     )
 
-    # Masking is now performed by the caller before HTML encoding.
-    # This ensures the regex tail (?:"[^"]*"|'[^']*'|\S+) matches full quoted strings
-    # before quotes are converted to &quot; or &#39;.
+    # Body and Subject arrive already masked. Masking must run before HTML encoding so the
+    # masker's regex tail (?:"[^"]*"|'[^']*'|\S+) still sees the raw quotes it anchors on
+    # rather than &quot; or &#39;.
 
     # --- HARDENED CONFIGURATION ACCESS ---
 
