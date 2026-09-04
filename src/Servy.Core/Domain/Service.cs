@@ -42,6 +42,21 @@ namespace Servy.Core.Domain
     /// after the main process starts and do not support supervisor features.
     /// </description>
     /// </item>
+    /// <item>
+    /// <description>
+    /// <b>Pre-Stop (Synchronous, advisory):</b> Runs before the child process tree is terminated and is
+    /// bounded by <see cref="PreStopTimeoutSeconds"/>, but it is not a gatekeeper: a failure never cancels
+    /// the stop, and <see cref="PreStopLogAsError"/> only decides whether it is logged as an error or a
+    /// warning.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// <b>Post-Stop (Asynchronous):</b> A "Sidecar" like Post-Launch. It runs fire-and-forget after the
+    /// process tree is gone, is not tracked, and supports no supervisor features - so it has no timeout
+    /// property of its own.
+    /// </description>
+    /// </item>
     /// </list>
     /// </remarks>
     public class Service
