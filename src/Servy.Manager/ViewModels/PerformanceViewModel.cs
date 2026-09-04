@@ -37,12 +37,16 @@ namespace Servy.Manager.ViewModels
         /// </remarks>
         private const double GraphScaleHeadroom = 1.2;
 
+        /// <summary>
+        /// Minimum RAM scale (MB) to avoid flat graphs for small processes.
+        /// </summary>
+        private const double MinRamAxisMaximumMb = 10;
+
         #endregion
 
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
-        private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
 
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
@@ -340,7 +344,7 @@ namespace Servy.Manager.ViewModels
             // (100% for CPU, _ramDisplayMax MB for RAM) so small processes don't fill the graph.
             double displayMax = isCpu
                 ? Math.Max(currentMax * GraphScaleHeadroom, 100.0)
-                : Math.Max(currentMax * GraphScaleHeadroom, _ramDisplayMax);
+                : Math.Max(currentMax * GraphScaleHeadroom, MinRamAxisMaximumMb);
 
             var lineBuffer = isCpu ? _cpuBuffer : _ramBuffer;
             var fillBuffer = isCpu ? _cpuFillBuffer : _ramFillBuffer;

@@ -59,25 +59,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Views\Controls\PidBadgeControl.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Views\Controls\ServiceListControl.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="Resources\Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-    </Compile>
-    <Compile Update="Views\DependenciesView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Views\ConsoleView.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Views\ServiceSearchUserControl.cs">
-      <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
 

@@ -187,7 +187,8 @@
                                         Width="*"
                                         MinWidth="300"
                                         CanUserReorder="False"
-                                        CanUserResize="False">
+                                        CanUserResize="False"
+                                        SortMemberPath="Message">
           <DataGridTemplateColumn.HeaderStyle>
             <Style TargetType="DataGridColumnHeader">
               <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_LogsMessageColumnHeader_Name}" />
