@@ -25,8 +25,10 @@ namespace Servy.Core.Validation
     }
 
     /// <summary>
-    /// A secure token representing a file path that has successfully passed all defense-in-depth security invariants.
-    /// The constructor is intentionally hidden to prevent arbitrary instantiation outside of the security gate.
+    /// A token representing a file path that passed the checks of the <see cref="PathSecurityGuard"/> entry point that produced it.
+    /// Note that <see cref="PathSecurityGuard.ValidatePathOnly"/> runs the pre-handle checks only; the post-open re-checks run in <see cref="PathSecurityGuard.ValidatePath"/>.
+    /// The constructor is <c>internal</c>, so construction is confined to <c>Servy.Core</c> and, through <c>InternalsVisibleTo</c>, its test assemblies; it is not restricted to the gate itself.
+    /// Callers must not construct one outside <see cref="PathSecurityResult.Success"/>.
     /// </summary>
     public sealed class ValidatedPath
     {
