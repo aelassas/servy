@@ -285,8 +285,9 @@ namespace Servy.Service.Helpers
                 // 2. Establish the absolute floor (System32)
                 string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
 
-                // 3. derive fallback from ExecutablePath with explicit guards
-                // This avoids ArgumentNullException on older runtimes and handles malformed roots
+                // 3. Derive the fallback from ExecutablePath.
+                // Path.GetDirectoryName returns null for null or empty input and for a bare root ("C:\"),
+                // so the IsNullOrEmpty check on its result below covers every case.
                 string? exeDir = string.IsNullOrEmpty(options.ExecutablePath)
                     ? null
                     : Path.GetDirectoryName(options.ExecutablePath);
