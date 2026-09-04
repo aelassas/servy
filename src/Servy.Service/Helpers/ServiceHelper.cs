@@ -357,7 +357,6 @@ namespace Servy.Service.Helpers
                         }
                         catch (Exception ex)
                         {
-                            /* Process already dead, can't get children anyway */
                             logger?.Warn($"RestartProcess error while getting process PID and StartTime: {ex.Message}");
                         }
 

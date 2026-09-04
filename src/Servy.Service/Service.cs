@@ -2705,7 +2705,6 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    /* Process already dead, can't get children anyway */
                     _logger?.Warn($"SafeKillProcess error while getting process PID and StartTime: {ex.Message}");
                 }
 
