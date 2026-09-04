@@ -143,7 +143,7 @@ namespace Servy.Core.Logging
         /// </para>
         /// <para>
         /// Settings established here govern the behavior of the <c>InternalInitialize</c> process, which
-        /// manages the physical file handles and archive logic for the <see cref="Servy.Service"/>.
+        /// manages the physical file handles and archive logic for the calling application's log file.
         /// </para>
         /// </remarks>
         /// <param name="logLevel">The minimum severity level required for an entry to be recorded. Defaults to <see cref="LogLevel.Info"/>.</param>
