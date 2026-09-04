@@ -41,8 +41,8 @@ namespace Servy.Core.ServiceDependencies
         /// A MULTI_SZ string suitable for the <c>lpDependencies</c> parameter of
         /// <c>ChangeServiceConfig</c>. The format is:
         /// <list type="bullet">
-        /// <item><description>Each dependency is separated by a single null character ('\0').</description></item>
-        /// <item><description>The list is terminated by an additional null character, resulting in a double-null termination ("\0\0").</description></item>
+        /// <item><description>Each dependency is followed by a null character ('\0').</description></item>
+        /// <item><description>A final null character closes the list, so the result always ends in "\0\0".</description></item>
         /// <item><description>If no dependencies are specified, returns <c>"\0\0"</c> to explicitly clear dependencies.</description></item>
         /// </list>
         /// </returns>
