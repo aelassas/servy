@@ -10,8 +10,9 @@ namespace Servy.UI.Helpers
     public static class Helper
     {
         /// <summary>
-        /// Recursively searches the WPF Visual Tree to find a child of a specific type.
-        /// Used here to extract the internal <see cref="ScrollViewer"/> from the <see cref="ListBox"/>.
+        /// Recursively searches the WPF visual tree below <paramref name="parent"/> for the first
+        /// descendant of type <typeparamref name="T"/>, depth-first in child order.
+        /// Typical use: locating the <see cref="ScrollViewer"/> inside a templated list control.
         /// </summary>
         /// <typeparam name="T">The type of the visual child to find.</typeparam>
         /// <param name="parent">The parent object to start the search from.</param>
