@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.0
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Recursively converts text files in the repository root to UTF-8 (with BOM for PowerShell scripts/manifests, XML, and config files; no BOM for others) with Windows (CRLF) line endings.
@@ -7,8 +7,9 @@
     Traverses the repository root recursively, skipping specified directories (e.g., bin, obj,
     node_modules) and file types/names (e.g., .exe, .7z, .coverage.xml, coverage.cobertura.xml).
     Normalizes line endings to Windows CRLF (`r`n) and re-writes file content using
-    [System.IO.File]::WriteAllText. PowerShell files (.ps1, .psm1, .psd1), XML files (.xml), and configuration files (.config)
-    are saved as UTF-8 with BOM for compatibility, while all other text files are saved as UTF-8 (no BOM).
+    [System.IO.File]::WriteAllText only when changes are detected. PowerShell files (.ps1, .psm1, .psd1),
+    XML files (.xml), and configuration files (.config) are saved as UTF-8 with BOM for compatibility,
+    while all other text files are saved as UTF-8 (no BOM).
 
 .PARAMETER DryRun
     If specified, previews the files that would be converted without performing writes to disk.
@@ -47,6 +48,7 @@ param(
     [string[]]$ExcludeFiles = @('coverage.cobertura.xml')
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $script:HadFailure = $false
 
@@ -132,17 +134,38 @@ function Get-FilteredFiles {
     }
 }
 
+# Fast byte array equality check for PowerShell 5.1 and Core
+function Test-ByteArrayEqual {
+    param(
+        [byte[]]$Bytes1,
+        [byte[]]$Bytes2
+    )
+
+    if ($null -eq $Bytes1 -or $null -eq $Bytes2) { return $Bytes1 -eq $Bytes2 }
+    if ($Bytes1.Length -ne $Bytes2.Length) { return $false }
+
+    for ($i = 0; $i -lt $Bytes1.Length; $i++) {
+        if ($Bytes1[$i] -ne $Bytes2[$i]) {
+            return $false
+        }
+    }
+    return $true
+}
+
 # Collect target files using early directory pruning
 $files = Get-FilteredFiles -Path $baseDir `
                            -DirExclusions $ExcludeDirs `
                            -ExtExclusions $ExcludeExtensions `
                            -FileExclusions $ExcludeFiles
 
+$scannedCount   = 0
 $convertedCount = 0
-$failedCount = 0
+$failedCount    = 0
 
 foreach ($file in $files) {
     try {
+        $scannedCount++
+
         # Inspect and validate existing encoding strictly to prevent silent non-UTF-8 character corruption
         $sourceEncoding = Get-FileEncoding $file.FullName
         $content = [System.IO.File]::ReadAllText($file.FullName, $sourceEncoding)
@@ -156,13 +179,25 @@ foreach ($file in $files) {
 
         $encodingLabel = if ($requiresBom) { "UTF-8 with BOM" } else { "UTF-8 (no BOM)" }
 
-        if ($DryRun) {
-            Write-Host "Would convert ($encodingLabel): $($file.FullName)" -ForegroundColor Yellow
-            $convertedCount++
-        } else {
-            # Write back file content
-            [System.IO.File]::WriteAllText($file.FullName, $crlfContent, $targetEncoding)
-            Write-Host "Converted ($encodingLabel): $($file.FullName)" -ForegroundColor Green
+        # Perform byte-level comparison to detect actual line ending or encoding drift
+        $originalBytes = [System.IO.File]::ReadAllBytes($file.FullName)
+        $preamble      = $targetEncoding.GetPreamble()
+        $contentBytes  = $targetEncoding.GetBytes($crlfContent)
+
+        $targetBytes = New-Object byte[] ($preamble.Length + $contentBytes.Length)
+        if ($preamble.Length -gt 0) {
+            [System.Buffer]::BlockCopy($preamble, 0, $targetBytes, 0, $preamble.Length)
+        }
+        [System.Buffer]::BlockCopy($contentBytes, 0, $targetBytes, $preamble.Length, $contentBytes.Length)
+
+        if (-not (Test-ByteArrayEqual -Bytes1 $originalBytes -Bytes2 $targetBytes)) {
+            if ($DryRun) {
+                Write-Host "Would convert ($encodingLabel): $($file.FullName)" -ForegroundColor Yellow
+            } else {
+                # Write back file content only when changes are present
+                [System.IO.File]::WriteAllText($file.FullName, $crlfContent, $targetEncoding)
+                Write-Host "Converted ($encodingLabel): $($file.FullName)" -ForegroundColor Green
+            }
             $convertedCount++
         }
     }
@@ -174,9 +209,9 @@ foreach ($file in $files) {
 }
 
 if ($DryRun) {
-    Write-Host "`nDRY-RUN: Preview Complete! $convertedCount file(s) would be converted, $failedCount failed." -ForegroundColor Yellow
+    Write-Host "`nDRY-RUN: Preview Complete! $scannedCount file(s) scanned, $convertedCount would be converted, $failedCount failed." -ForegroundColor Yellow
 } else {
-    Write-Host "`nCompleted: $convertedCount file(s) converted successfully, $failedCount failed." -ForegroundColor Cyan
+    Write-Host "`nCompleted: $scannedCount file(s) scanned, $convertedCount converted, $failedCount failed." -ForegroundColor Cyan
 }
 
 if ($failedCount -gt 0 -or $script:HadFailure) {
