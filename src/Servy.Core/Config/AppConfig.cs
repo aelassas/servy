@@ -273,7 +273,7 @@ namespace Servy.Core.Config
         /// <remarks>
         /// This value balances visibility of historical logs with application performance.
         /// Increasing this beyond the default may lead to increased memory usage and UI virtualization lag
-        /// in the <see cref="Servy.Manager"/> views.
+        /// in the <c>Servy.Manager</c> views.
         /// </remarks>
         public const int DefaultConsoleMaxLines = 20_000;
 
@@ -1082,7 +1082,7 @@ namespace Servy.Core.Config
         /// would pollute event streams with non-actionable noise.
         /// </para>
         /// <para>
-        /// If the cleanup loop encounters <value>10</value> consecutive deletion failures without a successful pass,
+        /// If the cleanup loop encounters <c>10</c> consecutive deletion failures without a successful pass,
         /// it escalates the log level to <c>Logger.Error</c> to notify administrators that rotated log files are
         /// no longer being pruned and disk space may grow unbounded.
         /// </para>
@@ -1095,7 +1095,7 @@ namespace Servy.Core.Config
         /// <remarks>
         /// Protects against transient I/O conflicts during atomic file replacement. While content is written to a temporary file,
         /// the final file move via <see cref="File.Move(string, string, bool)"/> can hit temporary locks if background OS processes
-        /// (like file indexers or antivirus filters) inspect the destination. This setting allows up to <value>3</value> retries
+        /// (like file indexers or antivirus filters) inspect the destination. This setting allows up to <c>3</c> retries
         /// before propagating an exception.
         /// </remarks>
         public const int WriteFileAtomicMaxRetries = 3;
@@ -1111,7 +1111,7 @@ namespace Servy.Core.Config
         /// <para>
         /// If a lock is active during an atomic file move, the operation fails with a Win32 Error 5
         /// (<see cref="UnauthorizedAccessException"/>) or Error 32 (<see cref="IOException"/> sharing violation). This
-        /// <value>100</value> millisecond delay gives external locks time to release before the next retry.
+        /// <c>100</c> millisecond delay gives external locks time to release before the next retry.
         /// </para>
         /// </remarks>
         public const int WriteFileAtomicRetryDelayMs = 100;
@@ -1265,7 +1265,7 @@ namespace Servy.Core.Config
         /// </para>
         /// <para>
         /// To handle these transient locks without crashing or freezing the UI dispatcher thread,
-        /// the application retries up to <value>5</value> times before logging a warning and giving up.
+        /// the application retries up to <c>5</c> times before logging a warning and giving up.
         /// </para>
         /// </remarks>
         public const int ClipboardComMaxRetries = 5;
