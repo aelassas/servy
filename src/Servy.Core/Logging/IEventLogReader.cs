@@ -5,14 +5,14 @@ using System.Diagnostics.Eventing.Reader;
 namespace Servy.Core.Logging
 {
     /// <summary>
-    /// Defines an abstraction for reading events from the Windows Event Viewer.
+    /// Defines an abstraction for reading events from the Windows Event Log.
     /// This allows decoupling the <see cref="System.Diagnostics.Eventing.Reader.EventLogReader"/> implementation
     /// from consumers, enabling easier unit testing and mocking.
     /// </summary>
     public interface IEventLogReader
     {
         /// <summary>
-        /// Reads events from the Windows Event Viewer using the specified <see cref="EventLogQuery"/>.
+        /// Reads events from the Windows Event Log using the specified <see cref="EventLogQuery"/>.
         /// </summary>
         /// <param name="query">
         /// The query that defines which log to read and the conditions to filter events.
