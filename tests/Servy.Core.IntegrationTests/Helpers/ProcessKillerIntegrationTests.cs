@@ -284,8 +284,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void KillProcessesUsingFile_FileLocked_TerminatesLockingProcess()
         {
             // Arrange
-            Assert.SkipWhen(!File.Exists(_handleExePath), "handle64.exe not available in this environment.");
-
             string testFile = Path.Combine(Path.GetTempPath(), $"lock_test_{Guid.NewGuid()}.tmp");
             File.WriteAllText(testFile, "Lock Data");
             _tempFiles.Add(testFile);
