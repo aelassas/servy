@@ -223,7 +223,7 @@ namespace Servy.Manager.ViewModels
         /// <inheritdoc />
         protected override ServiceItemBase CreateServiceItem(Service service)
         {
-            return new ConsoleService { Name = service.Name };
+            return new ConsoleService { Name = service.Name, Pid = service?.Pid };
         }
 
         /// <inheritdoc />

@@ -150,7 +150,7 @@ namespace Servy.Manager.ViewModels
         /// <inheritdoc />
         protected override ServiceItemBase CreateServiceItem(Service service)
         {
-            return new DependencyService { Name = service?.Name };
+            return new DependencyService { Name = service?.Name, Pid = service?.Pid };
         }
 
         /// <inheritdoc />
