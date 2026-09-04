@@ -57,10 +57,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // Structural State Validation: Force reflection to confirm that an active, populated cache state entry
                 // is preserved inside the dictionary, proving the metric loop did not fall back into an error eviction path.
                 var prevCpuTimes = TestReflection.GetField<ConcurrentDictionary<int, CpuSample>>(_sut, "_prevCpuTimes");
-                if (prevCpuTimes != null)
-                {
-                    Assert.True(prevCpuTimes.ContainsKey(currentPid), "The tracking baseline sample entry was lost or prematurely evicted from the delta cache.");
-                }
+                Assert.True(prevCpuTimes.ContainsKey(currentPid), "The tracking baseline sample entry was lost or prematurely evicted from the delta cache.");
             }
         }
 
