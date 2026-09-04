@@ -89,7 +89,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // By creating 'Services' as a VIEW, the subsequent 'CREATE UNIQUE INDEX' on it will throw a SQLiteException.
             using (var conn = CreateConnection())
             {
-                // Act
                 SeedSchemaInfo(conn, 0);
                 conn.Execute($"CREATE VIEW {SqlConstants.ServicesTableName} AS SELECT 1 AS Id;");
 
@@ -313,7 +312,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Setup the old functional index as NON-UNIQUE so it permits the insert of casing variations on legacy systems.
                 conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
 
-                // Seed duplicate rows out of chronological order to check oldest historical match selection (MIN(Id) resolution)
+                // Seed one case-duplicate after the baseline row (Ids 1 then 2); dedup must keep MIN(Id)=1,
+                // so a last-write-wins/MAX(Id) implementation would fail the assertion below.
                 var duplicateSeed = new Dictionary<string, string>(seedData) { ["Name"] = "'alpha-service'" };
                 InsertLegacyRow(conn, context, duplicateSeed);
 
