@@ -15,7 +15,7 @@ param (
     [string]$OutputFile
 )
 
-# Use subexpression operator to safely append the .0 suffix required for CycloneDX schemas
+# Append the .0 patch component the CycloneDX schema requires
 $FullSbomVersion = "$($BaseVersion).0"
 
 $projects = @(
