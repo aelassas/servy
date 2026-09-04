@@ -47,9 +47,11 @@ namespace Servy.Core.Logging
         #region Auxiliary & Scheduled Task Events
 
         /// <summary>Generic failure within a scheduled task automation script.</summary>
+        /// SYNC WITH: setup/taskschd/Servy-Watermark.psm1 ($EVENT_ID_ERROR)
         public const int ScheduledTaskScriptError = 3103;
 
         /// <summary>Fatal failure due to a missing script dependency or module import error.</summary>
+        /// SYNC WITH: setup/taskschd/ServyFailureEmail.ps1, setup/taskschd/ServyFailureNotification.ps1 ($EVENT_ID_DEPENDENCY_ERROR)
         public const int ScheduledTaskScriptDependencyError = 3104;
 
         #endregion
