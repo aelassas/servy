@@ -224,8 +224,9 @@ namespace Servy.Core.Security
                 }
                 catch (SecureDataLegacyBlockedException)
                 {
-                    // Policy refusal, not an integrity failure. Line 192 has already logged it accurately;
-                    // re-throw without a second, contradictory Error entry.
+                    // Policy refusal, not an integrity failure. The v1-marker and raw-legacy branches
+                    // already logged a Warn before throwing; re-throw without a second, contradictory
+                    // Error entry.
                     throw;
                 }
                 catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
