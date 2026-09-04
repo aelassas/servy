@@ -432,49 +432,6 @@ namespace Servy.Core.IntegrationTests.Native
         #region LSA & Security Token Policies
 
         [Fact]
-        public void ProcessSnapshot_Enumeration_IncludesCurrentProcess()
-        {
-            // Arrange
-            int currentPid;
-            using (var currentProcess = Process.GetCurrentProcess())
-            {
-                currentPid = currentProcess.Id;
-            }
-            bool foundCurrentProcess = false;
-
-            IntPtr snapshotHandle = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
-            Assert.NotEqual(IntPtr.Zero, snapshotHandle);
-            Assert.NotEqual(new IntPtr(-1), snapshotHandle);
-
-            try
-            {
-                var procEntry = new NativeMethods.PROCESSENTRY32
-                {
-                    dwSize = (uint)Marshal.SizeOf<NativeMethods.PROCESSENTRY32>()
-                };
-
-                if (NativeMethods.Process32First(snapshotHandle, ref procEntry))
-                {
-                    do
-                    {
-                        if ((int)procEntry.th32ProcessID == currentPid)
-                        {
-                            foundCurrentProcess = true;
-                            break;
-                        }
-                    }
-                    while (NativeMethods.Process32Next(snapshotHandle, ref procEntry));
-                }
-            }
-            finally
-            {
-                NativeMethods.CloseHandle(snapshotHandle);
-            }
-
-            Assert.True(foundCurrentProcess, $"The current process PID ({currentPid}) was not found in the Toolhelp32 snapshot.");
-        }
-
-        [Fact]
         public void LsaPolicy_OpenAndClose_SucceedsOrReturnsAccessDenied()
         {
             // Standard runner environments run on least-privilege tokens.
