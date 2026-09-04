@@ -606,9 +606,9 @@ namespace Servy.Core.Domain
                 PreLaunchRetryAttempts = PreLaunchRetryAttempts,
                 PreLaunchIgnoreFailure = PreLaunchIgnoreFailure,
 
-                FailureProgramPath = FailureProgramPath,
+                FailureProgramExecutablePath = FailureProgramPath,
                 FailureProgramStartupDirectory = FailureProgramStartupDirectory,
-                FailureProgramArgs = FailureProgramParameters,
+                FailureProgramExecutableArgs = FailureProgramParameters,
 
                 PostLaunchExePath = PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = PostLaunchStartupDirectory,

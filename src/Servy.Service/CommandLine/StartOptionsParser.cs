@@ -108,9 +108,9 @@ namespace Servy.Service.CommandLine
                 PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
                 // Failure program settings
-                FailureProgramPath = SafeResolvePath(processHelper, serviceDto.FailureProgramPath, nameof(serviceDto.FailureProgramPath), serviceName),
+                FailureProgramExecutablePath = SafeResolvePath(processHelper, serviceDto.FailureProgramPath, nameof(serviceDto.FailureProgramPath), serviceName),
                 FailureProgramStartupDirectory = SafeResolvePath(processHelper, serviceDto.FailureProgramStartupDirectory, nameof(serviceDto.FailureProgramStartupDirectory), serviceName),
-                FailureProgramArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
+                FailureProgramExecutableArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
 
                 // Post-Launch settings
                 PostLaunchExecutablePath = SafeResolvePath(processHelper, serviceDto.PostLaunchExecutablePath, nameof(serviceDto.PostLaunchExecutablePath), serviceName),

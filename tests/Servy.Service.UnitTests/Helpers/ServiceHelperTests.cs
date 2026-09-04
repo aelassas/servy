@@ -126,7 +126,7 @@ namespace Servy.Service.UnitTests.Helpers
                     ServiceName = "SecureService",
                     EnableDebugLogs = true,
                     ExecutableArgs = "--password=SuperSecretPassword --api_key DB12345 --port 8080",
-                    FailureProgramArgs = "/token:SecretToken123 /normalArg test",
+                    FailureProgramExecutableArgs = "/token:SecretToken123 /normalArg test",
                     EnvironmentVariables = new List<EnvironmentVariable>
                     {
                         new EnvironmentVariable { Name = "DB_PASSWORD", Value = "SqlPass123" },
@@ -293,7 +293,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 ServiceName = "TestService",
                 ExecutablePath = @"C:\app\exe.exe",
-                FailureProgramPath = @"C:\app\failure.exe",
+                FailureProgramExecutablePath = @"C:\app\failure.exe",
                 PreLaunchExecutablePath = @"C:\app\pre.exe",
                 PostLaunchExecutablePath = @"C:\app\post.exe"
             };

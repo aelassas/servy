@@ -212,7 +212,7 @@ namespace Servy.Service.Helpers
                   $"- heartbeatUrl: {MaskUrl(options.HeartbeatUrl)}\n" +
                   $"- heartbeatUrlTimeoutSeconds: {options.HeartbeatUrlTimeoutInSeconds}\n" +
                   $"- enableHeartbeatUrlFlags: {options.EnableHeartbeatUrlFlags}\n" +
-                  $"- failureProgramPath: {options.FailureProgramPath}\n" +
+                  $"- failureProgramPath: {options.FailureProgramExecutablePath}\n" +
                   $"- failureProgramStartupDirectory: {options.FailureProgramStartupDirectory}\n\n" +
 
                   "--------Pre-Launch-------------\n" +
@@ -253,7 +253,7 @@ namespace Servy.Service.Helpers
                     $"- realArgs: {MaskRawArguments(options.ExecutableArgs)}\n\n" +
 
                     "--------Recovery (Sensitive)---\n" +
-                    $"- failureProgramArgs: {MaskRawArguments(options.FailureProgramArgs)}\n\n" +
+                    $"- failureProgramArgs: {MaskRawArguments(options.FailureProgramExecutableArgs)}\n\n" +
 
                     "--------Advanced (Sensitive)---\n" +
                     $"- environmentVariables: {envVarsFormatted}\n\n" +

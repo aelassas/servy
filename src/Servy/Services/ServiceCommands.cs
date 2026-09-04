@@ -208,9 +208,9 @@ namespace Servy.Services
                     PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
                     PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
-                    FailureProgramPath = dto.FailureProgramPath,
+                    FailureProgramExecutablePath = dto.FailureProgramPath,
                     FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory,
-                    FailureProgramArgs = dto.FailureProgramParameters,
+                    FailureProgramExecutableArgs = dto.FailureProgramParameters,
 
                     PostLaunchExePath = dto.PostLaunchExecutablePath,
                     PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,

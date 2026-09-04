@@ -158,7 +158,7 @@ namespace Servy.Service.UnitTests
             var service = _ctx.Build();
 
             var options = ServiceTestContext.CreateDefaultStartOptions();
-            options.FailureProgramPath = @"C:\App\alert.exe";
+            options.FailureProgramExecutablePath = @"C:\App\alert.exe";
             TestReflection.SetField(service, "_options", options);
 
             var mockProcess = new Mock<IProcessWrapper>();
@@ -183,7 +183,7 @@ namespace Servy.Service.UnitTests
             var service = _ctx.Build();
 
             var options = ServiceTestContext.CreateDefaultStartOptions();
-            options.FailureProgramPath = @"C:\App\alert.exe";
+            options.FailureProgramExecutablePath = @"C:\App\alert.exe";
             TestReflection.SetField(service, "_options", options);
 
             var mockProcess = new Mock<IProcessWrapper>();

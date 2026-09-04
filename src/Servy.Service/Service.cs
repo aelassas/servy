@@ -1547,8 +1547,8 @@ namespace Servy.Service
         {
             RunFireAndForgetHook(
                  "failure program",
-                 exePath: _options?.FailureProgramPath,
-                 rawArgs: _options?.FailureProgramArgs,
+                 exePath: _options?.FailureProgramExecutablePath,
+                 rawArgs: _options?.FailureProgramExecutableArgs,
                  hookWorkingDir: _options?.FailureProgramStartupDirectory,
                  track: false);
         }
