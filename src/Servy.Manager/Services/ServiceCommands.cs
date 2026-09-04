@@ -811,7 +811,7 @@ namespace Servy.Manager.Services
         /// <remarks>
         /// The import follows a strict "Gatekeeper" pattern:
         /// <list type="number">
-        /// <item><description>Security & Size Check: Prevents large file attacks, UNC bypasses, and path traversal via <see cref="ImportGuard"/>.</description></item>
+        /// <item><description>Security &amp; Size Check: Prevents large file attacks, UNC bypasses, and path traversal via <see cref="ImportGuard"/>.</description></item>
         /// <item><description>Format Check: Ensures the raw string is valid XML/JSON.</description></item>
         /// <item><description>Domain Check: Validates business rules via <see cref="IServiceConfigurationValidator"/>.</description></item>
         /// <item><description>Persistence: Executes an Upsert in the database.</description></item>

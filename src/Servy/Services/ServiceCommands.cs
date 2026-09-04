@@ -656,7 +656,7 @@ namespace Servy.Services
         /// <returns>A task representing the asynchronous import operation.</returns>
         /// <remarks>
         /// The import process follows a multi-stage security gate:
-        /// 1. Security & Size Check: Prevents large file attacks, UNC bypasses, and path traversal (via <see cref="ImportGuard"/>).
+        /// 1. Security &amp; Size Check: Prevents large file attacks, UNC bypasses, and path traversal (via <see cref="ImportGuard"/>).
         /// 2. Raw content/syntax validation.
         /// 3. Logical domain validation (via <see cref="IServiceConfigurationValidator"/>).
         /// Only after passing all gates is the UI model updated.
