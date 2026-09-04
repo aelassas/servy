@@ -23,7 +23,7 @@ namespace Servy.UI.Bootstrapping
         public string? ResourcesNamespace { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the JSON configuration file (e.g., "appsettings.json").
+        /// Gets or sets the name of the JSON configuration file (e.g., "appsettings.desktop.json").
         /// </summary>
         public string? AppSettingsFileName { get; set; }
 

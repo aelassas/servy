@@ -245,7 +245,7 @@ namespace Servy.Service
         /// <remarks>
         /// This is the primary <b>Production Constructor</b>. It automatically initializes the
         /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from
-        /// <c>appsettings.json</c>, and initializes the <see cref="SecureData"/> and database systems.
+        /// <c>appsettings.service.json</c>, and initializes the <see cref="SecureData"/> and database systems.
         /// </remarks>
         public Service(
             Helpers.IServiceHelper serviceHelper,
@@ -275,7 +275,7 @@ namespace Servy.Service
                 // Ensure event source exists
                 Helper.EnsureEventSourceExists();
 
-                // Load configuration from appsettings.json
+                // Load configuration from appsettings.service.json
                 var config = new ConfigurationBuilder()
                     .SetBasePath(AppFoldersHelper.GetAppDirectory())
                     .AddJsonFile("appsettings.service.json", optional: true, reloadOnChange: false)

@@ -103,7 +103,7 @@ namespace Servy.CLI
 
                     args[0] = args[0].ToLowerInvariant();
 
-                    // Load configuration from appsettings.json
+                    // Load configuration from appsettings.cli.json
                     var builder = new ConfigurationBuilder();
 #if DEBUG
                     builder.AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: false);
