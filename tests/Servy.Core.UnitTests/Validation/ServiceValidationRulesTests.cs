@@ -260,22 +260,21 @@ namespace Servy.Core.UnitTests.Validation
         [Fact]
         public void Validate_Credentials_NativeValidationFailure_SurfacesExceptionMessageInResult()
         {
-            // Arrange: Configure non-LocalSystem credentials with an invalid account name format
-            // ("Administrators" without a domain prefix) to force NativeMethodsHelpers.ValidateCredentials to throw.
+            // Arrange: Configure non-LocalSystem credentials with an invalid account string format
+            // to force NativeMethodsHelpers.ValidateCredentials to throw an ArgumentException.
             var dto = ServiceDtoFactory.CreateValidValidationBase();
             dto.RunAsLocalSystem = false;
-            dto.UserAccount = "Administrators";
+            dto.UserAccount = "InvalidAccountFormatWithoutPrefix";
             dto.Password = "Password123!";
 
-            const string expectedExceptionMessage = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or NT AUTHORITY\\ServiceAccount.";
-
-            // Act: Pass matching confirmPassword to bypass the mismatch check and enter ValidateCredentials
+            // Act: Pass matching confirmPassword to bypass password mismatch check and execute ValidateCredentials
             var result = _sut.Validate(dto, confirmPassword: "Password123!");
 
-            // Assert: Verify the ArgumentException thrown by NativeMethodsHelpers.ValidateCredentials
+            // Assert: Verify the exception message thrown by NativeMethodsHelpers.ValidateCredentials
             // was caught by the catch block and surfaced in result.Errors.
             Assert.False(result.IsValid);
-            Assert.Contains(expectedExceptionMessage, result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Contains("Username format is invalid", result.Errors[0]);
         }
 
         [Fact]
