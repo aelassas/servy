@@ -181,6 +181,12 @@ function Send-NotificationEmail {
         return 'PermanentFailure'
     }
 
+    # Check for invalid timeout (ms). Upper bound mirrors the task's PT5M ExecutionTimeLimit.
+    if ($timeout -le 0 -or $timeout -gt 300000) {
+        Write-FallbackError -Message "ServyFailureEmail: Invalid TimeoutMs ($timeout) in smtp-config.xml. Expected 1-300000 milliseconds." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+
     # Email format checks (Prevent .NET ArgumentException/FormatException)
     if ($from -notmatch $emailRegex) {
         Write-FallbackError -Message "ServyFailureEmail: Invalid 'From' email format ($from) in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile

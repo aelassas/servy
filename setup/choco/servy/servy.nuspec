@@ -11,6 +11,7 @@
     <licenseUrl>https://github.com/aelassas/servy/blob/main/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/aelassas/servy</projectSourceUrl>
+    <packageSourceUrl>https://github.com/aelassas/servy/tree/main/setup/choco/servy</packageSourceUrl>
     <docsUrl>https://github.com/aelassas/servy/wiki</docsUrl>
     <bugTrackerUrl>https://github.com/aelassas/servy/issues</bugTrackerUrl>
     <tags>servy windows service wrapper manager cli automation watchdog nssm winsw</tags>

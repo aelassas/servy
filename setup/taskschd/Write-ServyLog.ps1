@@ -97,7 +97,10 @@ function Write-ServyLog {
             }
 
             # Enforce consistent UTF-8 logging with no BOM/UTF-16LE mix-ups
-            $timestampedMsg = "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss', $inv)) - $Message"
+            $useLocal = $false   # mirrors AppConfig.DefaultUseLocalTimeForRotation
+            $now      = if ($useLocal) { Get-Date } else { (Get-Date).ToUniversalTime() }
+            $tz       = if ($useLocal) { $now.ToString('zzz', $inv) } else { 'Z' }
+            $timestampedMsg = "[$($now.ToString('yyyy-MM-dd HH:mm:ss.fff', $inv))$tz] $Message"
 
             # Use FileStream with FileShare.None inside the Mutex lock.
             # This completely eliminates interleaved lines or swallowed "file in use" exceptions.
