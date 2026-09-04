@@ -130,7 +130,7 @@ namespace Servy.Service
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
         private uint _checkPoint = 0;
-        private volatile bool _disposed = false; // Tracks whether Dispose has been called
+        private volatile bool _disposed = false; // Tracks whether teardown has completed; ExecuteTeardown sets it, so it is true after a plain SCM stop as well as after Dispose
         private volatile bool _isTearingDown = false;
         private volatile bool _isRebooting = false;
         private readonly IProcessKiller _processKiller;
@@ -421,7 +421,7 @@ namespace Servy.Service
 
                 if (!isTestMode)
                 {
-                    // NO REFLECTION NEEDED: Access the underlying Service Status Handle directly
+                    // ServiceBase exposes the status handle directly; the native SetServiceStatus calls below need it.
                     _serviceHandle = ServiceHandle;
 
                     if (_serviceHandle != IntPtr.Zero)
@@ -1277,7 +1277,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                // This is now the SINGLE source of truth for start-up failure logging
+                // Start-up failures are logged here only; OnStart's catch must not log them again.
                 _logger?.Error($"Failed to start process '{_realExePath}': {ex.Message}");
 
                 CleanupFailedProcess();
@@ -2119,9 +2119,7 @@ namespace Servy.Service
 
             if (shouldStop) Stop();
 
-            // InitiateRecovery will now find _isRecovering is already true.
-            // Ensure InitiateRecovery's internal guard allows it to run if
-            // it's the one performing the recovery!
+            // Runs outside the health lock so recovery cannot stall OnProcessExited.
             if (needsRecovery) InitiateRecovery();
         }
 
