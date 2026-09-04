@@ -14,7 +14,9 @@ namespace Servy.UI.Services
         Task OpenDocumentationAsync(string caption);
 
         /// <summary>
-        /// Checks for application updates and optionally displays a message box with the result.
+        /// Checks for application updates and reports the result to the user in a message box:
+        /// an information dialog when up to date, a confirmation to open the download page when
+        /// a newer release exists, or an error dialog when the check fails or times out.
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed during the update check.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
