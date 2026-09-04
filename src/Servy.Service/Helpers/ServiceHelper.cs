@@ -212,7 +212,7 @@ namespace Servy.Service.Helpers
                   $"- heartbeatUrl: {MaskUrl(options.HeartbeatUrl)}\n" +
                   $"- heartbeatUrlTimeoutSeconds: {options.HeartbeatUrlTimeoutInSeconds}\n" +
                   $"- enableHeartbeatUrlFlags: {options.EnableHeartbeatUrlFlags}\n" +
-                  $"- failureProgramPath: {options.FailureProgramExecutablePath}\n" +
+                  $"- failureProgramPath: {options.FailureProgramPath}\n" +
                   $"- failureProgramStartupDirectory: {options.FailureProgramStartupDirectory}\n\n" +
 
                   "--------Pre-Launch-------------\n" +

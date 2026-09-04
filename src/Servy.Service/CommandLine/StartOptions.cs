@@ -131,7 +131,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the full path to the failure program to run.
         /// </summary>
         [ServicePath("Failure program executable path", isFile: true)]
-        public string FailureProgramExecutablePath { get; set; }
+        public string FailureProgramPath { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the failure program.

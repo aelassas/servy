@@ -142,7 +142,7 @@ namespace Servy.CLI.Commands
                     PreLaunchIgnoreFailure = opts.PreLaunchIgnoreFailure,
 
                     // Failure program
-                    FailureProgramExecutablePath = opts.FailureProgramPath,
+                    FailureProgramPath = opts.FailureProgramPath,
                     FailureProgramStartupDirectory = opts.FailureProgramStartupDir,
                     FailureProgramExecutableArgs = opts.FailureProgramParameters,
 

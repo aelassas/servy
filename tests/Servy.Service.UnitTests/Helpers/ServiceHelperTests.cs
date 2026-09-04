@@ -293,7 +293,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 ServiceName = "TestService",
                 ExecutablePath = @"C:\app\exe.exe",
-                FailureProgramExecutablePath = @"C:\app\failure.exe",
+                FailureProgramPath = @"C:\app\failure.exe",
                 PreLaunchExecutablePath = @"C:\app\pre.exe",
                 PostLaunchExecutablePath = @"C:\app\post.exe"
             };

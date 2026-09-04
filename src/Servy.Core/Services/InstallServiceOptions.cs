@@ -89,7 +89,7 @@ namespace Servy.Core.Services
         public bool EnableHeartbeatUrlFlags { get; set; } = AppConfig.DefaultEnableHeartbeatUrlFlags;
 
         /// <summary>Failure program path.</summary>
-        public string FailureProgramExecutablePath { get; set; }
+        public string FailureProgramPath { get; set; }
 
         /// <summary>Failure program working directory.</summary>
         public string FailureProgramStartupDirectory { get; set; }
