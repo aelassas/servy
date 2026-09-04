@@ -117,7 +117,7 @@ namespace Servy.Core.Helpers
         /// A new <see cref="Process"/> component that is associated with the process resource,
         /// or <c>null</c> if no process resource is started (e.g., if an existing process is reused).
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">Thrown if no file name is specified in <paramref name="psi"/>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if no file name is specified in <paramref name="psi"/>.</exception>
         /// <exception cref="System.ComponentModel.Win32Exception">Thrown if there is an error opening the associated file.</exception>
         Process? Start(ProcessStartInfo psi);
     }

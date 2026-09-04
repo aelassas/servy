@@ -29,6 +29,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="services">A collection of service names to start.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous start operation.</returns>
         Task StartServicesAsync(IEnumerable<string> services, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -37,6 +38,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="services">A collection of service names to stop.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous stop operation.</returns>
         Task StopServicesAsync(IEnumerable<string> services, CancellationToken cancellationToken = default);
     }
 }
