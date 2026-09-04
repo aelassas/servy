@@ -28,8 +28,9 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Populates null nullable properties with their matching system configurations sourced from <see cref="AppConfig"/>.
-        /// This ensures structural parameter completeness across business contexts without executing side-effect identity mutations.
+        /// Populates null nullable properties with their matching system configurations sourced from <see cref="AppConfig"/>,
+        /// and normalizes identity fields by trimming surrounding whitespace from <c>UserAccount</c>.
+        /// Unlike <see cref="ApplyDefaultsAndResetIdentity"/>, it never resets or clears identity values.
         /// </summary>
         /// <param name="dto">The service data transfer object layout to populate. The instance is modified in place.</param>
         /// <remarks>
