@@ -264,7 +264,7 @@ namespace Servy.CLI.Commands
                 return CommandResult.Fail(string.Format(Strings.Msg_ImportInstallLookupFailure, serviceName));
             }
 
-            var serviceDomain = ServiceMapper.ToDomain(_serviceManager, serviceDto);
+            var serviceDomain = ServiceDtoMapper.ToDomain(_serviceManager, serviceDto);
 
             // 2. Attempt service installation
             var res = await serviceDomain.Install(isCLI: true, cancellationToken: cancellationToken);

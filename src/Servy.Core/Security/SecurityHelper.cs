@@ -166,7 +166,7 @@ namespace Servy.Core.Security
         /// </item>
         /// </list>
         /// </remarks>
-        public static void ApplySecurityRules(FileSystemSecurity security, IdentityReference? currentUserSid, bool breakInheritance = true)
+        public static void ApplySecurityRules(FileSystemSecurity security, SecurityIdentifier? currentUserSid, bool breakInheritance = true)
         {
             // 1. Manage Inheritance Boundaries
             if (breakInheritance)

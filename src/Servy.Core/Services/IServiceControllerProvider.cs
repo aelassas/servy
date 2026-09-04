@@ -10,6 +10,8 @@ namespace Servy.Core.Services
         /// </summary>
         /// <returns>
         /// An array of <see cref="IServiceControllerWrapper"/> instances representing the services.
+        /// <b>The caller owns the returned wrappers and must dispose every element</b>, including
+        /// any it does not go on to use; each wrapper holds a live Service Control Manager handle.
         /// </returns>
         /// <remarks>
         /// This is typically a wrapper around the static <see cref="System.ServiceProcess.ServiceController.GetServices()"/>

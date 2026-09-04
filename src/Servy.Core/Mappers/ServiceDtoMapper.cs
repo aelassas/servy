@@ -7,10 +7,9 @@ using Servy.Core.Services;
 namespace Servy.Core.Mappers
 {
     /// <summary>
-    /// Provides mapping methods between the domain <see cref="Service"/> model
-    /// and its corresponding data transfer object <see cref="ServiceDto"/>.
+    /// Maps a persisted <see cref="ServiceDto"/> to the domain <see cref="Service"/> model.
     /// </summary>
-    public static class ServiceMapper
+    public static class ServiceDtoMapper
     {
         /// <summary>
         /// Maps a <see cref="ServiceDto"/> from the database back to the domain <see cref="Service"/> model.
@@ -24,7 +23,11 @@ namespace Servy.Core.Mappers
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            // Hydrate raw property defaults on a copy to avoid mutating the caller's DTO instance
+            // PRECONDITION: every '!.Value' below is safe only because HydrateDefaults assigned that
+            // property a default on the line above. Adding a nullable ServiceDto property that is read
+            // with '!.Value' here REQUIRES a matching line in ServiceDtoHelper.HydrateDefaults.
+            // RunAsLocalSystem is the deliberate exception: it is hydrated only on the import path
+            // (ApplyDefaultsAndResetIdentity), so it is read with '??' instead.
             var hydratedDto = ServiceDtoHelper.Clone(dto);
             ServiceDtoHelper.HydrateDefaults(hydratedDto);
 

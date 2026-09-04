@@ -1250,14 +1250,13 @@ namespace Servy.Core.Services
             // Intercept the native error state immediately before any subsequent C# evaluations occur
             int errorCode = _win32ErrorProvider.GetLastWin32Error();
 
+            // A successful size probe always fails with ERROR_INSUFFICIENT_BUFFER and reports a positive
+            // size. Anything else is a real failure. A service with no value set still returns a struct
+            // here; the null comes from extractString on the null string pointer inside it.
             if (bytesNeeded <= 0)
             {
-                if (errorCode != ERROR_INSUFFICIENT_BUFFER)
-                {
-                    Logger.Warn($"QueryServiceConfig size probe failed for {probeContext}. Win32 Error Code: {errorCode}");
-                    throw new Win32Exception(errorCode);
-                }
-                return null;
+                Logger.Warn($"QueryServiceConfig size probe failed for {probeContext}. Win32 Error Code: {errorCode}");
+                throw new Win32Exception(errorCode);
             }
 
             IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
