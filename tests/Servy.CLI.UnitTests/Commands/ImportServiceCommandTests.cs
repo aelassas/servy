@@ -116,12 +116,12 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ExecuteAsync_InvalidConfigFileType_ReturnsInvalidConfigFileTypeMessage()
+        public async Task ExecuteAsync_UnsupportedConfigFileType_ReturnsUnsupportedFileTypeMessage()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto><Name>Test</Name></ServiceDto>");
 
-            // "ini" is not a member of ConfigFileType, so TryParseFileType rejects it up-front and ExecuteAsync returns Msg_InvalidConfigFileType.
+            // "ini" is not a member of ConfigFileType, so TryParseFileType rejects it up-front and ExecuteAsync returns Msg_UnsupportedFileType.
             var opts = new ImportServiceOptions { ConfigFileType = "ini", Path = _legalXmlPath };
 
             // Act
@@ -283,6 +283,36 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportRepoFailure, "JSON"), result.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_RepositoryThrows_ReturnsHandledExceptionMessage()
+        {
+            // Arrange
+            var realPath = @"C:\Windows\System32\notepad.exe";
+            File.WriteAllText(_legalXmlPath, "<ServiceDto></ServiceDto>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = false };
+
+            MockXmlValidator(true);
+            var dto = new ServiceDto { Name = "ThrowingService", ExecutablePath = realPath };
+            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
+            _serviceRepoMock
+                .Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("boom"));
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            // Only the ExecuteWithHandlingAsync catch path formats the action and the suggestion into the
+            // message, so asserting both pins the two arguments ExecuteAsync builds for the base wrapper.
+            Assert.Equal(
+                string.Format(Strings.Msg_CommandFailedTemplate, string.Format(Strings.Msg_ImportServiceAction, _legalXmlPath), "boom")
+                    + Environment.NewLine
+                    + string.Format(Strings.Msg_SuggestionTemplate, Strings.Msg_ImportServiceSuggestion),
+                result.Message);
         }
 
         #endregion
