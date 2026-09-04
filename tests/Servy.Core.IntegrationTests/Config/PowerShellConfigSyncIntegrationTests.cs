@@ -101,6 +101,30 @@ namespace Servy.Core.IntegrationTests.Config
         }
 
         [Fact]
+        public void ServyModuleExamples_EnvVarLiterals_MatchAppConfigConstants()
+        {
+            // Arrange
+            var examplesPath = Helper.GetServyModuleExamplesPs1Path();
+            Assert.True(File.Exists(examplesPath), $"servy-module-examples.ps1 file not found at path: {examplesPath}");
+            string scriptContent = File.ReadAllText(examplesPath);
+
+            // Act
+            // Every SERVY_-prefixed environment variable name the shipped examples mention, commented out or not
+            var matches = Regex.Matches(scriptContent, @"\bSERVY_[A-Z0-9_]+\b");
+
+            Assert.NotEmpty(matches);
+
+            // Act & Assert
+            foreach (Match match in matches)
+            {
+                // Guard: the examples must not document an environment variable name the product no longer reads,
+                // which is what renaming an AppConfig constant would otherwise leave behind here unnoticed
+                Assert.True(ExpectedMappings.ContainsValue(match.Value),
+                    $"servy-module-examples.ps1 references environment variable '{match.Value}', which is not one of the AppConfig '*EnvVarName' constants. Either the constant was renamed and the example was not updated, or a new variable needs adding to the verification guard mappings array.");
+            }
+        }
+
+        [Fact]
         public void AppConfig_VerifyAllEnvVarConstantsAreGuarded()
         {
             // Arrange
