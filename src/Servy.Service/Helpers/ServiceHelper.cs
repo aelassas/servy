@@ -293,7 +293,7 @@ namespace Servy.Service.Helpers
                     : Path.GetDirectoryName(options.ExecutablePath);
 
                 // 4. Final safety check: if GetDirectoryName returned null or empty, use System32
-                options.StartupDirectory = string.IsNullOrEmpty(exeDir) ? system32 : exeDir!;
+                options.StartupDirectory = string.IsNullOrEmpty(exeDir) ? system32 : exeDir;
 
                 // 5. Diagnostic logging with full context
                 logger?.Warn($"Working directory '{originalValue}' is invalid or inaccessible. Falling back to '{options.StartupDirectory}'.");
