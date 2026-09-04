@@ -97,9 +97,10 @@ function Test-ServyAdminGroupMember {
             for that account. This function checks for that membership so the script can report the
             true effective access instead of the explicit ACE it just wrote.
 
-            Returns $true (confirmed member), $false (confirmed not a member), or $null (could not be
-            determined - e.g. gMSA or remote accounts that cannot be impersonated for an S4U check, or
-            an unreachable/RODC-limited domain controller for the WinNT fallback).
+            Returns $true (confirmed member), $false (confirmed not a member by a complete enumeration),
+            or $null (could not be determined - e.g. gMSA or remote accounts that cannot be impersonated
+            for an S4U check, or an unreachable/RODC-limited domain controller or unexpanded nested groups
+            for the WinNT fallback).
 
         .PARAMETER AccountName
             The account identifier as supplied by the caller (e.g. 'DOMAIN\User', 'LocalService').
@@ -149,6 +150,9 @@ function Test-ServyAdminGroupMember {
             # Translation failed; fall back to the default English name below.
         }
 
+        # A definite "not a member" is only sound if every member was readable and none was a
+        # group that could contain the target. Otherwise the honest answer is "unknown".
+        $enumerationComplete = $true
         $adminGroup = [ADSI]"WinNT://./$adminGroupName,group"
         foreach ($member in $adminGroup.Invoke("Members")) {
             try {
@@ -157,11 +161,24 @@ function Test-ServyAdminGroupMember {
                 if ($memberSid.Equals($Sid)) {
                     return $true
                 }
+
+                $memberClass = $member.GetType().InvokeMember("Class", "GetProperty", $null, $member, $null)
+                if ($memberClass -eq 'Group') {
+                    # Nested group: the target could be a member of it and we do not expand.
+                    $enumerationComplete = $false
+                }
             }
             catch {
+                # Unreadable member (orphaned SID, RODC-limited lookup) - an unchecked member.
+                $enumerationComplete = $false
                 continue
             }
         }
+
+        if (-not $enumerationComplete) {
+            return $null
+        }
+
         return $false
     }
     catch {
