@@ -115,7 +115,7 @@ namespace Servy.CLI.Commands
         /// <exception cref="IOException">Thrown if the directory chain cannot be created or the file cannot be written.</exception>
         private void SaveFile(string userPath, string content)
         {
-            // Run path pre-flight security checks BEFORE probing disk or opening network resources
+            // Run path pre-flight security checks BEFORE creating the directory chain or opening the target
             var preflight = PathSecurityGuard.ValidatePathOnly(userPath, FileMode.OpenOrCreate);
             if (!preflight.IsValid)
             {

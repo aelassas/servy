@@ -23,12 +23,13 @@ namespace Servy.Core.Validation
         private const string ExtendedUncPrefix = @"\\?\UNC\";
 
         /// <summary>
-        /// Audits path metadata without opening file handles or probing/creating directories.
-        /// Enforces pure path-based security checks (UNC path blocking, network drive detection, reparse points, reserved device names, protected system directories, and allowed file extensions).
+        /// Audits a path before any handle is opened: no <see cref="FileStream"/> is created and nothing is created on disk.
+        /// Read-only filesystem metadata is queried where a check requires it (volume type, ancestor reparse points, target existence and attributes).
+        /// Covers UNC path blocking, network drive detection, reparse points, reserved device names, protected system directories, and allowed file extensions.
         /// </summary>
         /// <param name="path">The unverified relative or absolute file path to audit.</param>
         /// <param name="mode">The <see cref="FileMode"/> configuration tracking contextual intent (e.g., import vs. export semantics).</param>
-        /// <returns>A <see cref="PathSecurityResult"/> indicating whether pure path validation passed or failed.</returns>
+        /// <returns>A <see cref="PathSecurityResult"/> indicating whether pre-handle validation passed or failed.</returns>
         public static PathSecurityResult ValidatePathOnly(string path, FileMode mode)
         {
             bool isImport = mode == FileMode.Open;
