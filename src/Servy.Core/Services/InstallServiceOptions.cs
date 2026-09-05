@@ -94,7 +94,7 @@ namespace Servy.Core.Services
         /// <summary>Failure program working directory.</summary>
         public string? FailureProgramStartupDirectory { get; set; }
 
-        /// <summary>Failure program parameters.</summary>
+        /// <summary>The command line arguments to pass to the failure program.</summary>
         public string? FailureProgramExecutableArgs { get; set; }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Servy.Core.Services
         /// <summary>Pre-launch working directory.</summary>
         public string? PreLaunchStartupDirectory { get; set; }
 
-        /// <summary>Command line arguments to pass to the pre-launch executable.</summary>
+        /// <summary>The command line arguments to pass to the pre-launch executable.</summary>
         public string? PreLaunchArgs { get; set; }
 
         /// <summary>Environment variables for the pre-launch process, in the same <c>KEY=VALUE</c> format and with the same caller-side validation as <see cref="EnvironmentVariables"/>.</summary>
@@ -152,7 +152,7 @@ namespace Servy.Core.Services
         /// <summary>Post-launch working directory.</summary>
         public string? PostLaunchStartupDirectory { get; set; }
 
-        /// <summary>Command line arguments to pass to the post-launch executable.</summary>
+        /// <summary>The command line arguments to pass to the post-launch executable.</summary>
         public string? PostLaunchArgs { get; set; }
 
         /// <summary>Enable debug logs for the service wrapper.</summary>
@@ -182,7 +182,7 @@ namespace Servy.Core.Services
         /// <summary>The startup directory for the pre-stop executable.</summary>
         public string? PreStopStartupDirectory { get; set; }
 
-        /// <summary>The parameters for the pre-stop executable.</summary>
+        /// <summary>The command line arguments to pass to the pre-stop executable.</summary>
         public string? PreStopArgs { get; set; }
 
         /// <summary>The maximum time in seconds to wait for the pre-stop executable to complete.</summary>
@@ -197,7 +197,7 @@ namespace Servy.Core.Services
         /// <summary>The startup directory for the post-stop executable.</summary>
         public string? PostStopStartupDirectory { get; set; }
 
-        /// <summary>The parameters for the post-stop executable.</summary>
+        /// <summary>The command line arguments to pass to the post-stop executable.</summary>
         public string? PostStopArgs { get; set; }
     }
 }
