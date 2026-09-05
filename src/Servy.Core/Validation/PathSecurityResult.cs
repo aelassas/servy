@@ -34,6 +34,8 @@ namespace Servy.Core.Validation
     {
         /// <summary>
         /// Gets the absolute, fully qualified, and structurally verified filesystem path.
+        /// It is kernel-resolved only when the token came from <see cref="PathSecurityGuard.ValidatePath"/>;
+        /// <see cref="PathSecurityGuard.ValidatePathOnly"/> supplies the <c>Path.GetFullPath</c> result instead.
         /// </summary>
         public string ResolvedPath { get; }
 
@@ -102,7 +104,12 @@ namespace Servy.Core.Validation
         /// <summary>
         /// Creates a successful <see cref="PathSecurityResult"/> encapsulating a verified path token.
         /// </summary>
-        /// <param name="path">The kernel-resolved, fully qualified path that passed security clearance invariants.</param>
+        /// <param name="path">
+        /// The fully qualified path that passed the checks of the calling entry point: the kernel-resolved
+        /// target from <see cref="PathSecurityGuard.ValidatePath"/>, or the <c>Path.GetFullPath</c> result
+        /// from <see cref="PathSecurityGuard.ValidatePathOnly"/>, which opens no handle and therefore performs
+        /// no kernel resolution.
+        /// </param>
         /// <returns>An initialized success descriptor containing a valid <see cref="ValidatedPath"/> instance.</returns>
         internal static PathSecurityResult Success(string path) => new PathSecurityResult(new ValidatedPath(path));
 
