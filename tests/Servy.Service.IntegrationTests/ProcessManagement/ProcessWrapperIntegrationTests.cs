@@ -22,7 +22,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     [Collection("ProcessWrapperIntegrationTests")]
     public class ProcessWrapperIntegrationTests : IDisposable
     {
-        // Track active wrappers so we can safely read started PIDs during teardown
+        // Best-effort second pass: wrappers already disposed by their test's using block are skipped (HasExited throws ObjectDisposedException, which KillAndDispose swallows)
         private readonly List<ProcessWrapper> _wrappersToCleanup = new List<ProcessWrapper>();
         private readonly TestLogger _logger = new TestLogger();
 
@@ -495,6 +495,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                         wrapper.WaitForExit(1000);
                     }
                 }
+                // The process already exited or its handle is gone; nothing is left to kill
                 catch (InvalidOperationException) { }
             }
         }
@@ -720,6 +721,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 if (File.Exists(tempExe))
                 {
+                    // The temp file is under %TEMP%; leaving it behind is harmless
                     try { File.Delete(tempExe); } catch { }
                 }
             }

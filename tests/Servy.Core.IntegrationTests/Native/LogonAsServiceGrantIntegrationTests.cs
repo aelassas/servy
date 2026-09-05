@@ -42,8 +42,6 @@ namespace Servy.Core.IntegrationTests.Native
             {
                 try
                 {
-                    // DYNAMIC PROVISIONING: Use transactional principal management instead of legacy process forks.
-                    // This forces immediate, deterministic commitment into the Windows SAM database registry tables.
                     using (var context = new PrincipalContext(ContextType.Machine))
                     using (var user = new UserPrincipal(context))
                     {
@@ -151,7 +149,7 @@ namespace Servy.Core.IntegrationTests.Native
             var postGrantRights = GetAccountRightsViaNativeMethods(sidBytes);
             Assert.Contains("SeServiceLogonRight", postGrantRights);
 
-            // Act 2 - Execute second pass: must hit the cached 'found' match pipeline loop branch as an early exit no-op
+            // Act 2 - Second call: the right is already present, so Ensure must return without granting again
             Exception ex2 = Record.Exception(() => LogonAsServiceGrant.Ensure(fullAccountName));
 
             // Assert 2 - Verify no exceptions were raised, the privilege wasn't stripped, and structure remains unmodified
@@ -159,7 +157,7 @@ namespace Servy.Core.IntegrationTests.Native
             var postIdempotentRights = GetAccountRightsViaNativeMethods(sidBytes);
             Assert.Contains("SeServiceLogonRight", postIdempotentRights);
 
-            // Verify idempotency payload metrics: collection sizes must align perfectly without row duplications
+            // A second Ensure must not add a duplicate entry
             Assert.Equal(postGrantRights.Count, postIdempotentRights.Count);
         }
 
@@ -178,7 +176,7 @@ namespace Servy.Core.IntegrationTests.Native
             uint desiredAccess = 0x00010000 /* STANDARD_RIGHTS_REQUIRED */ | NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES;
 
             int openStatus = NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref objectAttributes, desiredAccess, out policyHandle);
-            if (openStatus != 0) return rightsList; // Abort if context window mapping fails
+            if (openStatus != 0) return rightsList; // LsaOpenPolicy failed; report no rights
 
             IntPtr rawSidAllocationPtr = Marshal.AllocHGlobal(sidBytes.Length);
             try
@@ -188,7 +186,7 @@ namespace Servy.Core.IntegrationTests.Native
                 IntPtr outUserRightsBufferPtr;
                 uint countOfRights;
 
-                // Query the operating system directly for the explicit privileges mapped to this SID allocation string
+                // Enumerate the privileges assigned to this SID
                 int enumStatus = NativeMethods.LsaEnumerateAccountRights(policyHandle, rawSidAllocationPtr, out outUserRightsBufferPtr, out countOfRights);
 
                 // If status is 0 (STATUS_SUCCESS) and buffer is allocated, unmarshal the string values sequentially
@@ -270,7 +268,7 @@ namespace Servy.Core.IntegrationTests.Native
 
                     var rightsArray = new NativeMethods.LSA_UNICODE_STRING[] { privilegeString };
 
-                    // Revoke assigned system access parameters safely before SAM subsystem disconnect calls
+                    // Remove the privilege before the account is deleted, so no orphaned SID grant is left in LSA
                     LsaRemoveAccountRights(policyHandle, sidBuffer, false, rightsArray, 1);
 
                     Marshal.FreeHGlobal(nativeStringAlloc);
