@@ -171,8 +171,6 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData("Data Source=Servy.db;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
         [InlineData("Data Source=:db:;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
-        [InlineData("Data Source={tmp}\\db\\Servy.db;", "key.aes", "{tmp}\\iv\\iv.aes", "Cannot determine AES key folder path.")]
-        [InlineData("Data Source={tmp}\\db\\Servy.db;", "{tmp}\\key\\key.aes", "iv.aes", "Cannot determine AES IV folder path.")]
         public void EnsureFolders_PathWithoutDirectory_ThrowsInvalidOperationException(string conn, string key, string iv, string expectedMessage)
         {
             // Arrange
@@ -186,6 +184,25 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(expectedMessage, ex.Message);
+        }
+
+        [Theory]
+        [InlineData("Data Source={tmp}\\db\\Servy.db;", "key.aes", "{tmp}\\iv\\iv.aes", "aesKeyFilePath must be an absolute path")]
+        [InlineData("Data Source={tmp}\\db\\Servy.db;", "{tmp}\\key\\key.aes", "iv.aes", "aesIVFilePath must be an absolute path")]
+        [InlineData("Data Source=..\\Servy.db;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "dbFolder must be an absolute path")]
+        public void EnsureFolders_PathNotRooted_ThrowsArgumentException(string conn, string key, string iv, string expectedMessage)
+        {
+            // Arrange
+            string resolvedConn = conn.Replace(TempToken, _tempDir);
+            string resolvedKey = key.Replace(TempToken, _tempDir);
+            string resolvedIv = iv.Replace(TempToken, _tempDir);
+
+            // Act
+            var ex = Assert.Throws<ArgumentException>(() =>
+                AppFoldersHelper.EnsureFolders(resolvedConn, resolvedKey, resolvedIv, rootVaultPath: _tempDir));
+
+            // Assert
+            Assert.Contains(expectedMessage, ex.Message);
         }
 
         #endregion
