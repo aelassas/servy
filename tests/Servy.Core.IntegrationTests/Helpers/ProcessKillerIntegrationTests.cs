@@ -209,17 +209,9 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Assert.True(childExited, $"The child process (PID {childId}) should have exited within the timeout.");
                 Assert.True(parentExited, $"The parent process (PID {parentId}) should have been terminated through the upward walk.");
 
-                // Hardening: If both processes are dead, a false return value usually indicates an acceptable
-                // native race condition (e.g., trying to inspect a PID that vanished mid-walk).
-                if (!result)
-                {
-                    Debug.WriteLine("WARNING: KillProcessTreeAndParents returned false, but both processes were confirmed dead.");
-
-                    // Verify if the method returned false simply because the processes died ahead of the signal chain.
-                    // If they are dead, we bypass the result flag assertion to protect the CI runner pipeline.
-                    bool recordsConfirmDead = !IsPidActive(childId) && !IsPidActive(parentId);
-                    Assert.True(recordsConfirmDead, "The termination method returned false, and one or more processes are still running in the OS space.");
-                }
+                // The upward walk reports success unless a PID vanished mid-walk. Both processes are confirmed
+                // dead above, so a false here means the walk itself failed, not that a target raced ahead of it.
+                Assert.True(result, "KillProcessTreeAndParents returned false although both processes were terminated.");
             }
             finally
             {
@@ -250,12 +242,9 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Assert.True(childExited, "The target child process should have been terminated.");
                 Assert.False(parent.HasExited, "The parent process should remain alive because killParents was false.");
 
-                // If child exit took down the parent via unintended cascade, assert evaluation catches it here.
-                if (!result)
-                {
-                    bool isChildGenuinelyDead = !IsPidActive(child.Id);
-                    Assert.True(isChildGenuinelyDead, "The tracking core returned failure and the target thread is running.");
-                }
+                // The downward walk reports success unless a PID vanished mid-walk. The child is confirmed
+                // dead above, so a false here means the walk itself failed.
+                Assert.True(result, "KillProcessTreeAndParents returned false although the target child was terminated.");
             }
             finally
             {
@@ -403,22 +392,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Thread.Sleep(200);
             }
             return false;
-        }
-
-        /// <summary>
-        /// Determines whether a specified process identifier (PID) is currently active and running in the operating system.
-        /// </summary>
-        private static bool IsPidActive(int pid)
-        {
-            try
-            {
-                using (var process = Process.GetProcessById(pid))
-                    return !process.HasExited;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
         }
 
         /// <summary>
