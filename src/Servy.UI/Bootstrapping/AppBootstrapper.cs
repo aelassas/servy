@@ -507,7 +507,8 @@ namespace Servy.UI.Bootstrapping
                     _availabilityWatcher.Changed += _availabilityChangedHandler;
                     _availabilityWatcher.Renamed += _availabilityRenamedHandler;
 
-                    // Log unexpected buffer overflows, but we no longer rely on this for directory renames
+                    // Error reports buffer overflows only; a renamed or deleted root directory is
+                    // detected by the Phase 3 heartbeat below.
                     _availabilityWatcher.Error += _availabilityErrorHandler;
 
                     _availabilityWatcher.EnableRaisingEvents = true;   // arm last
