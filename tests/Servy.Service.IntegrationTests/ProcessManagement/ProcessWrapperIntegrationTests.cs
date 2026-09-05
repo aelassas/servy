@@ -848,6 +848,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact(Skip = "Skipping SendCtrlC test to prevent console IPC pipe crash.")]
         public void SendCtrlC_ProcessWithAttachedConsole_SendsSignalSuccessfully()
         {
+            // The attribute-level Skip above is unconditional, so this body never runs on any
+            // architecture; conhost/GenerateConsoleCtrlEvent severs testhost.exe's stdio IPC pipe
+            // and crashes the test host, first observed on ARM64 (native and emulated).
+
             // Arrange
             // Launch cmd.exe with CreateNoWindow = false so Windows allocates a console buffer.
             using (var wrapper = CreateWrapper("cmd.exe", "/c pause", createNoWindow: false))
