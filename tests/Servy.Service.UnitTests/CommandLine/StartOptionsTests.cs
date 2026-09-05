@@ -30,12 +30,14 @@ namespace Servy.Service.UnitTests.CommandLine
                 Assert.True(
                     x.Attr.IsFile == expectedIsFile,
                     $"StartOptions.{x.Property.Name}: IsFile is {x.Attr.IsFile}, expected {expectedIsFile}.");
-
-                // 3. Ensure a valid non-empty label is assigned for error logging
-                Assert.False(
-                    string.IsNullOrWhiteSpace(x.Attr.Label),
-                    $"StartOptions.{x.Property.Name} is decorated with [ServicePath] but has a null or empty Label.");
             }
+
+            // 3. Labels are the only identifier in ServiceHelper's "<Label> not provided."
+            //    diagnostics, so two properties sharing one label makes a failure unattributable.
+            //    A blank label is already unconstructable: the ServicePathAttribute constructor
+            //    throws on one, so asserting non-empty here could never fail.
+            var labels = startOptionsPaths.Select(x => x.Attr.Label).ToList();
+            Assert.Equal(labels.Count, labels.Distinct(StringComparer.OrdinalIgnoreCase).Count());
         }
 
         [Fact]
