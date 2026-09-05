@@ -6,6 +6,9 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public static class SqlConstants
     {
+        /// <summary>
+        /// Name of the table every statement in this class targets.
+        /// </summary>
         public const string ServicesTableName = "Services";
 
         // SINGLE SOURCE OF TRUTH: Add standard columns here.
@@ -93,23 +96,31 @@ namespace Servy.Infrastructure.Data
             "ActiveStderrPath"
         };
 
-        // 1. INSERT COLUMNS
+        /// <summary>
+        /// Column list for an INSERT: Name, every standard column, then PreviousStopTimeout.
+        /// </summary>
         public static readonly string InsertColumns =
             "Name, " + string.Join(", ", StandardColumns) + ", PreviousStopTimeout";
 
-        // 2. INSERT VALUES
+        /// <summary>
+        /// Parameter list matching <see cref="InsertColumns"/>, in the same order.
+        /// </summary>
         public static readonly string InsertValues =
             "@Name, " + string.Join(", ", StandardColumns.Select(c => $"@{c}")) + ", @PreviousStopTimeout";
 
-        // 3. UPDATE SET
-        // Includes 'Name' and specialized COALESCE logic for PreviousStopTimeout
+        /// <summary>
+        /// SET clause for an UPDATE. Includes Name, and assigns PreviousStopTimeout through COALESCE
+        /// so a null incoming value preserves the stored one.
+        /// </summary>
         public static readonly string UpdateSet =
             "Name = @Name, " +
             string.Join(", ", StandardColumns.Select(c => $"{c} = @{c}")) +
             ", PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout)";
 
-        // 4. UPSERT SET
-        // Excludes 'Name' (as it's the conflict target) and specialized COALESCE logic for PreviousStopTimeout
+        /// <summary>
+        /// SET clause for the ON CONFLICT upsert. Excludes Name (the conflict target), and assigns
+        /// PreviousStopTimeout through COALESCE so a null incoming value preserves the stored one.
+        /// </summary>
         public static readonly string UpsertSet =
             string.Join(", ", StandardColumns.Select(c => $"{c} = excluded.{c}")) +
             ", PreviousStopTimeout = COALESCE(excluded.PreviousStopTimeout, Services.PreviousStopTimeout)";
