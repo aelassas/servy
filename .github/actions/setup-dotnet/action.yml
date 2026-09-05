@@ -28,7 +28,7 @@ runs:
       shell: pwsh
       run: |
         $installDir = "$env:RUNNER_TEMP\dotnet"
-        # Relocate the temporary script to the runner's temp directory to prevent workspace pollution
+        # Path where the download step above placed dotnet-install.ps1 (kept out of the workspace)
         $installerPath = Join-Path $env:RUNNER_TEMP "dotnet-install.ps1"
 
         # --- SECURITY CHECK ---
