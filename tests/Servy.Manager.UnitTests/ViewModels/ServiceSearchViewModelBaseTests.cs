@@ -21,7 +21,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _uiDispatcherMock = new Mock<IUiDispatcher>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
 
-            // Ensure the dispatcher doesn't hang the async state machine during tests
+            // Explicit for readability; Moq already returns Task.CompletedTask for unstubbed Task members.
             _uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
             // Initialize centralized SUT instance to establish a single cleanup vector
