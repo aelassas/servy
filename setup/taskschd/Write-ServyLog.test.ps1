@@ -80,11 +80,15 @@ try {
     # --- EVALUATION AND AUDIT PASS ---
     Write-Host "Analyzing log files for multi-process safety exceptions..." -ForegroundColor Cyan
 
-    # Merge ALL background streams (Success, Error, Warning, etc.) into our data pipeline
-    $CapturedOutput = $Jobs | Receive-Job *>&1
+    # Merge ALL background streams (Success, Error, Warning, etc.) into our data pipeline.
+    # Job warnings are re-emitted on the host and do not survive *>&1 (measured on pwsh 7.6),
+    # so collect them through -WarningVariable and append their messages to the audited set.
+    $JobWarnings = @()
+    $CapturedOutput = @($Jobs | Receive-Job *>&1 -WarningVariable JobWarnings -WarningAction SilentlyContinue) +
+                      @($JobWarnings | ForEach-Object { $_.Message })
 
     # Extract warnings or errors matching our criteria
-    $Warnings = $CapturedOutput | Where-Object { $_ -match "Servy Critical Logging Failure|Mutex timeout" }
+    $Warnings = $CapturedOutput | Where-Object { $_ -match "Servy Critical Logging Failure|Mutex timeout|abandoned log mutex" }
 
     if ($Warnings) {
         Write-Host "FAIL: Swallowed I/O exceptions or Mutex timeouts detected:" -ForegroundColor Red
