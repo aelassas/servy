@@ -91,27 +91,15 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
-        [Fact]
-        public void FormatServiceDependencies_ShouldReturnEmpty_WhenInputIsNull()
-        {
-            // Act
-            var result = StringHelper.FormatServiceDependencies(null);
-
-            // Assert
-            Assert.Empty(result);
-        }
-
         [Theory]
+        [InlineData(null, "")]
         [InlineData("", "")]
         [InlineData("singleDep", "singleDep")]
         [InlineData("dep1;dep2;dep3", "dep1|dep2|dep3")] // Environment.NewLine cannot appear in [InlineData]; '|' is a placeholder substituted below
-        public void FormatServiceDependencies_ShouldReplaceSemicolonWithNewLine(string input, string expectedTemplate)
+        public void FormatServiceDependencies_ShouldReplaceSemicolonWithNewLine(string? input, string expectedTemplate)
         {
             // Arrange
-            // Dynamically construct the cross-platform expected string if the token template is detected
-            string expected = expectedTemplate.Contains("|")
-                ? expectedTemplate.Replace("|", Environment.NewLine)
-                : expectedTemplate;
+            string expected = expectedTemplate.Replace("|", Environment.NewLine);
 
             // Act
             var result = StringHelper.FormatServiceDependencies(input);
