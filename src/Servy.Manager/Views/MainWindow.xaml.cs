@@ -194,8 +194,6 @@ namespace Servy.Manager.Views
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task Menu_ConfigClickAsync(object sender, RoutedEventArgs e)
         {
-            // Verify the ViewModel is correctly bound before attempting to
-            // launch the configuration modal or view.
             if (DataContext is MainViewModel vm)
             {
                 await vm.ConfigureCommand.ExecuteAsync(null);
@@ -235,7 +233,6 @@ namespace Servy.Manager.Views
 
                 if (DataContext is MainViewModel vm)
                 {
-                    // Route to the appropriate handler based on the selected tab
                     if (MainTab.IsSelected)
                         await HandleMainTabSelected(vm);
                     else if (PerformanceTab.IsSelected)
@@ -324,11 +321,9 @@ namespace Servy.Manager.Views
             // Stop background workers on all other interfaces, bypassing the Main refresh timer
             DeactivateAllExcept(vm, TabScope.Main);
 
-            // Run search for main tab if applicable
             if (vm.ServicesView.IsEmpty)
                 await vm.SearchCommand.ExecuteAsync(null);
 
-            // Start periodic timer updates in main tab
             vm.CreateAndStartTimer();
         }
 
@@ -346,7 +341,6 @@ namespace Servy.Manager.Views
         {
             DeactivateAllExcept(vm, scope);
 
-            // Start timers in the selected monitoring tab
             monitoringVm?.StartMonitoring();
 
             return Task.CompletedTask;
@@ -364,7 +358,6 @@ namespace Servy.Manager.Views
         {
             DeactivateAllExcept(vm, TabScope.Logs);
 
-            // Run search for logs tab if applicable
             if (logsVm?.LogsView?.IsEmpty ?? false)
             {
                 logsVm.ResetDateWindowToNow();
@@ -422,7 +415,7 @@ namespace Servy.Manager.Views
             {
                 vm.IsChecked = !vm.IsChecked;
 
-                // Optional: prevent DataGrid from entering edit mode
+                // consume the double-click so it does not reach the row's default handling
                 e.Handled = true;
             }
         }
@@ -435,7 +428,6 @@ namespace Servy.Manager.Views
         /// <param name="e">Mouse button event arguments containing click information.</param>
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // Check if the click was outside the DataGrid
             if (e.OriginalSource is DependencyObject source && !IsDescendantOf(source, ServicesDataGrid))
             {
                 ServicesDataGrid.SelectedItems.Clear();
