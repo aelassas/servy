@@ -484,10 +484,6 @@ namespace Servy.Core.UnitTests.IO
             var writer = CreateWriter(baseLog, true, 1000);
             writer.Write(""); // force file creation
 
-            // ---- BRANCH 1: _maxRotations <= 0 ----
-            TestReflection.SetField(writer, "_maxRotations", 0);
-            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
-
             // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
             string f1 = Path.Combine(_testDir, "service.20260325_000001.log");
             string noise1 = Path.Combine(_testDir, "service_backup.log");
@@ -496,6 +492,22 @@ namespace Servy.Core.UnitTests.IO
             File.WriteAllText(f1, "valid");
             File.WriteAllText(noise1, "noise");
             File.WriteAllText(noise2, "noise");
+
+            // ---- BRANCH 1: _maxRotations <= 0 means unlimited, so nothing is ever deleted ----
+            // Exercised with rotated files already on disk: without the early return the
+            // "count <= maxRotations" check is false and every rotated file gets deleted.
+            string f0 = Path.Combine(_testDir, "service.20260325_000000.log");
+            File.WriteAllText(f0, "oldest");
+            File.SetLastWriteTimeUtc(f0, DateTime.UtcNow.AddHours(-1));
+
+            TestReflection.SetField(writer, "_maxRotations", 0);
+            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+            Assert.True(File.Exists(f0), "maxRotations 0 means unlimited; no rotated file may be deleted.");
+            Assert.True(File.Exists(f1));
+
+            // Remove the extra rotated file again so the branch 3 and 4 counts are unchanged
+            File.Delete(f0);
 
             // ---- BRANCH 3: rotatedFiles.Count <= _maxRotations ----
             TestReflection.SetField(writer, "_maxRotations", 5);
