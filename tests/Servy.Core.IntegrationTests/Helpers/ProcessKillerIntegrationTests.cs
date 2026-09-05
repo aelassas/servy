@@ -6,7 +6,7 @@ using System.Text;
 namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
-    /// Represents an exhaustive integration test suite for the ProcessKiller class, validating process tree termination, safelist protections, and file-lock release mechanisms.
+    /// Integration tests for ProcessKiller: process tree termination, the critical-process safelist, and file-lock release.
     /// </summary>
     [Collection("ProcessIntegrationTests")]
     public class ProcessKillerIntegrationTests : HandleExeIntegrationTestBase, IDisposable
@@ -75,7 +75,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             bool result = _processKiller.KillProcessTreeAndParents(invalidName!, killParents: true);
 
             // Assert
-            // Ensure bad/missing process name arrays safely report operational failure status indicators
+            // A null, empty or whitespace name is rejected before any process lookup
             Assert.False(result);
         }
 
@@ -93,7 +93,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             bool result = _processKiller.KillProcessTreeAndParents(protectedName, killParents: true);
 
             // Assert
-            // Baseline system structures must bypass structural process walk calls gracefully
+            // Names on the CriticalSystemProcesses safelist are never killed
             Assert.False(result);
         }
 
@@ -237,8 +237,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // Act
                 bool result = _processKiller.KillProcessTreeAndParents(child!.Id, killParents: false);
 
-                // IDIOM HARMONIZATION: Standardize exit checking pipeline onto the shared robust internal polling helper.
-                // This cleanly drops custom blocking WaitForExit branches and inconsistent manual tracking logic.
                 bool childExited = WaitForProcessExit(child, 5000);
                 parent!.Refresh();
 
@@ -291,13 +289,13 @@ namespace Servy.Core.IntegrationTests.Helpers
             // 1. Spawn the process
             var lockingProcess = SpawnFileLockingProcess(testFile);
 
-            // Stabilization Step A: Ensure the process hasn't crashed before we proceed
+            // 2. Ensure the process has not crashed before we proceed
             if (lockingProcess == null || lockingProcess.HasExited)
             {
                 throw new InvalidOperationException("Failed to spawn a stable file-locking process.");
             }
 
-            // CRITICAL - Stabilization Step B: Wait for the child process to physically claim the file lock handle.
+            // 3. Wait for the child process to acquire the file lock.
             // We poll by trying to open the file exclusively. Once an IOException triggers, the lock is live.
             bool lockConfirmed = SpinWait.SpinUntil(() =>
             {
@@ -312,7 +310,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 }
                 catch (IOException)
                 {
-                    // Lock is officially verified in the OS handle table!
+                    // The exclusive open failed, so the child holds the lock
                     return true;
                 }
                 catch
@@ -326,7 +324,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 throw new InvalidOperationException("The background process failed to acquire the file lock within the allowed timeout window.");
             }
 
-            // 2 & 3. Act & Backoff/Retry Phase for Process Termination
+            // 4. Act: terminate the locking process, with backoff/retry
             bool result = false;
             bool exited = false;
             int killAttempts = 0;
