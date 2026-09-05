@@ -64,6 +64,18 @@ namespace Servy.Testing
         public const int ProcessLauncherSynchronousTimeoutSeconds = 15;
 
         /// <summary>
+        /// Timeout budget (10 seconds) for the file-lock fixture of the process killer tests: both the poll that
+        /// waits for the spawned child to acquire the exclusive lock and that child's LOCKED stdout handshake.
+        /// </summary>
+        public const int ProcessKillerFileLockTimeoutSeconds = 10;
+
+        /// <summary>
+        /// Per-attempt window (3 seconds) allowed for a locking process to actually exit after a single
+        /// <c>KillProcessesUsingFile</c> call, before the test retries the kill.
+        /// </summary>
+        public const int ProcessKillerPerAttemptExitWaitSeconds = 3;
+
+        /// <summary>
         /// Standard timeout budget (5,000 ms / 5 seconds) for waiting for process exit in process wrapper unit tests.
         /// </summary>
         public const int ProcessWrapperProcessTimeoutMs = 5000;

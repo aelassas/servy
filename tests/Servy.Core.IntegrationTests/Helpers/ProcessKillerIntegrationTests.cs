@@ -193,7 +193,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 _processKiller.KillChildren(parent.Id);
 
                 // Polling loop with refreshes to handle OS termination latency and eliminate CI flake
-                bool childExited = WaitForProcessExit(child, 5000);
+                bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
                 parent.Refresh();
 
                 // Assert
@@ -225,8 +225,8 @@ namespace Servy.Core.IntegrationTests.Helpers
                 bool result = _processKiller.KillProcessTreeAndParents(childId, killParents: true);
 
                 // Validation: Use a polling loop with refreshes to handle OS termination latency
-                bool childExited = WaitForProcessExit(child, 5000);
-                bool parentExited = WaitForProcessExit(parent, 5000);
+                bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
+                bool parentExited = WaitForProcessExit(parent, TestTimeouts.CiGenerousMs);
 
                 // Assert
                 Assert.True(childExited, $"The child process (PID {childId}) should have exited within the timeout.");
@@ -258,7 +258,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // Act
                 bool result = _processKiller.KillProcessTreeAndParents(child.Id, killParents: false);
 
-                bool childExited = WaitForProcessExit(child, 5000);
+                bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
                 parent.Refresh();
 
                 // Assert
@@ -341,7 +341,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 {
                     return false;
                 }
-            }, TimeSpan.FromSeconds(10)); // Generous timeout for slow CI environments
+            }, TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds)); // Generous timeout for slow CI environments
 
             if (!lockConfirmed)
             {
@@ -364,7 +364,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 result = _processKiller.KillProcessesUsingFile(testFile);
 
                 // GitHub Actions runners can be slow; wait up to 3 seconds per attempt for the process to actually exit
-                exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(3));
+                exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(TestTimeouts.ProcessKillerPerAttemptExitWaitSeconds));
 
                 if (!exited && killAttempts < maxKillAttempts)
                 {
@@ -483,7 +483,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 return -1;
             });
 
-            if (readTask.Wait(TimeSpan.FromSeconds(15)))
+            if (readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ChildTimeoutSeconds)))
             {
                 childPid = readTask.Result;
             }
@@ -505,7 +505,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 childProcess.Refresh();
                 return !childProcess.HasExited;
-            }, TimeSpan.FromSeconds(5));
+            }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
 
             Assert.True(childAlive, "Spawned child process exited prematurely.");
 
@@ -548,7 +548,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 return false;
             });
 
-            readTask.Wait(TimeSpan.FromSeconds(10));
+            readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds));
 
             return lockingProcess;
         }
