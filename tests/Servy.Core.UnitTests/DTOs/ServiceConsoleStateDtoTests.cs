@@ -37,10 +37,9 @@ namespace Servy.Core.UnitTests.DTOs
             };
 
             // Act
-            var clone = original.Clone() as ServiceConsoleStateDto;
+            var clone = (ServiceConsoleStateDto)original.Clone();
 
             // Assert
-            Assert.NotNull(clone);
             Assert.NotSame(original, clone); // Verify it's a different instance
             Assert.Equal(original.Pid, clone.Pid);
             Assert.Equal(original.ActiveStdoutPath, clone.ActiveStdoutPath);
@@ -60,10 +59,9 @@ namespace Servy.Core.UnitTests.DTOs
             };
 
             // Act
-            var clone = original.Clone() as ServiceConsoleStateDto;
+            var clone = (ServiceConsoleStateDto)original.Clone();
 
             // Assert
-            Assert.NotNull(clone);
             Assert.NotSame(original, clone);
             Assert.Equal(4321, clone.Pid);
             Assert.Null(clone.ActiveStdoutPath);
