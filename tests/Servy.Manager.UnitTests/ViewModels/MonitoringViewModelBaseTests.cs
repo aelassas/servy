@@ -17,7 +17,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
 
-        // Track generated SUT view model instances to enforce complete memory containment cleanup
+        // Track created view models so the fixture can dispose them all
         private readonly ConcurrentBag<TestMonitoringViewModel> _allocatedViewModels = new ConcurrentBag<TestMonitoringViewModel>();
 
         public MonitoringViewModelBaseTests()
@@ -36,7 +36,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             public bool IsOnMonitoringStoppedCalled { get; private set; }
 
-            // Backing property to verify hosted selection variants
+            // Value returned by the SelectedServiceItem override
             public ServiceItemBase? MockedSelectedService { get; set; }
 
             public bool IsResetMonitoringStateCalled { get; private set; }
@@ -279,7 +279,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await tcs.Task;
             });
 
-            // Active a valid service snapshot context to bypass the outer selection guard check inside OnTick logic
+            // Set a valid selection so OnTickAsync forwards the tick to ApplyTickAsync
             vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
             vm.StartMonitoring();
 
@@ -449,12 +449,12 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Assert
                 Assert.Equal("1248", vm.Pid);
-                // Symmetrical Verification: Verify that the change-suppression optimization actually prevented event execution loops
+                // The redundant assignment must not raise PropertyChanged
                 Assert.False(propertyChangedFired, "PropertyChanged was erroneously raised for an optimized redundant value assignment.");
             }
             finally
             {
-                // Tear down event handlers to preserve test runner sandbox limits
+                // Detach the handler so later asserts cannot observe stale events
                 vm.PropertyChanged -= handler;
             }
         }
@@ -490,7 +490,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.MockedSelectedService = null;
             await vm.CopyPidCommand.ExecuteAsync(null);
 
-            // Scenario 2: Service instance assigned but numerical Pid collection value is missing
+            // Scenario 2: service assigned but its Pid is null
             // Act
             vm.MockedSelectedService = new ConcreteServiceItem { Pid = null };
             await vm.CopyPidCommand.ExecuteAsync(null);
