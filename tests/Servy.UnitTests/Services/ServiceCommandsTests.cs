@@ -371,6 +371,169 @@ namespace Servy.UnitTests.Services
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
+        [Fact]
+        public async Task InstallService_ValidConfiguration_MapsEveryDtoFieldOntoInstallServiceOptions()
+        {
+            // Arrange
+            // Every property carries a distinct value, and every boolean and enum differs from its
+            // AppConfig default, so both a transposition between same-typed fields and a dropped
+            // assignment (which would leave the option at its default) are detectable.
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "MappedService", EnableDebugLogs = true };
+            var dto = new ServiceDto
+            {
+                Name = "MappedService",
+                DisplayName = "Mapped Service Display",
+                Description = "Mapped service description",
+                ExecutablePath = @"C:\mapped\main.exe",
+                StartupDirectory = @"C:\mapped\main-dir",
+                Parameters = "--main-args",
+                StartupType = (int)ServiceStartType.Manual,
+                Priority = (int)ProcessPriority.High,
+                CpuAffinity = "3",
+                EnableConsoleUI = true,
+                UserAccount = @"MAPPED\user",
+                Password = "mapped-password",
+
+                StdoutPath = @"C:\mapped\out.log",
+                StderrPath = @"C:\mapped\err.log",
+                EnableSizeRotation = true,
+                RotationSize = 7,
+                MaxRotations = 11,
+                EnableDateRotation = true,
+                DateRotationType = (int)Core.Enums.DateRotationType.Weekly,
+                UseLocalTimeForRotation = true,
+
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 41,
+                MaxFailedChecks = 43,
+                RecoveryAction = (int)Core.Enums.RecoveryAction.RestartComputer,
+                RecoveryOnCleanExit = true,
+                MaxRestartAttempts = 47,
+                HeartbeatUrl = "https://mapped.example/heartbeat",
+                HeartbeatUrlTimeoutSeconds = 53,
+                EnableHeartbeatUrlFlags = true,
+
+                EnvironmentVariables = "MAPPED_ENV=1",
+                ServiceDependencies = "MappedDependency",
+
+                PreLaunchExecutablePath = @"C:\mapped\prelaunch.exe",
+                PreLaunchStartupDirectory = @"C:\mapped\prelaunch-dir",
+                PreLaunchParameters = "--prelaunch-args",
+                PreLaunchEnvironmentVariables = "MAPPED_PRELAUNCH_ENV=1",
+                PreLaunchStdoutPath = @"C:\mapped\prelaunch-out.log",
+                PreLaunchStderrPath = @"C:\mapped\prelaunch-err.log",
+                PreLaunchTimeoutSeconds = 59,
+                PreLaunchRetryAttempts = 61,
+                PreLaunchIgnoreFailure = true,
+
+                FailureProgramPath = @"C:\mapped\failure.exe",
+                FailureProgramStartupDirectory = @"C:\mapped\failure-dir",
+                FailureProgramParameters = "--failure-args",
+
+                PostLaunchExecutablePath = @"C:\mapped\postlaunch.exe",
+                PostLaunchStartupDirectory = @"C:\mapped\postlaunch-dir",
+                PostLaunchParameters = "--postlaunch-args",
+
+                StartTimeout = 67,
+                StopTimeout = 71,
+
+                PreStopExecutablePath = @"C:\mapped\prestop.exe",
+                PreStopStartupDirectory = @"C:\mapped\prestop-dir",
+                PreStopParameters = "--prestop-args",
+                PreStopTimeoutSeconds = 73,
+                PreStopLogAsError = true,
+
+                PostStopExecutablePath = @"C:\mapped\poststop.exe",
+                PostStopStartupDirectory = @"C:\mapped\poststop-dir",
+                PostStopParameters = "--poststop-args",
+            };
+
+            InstallServiceOptions captured = null;
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(dto.Name, It.IsAny<CancellationToken>())).Returns(false);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(captured);
+
+            Assert.Equal(dto.Name, captured.ServiceName);
+            Assert.Equal(dto.DisplayName, captured.DisplayName);
+            Assert.Equal(dto.Description, captured.Description);
+            Assert.Equal(Core.Config.AppConfig.GetServyUIServicePath(), captured.WrapperExePath);
+            Assert.Equal(dto.ExecutablePath, captured.RealExePath);
+            Assert.Equal(dto.StartupDirectory, captured.StartupDirectory);
+            Assert.Equal(dto.Parameters, captured.RealArgs);
+            Assert.Equal(ServiceStartType.Manual, captured.StartType);
+            Assert.Equal(ProcessPriority.High, captured.ProcessPriority);
+            Assert.Equal(dto.CpuAffinity, captured.CpuAffinity);
+            Assert.Equal(dto.EnableConsoleUI, captured.EnableConsoleUI);
+            Assert.Equal(dto.UserAccount, captured.Username);
+            Assert.Equal(dto.Password, captured.Password);
+
+            Assert.Equal(dto.StdoutPath, captured.StdoutPath);
+            Assert.Equal(dto.StderrPath, captured.StderrPath);
+            Assert.Equal(dto.EnableSizeRotation, captured.EnableSizeRotation);
+            Assert.Equal(Core.Config.AppConfig.ToBytes(dto.RotationSize.Value), captured.RotationSizeInBytes);
+            Assert.Equal(dto.MaxRotations, captured.MaxRotations);
+            Assert.Equal(dto.EnableDateRotation, captured.EnableDateRotation);
+            Assert.Equal(Core.Enums.DateRotationType.Weekly, captured.DateRotationType);
+            Assert.Equal(dto.UseLocalTimeForRotation, captured.UseLocalTimeForRotation);
+
+            Assert.Equal(dto.EnableHealthMonitoring, captured.EnableHealthMonitoring);
+            Assert.Equal(dto.HeartbeatInterval, captured.HeartbeatInterval);
+            Assert.Equal(dto.MaxFailedChecks, captured.MaxFailedChecks);
+            Assert.Equal(Core.Enums.RecoveryAction.RestartComputer, captured.RecoveryAction);
+            Assert.Equal(dto.RecoveryOnCleanExit, captured.RecoveryOnCleanExit);
+            Assert.Equal(dto.MaxRestartAttempts, captured.MaxRestartAttempts);
+            Assert.Equal(dto.HeartbeatUrl, captured.HeartbeatUrl);
+            Assert.Equal(dto.HeartbeatUrlTimeoutSeconds, captured.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(dto.EnableHeartbeatUrlFlags, captured.EnableHeartbeatUrlFlags);
+
+            Assert.Equal(dto.EnvironmentVariables, captured.EnvironmentVariables);
+            Assert.Equal(dto.ServiceDependencies, captured.ServiceDependencies);
+
+            Assert.Equal(dto.PreLaunchExecutablePath, captured.PreLaunchExePath);
+            Assert.Equal(dto.PreLaunchStartupDirectory, captured.PreLaunchStartupDirectory);
+            Assert.Equal(dto.PreLaunchParameters, captured.PreLaunchArgs);
+            Assert.Equal(dto.PreLaunchEnvironmentVariables, captured.PreLaunchEnvironmentVariables);
+            Assert.Equal(dto.PreLaunchStdoutPath, captured.PreLaunchStdoutPath);
+            Assert.Equal(dto.PreLaunchStderrPath, captured.PreLaunchStderrPath);
+            Assert.Equal(dto.PreLaunchTimeoutSeconds, captured.PreLaunchTimeout);
+            Assert.Equal(dto.PreLaunchRetryAttempts, captured.PreLaunchRetryAttempts);
+            Assert.Equal(dto.PreLaunchIgnoreFailure, captured.PreLaunchIgnoreFailure);
+
+            Assert.Equal(dto.FailureProgramPath, captured.FailureProgramPath);
+            Assert.Equal(dto.FailureProgramStartupDirectory, captured.FailureProgramStartupDirectory);
+            Assert.Equal(dto.FailureProgramParameters, captured.FailureProgramExecutableArgs);
+
+            Assert.Equal(dto.PostLaunchExecutablePath, captured.PostLaunchExePath);
+            Assert.Equal(dto.PostLaunchStartupDirectory, captured.PostLaunchStartupDirectory);
+            Assert.Equal(dto.PostLaunchParameters, captured.PostLaunchArgs);
+
+            Assert.Equal(dto.StartTimeout, captured.StartTimeout);
+            Assert.Equal(dto.StopTimeout, captured.StopTimeout);
+
+            Assert.Equal(dto.PreStopExecutablePath, captured.PreStopExePath);
+            Assert.Equal(dto.PreStopStartupDirectory, captured.PreStopStartupDirectory);
+            Assert.Equal(dto.PreStopParameters, captured.PreStopArgs);
+            Assert.Equal(dto.PreStopTimeoutSeconds, captured.PreStopTimeout);
+            Assert.Equal(dto.PreStopLogAsError, captured.PreStopLogAsError);
+
+            Assert.Equal(dto.PostStopExecutablePath, captured.PostStopExePath);
+            Assert.Equal(dto.PostStopStartupDirectory, captured.PostStopStartupDirectory);
+            Assert.Equal(dto.PostStopParameters, captured.PostStopArgs);
+
+            Assert.Equal(config.EnableDebugLogs, captured.EnableDebugLogs);
+        }
+
         #endregion
 
         #region OpenManager Method and Exceptions Tests
