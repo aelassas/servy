@@ -326,8 +326,8 @@ namespace Servy.CLI.Options
                        "you must grant Modify access to %ProgramData%\\Servy for the account running " +
                        "the service and execute the mandatory hardening script: " +
                        "Set-ServyExePermissions.ps1 -TargetAccount \"domain\\user\" to prevent unprivileged " +
-                       "binary tampering and local privilege escalation. Learn script location and " +
-                       "execution usage at: https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory"
+                       "binary tampering and local privilege escalation. See the wiki page Security, section " +
+                       "\"Executable permission hardening (mandatory)\"."
         )]
         public string User { get; set; }
 
