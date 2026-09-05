@@ -1015,14 +1015,17 @@ namespace Servy.Core.UnitTests.Helpers
                 {
                     Assert.Skip("Symlink creation unavailable on this runner (SeCreateSymbolicLinkPrivilege not held; enable Developer Mode or run elevated).");
                 }
-                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && i < MaxFileSystemRetries - 1)
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
+                    if (i == MaxFileSystemRetries - 1)
+                    {
+                        Assert.Fail($"Failed to establish a directory link from '{linkPath}' to '{targetPath}' after {MaxFileSystemRetries} attempts: {ex.Message}");
+                    }
+
                     try { if (Directory.Exists(linkPath)) Directory.Delete(linkPath); } catch { }
                     Thread.Sleep(200 * (i + 1));
                 }
             }
-
-            Assert.Fail($"Failed to establish a directory link from '{linkPath}' to '{targetPath}' after {MaxFileSystemRetries} attempts.");
         }
 
         /// <summary>
