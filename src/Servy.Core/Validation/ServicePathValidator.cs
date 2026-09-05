@@ -17,7 +17,9 @@ namespace Servy.Core.Validation
         /// </summary>
         /// <typeparam name="T">The type containing path properties to validate.</typeparam>
         /// <param name="target">The instance whose path properties should be inspected.</param>
-        /// <param name="validatePath">A delegate function that verifies whether a path string exists/is valid for files or directories.</param>
+        /// <param name="validatePath">Delegate invoked as <c>validatePath(path, isFile)</c>, returning whether the path
+        /// exists and is valid. <c>isFile</c> is <c>true</c> to validate the path as a file and <c>false</c> to validate
+        /// it as a directory; it is taken from <see cref="ServicePathAttribute.IsFile"/>.</param>
         /// <returns>A <see cref="ServicePathViolation"/> detailing the failure, or <c>null</c> if valid.</returns>
         public static ServicePathViolation FindFirstViolation<T>(T target, Func<string, bool, bool> validatePath)
           => FindAllViolations(target, validatePath).FirstOrDefault();
@@ -28,7 +30,9 @@ namespace Servy.Core.Validation
         /// </summary>
         /// <typeparam name="T">The type containing path properties to validate.</typeparam>
         /// <param name="target">The instance whose path properties should be inspected.</param>
-        /// <param name="validatePath">A delegate function that verifies whether a path string exists/is valid for files or directories.</param>
+        /// <param name="validatePath">Delegate invoked as <c>validatePath(path, isFile)</c>, returning whether the path
+        /// exists and is valid. <c>isFile</c> is <c>true</c> to validate the path as a file and <c>false</c> to validate
+        /// it as a directory; it is taken from <see cref="ServicePathAttribute.IsFile"/>.</param>
         /// <returns>A collection of <see cref="ServicePathViolation"/> detailing all failures.</returns>
         public static IEnumerable<ServicePathViolation> FindAllViolations<T>(T target, Func<string, bool, bool> validatePath)
         {
