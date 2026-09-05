@@ -63,6 +63,7 @@ namespace Servy.Manager.Views.Controls
 
         /// <summary>
         /// Gets or sets the search text used to filter the services list.
+        /// This property supports two-way binding by default.
         /// </summary>
         public string SearchText
         {
