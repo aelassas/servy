@@ -9,15 +9,16 @@ namespace Servy.Manager.Views
     /// Interaction logic for <see cref="LogsView"/>.
     /// Represents the Logs tab UI in Servy Manager.
     /// Subscribes to the <see cref="LogsViewModel.ScrollLogsToTopRequested"/> event
-    /// to scroll the logs DataGrid to the top when requested.
+    /// to scroll the logs DataGrid to the top when requested, and cancels any in-flight
+    /// search when the view is unloaded.
     /// </summary>
     [ExcludeFromCodeCoverage]
     public partial class LogsView : UserControl
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LogsView"/> class
-        /// and subscribes to <see cref="FrameworkElement.DataContextChanged"/>
-        /// to handle changes in the view model.
+        /// Initializes a new instance of the <see cref="LogsView"/> class, subscribing to
+        /// <see cref="FrameworkElement.DataContextChanged"/> to re-wire the view model and to
+        /// <see cref="FrameworkElement.Unloaded"/> to cancel any search still running.
         /// </summary>
         public LogsView()
         {
@@ -56,12 +57,11 @@ namespace Servy.Manager.Views
             if (LogsDataGrid.Items.Count == 0)
                 return;
 
+            // Realize the rows first: ScrollIntoView cannot reach an item the
+            // virtualizing panel has not generated yet.
             LogsDataGrid.UpdateLayout();
 
-            // Scroll first item into view
             LogsDataGrid.ScrollIntoView(LogsDataGrid.Items[0]);
         }
-
     }
-
 }
