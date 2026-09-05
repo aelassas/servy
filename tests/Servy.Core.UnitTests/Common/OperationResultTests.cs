@@ -1,5 +1,6 @@
 using Servy.Core.Common;
 using System;
+using System.Reflection;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Common
@@ -9,8 +10,22 @@ namespace Servy.Core.UnitTests.Common
         [Fact]
         public void OperationResult_ExposesNoConstructorThatCanBypassTheErrorInvariant()
         {
-            // Arrange & Act & Assert
-            Assert.Empty(typeof(OperationResult).GetConstructors());   // ctor is private; only Success()/Failure() are reachable
+            // Arrange
+            var type = typeof(OperationResult);
+
+            // Act & Assert
+            // sealed: no subclass can reach a widened constructor (the other half of the #4265 fix)
+            Assert.True(type.IsSealed, "OperationResult must stay sealed.");
+
+            // Exactly one constructor, and it must be private. GetConstructors() without flags
+            // returns public instance constructors only, so it reports empty for the protected
+            // constructor #4265 was about, and for an internal one that any Servy.Core caller
+            // could use to build a failure with no error message.
+            var ctors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var ctor = Assert.Single(ctors);
+            Assert.True(ctor.IsPrivate,
+                $"OperationResult's constructor is {(ctor.IsAssembly ? "internal" : ctor.IsFamily ? "protected" : "public")}; " +
+                "only Success()/Failure() may construct a result.");
         }
 
         [Fact]
