@@ -14,9 +14,12 @@ namespace Servy.Core.Services
         /// <param name="errorMessage">When this method returns <c>false</c>, contains a descriptive error message; otherwise, <c>null</c>.</param>
         /// <returns><c>true</c> if the XML is valid, safe from XXE attacks, and meets domain requirements; otherwise, <c>false</c>.</returns>
         /// <remarks>
-        /// This validation step typically precedes deserialization into a <see cref="DTOs.ServiceDto"/>.
-        /// It ensures that the payload does not exceed size limits and that all required
-        /// service properties (like ExecutablePath) are present and valid.
+        /// This method performs the deserialization into a <see cref="DTOs.ServiceDto"/> itself rather
+        /// than preceding it: it parses the payload with the same hardened settings the import path
+        /// uses, runs the shared domain validation rules over the materialised service definition,
+        /// and then discards it. It enforces the configured size limit, rejects unsafe or unknown
+        /// content, and requires the properties the Windows Service Control Manager needs (such as
+        /// ExecutablePath). A caller that validates and then deserializes the same payload parses it twice.
         /// </remarks>
         bool TryValidate(string? xml, out string? errorMessage);
     }
