@@ -1,0 +1,95 @@
+# ==========================================================================================
+# GitHub Actions Workflow - Test Single Project
+# ------------------------------------------------------------------------------------------
+# Executes unit and integration tests against a single target .NET test project on demand
+# under `./tests/` using direct `dotnet test` invocations for both Debug and Release configs.
+# ==========================================================================================
+
+name: test-project
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Test project filename or path (e.g. Servy.Core.UnitTests.csproj)'
+        required: true
+        type: string
+        default: 'Servy.Core.UnitTests.csproj'
+
+permissions:
+  contents: read
+
+jobs:
+  test-single-project:
+    name: Test Project (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x64
+          - os: windows-11-arm
+            arch: ARM64
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    env:
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient downstream downloads
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}
+
+      - name: Run test project (Debug & Release)
+        shell: pwsh
+        run: |
+          $inputName = "${{ inputs.project_name }}".Trim()
+
+          Write-Host "Searching for project matching: '$inputName' under ./tests..." -ForegroundColor Cyan
+
+          # Locate project file under ./tests/
+          $projectFile = Get-ChildItem -Path "$env:GITHUB_WORKSPACE/tests" -Recurse -Filter "*$inputName*" |
+            Where-Object { $_.Extension -eq '.csproj' } |
+            Select-Object -First 1
+
+          if (-not $projectFile) {
+              Write-Error "Could not locate project file matching '$inputName' inside ./tests/."
+          }
+
+          $projPath = $projectFile.FullName
+          $projName = $projectFile.BaseName
+
+          # 1. Run Debug configuration
+          Write-Host "Running tests for $projName (Debug)..." -ForegroundColor Green
+          & dotnet test $projPath --configuration Debug --results-directory "$env:GITHUB_WORKSPACE/TestResults/$projName/Debug"
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::Debug tests failed for project: $projName"
+              Write-Error "Debug test run failed for $projName."
+          }
+
+          # 2. Run Release configuration
+          Write-Host "Running tests for $projName (Release)..." -ForegroundColor Green
+          & dotnet test $projPath --configuration Release --results-directory "$env:GITHUB_WORKSPACE/TestResults/$projName/Release"
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::Release tests failed for project: $projName"
+              Write-Error "Release test run failed for $projName."
+          }
+
+      - name: Upload Test Diagnostics & Crash Dumps on Failure
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          name: test-diagnostics-${{ matrix.arch }}
+          path: |
+            TestResults/**/*.dmp
+            TestResults/**/*.xml
+            TestResults/**/*.trx
+          if-no-files-found: ignore
