@@ -202,9 +202,11 @@ namespace Servy.Infrastructure.Data
                         // Double check that the final tracked migration index completely aligns with the central declaration
                         if (currentVersion > LatestSchemaVersion)
                         {
-                            Logger.Warn($"Database schema version {currentVersion} is NEWER than this build supports (LatestSchemaVersion = {LatestSchemaVersion}). " +
-                                        $"This database was created by a later version of Servy. Columns it added will be reported as orphans below and will not be " +
-                                        $"read or written by this build. Re-install the newer version, or back up '{SqlConstants.ServicesTableName}' before continuing.");
+                            // Refuse to touch a database written by a newer Servy: the reconciliation
+                            // pass below would ADD COLUMN for anything the newer version renamed.
+                            throw new InvalidOperationException(
+                                $"The Servy database is at schema version {currentVersion}, but this build supports up to {LatestSchemaVersion}. " +
+                                "It was created by a newer version of Servy. Upgrade Servy, or restore a database backup taken before the upgrade.");
                         }
                         else if (currentVersion < LatestSchemaVersion)
                         {
