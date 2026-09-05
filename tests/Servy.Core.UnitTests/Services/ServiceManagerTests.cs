@@ -702,6 +702,11 @@ namespace Servy.Core.UnitTests.Services
                ))
                .Returns(false);
 
+            // The service is already registered in the SCM when pre-shutdown configuration fails,
+            // so the rollback has to delete it again
+            _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
+                .Returns(true);
+
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
@@ -730,6 +735,9 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>()), Times.Once);
+
+            // The created service must not be left behind as an SCM orphan
+            _mockWindowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Once);
         }
 
         [Fact]
@@ -853,6 +861,11 @@ namespace Servy.Core.UnitTests.Services
                ))
                .Returns(true);
 
+            // The service is already registered in the SCM when delayed auto-start configuration
+            // fails, so the rollback has to delete it again
+            _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
+                .Returns(true);
+
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
@@ -899,6 +912,9 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<SafeServiceHandle>(),
                 It.IsAny<uint>(),
                 ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
+
+            // The created service must not be left behind as an SCM orphan
+            _mockWindowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Once);
         }
 
         #region InstallService Async Unicode Case-Variance and Recovery Tests
