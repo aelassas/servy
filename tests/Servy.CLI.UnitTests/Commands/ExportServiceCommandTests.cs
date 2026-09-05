@@ -188,7 +188,7 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(_tempDir, "denied_extension.txt");
 
             // Act & Assert
-            // TestReflection unwraps TargetInvocationException cleanly to target the inner exception directly
+            // TestReflection rethrows the inner exception, so the guard's ArgumentException surfaces directly
             var ex = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "data"));
             Assert.Equal(string.Format(Core.Resources.Strings.Msg_SecurityInvalidFileType, ".txt"), ex.Message);
         }
@@ -218,16 +218,15 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(_tempDir, "locked_out.json");
             File.WriteAllText(filePath, "original contents");
 
-            // Exclusively open and lock down the target filesystem file channel before running SaveFile.
-            // When SaveFile invokes PathSecurityGuard, it opens with FileMode.OpenOrCreate and FileAccess.ReadWrite.
-            // Because our file handle context restricts any sharing options (FileShare.None), PathSecurityGuard
-            // will throw a SecurityException while trying to allocate the stream.
+            // Hold the file open with FileShare.None so PathSecurityGuard cannot open it for validation:
+            // SaveFile invokes PathSecurityGuard, which opens the file with FileMode.OpenOrCreate and
+            // FileAccess.ReadWrite and therefore throws a SecurityException while the lock is held.
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act & Assert
                 var ex = Assert.Throws<SecurityException>(() => InvokeSaveFile(filePath, "new config payload"));
 
-                // Unwraps target reflection errors to expose the inner thrown exception rule
+                // The guard's message identifies the failed file-handle validation
                 Assert.Contains("Security Alert: Target file handle validation was rejected", ex.Message);
             }
         }
@@ -290,7 +289,7 @@ namespace Servy.CLI.UnitTests.Commands
             bool isValidExceptionType = actualEx is ArgumentException || actualEx is SecurityException;
             Assert.True(isValidExceptionType, $"Expected ArgumentException or SecurityException, but caught: {actualEx.GetType().Name}");
 
-            // If it's a modern argument rejection, execute the localized syntax verification check
+            // When the guard rejected the path as an argument error, the message must name the reserved device
             if (actualEx is ArgumentException)
             {
                 bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1");
@@ -299,7 +298,7 @@ namespace Servy.CLI.UnitTests.Commands
                     $"The security guard rejected the path, but with an unexpected message profile: '{actualEx.Message}'");
             }
 
-            // Assert file system state left no permanent footprint across both frameworks
+            // Nothing SaveFile created may remain on disk
             Assert.False(File.Exists(filePath));
             Assert.False(Directory.Exists(deepSubDir), "The directory allocated for the device name target should be atomically removed on error.");
         }
@@ -335,11 +334,10 @@ namespace Servy.CLI.UnitTests.Commands
         #region Reflection Helper Definition
 
         /// <summary>
-        /// Safely executes the private SaveFile system method using reflection layers.
+        /// Invokes the private SaveFile(path, content) via TestReflection, which rethrows the inner exception.
         /// </summary>
         private void InvokeSaveFile(string path, string content)
         {
-            // Let TestReflection seamlessly invoke the non-public implementation framework
             TestReflection.InvokeNonPublic(_command, "SaveFile", path, content);
         }
 
