@@ -980,8 +980,16 @@ namespace Servy.Core.UnitTests.Helpers
                     }
                     break;
                 }
-                catch (Exception ex) when (i < MaxFileSystemRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
+                    if (i == MaxFileSystemRetries - 1)
+                    {
+                        // Every call site runs this from a finally block, so a teardown
+                        // failure must not hide the test result - same stance as Dispose().
+                        Console.WriteLine($"Failed to tear down directory link '{linkPath}': {ex.Message}");
+                        return;
+                    }
+
                     Thread.Sleep(200 * (i + 1));
                 }
             }
