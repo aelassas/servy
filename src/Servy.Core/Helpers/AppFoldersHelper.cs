@@ -85,8 +85,12 @@ namespace Servy.Core.Helpers
                 throw new ArgumentException("connectionString cannot be null or whitespace", nameof(connectionString));
             if (string.IsNullOrWhiteSpace(aesKeyFilePath))
                 throw new ArgumentException("aesKeyFilePath cannot be null or whitespace", nameof(aesKeyFilePath));
+            if (!Helper.IsAbsolute(aesKeyFilePath))
+                throw new ArgumentException("aesKeyFilePath must be an absolute path", nameof(aesKeyFilePath));
             if (string.IsNullOrWhiteSpace(aesIVFilePath))
                 throw new ArgumentException("aesIVFilePath cannot be null or whitespace", nameof(aesIVFilePath));
+            if (!Helper.IsAbsolute(aesIVFilePath))
+                throw new ArgumentException("aesIVFilePath must be an absolute path", nameof(aesIVFilePath));
             if (rootVaultPath != null && string.IsNullOrWhiteSpace(rootVaultPath))
                 throw new ArgumentException("rootVaultPath cannot be whitespace", nameof(rootVaultPath));
 
@@ -117,6 +121,8 @@ namespace Servy.Core.Helpers
             var dbFolder = Path.GetDirectoryName(dbFilePath);
             if (string.IsNullOrWhiteSpace(dbFolder))
                 throw new InvalidOperationException("Cannot determine database folder path.");
+            if (!Helper.IsAbsolute(dbFolder))
+                throw new ArgumentException("dbFolder must be an absolute path", nameof(dbFolder));
 
             var aesKeyFolder = Path.GetDirectoryName(aesKeyFilePath);
             if (string.IsNullOrWhiteSpace(aesKeyFolder))
