@@ -33,7 +33,6 @@ namespace Servy.Manager.ViewModels
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
 
-            // Subscribe to property changes in the Service model
             Service.PropertyChanged += Service_PropertyChanged;
 
             StartCommand = new AsyncCommand(
@@ -192,13 +191,8 @@ namespace Servy.Manager.ViewModels
         {
             if (string.IsNullOrEmpty(e?.PropertyName)) return;
 
-            // Forward the property change directly to the ViewModel.
-            // The default pass-through handles all 1:1 mapped properties (e.g., Description, Status, Pid).
             OnPropertyChanged(e.PropertyName);
 
-            // RE-EVALUATE COMMANDS:
-            // If status, PID or installation state changes, trigger a CanExecute re-check.
-            // This ensures UI buttons (Start, Stop, etc.) update their enabled state immediately.
             if (e.PropertyName == nameof(Service.Status) || e.PropertyName == nameof(Service.IsInstalled) || e.PropertyName == nameof(Service.Pid))
             {
                 // CommandManager.InvalidateRequerySuggested is global: one call re-queries every row command.
@@ -366,12 +360,9 @@ namespace Servy.Manager.ViewModels
             {
                 if (disposing)
                 {
-                    // CRITICAL: Unsubscribe to release the reference held by the Service model.
-                    // This allows the Garbage Collector to reclaim this ViewModel instance.
                     Service.PropertyChanged -= Service_PropertyChanged;
                 }
 
-                // Mark as disposed to prevent redundant disposal logic
                 _disposed = true;
             }
         }
