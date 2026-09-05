@@ -474,6 +474,14 @@ namespace Servy.Core.DTOs
 
         #region ShouldSerialize Methods
 
+        // Conditional-serialization hooks, one per optional property, honoured by both the JSON
+        // and the XML serializer. Two rules apply, chosen per property type:
+        //   - string properties are omitted when null, empty or whitespace-only;
+        //   - nullable value types are omitted only when they have no value, so an assigned
+        //     value is always written, including false and 0.
+        // Name and ExecutablePath are required and deliberately have no hook, so they are
+        // always emitted.
+
         public bool ShouldSerializeDisplayName() => !string.IsNullOrWhiteSpace(DisplayName);
         public bool ShouldSerializeDescription() => !string.IsNullOrWhiteSpace(Description);
         public bool ShouldSerializeStartupDirectory() => !string.IsNullOrWhiteSpace(StartupDirectory);
