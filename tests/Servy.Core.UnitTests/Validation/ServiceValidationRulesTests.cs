@@ -43,9 +43,11 @@ namespace Servy.Core.UnitTests.Validation
         [Theory]
         [InlineData("", "C:\\path.exe", nameof(Strings.Msg_ServiceNameRequired))]
         [InlineData(null, "C:\\path.exe", nameof(Strings.Msg_ServiceNameRequired))]
+        [InlineData("   ", "C:\\path.exe", nameof(Strings.Msg_ServiceNameRequired))]
         [InlineData("Name", "", nameof(Strings.Msg_ExecutablePathRequired))]
         [InlineData("Name", null, nameof(Strings.Msg_ExecutablePathRequired))]
-        public void Validate_MissingVitalFields_ReturnsSpecificValidationError(string? name, string? path, string expectedResourceKey)
+        [InlineData("Name", "   ", nameof(Strings.Msg_ExecutablePathRequired))]
+        public void Validate_MissingVitalFields_ReturnsSpecificValidationErrorAndStopsValidation(string? name, string? path, string expectedResourceKey)
         {
             // Arrange
             var dto = new ServiceDto { Name = name!, ExecutablePath = path! };
@@ -60,7 +62,8 @@ namespace Servy.Core.UnitTests.Validation
             // Act
             var result = _sut.Validate(dto);
 
-            // Assert
+            // Assert: the guard returns immediately, so this is the only error reported
+            Assert.Single(result.Errors);
             Assert.Contains(expectedError, result.Errors);
         }
 
