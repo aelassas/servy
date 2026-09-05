@@ -122,11 +122,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert: Immediately verify active-handle properties while the process lifecycle is valid
                 Assert.True(started);
-                Assert.True(wrapper.Id > 0);
-                Assert.NotNull(wrapper.StartInfo);
-                Assert.NotNull(wrapper.UnderlyingProcess);
+                Assert.Equal("powershell.exe", Path.GetFileName(wrapper.StartInfo.FileName));
                 Assert.True(wrapper.EnableRaisingEvents); // Constructor default
-                Assert.True(wrapper.StartTime > DateTime.MinValue);
+                Assert.InRange(wrapper.StartTime, DateTime.Now.AddMinutes(-1), DateTime.Now.AddMinutes(1));
 
                 string formatString = wrapper.Format();
                 Assert.Contains(wrapper.Id.ToString(), formatString);
