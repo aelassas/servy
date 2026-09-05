@@ -20,11 +20,17 @@ namespace Servy.Core.UnitTests.DTOs
         [Fact]
         public void Clone_AllProperties_MatchSourceValues()
         {
-            // 1. Arrange: Create a source with non-default values for ALL properties
+            // 1. Arrange: Create a source with non-default values for ALL properties.
+            // ServiceDto.Clone() is MemberwiseClone(), which cannot omit or transpose a member, so
+            // this test is a tripwire for a future hand-written Clone(): closed #1290 was exactly
+            // that defect (a dropped EnableConsoleUI), which is why every property is compared
+            // reflectively rather than by hand.
             var sourcePass1 = CreateFullyPopulatedServiceDto();
             var sourcePass2 = CreateFullyPopulatedServiceDto();
 
-            // Invert boolean properties on pass 2 to ensure two-pass complete boolean swap detection
+            // Pass 2 flips every bool so each one is compared in both states. Note this does NOT
+            // detect a swap between two bools whose ordinal indices share a parity: they are seeded
+            // equal and inverted together, so they are equal in both passes.
             InvertAllBooleanProperties(sourcePass2);
 
             var testPasses = new[] { sourcePass1, sourcePass2 };
@@ -156,8 +162,8 @@ namespace Servy.Core.UnitTests.DTOs
         }
 
         /// <summary>
-        /// Inverts all boolean property values on the target <see cref="ServiceDto"/> instance.
-        /// Enables complete mapping swap detection across boolean fields.
+        /// Inverts all boolean property values on the target <see cref="ServiceDto"/> instance,
+        /// so the second clone pass compares every boolean in its other state.
         /// </summary>
         private static void InvertAllBooleanProperties(ServiceDto dto)
         {
@@ -206,9 +212,9 @@ namespace Servy.Core.UnitTests.DTOs
             }
             else if (targetType == typeof(bool))
             {
-                // NOTE: bool? has only two non-null values, so same-typed swap detection is not
-                // achievable in a single pass - alternating keeps the pattern reproducible while
-                // dual-pass cloning validates all boolean states.
+                // NOTE: bool? has only two non-null values, so alternating on the ordinal index
+                // gives a reproducible pattern in which each boolean is populated non-default in
+                // one of the two passes. It does not separate two booleans of the same parity.
                 p.SetValue(dto, (seed & 1) == 0);
             }
             else if (targetType == typeof(double))
