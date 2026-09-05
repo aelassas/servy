@@ -68,13 +68,16 @@ namespace Servy.Core.UnitTests.Helpers
                 new EnvironmentVariable { Name = "KEY_DOUBLE_SLASH", Value = @"C:\Bar\\" },
                 new EnvironmentVariable { Name = "KEY_LITERAL_BACKSLASH_N", Value = "line1\\nline2" },
                 new EnvironmentVariable { Name = "KEY_ESCAPED_SEMICOLON", Value = "value1;value2" },
+                new EnvironmentVariable { Name = @"KEY_WITH\SLASH", Value = "SlashInKey" },
                 new EnvironmentVariable { Name = "STANDARD_KEY", Value = "NormalValue" }
             };
 
             // Act
-            // Convert raw structural model to single-line persistence string (Simulates initial load from DB)
+            // Convert raw structural model to single-line persistence string (Simulates initial load from DB).
+            // Both halves are escaped, matching StringHelper.FormatEnvironmentVariables, so the Name
+            // assertion below is exercised by a key that Escape actually alters.
             // Example layout: "KEY_TRAILING_SLASH=C:\\Foo\\;KEY_DOUBLE_SLASH=..."
-            string serializedDbString = string.Join(";", originalVars.Select(v => $"{v.Name}={StringHelper.Escape(v.Value)}"));
+            string serializedDbString = string.Join(";", originalVars.Select(v => $"{StringHelper.Escape(v.Name)}={StringHelper.Escape(v.Value)}"));
 
             // Step 1: Format for UI presentation (Multi-line layout)
             string uiText = StringHelper.FormatEnvironmentVariables(serializedDbString);
