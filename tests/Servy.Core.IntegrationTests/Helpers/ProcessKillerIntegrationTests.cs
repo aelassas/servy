@@ -1,4 +1,5 @@
 using Servy.Core.Helpers;
+using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -86,21 +87,43 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         /// <summary>
+        /// Supplies every entry of the ProcessKiller safelist, so the coverage of the guard cannot drift from the list it guards.
+        /// </summary>
+        /// <returns>One theory row per entry of the CriticalSystemProcesses safelist.</returns>
+        public static TheoryData<string> AllCriticalProcessNames()
+        {
+            // GetFieldStatic throws when the field is renamed or removed, so the theory can never
+            // degrade silently into an empty (and therefore vacuously green) data set.
+            var safelist = TestReflection.GetFieldStatic<HashSet<string>>(
+                typeof(ProcessKiller), "CriticalSystemProcesses");
+
+            var data = new TheoryData<string>();
+            foreach (var name in safelist)
+            {
+                data.Add(name);
+            }
+
+            return data;
+        }
+
+        /// <summary>
         /// Verifies that attempting to terminate a critical Windows system process by name is actively blocked by the internal guardrails.
         /// </summary>
-        /// <param name="protectedName">The name of the critical system process, optionally including the executable extension.</param>
+        /// <param name="protectedName">The name of the critical system process, taken from the safelist itself.</param>
         [Theory]
-        [InlineData("svchost")]
-        [InlineData("csrss.exe")]
-        [InlineData("explorer")]
+        [MemberData(nameof(AllCriticalProcessNames))]
         public void KillProcessTreeAndParents_ProtectedProcessName_ReturnsFalse(string protectedName)
         {
             // Arrange & Act
+            // Every entry must be refused with and without the .exe suffix the guard normalizes away,
+            // whether or not the process happens to be running on this host.
             bool result = _processKiller.KillProcessTreeAndParents(protectedName, killParents: true);
+            bool resultWithExtension = _processKiller.KillProcessTreeAndParents(protectedName + ".exe", killParents: true);
 
             // Assert
             // Names on the CriticalSystemProcesses safelist are never killed
             Assert.False(result);
+            Assert.False(resultWithExtension);
         }
 
         /// <summary>
