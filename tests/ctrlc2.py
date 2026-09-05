@@ -1,3 +1,18 @@
+# Manual test fixture: the middle rung of the Ctrl+C ladder. Spawns ctrlc.py and then runs
+# forever, producing a two-level tree (ctrlc2 -> ctrlc), so Servy's recursive termination
+# can be observed on a process it did not start itself.
+#
+# The child interpreter comes from PYTHON_EXE, falling back to sys.executable.
+# Logs to logs/ctrlc2.log next to this script; set SERVY_TEST_LOG_DIR to write elsewhere.
+#
+# It deliberately does not terminate the child it spawned: the tree is meant to be left
+# standing, so that what gets measured is Servy's own teardown.
+#
+# Install with:
+# .\servy-cli.exe install --name "ServyCtrlC2" --path "C:\path\to\python.exe" --params "C:\path\to\tests\ctrlc2.py" --env "PYTHON_EXE=C:\path\to\python.exe"
+#
+# Ladder: ctrlc_child.py spawns this script and notepad.exe; this script spawns ctrlc.py, the leaf.
+
 import time
 import sys
 import logging
