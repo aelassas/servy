@@ -243,15 +243,19 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             var root = SpawnProcessTree(1);
 
-            // Act (Control) - Retrieve children using the genuine parent start time to verify tree visibility
-            var realChildren = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
+            List<Process> realChildren = new List<Process>();
+            List<Process> childrenWithReusedPid = new List<Process>();
 
-            // Act (Test Target) - Request children with a future parent start time to simulate PID reuse
-            var childrenWithReusedPid = ProcessExtensions.GetChildren(root.Id, DateTime.Now.AddHours(1));
-
-            // Assert
+            // Act & Assert - both fetches run inside the try, so the finally sees whatever was
+            // acquired even when the second snapshot throws
             try
             {
+                // Act (Control) - Retrieve children using the genuine parent start time to verify tree visibility
+                realChildren = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
+
+                // Act (Test Target) - Request children with a future parent start time to simulate PID reuse
+                childrenWithReusedPid = ProcessExtensions.GetChildren(root.Id, DateTime.Now.AddHours(1));
+
                 // Verify the Control state holds true (genuine children exist)
                 Assert.NotEmpty(realChildren);
 
