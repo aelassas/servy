@@ -56,7 +56,12 @@ namespace Servy.Core.Data
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method iterates through the collection and executes individual upsert commands.
+        /// The whole collection is written with a single batched upsert command rather than one
+        /// command per row.
+        /// </para>
+        /// <para>
+        /// The batch is executed inside an explicit transaction, so it is all-or-nothing: either
+        /// every row in the collection is persisted or none of them is.
         /// </para>
         /// <para>
         /// After the database write, the method attempts to synchronize the auto-incremented
