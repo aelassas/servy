@@ -454,8 +454,8 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Executes an asynchronous single-row retrieval query by a service name parameter,
-        /// funneling execution through the centralized legacy tracking fallback pipeline.
+        /// Runs an asynchronous single-row lookup by service name, through the legacy
+        /// whitespace fallback helper.
         /// </summary>
         /// <typeparam name="T">The expected return type of the database record or primitive scalar value.</typeparam>
         /// <param name="sql">The target parameterized SQL statement to execute.</param>
@@ -645,9 +645,8 @@ namespace Servy.Infrastructure.Data
         /// that are excluded from external export files (where <c>ShouldSerialize*() => false</c>).
         /// </para>
         /// <para>
-        /// If these fields are omitted or unmapped during an entry import lifecycle, the persistence engine
-        /// would inadvertently overwrite critical operational telemetry columns with <c>NULL</c> values,
-        /// decoupling the active running background processes from system instrumentation tracking hooks.
+        /// If these fields are omitted on import, the update would overwrite <c>Pid</c> and the active
+        /// log paths with <c>NULL</c>, and the Manager would lose track of the running process.
         /// </para>
         /// </remarks>
         /// <param name="incoming">The fresh configuration DTO targeted for database persistence.</param>
@@ -685,8 +684,6 @@ namespace Servy.Infrastructure.Data
         /// <exception cref="InvalidOperationException">Thrown when a specific field fails to encrypt.</exception>
         private ServiceDto CreateEncryptedClone(ServiceDto source)
         {
-            // Implemented explicit entrance argument null verification pattern matching code conventions
-            // to stop propagation bugs before causing deeply nested NullReferenceExceptions.
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
