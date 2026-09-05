@@ -369,7 +369,7 @@ namespace Servy.Service.ProcessManagement
             {
                 children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
             }
-            catch (Win32Exception ex)
+            catch (Exception ex)
             {
                 _logger?.Warn($"Descendant enumeration for PID {parentPid} failed; skipping sub-tree stop: {ex.Message}");
                 children = new List<Process>();
@@ -436,6 +436,12 @@ namespace Servy.Service.ProcessManagement
         {
             ThrowIfDisposed();
 
+            if (parentPid <= 0 || parentStartTime == DateTime.MinValue)
+            {
+                _logger?.Warn("Descendant sweep skipped: the parent PID/StartTime could not be captured, so orphans (if any) were not enumerated.");
+                return;
+            }
+
             _logger?.Info($"Scanning for top-level descendants of PID {parentPid}...");
 
             List<Process> children;
@@ -443,7 +449,7 @@ namespace Servy.Service.ProcessManagement
             {
                 children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
             }
-            catch (Win32Exception ex)
+            catch (Exception ex)
             {
                 _logger?.Warn($"Descendant enumeration for PID {parentPid} failed; skipping cascaded stop: {ex.Message}");
                 return;
