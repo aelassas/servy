@@ -8,8 +8,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void UpdateCheckTimeouts_AreConsistent()
         {
-            // Arrange (Static property validation context)
-
             // Act & Assert
             Assert.True(AppConfig.UpdateCheckTimeoutSeconds <= AppConfig.UpdateCheckHttpTimeoutSeconds,
                 "Cooperative cancellation timeout must not exceed the HTTP client timeout.");
@@ -18,8 +16,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void Version_ShouldNotBeNullOrEmpty()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var version = AppConfig.Version;
 
@@ -30,8 +26,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void ServyServiceUIExe_ShouldBeCorrect()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var exeName = AppConfig.ServyServiceUIExe;
 
@@ -42,8 +36,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void ServyServiceCLIExe_ShouldBeCorrect()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var exeName = AppConfig.ServyServiceCLIExe;
 
@@ -54,8 +46,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void DefaultConnectionString_ShouldContainDbFolderPath()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var connectionString = AppConfig.DefaultConnectionString;
 
@@ -67,8 +57,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void DefaultAESKeyPath_ShouldEndWithAesKeyDat()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var keyPath = AppConfig.DefaultAESKeyPath;
 
@@ -79,8 +67,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void DefaultAESIVPath_ShouldEndWithAesIvDat()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var ivPath = AppConfig.DefaultAESIVPath;
 
@@ -91,9 +77,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void GetHandleExePath_ShouldReturnFullPath()
         {
-            // Arrange
-            // Host architecture is resolved dynamically via native environment reflection
-
             // Act
             var path = AppConfig.GetHandleExePath();
 
@@ -117,8 +100,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void GetServyCLIServicePath_ShouldReturnFullPath()
         {
-            // Arrange (Static execution context)
-
             // Act
             var path = AppConfig.GetServyCLIServicePath();
 
@@ -131,8 +112,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void GetServyUIServicePath_ShouldReturnFullPath()
         {
-            // Arrange (Static execution context)
-
             // Act
             var path = AppConfig.GetServyUIServicePath();
 
@@ -145,8 +124,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void ProgramDataPath_ShouldBeUnderCommonApplicationData()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var path = AppConfig.ProgramDataPath;
 
@@ -158,8 +135,6 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void SecurityFolderPath_ShouldBeTheSecuritySubfolder()
         {
-            // Arrange (Static property validation context)
-
             // Act
             var path = AppConfig.SecurityFolderPath;
 
