@@ -86,7 +86,10 @@ namespace Servy.Core.UnitTests.Mappers
                 RecoveryOnCleanExit = true,
                 MaxRestartAttempts = 20,
                 HeartbeatUrl = "https://hc-ping.com/test-uuid",
-                HeartbeatUrlTimeoutSeconds = 10,
+                // Must differ from AppConfig.DefaultHeartbeatUrlTimeoutSeconds (10), which
+                // Service.HeartbeatUrlTimeoutSeconds carries as its own field initializer:
+                // at 10 the assertion below passes even with the mapping removed.
+                HeartbeatUrlTimeoutSeconds = 25,
                 EnableHeartbeatUrlFlags = true,
                 FailureProgramPath = @"C:\apps\failure_prog.exe",
                 FailureProgramParameters = "--param1",
