@@ -62,8 +62,15 @@ function Copy-TaskSchdArtifacts {
 }
 
 <#
-.SYNOPSIS
+    .SYNOPSIS
     Validates that a provided version string conforms to the Servy version format.
+
+    .DESCRIPTION
+    Checks the value against the pattern ^\d+\.\d+$ (major.minor, digits only) and throws when it does not match,
+    naming the expected pattern and the value that was provided. Callers run it before the version is stamped into any artifact.
+
+    .PARAMETER Version
+    The version string to validate, for example "9.9".
 #>
 function Assert-ServyVersion {
     [CmdletBinding()]
