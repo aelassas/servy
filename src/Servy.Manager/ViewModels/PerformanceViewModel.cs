@@ -358,7 +358,7 @@ namespace Servy.Manager.ViewModels
             foreach (var val in valueHistory)
             {
                 double x = i * stepX;
-                double ratio = Math.Min(Math.Max(val / displayMax, 0), 1);
+                double ratio = val / displayMax;
                 double y = GraphHeight - (ratio * GraphHeight);
 
                 var point = new Point(x, y);

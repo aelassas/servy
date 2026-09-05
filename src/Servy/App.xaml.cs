@@ -137,6 +137,7 @@ namespace Servy
             var services = new ServiceCollection();
 
             // Register dependencies
+            services.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
             services.AddSingleton<IProcessHelper, ProcessHelper>();
             services.AddSingleton<IProcessKiller, ProcessKiller>();
 
@@ -159,6 +160,7 @@ namespace Servy
                     // 0. Retrieve DI-managed services
                     var processHelper = Services.GetRequiredService<IProcessHelper>();
                     var processKiller = Services.GetRequiredService<IProcessKiller>();
+                    var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
 
                     // 1. Initialize Infrastructure & Domain Services
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
@@ -172,7 +174,7 @@ namespace Servy
 
                     // 2. Initialize UI Services
                     var fileDialogService = new FileDialogService();
-                    var messageBoxService = new MessageBoxService(new WpfUiDispatcher());
+                    var messageBoxService = new MessageBoxService(uiDispatcher);
                     var helpService = new HelpService(messageBoxService);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var configValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);

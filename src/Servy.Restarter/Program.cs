@@ -29,7 +29,6 @@ namespace Servy.Restarter
             string? customLogDir = args.Length > 1 ? args[1] : null;
             Logger.Initialize("Servy.Restarter.log", logDirectory: customLogDir);
 
-            IServiceRestarter restarter = new ServiceRestarter();
             IServyLogger? rootLogger = null; // Declare as nullable for safe finally disposal
             IServyLogger? scopedLogger = null;
             AppDbContext? dbContext = null;
@@ -87,7 +86,10 @@ namespace Servy.Restarter
                 // and events are mirrored to the Windows Event Log.
                 scopedLogger = rootLogger.CreateScoped(serviceName);
 
-                // 5. Configure the GLOBAL logging (centralized bootstrapper)
+                // 5. Create the service restarter
+                IServiceRestarter restarter = new ServiceRestarter(logger: scopedLogger);
+
+                // 6. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
 
                 var maxHostWaitSeconds = AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond;
@@ -107,7 +109,7 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 6. Initialize database and helpers
+                // 7. Initialize database and helpers
                 dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
                 protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
@@ -117,7 +119,7 @@ namespace Servy.Restarter
 
                 var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
-                // 7. Validation
+                // 8. Validation
                 if (serviceRepository.GetByName(serviceName, decrypt: false) == null)
                 {
                     scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
@@ -125,7 +127,7 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 8. Execution
+                // 9. Execution
                 scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 var result = restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));

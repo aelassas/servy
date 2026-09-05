@@ -717,7 +717,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(expected, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(expected, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion

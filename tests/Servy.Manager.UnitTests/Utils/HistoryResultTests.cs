@@ -31,7 +31,7 @@ namespace Servy.Manager.UnitTests.Utils
             Assert.Equal("Line 1", result.Lines[0].Text);
             Assert.Equal("Line 2", result.Lines[1].Text);
             Assert.Equal(expectedPosition, result.Position);
-            Assert.Equal(ExpectedCreationTime, result.CreationTime);
+            Assert.Equal(ExpectedCreationTime, result.CreationTimeUtc);
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace Servy.Manager.UnitTests.Utils
             Assert.NotNull(result.Lines);
             Assert.Empty(result.Lines);
             Assert.Equal(expectedPosition, result.Position);
-            Assert.Equal(ExpectedCreationTime, result.CreationTime);
+            Assert.Equal(ExpectedCreationTime, result.CreationTimeUtc);
         }
     }
 }

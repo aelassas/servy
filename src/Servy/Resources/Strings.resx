@@ -81,8 +81,7 @@ Built with {1}
 
 Licensed under the MIT License.
 
-Copyright © {2} Akram El Assas. All rights reserved.
-    </value>
+Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <!-- Tabs -->
@@ -357,8 +356,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Confirm Password</value>
   </data>
   <data name="Info_SecurityHardeningNotice" xml:space="preserve">
-    <value>If the service runs under an account other than Local System, you must grant Modify access to
-%ProgramData%\Servy for the account running the service and execute the mandatory hardening script: Set-ServyExePermissions.ps1 -TargetAccount "domain\user" to prevent unprivileged binary tampering and local privilege escalation. </value>
+    <value>If the service runs under an account other than Local System, you must grant Modify access to %ProgramData%\Servy for the account running the service and execute the mandatory hardening script: Set-ServyExePermissions.ps1 -TargetAccount "domain\user" to prevent unprivileged binary tampering and local privilege escalation.</value>
   </data>
   <data name="Link_SecurityHardeningGuide" xml:space="preserve">
     <value>Learn script location and execution usage.</value>

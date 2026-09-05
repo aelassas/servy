@@ -2487,8 +2487,7 @@ namespace Servy.Manager.Resources {
         ///
         ///Licensed under the MIT License.
         ///
-        ///Copyright © {2} Akram El Assas. All rights reserved.
-        ///    .
+        ///Copyright © {2} Akram El Assas. All rights reserved..
         /// </summary>
         public static string Text_About {
             get {

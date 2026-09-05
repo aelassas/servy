@@ -464,13 +464,13 @@ namespace Servy.Manager.ViewModels
                     // Start StdOut tailer if the result and path are valid
                     if (outRes != null && !string.IsNullOrWhiteSpace(stdoutPath))
                     {
-                        StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTime, sessionId, token);
+                        StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTimeUtc, sessionId, token);
                     }
 
                     // Start StdErr tailer ONLY if it's a different file to prevent duplicate UI entries
                     if (errRes != null && hasUniqueStderr)
                     {
-                        StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTime, sessionId, token);
+                        StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTimeUtc, sessionId, token);
                     }
                 }
             }
