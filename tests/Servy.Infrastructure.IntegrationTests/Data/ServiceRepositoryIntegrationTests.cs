@@ -85,7 +85,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public ServiceRepositoryIntegrationTests()
         {
             _dbContext = new TestDbContext();
-            _dbContext.InitializeSchema(); // Applies initial schema structure, tables, and functional lower indexes
+            _dbContext.InitializeSchema(); // Applies the full migration chain: tables, and the UNICODE_NOCASE unique index on Name
 
             _executor = new DapperExecutor(_dbContext);
             _secureData = new TestSecureData();
@@ -258,7 +258,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var service1 = new ServiceDto { Name = "ConflictService", ExecutablePath = "C:\\v1.exe" };
-            var service2 = new ServiceDto { Name = "conflictservice", ExecutablePath = "C:\\v2.exe" }; // SQLite lower case collation index trigger test
+            var service2 = new ServiceDto { Name = "conflictservice", ExecutablePath = "C:\\v2.exe" }; // Trips idx_services_name_unique under COLLATE UNICODE_NOCASE
 
             int id1 = await _repository.AddAsync(service1, TestContext.Current.CancellationToken);
 
