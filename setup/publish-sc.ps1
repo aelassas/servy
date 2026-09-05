@@ -9,10 +9,10 @@
     and generates a portable 7z package containing the published executables.
 
 .PARAMETER Tfm
-     Target framework moniker (e.g., "net10.0-windows"). Defaults to the value in build-config.ps1.
+    Target framework moniker (e.g., "net10.0-windows"). Defaults to the value in build-config.ps1.
 
 .PARAMETER Version
-    Application version used for installer and ZIP output file names.
+    Application version used for installer and ZIP output file names. Defaults to the value in build-config.ps1.
 
 .PARAMETER Pause
     Optional switch that pauses the script before exiting.
