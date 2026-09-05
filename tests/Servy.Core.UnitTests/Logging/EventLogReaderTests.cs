@@ -194,7 +194,12 @@ namespace Servy.Core.UnitTests.Logging
 
             // Assert
             Assert.Equal(500, result.EventId);
-            Assert.StartsWith($"[{AppConfig.EventSource}] <message unavailable:", result.Message);
+            // The whole wrapper, not just its prefix: the interpolated ex.Message is the entire
+            // diagnostic value of this branch, and dropping it or interpolating the wrong value
+            // left a prefix-only assertion green. The expected text is read from the arranged
+            // exception rather than spelled out, because EventLogException overrides Message and
+            // does not necessarily return the string its constructor was given.
+            Assert.Equal($"[{AppConfig.EventSource}] <message unavailable: {exception.Message}>", result.Message);
         }
 
         #endregion
