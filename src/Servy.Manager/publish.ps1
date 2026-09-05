@@ -17,6 +17,10 @@ Common values: "Release" or "Debug".
 .PARAMETER Pause
 Optional switch to pause the script at the end of execution.
 
+.EXAMPLE
+    .\publish.ps1 -Tfm "net10.0-windows" -BuildConfiguration "Debug" -Runtime "win-x64"
+    Builds Servy.Manager for an explicit target framework, configuration and runtime.
+
 .NOTES
 - The output executable is located under bin\x64\<BuildConfiguration>\Servy.Manager.exe.
 - Adjust file paths if the project structure changes.
