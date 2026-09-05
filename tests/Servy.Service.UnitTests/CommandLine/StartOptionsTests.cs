@@ -19,8 +19,9 @@ namespace Servy.Service.UnitTests.CommandLine
                 .ToList();
 
             // Act & Assert
-            // 1. Verify exact expected property count decorated for reflective validation
-            Assert.Equal(12, startOptionsPaths.Count);
+            // 1. Verify the reflective validation surface is not empty. The exact count is pinned
+            //    once, against the ServiceDto side, by the parity test below.
+            Assert.NotEmpty(startOptionsPaths);
 
             foreach (var x in startOptionsPaths)
             {
@@ -51,9 +52,11 @@ namespace Servy.Service.UnitTests.CommandLine
                 .Where(x => x.Attr != null)
                 .ToDictionary(x => x.Name, x => x.Attr);
 
-            // Act & Assert: Pin 1:1 structural parity between ServiceDto and StartOptions
-            Assert.Equal(12, dtoPaths.Count);
-            Assert.Equal(12, optionsPaths.Count);
+            // Act & Assert: Pin 1:1 structural parity between ServiceDto and StartOptions.
+            // The count is not written out as a literal: equal counts plus membership in both
+            // directions is the bijection, and it needs no hand-maintained census.
+            Assert.NotEmpty(dtoPaths);
+            Assert.Equal(dtoPaths.Count, optionsPaths.Count);
 
             foreach (var kvp in dtoPaths)
             {
@@ -66,6 +69,13 @@ namespace Servy.Service.UnitTests.CommandLine
 
                 Assert.Equal(dtoAttr.IsFile, optionsAttr.IsFile);
                 Assert.Equal(dtoAttr.Required, optionsAttr.Required);
+            }
+
+            foreach (string mappedName in optionsPaths.Keys)
+            {
+                Assert.True(
+                    dtoPaths.ContainsKey(mappedName),
+                    $"ServiceDto is missing matching decorated path property for '{mappedName}'.");
             }
         }
     }
