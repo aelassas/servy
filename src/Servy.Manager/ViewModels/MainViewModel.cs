@@ -112,6 +112,16 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets the tri-state "Select All" value for the services.
         /// </summary>
+        /// <remarks>
+        /// Setting this property does two things to every row: it applies the new check state
+        /// (<see cref="ServiceRowViewModel.IsChecked"/>) and it clears the row highlight
+        /// (<see cref="ServiceRowViewModel.IsSelected"/>), so a single highlighted row is not shown
+        /// alongside a bulk selection. Checking a row by hand does not clear the highlight, so the
+        /// two paths are deliberately asymmetric.
+        /// The <c>_isUpdatingSelectAll</c> guard skips the loop while the header state is being
+        /// recomputed from the rows by <see cref="UpdateSelectAllState"/>, which is what stops a
+        /// background refresh from clearing the highlight.
+        /// </remarks>
         public bool? SelectAll
         {
             get => _selectAll;
@@ -130,7 +140,8 @@ namespace Servy.Manager.ViewModels
                     {
                         bool targetState = value == true;
 
-                        // Apply the target check-state to every row in a single pass.
+                        // Apply the target check-state to every row in a single pass, and clear the
+                        // row highlight as well so a highlighted row is not left next to a bulk selection.
                         foreach (var service in _services)
                         {
                             service.IsChecked = targetState;
@@ -416,13 +427,14 @@ namespace Servy.Manager.ViewModels
             await ExecuteSearchPipelineAsync(
                 async (token) =>
                 {
-                    // Step 3: fetch data off UI thread
+                    // fetchAndApplyAsync 1 of 4 (runs inside the pipeline's step 5 & 6):
+                    // fetch data off UI thread
                     var stopwatch = Stopwatch.StartNew();
                     var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
                     stopwatch.Stop();
                     Logger.Debug($"Fetched {results.Count} services in {stopwatch.ElapsedMilliseconds} ms");
 
-                    // Step 4: fetch data & build VMs off UI thread
+                    // fetchAndApplyAsync 2 of 4: build the row view models off UI thread
                     stopwatch = Stopwatch.StartNew();
                     var vms = await Task.Run(() =>
                         results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _cursorService)).ToList()
@@ -430,7 +442,7 @@ namespace Servy.Manager.ViewModels
                     stopwatch.Stop();
                     Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {stopwatch.ElapsedMilliseconds} ms");
 
-                    // Step 5: update collection on UI thread
+                    // fetchAndApplyAsync 3 of 4: update collection on UI thread
                     await _dispatcher.InvokeAsync(() =>
                     {
                         // Mutual exclusion: prevents the background refresh thread from
@@ -464,7 +476,7 @@ namespace Servy.Manager.ViewModels
                         OnPropertyChanged(nameof(HasSelectedServices));
                     }, DispatcherPriority.Background);
 
-                    // Step 6: refresh all service statuses and details in the background
+                    // fetchAndApplyAsync 4 of 4: refresh all service statuses and details in the background
                     _ = Task.Run(async () =>
                     {
                         if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
@@ -492,7 +504,8 @@ namespace Servy.Manager.ViewModels
                 manyFormat: Strings.Footer_Service_Many,
                 onPreFetchYieldAsync: async () =>
                 {
-                    // Step 2: allow WPF to repaint the button and show progress bar
+                    // onPreFetchYieldAsync hook (runs inside the pipeline's step 3 & 4):
+                    // allow WPF to repaint the button and show progress bar
                     await _dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 });
         }
