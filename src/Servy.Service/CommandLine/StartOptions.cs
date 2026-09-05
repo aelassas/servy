@@ -115,7 +115,8 @@ namespace Servy.Service.CommandLine
 
         /// <summary>
         /// Gets or sets a value indicating whether start/fail status flags are appended to the heartbeat URL.
-        /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
+        /// Value must be between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>;
+        /// values outside that range are rejected by <see cref="Servy.Core.Validation.IServiceValidationRules"/> at install time.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
         public int HeartbeatUrlTimeoutInSeconds { get; set; } = AppConfig.DefaultHeartbeatUrlTimeoutSeconds;

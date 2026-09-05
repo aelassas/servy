@@ -219,7 +219,8 @@ namespace Servy.Core.DTOs
 
         /// <summary>
         /// Maximum time in seconds allowed for the heartbeat URL request to complete before it is cancelled.
-        /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
+        /// Value must be between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>;
+        /// values outside that range are rejected by <see cref="Servy.Core.Validation.IServiceValidationRules"/> at install time.
         /// </summary>
         [SqlColumn("INTEGER")]
         public int? HeartbeatUrlTimeoutSeconds { get; set; }
