@@ -259,8 +259,8 @@ namespace Servy.Core.Native
                     {
                         fs.Seek(0, SeekOrigin.Begin);
 
-                        // Buffer size is configurable via AppConfig to get past common log headers/prologues.
-                        // We also incorporate fs.Length to differentiate rotated logs that have identical prefixes but different sizes.
+                        // AppConfig.FileIdentityPrefixBytes (4096) clears common application log headers
+                        // and prologues, so two rotated logs sharing a prologue still hash differently.
                         byte[] buffer = new byte[AppConfig.FileIdentityPrefixBytes];
 
                         int read = 0;
@@ -280,12 +280,14 @@ namespace Servy.Core.Native
                             {
                                 sha256.AppendData(buffer, 0, read);
 
-                                // Length-domain separator so 'AB' + 8-byte little-endian length cannot collide with 'A' + 'B' + 8-byte little-endian length.
+                                // Mix in the total size so two files with identical prefixes but different
+                                // lengths do not produce the same digest (#2130).
                                 sha256.AppendData(BitConverter.GetBytes(fs.Length));
 
                                 byte[] hashBytes = sha256.GetHashAndReset();
 
-                                // Store as a lowercase hex string for consistent identification across probes and to catch size drifts.
+                                // Lowercase hex string rather than a byte[] so FILE_IDENTITY.IsDifferentFrom
+                                // can compare digests with != instead of comparing arrays by reference.
                                 identity.PrefixDigest = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
                             }
                         }

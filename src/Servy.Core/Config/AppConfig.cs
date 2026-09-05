@@ -1013,7 +1013,7 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// The number of bytes read from the beginning of a file to generate a prefix digest.
-        /// 4096 bytes is the default to clear common application log headers and prologues.
+        /// 4096 bytes, chosen to clear common application log headers and prologues.
         /// </summary>
         public const int FileIdentityPrefixBytes = 4_096;
 
