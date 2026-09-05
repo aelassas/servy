@@ -57,6 +57,7 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
+        /// Default is <see cref="AppConfig.DefaultEnableConsoleUI"/>.
         /// </summary>
         public bool EnableConsoleUI { get; set; }
 
@@ -72,6 +73,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
+        /// Default is <see cref="AppConfig.DefaultEnableSizeRotation"/>.
         /// </summary>
         public bool EnableSizeRotation { get; set; }
 
@@ -83,6 +85,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether date-based log rotation is enabled.
+        /// Default is <see cref="AppConfig.DefaultEnableDateRotation"/>.
         /// </summary>
         public bool EnableDateRotation { get; set; }
 
@@ -101,7 +104,7 @@ namespace Servy.Models
         /// Gets or sets a value indicating whether to use local system time for log rotation.
         /// </summary>
         /// <remarks>
-        /// <para>Default is <c>false</c> (UTC).</para>
+        /// <para>Default is <see cref="AppConfig.DefaultUseLocalTimeForRotation"/> (UTC).</para>
         /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight).
         /// This is often preferred for manual log inspection but can be affected by Daylight Saving Time transitions.</para>
         /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC).
@@ -111,6 +114,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
+        /// Default is <see cref="AppConfig.DefaultEnableHealthMonitoring"/>.
         /// </summary>
         public bool EnableHealthMonitoring { get; set; }
 
@@ -133,6 +137,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a flag for running recovery action even if the process exits successfully.
+        /// Default is <see cref="AppConfig.DefaultRecoveryOnCleanExit"/>.
         /// </summary>
         public bool RecoveryOnCleanExit { get; set; }
 
@@ -155,6 +160,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether start/fail status suffixes are appended to the heartbeat URL.
+        /// Default is <see cref="AppConfig.DefaultEnableHeartbeatUrlFlags"/>.
         /// </summary>
         public bool EnableHeartbeatUrlFlags { get; set; }
 
@@ -187,6 +193,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether to run the Windows Service as the Local System account.
+        /// Default is <see cref="AppConfig.DefaultRunAsLocalSystem"/>.
         /// </summary>
         public bool RunAsLocalSystem { get; set; }
 
@@ -250,7 +257,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether to start the main service even if the pre-launch process fails.
-        /// Default is false.
+        /// Default is <see cref="AppConfig.DefaultPreLaunchIgnoreFailure"/>.
         /// </summary>
         public bool PreLaunchIgnoreFailure { get; set; }
 
@@ -273,6 +280,7 @@ namespace Servy.Models
         /// Gets or sets a value indicating whether debug logs are enabled.
         /// When enabled, environment variables and process parameters are recorded in the Servy.Service.log file.
         /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// Default is <see cref="AppConfig.DefaultEnableDebugLogs"/>.
         /// </summary>
         public bool EnableDebugLogs { get; set; }
 
@@ -311,6 +319,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether to log pre-stop failure as an error.
+        /// Default is <see cref="AppConfig.DefaultPreStopLogAsError"/>.
         /// </summary>
         public bool PreStopLogAsError { get; set; }
 
