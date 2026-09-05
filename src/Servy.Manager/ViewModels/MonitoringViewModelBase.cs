@@ -47,6 +47,9 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private long _tickErrorCount = 0;
 
+        /// <summary>
+        /// Backing field for <see cref="Pid"/>; holds <see cref="UiConstants.NotAvailable"/> while no process is known.
+        /// </summary>
         private string _pid = UiConstants.NotAvailable;
 
         /// <summary>
@@ -139,7 +142,8 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                // Increments atomically to maintain accurate tracking if multi-tab components ever fire concurrently.
+                // Interlocked keeps this consistent with the two Exchange resets above; ticks themselves
+                // are already serialised by _isTickRunningFlag, and the counter is per view model instance.
                 long currentErrorCount = Interlocked.Increment(ref _tickErrorCount);
 
                 if (currentErrorCount == 1 || currentErrorCount % AppConfig.MonitoringTickErrorLogThrottlingInterval == 0)
