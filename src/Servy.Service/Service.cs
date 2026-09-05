@@ -909,8 +909,8 @@ namespace Servy.Service
         /// optionally logs standard output and error to the provided file paths.
         /// </para>
         /// <para>
-        /// The process is allowed to run for at least <see cref="AppConfig.MinPreLaunchTimeoutSeconds"/> seconds or
-        /// <see cref="StartOptions.PreLaunchTimeoutInSeconds"/>, whichever is greater, per attempt.
+        /// The process is allowed to run for <see cref="StartOptions.PreLaunchTimeoutInSeconds"/> seconds per attempt
+        /// (a value of 0 launches it fire-and-forget without waiting).
         /// If the process exits with a non-zero code or times out, it is retried up to
         /// <see cref="StartOptions.PreLaunchRetryAttempts"/> times.
         /// </para>
