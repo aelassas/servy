@@ -83,7 +83,7 @@ chinesesimplified.SetupAppRunningError=安装程序检测到 %1 当前正在运�
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
 
 [CustomMessages]
 english.FullInstallation=Full installation
