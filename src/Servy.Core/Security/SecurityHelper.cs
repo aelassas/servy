@@ -160,8 +160,10 @@ namespace Servy.Core.Security
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Operational Continuity:</b> Grants <c>Full Control</c> to the current process user if they
-        /// are not a member of the Administrators group and are not the LocalSystem account.
+        /// <b>Operational Continuity:</b> Grants <c>Full Control</c> to the current process user when the
+        /// process is not running elevated and the user is not the LocalSystem account. This is an
+        /// elevation check (<see cref="IsAdministrator"/>), not a group-membership check: an administrator
+        /// running unelevated has a filtered token and therefore does receive an explicit ACE.
         /// </description>
         /// </item>
         /// </list>
