@@ -478,6 +478,77 @@ namespace Servy.UnitTests.Services
             }
         }
 
+        [Fact]
+        public async Task OpenManager_ProcessStartReturnsNull_DisplaysLaunchFailedError()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+            _processHelperMock.Setup(h => h.Start(It.IsAny<ProcessStartInfo>())).Returns((Process?)null);
+
+            var sut = CreateSut();
+
+            try
+            {
+                // Act
+                await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert: unlike the browser hand-off in OpenSecurityHardeningGuide, a null process
+                // here means the Manager app did not launch and must be reported to the user
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(
+                    Resources.Strings.Msg_ManagerAppLaunchFailed,
+                    UiAppConfig.Caption),
+                    Times.Once);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task OpenManager_ProcessStartsSuccessfully_DisplaysNoError()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+
+            var sut = CreateSut();
+
+            try
+            {
+                using (var currentProcess = Process.GetCurrentProcess())
+                {
+                    _processHelperMock.Setup(h => h.Start(It.IsAny<ProcessStartInfo>())).Returns(currentProcess);
+
+                    // Act
+                    await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
+                }
+
+                // Assert
+                _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
         #endregion
 
         #region OpenSecurityHardeningGuide Method Tests
