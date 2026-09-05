@@ -1,6 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using System.Reflection;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -18,146 +19,34 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void Clone_CreatesShallowCopyWithoutMutatingOriginal()
+        public void Clone_ReturnsIndependentCopy()
         {
-            // Arrange
-            var original = new ServiceDto
-            {
-                Name = "OriginalService",
-                DisplayName = "Original Display",
-                Description = "Original Description",
-                ExecutablePath = @"C:\app\service.exe",
-                StartupDirectory = @"C:\app",
-                Parameters = "-arg1",
-                StartupType = 2,
-                Priority = 32,
-                CpuAffinity = "0x1",
-                StartTimeout = 30,
-                StopTimeout = 30,
-                EnableConsoleUI = true,
-                StdoutPath = @"C:\logs\out.log",
-                StderrPath = @"C:\logs\err.log",
-                EnableSizeRotation = true,
-                RotationSize = 10,
-                EnableDateRotation = true,
-                DateRotationType = 1,
-                MaxRotations = 5,
-                UseLocalTimeForRotation = true,
-                EnableDebugLogs = true,
-                EnableHealthMonitoring = true,
-                HeartbeatInterval = 60,
-                MaxFailedChecks = 3,
-                RecoveryAction = 1,
-                RecoveryOnCleanExit = false,
-                MaxRestartAttempts = 5,
-                HeartbeatUrl = "https://example.com/ping",
-                HeartbeatUrlTimeoutSeconds = 15,
-                EnableHeartbeatUrlFlags = true,
-                FailureProgramPath = @"C:\app\fail.exe",
-                FailureProgramStartupDirectory = @"C:\app",
-                FailureProgramParameters = "--fail",
-                EnvironmentVariables = "ENV=1",
-                ServiceDependencies = "Dep1",
-                RunAsLocalSystem = false,
-                UserAccount = "Admin",
-                Password = "SecretPassword",
-                PreLaunchExecutablePath = @"C:\app\pre.exe",
-                PreLaunchStartupDirectory = @"C:\app",
-                PreLaunchParameters = "--pre",
-                PreLaunchEnvironmentVariables = "PRE=1",
-                PreLaunchStdoutPath = @"C:\logs\pre_out.log",
-                PreLaunchStderrPath = @"C:\logs\pre_err.log",
-                PreLaunchTimeoutSeconds = 10,
-                PreLaunchRetryAttempts = 2,
-                PreLaunchIgnoreFailure = true,
-                PostLaunchExecutablePath = @"C:\app\post.exe",
-                PostLaunchStartupDirectory = @"C:\app",
-                PostLaunchParameters = "--post",
-                PreviousStopTimeout = 20,
-                ActiveStdoutPath = @"C:\logs\active_out.log",
-                ActiveStderrPath = @"C:\logs\active_err.log",
-                PreStopExecutablePath = @"C:\app\prestop.exe",
-                PreStopStartupDirectory = @"C:\app",
-                PreStopParameters = "--prestop",
-                PreStopTimeoutSeconds = 10,
-                PreStopLogAsError = true,
-                PostStopExecutablePath = @"C:\app\poststop.exe",
-                PostStopStartupDirectory = @"C:\app",
-                PostStopParameters = "--poststop"
-            };
+            // Arrange: CreateFull leaves the [JsonIgnore]/[XmlIgnore] identity fields at their defaults,
+            // so set them here - the wrapper has to carry them across too
+            var original = ServiceDtoFactory.CreateFull();
+            original.Id = 42;
+            original.Pid = 4242;
 
             // Act
             var clone = ServiceDtoHelper.Clone(original);
 
-            // Assert: Verify all properties were copied
+            // Assert: a distinct instance carrying every property value
             Assert.NotSame(original, clone);
-            Assert.Equal(original.Name, clone.Name);
-            Assert.Equal(original.DisplayName, clone.DisplayName);
-            Assert.Equal(original.Description, clone.Description);
-            Assert.Equal(original.ExecutablePath, clone.ExecutablePath);
-            Assert.Equal(original.StartupDirectory, clone.StartupDirectory);
-            Assert.Equal(original.Parameters, clone.Parameters);
-            Assert.Equal(original.StartupType, clone.StartupType);
-            Assert.Equal(original.Priority, clone.Priority);
-            Assert.Equal(original.CpuAffinity, clone.CpuAffinity);
-            Assert.Equal(original.StartTimeout, clone.StartTimeout);
-            Assert.Equal(original.StopTimeout, clone.StopTimeout);
-            Assert.Equal(original.EnableConsoleUI, clone.EnableConsoleUI);
-            Assert.Equal(original.StdoutPath, clone.StdoutPath);
-            Assert.Equal(original.StderrPath, clone.StderrPath);
-            Assert.Equal(original.EnableSizeRotation, clone.EnableSizeRotation);
-            Assert.Equal(original.RotationSize, clone.RotationSize);
-            Assert.Equal(original.EnableDateRotation, clone.EnableDateRotation);
-            Assert.Equal(original.DateRotationType, clone.DateRotationType);
-            Assert.Equal(original.MaxRotations, clone.MaxRotations);
-            Assert.Equal(original.UseLocalTimeForRotation, clone.UseLocalTimeForRotation);
-            Assert.Equal(original.EnableDebugLogs, clone.EnableDebugLogs);
-            Assert.Equal(original.EnableHealthMonitoring, clone.EnableHealthMonitoring);
-            Assert.Equal(original.HeartbeatInterval, clone.HeartbeatInterval);
-            Assert.Equal(original.MaxFailedChecks, clone.MaxFailedChecks);
-            Assert.Equal(original.RecoveryAction, clone.RecoveryAction);
-            Assert.Equal(original.RecoveryOnCleanExit, clone.RecoveryOnCleanExit);
-            Assert.Equal(original.MaxRestartAttempts, clone.MaxRestartAttempts);
-            Assert.Equal(original.HeartbeatUrl, clone.HeartbeatUrl);
-            Assert.Equal(original.HeartbeatUrlTimeoutSeconds, clone.HeartbeatUrlTimeoutSeconds);
-            Assert.Equal(original.EnableHeartbeatUrlFlags, clone.EnableHeartbeatUrlFlags);
-            Assert.Equal(original.FailureProgramPath, clone.FailureProgramPath);
-            Assert.Equal(original.FailureProgramStartupDirectory, clone.FailureProgramStartupDirectory);
-            Assert.Equal(original.FailureProgramParameters, clone.FailureProgramParameters);
-            Assert.Equal(original.EnvironmentVariables, clone.EnvironmentVariables);
-            Assert.Equal(original.ServiceDependencies, clone.ServiceDependencies);
-            Assert.Equal(original.RunAsLocalSystem, clone.RunAsLocalSystem);
-            Assert.Equal(original.UserAccount, clone.UserAccount);
-            Assert.Equal(original.Password, clone.Password);
-            Assert.Equal(original.PreLaunchExecutablePath, clone.PreLaunchExecutablePath);
-            Assert.Equal(original.PreLaunchStartupDirectory, clone.PreLaunchStartupDirectory);
-            Assert.Equal(original.PreLaunchParameters, clone.PreLaunchParameters);
-            Assert.Equal(original.PreLaunchEnvironmentVariables, clone.PreLaunchEnvironmentVariables);
-            Assert.Equal(original.PreLaunchStdoutPath, clone.PreLaunchStdoutPath);
-            Assert.Equal(original.PreLaunchStderrPath, clone.PreLaunchStderrPath);
-            Assert.Equal(original.PreLaunchTimeoutSeconds, clone.PreLaunchTimeoutSeconds);
-            Assert.Equal(original.PreLaunchRetryAttempts, clone.PreLaunchRetryAttempts);
-            Assert.Equal(original.PreLaunchIgnoreFailure, clone.PreLaunchIgnoreFailure);
-            Assert.Equal(original.PostLaunchExecutablePath, clone.PostLaunchExecutablePath);
-            Assert.Equal(original.PostLaunchStartupDirectory, clone.PostLaunchStartupDirectory);
-            Assert.Equal(original.PostLaunchParameters, clone.PostLaunchParameters);
-            Assert.Equal(original.PreviousStopTimeout, clone.PreviousStopTimeout);
-            Assert.Equal(original.ActiveStdoutPath, clone.ActiveStdoutPath);
-            Assert.Equal(original.ActiveStderrPath, clone.ActiveStderrPath);
-            Assert.Equal(original.PreStopExecutablePath, clone.PreStopExecutablePath);
-            Assert.Equal(original.PreStopStartupDirectory, clone.PreStopStartupDirectory);
-            Assert.Equal(original.PreStopParameters, clone.PreStopParameters);
-            Assert.Equal(original.PreStopTimeoutSeconds, clone.PreStopTimeoutSeconds);
-            Assert.Equal(original.PreStopLogAsError, clone.PreStopLogAsError);
-            Assert.Equal(original.PostStopExecutablePath, clone.PostStopExecutablePath);
-            Assert.Equal(original.PostStopStartupDirectory, clone.PostStopStartupDirectory);
-            Assert.Equal(original.PostStopParameters, clone.PostStopParameters);
+            foreach (var prop in typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (!prop.CanRead || !prop.CanWrite) continue;
+                Assert.Equal(prop.GetValue(original), prop.GetValue(clone));
+            }
 
             // Assert: Verify mutating the clone does not affect the original object
+            var originalName = original.Name;
+            var originalStartTimeout = original.StartTimeout;
+
             clone.Name = "MutatedName";
             clone.StartTimeout = 999;
-            Assert.Equal("OriginalService", original.Name);
-            Assert.Equal(30, original.StartTimeout);
+
+            Assert.Equal(originalName, original.Name);
+            Assert.Equal(originalStartTimeout, original.StartTimeout);
         }
 
         [Fact]
