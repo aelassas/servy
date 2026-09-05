@@ -19,6 +19,15 @@ namespace Servy.Restarter
         /// </summary>
         /// <param name="desiredStatus">The status to wait for.</param>
         /// <param name="timeout">The maximum time to wait.</param>
+        /// <exception cref="ObjectDisposedException">The controller has been disposed.</exception>
+        /// <exception cref="System.ServiceProcess.TimeoutException">
+        /// The service did not reach <paramref name="desiredStatus"/> within <paramref name="timeout"/>.
+        /// Note the type: this is <c>System.ServiceProcess.TimeoutException</c>, not
+        /// <see cref="System.TimeoutException"/>, so a caller that means to surface a timeout as the
+        /// latter - as <see cref="IServiceRestarter.RestartService"/> documents - must catch this type
+        /// and translate it.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">The service could not be found.</exception>
         void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout);
 
         /// <summary>
@@ -32,6 +41,9 @@ namespace Servy.Restarter
         /// <summary>
         /// Stops the service.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">The controller has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The service could not be found, or the SCM rejected the request.</exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">The underlying SCM call failed.</exception>
         void Stop();
 
         /// <summary>
@@ -39,7 +51,10 @@ namespace Servy.Restarter
         /// </summary>
         /// <remarks>
         /// Call this method before checking the <see cref="Status"/> property to ensure you are reading the most up-to-date state rather than a cached snapshot.
+        /// Refreshing only discards the cached values; the SCM is contacted by the next property
+        /// read, so an SCM failure surfaces there rather than here.
         /// </remarks>
+        /// <exception cref="ObjectDisposedException">The controller has been disposed.</exception>
         void Refresh();
     }
 }
