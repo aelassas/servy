@@ -198,10 +198,10 @@ namespace Servy.CLI.UnitTests.Validation
         {
             // Arrange
             var opts = CreateValidOptions();
-            // Pass a corrupted value to a property name that doesn't exist on standard CommandLine attribute paths
-            // if mapped via an imaginary field, or force-trigger fallback lookup code branches manually.
-            // Since we can't add fields dynamically, we use an option property configuration that fails
-            // but tests the 'GetOptionName' logic completely.
+            // ServiceStartType is a real [Option("startupType")] property, so GetOptionName
+            // resolves it through the attribute path and the message carries the long name.
+            // The prop == null fallback is covered separately by
+            // GetOptionName_NonExistentPropertyName_ReturnsProvidedStringFallback below.
             opts.ServiceStartType = "Invalid";
 
             // Act
