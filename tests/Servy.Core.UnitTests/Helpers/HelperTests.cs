@@ -333,10 +333,8 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Pass the freshly-built dynamic assembly explicitly so GetBuiltWithFramework
             // reads the BuiltWithFramework metadata from it instead of the executing assembly.
-            return InvokeInAssembly(assemblyBuilder);
+            return Helper.GetBuiltWithFramework(assemblyBuilder);
         }
-
-        private string InvokeInAssembly(Assembly assembly) => Helper.GetBuiltWithFramework(assembly);
 
         [Fact]
         public void GetBuiltWithFramework_AttributeMissing_ReturnsUnknown()
@@ -398,6 +396,10 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             // Confirm the parameterless overload targets the core library assembly frame as its baseline
             Assert.Equal(expectedFrameworkString, actualFrameworkString);
+
+            // Both sides are the same call, so pin the result against the "Unknown" fallback:
+            // if the BuiltWithFramework metadata stops resolving, the equality alone stays green.
+            Assert.NotEqual("Unknown", actualFrameworkString);
         }
 
         /// <summary>
