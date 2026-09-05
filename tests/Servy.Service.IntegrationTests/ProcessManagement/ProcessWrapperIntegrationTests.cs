@@ -383,8 +383,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Stop & Kill Tests
 
         [Fact]
-        public void Stop_GracefulShutdown_ReturnsTrue()
+        public void Stop_RunningHeadlessProcess_ReturnsNonNullAndExits()
         {
+            // The name states what the assertion backs. Stop's graceful-success branch - true for a
+            // windowed process whose CloseMainWindow() causes a clean exit within the timeout - is
+            // still covered by no test: this arrangement is headless, so it reaches the force-kill
+            // fallback and Assert.NotNull accepts that false just as readily.
+
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
             {
