@@ -94,7 +94,7 @@ jobs:
           }
 
           Write-Host "Running Debug tests for $projName..." -ForegroundColor Green
-          & $vsTest $debugDll /Framework:.NETFramework,Version=v4.8 /logger:trx /Blame:CollectDump;CrashDumpType=full
+          & $vsTest $debugDll /Framework:.NETFramework,Version=v4.8 /logger:trx "/Blame:CollectDump;CrashDumpType=full"
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Debug tests failed for project: $projName"
@@ -118,7 +118,7 @@ jobs:
           }
 
           Write-Host "Running Release tests for $projName..." -ForegroundColor Green
-          & $vsTest $releaseDll /Framework:.NETFramework,Version=v4.8 /logger:trx /Blame:CollectDump;CrashDumpType=full
+          & $vsTest $releaseDll /Framework:.NETFramework,Version=v4.8 /logger:trx "/Blame:CollectDump;CrashDumpType=full"
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Release tests failed for project: $projName"
