@@ -180,12 +180,19 @@ namespace Servy.Core.Native
         [StructLayout(LayoutKind.Sequential)]
         public struct SERVICE_STATUS
         {
+            /// <summary>The type of service (SERVICE_WIN32_OWN_PROCESS, SERVICE_WIN32_SHARE_PROCESS, and flags).</summary>
             public int dwServiceType;
+            /// <summary>The current state of the service (SERVICE_STOPPED, SERVICE_RUNNING, and the pending states).</summary>
             public int dwCurrentState;
+            /// <summary>Bit mask of the control codes the service accepts and processes in its handler.</summary>
             public int dwControlsAccepted;
+            /// <summary>Win32 error code the service reports on start or stop; ERROR_SERVICE_SPECIFIC_ERROR means <see cref="dwServiceSpecificExitCode"/> holds the reason.</summary>
             public int dwWin32ExitCode;
+            /// <summary>Service-specific exit code, meaningful only when <see cref="dwWin32ExitCode"/> is ERROR_SERVICE_SPECIFIC_ERROR.</summary>
             public int dwServiceSpecificExitCode;
+            /// <summary>Check-point value the service increments periodically during a lengthy pending operation.</summary>
             public int dwCheckPoint;
+            /// <summary>Estimated time, in milliseconds, for a pending start, stop, pause or continue operation.</summary>
             public int dwWaitHint;
         }
 
@@ -193,15 +200,25 @@ namespace Servy.Core.Native
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         public struct PROCESSENTRY32
         {
+            /// <summary>Size of the structure, in bytes. Must be set to <c>sizeof(PROCESSENTRY32)</c> before calling Process32First.</summary>
             public uint dwSize;
+            /// <summary>No longer used; always zero.</summary>
             public uint cntUsage;
+            /// <summary>Process identifier.</summary>
             public uint th32ProcessID;
+            /// <summary>No longer used; always zero.</summary>
             public IntPtr th32DefaultHeapID;
+            /// <summary>No longer used; always zero.</summary>
             public uint th32ModuleID;
+            /// <summary>Number of execution threads started by the process.</summary>
             public uint cntThreads;
+            /// <summary>Identifier of the process that created this process. The process-tree walker keys on this member.</summary>
             public uint th32ParentProcessID;
+            /// <summary>Base priority of any threads created by this process.</summary>
             public int pcPriClassBase;
+            /// <summary>No longer used; always zero.</summary>
             public uint dwFlags;
+            /// <summary>Name of the executable file for the process (MAX_PATH characters).</summary>
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
             public string szExeFile;
         }
@@ -616,8 +633,11 @@ namespace Servy.Core.Native
         [StructLayout(LayoutKind.Sequential)]
         public struct LSA_UNICODE_STRING
         {
+            /// <summary>Length, in bytes, of the string in <see cref="Buffer"/>, not counting a terminating null.</summary>
             public ushort Length;
+            /// <summary>Total size, in bytes, of <see cref="Buffer"/>; at least <see cref="Length"/>, plus two bytes when a terminating null is stored.</summary>
             public ushort MaximumLength;
+            /// <summary>Pointer to the wide-character string; need not be null-terminated.</summary>
             public IntPtr Buffer;
         }
 
@@ -625,11 +645,17 @@ namespace Servy.Core.Native
         [StructLayout(LayoutKind.Sequential)]
         public struct LSA_OBJECT_ATTRIBUTES
         {
+            /// <summary>Size of this structure, in bytes.</summary>
             public int Length;
+            /// <summary>Root directory handle for the object name. Must be <see cref="IntPtr.Zero"/> for LSA policy objects.</summary>
             public IntPtr RootDir;
+            /// <summary>Pointer to an object name (LSA_UNICODE_STRING). Not used by LsaOpenPolicy; set to <see cref="IntPtr.Zero"/>.</summary>
             public IntPtr ObjectName;
+            /// <summary>Object attribute flags. Not used by LsaOpenPolicy; set to zero.</summary>
             public uint Attributes;
+            /// <summary>Pointer to a security descriptor. Not used by LsaOpenPolicy; set to <see cref="IntPtr.Zero"/>.</summary>
             public IntPtr SecurityDesc;
+            /// <summary>Pointer to a SECURITY_QUALITY_OF_SERVICE structure. Not used by LsaOpenPolicy; set to <see cref="IntPtr.Zero"/>.</summary>
             public IntPtr SecurityQos;
         }
 
