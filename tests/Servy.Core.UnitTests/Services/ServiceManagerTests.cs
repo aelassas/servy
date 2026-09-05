@@ -619,10 +619,15 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
+            // Capture the marshalled pre-shutdown deadline; the pointer is only valid for the
+            // duration of the call, so it has to be read inside the callback
+            uint capturedTimeoutMs = 0;
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                It.IsAny<SafeServiceHandle>(),
-               It.IsAny<uint>(),
+               SERVICE_CONFIG_PRESHUTDOWN_INFO,
                It.IsAny<IntPtr>()))
+               .Callback((SafeServiceHandle handle, uint infoLevel, IntPtr info) =>
+                   capturedTimeoutMs = Marshal.PtrToStructure<SERVICE_PRE_SHUTDOWN_INFO>(info).dwPreshutdownTimeout)
                .Returns(true);
 
             var options = new InstallServiceOptions
@@ -654,7 +659,16 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(result.IsSuccess);
 
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, gMSA, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>()), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_PRESHUTDOWN_INFO, It.IsAny<IntPtr>()), Times.Once);
+
+            // The deadline the SCM is given must include the pre-stop hook, since PreStopExePath is set
+            var expectedTimeoutMs = (uint)ServiceHelper.CalculateStopTimeout(
+                options.StopTimeout,
+                null,
+                options.PreStopTimeout,
+                floorOverride: AppConfig.ScmStopTimeoutFloorSeconds) * AppConfig.MillisecondsPerSecond;
+
+            Assert.Equal(expectedTimeoutMs, capturedTimeoutMs);
         }
 
         [Fact]
