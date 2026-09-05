@@ -231,7 +231,7 @@ namespace Servy.Core.UnitTests.Validation
 
             dto.HeartbeatInterval = AppConfig.MinHeartbeatInterval - 1;
             dto.MaxFailedChecks = AppConfig.MaxMaxFailedChecks + 1;
-            dto.MaxRestartAttempts = -5;
+            dto.MaxRestartAttempts = AppConfig.MinMaxRestartAttempts - 1;
 
             // Act
             var result = _sut.Validate(dto);
@@ -306,7 +306,7 @@ namespace Servy.Core.UnitTests.Validation
             dto.PreLaunchStartupDirectory = "invalid|dir";
             dto.PreLaunchEnvironmentVariables = "INVALID_VAR"; // Missing '=' -> Triggers Strings.Msg_EnvironmentVariableMissingEquals
             dto.PreLaunchTimeoutSeconds = AppConfig.MaxPreLaunchTimeoutSeconds + 1;
-            dto.PreLaunchRetryAttempts = -1;
+            dto.PreLaunchRetryAttempts = AppConfig.MinPreLaunchRetryAttempts - 1;
             dto.PreLaunchStdoutPath = "invalid>out";
             dto.PreLaunchStderrPath = "invalid>err";
 
