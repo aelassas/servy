@@ -42,7 +42,7 @@ try {
     $WorkerScript = {
         param([string]$LogScript, [string]$FilePath, [int]$MaxSize, [int]$WorkerId, [int]$WritesCount)
 
-        # Dot-source the logging mechanism inside the unique worker thread scope
+        # Dot-source the logging mechanism inside each worker process
         . $LogScript
 
         # Rapidly blast messages to stress test locking and trigger rotation races
