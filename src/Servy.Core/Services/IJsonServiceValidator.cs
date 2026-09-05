@@ -14,10 +14,12 @@ namespace Servy.Core.Services
         /// <param name="errorMessage">When this method returns <c>false</c>, contains a descriptive error message; otherwise, <c>null</c>.</param>
         /// <returns><c>true</c> if the JSON is structurally sound and meets all domain requirements; otherwise, <c>false</c>.</returns>
         /// <remarks>
-        /// This validation step acts as a "Gatekeeper" prior to full deserialization. It ensures
-        /// the payload adheres to size constraints, utilizes safe deserialization settings
-        /// to prevent untrusted data exploits, and contains a valid service definition
-        /// compatible with the Windows Service Control Manager.
+        /// This method performs the deserialization itself rather than preceding it: it parses the
+        /// payload with the same hardened settings the import path uses, runs the shared domain
+        /// validation rules over the materialised service definition, and then discards it.
+        /// It enforces the configured size limit, rejects unsafe or unknown content, and requires
+        /// the properties the Windows Service Control Manager needs (such as ExecutablePath).
+        /// A caller that validates and then deserializes the same payload parses it twice.
         /// </remarks>
         bool TryValidate(string json, out string errorMessage);
     }
