@@ -59,7 +59,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Disposal & Precondition Tests
 
         [Fact]
-        public void ObjectDisposed_AccessingProperties_ThrowsObjectDisposedException()
+        public async Task ObjectDisposed_AccessingProperties_ThrowsObjectDisposedException()
         {
             // Arrange
             var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
@@ -94,6 +94,27 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Throws<ObjectDisposedException>(() => wrapper.BeginErrorReadLine());
             Assert.Throws<ObjectDisposedException>(() => wrapper.CancelOutputRead());
             Assert.Throws<ObjectDisposedException>(() => wrapper.CancelErrorRead());
+
+            // The blocking members: without their guard a disposed wrapper would block or fault
+            // inside a released Process instead of throwing.
+            Assert.Throws<ObjectDisposedException>(() => wrapper.WaitForExit());
+
+            // WaitAndCheckStillRunningAsync is an async method, so its ThrowIfDisposed lands on the
+            // returned task rather than on the call: the awaiting overload is the one that observes it.
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+                wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), CancellationToken.None));
+
+            // The six event accessors each carry their own guard, so dropping one of them is
+            // invisible to every other test in the suite.
+            DataReceivedEventHandler dataHandler = (s, e) => { };
+            EventHandler exitHandler = (s, e) => { };
+
+            Assert.Throws<ObjectDisposedException>(() => wrapper.OutputDataReceived += dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.OutputDataReceived -= dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.ErrorDataReceived += dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.ErrorDataReceived -= dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Exited += exitHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Exited -= exitHandler);
         }
 
         [Fact]
