@@ -55,7 +55,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 string formatted = process.Format();
 
                 // Assert
-                Assert.NotNull(formatted);
                 Assert.Equal("(Exited Process)", formatted);
             }
         }
