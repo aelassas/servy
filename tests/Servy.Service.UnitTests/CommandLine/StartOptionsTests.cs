@@ -52,7 +52,8 @@ namespace Servy.Service.UnitTests.CommandLine
                 .Where(x => x.Attr != null)
                 .ToDictionary(x => x.Name, x => x.Attr);
 
-            // Act & Assert: Pin 1:1 structural parity between ServiceDto and StartOptions.
+            // Act & Assert: IsFile and Required must agree across the two decorated sets;
+            // Label and ErrorResourceKey deliberately do not, and that is pinned below.
             // The count is not written out as a literal: equal counts plus membership in both
             // directions is the bijection, and it needs no hand-maintained census.
             Assert.NotEmpty(dtoPaths);
@@ -69,6 +70,15 @@ namespace Servy.Service.UnitTests.CommandLine
 
                 Assert.Equal(dtoAttr.IsFile, optionsAttr.IsFile);
                 Assert.Equal(dtoAttr.Required, optionsAttr.Required);
+
+                // The asymmetry is deliberate and is asserted so that removing it is a test
+                // failure rather than a silent change: ServiceDto carries a localized resource
+                // key and lowercase labels for mid-sentence use, StartOptions validates without
+                // Strings.resx and uses sentence case for standalone log lines. Comparing the
+                // labels ignoring case still catches a typo introduced on either side.
+                Assert.NotNull(dtoAttr.ErrorResourceKey);
+                Assert.Null(optionsAttr.ErrorResourceKey);
+                Assert.Equal(dtoAttr.Label, optionsAttr.Label, ignoreCase: true);
             }
 
             foreach (string mappedName in optionsPaths.Keys)
