@@ -89,25 +89,25 @@ Assert-Equal "Valid flat XML entry maps into the staging root" $e2.TargetPath ([
 
 # Test 3.3: Non-flat entry (subdirectory)
 $e3 = Test-ServyDumpArchiveEntry -EntryName "MyService.xml" -EntryFullName "folder/MyService.xml" -RootPath $rootPath -SeenEntryNames $seenEntries
-Assert-True "Non-flat archive entry rejected" (-not $e3.IsValid -and $e3.ErrorMessage.Contains("contains subdirectories"))
+Assert-True "Non-flat archive entry rejected" (-not $e3.IsValid -and $e3.ErrorMessage.Contains("包含子目录"))
 
 # Test 3.4: Duplicate entry detection
 $e4 = Test-ServyDumpArchiveEntry -EntryName "MyService.xml" -EntryFullName "MyService.xml" -RootPath $rootPath -SeenEntryNames $seenEntries
-Assert-True "Duplicate archive entry rejected" (-not $e4.IsValid -and $e4.ErrorMessage.Contains("duplicate entry"))
+Assert-True "Duplicate archive entry rejected" (-not $e4.IsValid -and $e4.ErrorMessage.Contains("重复条目"))
 
 # Test 3.5: Path traversal attack
 $seenEntries2 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $e5 = Test-ServyDumpArchiveEntry -EntryName "..\..\Evil.xml" -EntryFullName "..\..\Evil.xml" -RootPath $rootPath -SeenEntryNames $seenEntries2
-Assert-True "Path traversal entry rejected" (-not $e5.IsValid -and ($e5.ErrorMessage.Contains("outside staging directory") -or $e5.ErrorMessage.Contains("subdirectories")))
+Assert-True "Path traversal entry rejected" (-not $e5.IsValid -and ($e5.ErrorMessage.Contains("暂存目录之外") -or $e5.ErrorMessage.Contains("包含子目录")))
 
 # Test 3.6: Non-XML file extension
 $seenEntries3 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $e6 = Test-ServyDumpArchiveEntry -EntryName "Malware.exe" -EntryFullName "Malware.exe" -RootPath $rootPath -SeenEntryNames $seenEntries3
-Assert-True "Non-XML archive entry rejected" (-not $e6.IsValid -and $e6.ErrorMessage.Contains("not an XML configuration file"))
+Assert-True "Non-XML archive entry rejected" (-not $e6.IsValid -and $e6.ErrorMessage.Contains("不是 XML 配置文件"))
 
 # Test 3.7: Absolute-path entry
 $seenEntries4 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $e7 = Test-ServyDumpArchiveEntry -EntryName "C:\evil.xml" -EntryFullName "C:\evil.xml" -RootPath $rootPath -SeenEntryNames $seenEntries4
-Assert-True "Absolute-path archive entry rejected" (-not $e7.IsValid -and $e7.ErrorMessage.Contains("outside staging directory"))
+Assert-True "Absolute-path archive entry rejected" (-not $e7.IsValid -and $e7.ErrorMessage.Contains("暂存目录之外"))
 
 Invoke-TestSummary

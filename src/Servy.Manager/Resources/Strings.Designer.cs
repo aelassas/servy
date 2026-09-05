@@ -61,6 +61,33 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Local Service.
+        /// </summary>
+        public static string Account_LocalService {
+            get {
+                return ResourceManager.GetString("Account_LocalService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Local System.
+        /// </summary>
+        public static string Account_LocalSystem {
+            get {
+                return ResourceManager.GetString("Account_LocalSystem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Network Service.
+        /// </summary>
+        public static string Account_NetworkService {
+            get {
+                return ResourceManager.GetString("Account_NetworkService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Displays application information and copyright details..
         /// </summary>
         public static string Automation_AboutMenuItem_HelpText {
@@ -1726,7 +1753,43 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to JSON Configuration exported successfully..
+        ///   Looks up a localized string similar to All.
+        /// </summary>
+        public static string EventLogLevel_All {
+            get {
+                return ResourceManager.GetString("EventLogLevel_All", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error.
+        /// </summary>
+        public static string EventLogLevel_Error {
+            get {
+                return ResourceManager.GetString("EventLogLevel_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Information.
+        /// </summary>
+        public static string EventLogLevel_Information {
+            get {
+                return ResourceManager.GetString("EventLogLevel_Information", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warning.
+        /// </summary>
+        public static string EventLogLevel_Warning {
+            get {
+                return ResourceManager.GetString("EventLogLevel_Warning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} configuration exported successfully to JSON..
         /// </summary>
         public static string ExportJson_Success {
             get {

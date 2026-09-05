@@ -72,21 +72,21 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = 'Specify path to the Servy dump zip archive (e.g., "C:\Backups\Servy_Dump.zip").')]
+    [Parameter(Mandatory = $true, HelpMessage = '指定 Servy 转储 zip 归档路径（例如 "C:\Backups\Servy_Dump.zip"）。')]
     [ValidateNotNullOrEmpty()]
     [string]$DumpArchivePath,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Optionally install each service into Windows SCM after import.')]
+    [Parameter(Mandatory = $false, HelpMessage = '导入后可选地将每个服务安装到 Windows SCM。')]
     [switch]$Install,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Skip SHA-256 sidecar verification entirely, whether the sidecar is absent, stale, or mismatching.')]
+    [Parameter(Mandatory = $false, HelpMessage = '完全跳过 SHA-256 伴随文件校验（无论伴随文件缺失、过期或不匹配）。')]
     [switch]$SkipIntegrityCheck,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Maximum number of entries permitted in the archive (default: 1000).')]
+    [Parameter(Mandatory = $false, HelpMessage = '归档允许的最大条目数（默认：1000）。')]
     [ValidateRange(1, 100000)]
     [int]$MaxAllowedEntries = 1000,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Maximum total uncompressed byte size permitted during extraction (default: 104857600 = 100 MB).')]
+    [Parameter(Mandatory = $false, HelpMessage = '解压时允许的最大未压缩总字节数（默认：104857600 = 100 MB）。')]
     [ValidateRange(1, 10737418240)] # Up to 10 GB max safety ceiling
     [long]$MaxUncompressedBytes = 104857600
 )
@@ -204,21 +204,21 @@ function Test-ServyDumpArchiveEntry {
     }
 
     if ($EntryName -ne $EntryFullName) {
-        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive entry '$EntryFullName' contains subdirectories. Non-flat dump archives are disallowed. Aborting." }
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "归档条目 '$EntryFullName' 包含子目录。不允许使用非扁平结构的转储归档。已中止。" }
     }
 
     if (-not $SeenEntryNames.Add($EntryName)) {
-        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive contains duplicate entry '$EntryName'. Aborting: malformed dump archive." }
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "归档包含重复条目 '$EntryName'。已中止：归档格式异常。" }
     }
 
     $targetPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($RootPath, $EntryFullName))
 
     if (-not $targetPath.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive entry '$EntryFullName' resolves outside staging directory. Aborting: malformed or hostile archive." }
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "归档条目 '$EntryFullName' 解析到暂存目录之外。已中止：归档格式异常或存在恶意内容。" }
     }
 
     if (-not $EntryName.EndsWith('.xml', [System.StringComparison]::OrdinalIgnoreCase)) {
-        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "Archive entry '$EntryFullName' is not an XML configuration file. Aborting." }
+        return @{ IsValid = $false; IsDirectory = $false; TargetPath = $null; ErrorMessage = "归档条目 '$EntryFullName' 不是 XML 配置文件。已中止。" }
     }
 
     return @{ IsValid = $true; IsDirectory = $false; TargetPath = $targetPath; ErrorMessage = $null }
@@ -242,7 +242,7 @@ try {
     $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
 
     if (-not $currentPrincipal.IsInRole($adminRole)) {
-        Write-Host "Servy-Restore.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
+        Write-Host "Servy-Restore.ps1 需要管理员权限。请在提升的 PowerShell 会话中重新运行此脚本。" -ForegroundColor Red
         exit 1
     }
 
@@ -255,7 +255,7 @@ try {
     $servyModulePath = $moduleCandidates | Select-Object -First 1
 
     if (-not $servyModulePath) {
-        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script or in %ProgramFiles%\Servy." -ForegroundColor Red
+        Write-Host "在此脚本旁或 %ProgramFiles%\Servy 中未找到 Servy PowerShell 模块（Servy.psm1）。" -ForegroundColor Red
         exit 2
     }
 
@@ -263,7 +263,7 @@ try {
         Import-Module -Name $servyModulePath -Force -ErrorAction Stop
     }
     catch {
-        Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
+        Write-Host "无法从 '$servyModulePath' 导入 Servy PowerShell 模块：$_" -ForegroundColor Red
         exit 2
     }
 
@@ -272,12 +272,12 @@ try {
         $resolvedArchivePath = Resolve-ServyRestoreDumpPath -DumpArchivePath $DumpArchivePath -PSCmdletContext $PSCmdlet
     }
     catch {
-        Write-Host "Invalid dump archive path specified '$DumpArchivePath': $_" -ForegroundColor Red
+        Write-Host "指定的转储归档路径无效 '$DumpArchivePath'：$_" -ForegroundColor Red
         exit 4
     }
 
     if (-not (Test-Path -LiteralPath $resolvedArchivePath)) {
-        Write-Host "Specified dump archive file does not exist: '$resolvedArchivePath'." -ForegroundColor Red
+        Write-Host "指定的转储归档文件不存在：'$resolvedArchivePath'。" -ForegroundColor Red
         exit 3
     }
 
@@ -285,10 +285,10 @@ try {
     $sidecarPath = "$resolvedArchivePath.sha256"
 
     if ($SkipIntegrityCheck.IsPresent) {
-        Write-Host "WARNING: Integrity verification skipped (-SkipIntegrityCheck specified)." -ForegroundColor Yellow
+        Write-Host "警告：已跳过完整性校验（指定了 -SkipIntegrityCheck）。" -ForegroundColor Yellow
     }
     elseif (Test-Path -LiteralPath $sidecarPath) {
-        Write-Host "Verifying archive integrity against SHA-256 sidecar..." -ForegroundColor Cyan
+        Write-Host "正在对照 SHA-256 伴随文件校验归档完整性..." -ForegroundColor Cyan
 
         try {
             $sidecarText  = [System.IO.File]::ReadAllText($sidecarPath)
@@ -296,19 +296,19 @@ try {
             $actualHash   = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
         }
         catch {
-            Write-Host "Failed to read checksum files or compute hash for verification: $_" -ForegroundColor Red
+            Write-Host "读取校验和文件或计算哈希以进行校验失败：$_" -ForegroundColor Red
             exit 5
         }
 
         if (-not [string]::Equals($expectedHash, $actualHash, [System.StringComparison]::OrdinalIgnoreCase)) {
-            Write-Host "Archive checksum mismatch! Expected SHA-256 '$expectedHash', but calculated '$actualHash'. Aborting restore." -ForegroundColor Red
+            Write-Host "归档校验和不匹配！期望的 SHA-256 为 '$expectedHash'，实际计算为 '$actualHash'。还原已中止。" -ForegroundColor Red
             exit 5
         }
-        Write-Host "Archive SHA-256 checksum successfully verified." -ForegroundColor Green
+        Write-Host "归档 SHA-256 校验和验证成功。" -ForegroundColor Green
     }
     else {
-        Write-Host "No SHA-256 sidecar file found at '$sidecarPath'." -ForegroundColor Red
-        Write-Host "To proceed without integrity verification, re-run with the -SkipIntegrityCheck switch." -ForegroundColor Red
+        Write-Host "在 '$sidecarPath' 未找到 SHA-256 伴随文件。" -ForegroundColor Red
+        Write-Host "若要在不进行完整性校验的情况下继续，请使用 -SkipIntegrityCheck 开关重新运行。" -ForegroundColor Red
         exit 5
     }
 
@@ -323,12 +323,12 @@ try {
             Set-ServyHardenedFileAcl -Path $tempExtractDir -IsDirectory
         }
         catch {
-            Write-Host "WARNING: Could not restrict permissions on the extraction directory '$tempExtractDir': $($_.Exception.Message)" -ForegroundColor Red
-            Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
+            Write-Host "警告：无法限制解压目录 '$tempExtractDir' 的权限：$($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "该目录将存放未加密的纯文本服务配置。为避免泄露，操作已中止。" -ForegroundColor Red
             exit 4
         }
 
-        Write-Host "Extracting dump archive '$resolvedArchivePath'..." -ForegroundColor Cyan
+        Write-Host "正在解压转储归档 '$resolvedArchivePath'..." -ForegroundColor Cyan
 
         # Entry-path validation and bounded extraction
         Add-Type -AssemblyName "System.IO.Compression.FileSystem"
@@ -341,7 +341,7 @@ try {
 
         try {
             if ($zipFile.Entries.Count -gt $MaxAllowedEntries) {
-                Write-Host "Archive contains $($zipFile.Entries.Count) entries, exceeding the limit of $MaxAllowedEntries. Aborting." -ForegroundColor Red
+                Write-Host "归档包含 $($zipFile.Entries.Count) 个条目，超过限制 $MaxAllowedEntries。已中止。" -ForegroundColor Red
                 exit 4
             }
 
@@ -365,7 +365,7 @@ try {
                     while (($n = $in.Read($buf, 0, $buf.Length)) -gt 0) {
                         $totalUncompressedSize += $n
                         if ($totalUncompressedSize -gt $MaxUncompressedBytes) {
-                            Write-Host "Uncompressed data exceeds limit of $MaxUncompressedBytes bytes. Aborting to prevent resource exhaustion." -ForegroundColor Red
+                            Write-Host "未压缩数据超过 $MaxUncompressedBytes 字节的限制。为防止资源耗尽，已中止。" -ForegroundColor Red
                             exit 4
                         }
                         $out.Write($buf, 0, $n)
@@ -385,19 +385,19 @@ try {
         $xmlFiles = Get-ChildItem -LiteralPath $tempExtractDir -Filter "*.xml" -File
 
         if ($null -eq $xmlFiles) {
-            Write-Host "No XML configuration files were found in the dump archive." -ForegroundColor Yellow
+            Write-Host "转储归档中未找到 XML 配置文件。" -ForegroundColor Yellow
             exit 0
         }
 
         $xmlFileList = @($xmlFiles)
-        Write-Host "Found $($xmlFileList.Count) service configuration file(s) to restore..." -ForegroundColor Cyan
+        Write-Host "找到 $($xmlFileList.Count) 个待还原的服务配置文件..." -ForegroundColor Cyan
 
         $imported = New-Object System.Collections.Generic.List[string]
         $failed   = New-Object System.Collections.Generic.List[object]
 
         # Iterate through extracted XML files and import each service configuration with isolated error handling
         foreach ($xmlFile in $xmlFileList) {
-            Write-Host "Importing configuration from '$($xmlFile.Name)'..." -ForegroundColor Green
+            Write-Host "正在从 '$($xmlFile.Name)' 导入配置..." -ForegroundColor Green
 
             # Build splatting hashtable for Import-ServyServiceConfig
             $importParams = @{
@@ -415,46 +415,43 @@ try {
                 $imported.Add($xmlFile.Name)
             }
             catch {
-                Write-Host "  FAILED to import '$($xmlFile.Name)': $($_.Exception.Message)" -ForegroundColor Red
-                $failed.Add([PSCustomObject]@{ File = $xmlFile.Name; Reason = $_.Exception.Message })
+                Write-Host "  导入 '$($xmlFile.Name)' 失败：$($_.Exception.Message)" -ForegroundColor Red
+                $failed.Add([PSCustomObject]@{ '文件' = $xmlFile.Name; '原因' = $_.Exception.Message })
             }
         }
 
         # If zero configurations succeeded, terminate with complete failure exit code
         if ($imported.Count -eq 0) {
-            Write-Host "No service configurations could be imported from the archive." -ForegroundColor Red
+            Write-Host "未能从归档导入任何服务配置。" -ForegroundColor Red
             exit 6
         }
 
         # Display completion status and critical security notice
         if ($failed.Count -gt 0) {
-            Write-Host "`nServy configuration restore completed with warnings!" -ForegroundColor Yellow
-            Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
-            Write-Host "`nThe following service file(s) FAILED to import:" -ForegroundColor Red
+            Write-Host "`nServy 配置还原已完成，但有警告！" -ForegroundColor Yellow
+            Write-Host "已成功导入 $($imported.Count) / $($xmlFileList.Count) 个服务。" -ForegroundColor Cyan
+            Write-Host "`n以下服务文件导入失败：" -ForegroundColor Red
             $failed | Format-Table -AutoSize | Out-String | Write-Host
         }
         else {
-            Write-Host "`nServy configuration restore completed successfully!" -ForegroundColor Green
-            Write-Host "Successfully imported $($imported.Count) of $($xmlFileList.Count) service(s)." -ForegroundColor Cyan
+            Write-Host "`nServy 配置还原已成功完成！" -ForegroundColor Green
+            Write-Host "已成功导入 $($imported.Count) / $($xmlFileList.Count) 个服务。" -ForegroundColor Cyan
         }
 
         Write-Host @"
 
 ================================================================================
-CRITICAL SECURITY NOTICE:
+重要安全提示：
 ================================================================================
-The restored dump archive contains highly sensitive information!
-- Service execution parameters, environment variables, and startup arguments
-  were restored from unencrypted plain-text XML configuration files.
-- Ensure the backup zip file is stored securely and access is restricted.
+所还原的转储归档包含高度敏感信息！
+- 服务执行参数、环境变量和启动参数来自未加密的纯文本 XML 配置文件。
+- 请确保备份 zip 文件妥善存放，并限制访问权限。
 
-NOTE ON SERVICE RESTORATION & CREDENTIALS:
-- Service logon Usernames and Passwords were NOT exported for security reasons.
-- Restoring configurations via Servy-Restore.ps1 automatically resets all
-  service logon accounts to 'LocalSystem' by default.
-- You must manually re-enter Logon Usernames and Passwords via Servy Manager,
-  servy-cli, or the PowerShell module for any services that require specific
-  custom service runner accounts.
+关于服务还原与凭据的说明：
+- 出于安全考虑，服务登录用户名和密码不会导出。
+- 通过 Servy-Restore.ps1 还原配置时，默认会将所有服务登录账户重置为 'LocalSystem'。
+- 对于需要特定自定义服务运行账户的服务，必须通过 Servy Manager、
+  servy-cli 或 PowerShell 模块手动重新输入登录用户名和密码。
 ================================================================================
 "@ -ForegroundColor Yellow
 
@@ -463,7 +460,7 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
         }
     }
     catch {
-        Write-Host "`nServy configuration restore FAILED: $_" -ForegroundColor Red
+        Write-Host "`nServy 配置还原失败：$_" -ForegroundColor Red
         exit 4
     }
     finally {
@@ -475,13 +472,13 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
                 Write-Host @"
 
 ================================================================================
-WARNING: EXTRACTION CLEANUP FAILURE DETECTED
+警告：检测到解压清理失败
 ================================================================================
-The temporary extraction directory could not be fully removed:
+临时解压目录未能完全删除：
   $tempExtractDir
 
-It contains UNENCRYPTED PLAIN-TEXT service configurations.
-Please delete this directory manually to prevent credential/config leaks.
+其中包含未加密的纯文本服务配置。
+请手动删除此目录，以防止凭据/配置泄露。
 ================================================================================
 "@ -ForegroundColor Red
             }

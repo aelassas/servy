@@ -1002,4 +1002,26 @@ If the service is disabled and marked for deletion, installation will fail until
   <data name="Automation_ServiceNameHeader_Name" xml:space="preserve">
     <value>Service Name Header</value>
   </data>
+
+  <data name="EventLogLevel_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="EventLogLevel_Information" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="EventLogLevel_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="EventLogLevel_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Account_LocalSystem" xml:space="preserve">
+    <value>Local System</value>
+  </data>
+  <data name="Account_LocalService" xml:space="preserve">
+    <value>Local Service</value>
+  </data>
+  <data name="Account_NetworkService" xml:space="preserve">
+    <value>Network Service</value>
+  </data>
 </root>

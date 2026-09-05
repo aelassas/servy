@@ -64,6 +64,8 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         public static async Task<int> Main(string[] args)
         {
+            CultureHelper.ApplyUiCulture();
+
             using (var cts = new CancellationTokenSource())
             {
                 // Hook Ctrl+C and Ctrl+Break
@@ -73,7 +75,7 @@ namespace Servy.CLI
                     {
                         e.Cancel = true;          // first press: graceful cancellation
                         cts.Cancel();
-                        Console.Error.WriteLine("Cancelling... press Ctrl+C again to force exit.");
+                        Console.Error.WriteLine(Resources.Strings.Msg_CancellingForceExit);
                     }
                     // second press: leave e.Cancel = false -> process terminates
                 };
@@ -95,7 +97,7 @@ namespace Servy.CLI
                     {
                         // Detect a mistyped or unrecognized command that does not start with a global flag dash
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Error.WriteLine($"Error: Unknown command '{firstArg}'. See '--help' for available options.");
+                        Console.Error.WriteLine(string.Format(Resources.Strings.Msg_UnknownCommand, firstArg));
                         Console.ResetColor();
 
                         return (int)CliExitCode.Error;
@@ -126,8 +128,8 @@ namespace Servy.CLI
                                      $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
 
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Error.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
-                        Console.Error.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
+                        Console.Error.WriteLine(string.Format(Resources.Strings.Msg_VulnerableSqliteDetected, detectedVersion));
+                        Console.Error.WriteLine(string.Format(Resources.Strings.Msg_VulnerableSqliteRequirement, AppConfig.MinRequiredSqliteVersion));
                         Console.ResetColor();
 
                         // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
@@ -284,13 +286,13 @@ namespace Servy.CLI
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.Error.WriteLine("\nOperation cancelled by user.");
+                    Console.Error.WriteLine(Resources.Strings.Msg_OperationCancelledByUser);
                     return (int)CliExitCode.Error;
                 }
                 catch (Exception ex)
                 {
                     Logger.Error("An unexpected error occurred in the main execution flow.", ex);
-                    Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
+                    Console.Error.WriteLine(string.Format(Resources.Strings.Msg_UnexpectedErrorWithDetail, ex.Message));
                     return (int)CliExitCode.Error;
                 }
                 finally

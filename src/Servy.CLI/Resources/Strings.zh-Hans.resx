@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Help_Export_Config" xml:space="preserve">
+    <value>配置导出文件类型（xml 或 json）。</value>
+  </data>
+  <data name="Help_Export_Name" xml:space="preserve">
+    <value>要导出的服务名称。</value>
+  </data>
+  <data name="Help_Export_Path" xml:space="preserve">
+    <value>要导出的配置文件路径。</value>
+  </data>
+  <data name="Help_Global_Quiet" xml:space="preserve">
+    <value>抑制旋转指示器，并以非交互模式运行。</value>
+  </data>
+  <data name="Help_Import_Config" xml:space="preserve">
+    <value>配置文件类型（xml 或 json）。</value>
+  </data>
+  <data name="Help_Import_Install" xml:space="preserve">
+    <value>导入后安装服务。如果服务已安装，需要重启服务才能使更改生效。</value>
+  </data>
+  <data name="Help_Import_Path" xml:space="preserve">
+    <value>要导入的配置文件路径。</value>
+  </data>
+  <data name="Help_Install_CpuAffinity" xml:space="preserve">
+    <value>进程可运行的逻辑 CPU（例如 '0-3,8' 或 '0xFF00'）。</value>
+  </data>
+  <data name="Help_Install_DateRotationType" xml:space="preserve">
+    <value>日期轮转类型。选项：Daily、Weekly、Monthly、None（None 禁用基于日期的轮转；仅需大小轮转时使用）。</value>
+  </data>
+  <data name="Help_Install_Debug" xml:space="preserve">
+    <value>是否启用调试日志。启用后，环境变量和进程参数会记录到 Servy.Service.log 文件中。不建议在生产环境中使用，因为这些日志可能包含敏感信息。</value>
+  </data>
+  <data name="Help_Install_Deps" xml:space="preserve">
+    <value>指定此服务所依赖的一个或多个 Windows 服务名称（非显示名称），以分号（;）分隔。每个服务名称只能包含字母、数字、连字符、下划线、句点、空格和美元符号（$），可选择以 '+' 开头以引用加载顺序组，且不得超过 256 个字符。当此服务启动时，Windows 会自动启动已停止的依赖项；如果依赖项被禁用或启动失败，此服务将不会启动。</value>
+  </data>
+  <data name="Help_Install_Description" xml:space="preserve">
+    <value>服务的描述。</value>
+  </data>
+  <data name="Help_Install_DisplayName" xml:space="preserve">
+    <value>在 Windows 服务控制台（services.msc）中显示的可读名称。若留空，将使用服务名称。</value>
+  </data>
+  <data name="Help_Install_EnableConsoleUI" xml:space="preserve">
+    <value>为服务启用控制台用户界面。启用后，将禁用 stdout/stderr 重定向。</value>
+  </data>
+  <data name="Help_Install_EnableDateRotation" xml:space="preserve">
+    <value>根据 --dateRotationType 指定的日期间隔启用基于日期的日志轮转。当同时启用基于大小和基于日期的轮转时，以大小轮转为准。</value>
+  </data>
+  <data name="Help_Install_EnableHealth" xml:space="preserve">
+    <value>启用健康监控。</value>
+  </data>
+  <data name="Help_Install_EnableHeartbeatUrlFlags" xml:space="preserve">
+    <value>在服务启动和失败时向心跳 URL 追加 /start 和 /fail。</value>
+  </data>
+  <data name="Help_Install_EnableRotation" xml:space="preserve">
+    <value>已弃用。启用基于大小的日志轮转。此选项仅为向后兼容而保留。请改用 --enableSizeRotation。</value>
+  </data>
+  <data name="Help_Install_EnableSizeRotation" xml:space="preserve">
+    <value>启用基于大小的日志轮转。</value>
+  </data>
+  <data name="Help_Install_EnvVars" xml:space="preserve">
+    <value>进程的环境变量。按 varName=varValue 格式输入，以分号（;）分隔。使用 \= 转义 '='，\" 转义 '"'，\; 转义 ';'，\\ 转义 '\'，以及 %% 转义 '%'（折叠为单个 '%'）。支持环境变量展开，例如：VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin。 安全警告：请改用 SERVY_ENVIRONMENT_VARIABLES 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_FailureProgramParams" xml:space="preserve">
+    <value>失败程序的附加参数。 安全警告：请改用 SERVY_FAILURE_PROGRAM_PARAMETERS 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_FailureProgramPath" xml:space="preserve">
+    <value>失败程序路径。配置脚本或可执行文件，在封装进程以非零退出码退出（未启用恢复）或所有恢复操作重试均失败（已启用恢复）时运行。进程启动失败时不会运行该程序，该情况会停止服务。支持环境变量展开，例如：%JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_FailureProgramStartupDir" xml:space="preserve">
+    <value>指定失败程序的启动目录。未设置时默认为服务工作目录。支持环境变量展开，例如：%PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_HeartbeatInterval" xml:space="preserve">
+    <value>心跳间隔（秒）。必须介于 5 到 86400 秒之间。</value>
+  </data>
+  <data name="Help_Install_HeartbeatUrl" xml:space="preserve">
+    <value>用于带外诊断心跳探测的绝对 URL。仅在启用健康监控时使用。</value>
+  </data>
+  <data name="Help_Install_HeartbeatUrlTimeoutSeconds" xml:space="preserve">
+    <value>外部心跳 URL 请求的超时时间（秒）。必须介于 2 到 30 秒之间。默认为 10 秒。</value>
+  </data>
+  <data name="Help_Install_MaxFailedChecks" xml:space="preserve">
+    <value>允许的最大失败健康检查次数。必须介于 1 到 100000 之间。</value>
+  </data>
+  <data name="Help_Install_MaxRestartAttempts" xml:space="preserve">
+    <value>失败时的最大重启尝试次数。必须介于 0 到 100000 之间。设为 0 表示不限制重启次数。</value>
+  </data>
+  <data name="Help_Install_MaxRotations" xml:space="preserve">
+    <value>保留的已轮转日志文件最大数量。必须介于 0 到 10000 之间。设为 0 或留空表示不限制。</value>
+  </data>
+  <data name="Help_Install_Name" xml:space="preserve">
+    <value>要安装的唯一服务名称。</value>
+  </data>
+  <data name="Help_Install_Params" xml:space="preserve">
+    <value>进程的附加参数。支持环境变量展开，例如：--params="--data %ProgramData%\MyApp --bin %MY_VAR%\bin"。 安全警告：请改用 SERVY_PROCESS_PARAMETERS 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_Password" xml:space="preserve">
+    <value>服务账户密码。 安全警告：请改用 SERVY_PASSWORD 环境变量，以避免在操作系统进程列表中暴露凭据。</value>
+  </data>
+  <data name="Help_Install_Path" xml:space="preserve">
+    <value>可执行进程的路径。支持环境变量展开，例如：%JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PostLaunchParams" xml:space="preserve">
+    <value>后启动可执行文件的附加参数。 安全警告：请改用 SERVY_POST_LAUNCH_PARAMETERS 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_PostLaunchPath" xml:space="preserve">
+    <value>后启动可执行文件路径。配置可选脚本或可执行文件，在进程成功启动后运行。支持环境变量展开，例如：%JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PostLaunchStartupDir" xml:space="preserve">
+    <value>指定后启动可执行文件的启动目录。未设置时默认为服务工作目录。支持环境变量展开，例如：%PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PostStopParams" xml:space="preserve">
+    <value>后停止可执行文件的附加参数。 安全警告：请改用 SERVY_POST_STOP_PARAMETERS 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_PostStopPath" xml:space="preserve">
+    <value>后停止可执行文件路径。配置可选脚本或可执行文件，在封装进程及其所有子进程退出后运行。后停止进程以即发即弃模式启动，不会阻塞服务关闭。支持环境变量展开，例如：%JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PostStopStartupDir" xml:space="preserve">
+    <value>指定后停止可执行文件的启动目录。未设置时默认为服务工作目录。支持环境变量展开，例如：%PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PreLaunchEnv" xml:space="preserve">
+    <value>预启动可执行文件的环境变量。按 varName=varValue 格式输入，以分号（;）分隔。使用 \= 转义 '='，\" 转义 '"'，\; 转义 ';'，\\ 转义 '\'，以及 %% 转义 '%'（折叠为单个 '%'）。支持环境变量展开，例如：VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin。 安全警告：请改用 SERVY_PRE_LAUNCH_ENVIRONMENT_VARIABLES 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_PreLaunchIgnoreFailure" xml:space="preserve">
+    <value>忽略失败，即使预启动可执行文件失败也启动服务。</value>
+  </data>
+  <data name="Help_Install_PreLaunchParams" xml:space="preserve">
+    <value>预启动可执行文件的附加参数。 安全警告：请改用 SERVY_PRE_LAUNCH_PARAMETERS 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_PreLaunchPath" xml:space="preserve">
+    <value>预启动可执行文件路径。配置可选脚本或可执行文件，在主服务启动前运行。可用于准备配置、获取密钥或其他设置任务。如果预启动脚本失败，除非启用 --preLaunchIgnoreFailure，否则服务将不会启动。支持环境变量展开，例如：%JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PreLaunchRetryAttempts" xml:space="preserve">
+    <value>预启动可执行文件失败时的重试次数。必须介于 0 到 100000 之间。</value>
+  </data>
+  <data name="Help_Install_PreLaunchStartupDir" xml:space="preserve">
+    <value>指定预启动可执行文件的启动目录。未设置时默认为服务工作目录。支持环境变量展开，例如：%PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PreLaunchStderr" xml:space="preserve">
+    <value>预启动可执行文件的 stderr 日志文件路径。</value>
+  </data>
+  <data name="Help_Install_PreLaunchStdout" xml:space="preserve">
+    <value>预启动可执行文件的 stdout 日志文件路径。</value>
+  </data>
+  <data name="Help_Install_PreLaunchTimeout" xml:space="preserve">
+    <value>预启动可执行文件的超时时间。必须介于 0 到 86400 秒之间。将超时设为 0 可按即发即弃模式运行预启动钩子。设为 0 时，钩子启动后服务会立即启动而不等待其完成。仅对不影响服务启动或正常运行的任务使用此模式。在即发即弃模式下，Stdout/Stderr 重定向和重试不可用。</value>
+  </data>
+  <data name="Help_Install_PreStopLogAsError" xml:space="preserve">
+    <value>将预停止失败记录为错误。</value>
+  </data>
+  <data name="Help_Install_PreStopParams" xml:space="preserve">
+    <value>预停止可执行文件的附加参数。 安全警告：请改用 SERVY_PRE_STOP_PARAMETERS 环境变量，以避免在操作系统进程列表中暴露敏感参数。</value>
+  </data>
+  <data name="Help_Install_PreStopPath" xml:space="preserve">
+    <value>预停止可执行文件路径。配置可选脚本或可执行文件，在主服务停止前运行。可用于通知外部系统或释放资源等优雅关闭任务。预停止进程同步运行，运行期间会延长服务停止超时。将超时设为 0 可按即发即弃模式运行预停止进程。支持环境变量展开，例如：%JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PreStopStartupDir" xml:space="preserve">
+    <value>指定预停止可执行文件的启动目录。未设置时默认为服务工作目录。支持环境变量展开，例如：%PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PreStopTimeout" xml:space="preserve">
+    <value>预停止可执行文件的超时时间。将超时设为 0 可按即发即弃模式运行预停止进程。必须介于 0 到 86400 秒之间。</value>
+  </data>
+  <data name="Help_Install_Priority" xml:space="preserve">
+    <value>进程优先级。选项：Idle、BelowNormal、Normal、AboveNormal、High、RealTime。默认为 Normal。</value>
+  </data>
+  <data name="Help_Install_RecoveryAction" xml:space="preserve">
+    <value>失败时的恢复操作。选项：None、RestartService、RestartProcess、RestartComputer。如果服务运行在 NT AUTHORITY\NetworkService、NT AUTHORITY\LocalService 或不具备所需权限的用户账户下，则无法使用重启服务和重启计算机操作。这些账户仅可使用重启进程操作。</value>
+  </data>
+  <data name="Help_Install_RecoveryOnCleanExit" xml:space="preserve">
+    <value>即使进程成功退出也执行恢复操作。默认为 false。</value>
+  </data>
+  <data name="Help_Install_RotationSize" xml:space="preserve">
+    <value>日志轮转大小（兆字节，MB）。必须介于 1 到 10240 MB 之间。</value>
+  </data>
+  <data name="Help_Install_StartTimeout" xml:space="preserve">
+    <value>等待进程成功启动的超时时间（秒），超时则视为启动失败。必须介于 1 到 86400 秒之间。默认为 10 秒。</value>
+  </data>
+  <data name="Help_Install_StartupDir" xml:space="preserve">
+    <value>进程的启动目录。支持环境变量展开，例如：%PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_StartupType" xml:space="preserve">
+    <value>服务启动类型。选项：Automatic、AutomaticDelayedStart、Manual、Disabled。默认为 Automatic。</value>
+  </data>
+  <data name="Help_Install_Stderr" xml:space="preserve">
+    <value>stderr 日志文件路径。</value>
+  </data>
+  <data name="Help_Install_Stdout" xml:space="preserve">
+    <value>stdout 日志文件路径。</value>
+  </data>
+  <data name="Help_Install_StopTimeout" xml:space="preserve">
+    <value>等待进程退出的超时时间（秒）。必须介于 1 到 86400 秒之间。默认为 5 秒。</value>
+  </data>
+  <data name="Help_Install_UseLocalTimeForRotation" xml:space="preserve">
+    <value>使用本地服务器时间进行日志轮转，而不是 UTC。默认为 false。</value>
+  </data>
+  <data name="Help_Install_User" xml:space="preserve">
+    <value>服务账户用户名（例如 .\username、DOMAIN\username、DOMAIN\gMSA$，或内置标识如 NT AUTHORITY\LocalService、NT AUTHORITY\NetworkService、NT SERVICE\MyService 或 IIS APPPOOL\MyPool）。对于内置、虚拟和 gMSA 账户，请将 --password 选项或 SERVY_PASSWORD 环境变量留空。如果未设置此选项，服务将以 Local System 运行。如果服务以非 Local System 账户运行，必须为运行服务的账户授予 %ProgramData%\Servy 的修改权限，并执行强制加固脚本：Set-ServyExePermissions.ps1 -TargetAccount "domain\user"，以防止无特权二进制篡改和本地权限提升。脚本位置与用法请参见：https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory</value>
+  </data>
+  <data name="Help_Restart_Name" xml:space="preserve">
+    <value>要重启的服务名称。</value>
+  </data>
+  <data name="Help_Start_Name" xml:space="preserve">
+    <value>要启动的服务名称。</value>
+  </data>
+  <data name="Help_Status_Name" xml:space="preserve">
+    <value>要查询状态的服务名称。</value>
+  </data>
+  <data name="Help_Stop_Name" xml:space="preserve">
+    <value>要停止的服务名称。</value>
+  </data>
+  <data name="Help_Uninstall_Name" xml:space="preserve">
+    <value>要卸载的服务名称。</value>
+  </data>
+  <data name="Help_Verb_Export" xml:space="preserve">
+    <value>将 Servy Windows 服务配置导出到配置文件。</value>
+  </data>
+  <data name="Help_Verb_Help" xml:space="preserve">
+    <value>显示帮助信息。</value>
+  </data>
+  <data name="Help_Verb_Import" xml:space="preserve">
+    <value>将 Windows 服务配置导入 Servy 数据库，并可选择安装该服务。</value>
+  </data>
+  <data name="Help_Verb_Install" xml:space="preserve">
+    <value>安装 Windows 服务。</value>
+  </data>
+  <data name="Help_Verb_Restart" xml:space="preserve">
+    <value>重启 Windows 服务。</value>
+  </data>
+  <data name="Help_Verb_Start" xml:space="preserve">
+    <value>启动 Windows 服务。</value>
+  </data>
+  <data name="Help_Verb_Status" xml:space="preserve">
+    <value>获取 Windows 服务的当前状态。可能的结果：NotInstalled、Stopped、StartPending、StopPending、Running、ContinuePending、PausePending、Paused、Unknown。</value>
+  </data>
+  <data name="Help_Verb_Stop" xml:space="preserve">
+    <value>停止 Windows 服务。</value>
+  </data>
+  <data name="Help_Verb_Uninstall" xml:space="preserve">
+    <value>卸载 Windows 服务。</value>
+  </data>
+  <data name="Msg_PreparingEnvironment" xml:space="preserve">
+    <value>正在准备环境...</value>
+  </data>
+  <data name="Msg_AdminPrivilegesRequired" xml:space="preserve">
+    <value>访问被拒绝。请以管理员身份重新启动 shell 以运行“{0}”命令。</value>
+  </data>
+  <data name="Msg_UnknownError" xml:space="preserve">
+    <value>发生未知错误。</value>
+  </data>
+  <data name="Msg_InvalidExecutablePath" xml:space="preserve">
+    <value>无效的可执行文件路径：{0}。请确保文件存在且可访问。</value>
+  </data>
+  <data name="Msg_WrapperNotFound" xml:space="preserve">
+    <value>未找到包装器可执行文件：{0}。请确保已正确安装 Servy。</value>
+  </data>
+  <data name="Msg_PathRequired" xml:space="preserve">
+    <value>必须提供文件路径。</value>
+  </data>
+  <data name="Msg_ConfigFileTypeRequired" xml:space="preserve">
+    <value>必须指定配置文件类型（XML 或 JSON）。</value>
+  </data>
+  <data name="Msg_UnsupportedFileType" xml:space="preserve">
+    <value>不支持的配置文件类型：{0}</value>
+  </data>
+  <data name="Msg_ImportFormatInvalid" xml:space="preserve">
+    <value>{0} 文件无效：{1}</value>
+  </data>
+  <data name="Msg_ImportRepoFailure" xml:space="preserve">
+    <value>无法将 {0} 配置导入存储库。</value>
+  </data>
+  <data name="Msg_ImportDeserializationFailure" xml:space="preserve">
+    <value>无法反序列化服务配置。未导入任何内容。</value>
+  </data>
+  <data name="Msg_ImportInstallSuccess" xml:space="preserve">
+    <value>{0} 配置已保存，服务“{1}”安装成功。</value>
+  </data>
+  <data name="Msg_ImportInstallLookupFailure" xml:space="preserve">
+    <value>服务配置已保存，但无法找到服务“{0}”以进行安装。</value>
+  </data>
+  <data name="Msg_ImportInstallGeneralFailure" xml:space="preserve">
+    <value>服务配置已保存，但服务“{0}”安装失败。</value>
+  </data>
+  <data name="Msg_ExportSuccess" xml:space="preserve">
+    <value>{0} 配置已成功导出到：{1}</value>
+  </data>
+  <data name="Msg_ImportSuccessNoInstall" xml:space="preserve">
+    <value>{0} 配置导入成功。</value>
+  </data>
+  <data name="Msg_InstallSuccess" xml:space="preserve">
+    <value>服务“{0}”安装成功。</value>
+  </data>
+  <data name="Msg_RestartSuccess" xml:space="preserve">
+    <value>服务“{0}”重启成功。</value>
+  </data>
+  <data name="Msg_ServiceStatusResult" xml:space="preserve">
+    <value>服务“{0}”的状态：{1}</value>
+  </data>
+  <data name="Msg_StartSuccess" xml:space="preserve">
+    <value>服务“{0}”启动成功。</value>
+  </data>
+  <data name="Msg_StopSuccess" xml:space="preserve">
+    <value>服务“{0}”停止成功。</value>
+  </data>
+  <data name="Msg_UninstallServiceNotInstalled" xml:space="preserve">
+    <value>服务“{0}”未安装在 Windows SCM 中；已清除残留的数据库配置。</value>
+  </data>
+  <data name="Msg_UninstallSuccess" xml:space="preserve">
+    <value>服务“{0}”卸载成功。</value>
+  </data>
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>指定的服务已禁用。</value>
+  </data>
+  <data name="Msg_CommandCancelled" xml:space="preserve">
+    <value>操作“{0}”已被用户取消。</value>
+  </data>
+  <data name="Msg_CommandFailedTemplate" xml:space="preserve">
+    <value>{0}失败：{1}</value>
+  </data>
+  <data name="Msg_SuggestionTemplate" xml:space="preserve">
+    <value>建议：{0}</value>
+  </data>
+  <data name="Msg_InvalidIntegerFormat" xml:space="preserve">
+    <value>{0} 的整数格式无效：“{1}”</value>
+  </data>
+  <data name="Msg_InvalidEnumValue" xml:space="preserve">
+    <value>{0} 的值无效：“{1}”。有效选项：{2}</value>
+  </data>
+
+  <data name="Msg_InstallServiceAction" xml:space="preserve">
+    <value>安装服务“{0}”</value>
+  </data>
+  <data name="Msg_InstallServiceSuggestion" xml:space="preserve">
+    <value>请确保可执行文件路径正确、服务名称未被占用，并以管理员权限运行。</value>
+  </data>
+  <data name="Msg_StartServiceAction" xml:space="preserve">
+    <value>启动服务“{0}”</value>
+  </data>
+  <data name="Msg_StartServiceSuggestion" xml:space="preserve">
+    <value>请确保服务已安装、可执行文件路径有效，且服务账户具有“作为服务登录”权限。</value>
+  </data>
+  <data name="Msg_StopServiceAction" xml:space="preserve">
+    <value>停止服务“{0}”</value>
+  </data>
+  <data name="Msg_StopServiceSuggestion" xml:space="preserve">
+    <value>请确保具有管理员权限。如果服务无响应，可能需要通过任务管理器手动终止进程。</value>
+  </data>
+  <data name="Msg_RestartServiceAction" xml:space="preserve">
+    <value>重启服务“{0}”</value>
+  </data>
+  <data name="Msg_RestartServiceSuggestion" xml:space="preserve">
+    <value>请确保服务当前已安装，且您的账户具有足够的权限来停止和启动服务。</value>
+  </data>
+  <data name="Msg_UninstallServiceAction" xml:space="preserve">
+    <value>卸载服务“{0}”</value>
+  </data>
+  <data name="Msg_UninstallServiceSuggestion" xml:space="preserve">
+    <value>请确保在卸载前已停止服务，并以管理员身份运行此命令。</value>
+  </data>
+  <data name="Msg_ServiceStatusAction" xml:space="preserve">
+    <value>查询服务“{0}”的状态</value>
+  </data>
+  <data name="Msg_ServiceStatusSuggestion" xml:space="preserve">
+    <value>请核实服务名称拼写正确，且该服务当前已安装在本系统上。</value>
+  </data>
+  <data name="Msg_ExportServiceAction" xml:space="preserve">
+    <value>导出服务“{0}”的配置</value>
+  </data>
+  <data name="Msg_ExportServiceSuggestion" xml:space="preserve">
+    <value>请确保服务存在于数据库中，并且您对目标路径具有写入权限。</value>
+  </data>
+  <data name="Msg_ImportServiceAction" xml:space="preserve">
+    <value>从“{0}”导入配置</value>
+  </data>
+  <data name="Msg_ImportServiceSuggestion" xml:space="preserve">
+    <value>请检查文件路径是否正确、文件格式是否为有效的 JSON 或 XML，以及您是否具有读取权限。</value>
+  </data>
+  <data name="Msg_PostSuccessSyncFailed" xml:space="preserve">
+    <value>{0}：服务操作已成功完成，但对“{1}”的成功后存储库同步失败：{2}</value>
+  </data>
+  <data name="Msg_ServiceOperationFailed" xml:space="preserve">
+    <value>{0}：{1}失败：{2}</value>
+  </data>
+  <data name="Msg_LogFailedUnauthorized" xml:space="preserve">
+    <value>{0}失败（未授权）</value>
+  </data>
+  <data name="Msg_LogFailed" xml:space="preserve">
+    <value>{0}失败</value>
+  </data>
+  <data name="Msg_CancellingForceExit" xml:space="preserve">
+    <value>正在取消... 再次按 Ctrl+C 可强制退出。</value>
+  </data>
+  <data name="Msg_UnknownCommand" xml:space="preserve">
+    <value>错误：未知命令“{0}”。请使用“--help”查看可用选项。</value>
+  </data>
+  <data name="Msg_VulnerableSqliteDetected" xml:space="preserve">
+    <value>[严重] 检测到存在漏洞的 SQLite 版本：{0}</value>
+  </data>
+  <data name="Msg_VulnerableSqliteRequirement" xml:space="preserve">
+    <value>此版本的 Servy 需要 SQLite {0} 或更高版本。</value>
+  </data>
+  <data name="Msg_OperationCancelledByUser" xml:space="preserve">
+    <value>操作已被用户取消。</value>
+  </data>
+  <data name="Msg_UnexpectedErrorWithDetail" xml:space="preserve">
+    <value>发生意外错误：{0}</value>
+  </data>
+</root>

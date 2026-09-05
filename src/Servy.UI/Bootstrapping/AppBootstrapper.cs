@@ -110,6 +110,9 @@ namespace Servy.UI.Bootstrapping
         /// <returns><see langword="true"/> if security and environment checks passed; otherwise <see langword="false"/>.</returns>
         public bool OnStartup(Application app, StartupEventArgs e)
         {
+            // 0. Apply optional UI culture override before any localized strings are read
+            CultureHelper.ApplyUiCulture();
+
             // 1. Initialize Configuration and Logger settings immediately
             LoadConfiguration();
 

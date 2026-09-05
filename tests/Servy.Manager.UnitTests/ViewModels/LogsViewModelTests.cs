@@ -261,7 +261,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void LogLevels_Get_ExcludesCriticalAndVerbose()
         {
             // Act
-            var levels = LogsViewModel.LogLevels;
+            var levels = LogsViewModel.LogLevels.Select(i => i.Value).ToList();
 
             // Assert
             Assert.DoesNotContain(EventLogLevel.Critical, levels);
@@ -270,6 +270,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Contains(EventLogLevel.Error, levels);
             Assert.Contains(EventLogLevel.Information, levels);
             Assert.Contains(EventLogLevel.Warning, levels);
+            Assert.All(LogsViewModel.LogLevels, i => Assert.False(string.IsNullOrWhiteSpace(i.DisplayName)));
         }
 
         #endregion

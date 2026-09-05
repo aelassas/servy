@@ -1,0 +1,1027 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_SecurityWarningTitle" xml:space="preserve">
+    <value>需要提升权限</value>
+  </data>
+  <data name="Msg_SecurityWarningMessage" xml:space="preserve">
+    <value>Servy Manager 需要管理员权限才能管理系统服务。</value>
+  </data>
+
+  <data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
+    <value>安全警报</value>
+  </data>
+  <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
+    <value>严重安全风险：您的系统正在使用过时的 SQLite 引擎（{0}）。此版本的应用程序需要 SQLite {1} 或更高版本，以缓解 CVE-2025-6965。</value>
+  </data>
+
+  <!-- Splash screen -->
+  <data name="Splash_Text" xml:space="preserve">
+    <value>正在加载 Servy Manager...</value>
+  </data>
+
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>导入 XML 配置</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>导入 JSON 配置</value>
+  </data>
+
+  <data name="Menu_Config" xml:space="preserve">
+    <value>配置器</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>帮助</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>帮助 / 文档</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>检查更新...</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>关于 Servy Manager</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+    <value>
+Servy Manager {0}
+
+Servy Manager 为使用 Servy 创建的 Windows 服务提供简洁易用的管理界面。可轻松启动、停止、配置和监视服务。
+
+使用 {1} 构建
+
+基于 MIT 许可证授权。
+
+Copyright © {2} Akram El Assas. 保留所有权利。
+    </value>
+  </data>
+
+  <!-- Tabs -->
+  <data name="Label_ServicesTab" xml:space="preserve">
+    <value>服务</value>
+  </data>
+  <data name="Label_LogsTab" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="Label_PerformanceTab" xml:space="preserve">
+    <value>性能</value>
+  </data>
+  <data name="Label_ConsoleTab" xml:space="preserve">
+    <value>控制台</value>
+  </data>
+  <data name="Label_DependenciesTab" xml:space="preserve">
+    <value>依赖关系</value>
+  </data>
+
+  <data name="Console_Info" xml:space="preserve">
+    <value>启用服务的 stdout/stderr 重定向以实时监视控制台输出</value>
+  </data>
+  <data name="Label_Copy" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="Button_Resume" xml:space="preserve">
+    <value>▶ 继续</value>
+  </data>
+  <data name="Tooltip_Resume" xml:space="preserve">
+    <value>恢复实时更新</value>
+  </data>
+
+  <data name="Dependencies_Info" xml:space="preserve">
+    <value>服务依赖树（通过 SCM）</value>
+  </data>
+  <data name="Button_Refresh" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="Tooltip_Refresh" xml:space="preserve">
+    <value>刷新服务依赖树</value>
+  </data>
+  <data name="Button_ExpandAll" xml:space="preserve">
+    <value>全部展开</value>
+  </data>
+  <data name="Tooltip_ExpandAll" xml:space="preserve">
+    <value>展开依赖树中的所有节点</value>
+  </data>
+  <data name="Button_CollapseAll" xml:space="preserve">
+    <value>全部折叠</value>
+  </data>
+  <data name="Tooltip_CollapseAll" xml:space="preserve">
+    <value>折叠依赖树中的所有节点</value>
+  </data>
+  <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
+    <value>状态：正在运行（绿色）、已停止（红色）、循环（橙色）</value>
+  </data>
+  <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
+    <value>按 F5 刷新依赖树</value>
+  </data>
+  <data name="Tooltip_Cycle" xml:space="preserve">
+    <value>检测到循环依赖</value>
+  </data>
+  <data name="Tooltip_ServiceRunning" xml:space="preserve">
+    <value>此服务正在运行</value>
+  </data>
+  <data name="Tooltip_ServiceStopped" xml:space="preserve">
+    <value>此服务已停止</value>
+  </data>
+
+  <!-- Search -->
+  <data name="Button_Search" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="Button_Searching" xml:space="preserve">
+    <value>正在搜索...</value>
+  </data>
+  <data name="Label_F5_Shortcut" xml:space="preserve">
+    <value>服务状态自动刷新 - 按 F5 刷新完整列表</value>
+  </data>
+  <data name="Label_F5_Shortcut_Logs" xml:space="preserve">
+    <value>按 F5 刷新日志</value>
+  </data>
+
+  <!-- Services DataGrid -->
+  <data name="Column_Name" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="Column_Description" xml:space="preserve">
+    <value>描述</value>
+  </data>
+  <data name="Column_Status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Column_StartupType" xml:space="preserve">
+    <value>启动类型</value>
+  </data>
+  <data name="Column_LogOnAs" xml:space="preserve">
+    <value>登录身份</value>
+  </data>
+
+  <!-- Status -->
+  <data name="Status_Stopped" xml:space="preserve">
+    <value>已停止</value>
+  </data>
+  <data name="Status_StartPending" xml:space="preserve">
+    <value>正在启动</value>
+  </data>
+  <data name="Status_StopPending" xml:space="preserve">
+    <value>正在停止</value>
+  </data>
+  <data name="Status_Running" xml:space="preserve">
+    <value>正在运行</value>
+  </data>
+  <data name="Status_ContinuePending" xml:space="preserve">
+    <value>正在继续</value>
+  </data>
+  <data name="Status_PausePending" xml:space="preserve">
+    <value>正在暂停</value>
+  </data>
+  <data name="Status_Paused" xml:space="preserve">
+    <value>已暂停</value>
+  </data>
+  <data name="Status_NotInstalled" xml:space="preserve">
+    <value>未安装</value>
+  </data>
+  <data name="Status_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+
+  <data name="Label_Fetching" xml:space="preserve">
+    <value>正在获取...</value>
+  </data>
+
+  <!-- Actions -->
+  <data name="Button_Start" xml:space="preserve">
+    <value>启动</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>重启</value>
+  </data>
+  <data name="Button_More" xml:space="preserve">
+    <value>更多操作</value>
+  </data>
+
+  <data name="Button_StartSelected" xml:space="preserve">
+    <value>启动所选</value>
+  </data>
+  <data name="Button_StopSelected" xml:space="preserve">
+    <value>停止所选</value>
+  </data>
+  <data name="Button_RestartSelected" xml:space="preserve">
+    <value>重启所选</value>
+  </data>
+
+  <data name="Msg_NoServicesSelected" xml:space="preserve">
+    <value>未选择任何服务。</value>
+  </data>
+  <data name="Confirm_StartSelectedServices" xml:space="preserve">
+    <value>是否启动所选服务？</value>
+  </data>
+  <data name="Confirm_StopSelectedServices" xml:space="preserve">
+    <value>是否停止所选服务？</value>
+  </data>
+  <data name="Confirm_RestartSelectedServices" xml:space="preserve">
+    <value>是否重启所选服务？</value>
+  </data>
+  <data name="Msg_OperationCompletedSuccessfully" xml:space="preserve">
+    <value>操作已成功完成。</value>
+  </data>
+  <data name="Msg_OperationCompletedWithErrorsDetails" xml:space="preserve">
+    <value>对以下项执行操作时出错：{0}</value>
+  </data>
+  <data name="Msg_AllOperationsFailed" xml:space="preserve">
+    <value>所有操作均失败。</value>
+  </data>
+
+  <data name="Button_Install" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>卸载</value>
+  </data>
+  <data name="Button_Remove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="Button_Config" xml:space="preserve">
+    <value>打开配置</value>
+  </data>
+  <data name="Button_ExportXML" xml:space="preserve">
+    <value>导出 XML</value>
+  </data>
+  <data name="Button_ExportJSON" xml:space="preserve">
+    <value>导出 JSON</value>
+  </data>
+
+  <!-- Startup Type Items -->
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>自动</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
+  </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>自动（延迟启动）</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>手动</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>已禁用</value>
+  </data>
+  <data name="StartupType_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+
+  <!-- XML/JSON import -->
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>加载 XML 服务配置失败。</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>加载 JSON 服务配置失败。</value>
+  </data>
+  <data name="ImportXml_Success" xml:space="preserve">
+    <value>XML 配置已成功导入。</value>
+  </data>
+  <data name="ImportJson_Success" xml:space="preserve">
+    <value>JSON 配置已成功导入。</value>
+  </data>
+  <data name="ImportXml_Error" xml:space="preserve">
+    <value>导入 XML 配置失败。</value>
+  </data>
+  <data name="ImportJson_Error" xml:space="preserve">
+    <value>导入 JSON 配置失败。</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>导出 XML 配置</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>导出 JSON 配置</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>XML 配置已成功导出。</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>JSON 配置已成功导出。</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>未找到服务包装程序可执行文件。</value>
+  </data>
+
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>服务已成功安装。</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>发生意外错误。</value>
+  </data>
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>服务已成功启动。</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>服务已成功停止。</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>服务已成功重启。</value>
+  </data>
+
+  <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
+    <value>确定要卸载此服务吗？所有服务配置将永久丢失且无法恢复。</value>
+  </data>
+  <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
+    <value>确定要移除此服务吗？所有服务配置将永久丢失且无法恢复。</value>
+  </data>
+  <data name="Msg_DesktopAppNotFound" xml:space="preserve">
+    <value>未找到 Servy 桌面应用。</value>
+  </data>
+
+  <!-- Logs View -->
+  <data name="Label_Level" xml:space="preserve">
+    <value>级别：</value>
+  </data>
+  <data name="Label_From" xml:space="preserve">
+    <value>从：</value>
+  </data>
+  <data name="Label_To" xml:space="preserve">
+    <value>到：</value>
+  </data>
+  <data name="Label_Keyword" xml:space="preserve">
+    <value>关键字：</value>
+  </data>
+
+  <data name="Column_Time" xml:space="preserve">
+    <value>时间</value>
+  </data>
+  <data name="Column_Level" xml:space="preserve">
+    <value>级别</value>
+  </data>
+  <data name="Column_Message" xml:space="preserve">
+    <value>消息</value>
+  </data>
+
+  <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
+    <value>切换选项卡时出错。请重试。</value>
+  </data>
+
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>已存在同名服务。是否要替换它？
+
+如果该服务已禁用并标记为删除，则在重启电脑之前安装将失败。</value>
+  </data>
+  <data name="Msg_ImportServiceConfirmation" xml:space="preserve">
+    <value>已存在同名服务。是否要替换它？
+
+导入后需要点击“安装”并重启服务，更改才会生效。
+如果该服务已禁用并标记为删除，则在重启电脑之前安装将失败。</value>
+  </data>
+
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>指定的服务已禁用。</value>
+  </data>
+
+  <!-- PID -->
+  <data name="Column_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="Button_CopyPid" xml:space="preserve">
+    <value>复制 PID</value>
+  </data>
+  <data name="Msg_PidCopied" xml:space="preserve">
+    <value>PID 已复制到剪贴板。</value>
+  </data>
+  <data name="Msg_PidCopyFailed" xml:space="preserve">
+    <value>复制 PID 到剪贴板失败。</value>
+  </data>
+
+  <!-- CPU/RAM -->
+  <data name="Column_CPU" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Column_RAM" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+
+  <!-- Performance tab -->
+  <data name="Column_Service" xml:space="preserve">
+    <value>服务</value>
+  </data>
+  <data name="Label_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="Label_CPU" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Label_RAM" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+
+  <!-- Console Tab -->
+  <data name="Label_ConsoleFilter" xml:space="preserve">
+    <value>🔍 筛选：</value>
+  </data>
+
+  <!-- Miscellaneous -->
+  <data name="Msg_DesktopAppLaunchFailed" xml:space="preserve">
+    <value>启动桌面应用程序失败。</value>
+  </data>
+
+  <!-- Service Footer Templates -->
+  <data name="Footer_Service_None" xml:space="preserve">
+    <value>在 {1} 内未加载任何服务</value>
+  </data>
+  <data name="Footer_Service_One" xml:space="preserve">
+    <value>在 {1} 内加载了 1 个服务</value>
+  </data>
+  <data name="Footer_Service_Many" xml:space="preserve">
+    <value>在 {1} 内加载了 {0} 个服务</value>
+  </data>
+
+  <!-- Log Footer Templates -->
+  <data name="Footer_Log_None" xml:space="preserve">
+    <value>在 {1} 内未找到日志</value>
+  </data>
+  <data name="Footer_Log_One" xml:space="preserve">
+    <value>在 {1} 内找到 1 条日志</value>
+  </data>
+  <data name="Footer_Log_Many" xml:space="preserve">
+    <value>在 {1} 内找到 {0} 条日志</value>
+  </data>
+
+  <data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
+    <value>加载服务依赖树失败。</value>
+  </data>
+  <data name="Tooltip_DependencyUnavailable" xml:space="preserve">
+    <value>此依赖项不可用或无法访问。</value>
+  </data>  
+
+  <!-- Automation Properties -->
+  <data name="Automation_MainWindow_Name" xml:space="preserve">
+    <value>Servy Manager 窗口</value>
+  </data>
+  <data name="Automation_MainWindow_HelpText" xml:space="preserve">
+    <value>Servy 服务管理器的主界面，用于配置服务参数并监视执行情况。</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>主菜单</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>提供导入配置、配置设置和访问帮助的选项。</value>
+  </data>
+
+  <data name="Automation_ImportMenu_HelpText" xml:space="preserve">
+    <value>打开用于导入服务配置的菜单。</value>
+  </data>
+  <data name="Automation_ImportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>从 XML 文件导入服务配置。</value>
+  </data>
+  <data name="Automation_ImportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>从 JSON 文件导入服务配置。</value>
+  </data>
+
+  <data name="Automation_ConfigMenu_HelpText" xml:space="preserve">
+    <value>打开所选服务的配置应用。</value>
+  </data>
+
+  <data name="Automation_HelpMenu_HelpText" xml:space="preserve">
+    <value>打开包含文档和更新选项的菜单。</value>
+  </data>
+  <data name="Automation_DocMenuItem_HelpText" xml:space="preserve">
+    <value>打开官方 Servy 文档。</value>
+  </data>
+  <data name="Automation_CheckUpdatesMenuItem_HelpText" xml:space="preserve">
+    <value>检查是否有新版本的 Servy 可用。</value>
+  </data>
+  <data name="Automation_AboutMenuItem_HelpText" xml:space="preserve">
+    <value>显示应用程序信息和版权详细信息。</value>
+  </data>
+
+  <data name="Automation_MainTabControl_Name" xml:space="preserve">
+    <value>主导航选项卡</value>
+  </data>
+  <data name="Automation_MainTabControl_HelpText" xml:space="preserve">
+    <value>允许在服务、性能、控制台、依赖关系和日志视图之间切换。</value>
+  </data>
+
+  <data name="Automation_MainTab_Name" xml:space="preserve">
+    <value>服务选项卡</value>
+  </data>
+  <data name="Automation_MainTab_HelpText" xml:space="preserve">
+    <value>显示托管服务的主列表。</value>
+  </data>
+
+  <data name="Automation_SearchTextBox_Name" xml:space="preserve">
+    <value>搜索服务</value>
+  </data>
+  <data name="Automation_SearchTextBox_HelpText" xml:space="preserve">
+    <value>输入关键字以筛选服务列表。</value>
+  </data>
+
+  <data name="Automation_SearchButton_HelpText" xml:space="preserve">
+    <value>执行服务搜索。</value>
+  </data>
+
+  <data name="Automation_ServicesDataGrid_Name" xml:space="preserve">
+    <value>服务列表</value>
+  </data>
+  <data name="Automation_ServicesDataGrid_HelpText" xml:space="preserve">
+    <value>托管服务的列表。</value>
+  </data>
+
+  <data name="Automation_SelectAllColumnHeader_Name" xml:space="preserve">
+    <value>全选服务列</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_Name" xml:space="preserve">
+    <value>全选服务</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_HelpText" xml:space="preserve">
+    <value>选择或取消选择列表中的所有服务。</value>
+  </data>
+
+  <data name="Automation_SelectServiceCheckBox_Name" xml:space="preserve">
+    <value>选择服务</value>
+  </data>
+  <data name="Automation_SelectServiceCheckBox_HelpText" xml:space="preserve">
+    <value>选择此服务以执行批量操作。</value>
+  </data>
+
+  <data name="Automation_NameColumnHeader_Name" xml:space="preserve">
+    <value>名称列</value>
+  </data>
+  <data name="Automation_NameColumnCell_HelpText" xml:space="preserve">
+    <value>服务的名称。</value>
+  </data>
+
+  <data name="Automation_DescriptionColumnHeader_Name" xml:space="preserve">
+    <value>描述列</value>
+  </data>
+  <data name="Automation_DescriptionColumnCell_HelpText" xml:space="preserve">
+    <value>服务的描述。</value>
+  </data>
+
+  <data name="Automation_StatusColumnHeader_Name" xml:space="preserve">
+    <value>状态列</value>
+  </data>
+  <data name="Automation_StatusColumnCell_HelpText" xml:space="preserve">
+    <value>服务的当前状态。</value>
+  </data>
+
+  <data name="Automation_StartupTypeColumnHeader_Name" xml:space="preserve">
+    <value>启动类型列</value>
+  </data>
+  <data name="Automation_StartupTypeColumnCell_HelpText" xml:space="preserve">
+    <value>服务配置的启动类型。</value>
+  </data>
+
+  <data name="Automation_LogOnAsColumnHeader_Name" xml:space="preserve">
+    <value>用户会话列</value>
+  </data>
+  <data name="Automation_LogOnAsColumnCell_HelpText" xml:space="preserve">
+    <value>服务运行所使用的用户账户。</value>
+  </data>
+
+  <data name="Automation_PidColumnHeader_Name" xml:space="preserve">
+    <value>PID 列</value>
+  </data>
+  <data name="Automation_PidColumnCell_HelpText" xml:space="preserve">
+    <value>正在运行的服务的进程标识符（PID）。</value>
+  </data>
+
+  <data name="Automation_CpuColumnHeader_Name" xml:space="preserve">
+    <value>CPU 列</value>
+  </data>
+  <data name="Automation_CpuColumnCell_HelpText" xml:space="preserve">
+    <value>服务当前的 CPU 使用率。</value>
+  </data>
+
+  <data name="Automation_RamColumnHeader_Name" xml:space="preserve">
+    <value>RAM 列</value>
+  </data>
+  <data name="Automation_RamColumnCell_HelpText" xml:space="preserve">
+    <value>服务当前的内存使用量。</value>
+  </data>
+
+  <data name="Automation_ActionsColumnHeader_Name" xml:space="preserve">
+    <value>操作列</value>
+  </data>
+
+  <data name="Automation_StartSelectedButton_HelpText" xml:space="preserve">
+    <value>启动所有所选服务。</value>
+  </data>
+
+  <data name="Automation_StopSelectedButton_HelpText" xml:space="preserve">
+    <value>停止所有所选服务。</value>
+  </data>
+
+  <data name="Automation_RestartSelectedButton_HelpText" xml:space="preserve">
+    <value>重启所有所选服务。</value>
+  </data>
+
+  <data name="Automation_StartServiceButton_Name" xml:space="preserve">
+    <value>启动服务</value>
+  </data>
+  <data name="Automation_StartServiceButton_HelpText" xml:space="preserve">
+    <value>启动当前服务。</value>
+  </data>
+
+  <data name="Automation_StopServiceButton_Name" xml:space="preserve">
+    <value>停止服务</value>
+  </data>
+  <data name="Automation_StopServiceButton_HelpText" xml:space="preserve">
+    <value>停止当前服务。</value>
+  </data>
+
+  <data name="Automation_RestartServiceButton_Name" xml:space="preserve">
+    <value>重启服务</value>
+  </data>
+  <data name="Automation_RestartServiceButton_HelpText" xml:space="preserve">
+    <value>重启当前服务。</value>
+  </data>
+
+  <data name="Automation_MoreActionsButton_HelpText" xml:space="preserve">
+    <value>打开包含当前服务其他操作的菜单。</value>
+  </data>
+
+  <data name="Automation_RowInstallMenuItem_Name" xml:space="preserve">
+    <value>安装服务</value>
+  </data>
+  <data name="Automation_RowInstallMenuItem_HelpText" xml:space="preserve">
+    <value>将服务配置安装到系统。</value>
+  </data>
+
+  <data name="Automation_RowUninstallMenuItem_Name" xml:space="preserve">
+    <value>卸载服务</value>
+  </data>
+  <data name="Automation_RowUninstallMenuItem_HelpText" xml:space="preserve">
+    <value>从系统卸载该服务。</value>
+  </data>
+
+  <data name="Automation_RowRemoveMenuItem_Name" xml:space="preserve">
+    <value>移除服务</value>
+  </data>
+  <data name="Automation_RowRemoveMenuItem_HelpText" xml:space="preserve">
+    <value>从 Servy Manager 列表中移除此服务。</value>
+  </data>
+
+  <data name="Automation_RowConfigMenuItem_Name" xml:space="preserve">
+    <value>配置服务</value>
+  </data>
+  <data name="Automation_RowConfigMenuItem_HelpText" xml:space="preserve">
+    <value>打开此服务的配置应用。</value>
+  </data>
+
+  <data name="Automation_RowExportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>将当前服务配置导出为 XML 文件。</value>
+  </data>
+
+  <data name="Automation_RowExportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>将当前服务配置导出为 JSON 文件。</value>
+  </data>
+
+  <data name="Automation_RowCopyPidMenuItem_HelpText" xml:space="preserve">
+    <value>将服务当前的进程 ID 复制到剪贴板。</value>
+  </data>
+
+  <data name="Automation_PerformanceTab_Name" xml:space="preserve">
+    <value>性能选项卡</value>
+  </data>
+  <data name="Automation_PerformanceTab_HelpText" xml:space="preserve">
+    <value>显示正在运行服务的实时 CPU 和内存使用统计信息。</value>
+  </data>
+
+  <data name="Automation_ConsoleTab_Name" xml:space="preserve">
+    <value>控制台选项卡</value>
+  </data>
+  <data name="Automation_ConsoleTab_HelpText" xml:space="preserve">
+    <value>显示所选服务的实时标准输出和错误日志。</value>
+  </data>
+
+  <data name="Automation_DependenciesTab_Name" xml:space="preserve">
+    <value>依赖关系选项卡</value>
+  </data>
+  <data name="Automation_DependenciesTab_HelpText" xml:space="preserve">
+    <value>显示服务依赖树和状态层次结构。</value>
+  </data>
+
+  <data name="Automation_LogsTab_Name" xml:space="preserve">
+    <value>日志选项卡</value>
+  </data>
+  <data name="Automation_LogsTab_HelpText" xml:space="preserve">
+    <value>显示服务的系统事件和诊断记录列表。</value>
+  </data>
+
+  <data name="Automation_MainFooterText_HelpText" xml:space="preserve">
+    <value>显示已加载服务的总数和执行时间。</value>
+  </data>
+
+  <data name="Automation_MainShortcutInfo_HelpText" xml:space="preserve">
+    <value>提示按 F5 可刷新服务列表。</value>
+  </data>
+
+  <!-- Performance View Specific Automation Properties -->
+  <data name="Automation_PerformanceView_Name" xml:space="preserve">
+    <value>性能监视视图</value>
+  </data>
+  <data name="Automation_PerformanceView_HelpText" xml:space="preserve">
+    <value>显示所选进程的资源使用统计信息。</value>
+  </data>
+
+  <data name="Automation_PerformanceServiceList_Name" xml:space="preserve">
+    <value>服务选择器</value>
+  </data>
+  <data name="Automation_PerformanceServiceList_HelpText" xml:space="preserve">
+    <value>从列表中选择服务以查看其性能数据。</value>
+  </data>
+
+  <data name="Automation_PidValue_Name" xml:space="preserve">
+    <value>进程 ID</value>
+  </data>
+  <data name="Automation_PidValue_HelpText" xml:space="preserve">
+    <value>显示当前所选服务进程的进程 ID。</value>
+  </data>
+
+  <data name="Automation_CopyPidButton_HelpText" xml:space="preserve">
+    <value>将进程 ID 复制到剪贴板。</value>
+  </data>
+
+  <data name="Automation_CpuGraphGrid_Name" xml:space="preserve">
+    <value>CPU 使用率图表</value>
+  </data>
+  <data name="Automation_CpuGraphGrid_HelpText" xml:space="preserve">
+    <value>CPU 使用百分比的历史视图。</value>
+  </data>
+
+  <data name="Automation_CpuUsageLabel_Name" xml:space="preserve">
+    <value>当前 CPU 使用率</value>
+  </data>
+  <data name="Automation_CpuUsageLabel_HelpText" xml:space="preserve">
+    <value>显示服务进程实时占用的 CPU 百分比。</value>
+  </data>
+
+  <data name="Automation_RamGraphGrid_Name" xml:space="preserve">
+    <value>RAM 使用量图表</value>
+  </data>
+  <data name="Automation_RamGraphGrid_HelpText" xml:space="preserve">
+    <value>内存使用量的历史视图。</value>
+  </data>
+
+  <data name="Automation_RamUsageLabel_Name" xml:space="preserve">
+    <value>当前 RAM 使用量</value>
+  </data>
+  <data name="Automation_RamUsageLabel_HelpText" xml:space="preserve">
+    <value>显示服务进程的实时内存使用量。</value>
+  </data>
+
+  <!-- Console View Specific Automation Properties -->
+  <data name="Automation_ConsoleViewRoot_Name" xml:space="preserve">
+    <value>控制台输出视图</value>
+  </data>
+  <data name="Automation_ConsoleViewRoot_HelpText" xml:space="preserve">
+    <value>显示所选服务的实时标准输出和错误日志。</value>
+  </data>
+
+  <data name="Automation_ConsoleServiceList_Name" xml:space="preserve">
+    <value>服务选择器</value>
+  </data>
+  <data name="Automation_ConsoleServiceList_HelpText" xml:space="preserve">
+    <value>选择服务以查看其控制台输出。</value>
+  </data>
+
+  <data name="Automation_ResumeScrollButton_Name" xml:space="preserve">
+    <value>恢复滚动</value>
+  </data>
+  <data name="Automation_ResumeScrollButton_HelpText" xml:space="preserve">
+    <value>恢复自动滚动到最新日志条目。</value>
+  </data>
+
+  <data name="Automation_ConsoleInstructions_Name" xml:space="preserve">
+    <value>控制台说明</value>
+  </data>
+  <data name="Automation_ConsoleInstructions_HelpText" xml:space="preserve">
+    <value>关于如何配置 stdout 和 stderr 重定向以实现实时控制台输出的说明。</value>
+  </data>
+
+  <data name="Automation_ConsoleFilterTextBox_Name" xml:space="preserve">
+    <value>日志筛选</value>
+  </data>
+  <data name="Automation_ConsoleFilterTextBox_HelpText" xml:space="preserve">
+    <value>输入文本以筛选可见的日志行。</value>
+  </data>
+
+  <data name="Automation_ConsoleLogList_Name" xml:space="preserve">
+    <value>日志终端</value>
+  </data>
+  <data name="Automation_ConsoleLogList_HelpText" xml:space="preserve">
+    <value>显示滚动的日志输出。使用上下文菜单复制所选行。</value>
+  </data>
+
+  <data name="Automation_CopyLogMenuItem_Name" xml:space="preserve">
+    <value>复制所选内容</value>
+  </data>
+  <data name="Automation_CopyLogMenuItem_HelpText" xml:space="preserve">
+    <value>将所选控制台日志行复制到剪贴板。</value>
+  </data>
+
+  <!-- Dependencies View Specific Automation Properties -->
+  <data name="Automation_DependenciesViewRoot_Name" xml:space="preserve">
+    <value>依赖关系视图</value>
+  </data>
+  <data name="Automation_DependenciesViewRoot_HelpText" xml:space="preserve">
+    <value>显示服务列表及其分层依赖关系。</value>
+  </data>
+
+  <data name="Automation_DependenciesServiceList_Name" xml:space="preserve">
+    <value>服务选择列表</value>
+  </data>
+  <data name="Automation_DependenciesServiceList_HelpText" xml:space="preserve">
+    <value>搜索并选择服务以查看其依赖关系。</value>
+  </data>
+
+  <data name="Automation_DependenciesRefreshButton_HelpText" xml:space="preserve">
+    <value>重新加载所选服务的依赖树。</value>
+  </data>
+
+  <data name="Automation_DependenciesExpandAllButton_HelpText" xml:space="preserve">
+    <value>展开依赖树中的所有分支。</value>
+  </data>
+
+  <data name="Automation_DependenciesCollapseAllButton_HelpText" xml:space="preserve">
+    <value>折叠依赖树中的所有分支。</value>
+  </data>
+
+  <data name="Automation_DependenciesLegendInfo_Name" xml:space="preserve">
+    <value>依赖图例信息</value>
+  </data>
+  <data name="Automation_DependenciesLegendInfo_HelpText" xml:space="preserve">
+    <value>关于通过 Windows 服务控制管理器实现的服务依赖树机制的信息。</value>
+  </data>
+
+  <data name="Automation_DependenciesTreeView_Name" xml:space="preserve">
+    <value>依赖层次树</value>
+  </data>
+  <data name="Automation_DependenciesTreeView_HelpText" xml:space="preserve">
+    <value>显示所选服务的递归依赖关系。</value>
+  </data>
+
+  <data name="Automation_DependenciesUsageInfo_Name" xml:space="preserve">
+    <value>用法信息</value>
+  </data>
+  <data name="Automation_DependenciesUsageInfo_HelpText" xml:space="preserve">
+    <value>说明树节点状态颜色指示：绿色表示正在运行，红色表示已停止，橙色表示循环。</value>
+  </data>
+
+  <data name="Automation_DependenciesShortcutInfo_Name" xml:space="preserve">
+    <value>快捷键信息</value>
+  </data>
+  <data name="Automation_DependenciesShortcutInfo_HelpText" xml:space="preserve">
+    <value>提示按 F5 可刷新依赖树。</value>
+  </data>
+
+  <!-- Logs View Specific Automation Properties -->
+  <data name="Automation_LogsViewRoot_Name" xml:space="preserve">
+    <value>日志视图</value>
+  </data>
+  <data name="Automation_LogsViewRoot_HelpText" xml:space="preserve">
+    <value>显示服务的系统事件和诊断记录列表。</value>
+  </data>
+
+  <data name="Automation_LogsLevelComboBox_Name" xml:space="preserve">
+    <value>按级别筛选</value>
+  </data>
+  <data name="Automation_LogsLevelComboBox_HelpText" xml:space="preserve">
+    <value>选择日志严重级别以筛选显示的日志条目。</value>
+  </data>
+
+  <data name="Automation_LogsFromDatePicker_Name" xml:space="preserve">
+    <value>起始日期筛选</value>
+  </data>
+  <data name="Automation_LogsFromDatePicker_HelpText" xml:space="preserve">
+    <value>选择筛选日志条目的起始日期。</value>
+  </data>
+
+  <data name="Automation_LogsToDatePicker_Name" xml:space="preserve">
+    <value>结束日期筛选</value>
+  </data>
+  <data name="Automation_LogsToDatePicker_HelpText" xml:space="preserve">
+    <value>选择筛选日志条目的结束日期。</value>
+  </data>
+
+  <data name="Automation_LogsKeywordTextBox_Name" xml:space="preserve">
+    <value>按关键字筛选</value>
+  </data>
+  <data name="Automation_LogsKeywordTextBox_HelpText" xml:space="preserve">
+    <value>输入关键字以在日志消息中搜索。</value>
+  </data>
+
+  <data name="Automation_LogsSearchButton_HelpText" xml:space="preserve">
+    <value>使用当前级别、日期和关键字筛选条件执行日志搜索。</value>
+  </data>
+
+  <data name="Automation_LogsDataGrid_Name" xml:space="preserve">
+    <value>系统日志</value>
+  </data>
+  <data name="Automation_LogsDataGrid_HelpText" xml:space="preserve">
+    <value>显示筛选后的诊断日志条目列表。</value>
+  </data>
+
+  <data name="Automation_LogsTimeColumnHeader_Name" xml:space="preserve">
+    <value>时间列</value>
+  </data>
+
+  <data name="Automation_LogsLevelColumnHeader_Name" xml:space="preserve">
+    <value>级别列</value>
+  </data>
+
+  <data name="Automation_LogsLevelIcon_Name" xml:space="preserve">
+    <value>日志级别图标</value>
+  </data>
+
+  <data name="Automation_LogsMessageColumnHeader_Name" xml:space="preserve">
+    <value>消息列</value>
+  </data>
+
+  <data name="Automation_LogsGridSplitter_Name" xml:space="preserve">
+    <value>日志详情调整器</value>
+  </data>
+  <data name="Automation_LogsGridSplitter_HelpText" xml:space="preserve">
+    <value>拖动以调整日志列表与日志消息详情窗格之间的比例。</value>
+  </data>
+
+  <data name="Automation_LogDetailsTextBox_Name" xml:space="preserve">
+    <value>日志条目详情</value>
+  </data>
+  <data name="Automation_LogDetailsTextBox_HelpText" xml:space="preserve">
+    <value>显示所选日志条目的完整消息文本和详细信息。</value>
+  </data>
+
+  <data name="Automation_LogsFooterText_HelpText" xml:space="preserve">
+    <value>显示当前日志筛选的总计数和查询执行时长。</value>
+  </data>
+
+  <data name="Automation_LogsShortcutInfo_Name" xml:space="preserve">
+    <value>快捷键信息</value>
+  </data>
+  <data name="Automation_LogsShortcutInfo_HelpText" xml:space="preserve">
+    <value>提示按 F5 可刷新日志。</value>
+  </data>
+
+  <data name="Automation_ServiceListControl_Name" xml:space="preserve">
+    <value>服务列表控件</value>
+  </data>
+  <data name="Automation_ServiceListControl_HelpText" xml:space="preserve">
+    <value>显示可搜索的托管服务列表。使用搜索字段按服务名称筛选。</value>
+  </data>
+  <data name="Automation_SidebarSearchTextBox_Name" xml:space="preserve">
+    <value>搜索服务</value>
+  </data>
+  <data name="Automation_SidebarSearchTextBox_HelpText" xml:space="preserve">
+    <value>输入关键字以搜索服务。</value>
+  </data>
+  <data name="Automation_SidebarServicesDataGrid_Name" xml:space="preserve">
+    <value>服务列表</value>
+  </data>
+  <data name="Automation_ServiceNameHeader_Name" xml:space="preserve">
+    <value>服务名称标题</value>
+  </data>
+
+  <data name="EventLogLevel_All" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="EventLogLevel_Information" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="EventLogLevel_Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="EventLogLevel_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Account_LocalSystem" xml:space="preserve">
+    <value>本地系统</value>
+  </data>
+  <data name="Account_LocalService" xml:space="preserve">
+    <value>本地服务</value>
+  </data>
+  <data name="Account_NetworkService" xml:space="preserve">
+    <value>网络服务</value>
+  </data>
+</root>

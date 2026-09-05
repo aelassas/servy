@@ -61,11 +61,731 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Configuration export file type (xml or json)..
+        /// </summary>
+        public static string Help_Export_Config {
+            get {
+                return ResourceManager.GetString("Help_Export_Config", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name of the service to export..
+        /// </summary>
+        public static string Help_Export_Name {
+            get {
+                return ResourceManager.GetString("Help_Export_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path of the configuration file to export..
+        /// </summary>
+        public static string Help_Export_Path {
+            get {
+                return ResourceManager.GetString("Help_Export_Path", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Suppress spinner and run in non-interactive mode..
+        /// </summary>
+        public static string Help_Global_Quiet {
+            get {
+                return ResourceManager.GetString("Help_Global_Quiet", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration file type (xml or json)..
+        /// </summary>
+        public static string Help_Import_Config {
+            get {
+                return ResourceManager.GetString("Help_Import_Config", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Install the service after import. If the service is already installed, restarting it is required....
+        /// </summary>
+        public static string Help_Import_Install {
+            get {
+                return ResourceManager.GetString("Help_Import_Install", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path of the configuration file to import..
+        /// </summary>
+        public static string Help_Import_Path {
+            get {
+                return ResourceManager.GetString("Help_Import_Path", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Logical CPUs the process may run on (e.g., &apos;0-3,8&apos; or &apos;0xFF00&apos;)..
+        /// </summary>
+        public static string Help_Install_CpuAffinity {
+            get {
+                return ResourceManager.GetString("Help_Install_CpuAffinity", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Date rotation type. Options: Daily, Weekly, Monthly, None (None disables date-based rotation; use....
+        /// </summary>
+        public static string Help_Install_DateRotationType {
+            get {
+                return ResourceManager.GetString("Help_Install_DateRotationType", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Whether debug logs are enabled. When enabled, environment variables and process parameters are re....
+        /// </summary>
+        public static string Help_Install_Debug {
+            get {
+                return ResourceManager.GetString("Help_Install_Debug", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Specify one or more Windows service names (not display names) that this service depends on separa....
+        /// </summary>
+        public static string Help_Install_Deps {
+            get {
+                return ResourceManager.GetString("Help_Install_Deps", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Description of the service..
+        /// </summary>
+        public static string Help_Install_Description {
+            get {
+                return ResourceManager.GetString("Help_Install_Description", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The human-readable name shown in the Windows Services console (services.msc). If left empty, the....
+        /// </summary>
+        public static string Help_Install_DisplayName {
+            get {
+                return ResourceManager.GetString("Help_Install_DisplayName", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enable console user interface for the service. When enabled, stdout/stderr redirection is disabled..
+        /// </summary>
+        public static string Help_Install_EnableConsoleUI {
+            get {
+                return ResourceManager.GetString("Help_Install_EnableConsoleUI", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enable date-based log rotation based on the date interval specified by --dateRotationType. When b....
+        /// </summary>
+        public static string Help_Install_EnableDateRotation {
+            get {
+                return ResourceManager.GetString("Help_Install_EnableDateRotation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enable health monitoring..
+        /// </summary>
+        public static string Help_Install_EnableHealth {
+            get {
+                return ResourceManager.GetString("Help_Install_EnableHealth", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Append /start and /fail to the heartbeat URL on service start and failure..
+        /// </summary>
+        public static string Help_Install_EnableHeartbeatUrlFlags {
+            get {
+                return ResourceManager.GetString("Help_Install_EnableHeartbeatUrlFlags", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Deprecated. Enable size-based log rotation. This option is kept only for backward compatibility.....
+        /// </summary>
+        public static string Help_Install_EnableRotation {
+            get {
+                return ResourceManager.GetString("Help_Install_EnableRotation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enable size-based log rotation..
+        /// </summary>
+        public static string Help_Install_EnableSizeRotation {
+            get {
+                return ResourceManager.GetString("Help_Install_EnableSizeRotation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Environment variables for the process. Enter variables in the format varName=varValue separated b....
+        /// </summary>
+        public static string Help_Install_EnvVars {
+            get {
+                return ResourceManager.GetString("Help_Install_EnvVars", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Additional parameters for the failure program. SECURITY WARNING: Use the SERVY_FAILURE_PROGRAM_PA....
+        /// </summary>
+        public static string Help_Install_FailureProgramParams {
+            get {
+                return ResourceManager.GetString("Help_Install_FailureProgramParams", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The failure program path. Configure a script or executable to run when the wrapped process exits....
+        /// </summary>
+        public static string Help_Install_FailureProgramPath {
+            get {
+                return ResourceManager.GetString("Help_Install_FailureProgramPath", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Specifies the directory in which the failure program will start. If not set, defaults to the serv....
+        /// </summary>
+        public static string Help_Install_FailureProgramStartupDir {
+            get {
+                return ResourceManager.GetString("Help_Install_FailureProgramStartupDir", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Heartbeat interval in seconds. Must be between 5 and 86400 seconds..
+        /// </summary>
+        public static string Help_Install_HeartbeatInterval {
+            get {
+                return ResourceManager.GetString("Help_Install_HeartbeatInterval", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Absolute URL for out-of-band diagnostic heartbeat pings. Only used when health monitoring is enab....
+        /// </summary>
+        public static string Help_Install_HeartbeatUrl {
+            get {
+                return ResourceManager.GetString("Help_Install_HeartbeatUrl", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Timeout in seconds for external heartbeat URL requests. Must be between 2 and 30 seconds. Default....
+        /// </summary>
+        public static string Help_Install_HeartbeatUrlTimeoutSeconds {
+            get {
+                return ResourceManager.GetString("Help_Install_HeartbeatUrlTimeoutSeconds", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum allowed failed health checks. Must be between 1 and 100000..
+        /// </summary>
+        public static string Help_Install_MaxFailedChecks {
+            get {
+                return ResourceManager.GetString("Help_Install_MaxFailedChecks", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum restart attempts on failure. Must be between 0 and 100000. Set to 0 for unlimited restart....
+        /// </summary>
+        public static string Help_Install_MaxRestartAttempts {
+            get {
+                return ResourceManager.GetString("Help_Install_MaxRestartAttempts", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum rotated log files to keep. Must be between 0 and 10000. Set to 0 or leave empty for unlim....
+        /// </summary>
+        public static string Help_Install_MaxRotations {
+            get {
+                return ResourceManager.GetString("Help_Install_MaxRotations", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Unique service name to install..
+        /// </summary>
+        public static string Help_Install_Name {
+            get {
+                return ResourceManager.GetString("Help_Install_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Additional parameters for the process. Supports environment variable expansion, example: --params....
+        /// </summary>
+        public static string Help_Install_Params {
+            get {
+                return ResourceManager.GetString("Help_Install_Params", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The service account password. SECURITY WARNING: Use the SERVY_PASSWORD environment variable inste....
+        /// </summary>
+        public static string Help_Install_Password {
+            get {
+                return ResourceManager.GetString("Help_Install_Password", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path to the executable process. Supports environment variable expansion, example: %JAVA_HOME%\bin....
+        /// </summary>
+        public static string Help_Install_Path {
+            get {
+                return ResourceManager.GetString("Help_Install_Path", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Additional parameters for the post-launch executable. SECURITY WARNING: Use the SERVY_POST_LAUNCH....
+        /// </summary>
+        public static string Help_Install_PostLaunchParams {
+            get {
+                return ResourceManager.GetString("Help_Install_PostLaunchParams", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The post-launch executable path. Configure an optional script or executable to run after the proc....
+        /// </summary>
+        public static string Help_Install_PostLaunchPath {
+            get {
+                return ResourceManager.GetString("Help_Install_PostLaunchPath", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Specifies the directory in which the post-launch executable will start. If not set, defaults to t....
+        /// </summary>
+        public static string Help_Install_PostLaunchStartupDir {
+            get {
+                return ResourceManager.GetString("Help_Install_PostLaunchStartupDir", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Additional parameters for the post-stop executable. SECURITY WARNING: Use the SERVY_POST_STOP_PAR....
+        /// </summary>
+        public static string Help_Install_PostStopParams {
+            get {
+                return ResourceManager.GetString("Help_Install_PostStopParams", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The post-stop executable path. Configure an optional script or executable to run after the wrappe....
+        /// </summary>
+        public static string Help_Install_PostStopPath {
+            get {
+                return ResourceManager.GetString("Help_Install_PostStopPath", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Specifies the directory in which the post-stop executable will start. If not set, defaults to the....
+        /// </summary>
+        public static string Help_Install_PostStopStartupDir {
+            get {
+                return ResourceManager.GetString("Help_Install_PostStopStartupDir", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Environment variables for the pre-launch executable. Enter variables in the format varName=varVal....
+        /// </summary>
+        public static string Help_Install_PreLaunchEnv {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchEnv", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Ignore failure and start service even if pre-launch executable fails..
+        /// </summary>
+        public static string Help_Install_PreLaunchIgnoreFailure {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchIgnoreFailure", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Additional parameters for the pre-launch executable. SECURITY WARNING: Use the SERVY_PRE_LAUNCH_P....
+        /// </summary>
+        public static string Help_Install_PreLaunchParams {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchParams", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The pre-launch executable path. Configure an optional script or executable to run before the main....
+        /// </summary>
+        public static string Help_Install_PreLaunchPath {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchPath", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Number of retry attempts for the pre-launch executable if it fails. Must be between 0 and 100000..
+        /// </summary>
+        public static string Help_Install_PreLaunchRetryAttempts {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchRetryAttempts", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Specifies the directory in which the pre-launch executable will start. If not set, defaults to th....
+        /// </summary>
+        public static string Help_Install_PreLaunchStartupDir {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchStartupDir", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path to stderr log file of the pre-launch executable..
+        /// </summary>
+        public static string Help_Install_PreLaunchStderr {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchStderr", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path to stdout log file of the pre-launch executable..
+        /// </summary>
+        public static string Help_Install_PreLaunchStdout {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchStdout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Timeout for the pre-launch executable. Must be between 0 and 86400 seconds. Set the timeout to 0....
+        /// </summary>
+        public static string Help_Install_PreLaunchTimeout {
+            get {
+                return ResourceManager.GetString("Help_Install_PreLaunchTimeout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Log pre-stop failure as error..
+        /// </summary>
+        public static string Help_Install_PreStopLogAsError {
+            get {
+                return ResourceManager.GetString("Help_Install_PreStopLogAsError", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Additional parameters for the pre-stop executable. SECURITY WARNING: Use the SERVY_PRE_STOP_PARAM....
+        /// </summary>
+        public static string Help_Install_PreStopParams {
+            get {
+                return ResourceManager.GetString("Help_Install_PreStopParams", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The pre-stop executable path. Configure an optional script or executable to run before the main s....
+        /// </summary>
+        public static string Help_Install_PreStopPath {
+            get {
+                return ResourceManager.GetString("Help_Install_PreStopPath", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Specifies the directory in which the pre-stop executable will start. If not set, defaults to the....
+        /// </summary>
+        public static string Help_Install_PreStopStartupDir {
+            get {
+                return ResourceManager.GetString("Help_Install_PreStopStartupDir", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Timeout for the pre-stop executable. Set the timeout to 0 to run the pre-stop process in fire-and....
+        /// </summary>
+        public static string Help_Install_PreStopTimeout {
+            get {
+                return ResourceManager.GetString("Help_Install_PreStopTimeout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Process priority level. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime. Defaults....
+        /// </summary>
+        public static string Help_Install_Priority {
+            get {
+                return ResourceManager.GetString("Help_Install_Priority", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer. Resta....
+        /// </summary>
+        public static string Help_Install_RecoveryAction {
+            get {
+                return ResourceManager.GetString("Help_Install_RecoveryAction", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enable running recovery action even if the process exits successfully. Default is false..
+        /// </summary>
+        public static string Help_Install_RecoveryOnCleanExit {
+            get {
+                return ResourceManager.GetString("Help_Install_RecoveryOnCleanExit", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Log rotation size in Megabytes (MB). Must be between 1 and 10240 MB..
+        /// </summary>
+        public static string Help_Install_RotationSize {
+            get {
+                return ResourceManager.GetString("Help_Install_RotationSize", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Timeout in seconds to wait for the process to start successfully before considering the startup a....
+        /// </summary>
+        public static string Help_Install_StartTimeout {
+            get {
+                return ResourceManager.GetString("Help_Install_StartTimeout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Startup directory for the process. Supports environment variable expansion, example: %PROGRAMDATA....
+        /// </summary>
+        public static string Help_Install_StartupDir {
+            get {
+                return ResourceManager.GetString("Help_Install_StartupDir", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Service startup type. Options: Automatic, AutomaticDelayedStart, Manual, Disabled. Defaults to Au....
+        /// </summary>
+        public static string Help_Install_StartupType {
+            get {
+                return ResourceManager.GetString("Help_Install_StartupType", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path to stderr log file..
+        /// </summary>
+        public static string Help_Install_Stderr {
+            get {
+                return ResourceManager.GetString("Help_Install_Stderr", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Path to stdout log file..
+        /// </summary>
+        public static string Help_Install_Stdout {
+            get {
+                return ResourceManager.GetString("Help_Install_Stdout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Timeout in seconds to wait for the process to exit. Must be between 1 and 86400 seconds. Defaults....
+        /// </summary>
+        public static string Help_Install_StopTimeout {
+            get {
+                return ResourceManager.GetString("Help_Install_StopTimeout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use local server time for log rotation instead of UTC. Default is false..
+        /// </summary>
+        public static string Help_Install_UseLocalTimeForRotation {
+            get {
+                return ResourceManager.GetString("Help_Install_UseLocalTimeForRotation", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The service account username (e.g., .\username, DOMAIN\username, DOMAIN\gMSA$, or a built-in iden....
+        /// </summary>
+        public static string Help_Install_User {
+            get {
+                return ResourceManager.GetString("Help_Install_User", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name of the service to restart..
+        /// </summary>
+        public static string Help_Restart_Name {
+            get {
+                return ResourceManager.GetString("Help_Restart_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name of the service to start..
+        /// </summary>
+        public static string Help_Start_Name {
+            get {
+                return ResourceManager.GetString("Help_Start_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name of the service to check..
+        /// </summary>
+        public static string Help_Status_Name {
+            get {
+                return ResourceManager.GetString("Help_Status_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name of the service to stop..
+        /// </summary>
+        public static string Help_Stop_Name {
+            get {
+                return ResourceManager.GetString("Help_Stop_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name of the service to uninstall..
+        /// </summary>
+        public static string Help_Uninstall_Name {
+            get {
+                return ResourceManager.GetString("Help_Uninstall_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Export a Servy Windows service configuration to a configuration file..
+        /// </summary>
+        public static string Help_Verb_Export {
+            get {
+                return ResourceManager.GetString("Help_Verb_Export", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Display help information..
+        /// </summary>
+        public static string Help_Verb_Help {
+            get {
+                return ResourceManager.GetString("Help_Verb_Help", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Import a Windows service configuration into the Servy database and optionally install the service..
+        /// </summary>
+        public static string Help_Verb_Import {
+            get {
+                return ResourceManager.GetString("Help_Verb_Import", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Install a Windows service..
+        /// </summary>
+        public static string Help_Verb_Install {
+            get {
+                return ResourceManager.GetString("Help_Verb_Install", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restart a Windows service..
+        /// </summary>
+        public static string Help_Verb_Restart {
+            get {
+                return ResourceManager.GetString("Help_Verb_Restart", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Start a Windows service..
+        /// </summary>
+        public static string Help_Verb_Start {
+            get {
+                return ResourceManager.GetString("Help_Verb_Start", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Get the current status of a Windows service. Possible results: NotInstalled, Stopped, StartPendin....
+        /// </summary>
+        public static string Help_Verb_Status {
+            get {
+                return ResourceManager.GetString("Help_Verb_Status", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Stop a Windows service..
+        /// </summary>
+        public static string Help_Verb_Stop {
+            get {
+                return ResourceManager.GetString("Help_Verb_Stop", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstall a Windows service..
+        /// </summary>
+        public static string Help_Verb_Uninstall {
+            get {
+                return ResourceManager.GetString("Help_Verb_Uninstall", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Access Denied. Please restart your shell as Administrator to run the &apos;{0}&apos; command..
         /// </summary>
         public static string Msg_AdminPrivilegesRequired {
             get {
                 return ResourceManager.GetString("Msg_AdminPrivilegesRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancelling... press Ctrl+C again to force exit..
+        /// </summary>
+        public static string Msg_CancellingForceExit {
+            get {
+                return ResourceManager.GetString("Msg_CancellingForceExit", resourceCulture);
             }
         }
         
@@ -277,6 +997,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Operation cancelled by user..
+        /// </summary>
+        public static string Msg_OperationCancelledByUser {
+            get {
+                return ResourceManager.GetString("Msg_OperationCancelledByUser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File path is required..
         /// </summary>
         public static string Msg_PathRequired {
@@ -475,11 +1204,47 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An unexpected error occurred: {0}.
+        /// </summary>
+        public static string Msg_UnexpectedErrorWithDetail {
+            get {
+                return ResourceManager.GetString("Msg_UnexpectedErrorWithDetail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An unknown error occurred..
         /// </summary>
         public static string Msg_UnknownError {
             get {
                 return ResourceManager.GetString("Msg_UnknownError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: Unknown command &apos;{0}&apos;. See &apos;--help&apos; for available options..
+        /// </summary>
+        public static string Msg_UnknownCommand {
+            get {
+                return ResourceManager.GetString("Msg_UnknownCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [CRITICAL] Vulnerable SQLite version detected: {0}.
+        /// </summary>
+        public static string Msg_VulnerableSqliteDetected {
+            get {
+                return ResourceManager.GetString("Msg_VulnerableSqliteDetected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This version of Servy requires SQLite {0}+..
+        /// </summary>
+        public static string Msg_VulnerableSqliteRequirement {
+            get {
+                return ResourceManager.GetString("Msg_VulnerableSqliteRequirement", resourceCulture);
             }
         }
         

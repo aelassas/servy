@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DetailsUnavailableAccessDenied" xml:space="preserve">
+    <value>（详情不可用：访问被拒绝）</value>
+  </data>
+  <data name="Msg_ValidationError" xml:space="preserve">
+    <value>请填写所有必填项。</value>
+  </data>
+  <data name="Msg_ServiceNameRequired" xml:space="preserve">
+    <value>服务名称不能为空。</value>
+  </data>
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>未找到指定的服务。</value>
+  </data>
+  <data name="Msg_ExecutablePathRequired" xml:space="preserve">
+    <value>服务进程路径不能为空。</value>
+  </data>
+  <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
+    <value>服务名称不能包含尾随空格。</value>
+  </data>
+  <data name="Msg_ServiceNameContainsLeadingWhitespace" xml:space="preserve">
+    <value>服务名称不能包含前导空格。</value>
+  </data>
+  <data name="Msg_InvalidServiceName" xml:space="preserve">
+    <value>服务名称包含无效字符。请勿使用 '\'、'/'、':'、'*'、'?'、'"'、'&amp;lt;'、'&amp;gt;'、'|' 以及不可打印字符。</value>
+  </data>
+  <data name="Msg_ServiceNameLeadingTrailingDot" xml:space="preserve">
+    <value>服务名称不能以句点开头或结尾。</value>
+  </data>
+  <data name="Msg_ServiceNameReservedDeviceName" xml:space="preserve">
+    <value>'{0}' 是 Windows 保留名称，不能用于服务名称。</value>
+  </data>
+
+  <data name="Msg_ValidationPassed" xml:space="preserve">
+    <value>服务 '{0}' 验证通过。</value>
+  </data>
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>未找到服务包装程序可执行文件。</value>
+  </data>
+  <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
+    <value>指定的启动目录无效。</value>
+  </data>
+  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
+    <value>指定的标准输出文件路径无效。</value>
+  </data>
+  <data name="Msg_InvalidStderrPath" xml:space="preserve">
+    <value>指定的标准错误文件路径无效。</value>
+  </data>
+  <data name="Msg_InvalidRotationSize" xml:space="preserve">
+    <value>轮转大小必须是介于 {0} 和 {1} 之间的兆字节（MB）数值。</value>
+  </data>
+  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
+    <value>最大轮转次数必须是介于 {0} 和 {1} 之间的数值。设为 0 表示不限制轮转次数。</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrlTimeout" xml:space="preserve">
+    <value>心跳 URL 超时必须是介于 {0} 和 {1} 之间的秒数。</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
+    <value>心跳间隔必须是介于 {0} 和 {1} 之间的秒数。</value>
+  </data>
+  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
+    <value>最大失败检查次数必须是介于 {0} 和 {1} 之间的数值。</value>
+  </data>
+  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
+    <value>最大重启次数必须是介于 {0} 和 {1} 之间的数值。设为 0 表示不限制重启次数。</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrl" xml:space="preserve">
+    <value>心跳监控 URL 必须是格式正确的绝对 HTTP 或 HTTPS 地址。</value>
+  </data>
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>服务已成功安装。</value>
+  </data>
+  <data name="Msg_ServiceRemoved" xml:space="preserve">
+    <value>服务已成功移除。</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>发生意外错误。</value>
+  </data>
+  <data name="Msg_AdminRightsRequired" xml:space="preserve">
+    <value>需要管理员权限。</value>
+  </data>
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>服务已成功启动。</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>服务已成功停止。</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>服务已成功重启。</value>
+  </data>
+
+  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
+    <value>预启动进程路径无效。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
+    <value>指定的预启动工作目录无效。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
+    <value>指定的预启动标准输出文件路径无效。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
+    <value>指定的预启动标准错误文件路径无效。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
+    <value>预启动超时必须是介于 {0} 和 {1} 之间的秒数。设为 0 可在“即发即弃”模式下运行预启动钩子。设为 0 时，钩子启动后服务会立即启动，不等待钩子完成。仅在任务不影响服务正常启动或运行时使用即发即弃模式。该模式下不支持标准输出/标准错误重定向和重试。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
+    <value>预启动重试次数必须是介于 {0} 和 {1} 之间的数值。</value>
+  </data>
+
+  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
+    <value>失败处理程序路径无效。</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
+    <value>指定的失败处理程序工作目录无效。</value>
+  </data>
+
+  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
+    <value>启动后进程路径无效。</value>
+  </data>
+  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
+    <value>指定的启动后工作目录无效。</value>
+  </data>
+
+  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
+    <value>启动超时必须是介于 {0} 和 {1} 之间的秒数。</value>
+  </data>
+  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
+    <value>停止超时必须是介于 {0} 和 {1} 之间的秒数。</value>
+  </data>
+
+  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
+    <value>停止前进程路径无效。</value>
+  </data>
+  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
+    <value>指定的停止前工作目录无效。</value>
+  </data>
+  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
+    <value>停止前超时必须是介于 {0} 和 {1} 之间的秒数。设为 0 可在“即发即弃”模式下运行停止前进程。</value>
+  </data>
+
+  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
+    <value>停止后进程路径无效。</value>
+  </data>
+  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
+    <value>指定的停止后工作目录无效。</value>
+  </data>
+
+  <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
+    <value>服务名称超过 {0} 个字符。</value>
+  </data>
+  <data name="Msg_ServiceDependencyNameLengthReachedForName" xml:space="preserve">
+    <value>服务依赖项 '{0}' 超过最大长度 {1} 个字符。</value>
+  </data>
+  <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
+    <value>显示名称超过 {0} 个字符。</value>
+  </data>
+  <data name="Msg_DescriptionLengthReached" xml:space="preserve">
+    <value>描述超过 {0} 个字符。</value>
+  </data>
+  <data name="Msg_ArgumentsLengthReachedForField" xml:space="preserve">
+    <value>字段 '{0}' 的参数超过 Windows 命令行限制 {1} 个字符。</value>
+  </data>
+  <data name="Msg_PasswordsDontMatch" xml:space="preserve">
+    <value>两次输入的密码不一致。</value>
+  </data>
+
+  <data name="Msg_FatalError_Title" xml:space="preserve">
+    <value>Servy - 致命错误</value>
+  </data>
+  <data name="Msg_FatalError_Body" xml:space="preserve">
+    <value>发生致命错误，应用程序必须关闭。详细诊断信息已保存到日志文件。</value>
+  </data>
+  <data name="Msg_UnexpectedError_Title" xml:space="preserve">
+    <value>Servy - 意外错误</value>
+  </data>
+  <data name="Msg_UnexpectedError_Body" xml:space="preserve">
+    <value>界面发生意外错误，但应用程序将尝试继续运行。详情已记录到日志。</value>
+  </data>
+  <data name="Msg_StartupError_Format" xml:space="preserve">
+    <value>启动错误：{0}</value>
+  </data>
+  <data name="Msg_ImportReadFailure" xml:space="preserve">
+    <value>无法打开配置文件进行读取。</value>
+  </data>
+  <data name="Msg_ImportInputEmptyOrWhitespace" xml:space="preserve">
+    <value>{0} 输入不能为空或仅包含空白字符。</value>
+  </data>
+  <data name="Msg_ImportPayloadTooLarge" xml:space="preserve">
+    <value>{0} 内容超过允许的最大大小 {1} MB。</value>
+  </data>
+  <data name="Msg_ImportInvalidStructure" xml:space="preserve">
+    <value>无效的 {0} 结构：{1}。</value>
+  </data>
+  <data name="Msg_ImportStructureError" xml:space="preserve">
+    <value>{0} 结构错误：{1}。</value>
+  </data>
+  <data name="Msg_ImportEmptyDefinition" xml:space="preserve">
+    <value>{0} 反序列化结果为空的服务定义。</value>
+  </data>
+  <data name="Msg_ImportFileNotFound" xml:space="preserve">
+    <value>未找到文件：{0}</value>
+  </data>
+  <data name="Msg_InvalidServiceDependencyName" xml:space="preserve">
+    <value>无效的服务名称 '{0}'。仅允许字母、数字、连字符、下划线、句点、空格和美元符号 ($)，并可选择在前面加 '+' 以引用加载顺序组。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableMissingEquals" xml:space="preserve">
+    <value>每个环境变量必须包含一个未转义的 '=' 字符，用于分隔键和值。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyEmpty" xml:space="preserve">
+    <value>环境变量键不能为空。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableForbiddenNewline" xml:space="preserve">
+    <value>环境变量 '{0}' 包含禁止的换行符。不支持多行值。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyInvalidChars" xml:space="preserve">
+    <value>环境变量键 '{0}' 包含非法字符。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableValueInvalidChars" xml:space="preserve">
+    <value>环境变量 '{0}' 的值包含非法字符。</value>
+  </data>
+
+  <data name="FileFilter_Executable" xml:space="preserve">
+    <value>可执行文件 (*.exe)|*.exe|所有文件 (*.*)|*.*</value>
+  </data>
+  <data name="FileFilter_Xml" xml:space="preserve">
+    <value>XML 文件 (*.xml)|*.xml</value>
+  </data>
+  <data name="FileFilter_Json" xml:space="preserve">
+    <value>JSON 文件 (*.json)|*.json</value>
+  </data>
+  <data name="FileFilter_AllFiles" xml:space="preserve">
+    <value>所有文件 (*.*)|*.*</value>
+  </data>
+  <data name="Title_SelectExecutable" xml:space="preserve">
+    <value>选择进程可执行文件</value>
+  </data>
+  <data name="Title_SelectXml" xml:space="preserve">
+    <value>选择 XML 文件</value>
+  </data>
+  <data name="Title_SelectJson" xml:space="preserve">
+    <value>选择 JSON 文件</value>
+  </data>
+  <data name="Title_SelectStartupDirectory" xml:space="preserve">
+    <value>选择启动目录</value>
+  </data>
+
+  <data name="Msg_SecurityUncPathProhibited" xml:space="preserve">
+    <value>安全警告：禁止从 UNC 路径导入，以防止恶意配置注入。</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveProhibited" xml:space="preserve">
+    <value>安全警告：禁止从网络驱动器（包括已映射的 UNC 共享）导入。</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointProhibited" xml:space="preserve">
+    <value>安全警告：禁止通过目录联接或符号链接导入配置，以防止路径重定向攻击。</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointProhibited" xml:space="preserve">
+    <value>安全警告：禁止通过文件符号链接或联接导入配置，以防止路径重定向攻击。</value>
+  </data>
+  <data name="Msg_SecurityUncPathExportProhibited" xml:space="preserve">
+    <value>安全警告：禁止导出到 UNC 路径，以防止配置外泄。</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveExportProhibited" xml:space="preserve">
+    <value>安全警告：禁止导出到网络驱动器（包括已映射的 UNC 共享）。</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointExportProhibited" xml:space="preserve">
+    <value>安全警告：禁止将配置导出到目录联接或符号链接，以防止路径重定向攻击。</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointExportProhibited" xml:space="preserve">
+    <value>安全警告：禁止将配置导出到文件符号链接或联接，以防止路径重定向攻击。</value>
+  </data>
+  <data name="Msg_SecurityReservedDeviceName" xml:space="preserve">
+    <value>安全警告：'{0}' 是 Windows 保留设备名称，不能使用。</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectory" xml:space="preserve">
+    <value>访问被拒绝：解析后的路径指向受保护的系统目录 '{0}'。禁止导入。</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectoryExport" xml:space="preserve">
+    <value>访问被拒绝：解析后的路径指向受保护的系统目录 '{0}'。禁止导出。</value>
+  </data>
+  <data name="Msg_SecurityInvalidFileType" xml:space="preserve">
+    <value>安全警告：无效的文件类型 '{0}'。仅支持 .json 和 .xml 文件。</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestination" xml:space="preserve">
+    <value>安全警告：解析后的文件目标直接指向 UNC 目标。已中止导入。</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestinationExport" xml:space="preserve">
+    <value>安全警告：解析后的文件目标直接指向 UNC 目标。已中止导出。</value>
+  </data>
+  <data name="Msg_SecurityHandleInvalid" xml:space="preserve">
+    <value>安全：无法获取目标的 SafeFileHandle。</value>
+  </data>
+  <data name="Msg_SecurityHandleValidationFailed" xml:space="preserve">
+    <value>安全防护失败：目标文件句柄验证被拒绝。{0}</value>
+  </data>
+  <data name="Msg_SecurityHandleSizeProbeFailed" xml:space="preserve">
+    <value>内核级路径验证失败：内核大小探测分配失败。</value>
+  </data>
+  <data name="Msg_SecurityHandleSerializationFailed" xml:space="preserve">
+    <value>内核级路径验证失败：内核路径解析序列化失败。</value>
+  </data>
+  <data name="Msg_InvalidConfig" xml:space="preserve">
+    <value>配置中的 {0} 无效。</value>
+  </data>
+  <data name="Msg_InvalidPathInConfig" xml:space="preserve">
+    <value>配置中的 {0} 无效。请确保路径存在且可访问。</value>
+  </data>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>指定的路径无效。</value>
+  </data>
+  <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
+    <value>配置文件 '{0}' 超过最大大小（{1} MB）。</value>
+  </data>
+
+  <data name="Msg_DependencyUnavailable" xml:space="preserve">
+    <value>依赖项 '{0}' 不可用。</value>
+  </data>
+  <data name="Msg_DependencyAccessDenied" xml:space="preserve">
+    <value>依赖项 '{0}' 无法访问（访问被拒绝）。</value>
+  </data>
+
+  <data name="Msg_InvalidHexAffinityFormat" xml:space="preserve">
+    <value>无效的十六进制亲和性格式：{0}</value>
+  </data>
+  <data name="Msg_CoreIndexRangeOutOfBounds" xml:space="preserve">
+    <value>范围 '{0}' 中的核心索引超出范围（0-{1}）。</value>
+  </data>
+  <data name="Msg_CoreIndexOutOfBounds" xml:space="preserve">
+    <value>核心索引 '{0}' 超出范围（0-{1}）。</value>
+  </data>
+  <data name="Msg_InvalidCoreSpecification" xml:space="preserve">
+    <value>无效的核心规格：'{0}'。</value>
+  </data>
+  <data name="Msg_InvertedCoreRange" xml:space="preserve">
+    <value>倒置的核心范围 '{0}'：起始索引大于结束索引。</value>
+  </data>
+  <data name="Msg_EmptyAffinityMask" xml:space="preserve">
+    <value>亲和性掩码 '{0}' 未选择任何处理器。</value>
+  </data>
+  <data name="Msg_HexMaskOutOfBounds" xml:space="preserve">
+    <value>亲和性掩码 '{0}' 选择了超出允许范围（0-{1}）的处理器。</value>
+  </data>
+
+  <data name="Msg_ImportXmlNullOrEmpty" xml:space="preserve">
+    <value>XML 内容不能为 null 或空。</value>
+  </data>
+  <data name="Msg_ImportXmlDeserializationFailed" xml:space="preserve">
+    <value>无法从 XML 内容反序列化服务配置。</value>
+  </data>
+  <data name="Msg_ImportXmlFailed" xml:space="preserve">  
+    <value>从 XML 导入服务失败：{0}</value>
+  </data>
+  <data name="Msg_ImportJsonNullOrEmpty" xml:space="preserve">
+    <value>JSON 内容不能为 null 或空。</value>
+  </data>
+  <data name="Msg_ImportJsonDeserializationFailed" xml:space="preserve">
+    <value>无法从 JSON 内容反序列化服务配置。</value>
+  </data>
+  <data name="Msg_ImportJsonFailed" xml:space="preserve">
+    <value>从 JSON 导入服务失败：{0}</value>
+  </data>
+  <data name="Msg_UnknownXmlElement" xml:space="preserve">
+    <value>遇到未知的 XML 元素：'{0}'。</value>
+  </data>
+  <data name="Msg_UnknownXmlAttribute" xml:space="preserve">
+    <value>遇到未知的 XML 属性：'{0}'。</value>
+  </data>
+</root>

@@ -54,7 +54,7 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = 'Specify target account (e.g., "DOMAIN\User", "LocalService", "NT AUTHORITY\LocalService", or "DOMAIN\gMSA$").')]
+    [Parameter(Mandatory = $true, HelpMessage = '指定目标账户（例如 "DOMAIN\User"、"LocalService"、"NT AUTHORITY\LocalService" 或 "DOMAIN\gMSA$"）。')]
     [ValidateNotNullOrEmpty()]
     [string]$TargetAccount
 )
@@ -67,7 +67,7 @@ $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
 $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
 if (-not $currentPrincipal.IsInRole($adminRole)) {
-    Write-Host "Set-ServyExePermissions.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
+    Write-Host "Set-ServyExePermissions.ps1 需要管理员权限。请在提升的 PowerShell 会话中重新运行此脚本。" -ForegroundColor Red
     exit 1
 }
 
@@ -182,7 +182,7 @@ function Test-ServyAdminGroupMember {
         return $false
     }
     catch {
-        Write-Warning "Unable to enumerate local Administrators group membership for '$AccountName': $_"
+        Write-Warning "无法枚举 '$AccountName' 的本地 Administrators 组成员身份：$_"
         return $null
     }
 }
@@ -203,8 +203,8 @@ try {
     $programDataDir = [System.IO.Path]::Combine($env:ProgramData, "Servy")
 
     if (-not (Test-Path -Path $programDataDir)) {
-        Write-Warning "Directory '$programDataDir' does not exist. No changes applied."
-        Write-Warning "Start the service once so %ProgramData%\Servy and its binaries are extracted, then RE-RUN this script."
+        Write-Warning "目录 '$programDataDir' 不存在。未应用任何更改。"
+        Write-Warning "请先启动一次服务，以便提取 %ProgramData%\Servy 及其二进制文件，然后重新运行此脚本。"
         exit 2
     }
 
@@ -250,8 +250,8 @@ try {
     }
 
     if ($null -eq $targetNTAccount) {
-        Write-Host "Account '$TargetAccount' could not be resolved on this machine or domain." -ForegroundColor Red
-        Write-Host "Use the form shown by services.msc (e.g., 'LocalService', 'NT AUTHORITY\LocalService', 'DOMAIN\svc-servy', or 'DOMAIN\gMSAAccount$')." -ForegroundColor Red
+        Write-Host "无法在本机或域上解析账户 '$TargetAccount'。" -ForegroundColor Red
+        Write-Host "请使用 services.msc 中显示的形式（例如 'LocalService'、'NT AUTHORITY\LocalService'、'DOMAIN\svc-servy' 或 'DOMAIN\gMSAAccount$'）。" -ForegroundColor Red
         exit 4
     }
 
@@ -264,8 +264,8 @@ try {
 
     # Refuse broad unprivileged groups that step 2 exists to purge (#6468)
     if ($targetSid.Equals($everyoneSid) -or $targetSid.Equals($builtinUsersSid) -or $targetSid.Equals($authUsersSid)) {
-        Write-Host "Account '$TargetAccount' is a broad unprivileged group that this script exists to remove." -ForegroundColor Red
-        Write-Host "Specify the specific service runner account instead." -ForegroundColor Red
+        Write-Host "账户 '$TargetAccount' 是本脚本旨在移除的宽泛非特权组。" -ForegroundColor Red
+        Write-Host "请改为指定具体的服务运行账户。" -ForegroundColor Red
         exit 4
     }
 
@@ -277,16 +277,16 @@ try {
     }
 
     if ($targetIsAdminMember -eq $true) {
-        Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
-        Write-Host "          Its effective access will be FullControl, not the ReadAndExecute/Read this script writes." -ForegroundColor Cyan
-        Write-Host "          Use a non-administrative service account for the trust boundary this script establishes." -ForegroundColor Cyan
+        Write-Host "[警告] '$TargetAccount' 是 BUILTIN\Administrators 的成员，该组仍保留 FullControl。" -ForegroundColor Cyan
+        Write-Host "          其有效权限将是 FullControl，而非本脚本写入的 ReadAndExecute/Read。" -ForegroundColor Cyan
+        Write-Host "          请使用非管理服务账户，以符合本脚本建立的信任边界。" -ForegroundColor Cyan
     }
     elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
-        Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access after hardening."
+        Write-Warning "无法验证 '$TargetAccount' 是否为 BUILTIN\Administrators 的成员。加固后请手动确认其有效权限。"
     }
 
-    Write-Host "Securing Servy executable and configuration files in: $programDataDir" -ForegroundColor Cyan
-    Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
+    Write-Host "正在加固 Servy 可执行文件与配置文件权限，目录：$programDataDir" -ForegroundColor Cyan
+    Write-Host "目标账户：$TargetAccount" -ForegroundColor Yellow
 
     $targetFiles = @()
 
@@ -310,7 +310,7 @@ try {
 
         if (-not (Test-Path -Path $filePath)) {
             if ($configNames -contains $fileName) {
-                Write-Host "Skipping hardening for missing configuration file '$fileName'." -ForegroundColor Yellow
+                Write-Host "跳过缺失的配置文件 '$fileName' 的权限加固。" -ForegroundColor Yellow
                 $skippedConfigs += $fileName
             } else {
                 $missing += $fileName
@@ -319,7 +319,7 @@ try {
         }
 
         try {
-            Write-Host "Hardening permissions on '$fileName' ($requiredRights)..." -ForegroundColor Green
+            Write-Host "正在加固 '$fileName' 的权限（$requiredRights）..." -ForegroundColor Green
 
             $acl = Get-Acl -LiteralPath $filePath
 
@@ -359,7 +359,7 @@ try {
 
             # 4. Grant explicit ReadAndExecute or Read access to target account
             if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
-                Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
+                Write-Host "  目标 '$TargetAccount' 为受保护的管理主体；已保留 FullControl，未降级为 $requiredRights。" -ForegroundColor Yellow
             } else {
                 $targetRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
                     $targetNTAccount,
@@ -371,7 +371,7 @@ try {
                 # The explicit ACE above does NOT establish the trust boundary if the target is also a member
                 # of BUILTIN\Administrators: that group ACE (step 3) grants FullControl and always wins.
                 if ($targetIsAdminMember -eq $true) {
-                    Write-Host "  [WARNING] '$TargetAccount' is a member of BUILTIN\Administrators; effective access is FullControl, not $requiredRights." -ForegroundColor Cyan
+                    Write-Host "  [警告] '$TargetAccount' 是 BUILTIN\Administrators 的成员；有效权限为 FullControl，而非 $requiredRights。" -ForegroundColor Cyan
                 }
             }
 
@@ -380,7 +380,7 @@ try {
 
             # Audit owner replacement only AFTER successful Set-Acl commit (#6465)
             if ($ownerChanged) {
-                Write-Host "  [Owner] replaced '$previousOwnerName' -> 'BUILTIN\Administrators'" -ForegroundColor Cyan
+                Write-Host "  [所有者] 已将 '$previousOwnerName' 替换为 'BUILTIN\Administrators'" -ForegroundColor Cyan
             }
 
             # 5. Audit surviving explicit ACEs for transparency (Target + Manual Users & Groups)
@@ -409,66 +409,66 @@ try {
 
             foreach ($tRule in $appliedTargetRules) {
                 if ($targetIsAdminMember -eq $true) {
-                    Write-Host "  [Target Granted] $tRule (WARNING: effective access is FullControl via BUILTIN\Administrators membership)" -ForegroundColor Cyan
+                    Write-Host "  [已授予目标] $tRule（警告：因 BUILTIN\Administrators 成员身份，有效权限为 FullControl）" -ForegroundColor Cyan
                 } else {
-                    Write-Host "  [Target Granted] $tRule" -ForegroundColor Cyan
+                    Write-Host "  [已授予目标] $tRule" -ForegroundColor Cyan
                 }
             }
 
             if ($manualAllowRules.Count -gt 0) {
-                Write-Host "  [Note] Preserved manual explicit ACE(s) (Users & Groups) on '$fileName':" -ForegroundColor Yellow
+                Write-Host "  [注意] 已保留 '$fileName' 上手动添加的显式 ACE（用户和组）：" -ForegroundColor Yellow
                 foreach ($mRule in $manualAllowRules) {
                     Write-Host "    - $mRule" -ForegroundColor Yellow
                 }
             }
 
             if ($manualDenyRules.Count -gt 0) {
-                Write-Host "  [WARNING] Preserved manual explicit Deny ACE(s) on '$fileName':" -ForegroundColor Red
+                Write-Host "  [警告] 已保留 '$fileName' 上手动添加的显式拒绝 ACE：" -ForegroundColor Red
                 foreach ($dRule in $manualDenyRules) {
                     Write-Host "    - $dRule" -ForegroundColor Red
                 }
             }
 
-            Write-Host "Successfully hardened '$fileName'." -ForegroundColor Green
+            Write-Host "已成功加固 '$fileName'。" -ForegroundColor Green
             $hardened += $fileName
         }
         catch {
-            Write-Host "FAILED to harden '$fileName': $_" -ForegroundColor Red
+            Write-Host "加固 '$fileName' 失败：$_" -ForegroundColor Red
             $failed += $fileName
         }
     }
 
-    Write-Host "`nHardened $($hardened.Count) of $($targetFiles.Count) files." -ForegroundColor Cyan
+    Write-Host "`n已加固 $($hardened.Count) / $($targetFiles.Count) 个文件。" -ForegroundColor Cyan
 
     if ($skippedConfigs.Count -gt 0) {
-        Write-Host "Skipped configuration file(s) (not present): $($skippedConfigs -join ', ')" -ForegroundColor Yellow
+        Write-Host "已跳过的配置文件（不存在）：$($skippedConfigs -join ', ')" -ForegroundColor Yellow
     }
 
     if ($failed.Count -gt 0) {
-        Write-Warning ("Hardening failed on: {0}" -f ($failed -join ', '))
-        Write-Warning "Check file locks, permissions, or system security settings before re-running this script."
+        Write-Warning ("加固失败：{0}" -f ($failed -join ', '))
+        Write-Warning "重新运行此脚本前，请检查文件锁定、权限或系统安全设置。"
         exit 3
     }
 
     if ($missing.Count -gt 0) {
-        Write-Warning ("Not hardened (missing): {0}" -f ($missing -join ', '))
-        Write-Warning "These files will inherit Modify access from '$programDataDir' when Servy creates them."
-        Write-Warning "Start the service once so every binary is extracted, then RE-RUN this script."
+        Write-Warning ("未加固（缺失）：{0}" -f ($missing -join ', '))
+        Write-Warning "当 Servy 创建这些文件时，它们将从 '$programDataDir' 继承“修改”权限。"
+        Write-Warning "请先启动一次服务以提取全部二进制文件，然后重新运行此脚本。"
         exit 2
     }
 
-    Write-Host "Executable and configuration permission hardening complete." -ForegroundColor Green
+    Write-Host "可执行文件与配置文件权限加固已完成。" -ForegroundColor Green
 
     if ($targetIsAdminMember -eq $true) {
-        Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
-        Write-Host "          The explicit ACEs written above do NOT establish the single trust boundary this" -ForegroundColor Cyan
-        Write-Host "          script promises. Use a non-administrative service account instead." -ForegroundColor Cyan
+        Write-Host "[警告] '$TargetAccount' 是 BUILTIN\Administrators 的成员，该组仍保留 FullControl。" -ForegroundColor Cyan
+        Write-Host "          上方写入的显式 ACE 并不能建立本脚本所承诺的单一信任边界。" -ForegroundColor Cyan
+        Write-Host "          请改用非管理服务账户。" -ForegroundColor Cyan
     }
     elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
-        Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access."
+        Write-Warning "无法验证 '$TargetAccount' 是否为 BUILTIN\Administrators 的成员。请手动确认其有效权限。"
     }
 }
 catch {
-    Write-Host "Unhandled error during execution: $_" -ForegroundColor Red
+    Write-Host "执行期间发生未处理的错误：$_" -ForegroundColor Red
     exit 3
 }

@@ -326,7 +326,7 @@ $lastProcessed = Read-Watermark -TimestampFile $timestampFile
 $eventsToProcess = Get-EventsToProcess -ScriptDir $scriptDir -LastProcessed $lastProcessed
 
 if ($null -eq $eventsToProcess) {
-    Write-Host "No new errors to process."
+    Write-Host "没有需要处理的新错误。"
     exit 0
 }
 
@@ -351,7 +351,7 @@ foreach ($evt in $eventsToProcess) {
 
     # 3. COMPOSITION
     # Scrub the subject using the raw service name (masker handles this internally)
-    $subject = "Servy - $($parsed.ServiceName) Failure"
+    $subject = "Servy - $($parsed.ServiceName) 失败"
     $subject = Protect-SensitiveString -Text $subject
 
     # ROBUSTNESS: Sanitise the subject string value of CR/LF injection characters
@@ -359,8 +359,8 @@ foreach ($evt in $eventsToProcess) {
     $subject = $subject -replace "[\r\n]", ' '
 
     # Build the HTML body using the safe, pre-masked segments
-    $body = "A failure has been detected in service '$safeServiceName'." +
-            [Environment]::NewLine + "Details: $safeLogText"
+    $body = "检测到服务 '$safeServiceName' 发生故障。" +
+            [Environment]::NewLine + "详细信息：$safeLogText"
 
     # Basic HTML formatting (newlines to breaks)
     $htmlBody = $body -replace "`r?`n", "<br>"
@@ -369,19 +369,19 @@ foreach ($evt in $eventsToProcess) {
 
     switch ($sendStatus) {
         'Success' {
-            Write-Host "Email Notification sent for '$($parsed.ServiceName)'."
+            Write-Host "已为 '$($parsed.ServiceName)' 发送电子邮件通知。"
             # Track this timestamp as successfully processed
             Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
         }
         'PermanentFailure' {
             # Logged internally. Advance the watermark because retrying won't fix bad config.
-            Write-Host "Permanent configuration failure for '$($parsed.ServiceName)'. Skipping to prevent endless fallback logging." -ForegroundColor Yellow
+            Write-Host "'$($parsed.ServiceName)' 出现永久性配置失败。已跳过，以避免无限回退日志。" -ForegroundColor Yellow
             Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
         }
         'TransientFailure' {
             # Network drop, timeout, or SMTP temp-fail. DO NOT advance the watermark.
             # We break the loop immediately; if SMTP is down, subsequent events in this batch will fail too.
-            Write-Host "Transient failure sending email for '$($parsed.ServiceName)'. Halting processing to preserve event queue." -ForegroundColor Red
+            Write-Host "为 '$($parsed.ServiceName)' 发送电子邮件时出现瞬时失败。暂停处理以保留事件队列。" -ForegroundColor Red
         }
     }
     if ($sendStatus -eq 'TransientFailure') { break }   # break the foreach explicitly
