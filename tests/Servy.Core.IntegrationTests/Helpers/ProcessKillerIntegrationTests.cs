@@ -548,7 +548,12 @@ namespace Servy.Core.IntegrationTests.Helpers
                 return false;
             });
 
-            readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds));
+            // Validate the handshake the same way SpawnProcessTree validates its CHILD_PID one:
+            // a timeout, or a child that exited without ever printing LOCKED, is a failed spawn.
+            if (!readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds)) || !readTask.Result)
+            {
+                return null;
+            }
 
             return lockingProcess;
         }
