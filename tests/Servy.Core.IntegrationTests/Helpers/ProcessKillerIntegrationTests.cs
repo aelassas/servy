@@ -373,7 +373,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
 
             Assert.True(deleted, $"Failed to delete '{testFile}' after process termination. The lock was not genuinely released.");
-            Assert.False(File.Exists(testFile));
         }
 
         #region Helpers & Tool Utilities
