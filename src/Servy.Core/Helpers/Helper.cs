@@ -266,7 +266,7 @@ namespace Servy.Core.Helpers
                 }
                 else
                 {
-                    // Normal character / Write any previous backslashes as-is - just flush any backslashes
+                    // Backslashes are only special before a quote, so a run that ends at an ordinary character is literal.
                     if (backslashCount > 0)
                     {
                         sb.Append('\\', backslashCount);
@@ -276,8 +276,7 @@ namespace Servy.Core.Helpers
                 }
             }
 
-            // Escape trailing backslashes before closing quote
-            // Flush any remaining backslashes unchanged or doubled depending on mode
+            // Flush any remaining backslashes, doubled only when a closing quote will follow (EscapeArgs).
             if (backslashCount > 0)
                 sb.Append('\\', escapeQuotes ? backslashCount * 2 : backslashCount);
 
@@ -486,8 +485,7 @@ namespace Servy.Core.Helpers
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir))
             {
-                // Directory creation is synchronous in standard .NET, but keeping context
-                // aware for potential future IO wrappers.
+                // Ensure the parent directory exists before attempting to create the file.
                 Directory.CreateDirectory(dir);
             }
 
