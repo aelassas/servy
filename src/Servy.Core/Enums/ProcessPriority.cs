@@ -6,6 +6,12 @@ namespace Servy.Core.Enums
     /// <remarks>
     /// <b>CRITICAL NOTE:</b> These integers are persisted directly to the SQLite database configuration layer.
     /// Do not reorder or alter these values, as it will corrupt process configurations on existing installations.
+    /// <para>
+    /// Note: <c>default(ProcessPriority)</c> yields <see cref="Idle"/>, which is not the product default
+    /// (<see cref="Servy.Core.Config.AppConfig.DefaultProcessPriority"/> is <see cref="Normal"/>). When initializing
+    /// new fields, configurations, or data transfer objects, you must explicitly assign an appropriate default state
+    /// value rather than relying on the CLR zero-initialization layout.
+    /// </para>
     /// </remarks>
     public enum ProcessPriority
     {
