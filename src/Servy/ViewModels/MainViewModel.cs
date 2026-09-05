@@ -325,7 +325,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the heartbeat interval (seconds) as a string.
+        /// Gets or sets the health check heartbeat interval in seconds.
         /// </summary>
         public string HeartbeatInterval
         {
@@ -334,7 +334,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the maximum allowed failed health checks as a string.
+        /// Gets or sets the maximum number of failed health checks before taking recovery action.
         /// </summary>
         public string MaxFailedChecks
         {
@@ -372,7 +372,7 @@ namespace Servy.ViewModels
         };
 
         /// <summary>
-        /// Gets or sets the maximum number of restart attempts as a string.
+        /// Gets or sets the maximum number of restart attempts.
         /// </summary>
         public string MaxRestartAttempts
         {
@@ -408,7 +408,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets failure program path as a string.
+        /// Gets or sets the path to the program run when the service fails.
         /// </summary>
         public string FailureProgramPath
         {
@@ -417,7 +417,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets failure program startup directory as a string.
+        /// Gets or sets the working directory of the failure program.
         /// </summary>
         public string FailureProgramStartupDirectory
         {
@@ -426,7 +426,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets failure program parameters as a string.
+        /// Gets or sets the command line parameters passed to the failure program.
         /// </summary>
         public string FailureProgramParameters
         {
@@ -435,7 +435,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets environment variables as a string.
+        /// Gets or sets the environment variables for the service, in KEY=VALUE form separated by semicolons.
         /// </summary>
         public string EnvironmentVariables
         {
@@ -444,7 +444,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets service dependencies as a string.
+        /// Gets or sets the semicolon- or newline-separated list of dependent service names.
         /// </summary>
         public string ServiceDependencies
         {
@@ -453,7 +453,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets run as local system as a bool.
+        /// Gets or sets a value indicating whether the service runs as LocalSystem.
         /// </summary>
         public bool RunAsLocalSystem
         {
@@ -462,7 +462,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets user account as a string.
+        /// Gets or sets the user account the service logs on as.
         /// </summary>
         public string UserAccount
         {
@@ -471,7 +471,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets user password as a string.
+        /// Gets or sets the password of the user account the service logs on as.
         /// </summary>
         public string Password
         {
@@ -480,7 +480,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets user password confirmation as a string.
+        /// Gets or sets the confirmation of the user account password.
         /// </summary>
         public string ConfirmPassword
         {
@@ -489,7 +489,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch executable path as a string.
+        /// Gets or sets the path to the executable run before the service process starts.
         /// </summary>
         public string PreLaunchExecutablePath
         {
@@ -498,7 +498,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch startup directory as a string.
+        /// Gets or sets the working directory of the pre-launch executable.
         /// </summary>
         public string PreLaunchStartupDirectory
         {
@@ -507,7 +507,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch parameters as a string.
+        /// Gets or sets the command line parameters passed to the pre-launch executable.
         /// </summary>
         public string PreLaunchParameters
         {
@@ -516,7 +516,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch environment variables as a string.
+        /// Gets or sets the environment variables for the pre-launch process, in KEY=VALUE form separated by semicolons.
         /// </summary>
         public string PreLaunchEnvironmentVariables
         {
@@ -525,7 +525,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch stdout log file path as a string.
+        /// Gets or sets the path for pre-launch standard output redirection.
         /// </summary>
         public string PreLaunchStdoutPath
         {
@@ -534,7 +534,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch stderr log file path as a string.
+        /// Gets or sets the path for pre-launch standard error redirection.
         /// </summary>
         public string PreLaunchStderrPath
         {
@@ -543,7 +543,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch timeout as a string.
+        /// Gets or sets the pre-launch timeout in seconds.
         /// </summary>
         public string PreLaunchTimeoutSeconds
         {
@@ -552,7 +552,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch retry attempts as a string.
+        /// Gets or sets the number of retry attempts for the pre-launch process.
         /// </summary>
         public string PreLaunchRetryAttempts
         {
@@ -561,7 +561,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-launch ignore failure as a bool.
+        /// Gets or sets a value indicating whether to ignore failures of the pre-launch process.
         /// </summary>
         public bool PreLaunchIgnoreFailure
         {
@@ -579,7 +579,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets post-launch executable path as a string.
+        /// Gets or sets the path to the executable run after the service process starts.
         /// </summary>
         public string PostLaunchExecutablePath
         {
@@ -588,7 +588,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets post-launch startup directory as a string.
+        /// Gets or sets the working directory of the post-launch executable.
         /// </summary>
         public string PostLaunchStartupDirectory
         {
@@ -597,7 +597,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets post-launch parameters as a string.
+        /// Gets or sets the command line parameters passed to the post-launch executable.
         /// </summary>
         public string PostLaunchParameters
         {
@@ -615,7 +615,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-stop executable path as a string.
+        /// Gets or sets the path to the executable run before the service process stops.
         /// </summary>
         public string PreStopExecutablePath
         {
@@ -624,7 +624,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-stop startup directory as a string.
+        /// Gets or sets the working directory of the pre-stop executable.
         /// </summary>
         public string PreStopStartupDirectory
         {
@@ -633,7 +633,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-stop parameters as a string.
+        /// Gets or sets the command line parameters passed to the pre-stop executable.
         /// </summary>
         public string PreStopParameters
         {
@@ -642,7 +642,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-stop timeout as a string.
+        /// Gets or sets the pre-stop timeout in seconds.
         /// </summary>
         public string PreStopTimeoutSeconds
         {
@@ -651,7 +651,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets pre-stop log as error as a bool.
+        /// Gets or sets a value indicating whether to log pre-stop failure as error.
         /// </summary>
         public bool PreStopLogAsError
         {
@@ -660,7 +660,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets post-stop executable path as a string.
+        /// Gets or sets the path to the executable run after the service process stops.
         /// </summary>
         public string PostStopExecutablePath
         {
@@ -669,7 +669,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets post-stop startup directory as a string.
+        /// Gets or sets the working directory of the post-stop executable.
         /// </summary>
         public string PostStopStartupDirectory
         {
@@ -678,7 +678,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets post-stop parameters as a string.
+        /// Gets or sets the command line parameters passed to the post-stop executable.
         /// </summary>
         public string PostStopParameters
         {
