@@ -39,7 +39,9 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Cleans up any open file streams, temporary files, and the extracted executable.
+        /// Deletes the temporary files created by <see cref="CreateTempFile"/>. The extracted
+        /// handle64.exe is shared with sibling suites and is deliberately left in place
+        /// (see the comment in the method body).
         /// </summary>
         public void Dispose()
         {
