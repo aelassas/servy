@@ -432,13 +432,14 @@ namespace Servy.Manager.ViewModels
             await ExecuteSearchPipelineAsync(
                 async (token) =>
                 {
-                    // Step 3: fetch data off UI thread
+                    // fetchAndApplyAsync 1 of 4 (runs inside the pipeline's step 5 & 6):
+                    // fetch data off UI thread
                     var stopwatch = Stopwatch.StartNew();
                     var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
                     stopwatch.Stop();
                     Logger.Debug($"Fetched {results.Count} services in {stopwatch.ElapsedMilliseconds} ms");
 
-                    // Step 4: fetch data & build VMs off UI thread
+                    // fetchAndApplyAsync 2 of 4: build the row view models off UI thread
                     stopwatch = Stopwatch.StartNew();
                     var vms = await Task.Run(() =>
                         results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _cursorService)).ToList()
@@ -446,7 +447,7 @@ namespace Servy.Manager.ViewModels
                     stopwatch.Stop();
                     Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {stopwatch.ElapsedMilliseconds} ms");
 
-                    // Step 5: update collection on UI thread
+                    // fetchAndApplyAsync 3 of 4: update collection on UI thread
                     await _dispatcher.InvokeAsync(() =>
                     {
                         // Mutual exclusion: prevents the background refresh thread from
@@ -480,7 +481,7 @@ namespace Servy.Manager.ViewModels
                         OnPropertyChanged(nameof(HasSelectedServices));
                     }, DispatcherPriority.Background);
 
-                    // Step 6: refresh all service statuses and details in the background
+                    // fetchAndApplyAsync 4 of 4: refresh all service statuses and details in the background
                     _ = Task.Run(async () =>
                     {
                         if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
@@ -508,7 +509,8 @@ namespace Servy.Manager.ViewModels
                 manyFormat: Strings.Footer_Service_Many,
                 onPreFetchYieldAsync: async () =>
                 {
-                    // Step 2: allow WPF to repaint the button and show progress bar
+                    // onPreFetchYieldAsync hook (runs inside the pipeline's step 3 & 4):
+                    // allow WPF to repaint the button and show progress bar
                     await _dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 });
         }
