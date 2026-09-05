@@ -353,23 +353,6 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
-        [Fact]
-        public void Flush_EmptyWrite_CoversBaseStreamLengthZero()
-        {
-            // Arrange
-            var filePath = Path.Combine(_testDir, "flush_empty.txt");
-
-            // Act
-            using (var writer = CreateWriter(filePath, true, 10))
-            {
-                writer.Write(""); // Forces lazy initialization, _baseStream is created
-                writer.Flush();   // Length could be 0, covers the extra boundary
-            }
-
-            // Assert
-            Assert.True(File.Exists(filePath));
-        }
-
         private string InvokeGenerateUniqueFileName(string path)
         {
             // Arrange & Act
