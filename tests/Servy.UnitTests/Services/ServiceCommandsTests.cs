@@ -697,6 +697,28 @@ namespace Servy.UnitTests.Services
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
+        [Fact]
+        public async Task StopService_ServiceDisabled_StillStopsWithoutDisabledError()
+        {
+            // Arrange
+            // A service whose startup type is Disabled can still be running - Disabled governs
+            // starting, not stopping - which is why StopService passes checkDisabled: false.
+            var sut = CreateSut();
+            var serviceName = "DisabledButRunningService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(serviceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.StopServiceAsync(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceDisabledError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+        }
+
         #endregion
 
         #region IsServiceNameValid Conditional Branch Tests
