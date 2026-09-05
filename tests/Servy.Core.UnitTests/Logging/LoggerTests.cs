@@ -214,15 +214,25 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Shutdown();
 
             // Assert
-            string[] lines = File.ReadAllLines(_fullLogPath);
+            // Read the raw text: File.ReadAllLines strips every terminator it splits on, so a
+            // CR or LF assertion made against one of its elements is true by construction.
+            string content = File.ReadAllText(_fullLogPath);
 
             // Locate by payload rather than by index: the file may already hold entries from earlier writes.
-            int matchingIndex = Array.FindIndex(lines, l => l.Contains(expectedFragment));
-            Assert.True(matchingIndex >= 0, $"Expected log entry containing fragment '{expectedFragment}' was not found.");
+            Assert.Contains(expectedFragment, content);
 
-            string targetLine = lines[matchingIndex];
-            Assert.DoesNotContain("\n", targetLine);
-            Assert.DoesNotContain("\r", targetLine);
+            // The entry must occupy exactly one physical line: the only newline in the file
+            // is the terminator the writer appends.
+            string entry = content.TrimEnd('\r', '\n');
+            Assert.DoesNotContain("\n", entry);
+            Assert.DoesNotContain("\r", entry);
+
+            // The vertical separators ReadLine does not split on, and which the sanitizer
+            // is specifically there to collapse.
+            foreach (char forbidden in new[] { '\u2028', '\u2029', '\u0085', '\v', '\f' })
+            {
+                Assert.DoesNotContain(forbidden.ToString(), entry);
+            }
         }
 
         #endregion
