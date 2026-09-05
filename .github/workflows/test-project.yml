@@ -1,8 +1,8 @@
 # ==========================================================================================
 # GitHub Actions Workflow - Test Single Project
 # ------------------------------------------------------------------------------------------
-# Executes unit and integration tests against a single target .NET test project on demand
-# under `./tests/` using direct `dotnet test` invocations for both Debug and Release configs.
+# Executes tests against a single target .NET test project on demand under `./tests/` using
+# direct `dotnet test` invocations for both Debug and Release configs.
 # ==========================================================================================
 
 name: test-project
