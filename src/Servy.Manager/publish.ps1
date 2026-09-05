@@ -30,6 +30,10 @@
     .\publish.ps1
     Builds Servy.Manager in Release mode with default settings.
 
+.EXAMPLE
+    .\publish.ps1 -Tfm "net10.0-windows" -BuildConfiguration "Debug" -Runtime "win-x64"
+    Builds Servy.Manager for an explicit target framework, configuration and runtime.
+
 .NOTES
     Author: Akram El Assas
 
