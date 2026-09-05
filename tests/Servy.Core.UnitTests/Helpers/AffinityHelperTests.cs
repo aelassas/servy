@@ -201,17 +201,22 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("0xINVALID")]
-        [InlineData("0x0")]
-        [InlineData("abc")]
-        [InlineData("9999")]
-        [InlineData(",")]
-        [InlineData(",,")]
-        [InlineData(" , ")]
-        [InlineData("1-0")]
-        public void ValidateAffinity_InvalidInput_ReturnsFalseAndPopulatesErrorMessage(string input)
+        [InlineData("0xINVALID", nameof(Strings.Msg_InvalidHexAffinityFormat), "0xINVALID")]
+        [InlineData("0x0", nameof(Strings.Msg_EmptyAffinityMask), "0x0")]
+        [InlineData("abc", nameof(Strings.Msg_InvalidCoreSpecification), "abc")]
+        [InlineData("9999", nameof(Strings.Msg_CoreIndexOutOfBounds), "9999")]
+        [InlineData(",", nameof(Strings.Msg_InvalidCoreSpecification), ",")]
+        [InlineData(",,", nameof(Strings.Msg_InvalidCoreSpecification), ",,")]
+        [InlineData(" , ", nameof(Strings.Msg_InvalidCoreSpecification), ",")] // ParseAffinity trims before formatting
+        [InlineData("1-0", nameof(Strings.Msg_InvertedCoreRange), "1-0")]
+        public void ValidateAffinity_InvalidInput_ReturnsFalseAndPopulatesErrorMessage(string input, string expectedResourceKey, string expectedToken)
         {
-            // Arrange (N/A)
+            // Arrange
+            // Name the exact resource each row is expected to surface: the eight rows reach five
+            // different throw sites, and asserting only that the message is non-empty cannot tell
+            // them apart, so a wrong-resource regression of the #5911 kind would pass.
+            string template = (string)typeof(Strings).GetProperty(expectedResourceKey)!.GetValue(null)!;
+            string expected = string.Format(template, expectedToken, Math.Min(Environment.ProcessorCount, 64) - 1);
 
             // Act
             bool isValid = AffinityHelper.ValidateAffinity(input, out string? errorMessage);
@@ -219,7 +224,7 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.False(isValid);
             Assert.NotNull(errorMessage);
-            Assert.NotEmpty(errorMessage);
+            Assert.Contains(expected, errorMessage);
         }
     }
 }
