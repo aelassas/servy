@@ -4,6 +4,7 @@ using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
 using Xunit;
@@ -172,6 +173,42 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result);
             Assert.Null(error);
+        }
+
+        [Fact]
+        public void TryValidate_JsonWithUnknownMember_ReturnsFalse()
+        {
+            // Arrange
+            // MissingMemberHandling.Error in JsonSecurity.UntrustedDataSettings must reject a member
+            // that does not exist on ServiceDto, the way the XML twin rejects an unknown element.
+            // Everything else in this payload is valid, so the unknown member is the only reason to fail.
+            var json = "{\"Name\":\"TestService\",\"ExecutablePath\":\"C:\\\\Windows\\\\System32\\\\calc.exe\",\"StopTimeout\":30,\"NotAServiceDtoMember\":123}";
+            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "JSON", string.Empty).TrimEnd('.', ':', ' ');
+
+            _processHelperMock.Setup(ph => ph.ValidatePath("C:\\Windows\\System32\\calc.exe", It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(json, out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.StartsWith(expectedPrefix, error);
+            Assert.Contains("NotAServiceDtoMember", error);
+        }
+
+        [Fact]
+        public void UntrustedDataSettings_PinsDepthAndUnknownMemberHardening()
+        {
+            // Arrange & Act
+            // The MaxDepth guard cannot be reached through TryValidate: ServiceDto exposes only
+            // primitive properties, so a nested payload fails on the first structural mismatch (or on
+            // MissingMemberHandling) long before the reader descends 32 levels. Pin the settings
+            // object instead, which is what deleting either line would silently remove.
+            var settings = JsonSecurity.UntrustedDataSettings;
+
+            // Assert
+            Assert.Equal(AppConfig.UntrustedJsonMaxDepth, settings.MaxDepth);
+            Assert.Equal(MissingMemberHandling.Error, settings.MissingMemberHandling);
         }
 
         [Fact]
