@@ -117,6 +117,16 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets the tri-state "Select All" value for the services.
         /// </summary>
+        /// <remarks>
+        /// Setting this property does two things to every row: it applies the new check state
+        /// (<see cref="ServiceRowViewModel.IsChecked"/>) and it clears the row highlight
+        /// (<see cref="ServiceRowViewModel.IsSelected"/>), so a single highlighted row is not shown
+        /// alongside a bulk selection. Checking a row by hand does not clear the highlight, so the
+        /// two paths are deliberately asymmetric.
+        /// The <c>_isUpdatingSelectAll</c> guard skips the loop while the header state is being
+        /// recomputed from the rows by <see cref="UpdateSelectAllState"/>, which is what stops a
+        /// background refresh from clearing the highlight.
+        /// </remarks>
         public bool? SelectAll
         {
             get => _selectAll;
@@ -135,7 +145,8 @@ namespace Servy.Manager.ViewModels
                     {
                         bool targetState = value == true;
 
-                        // Apply the target check-state to every row in a single pass.
+                        // Apply the target check-state to every row in a single pass, and clear the
+                        // row highlight as well so a highlighted row is not left next to a bulk selection.
                         foreach (var service in _services)
                         {
                             service.IsChecked = targetState;
