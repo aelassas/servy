@@ -21,6 +21,18 @@ namespace Servy.Core.UnitTests.Services
             _validator = new JsonServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
         }
 
+        #region Constructor Tests
+
+        [Fact]
+        public void Constructor_NullRules_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new JsonServiceValidator(null!));
+            Assert.Equal("serviceValidationRules", ex.ParamName);
+        }
+
+        #endregion
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
