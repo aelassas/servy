@@ -95,10 +95,11 @@ namespace Servy.Core.UnitTests.Logging
         public void MapToDto_AllPropertiesValid_MapsCorrectly()
         {
             // Arrange
+            var timeCreated = new DateTime(2026, 6, 24, 15, 0, 0, DateTimeKind.Utc);
             var mockEvent = new TestableEventRecord
             {
                 IdValue = 42,
-                TimeCreatedValue = new DateTime(2026, 6, 24, 15, 0, 0, DateTimeKind.Utc),
+                TimeCreatedValue = timeCreated,
                 LevelValue = 3,
                 ProviderNameValue = "ServyEngine",
                 FormatDescriptionValue = "Service started successfully."
@@ -112,7 +113,11 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal(EventLogLevel.Warning, result.Level);
             Assert.Equal("ServyEngine", result.ProviderName);
             Assert.Equal("Service started successfully.", result.Message);
-            Assert.Equal(TimeSpan.Zero, result.Time.Offset);
+            // The whole instant, not just the offset: DateTimeOffset.MinValue - the fallback MapToDto
+            // leaves in place when TimeCreated cannot be read - also has a Zero offset, so pinning
+            // .Offset alone stayed green even with the timestamp mapping deleted. An explicitly-UTC
+            // DateTime projects to a Zero offset, so the expected value is machine-independent.
+            Assert.Equal(new DateTimeOffset(timeCreated, TimeSpan.Zero), result.Time);
         }
 
         [Fact]
