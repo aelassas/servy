@@ -328,7 +328,10 @@ namespace Servy.Core.IntegrationTests.Security
                     ? exception.InnerException
                     : exception;
 
-                Assert.True(baseException is IOException || baseException is System.Security.SecurityException,
+                // The read-retry loop catches and, on the final attempt, rethrows exactly IOException
+                // (other than the not-found pair) and UnauthorizedAccessException, so those are the
+                // two classes a caller can observe from this path.
+                Assert.True(baseException is IOException || baseException is UnauthorizedAccessException,
                     $"Expected filesystem access error, but instead caught: {baseException.GetType().Name}");
 
                 // 2. Verify the backoff retry time logic contract.
