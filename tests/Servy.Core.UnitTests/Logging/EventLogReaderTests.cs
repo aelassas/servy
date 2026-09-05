@@ -79,15 +79,18 @@ namespace Servy.Core.UnitTests.Logging
         public void SafeToOffset_WhenUnspecifiedOrLocalKind_InheritsMachineLocalOffset(DateTimeKind kind)
         {
             // Arrange
+            // The expected offset comes from TimeZoneInfo, not from the 'new DateTimeOffset(raw.Value)'
+            // expression under test: computing it the SUT's own way made both assertions hold for any
+            // change to how the offset is derived, which is the one thing the test name promises.
             var testTime = new DateTime(2026, 6, 24, 12, 0, 0, kind);
-            var expected = new DateTimeOffset(testTime);
+            var expectedOffset = TimeZoneInfo.Local.GetUtcOffset(testTime);
 
             // Act
             var result = EventLogReader.SafeToOffset(testTime);
 
             // Assert
-            Assert.Equal(expected, result);
-            Assert.Equal(expected.Offset, result.Offset);
+            Assert.Equal(expectedOffset, result.Offset);
+            Assert.Equal(testTime, result.DateTime); // the wall-clock reading is stamped, not shifted
         }
 
         #endregion
