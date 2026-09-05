@@ -97,10 +97,20 @@ namespace Servy.Core.Services
         /// <summary>Failure program parameters.</summary>
         public string FailureProgramExecutableArgs { get; set; }
 
-        /// <summary>Environment variables.</summary>
+        /// <summary>
+        /// Environment variables for the wrapped process as <c>KEY=VALUE</c> pairs separated by semicolons or newlines
+        /// (a literal '=' or ';' inside a value is escaped with a backslash). Not validated by
+        /// <see cref="IServiceManager.InstallServiceAsync"/>; callers run <see cref="Servy.Core.Validation.IServiceValidationRules"/>
+        /// (or <see cref="Servy.Core.EnvironmentVariables.EnvironmentVariablesValidator"/>) before installing.
+        /// </summary>
         public string EnvironmentVariables { get; set; }
 
-        /// <summary>Service dependencies.</summary>
+        /// <summary>
+        /// Names of the services this service depends on, separated by semicolons or newlines (not commas).
+        /// A name may carry a leading '+' to reference a load-order group. Not validated by
+        /// <see cref="IServiceManager.InstallServiceAsync"/>; callers run <see cref="Servy.Core.Validation.IServiceValidationRules"/>
+        /// (or <see cref="Servy.Core.ServiceDependencies.ServiceDependenciesValidator"/>) before installing.
+        /// </summary>
         public string ServiceDependencies { get; set; }
 
         /// <summary>Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</summary>
@@ -118,7 +128,7 @@ namespace Servy.Core.Services
         /// <summary>Command line arguments to pass to the pre-launch executable.</summary>
         public string PreLaunchArgs { get; set; }
 
-        /// <summary>Pre-launch environment variables.</summary>
+        /// <summary>Environment variables for the pre-launch process, in the same <c>KEY=VALUE</c> format and with the same caller-side validation as <see cref="EnvironmentVariables"/>.</summary>
         public string PreLaunchEnvironmentVariables { get; set; }
 
         /// <summary>Optional path for pre-launch standard output redirection. If null, no redirection is performed.</summary>
