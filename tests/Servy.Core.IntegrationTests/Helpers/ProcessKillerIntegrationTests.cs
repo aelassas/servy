@@ -345,26 +345,25 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Act
             while (killAttempts < maxKillAttempts && !exited)
             {
+                // Count every attempt, so the failure message below reports what was actually tried
+                killAttempts++;
+
                 // Attempt to kill processes holding the lock
                 result = _processKiller.KillProcessesUsingFile(testFile);
 
                 // GitHub Actions runners can be slow; wait up to 3 seconds per attempt for the process to actually exit
                 exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(3));
 
-                if (!exited)
+                if (!exited && killAttempts < maxKillAttempts)
                 {
-                    killAttempts++;
-                    if (killAttempts < maxKillAttempts)
-                    {
-                        // Give the OS handle table a moment to update before attempting the kill again
-                        Thread.Sleep(1000);
-                    }
+                    // Give the OS handle table a moment to update before attempting the kill again
+                    Thread.Sleep(1000);
                 }
             }
 
             // Assert
             Assert.True(result, "KillProcessesUsingFile should return true.");
-            Assert.True(exited, $"The background process holding the file lock should have been terminated after {killAttempts + 1} attempts.");
+            Assert.True(exited, $"The background process holding the file lock should have been terminated after {killAttempts} attempts.");
 
             // 5. Backoff/Retry Phase for File Deletion
             bool deleted = false;
@@ -456,7 +455,8 @@ namespace Servy.Core.IntegrationTests.Helpers
                 WorkingDirectory = tempPath,
             };
 
-            var parentProcess = Process.Start(psi);
+            var parentProcess = Process.Start(psi)
+                ?? throw new InvalidOperationException("Failed to spawn the orchestration PowerShell process.");
             _trackedProcesses.Add(parentProcess);
 
             var errBuilder = new StringBuilder();
@@ -475,7 +475,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             int childPid = -1;
             var readTask = Task.Run(() =>
             {
-                while (parentProcess != null && !parentProcess.HasExited)
+                while (!parentProcess.HasExited)
                 {
                     string line = parentProcess.StandardOutput.ReadLine();
                     const string marker = "CHILD_PID:";
