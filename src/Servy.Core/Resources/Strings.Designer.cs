@@ -241,6 +241,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator)..
+        /// </summary>
+        public static string Msg_EventLogAccessDenied {
+            get {
+                return ResourceManager.GetString("Msg_EventLogAccessDenied", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot access Windows Event Log. Ensure the &apos;Windows Event Log&apos; service is running and the query is valid..
+        /// </summary>
+        public static string Msg_EventLogUnavailable {
+            get {
+                return ResourceManager.GetString("Msg_EventLogUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Service process path cannot be empty..
         /// </summary>
         public static string Msg_ExecutablePathRequired {
@@ -349,15 +367,6 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to open configuration file for reading..
-        /// </summary>
-        public static string Msg_ImportReadFailure {
-            get {
-                return ResourceManager.GetString("Msg_ImportReadFailure", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to {0} structure error: {1}..
         /// </summary>
         public static string Msg_ImportStructureError {
@@ -457,7 +466,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid hex affinity format: {0}.
+        ///   Looks up a localized string similar to Invalid hex affinity format: &apos;{0}&apos;..
         /// </summary>
         public static string Msg_InvalidHexAffinityFormat {
             get {
@@ -763,7 +772,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Security: Could not obtain a SafeFileHandle for the target..
+        ///   Looks up a localized string similar to Security Alert: Could not obtain a file handle for the target..
         /// </summary>
         public static string Msg_SecurityHandleInvalid {
             get {
@@ -772,7 +781,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Path validation failed at the kernel level: Kernel path resolution serialization failed..
+        ///   Looks up a localized string similar to Security Alert: Path validation failed in the kernel probe (path serialization)..
         /// </summary>
         public static string Msg_SecurityHandleSerializationFailed {
             get {
@@ -781,7 +790,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Path validation failed at the kernel level: Kernel size probe allocation failed..
+        ///   Looks up a localized string similar to Security Alert: Path validation failed in the kernel probe (size allocation)..
         /// </summary>
         public static string Msg_SecurityHandleSizeProbeFailed {
             get {
@@ -790,7 +799,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Security Guard Failure: Target file handle validation rejected. {0}.
+        ///   Looks up a localized string similar to Security Alert: Target file handle validation was rejected ({0})..
         /// </summary>
         public static string Msg_SecurityHandleValidationFailed {
             get {
@@ -826,7 +835,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Access Denied: The resolved path targets protected system directory &apos;{0}&apos;. Import prohibited..
+        ///   Looks up a localized string similar to Security Alert: The resolved path targets protected system directory &apos;{0}&apos;. Import prohibited..
         /// </summary>
         public static string Msg_SecurityProtectedDirectory {
             get {
@@ -835,7 +844,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Access Denied: The resolved path targets protected system directory &apos;{0}&apos;. Export prohibited..
+        ///   Looks up a localized string similar to Security Alert: The resolved path targets protected system directory &apos;{0}&apos;. Export prohibited..
         /// </summary>
         public static string Msg_SecurityProtectedDirectoryExport {
             get {

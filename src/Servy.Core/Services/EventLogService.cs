@@ -2,6 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
+using Servy.Core.Resources;
 using System.Diagnostics.Eventing.Reader;
 using System.Security;
 using System.Text.RegularExpressions;
@@ -150,13 +151,13 @@ namespace Servy.Core.Services
                 {
                     // InvalidOperationException is appropriate when a required system service (Event Log)
                     // is not in the correct state to perform the operation.
-                    throw new InvalidOperationException("Cannot access Windows Event Log. Ensure the 'Windows Event Log' service is running and the query is valid.", ex);
+                    throw new InvalidOperationException(Strings.Msg_EventLogUnavailable, ex);
                 }
                 catch (UnauthorizedAccessException ex)
                 {
                     // SecurityException is the standard .NET way to signal that a call failed
                     // due to insufficient permissions/privileges.
-                    throw new SecurityException("Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).", ex);
+                    throw new SecurityException(Strings.Msg_EventLogAccessDenied, ex);
                 }
 
                 return results

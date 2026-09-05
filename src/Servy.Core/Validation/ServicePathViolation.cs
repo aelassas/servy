@@ -1,4 +1,5 @@
 using Servy.Core.DTOs;
+using Servy.Core.Resources;
 using System.Reflection;
 
 namespace Servy.Core.Validation
@@ -48,6 +49,25 @@ namespace Servy.Core.Validation
             Attribute = attribute;
             Value = value;
             IsMissing = isMissing;
+        }
+
+        /// <summary>
+        /// Resolves the localized message named by <see cref="ServicePathAttribute.ErrorResourceKey"/>,
+        /// falling back to the generic in-configuration message when no key is declared or it does not resolve.
+        /// </summary>
+        public string ResolveErrorMessage()
+        {
+            if (!string.IsNullOrEmpty(Attribute.ErrorResourceKey))
+            {
+                var property = typeof(Strings).GetProperty(
+                    Attribute.ErrorResourceKey,
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+                if (property?.GetValue(null) is string resolved)
+                    return resolved;
+            }
+
+            return string.Format(Strings.Msg_InvalidPathInConfig, Attribute.Label);
         }
     }
 }

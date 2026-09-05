@@ -231,6 +231,7 @@ namespace Servy.CLI.Commands
             var violation = ServicePathValidator.FindFirstViolation(service, _processHelper.ValidatePath);
             if (violation != null)
             {
+                // ExecutablePath keeps the CLI-specific message because it interpolates the offending value.
                 if (violation.Property.Name == nameof(ServiceDto.ExecutablePath))
                 {
                     return CommandResult.Fail(string.Format(
@@ -238,9 +239,7 @@ namespace Servy.CLI.Commands
                         violation.Value ?? string.Empty));
                 }
 
-                return CommandResult.Fail(string.Format(
-                    Core.Resources.Strings.Msg_InvalidPathInConfig,
-                    violation.Attribute.Label));
+                return CommandResult.Fail(violation.ResolveErrorMessage());
             }
 
             return CommandResult.Ok();

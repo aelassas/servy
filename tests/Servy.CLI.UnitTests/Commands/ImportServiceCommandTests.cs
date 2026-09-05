@@ -378,8 +378,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            // Proves execution hit the generalized config path error message branch fallback path
-            Assert.Equal(string.Format(Core.Resources.Strings.Msg_InvalidPathInConfig, "startup directory"), result.Message);
+            Assert.Equal(Core.Resources.Strings.Msg_InvalidStartupDirectory, result.Message);
         }
 
         #endregion

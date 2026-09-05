@@ -121,7 +121,8 @@ namespace Servy.Core.Services
                 serviceName,
                 SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG))
             {
-                if (serviceHandle.IsInvalid)
+                // Note: Check serviceHandle for null to accommodate mock objects in unit tests.
+                if (serviceHandle == null || serviceHandle.IsInvalid)
                 {
                     throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open existing service.");
                 }
@@ -554,7 +555,7 @@ namespace Servy.Core.Services
                                     options.ServiceName,
                                     SERVICE_CHANGE_CONFIG))
                                 {
-                                    if (existingServiceHandle.IsInvalid)
+                                    if (existingServiceHandle == null || existingServiceHandle.IsInvalid)
                                     {
                                         var err = _win32ErrorProvider.GetLastWin32Error();
                                         Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
@@ -648,10 +649,7 @@ namespace Servy.Core.Services
                 }
                 finally
                 {
-                    if (serviceHandle != null)
-                    {
-                        serviceHandle.Dispose();
-                    }
+                    serviceHandle?.Dispose();
                 }
             }
             catch (OperationCanceledException)
@@ -729,7 +727,7 @@ namespace Servy.Core.Services
 
                 using (var serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, uninstallRights))
                 {
-                    if (serviceHandle.IsInvalid)
+                    if (serviceHandle == null || serviceHandle.IsInvalid)
                     {
                         int openErr = _win32ErrorProvider.GetLastWin32Error();
 
@@ -782,17 +780,17 @@ namespace Servy.Core.Services
                     // This guarantees that if the wait loop times out or throws a cancellation exception above,
                     // the original SCM startup configuration remains unaltered, eliminating the manual-start downgrade trap.
                     bool configSuccess = _windowsServiceApi.ChangeServiceConfig(
-                        serviceHandle,
-                        SERVICE_NO_CHANGE,
-                        SERVICE_DEMAND_START,
-                        SERVICE_NO_CHANGE,
-                        null,
-                        null,
-                        IntPtr.Zero,
-                        null,
-                        null,
-                        null,
-                        null);
+                        hService: serviceHandle,
+                        dwServiceType: SERVICE_NO_CHANGE,
+                        dwStartType: SERVICE_DEMAND_START,
+                        dwErrorControl: SERVICE_NO_CHANGE,
+                        lpBinaryPathName: null,
+                        lpLoadOrderGroup: null,
+                        lpdwTagId: IntPtr.Zero,
+                        lpDependencies: null,
+                        lpServiceStartName: null,
+                        lpPassword: null,
+                        lpDisplayName: null);
 
                     if (!configSuccess)
                     {
@@ -1041,7 +1039,7 @@ namespace Servy.Core.Services
                             {
                                 using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_QUERY_CONFIG))
                                 {
-                                    if (svcHandle.IsInvalid)
+                                    if (svcHandle == null || svcHandle.IsInvalid)
                                     {
                                         Logger.Debug($"Could not open '{serviceName}' to check delayed auto-start (Win32 {_win32ErrorProvider.GetLastWin32Error()}); reporting Automatic.");
                                     }
@@ -1201,7 +1199,7 @@ namespace Servy.Core.Services
             // 2. Open the service handle
             using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, info.Name, SERVICE_QUERY_CONFIG))
             {
-                if (svcHandle.IsInvalid)
+                if (svcHandle == null || svcHandle.IsInvalid)
                 {
                     int err = _win32ErrorProvider.GetLastWin32Error();
                     Logger.Debug($"Could not open '{info.Name}' for native details (Win32 {err}); leaving details unset.");

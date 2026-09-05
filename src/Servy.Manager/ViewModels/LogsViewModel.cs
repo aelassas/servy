@@ -9,6 +9,7 @@ using Servy.UI.Commands;
 using Servy.UI.Design;
 using Servy.UI.Services;
 using System.ComponentModel;
+using System.Security;
 using System.Windows.Data;
 
 namespace Servy.Manager.ViewModels
@@ -292,7 +293,12 @@ namespace Servy.Manager.ViewModels
         protected override async Task HandleSearchExceptionAsync(Exception ex)
         {
             Logger.Error($"Failed to search logs.", ex);
-            await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+
+            var message = ex is SecurityException || ex is InvalidOperationException
+                ? ex.Message
+                : Strings.Msg_UnexpectedError;
+
+            await _messageBoxService.ShowErrorAsync(message, UiAppConfig.Caption);
         }
 
         /// <summary>
