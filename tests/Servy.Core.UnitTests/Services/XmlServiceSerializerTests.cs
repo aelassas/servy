@@ -85,10 +85,11 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.True(compared >= 50, $"Only {compared} of {properties.Count()} properties were compared; the fixture has gone sparse.");
 
-            // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings are omitted
+            // UserAccount and Password (sensitive data) are dropped by [XmlIgnore], while
+            // RunAsLocalSystem is reset to the configured default rather than omitted.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
-            Assert.True(actual.RunAsLocalSystem);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, actual.RunAsLocalSystem);
         }
 
         [Fact]
@@ -284,7 +285,7 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.Null(deserialized.UserAccount);
             Assert.Null(deserialized.Password);
-            Assert.True(deserialized.RunAsLocalSystem);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, deserialized.RunAsLocalSystem);
         }
 
         [Fact]

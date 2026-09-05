@@ -123,7 +123,7 @@ namespace Servy.Core.UnitTests.Services
             // these properties never hit the serialized string payload loop during SerializeObject passes.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
-            Assert.True(actual.RunAsLocalSystem);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, actual.RunAsLocalSystem);
         }
 
         [Fact]
@@ -153,7 +153,8 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
-            Assert.True(actual.RunAsLocalSystem, "RunAsLocalSystem must fall back to its safe system default (true).");
+            // Identity is reset to the configured default, never taken from the payload.
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, actual.RunAsLocalSystem);
         }
 
         [Fact]
@@ -292,7 +293,7 @@ namespace Servy.Core.UnitTests.Services
             // Confirm structural integrity for unmapped fallback security fields (credentials are dropped by [JsonIgnore] in both directions)
             Assert.Null(recovered.UserAccount);
             Assert.Null(recovered.Password);
-            Assert.True(recovered.RunAsLocalSystem);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, recovered.RunAsLocalSystem);
         }
 
         #endregion
