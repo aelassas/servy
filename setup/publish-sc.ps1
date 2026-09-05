@@ -23,7 +23,9 @@
       - .NET SDK
       - Inno Setup (ISCC.exe)
       - 7-Zip (7z.exe)
-      - setup/signpath.ps1
+    Optional:
+      - setup/signpath.ps1: signs the installer when present; when absent, signing is
+        skipped with a warning and the installer remains unsigned.
 #>
 [CmdletBinding()]
 param(

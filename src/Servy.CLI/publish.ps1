@@ -40,8 +40,10 @@
     Project: Servy
     Requirements:
         - .NET SDK installed
-        - SignPath setup
         - Valid folder structure
+    Optional:
+        - setup/signpath.ps1: signs the output when -BuildConfiguration is Release;
+          when absent, signing is skipped with a warning.
 #>
 param(
     [string]$Tfm                = "net10.0-windows",

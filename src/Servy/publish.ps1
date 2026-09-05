@@ -2,12 +2,12 @@
 
 <#
 .SYNOPSIS
-    Publishes the Servy WPF application as a self-contained executable and signs it.
+    Publishes the Servy WPF application as a self-contained executable and optionally signs it.
 
 .DESCRIPTION
     This script performs the following steps:
       1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration).
-      2. Builds and publishes `Servy.csproj` as a self-contained executable for the specified runtime
+      2. Builds and publishes `Servy.csproj` as a self-contained executable for the specified runtime.
       3. Signs the published executable with SignPath when -BuildConfiguration is Release
          and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
 
@@ -23,7 +23,9 @@
 .NOTES
     Requirements:
       - .NET SDK must be installed
-      - The SignPath script (signpath.ps1) must exist in ../../setup/
+    Optional:
+      - setup/signpath.ps1: used to sign the output when -BuildConfiguration is Release;
+        when absent, signing is skipped with a warning.
 
 .EXAMPLE
     ./publish.ps1
