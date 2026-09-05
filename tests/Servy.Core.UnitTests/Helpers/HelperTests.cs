@@ -705,6 +705,28 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void WriteFileAtomic_CreatesNestedDirectories()
+        {
+            // Arrange
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            string nestedPath = Path.Combine(tempDir, "deeply", "nested", "path");
+            string targetPath = Path.Combine(nestedPath, "test.log");
+
+            // Act: WriteFileAtomic calls Directory.CreateDirectory
+            Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+            {
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                {
+                    writer.Write("nesting-test");
+                }
+            }, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(Directory.Exists(nestedPath));
+            Assert.True(File.Exists(targetPath));
+        }
+
+        [Fact]
         public void WriteFileAtomic_OnException_CleansUpTempAndDoesNotCreateTarget()
         {
             // Arrange
@@ -716,7 +738,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 Helper.WriteFileAtomic(targetPath, (Stream stream) =>
                 {
-                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
                     {
                         writer.Write("partial-data");
                         throw new InvalidOperationException("Simulated failure");
@@ -824,7 +846,6 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             string targetPath = Path.Combine(tempDir, "target.txt");
-            Directory.CreateDirectory(tempDir);
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
