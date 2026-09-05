@@ -200,7 +200,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>
   </data>
 
-  <!-- EnableConsoleUI-->
+  <!-- EnableConsoleUI -->
   <data name="Label_EnableConsoleUI" xml:space="preserve">
     <value>Enable Console UI (for interactive console apps; disables stdout/stderr redirection)</value>
   </data>
