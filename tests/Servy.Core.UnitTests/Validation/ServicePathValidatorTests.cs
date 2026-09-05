@@ -254,24 +254,32 @@ namespace Servy.Core.UnitTests.Validation
             Assert.False(receivedIsFile); // Verifies isFile = false was evaluated for StartupDirectory
         }
 
-        [Fact]
-        public void FindAllViolations_WhenOnlyOnePropertyIsInvalid_ReturnsSingleViolation()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\t")]
+        public void FindAllViolations_WhenRequiredPropertyIsNullOrEmptyOrWhitespace_ReturnsMissingViolationAndSkipsPathValidation(string? requiredPath)
         {
             // Arrange
-            var dto = new TestDto
-            {
-                ExecutablePath = @"C:\valid\app.exe",
-                StartupDirectory = @"C:\invalid\dir"
-            };
+            var dto = new TestDto { ExecutablePath = requiredPath, StartupDirectory = @"C:\valid\dir" };
+            bool requiredPathValidated = false;
 
             // Act
-            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) => path != @"C:\invalid\dir").ToList();
+            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) =>
+            {
+                if (path == requiredPath)
+                {
+                    requiredPathValidated = true;
+                }
+                return true;
+            }).ToList();
 
             // Assert
             var violation = Assert.Single(violations);
-            Assert.Equal("startup directory", violation.Attribute.Label);
-            Assert.Equal(@"C:\invalid\dir", violation.Value);
-            Assert.False(violation.IsMissing);
+            Assert.True(violation.IsMissing);
+            Assert.Equal("executable path", violation.Attribute.Label);
+            Assert.False(requiredPathValidated); // Verifies validatePath is skipped for a required path that is empty or whitespace
         }
 
         [Fact]
