@@ -78,12 +78,15 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_ZeroHex_ThrowsArgumentException()
         {
             // Arrange
-            string expectedPrefix = Strings.Msg_EmptyAffinityMask.Split('{')[0];
+            // Msg_EmptyAffinityMask and Msg_HexMaskOutOfBounds share the head that Split('{')
+            // extracts ("Affinity mask '"), so the formatted message is asserted instead:
+            // swapping the two branches of ParseAffinity must not leave this test green.
+            string expected = string.Format(Strings.Msg_EmptyAffinityMask, "0x0");
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity("0x0"));
 
-            Assert.Contains(expectedPrefix, ex.Message);
+            Assert.Contains(expected, ex.Message);
         }
 
         [Fact]
@@ -94,12 +97,14 @@ namespace Servy.Core.UnitTests.Helpers
             string input = "0xFFFFFFFFFFFFFFFF";
             if (maxCores >= 64) return; // Skip if host has full 64 cores and input is all bits set
 
-            string expectedPrefix = Strings.Msg_HexMaskOutOfBounds.Split('{')[0];
+            // The static head Split('{') extracts is shared with Msg_EmptyAffinityMask, so the
+            // formatted message is asserted instead - see ParseAffinity_ZeroHex.
+            string expected = string.Format(Strings.Msg_HexMaskOutOfBounds, input, maxCores - 1);
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
 
-            Assert.Contains(expectedPrefix, ex.Message);
+            Assert.Contains(expected, ex.Message);
         }
 
         [Fact]
@@ -112,12 +117,15 @@ namespace Servy.Core.UnitTests.Helpers
             // Mask that sets a bit beyond host max cores
             long outOfBoundsMask = 1L << maxAllowedCores;
             string input = $"0x{outOfBoundsMask:X}";
-            string expectedPrefix = Strings.Msg_HexMaskOutOfBounds.Split('{')[0];
+
+            // The static head Split('{') extracts is shared with Msg_EmptyAffinityMask, so the
+            // formatted message is asserted instead - see ParseAffinity_ZeroHex.
+            string expected = string.Format(Strings.Msg_HexMaskOutOfBounds, input, maxAllowedCores - 1);
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
 
-            Assert.Contains(expectedPrefix, ex.Message);
+            Assert.Contains(expected, ex.Message);
         }
 
         [Theory]
