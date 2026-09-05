@@ -1295,7 +1295,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ExportXmlConfigAsync(ConfirmPassword);
+                await Task.Run(() => ServiceCommands.ExportXmlConfigAsync(ConfirmPassword));
             }
             finally
             {
@@ -1311,7 +1311,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ExportJsonConfigAsync(ConfirmPassword);
+                await Task.Run(() => ServiceCommands.ExportJsonConfigAsync(ConfirmPassword));
             }
             finally
             {
@@ -1330,7 +1330,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ImportXmlConfigAsync();
+                await Task.Run(() => ServiceCommands.ImportXmlConfigAsync());
             }
             finally
             {
@@ -1349,7 +1349,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ImportJsonConfigAsync();
+                await Task.Run(() => ServiceCommands.ImportJsonConfigAsync());
             }
             finally
             {

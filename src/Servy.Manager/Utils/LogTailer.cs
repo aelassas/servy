@@ -373,13 +373,13 @@ namespace Servy.Manager.Utils
         /// <param name="type">The log type for the resulting <see cref="LogLine"/> objects.</param>
         /// <param name="maxLines">Maximum number of historical lines to retrieve.</param>
         /// <param name="finalPos">Outputs the file position where the history ended (to start tailing from).</param>
-        /// <param name="creationTime">Outputs the creation time of the file used for rotation detection.</param>
+        /// <param name="creationTimeUtc">Outputs the UTC creation time of the file used for rotation detection.</param>
         /// <param name="cancellationToken">A token used to cancel the history load operation.</param>
         /// <returns>A list of log lines retrieved from the end of the file.</returns>
-        private List<LogLine> LoadHistory(string path, LogType type, int maxLines, out long finalPos, out DateTime creationTime, CancellationToken cancellationToken = default)
+        private List<LogLine> LoadHistory(string path, LogType type, int maxLines, out long finalPos, out DateTime creationTimeUtc, CancellationToken cancellationToken = default)
         {
             finalPos = 0;
-            creationTime = DateTime.MinValue;
+            creationTimeUtc = DateTime.MinValue;
             List<LogLine> lines = new List<LogLine>();
 
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
@@ -392,7 +392,7 @@ namespace Servy.Manager.Utils
             try
             {
                 FileInfo info = new FileInfo(path);
-                creationTime = info.CreationTimeUtc;
+                creationTimeUtc = info.CreationTimeUtc;
                 DateTime lastWrite = info.LastWriteTimeUtc;
 
                 using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))

@@ -180,6 +180,9 @@ namespace Servy.Service.ProcessManagement
             StreamWriter stdoutWriter = null;
             StreamWriter stderrWriter = null;
 
+            DataReceivedEventHandler outHandler = null;
+            DataReceivedEventHandler errHandler = null;
+
             // Failure latches to prevent log-spam if file access is denied
             bool stdoutWriterFailed = false;
             bool stderrWriterFailed = false;
@@ -221,7 +224,7 @@ namespace Servy.Service.ProcessManagement
                 // Setup StdOut Writer (Lazy Init)
                 if (psi.RedirectStandardOutput)
                 {
-                    process.OutputDataReceived += (_, e) =>
+                    outHandler = (_, e) =>
                     {
                         if (e.Data == null) return;
 
@@ -249,12 +252,13 @@ namespace Servy.Service.ProcessManagement
                             try { logger.Warn($"Failed to write stdout line for '{options.ExecutablePath}': {ex.Message}"); } catch { /* Fail-silent */ }
                         }
                     };
+                    process.OutputDataReceived += outHandler;
                 }
 
                 // Setup StdErr Writer (Lazy Init)
                 if (psi.RedirectStandardError)
                 {
-                    process.ErrorDataReceived += (_, e) =>
+                    errHandler = (_, e) =>
                     {
                         if (e.Data == null) return;
 
@@ -302,6 +306,7 @@ namespace Servy.Service.ProcessManagement
                             try { logger.Warn($"Failed to write stderr line for '{options.ExecutablePath}': {ex.Message}"); } catch { /* Fail-silent */ }
                         }
                     };
+                    process.ErrorDataReceived += errHandler;
                 }
 
                 if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
@@ -317,6 +322,18 @@ namespace Servy.Service.ProcessManagement
                     Task.Run(process.WaitForExit).Wait(AppConfig.OutputDrainTimeoutMs);
                 }
                 catch { /* fail-silent - drain is best-effort */ }
+
+                // Stop the pumps before the writers they close over are disposed in the finally block (#5628)
+                if (psi.RedirectStandardOutput)
+                {
+                    try { process.CancelOutputRead(); } catch { /* already stopped */ }
+                    if (outHandler != null) process.OutputDataReceived -= outHandler;
+                }
+                if (psi.RedirectStandardError)
+                {
+                    try { process.CancelErrorRead(); } catch { /* already stopped */ }
+                    if (errHandler != null) process.ErrorDataReceived -= errHandler;
+                }
 
                 returnedOwnership = true;
                 return process;
@@ -486,6 +503,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
+        /// <summary>
         /// Attempts to initialize a file log writer in append mode with broad thread-sharing permissions.
         /// Ensures the target directory exists and safely disposes file streams if opening fails.
         /// Rejects paths traversing directory junctions or symbolic links to prevent privilege escalation attacks.

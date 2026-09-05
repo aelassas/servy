@@ -158,14 +158,12 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             _mockController.SetupSequence(c => c.Status)
-                .Returns(ServiceControllerStatus.Running)        // Step 1: Passes pending check
+                .Returns(ServiceControllerStatus.Running)        // Step 1: Passes initial pending check
                 .Returns(ServiceControllerStatus.Running)        // Step 2: Enters Stop block
-                .Returns(ServiceControllerStatus.StopPending)    // HandleTransitionalError: First Refresh check
-                .Returns(ServiceControllerStatus.StopPending)    // HandleTransitionalError: Re-probe in catch block
-                .Returns(ServiceControllerStatus.Stopped);       // HandleTransitionalError: Second loop iteration exit
+                .Returns(ServiceControllerStatus.StopPending)    // HandleTransitionalError: First Refresh check (skips Stop() because pending)
+                .Returns(ServiceControllerStatus.Stopped);       // HandleTransitionalError: Reached target status
 
             // First call to Stop() in Stop phase throws InvalidOperationException to enter HandleTransitionalError.
-            // Second call to Stop() inside HandleTransitionalError loop throws to enter catch block and trigger re-probe.
             _mockController.Setup(c => c.Stop()).Throws<InvalidOperationException>();
 
             // Act
@@ -173,7 +171,7 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(RestartResult.Restarted, result);
-            _mockController.Verify(c => c.Stop(), Times.Exactly(2)); // Primary check call + Fallback step execution call
+            _mockController.Verify(c => c.Stop(), Times.Once); // Called once in primary Stop phase; skipped in HandleTransitionalError due to StopPending
             _mockController.Verify(c => c.Start(), Times.Once); // Continues cleanly to start phase
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }

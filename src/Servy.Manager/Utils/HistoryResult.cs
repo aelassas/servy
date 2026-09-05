@@ -1,6 +1,7 @@
 using Servy.Manager.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Servy.Manager.Utils
 {
@@ -26,24 +27,29 @@ namespace Servy.Manager.Utils
         public long Position { get; }
 
         /// <summary>
-        /// Gets the creation time of the log file at the time of reading.
-        /// Used to detect file rotations or resets during live monitoring.
+        /// Gets the UTC creation time of the log file at the time of reading
+        /// (<see cref="FileInfo.CreationTimeUtc"/>, not <see cref="FileInfo.CreationTime"/>).
+        /// Used to detect file rotations or resets during live monitoring; compared with
+        /// <c>!=</c>, which ignores <see cref="DateTime.Kind"/>, so a local-time value here
+        /// reports a rotation on every poll.
         /// </summary>
-        public DateTime CreationTime { get; }
+        public DateTime CreationTimeUtc { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HistoryResult"/> class.
         /// </summary>
         /// <param name="lines">The list of initial log lines.</param>
         /// <param name="position">The file pointer position after the read.</param>
-        /// <param name="creationTime">The creation timestamp of the source file.</param>
-        public HistoryResult(List<LogLine> lines, long position, DateTime creationTime)
+        /// <param name="creationTimeUtc">The UTC creation timestamp of the source file.</param>
+        public HistoryResult(List<LogLine> lines, long position, DateTime creationTimeUtc)
         {
+            if (creationTimeUtc.Kind == DateTimeKind.Local)
+                throw new ArgumentException("Creation time must be UTC.", nameof(creationTimeUtc));
             // We still accept List<T> in the constructor for convenience,
             // but it is stored and exposed as a defensively copied IReadOnlyList.
             Lines = lines != null ? new List<LogLine>(lines) : new List<LogLine>();
             Position = position;
-            CreationTime = creationTime;
+            CreationTimeUtc = creationTimeUtc;
         }
     }
 }

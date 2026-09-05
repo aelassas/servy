@@ -511,9 +511,6 @@ namespace Servy.Service
                 // Final step: Inform SCM we are running and specifically that we accept PRESHUTDOWN
                 if (_serviceHandle != IntPtr.Zero)
                 {
-                    // Capture the cancellation token tied to the service's current lifecycle
-                    var token = _cancellationSource?.Token ?? CancellationToken.None;
-
                     // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart()
                     // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite
                     // the state to include SERVICE_ACCEPT_PRESHUTDOWN, bypassing .NET's internal limitations.
@@ -524,10 +521,10 @@ namespace Servy.Service
                         try
                         {
                             // 1. Wait, but respect cancellation if Stop() races us
-                            await Task.Delay(AppConfig.PreShutdownRegistrationDelayMs, token);
+                            await Task.Delay(AppConfig.PreShutdownRegistrationDelayMs, capturedToken);
 
                             // 2. Validate state before touching the native handle
-                            if (token.IsCancellationRequested || _isTearingDown || _disposed || _serviceHandle == IntPtr.Zero)
+                            if (capturedToken.IsCancellationRequested || _isTearingDown || _disposed || _serviceHandle == IntPtr.Zero)
                             {
                                 _logger?.Info("Skipping PRESHUTDOWN registration: Service is already tearing down.");
                                 return;
@@ -564,7 +561,7 @@ namespace Servy.Service
                             // 4. Prevent unobserved task exceptions from crashing the finalizer thread
                             _logger?.Error("Unexpected error during PRESHUTDOWN registration.", ex);
                         }
-                    }, token); // Pass token to Task.Run to prevent execution if already cancelled
+                    }, capturedToken); // Pass capturedToken to Task.Run to prevent execution if already cancelled
                 }
             }
             catch (Exception ex)
@@ -966,7 +963,7 @@ namespace Servy.Service
                     {
                         // We track this so if the main service stops while the fire-and-forget
                         // process is still running, we can kill the orphan.
-                        _trackedHooks.Add(new Hook { OperationName = "pre-launch", Process = nativeProcess });
+                        _trackedHooks.Add(new Hook { OperationName = "Pre-Launch", Process = nativeProcess });
                     }
                 }
                 else
@@ -1471,7 +1468,7 @@ namespace Servy.Service
         private void StartPostLaunchProcess()
         {
             RunFireAndForgetHook(
-                "post-launch",
+                "Post-Launch",
                 exePath: _options?.PostLaunchExecutablePath,
                 rawArgs: _options?.PostLaunchExecutableArgs,
                 hookWorkingDir: _options?.PostLaunchStartupDirectory,
@@ -1546,7 +1543,7 @@ namespace Servy.Service
         private void RunFailureProgram()
         {
             RunFireAndForgetHook(
-                 "failure program",
+                 "Failure-Program",
                  exePath: _options?.FailureProgramPath,
                  rawArgs: _options?.FailureProgramExecutableArgs,
                  hookWorkingDir: _options?.FailureProgramStartupDirectory,
@@ -2812,9 +2809,14 @@ namespace Servy.Service
                 }
                 else
                 {
-                    // Timeout: task is still running. Don't fall through to HandleStopResult,
-                    // which would misreport "had already exited".
+                    // Timeout: task is still running.
                     _logger?.Warn($"Child process '{process.Format()}' stop sequence did not complete within the safety budget; the kill task is still running and will be abandoned.");
+
+                    // Observe the orphan, and record why the abandoned kill actually ended.
+                    _ = stopTask.ContinueWith(
+                        t => _logger?.Warn($"Abandoned stop task for '{process.Format()}' later faulted: {t.Exception?.Flatten().InnerException?.Message}"),
+                        TaskContinuationOptions.OnlyOnFaulted);
+
                     outcomeHandled = true;
                 }
 
@@ -2859,7 +2861,7 @@ namespace Servy.Service
         private void StartPostStopProcess()
         {
             RunFireAndForgetHook(
-                 "post-stop",
+                 "Post-Stop",
                  exePath: _options?.PostStopExecutablePath,
                  rawArgs: _options?.PostStopExecutableArgs,
                  hookWorkingDir: _options?.PostStopStartupDirectory,

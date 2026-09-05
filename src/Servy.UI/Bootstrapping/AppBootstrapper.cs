@@ -267,6 +267,10 @@ namespace Servy.UI.Bootstrapping
             {
                 await InitializeAppAsync(app, e);
             }
+            catch (OperationCanceledException)
+            {
+                Logger.Info("Startup cancelled; application is shutting down.");
+            }
             catch (Exception ex)
             {
                 Logger.Error("Critical Startup Fault in InitializeApp", ex);
@@ -362,8 +366,10 @@ namespace Servy.UI.Bootstrapping
                     var sh = new ServiceHelper(ServiceRepository);
                     var resourceHelper = new ResourceHelper(sh, _processKiller);
 
+                    var ct = _appLifetimeCts.Token;
+
                     // Binary Resource Extraction
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: ct))
                     {
                         string resourceName = $"{AppConfig.HandleExeFileName}.exe";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
@@ -381,7 +387,7 @@ namespace Servy.UI.Bootstrapping
                     };
 
 #if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: CancellationToken.None))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
                     {
                         string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
@@ -414,7 +420,7 @@ namespace Servy.UI.Bootstrapping
                         new ResourceItem{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions", Extension= "dll" },
                     });
 #endif
-                    if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems, cancellationToken: CancellationToken.None))
+                    if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems, cancellationToken: ct))
                     {
                         throw new InvalidOperationException($"Failed to extract embedded resources. The application cannot start safely - see file log for details.");
                     }
