@@ -315,7 +315,9 @@ namespace Servy.Core.UnitTests.Security
             {
                 try
                 {
-                    // This should now succeed because the CurrentUser is added to the ACL
+                    // Delete succeeds either way: elevated runs inherit access from the mandatory
+                    // Administrators ACE, non-elevated runs get the explicit current-user ACE
+                    // ApplySecurityRules adds when IsAdministrator() is false.
                     Directory.Delete(_testBaseDir, true);
                 }
                 catch
