@@ -31,7 +31,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Iterate over all tracked wrappers and clean up their associated OS processes
             foreach (var wrapper in _wrappersToCleanup)
             {
-                TestProcessCleanup.KillAndDispose(wrapper, TestTimeouts.CleanupWaitMs);
+                TestProcessCleanup.KillAndDispose(wrapper);
             }
         }
 

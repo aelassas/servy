@@ -39,7 +39,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             foreach (var wrapper in _spawnedWrappers)
             {
-                TestProcessCleanup.KillAndDispose(wrapper, TestTimeouts.CleanupWaitMs);
+                TestProcessCleanup.KillAndDispose(wrapper);
             }
 
             foreach (var file in _tempFiles)
