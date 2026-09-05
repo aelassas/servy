@@ -956,6 +956,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.BeginErrorReadLine();
 
                 bool processExited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessGenerousTimeoutMs);
+
+                // Assert the timed wait before draining: the parameterless overload below blocks
+                // without a timeout, so a child that did not exit must fail here rather than hang.
+                Assert.True(processExited, "Process should have exited within timeout.");
+
                 // Parameterless WaitForExit also waits for async output/error event handlers to drain;
                 // the timeout overload above does not.
                 wrapper.WaitForExit();
@@ -965,7 +970,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
 
                 // Assert
-                Assert.True(processExited, "Process should have exited within timeout.");
                 Assert.True(signalsReceived, "Did not receive expected stdout/stderr signals.");
                 Assert.Contains("HELLO_OUT", stdOut);
                 Assert.Contains("HELLO_ERR", stdErr);
