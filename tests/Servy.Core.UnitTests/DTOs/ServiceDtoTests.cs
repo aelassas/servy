@@ -55,27 +55,31 @@ namespace Servy.Core.UnitTests.DTOs
         public void SensitiveProperties_MustCarryIgnoreSerializationAttributes()
         {
             // Arrange
-            var sensitiveProperties = new List<string>
+            var expected = new List<string>
             {
                 "Id", "Pid", "RunAsLocalSystem", "UserAccount", "Password",
                 "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath"
-            };
+            }.OrderBy(n => n, StringComparer.Ordinal).ToList();
 
-            // Act & Assert
-            foreach (string propName in sensitiveProperties)
-            {
-                // Safely extract property data via the target public type reflection framework
-                var prop = typeof(ServiceDto).GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+            var props = typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-                Assert.NotNull(prop);
+            // Act
+            // Enumerate by attribute rather than by name, the shape ServicePathAttributeAntiDriftTests
+            // uses: walking the hand-maintained list could only catch an attribute removed from a
+            // listed property, never one of ServiceDto's other 55 properties - or a newly added
+            // secret - that should be ignored and is not.
+            var jsonIgnored = props.Where(p => p.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+                .Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList();
+            var xmlIgnored = props.Where(p => p.GetCustomAttribute<XmlIgnoreAttribute>() != null)
+                .Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList();
 
-                // Actively assert protection attributes are registered to enforce security constraints
-                bool hasJsonIgnore = prop.GetCustomAttribute<JsonIgnoreAttribute>() != null;
-                bool hasXmlIgnore = prop.GetCustomAttribute<XmlIgnoreAttribute>() != null;
-
-                Assert.True(hasJsonIgnore, $"Security Regression: Property '{propName}' is missing [JsonIgnore].");
-                Assert.True(hasXmlIgnore, $"Security Regression: Property '{propName}' is missing [XmlIgnore].");
-            }
+            // Assert
+            // Security Regression: the ignored set must be exactly the set listed above, so adding
+            // or removing either attribute has to be a deliberate edit of this test. Comparing both
+            // attributes against the same list also pins that they never diverge - a value hidden
+            // from JSON but present in the XML export still reaches disk.
+            Assert.Equal(expected, jsonIgnored);
+            Assert.Equal(expected, xmlIgnored);
         }
 
         [Fact]
