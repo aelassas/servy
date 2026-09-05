@@ -1,0 +1,138 @@
+# ==========================================================================================
+# GitHub Actions Workflow - Test Single Project (net48)
+# ------------------------------------------------------------------------------------------
+# Builds and runs tests against a single target .NET Framework 4.8 test project under
+# `./tests/` using MSBuild and vstest.console.exe for Debug and Release x64.
+# ==========================================================================================
+
+name: test-project
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Test project filename or path (e.g. Servy.Core.UnitTests.csproj)'
+        required: true
+        type: string
+        default: 'Servy.Core.UnitTests.csproj'
+
+permissions:
+  contents: read
+
+jobs:
+  test-single-project:
+    name: Test Project (x64)
+    runs-on: windows-2022
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 #v3
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 #v4.0
+
+      - name: Restore NuGet packages
+        run: nuget restore Servy.sln
+
+      - name: Locate vstest.console.exe
+        id: locate-vstest
+        shell: pwsh
+        run: |
+          $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          if (-not $vsInstallPath) {
+              Write-Error "Visual Studio installation not found using vswhere."
+              exit 1
+          }
+
+          $vsTest = Join-Path $vsInstallPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+          if (-not (Test-Path $vsTest)) {
+              Write-Error "Could not locate vstest.console.exe at: $vsTest"
+              exit 1
+          }
+
+          Write-Host "Found vstest.console.exe at: $vsTest" -ForegroundColor Green
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "vstest_path=$vsTest"
+
+      - name: Run test project (Debug & Release)
+        shell: pwsh
+        run: |
+          $inputName = "${{ inputs.project_name }}".Trim()
+
+          Write-Host "Searching for project matching: '$inputName' under ./tests..." -ForegroundColor Cyan
+
+          # Locate project file under ./tests/
+          $projectFile = Get-ChildItem -Path "$env:GITHUB_WORKSPACE/tests" -Recurse -Filter "*$inputName*" |
+            Where-Object { $_.Extension -eq '.csproj' } |
+            Select-Object -First 1
+
+          if (-not $projectFile) {
+              Write-Error "Could not locate project file matching '$inputName' inside ./tests/."
+              exit 1
+          }
+
+          $projName = $projectFile.BaseName
+          $vsTest = "${{ steps.locate-vstest.outputs.vstest_path }}"
+
+          # -----------------------------------------------------
+          # 1. Debug Configuration
+          # -----------------------------------------------------
+          Write-Host "`nBuilding solution for Debug (x64)..." -ForegroundColor Cyan
+          & msbuild Servy.sln /p:Configuration=Debug /p:Platform=x64 /p:AllowUnsafeBlocks=true /nodeReuse:false /m
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "MSBuild failed for Debug configuration."
+              exit 1
+          }
+
+          $debugDll = "tests\$projName\bin\x64\Debug\$projName.dll"
+          if (-Not (Test-Path $debugDll)) {
+              Write-Error "Debug test assembly not found: $debugDll"
+              exit 1
+          }
+
+          Write-Host "Running Debug tests for $projName..." -ForegroundColor Green
+          & $vsTest $debugDll /Framework:.NETFramework,Version=v4.8 /logger:trx /Blame:CollectDump;CrashDumpType=full
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::Debug tests failed for project: $projName"
+              Write-Error "Debug test run failed for $projName."
+          }
+
+          # -----------------------------------------------------
+          # 2. Release Configuration
+          # -----------------------------------------------------
+          Write-Host "`nBuilding solution for Release (x64)..." -ForegroundColor Cyan
+          & msbuild Servy.sln /p:Configuration=Release /p:Platform=x64 /p:AllowUnsafeBlocks=true /nodeReuse:false /m
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "MSBuild failed for Release configuration."
+              exit 1
+          }
+
+          $releaseDll = "tests\$projName\bin\x64\Release\$projName.dll"
+          if (-Not (Test-Path $releaseDll)) {
+              Write-Error "Release test assembly not found: $releaseDll"
+              exit 1
+          }
+
+          Write-Host "Running Release tests for $projName..." -ForegroundColor Green
+          & $vsTest $releaseDll /Framework:.NETFramework,Version=v4.8 /logger:trx /Blame:CollectDump;CrashDumpType=full
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::Release tests failed for project: $projName"
+              Write-Error "Release test run failed for $projName."
+          }
+
+      - name: Upload Test Diagnostics & Crash Dumps on Failure
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          name: test-diagnostics-net48
+          path: |
+            **/*.dmp
+            **/*.xml
+            **/*.trx
+            TestResults/**
+          if-no-files-found: ignore
