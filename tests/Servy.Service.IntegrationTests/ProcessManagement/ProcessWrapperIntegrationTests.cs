@@ -319,6 +319,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
+                // cmd.exe is launched by bare name with UseShellExecute = false, so CreateProcess
+                // searches the working directory before the system directory. Every cmd.exe launch
+                // in this file pins System32 so the writable temp default cannot decide which
+                // cmd.exe runs.
                 wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
                 wrapper.Start();
 
@@ -355,6 +359,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
+                // Same bare-name resolution pin as the other two cmd.exe launches in this file.
                 wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
                 wrapper.Start();
 
@@ -588,7 +593,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     FileName = "cmd.exe",
                     Arguments = "/c exit 0",
                     CreateNoWindow = true,
-                    UseShellExecute = false
+                    UseShellExecute = false,
+                    // Same bare-name resolution pin as the other two cmd.exe launches in this file.
+                    WorkingDirectory = Environment.SystemDirectory,
                 };
 
                 // Act
