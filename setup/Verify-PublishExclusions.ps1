@@ -117,7 +117,7 @@ try {
     Write-Host "==========================================================" -ForegroundColor Cyan
 }
 finally {
-    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force | Out-Null }
+    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
     Pop-Location
 }
 
