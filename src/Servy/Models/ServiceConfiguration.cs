@@ -313,7 +313,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets the maximum time in seconds to wait for the pre-stop executable to complete.
-        /// Default is <see cref="AppConfig.DefaultPreStopTimeoutSeconds"/> seconds (Allowed range: 0 to 86400 seconds).
+        /// Default is <see cref="AppConfig.DefaultPreStopTimeoutSeconds"/> seconds (Allowed range: <see cref="AppConfig.MinPreStopTimeoutSeconds"/> to <see cref="AppConfig.MaxPreStopTimeoutSeconds"/> seconds).
         /// </summary>
         public string PreStopTimeoutSeconds { get; set; }
 
