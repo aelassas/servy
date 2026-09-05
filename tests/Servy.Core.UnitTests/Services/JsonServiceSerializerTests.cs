@@ -3,7 +3,9 @@ using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
+using Servy.Core.Security;
 using Servy.Testing;
+using System;
 using System.Linq;
 using Xunit;
 
@@ -163,6 +165,58 @@ namespace Servy.Core.UnitTests.Services
             // Act & Assert
             Assert.Null(_serializer.Deserialize(invalidJson));
         }
+
+        #region FormatLineInfo Tests
+
+        [Fact]
+        public void FormatLineInfo_JsonReaderException_ReportsLineAndPosition()
+        {
+            // Arrange
+            // A reader-level failure carries real line/position metadata, the first switch case.
+            var ex = Assert.Throws<JsonReaderException>(() =>
+                JsonConvert.DeserializeObject<ServiceDto>("{\n  \"StopTimeout\": 12x\n}", JsonSecurity.UntrustedDataSettings));
+
+            // Act
+            var info = (string)TestReflection.InvokeNonPublic(_serializer, "FormatLineInfo", ex);
+
+            // Assert
+            Assert.Equal($" at line {ex.LineNumber}, position {ex.LinePosition}", info);
+            Assert.NotEqual(string.Empty, info);
+        }
+
+        [Fact]
+        public void FormatLineInfo_JsonSerializationException_ReportsLineAndPosition()
+        {
+            // Arrange
+            // MissingMemberHandling.Error in UntrustedDataSettings turns an unknown property into a
+            // JsonSerializationException, the switch's second case. It does not derive from
+            // JsonReaderException, so the pre-#4459 IJsonLineInfo cast reported nothing for it.
+            var ex = Assert.Throws<JsonSerializationException>(() =>
+                JsonConvert.DeserializeObject<ServiceDto>(
+                    "{\n  \"NoSuchProperty\": 1\n}", JsonSecurity.UntrustedDataSettings));
+
+            // Act
+            var info = (string)TestReflection.InvokeNonPublic(_serializer, "FormatLineInfo", ex);
+
+            // Assert
+            Assert.Equal($" at line {ex.LineNumber}, position {ex.LinePosition}", info);
+            Assert.NotEqual(string.Empty, info);
+        }
+
+        [Fact]
+        public void FormatLineInfo_ExceptionWithoutPositionMetadata_ReturnsEmpty()
+        {
+            // Arrange & Act
+            // Pins the default branch and the lineNumber/linePosition > 0 gate, so that no
+            // " at line 0, position 0" suffix can reach the log.
+            var info = (string)TestReflection.InvokeNonPublic(
+                _serializer, "FormatLineInfo", new InvalidOperationException("no position"));
+
+            // Assert
+            Assert.Equal(string.Empty, info);
+        }
+
+        #endregion
 
         #region Serialize Tests
 
