@@ -29,9 +29,7 @@ namespace Servy.Manager.Views
         /// </summary>
         private bool _isFirstLoad = true;
 
-        /// <summary>
-        /// Define a small tolerance for floating point comparisons
-        /// </summary>
+        /// <summary>Defines the tolerance below which a vertical scroll change is treated as zero.</summary>
         private const double ScrollTolerance = 0.001;
 
         /// <summary>Defines the pixel threshold from the bottom that forces an immediate resumption of tailing.</summary>
@@ -91,7 +89,6 @@ namespace Servy.Manager.Views
         {
             if (e?.PropertyName == nameof(ConsoleViewModel.IsPaused) && sender is ConsoleViewModel vm && !vm.IsPaused)
             {
-                // Clear UI selection
                 LogList.SelectedItems.Clear();
 
                 // Snap to the bottom of the fresh history loaded by LoadLogsAsync
@@ -110,7 +107,6 @@ namespace Servy.Manager.Views
         /// </summary>
         private void LogList_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            // Check if the change is effectively zero using the tolerance range
             if (Math.Abs(e.VerticalChange) < ScrollTolerance)
                 return;
 
@@ -119,7 +115,6 @@ namespace Servy.Manager.Views
                 var sv = e.OriginalSource as ScrollViewer;
                 if (sv == null) return;
 
-                // Check if we are at the bottom
                 bool isAtBottom = sv.VerticalOffset >= (sv.ScrollableHeight - ResumeAtBottomThresholdPx);
 
                 // UI/UX Logic: Resume only if at the bottom AND nothing is selected.
