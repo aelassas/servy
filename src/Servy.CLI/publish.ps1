@@ -28,11 +28,11 @@
 
 .EXAMPLE
     ./publish.ps1
-    Runs the script using the default TFM (net10.0-windows).
+    Publishes the CLI using the defaults (Release, net10.0-windows, win-x64).
 
 .EXAMPLE
-    ./publish.ps1 -Tfm net10.0-windows
-    Publishes the CLI for .NET target framework.
+    ./publish.ps1 -Runtime win-arm64
+    Publishes the CLI for the ARM64 runtime.
 
 .NOTES
     Author : Akram El Assas
