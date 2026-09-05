@@ -628,9 +628,10 @@ namespace Servy.Service.ProcessManagement
         /// </remarks>
         private bool? SendCtrlC(Process process)
         {
-            // The ConsoleStateLock lock serializes graceful-shutdown signals across services.
-            // That is a feature: the SetConsoleCtrlHandler API is process-wide,
-            // so the only correct execution model is one-at-a-time.
+            // ConsoleStateLock serializes Ctrl+C delivery inside THIS service host (main child, hooks
+            // and the descendant cascade). FreeConsole/AttachConsole/SetConsoleCtrlHandler are
+            // process-wide state, so two signals in flight at once would corrupt each other. Other
+            // Servy services run in their own Servy.Service.exe process and need no coordination.
             lock (ConsoleStateLock)
             {
                 // ALWAYS free the console first to prevent stale locks from previous iterations
@@ -651,6 +652,10 @@ namespace Servy.Service.ProcessManagement
 
                     if (error == Errors.ERROR_PIPE_NOT_CONNECTED)
                     {
+                        // No signal is generated here: the process shares the root's console, so it has
+                        // already received the broadcast Service.cs sends to the root wrapper first.
+                        // The 'true' returned below therefore means "assumed already signalled", which is
+                        // why the caller is allowed to wait out the graceful timeout.
                         _logger?.Info($"Process '{process.Format()}' shares a console group. Awaiting graceful shutdown...");
                     }
                     else if (outcome == false)
