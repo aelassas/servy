@@ -195,7 +195,11 @@ namespace Servy.Restarter
                     controller.Refresh();
                     if (controller.Status == targetStatus) return null;
 
-                    // If it's still in a pending state, wait and retry the command
+                    // Not in the target state yet, whatever that state is: re-issue the command.
+                    // There is no pending-state test here, and no wait before the retry. While the
+                    // service is still transitioning the SCM refuses the command with
+                    // ERROR_SERVICE_CANNOT_ACCEPT_CTRL, and it is the catch block below that
+                    // re-probes and then sleeps before the next attempt.
                     if (targetStatus == ServiceControllerStatus.Stopped)
                         controller.Stop();
                     else if (targetStatus == ServiceControllerStatus.Running)
