@@ -1,29 +1,32 @@
-﻿# ==============================================================================
-# Project: Servy
-# Script:  tools-config.ps1
-# Purpose: Dynamic tool path resolution with environment and fallback support.
-# ==============================================================================
-
-<#
+﻿<#
 .SYNOPSIS
-    Resolves the full path of a required executable or tool.
+    Provides dynamic tool path resolution utilities for Servy build and release scripts.
 
 .DESCRIPTION
-    Checks for the tool path in the following order of priority:
-    1. Environment variable (SERVY_TOOL_<Name>)
-    2. System PATH (via Get-Command)
-    3. Provided fallback paths
-
-.PARAMETER Name
-    The name of the tool to resolve (e.g., 'signtool', 'iscc').
-
-.PARAMETER Fallbacks
-    An array of file paths to check if the tool is not found in the environment or PATH.
-
-.EXAMPLE
-    Resolve-Tool -Name "SignTool" -Fallbacks @("C:\Program Files (x86)\...\signtool.exe")
+    Dot-sourced configuration script defining helper functions for locating build tools,
+    compilers, and signing utilities across system environments and fallback paths.
 #>
+
 function Resolve-Tool {
+    <#
+        .SYNOPSIS
+            Resolves the full path of a required executable or tool.
+
+        .DESCRIPTION
+            Checks for the tool path in the following order of priority:
+            1. Environment variable (SERVY_TOOL_<Name>)
+            2. System PATH (via Get-Command)
+            3. Provided fallback paths
+
+        .PARAMETER Name
+            The name of the tool to resolve (e.g., 'signtool', 'iscc').
+
+        .PARAMETER Fallbacks
+            An array of file paths to check if the tool is not found in the environment or PATH.
+
+        .EXAMPLE
+            Resolve-Tool -Name "SignTool" -Fallbacks @("C:\Program Files (x86)\...\signtool.exe")
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]

@@ -1,10 +1,24 @@
-﻿# ==============================================================================
-# Shared Utility Script - Generate Solution SBOM
-# ------------------------------------------------------------------------------
-# Purpose:
-#    Maps solution assembly structures, runs CycloneDX dependency tracking,
-#    and combines outputs into a finalized, unified CycloneDX SBOM XML file.
-# ==============================================================================
+﻿<#
+.SYNOPSIS
+    Generates a unified CycloneDX SBOM for the five Servy executables.
+
+.DESCRIPTION
+    Maps solution assembly structures, runs dotnet-CycloneDX dependency tracking per project,
+    merges the individual component SBOM XML files with the cyclonedx CLI, and cleans up
+    intermediate files.
+
+.PARAMETER BaseVersion
+    Product version in Major.Minor form (e.g. "10.0"); ".0" is appended to meet the CycloneDX schema version requirements.
+
+.PARAMETER OutputFile
+    Destination file path where the merged, unified CycloneDX SBOM XML will be written.
+
+.NOTES
+    Requires dotnet-CycloneDX and the cyclonedx CLI to be available on PATH.
+
+.EXAMPLE
+    .\generate-sbom.ps1 -BaseVersion 10.0 -OutputFile servy-10.0-sbom.xml
+#>
 
 param (
     [Parameter(Mandatory=$true)]
