@@ -288,8 +288,13 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
+            string capturedQuery = null;
 
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                      .Callback<EventLogQuery, int>((queryObj, limit) =>
+                      {
+                          capturedQuery = GetInternalQuery(queryObj);
+                      })
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -305,6 +310,15 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(EventLogLevel.Information, entry.Level);
 
             mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
+
+            // Assert: both bounds are local calendar days converted to UTC - the caller's
+            // time of day is discarded and the end bound is widened to the last tick of the day
+            var expectedStartUtc = DateTime.SpecifyKind(start.Date, DateTimeKind.Local).ToUniversalTime();
+            var expectedEndUtc = DateTime.SpecifyKind(end.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime();
+
+            Assert.NotNull(capturedQuery);
+            Assert.Contains($"TimeCreated[@SystemTime >= '{expectedStartUtc:o}']", capturedQuery);
+            Assert.Contains($"TimeCreated[@SystemTime <= '{expectedEndUtc:o}']", capturedQuery);
         }
 
         [Fact]
@@ -313,8 +327,13 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "[service] unknown level");
+            string capturedQuery = null;
 
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                      .Callback<EventLogQuery, int>((queryObj, limit) =>
+                      {
+                          capturedQuery = GetInternalQuery(queryObj);
+                      })
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -329,6 +348,13 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(EventLogLevel.Information, entry.Level);
 
             mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
+
+            // Assert: only the upper bound is emitted, widened to the last tick of the local day
+            var expectedEndUtc = DateTime.SpecifyKind(end.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime();
+
+            Assert.NotNull(capturedQuery);
+            Assert.Contains($"TimeCreated[@SystemTime <= '{expectedEndUtc:o}']", capturedQuery);
+            Assert.DoesNotContain("SystemTime >=", capturedQuery);
         }
 
         [Fact]
