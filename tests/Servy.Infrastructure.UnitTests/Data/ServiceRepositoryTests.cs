@@ -208,7 +208,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                 Password = "EncryptedOrigPassword"
             };
 
-            // Use a broad query setup so PatchRuntimeStateAsync resolves existingInDb regardless of whether it queries by Id or Name
+            // PatchRuntimeStateAsync resolves the existing row by name only (GetByNameAsync); this broad setup answers that query with existingInDb
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
                 It.IsAny<string>(),
                 It.IsAny<object>(),
@@ -262,7 +262,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                 Password = "SyncEncryptedOrigPassword"
             };
 
-            // Match both SQL query variants used by GetById / GetByName synchronously in PatchRuntimeState
+            // PatchRuntimeState resolves the existing row by name only (GetByName, synchronous path); this broad setup answers that query with existingInDb
             _mockDapper.Setup(d => d.QuerySingleOrDefault<ServiceDto>(
                 It.IsAny<string>(),
                 It.IsAny<object>(),
