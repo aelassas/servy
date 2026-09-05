@@ -56,8 +56,14 @@ namespace Servy.Manager.Models
             Text = text;
             Type = type;
 
-            // Normalize at the boundary: convert to UTC if provided, otherwise use current UTC.
-            Timestamp = timestamp?.ToUniversalTime() ?? DateTime.UtcNow;
+            // Normalize at the boundary. Unspecified is assumed to be UTC: every producer in this
+            // codebase reads UTC file times, and ToUniversalTime() would otherwise shift it by the
+            // reading machine's offset (see EventLogReader.SafeToOffset for the same rule on .evtx).
+            Timestamp = timestamp.HasValue
+                ? (timestamp.Value.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(timestamp.Value, DateTimeKind.Utc)
+                    : timestamp.Value.ToUniversalTime())
+                : DateTime.UtcNow;
 
             IsSyntheticTime = false;
         }
