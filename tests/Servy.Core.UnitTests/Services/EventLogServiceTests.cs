@@ -42,6 +42,17 @@ namespace Servy.Core.UnitTests.Services
             throw ex;
         }
 
+        private static IEnumerable<ServyEventLogEntry> CancellingIterator(CancellationTokenSource cts)
+        {
+            yield return new ServyEventLogEntry { Message = "[service] first", ProviderName = AppConfig.EventSource };
+
+            // Cancelled only after the loop body has run once, so the throw can come from the
+            // in-loop checkpoint and from nowhere else
+            cts.Cancel();
+
+            yield return new ServyEventLogEntry { Message = "[service] second", ProviderName = AppConfig.EventSource };
+        }
+
         private static string GetInternalQuery(EventLogQuery queryObj)
         {
             var fields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
@@ -525,6 +536,27 @@ namespace Servy.Core.UnitTests.Services
             using (var cts = new CancellationTokenSource())
             {
                 cts.Cancel();
+
+                // Act & Assert
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                    service.SearchAsync(null, null, null, null, cts.Token));
+            }
+        }
+
+        [Fact]
+        public async Task SearchAsync_WhenCancelledDuringEnumeration_Throws()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+
+            using (var cts = new CancellationTokenSource())
+            {
+                // The token is still uncancelled when SearchAsync is called, so Task.Run does run
+                // the delegate and the cancellation can only come from the in-loop checkpoint
+                mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                          .Returns(CancellingIterator(cts));
+
+                var service = CreateService(mockReader);
 
                 // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
