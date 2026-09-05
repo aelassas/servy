@@ -159,6 +159,34 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
+        /// Waits for an in-flight log rotation to complete or forcefully resets the rotation gate upon timeout.
+        /// The caller must hold <see cref="_lock"/>.
+        /// </summary>
+        private void WaitForRotationToSettle()
+        {
+            // Block other threads from writing, flushing, or disposing
+            // while the physical File.Move is taking place.
+            while (_rotationInProgress)
+            {
+                // ROBUSTNESS: Use the timed overload of Monitor.Wait to prevent permanent thread freezes
+                // if PerformPhysicalRotation deadlocks or drops its PulseAll invocation.
+                if (!Monitor.Wait(_lock, AppConfig.LogRotationWaitTimeoutMs))
+                {
+                    // The rotation attempt timed out. We break out of the lock loop to prevent thread pool
+                    // exhaustion across stdout/stderr worker streams.
+                    Logger.Error(
+                        $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms. " +
+                        "Assuming rotation stalled. Forcefully resetting state gate and proceeding.");
+
+                    // Forceful safety recovery: clear the gate so the system doesn't permanently deadlock
+                    _rotationInProgress = false;
+                    Monitor.PulseAll(_lock);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
         /// Writes a line to the log file and checks for rotation.
         /// </summary>
         /// <param name="line">The line of text to write.</param>
@@ -187,26 +215,7 @@ namespace Servy.Core.IO
 
             lock (_lock)
             {
-                // Block other threads from writing or re-opening the file
-                // while the physical File.Move is taking place.
-                while (_rotationInProgress)
-                {
-                    // ROBUSTNESS: Use the timed overload of Monitor.Wait to prevent permanent threads freezes
-                    // if PerformPhysicalRotation deadlocks or drops its PulseAll invocation.
-                    if (!Monitor.Wait(_lock, AppConfig.LogRotationWaitTimeoutMs))
-                    {
-                        // The rotation attempt timed out. We break out of the lock loop to prevent thread pool
-                        // exhaustion across stdout/stderr worker streams.
-                        Logger.Error(
-                            $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms. " +
-                            "Assuming rotation stalled. Forcefully resetting state gate and proceeding to write the current line.");
-
-                        // Forceful safety recovery: clear the gate so the system doesn't permanently deadlock
-                        _rotationInProgress = false;
-                        Monitor.PulseAll(_lock);
-                        break;
-                    }
-                }
+                WaitForRotationToSettle();
 
                 // Check disposal *after* waking up, in case Dispose was called while we waited
                 if (_disposed) return;
@@ -674,6 +683,8 @@ namespace Servy.Core.IO
         {
             lock (_lock)
             {
+                WaitForRotationToSettle();
+
                 _writer?.Flush();
 
                 if (_baseStream != null && _baseStream.Length > 0)
@@ -699,6 +710,8 @@ namespace Servy.Core.IO
         {
             lock (_lock) // Ensure Dispose doesn't race with Write/Rotate
             {
+                WaitForRotationToSettle();
+
                 if (_disposed) return;
 
                 if (disposing)

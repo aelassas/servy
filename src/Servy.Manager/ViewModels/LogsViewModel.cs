@@ -292,8 +292,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected override async Task HandleSearchExceptionAsync(Exception ex)
         {
-            Logger.Error($"Failed to search logs.", ex);
-
             var message = ex is SecurityException || ex is InvalidOperationException
                 ? ex.Message
                 : Strings.Msg_UnexpectedError;
