@@ -371,8 +371,8 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("[Inner -> InvalidOperationException: Task B state invalid]", content);
 
             // 3. Verify chronological order: Task A (left sibling) must be logged BEFORE Task B (right sibling)
-            int indexA = content.IndexOf("Task A timed out");
-            int indexB = content.IndexOf("Task B state invalid");
+            int indexA = content.IndexOf("Task A timed out", StringComparison.Ordinal);
+            int indexB = content.IndexOf("Task B state invalid", StringComparison.Ordinal);
 
             Assert.True(indexA < indexB, "AggregateException siblings were not preserved in their chronological declaration order.");
         }
