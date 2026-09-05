@@ -288,15 +288,22 @@ namespace Servy.Core.UnitTests.Logging
             Assert.DoesNotContain("\n", exceptionSegment);
         }
 
-        [Fact]
-        public void FormatException_HardTruncatesMassiveExceptions_AvoidsSurrogatePairSplitting()
+        [Theory]
+        [InlineData("")]  // Cut position at even offset into the payload.
+        [InlineData("x")] // Odd offset: this is the row whose cut lands between the two halves of a pair.
+        public void FormatException_HardTruncatesMassiveExceptions_AvoidsSurrogatePairSplitting(string parityPrefix)
         {
             // Arrange
             // DYNAMIC CAP BOUNDING: Derive payload constraints directly from AppConfig to prevent
             // regression breaks if exception truncation configuration thresholds fluctuate.
-            // A heart emoji with variation selectors forms a valid multi-code-unit surrogate pair sequence.
+            // U+1F60A is a supplementary-plane code point, so UTF-16 encodes it as the surrogate pair
+            // U+D83D U+DE0A - the two code units the truncation guard must not separate. A BMP
+            // character such as a heart plus a variation selector would contain no surrogate at all.
+            // The payload is run at both parities because the cut is derived from a fixed byte cap:
+            // only one of the two offsets puts the cut inside a pair and exercises the guard.
+            string surrogatePair = char.ConvertFromUtf32(0x1F60A);
             int charCount = (AppConfig.LoggerMaxFormattedExceptionLength / 2) + 1024;
-            string hugeSurrogateString = string.Concat(Enumerable.Repeat("❤️", charCount));
+            string hugeSurrogateString = parityPrefix + string.Concat(Enumerable.Repeat(surrogatePair, charCount));
             var ex = new Exception(hugeSurrogateString);
 
             Logger.Initialize(_testFileName);
@@ -322,6 +329,15 @@ namespace Servy.Core.UnitTests.Logging
 
             Assert.False(char.IsHighSurrogate(boundaryChar),
                 "Regression: Truncation logic split a UTF-16 surrogate pair, leaving an orphaned high surrogate at the boundary.");
+
+            // Pin the guard across the whole truncated segment rather than sampling it at one position.
+            for (int i = 0; i < truncatedHead.Length; i++)
+            {
+                if (!char.IsHighSurrogate(truncatedHead[i])) continue;
+
+                Assert.True(i + 1 < truncatedHead.Length && char.IsLowSurrogate(truncatedHead[i + 1]),
+                    $"Unpaired high surrogate at index {i} of the truncated segment.");
+            }
         }
 
         [Fact]
