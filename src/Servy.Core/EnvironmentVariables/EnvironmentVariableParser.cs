@@ -20,7 +20,11 @@ namespace Servy.Core.EnvironmentVariables
         /// </remarks>
         /// <param name="input">The normalized environment variables string containing semicolon or newline separators with optional escapes.</param>
         /// <returns>A list of parsed environment variables as instantiated objects.</returns>
-        /// <exception cref="FormatException">Thrown if any variable is missing an unescaped equals sign, has an empty key, or carries forbidden literal newlines.</exception>
+        /// <exception cref="FormatException">Thrown for any record that fails
+        /// <see cref="EnvironmentVariablesValidator.ProcessAndValidateRecord"/>: a missing unescaped
+        /// equals sign, an empty key, a forbidden newline in the key or value, a null terminator or
+        /// equals sign in the key, or a null terminator in the value. See
+        /// <see cref="EnvVarValidationResultKind"/>.</exception>
         public static List<EnvironmentVariable> Parse(string? input)
         {
             if (string.IsNullOrEmpty(input))

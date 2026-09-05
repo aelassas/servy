@@ -8,8 +8,11 @@ namespace Servy.Core.EnvironmentVariables
     public static class EnvironmentVariablesValidator
     {
         /// <summary>
-        /// Validates the format of the environment variables input. Supports variables separated by unescaped semicolons or new lines.
-        /// Checks that each variable contains at least one unescaped equals character, and that the variable key before the equals sign is not empty.
+        /// Validates the format of the environment variables input. Supports variables separated by
+        /// unescaped semicolons or new lines. Each record must contain at least one unescaped equals
+        /// character and a non-empty key; after unescaping, the key may not contain a newline, a null
+        /// terminator or an equals sign, and the value may not contain a newline or a null terminator.
+        /// See <see cref="EnvVarValidationResultKind"/> for the full rule set.
         /// </summary>
         /// <param name="environmentVariables">The raw environment variables string to validate.</param>
         /// <param name="errors">When validation fails, contains the error messages describing the issues; otherwise, an empty list.</param>
