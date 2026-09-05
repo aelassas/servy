@@ -158,6 +158,33 @@ namespace Servy.Core.UnitTests.Services
             Assert.EndsWith("]]", capturedQuery);
         }
 
+        [Fact]
+        public async Task SearchAsync_WhenLevelIsAll_OmitsLevelClauseFromQuery()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            string? capturedQuery = null;
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                .Callback<EventLogQuery, int>((queryObj, limit) =>
+                {
+                    capturedQuery = GetInternalQuery(queryObj);
+                })
+                .Returns(Array.Empty<ServyEventLogEntry>());
+
+            var service = CreateService(mockReader);
+
+            // Act: EventLogLevel.All is the sentinel for "no level filter" and the Manager's
+            // default SelectedLevel, so it must not reach the query as Level=0 (LogAlways),
+            // which Servy never writes and which would return an empty log view.
+            await service.SearchAsync(EventLogLevel.All, null, null, null!, TestContext.Current.CancellationToken);
+
+            // Assert: All and null produce the same query
+            Assert.NotNull(capturedQuery);
+            Assert.Equal($"*[System[Provider[@Name='{AppConfig.EventSource}']]]", capturedQuery);
+            Assert.DoesNotContain("Level=", capturedQuery);
+        }
+
         #endregion
 
         #region Security & Allowlist Tests
