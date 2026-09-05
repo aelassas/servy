@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.0
+
 <#
 .SYNOPSIS
 Builds the Servy WPF application in Release or Debug mode and signs the output.

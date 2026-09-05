@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.0
+
 <#
 .SYNOPSIS
     Enforces whitespace hygiene (trailing whitespace removal, final newline insertion, line-ending normalization, and UTF-8 BOM policy) across repository source files.

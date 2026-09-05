@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Runs unit tests and integration tests, collects coverage with Coverlet, and generates an HTML coverage report.

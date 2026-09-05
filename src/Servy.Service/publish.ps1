@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.0
+
 <#
 .SYNOPSIS
     Builds the Servy.Service project and optionally signs the output.
