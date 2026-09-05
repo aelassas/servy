@@ -111,7 +111,7 @@ namespace Servy.UI.IntegrationTests.Services
             await _service.CheckUpdatesAsync(Caption);
 
             // Assert
-            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), Caption), Times.Once);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), Caption), Times.Once);
         }
 
         [Fact]
