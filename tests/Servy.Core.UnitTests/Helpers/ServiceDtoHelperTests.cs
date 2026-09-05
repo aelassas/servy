@@ -175,67 +175,16 @@ namespace Servy.Core.UnitTests.Helpers
         public void HydrateDefaults_WhenStructuralPropertiesAreNull_PopulatesDefaultsWithoutResettingIdentity()
         {
             // Arrange: Null every structural property, but give the identity trio explicit values so the no-reset guarantee is observable
-            var dto = new ServiceDto
-            {
-                StartupType = null,
-                Priority = null,
-                RunAsLocalSystem = false,
-                UserAccount = "CustomUser",
-                Password = "CustomPassword",
-                EnableDebugLogs = null,
-                StartTimeout = null,
-                StopTimeout = null,
-                EnableSizeRotation = null,
-                RotationSize = null,
-                EnableDateRotation = null,
-                DateRotationType = null,
-                MaxRotations = null,
-                UseLocalTimeForRotation = null,
-                EnableHealthMonitoring = null,
-                HeartbeatInterval = null,
-                MaxFailedChecks = null,
-                MaxRestartAttempts = null,
-                HeartbeatUrlTimeoutSeconds = null,
-                EnableHeartbeatUrlFlags = null,
-                PreLaunchTimeoutSeconds = null,
-                PreLaunchRetryAttempts = null,
-                PreLaunchIgnoreFailure = null,
-                PreStopTimeoutSeconds = null,
-                PreStopLogAsError = null,
-                EnableConsoleUI = null,
-                RecoveryAction = null,
-                RecoveryOnCleanExit = null
-            };
+            var dto = CreateAllNullDto();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "CustomUser";
+            dto.Password = "CustomPassword";
 
             // Act
             ServiceDtoHelper.HydrateDefaults(dto);
 
             // Assert: Structural defaults populated
-            Assert.Equal((int)AppConfig.DefaultStartupType, dto.StartupType);
-            Assert.Equal((int)AppConfig.DefaultProcessPriority, dto.Priority);
-            Assert.Equal(AppConfig.DefaultEnableDebugLogs, dto.EnableDebugLogs);
-            Assert.Equal(AppConfig.DefaultStartTimeout, dto.StartTimeout);
-            Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
-            Assert.Equal(AppConfig.DefaultEnableSizeRotation, dto.EnableSizeRotation);
-            Assert.Equal(AppConfig.DefaultRotationSizeMB, dto.RotationSize);
-            Assert.Equal(AppConfig.DefaultEnableDateRotation, dto.EnableDateRotation);
-            Assert.Equal((int)AppConfig.DefaultDateRotationType, dto.DateRotationType);
-            Assert.Equal(AppConfig.DefaultMaxRotations, dto.MaxRotations);
-            Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, dto.UseLocalTimeForRotation);
-            Assert.Equal(AppConfig.DefaultEnableHealthMonitoring, dto.EnableHealthMonitoring);
-            Assert.Equal(AppConfig.DefaultHeartbeatInterval, dto.HeartbeatInterval);
-            Assert.Equal(AppConfig.DefaultMaxFailedChecks, dto.MaxFailedChecks);
-            Assert.Equal(AppConfig.DefaultMaxRestartAttempts, dto.MaxRestartAttempts);
-            Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, dto.PreLaunchTimeoutSeconds);
-            Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, dto.PreLaunchRetryAttempts);
-            Assert.Equal(AppConfig.DefaultPreLaunchIgnoreFailure, dto.PreLaunchIgnoreFailure);
-            Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, dto.PreStopTimeoutSeconds);
-            Assert.Equal(AppConfig.DefaultPreStopLogAsError, dto.PreStopLogAsError);
-            Assert.Equal(AppConfig.DefaultEnableConsoleUI, dto.EnableConsoleUI);
-            Assert.Equal((int)AppConfig.DefaultRecoveryAction, dto.RecoveryAction);
-            Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, dto.RecoveryOnCleanExit);
-            Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, dto.HeartbeatUrlTimeoutSeconds);
-            Assert.Equal(AppConfig.DefaultEnableHeartbeatUrlFlags, dto.EnableHeartbeatUrlFlags);
+            AssertAllStructuralDefaults(dto);
 
             // Assert: Identity properties remain untouched
             Assert.False(dto.RunAsLocalSystem);
@@ -247,66 +196,14 @@ namespace Servy.Core.UnitTests.Helpers
         public void ApplyDefaultsAndResetIdentity_WhenAllPropertiesAreNull_PopulatesEveryDefault()
         {
             // Arrange: Explicitly null every nullable property defensively to exercise ApplyDefaultsAndResetIdentity on an incomplete import
-            var dto = new ServiceDto
-            {
-                StartupType = null,
-                Priority = null,
-                RunAsLocalSystem = null,
-                EnableDebugLogs = null,
-                StartTimeout = null,
-                StopTimeout = null,
-                EnableSizeRotation = null,
-                RotationSize = null,
-                EnableDateRotation = null,
-                DateRotationType = null,
-                MaxRotations = null,
-                UseLocalTimeForRotation = null,
-                EnableHealthMonitoring = null,
-                HeartbeatInterval = null,
-                MaxFailedChecks = null,
-                MaxRestartAttempts = null,
-                HeartbeatUrlTimeoutSeconds = null,
-                EnableHeartbeatUrlFlags = null,
-                PreLaunchTimeoutSeconds = null,
-                PreLaunchRetryAttempts = null,
-                PreLaunchIgnoreFailure = null,
-                PreStopTimeoutSeconds = null,
-                PreStopLogAsError = null,
-                EnableConsoleUI = null,
-                RecoveryAction = null,
-                RecoveryOnCleanExit = null
-            };
+            var dto = CreateAllNullDto();
 
             // Act
             ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
 
             // Assert
-            Assert.Equal((int)AppConfig.DefaultStartupType, dto.StartupType);
-            Assert.Equal((int)AppConfig.DefaultProcessPriority, dto.Priority);
+            AssertAllStructuralDefaults(dto);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, dto.RunAsLocalSystem);
-            Assert.Equal(AppConfig.DefaultEnableDebugLogs, dto.EnableDebugLogs);
-            Assert.Equal(AppConfig.DefaultStartTimeout, dto.StartTimeout);
-            Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
-            Assert.Equal(AppConfig.DefaultEnableSizeRotation, dto.EnableSizeRotation);
-            Assert.Equal(AppConfig.DefaultRotationSizeMB, dto.RotationSize);
-            Assert.Equal(AppConfig.DefaultEnableDateRotation, dto.EnableDateRotation);
-            Assert.Equal((int)AppConfig.DefaultDateRotationType, dto.DateRotationType);
-            Assert.Equal(AppConfig.DefaultMaxRotations, dto.MaxRotations);
-            Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, dto.UseLocalTimeForRotation);
-            Assert.Equal(AppConfig.DefaultEnableHealthMonitoring, dto.EnableHealthMonitoring);
-            Assert.Equal(AppConfig.DefaultHeartbeatInterval, dto.HeartbeatInterval);
-            Assert.Equal(AppConfig.DefaultMaxFailedChecks, dto.MaxFailedChecks);
-            Assert.Equal(AppConfig.DefaultMaxRestartAttempts, dto.MaxRestartAttempts);
-            Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, dto.PreLaunchTimeoutSeconds);
-            Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, dto.PreLaunchRetryAttempts);
-            Assert.Equal(AppConfig.DefaultPreLaunchIgnoreFailure, dto.PreLaunchIgnoreFailure);
-            Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, dto.PreStopTimeoutSeconds);
-            Assert.Equal(AppConfig.DefaultPreStopLogAsError, dto.PreStopLogAsError);
-            Assert.Equal(AppConfig.DefaultEnableConsoleUI, dto.EnableConsoleUI);
-            Assert.Equal((int)AppConfig.DefaultRecoveryAction, dto.RecoveryAction);
-            Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, dto.RecoveryOnCleanExit);
-            Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, dto.HeartbeatUrlTimeoutSeconds);
-            Assert.Equal(AppConfig.DefaultEnableHeartbeatUrlFlags, dto.EnableHeartbeatUrlFlags);
         }
 
         [Fact]
@@ -370,6 +267,77 @@ namespace Servy.Core.UnitTests.Helpers
             // ApplyDefaultsAndResetIdentity returns immediately on null (see ServiceDtoHelper)
             var exception = Record.Exception(() => ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto));
             Assert.Null(exception);
+        }
+
+        /// <summary>
+        /// Builds the shared null-out fixture both hydration tests arrange, so a new nullable
+        /// property is nulled once rather than in two hand-maintained initializers.
+        /// </summary>
+        private static ServiceDto CreateAllNullDto()
+        {
+            return new ServiceDto
+            {
+                StartupType = null,
+                Priority = null,
+                RunAsLocalSystem = null,
+                EnableDebugLogs = null,
+                StartTimeout = null,
+                StopTimeout = null,
+                EnableSizeRotation = null,
+                RotationSize = null,
+                EnableDateRotation = null,
+                DateRotationType = null,
+                MaxRotations = null,
+                UseLocalTimeForRotation = null,
+                EnableHealthMonitoring = null,
+                HeartbeatInterval = null,
+                MaxFailedChecks = null,
+                MaxRestartAttempts = null,
+                HeartbeatUrlTimeoutSeconds = null,
+                EnableHeartbeatUrlFlags = null,
+                PreLaunchTimeoutSeconds = null,
+                PreLaunchRetryAttempts = null,
+                PreLaunchIgnoreFailure = null,
+                PreStopTimeoutSeconds = null,
+                PreStopLogAsError = null,
+                EnableConsoleUI = null,
+                RecoveryAction = null,
+                RecoveryOnCleanExit = null
+            };
+        }
+
+        /// <summary>
+        /// Asserts the 25 structural defaults HydrateDefaults populates. ApplyDefaultsAndResetIdentity
+        /// delegates to HydrateDefaults for all of them, so both tests share one list and default
+        /// number 26 is added in a single place.
+        /// </summary>
+        private static void AssertAllStructuralDefaults(ServiceDto dto)
+        {
+            Assert.Equal((int)AppConfig.DefaultStartupType, dto.StartupType);
+            Assert.Equal((int)AppConfig.DefaultProcessPriority, dto.Priority);
+            Assert.Equal(AppConfig.DefaultEnableDebugLogs, dto.EnableDebugLogs);
+            Assert.Equal(AppConfig.DefaultStartTimeout, dto.StartTimeout);
+            Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
+            Assert.Equal(AppConfig.DefaultEnableSizeRotation, dto.EnableSizeRotation);
+            Assert.Equal(AppConfig.DefaultRotationSizeMB, dto.RotationSize);
+            Assert.Equal(AppConfig.DefaultEnableDateRotation, dto.EnableDateRotation);
+            Assert.Equal((int)AppConfig.DefaultDateRotationType, dto.DateRotationType);
+            Assert.Equal(AppConfig.DefaultMaxRotations, dto.MaxRotations);
+            Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, dto.UseLocalTimeForRotation);
+            Assert.Equal(AppConfig.DefaultEnableHealthMonitoring, dto.EnableHealthMonitoring);
+            Assert.Equal(AppConfig.DefaultHeartbeatInterval, dto.HeartbeatInterval);
+            Assert.Equal(AppConfig.DefaultMaxFailedChecks, dto.MaxFailedChecks);
+            Assert.Equal(AppConfig.DefaultMaxRestartAttempts, dto.MaxRestartAttempts);
+            Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, dto.PreLaunchTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, dto.PreLaunchRetryAttempts);
+            Assert.Equal(AppConfig.DefaultPreLaunchIgnoreFailure, dto.PreLaunchIgnoreFailure);
+            Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, dto.PreStopTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultPreStopLogAsError, dto.PreStopLogAsError);
+            Assert.Equal(AppConfig.DefaultEnableConsoleUI, dto.EnableConsoleUI);
+            Assert.Equal((int)AppConfig.DefaultRecoveryAction, dto.RecoveryAction);
+            Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, dto.RecoveryOnCleanExit);
+            Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, dto.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultEnableHeartbeatUrlFlags, dto.EnableHeartbeatUrlFlags);
         }
     }
 }
