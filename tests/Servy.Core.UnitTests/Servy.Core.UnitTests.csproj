@@ -183,10 +183,6 @@
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\Servy.Service\Servy.Service.csproj">
-      <Project>{C41E0E90-CFF6-4DFA-A042-59E4B31198A2}</Project>
-      <Name>Servy.Service</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj">
       <Project>{4bc9a435-c352-4953-82b8-b419b13e8f56}</Project>
       <Name>Servy.Testing</Name>

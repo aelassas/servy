@@ -121,6 +121,7 @@
   <ItemGroup>
     <Compile Include="CommandLine\CommandLineProviderTests.cs" />
     <Compile Include="CommandLine\StartOptionsParserTests.cs" />
+    <Compile Include="CommandLine\StartOptionsTests.cs" />
     <Compile Include="Documentation\ProtectedVariablesDocumentationTests.cs" />
     <Compile Include="EventHandlerTests.cs" />
     <Compile Include="HealthCheckTests.cs" />
