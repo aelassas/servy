@@ -68,21 +68,14 @@ namespace Servy.Core.UnitTests.Helpers
 
         #region ResolvePath Tests
 
-        [Fact]
-        public void ResolvePath_NullInput_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public void ResolvePath_NullOrWhitespace_ReturnsNull(string? input)
         {
             // Arrange & Act
-            var result = _processHelper.ResolvePath(null!);
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public void ResolvePath_EmptyInput_ReturnsNull()
-        {
-            // Arrange & Act
-            var result = _processHelper.ResolvePath(string.Empty);
+            var result = _processHelper.ResolvePath(input!);
 
             // Assert
             Assert.Null(result);
