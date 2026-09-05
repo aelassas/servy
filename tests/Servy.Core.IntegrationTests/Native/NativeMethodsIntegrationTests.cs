@@ -44,7 +44,6 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(1, NativeMethods.SERVICE_CONFIG_DESCRIPTION);
             Assert.Equal(0x0004u, NativeMethods.SC_MANAGER_ENUMERATE_SERVICE);
             Assert.Equal(0x0001u, NativeMethods.SERVICE_QUERY_CONFIG);
-            Assert.Equal(2, NativeMethods.LOGON32_LOGON_INTERACTIVE);
             Assert.Equal(3, NativeMethods.LOGON32_LOGON_NETWORK);
             Assert.Equal(0, NativeMethods.LOGON32_PROVIDER_DEFAULT);
             Assert.Equal(5, NativeMethods.LOGON32_LOGON_SERVICE);
@@ -59,11 +58,6 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(0x00000001, NativeMethods.SERVICE_STOPPED);
             Assert.Equal(0x00000001, NativeMethods.SERVICE_ACCEPT_STOP);
             Assert.Equal(0x00000010, NativeMethods.SERVICE_WIN32_OWN_PROCESS);
-            Assert.Equal(0x00000001u, NativeMethods.FILE_SHARE_READ);
-            Assert.Equal(0x00000002u, NativeMethods.FILE_SHARE_WRITE);
-            Assert.Equal(0x00000004u, NativeMethods.FILE_SHARE_DELETE);
-            Assert.Equal(3u, NativeMethods.OPEN_EXISTING);
-            Assert.Equal(0x02000000u, NativeMethods.FILE_FLAG_BACKUP_SEMANTICS);
             Assert.Equal(0x0u, NativeMethods.VOLUME_NAME_DOS);
             Assert.Equal(0x01u, NativeMethods.MOVEFILE_REPLACE_EXISTING);
             Assert.Equal(0x08u, NativeMethods.MOVEFILE_WRITE_THROUGH);

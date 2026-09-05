@@ -11,7 +11,7 @@ namespace Servy.Core.Native
     /// for Windows Service management, process lifecycle control, and security rights.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static partial class NativeMethods
+    public static class NativeMethods
     {
         #region Constants
 
@@ -24,8 +24,6 @@ namespace Servy.Core.Native
         /// <summary>Information level for QueryServiceConfig2/ChangeServiceConfig2: Service description.</summary>
         public const int SERVICE_CONFIG_DESCRIPTION = 1;
 
-        /// <summary>Logon type: Interactive. Designed for users who will be using the computer interactively.</summary>
-        public const int LOGON32_LOGON_INTERACTIVE = 2;
         /// <summary>Logon type: Network. Intended for high-performance servers to authenticate clear-text passwords.</summary>
         public const int LOGON32_LOGON_NETWORK = 3;
         /// <summary>Uses the standard logon provider for the system.</summary>
@@ -58,16 +56,6 @@ namespace Servy.Core.Native
         /// <summary>The service runs in its own process.</summary>
         public const int SERVICE_WIN32_OWN_PROCESS = 0x00000010;
 
-        /// <summary>Share mode: Enables subsequent open operations on a file/device to request read access.</summary>
-        public const uint FILE_SHARE_READ = 0x00000001;
-        /// <summary>Share mode: Enables subsequent open operations on a file/device to request write access.</summary>
-        public const uint FILE_SHARE_WRITE = 0x00000002;
-        /// <summary>Share mode: Enables subsequent open operations on a file/device to request delete access.</summary>
-        public const uint FILE_SHARE_DELETE = 0x00000004;
-        /// <summary>Creation disposition: Opens a file/device only if it exists.</summary>
-        public const uint OPEN_EXISTING = 3;
-        /// <summary>Flag: Opens a directory for backup/restore or identity tracking.</summary>
-        public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
         /// <summary>Path flag: Return the path with a drive letter.</summary>
         public const uint VOLUME_NAME_DOS = 0x0;
 
@@ -154,7 +142,7 @@ namespace Servy.Core.Native
         }
 
         /// <summary>Contains configuration information for an installed service.</summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         public struct QUERY_SERVICE_CONFIG
         {
             /// <summary>The type of service.</summary>
@@ -198,7 +186,7 @@ namespace Servy.Core.Native
         }
 
         /// <summary>Describes a process entry in a system snapshot.</summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         public struct PROCESSENTRY32
         {
             /// <summary>Size of the structure, in bytes. Must be set to <c>sizeof(PROCESSENTRY32)</c> before calling Process32First.</summary>
@@ -429,7 +417,7 @@ namespace Servy.Core.Native
         public static extern bool ControlService(SafeServiceHandle hService, uint dwControl, ref SERVICE_STATUS lpServiceStatus);
 
         /// <summary>Retrieves the configuration parameters of the specified service.</summary>
-        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern bool QueryServiceConfig(
             SafeServiceHandle hService,
             IntPtr lpServiceConfig,
@@ -446,7 +434,7 @@ namespace Servy.Core.Native
             out int pcbBytesNeeded);
 
         /// <summary>Retrieves optional configuration parameters using a raw buffer pointer.</summary>
-        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern bool QueryServiceConfig2(
             SafeServiceHandle hService,
             uint dwInfoLevel,
@@ -601,11 +589,11 @@ namespace Servy.Core.Native
         #region File & Security Functions
 
         /// <summary>Closes an open object handle.</summary>
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool CloseHandle(IntPtr handle);
 
         /// <summary>Retrieves the final path for the specified file handle.</summary>
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern uint GetFinalPathNameByHandle(
            SafeFileHandle hFile,
            [Out] StringBuilder lpszFilePath,

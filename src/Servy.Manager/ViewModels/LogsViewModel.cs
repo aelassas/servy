@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Security;
 using System.Threading.Tasks;
 using System.Windows.Data;
 
@@ -296,7 +297,12 @@ namespace Servy.Manager.ViewModels
         protected override async Task HandleSearchExceptionAsync(Exception ex)
         {
             Logger.Error($"Failed to search logs.", ex);
-            await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+
+            var message = ex is SecurityException || ex is InvalidOperationException
+                ? ex.Message
+                : Strings.Msg_UnexpectedError;
+
+            await _messageBoxService.ShowErrorAsync(message, UiAppConfig.Caption);
         }
 
         /// <summary>

@@ -203,13 +203,13 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             // Forcing a path sequence targeting a structural Windows system environment folder
-            // triggers an internal "Access Denied" rule inside PathSecurityGuard, hitting the SecurityException branch.
+            // triggers an internal "Security Alert" rule inside PathSecurityGuard, hitting the SecurityException branch.
             string protectedDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             var filePath = Path.Combine(protectedDir, "malicious_export.json");
 
             // Act & Assert
             var ex = Assert.Throws<SecurityException>(() => InvokeSaveFile(filePath, "data"));
-            Assert.Contains("Access Denied", ex.Message);
+            Assert.Contains("Security Alert", ex.Message);
         }
 
         #endregion
@@ -233,7 +233,7 @@ namespace Servy.CLI.UnitTests.Commands
                 var ex = Assert.Throws<SecurityException>(() => InvokeSaveFile(filePath, "new config payload"));
 
                 // Unwraps target reflection errors to expose the inner thrown exception rule
-                Assert.Contains(string.Format(Core.Resources.Strings.Msg_SecurityHandleValidationFailed, string.Empty), ex.Message);
+                Assert.Contains("Security Alert: Target file handle validation was rejected", ex.Message);
             }
         }
 

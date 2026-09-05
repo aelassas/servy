@@ -899,6 +899,7 @@ namespace Servy.Manager.Services
             }
             catch (OperationCanceledException)
             {
+                Logger.Debug($"{formatName} config import was cancelled.");
                 throw;
             }
             catch (Exception ex)

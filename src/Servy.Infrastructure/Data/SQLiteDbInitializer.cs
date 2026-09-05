@@ -203,9 +203,16 @@ namespace Servy.Infrastructure.Data
                         // if (currentVersion < 10) { ... }
 
                         // Double check that the final tracked migration index completely aligns with the central declaration
-                        if (currentVersion != LatestSchemaVersion)
+                        if (currentVersion > LatestSchemaVersion)
                         {
-                            Logger.Warn($"Migration chain sync warning: Current database version is {currentVersion}, but LatestSchemaVersion is defined as {LatestSchemaVersion}. Ensure future migration blocks are properly wired.");
+                            Logger.Warn($"Database schema version {currentVersion} is NEWER than this build supports (LatestSchemaVersion = {LatestSchemaVersion}). " +
+                                        $"This database was created by a later version of Servy. Columns it added will be reported as orphans below and will not be " +
+                                        $"read or written by this build. Re-install the newer version, or back up '{SqlConstants.ServicesTableName}' before continuing.");
+                        }
+                        else if (currentVersion < LatestSchemaVersion)
+                        {
+                            Logger.Warn($"Migration chain sync warning: current database version is {currentVersion}, but LatestSchemaVersion is defined as " +
+                                        $"{LatestSchemaVersion}. A migration block for one of versions {currentVersion + 1}-{LatestSchemaVersion} is missing from the runner in Initialize.");
                         }
 
                         // 6. Reconciliation safety net

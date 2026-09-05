@@ -89,17 +89,7 @@ namespace Servy.Core.Validation
             var pathViolations = ServicePathValidator.FindAllViolations(dto, _processHelper.ValidatePath);
             foreach (var pathViolation in pathViolations)
             {
-                string errorString = null;
-                if (!string.IsNullOrEmpty(pathViolation.Attribute.ErrorResourceKey))
-                {
-                    var property = typeof(Strings).GetProperty(
-                        pathViolation.Attribute.ErrorResourceKey,
-                        BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-
-                    errorString = property?.GetValue(null) as string;
-                }
-
-                result.Errors.Add(errorString ?? string.Format(Strings.Msg_InvalidPathInConfig, pathViolation.Attribute.Label));
+                result.Errors.Add(pathViolation.ResolveErrorMessage());
             }
 
             // External Wrapper Executable Path
