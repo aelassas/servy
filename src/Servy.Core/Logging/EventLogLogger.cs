@@ -206,8 +206,8 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="logName">The Windows Event Log to write to (e.g., Application).</param>
         /// <param name="source">The event source name.</param>
-        /// <param name="message">The full string message layout definition data contents payload.</param>
-        /// <param name="type">The standard Windows event severity logging level context enumeration.</param>
+        /// <param name="message">The formatted log message to write.</param>
+        /// <param name="type">The severity classification for the entry (Information, Warning, or Error).</param>
         /// <param name="eventId">The application-specific event ID.</param>
         internal static void WriteRawToWindowsEventLog(string logName, string source, string message, EventLogEntryType type, int eventId)
         {
@@ -249,7 +249,8 @@ namespace Servy.Core.Logging
                 if (!_isInitialized) return;
             }
 
-            // Threading the raw execution directly into the static shared utility layout context
+            // Delegate to the shared static writer so instance and static callers use the same
+            // truncation and source-registration safeguards.
             WriteRawToWindowsEventLog(AppConfig.EventLogName, _source, message, type, eventId);
         }
 
