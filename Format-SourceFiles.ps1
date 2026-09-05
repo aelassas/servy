@@ -19,7 +19,7 @@
     Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'.
 
 .PARAMETER ExcludeExtensions
-    Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx'.
+    Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite'.
 
 .PARAMETER ExcludeFiles
     Array of specific filenames to exclude. Defaults to 'coverage.cobertura.xml'.
@@ -43,7 +43,7 @@ param(
     [string[]]$ExcludeDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'),
 
     [Parameter(Mandatory = $false)]
-    [string[]]$ExcludeExtensions = @('.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx'),
+    [string[]]$ExcludeExtensions = @('.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite'),
 
     [Parameter(Mandatory = $false)]
     [string[]]$ExcludeFiles = @('coverage.cobertura.xml')
@@ -58,6 +58,18 @@ $baseDir = $PSScriptRoot
 
 if (-not (Test-Path (Join-Path $baseDir 'Servy.sln'))) {
     throw "Run from the Servy repository root (Servy.sln not found in $baseDir)"
+}
+
+# Parse .gitattributes to ensure all declared binary file types are automatically excluded
+$gitAttributesPath = Join-Path $baseDir '.gitattributes'
+if (Test-Path $gitAttributesPath) {
+    $declaredBinaryExts = Get-Content $gitAttributesPath |
+        Where-Object { $_ -match '^\s*\*(\.[A-Za-z0-9.]+)\s+binary\s*$' } |
+        ForEach-Object { $Matches[1] }
+
+    if ($declaredBinaryExts -and -not $PSBoundParameters.ContainsKey('ExcludeExtensions')) {
+        $ExcludeExtensions = @($ExcludeExtensions + $declaredBinaryExts) | Select-Object -Unique
+    }
 }
 
 # Default list of BOM-required extensions if Update-FileHelpers.ps1 is unavailable

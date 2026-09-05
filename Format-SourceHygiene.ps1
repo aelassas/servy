@@ -71,14 +71,15 @@ $bomOnlyCount = 0
 # File extensions requiring UTF-8 BOM encoding
 $bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
 
-# Extensions governed by .editorconfig whitespace and charset rules
+# Extensions governed by .editorconfig whitespace and charset rules (mirroring [*] scope).
 # NOTE: .resx files are deliberately omitted because trailing spaces inside XML <value> elements
 # represent localized string data rather than code formatting.
 $textExtensions = @(
     '.cs', '.yml', '.yaml', '.ps1', '.psm1', '.psd1',
     '.csproj', '.props', '.targets', '.xaml',
     '.md', '.iss', '.manifest', '.json', '.sln',
-    '.xml', '.config'
+    '.xml', '.config', '.js', '.py', '.vbs', '.toml',
+    '.ahk', '.nuspec', '.txt'
 )
 
 # Collect repository text files excluding build output, version control, and generated files

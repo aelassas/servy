@@ -1,9 +1,9 @@
 /**
  * Small Node.js utility to test environment variables in Servy.
- * 
+ *
  * Usage example:
  * .\servy-cli.exe install --name "ServyEnvTest" --path "C:\Program Files\nodejs\node.exe" --params "C:\path\to\nodejs-app-env-vars\index.js" --env "var1=val1;var2=val2;"
- * 
+ *
  * This script writes all environment variables except those in baselineEnvKeys to 'output.txt' in the script directory.
  * The variables themselves are never written to the console; only fixed marker lines go to stdout and stderr.
  */
