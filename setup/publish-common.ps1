@@ -93,6 +93,12 @@ function Copy-TaskSchdArtifacts {
 
     .PARAMETER Tfm
     The target framework moniker ("net10.0-windows") passed to the Inno preprocessor directive.
+
+    .PARAMETER MaxRetry
+    The number of ISCC compilation attempts before giving up. Defaults to 3.
+
+    .PARAMETER RetryDelaySeconds
+    Seconds to wait between attempts, allowing an anti-virus file lock to release. Defaults to 2.
 #>
 function Invoke-BuildInstaller {
     param (
@@ -239,8 +245,15 @@ function New-PortablePackage {
 }
 
 <#
-.SYNOPSIS
+    .SYNOPSIS
     Validates that a provided version string conforms to the Servy version format.
+
+    .DESCRIPTION
+    Checks the value against the pattern ^\d+\.\d+$ (major.minor, digits only) and throws when it does not match,
+    naming the expected pattern and the value that was provided. Callers run it before the version is stamped into any artifact.
+
+    .PARAMETER Version
+    The version string to validate, for example "9.9".
 #>
 function Assert-ServyVersion {
     [CmdletBinding()]
