@@ -47,7 +47,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
 
                 // Assert
                 Assert.Equal("TestOp", hook.OperationName);
-                Assert.Equal(process, hook.Process);
+                Assert.Same(process, hook.Process);
             }
         }
 
