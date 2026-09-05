@@ -189,56 +189,47 @@ namespace Servy.Core.IntegrationTests.Security
             var keyPath = GetTempFilePath("legacy.key");
             var ivPath = GetTempFilePath("legacy.iv");
 
-            try
+            // 1. Manually create a legacy v7.8 key without machine entropy
+            var rawLegacyData = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
             {
-                // 1. Manually create a legacy v7.8 key without machine entropy
-                var rawLegacyData = new byte[32];
-                using (var rng = RandomNumberGenerator.Create())
-                {
-                    rng.GetBytes(rawLegacyData);
-                }
-
-                // Encrypted with NULL entropy
-                byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
-                File.WriteAllBytes(keyPath, legacyEncrypted);
-
-                // Capture the exact file bytes prior to migration
-                byte[] bytesBeforeMigration = File.ReadAllBytes(keyPath);
-
-                // Act
-                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
-                {
-                    var retrievedKey = provider.GetKey();
-
-                    // Assert 1: Must successfully decrypt the legacy data
-                    Assert.Equal(rawLegacyData, retrievedKey);
-
-                    // Assert 2: The file on disk was rewritten
-                    byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
-                    Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
-                }
-
-                // Assert 3: Verify the migrated file is genuinely entropy-protected
-                // Path A: A fresh provider instance can successfully read it (using machine entropy)
-                using (var freshProvider = new ProtectedKeyProvider(keyPath, ivPath))
-                {
-                    var roundTripKey = freshProvider.GetKey();
-                    Assert.Equal(rawLegacyData, roundTripKey);
-                }
-
-                // Path B: Raw decryption without entropy MUST fail
-                byte[] migratedBytes = File.ReadAllBytes(keyPath);
-                Assert.Throws<CryptographicException>(() =>
-                {
-                    ProtectedData.Unprotect(migratedBytes, null, DataProtectionScope.LocalMachine);
-                });
+                rng.GetBytes(rawLegacyData);
             }
-            finally
+
+            // Encrypted with NULL entropy
+            byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
+            File.WriteAllBytes(keyPath, legacyEncrypted);
+
+            // Capture the exact file bytes prior to migration
+            byte[] bytesBeforeMigration = File.ReadAllBytes(keyPath);
+
+            // Act
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
-                // Clean up disk footprint
-                if (File.Exists(keyPath)) File.Delete(keyPath);
-                if (File.Exists(ivPath)) File.Delete(ivPath);
+                var retrievedKey = provider.GetKey();
+
+                // Assert 1: Must successfully decrypt the legacy data
+                Assert.Equal(rawLegacyData, retrievedKey);
+
+                // Assert 2: The file on disk was rewritten
+                byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
+                Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
             }
+
+            // Assert 3: Verify the migrated file is genuinely entropy-protected
+            // Path A: A fresh provider instance can successfully read it (using machine entropy)
+            using (var freshProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var roundTripKey = freshProvider.GetKey();
+                Assert.Equal(rawLegacyData, roundTripKey);
+            }
+
+            // Path B: Raw decryption without entropy MUST fail
+            byte[] migratedBytes = File.ReadAllBytes(keyPath);
+            Assert.Throws<CryptographicException>(() =>
+            {
+                ProtectedData.Unprotect(migratedBytes, null, DataProtectionScope.LocalMachine);
+            });
         }
 
         [Fact]
@@ -371,8 +362,17 @@ namespace Servy.Core.IntegrationTests.Security
             var provider = new ProtectedKeyProvider(keyPath, ivPath);
 
             // Populate the cache
-            var key1 = provider.GetKey();
-            var iv1 = provider.GetIV();
+            provider.GetKey();
+            provider.GetIV();
+
+            // GetKey/GetIV hand out defensive clones, so hold the internal buffers instead:
+            // those are the arrays Dispose zeroes in place before nulling the fields.
+            var internalKey = TestReflection.GetField<byte[]>(provider, "_cachedKey");
+            var internalIv = TestReflection.GetField<byte[]>(provider, "_cachedIv");
+
+            // Baseline, so an all-zero buffer cannot make the zeroing assertions vacuous
+            Assert.Contains(internalKey, b => b != 0);
+            Assert.Contains(internalIv, b => b != 0);
 
             // Act
             provider.Dispose();
@@ -381,6 +381,10 @@ namespace Servy.Core.IntegrationTests.Security
             // Verify that subsequent access throws ObjectDisposedException
             Assert.Throws<ObjectDisposedException>(provider.GetKey);
             Assert.Throws<ObjectDisposedException>(provider.GetIV);
+
+            // Verify the buffers were actually zeroed, not merely dropped
+            Assert.All(internalKey, b => Assert.Equal(0, b));
+            Assert.All(internalIv, b => Assert.Equal(0, b));
 
             // Verify the backing fields are fully cleared out to null post-disposal
             var cachedKey = TestReflection.GetField<byte[]>(provider, "_cachedKey");
@@ -395,6 +399,11 @@ namespace Servy.Core.IntegrationTests.Security
         {
             // Arrange
             var provider = new ProtectedKeyProvider(GetTempFilePath("k.key"), GetTempFilePath("i.iv"));
+
+            // Populate the cache, so the zeroing branch of Dispose runs on the first call
+            // and has to stay safe on the second and third
+            provider.GetKey();
+            provider.GetIV();
 
             // Act
             var exception = Record.Exception(() =>
