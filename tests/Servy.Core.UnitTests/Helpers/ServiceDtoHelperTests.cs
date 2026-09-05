@@ -174,9 +174,9 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void HydrateDefaults_WhenAllPropertiesAreNull_PopulatesDefaultsWithoutResettingIdentity()
+        public void HydrateDefaults_WhenStructuralPropertiesAreNull_PopulatesDefaultsWithoutResettingIdentity()
         {
-            // Arrange: Explicitly null every nullable property defensively to exercise HydrateDefaults on an incomplete import
+            // Arrange: Null every structural property, but give the identity trio explicit values so the no-reset guarantee is observable
             var dto = new ServiceDto
             {
                 StartupType = null,
@@ -322,10 +322,11 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 Name = "TestService",
                 StartTimeout = customTimeout,
-                EnableSizeRotation = customToggle,
-                // Populate arbitrary properties as null to ensure hydration still executes as a sibling track
-                StopTimeout = null
+                EnableSizeRotation = customToggle
             };
+
+            // Precondition: StopTimeout is left unset, so hydration is the only thing that can fill it
+            Assert.Null(dto.StopTimeout);
 
             // Act
             ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
