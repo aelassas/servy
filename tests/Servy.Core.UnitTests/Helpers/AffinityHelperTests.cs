@@ -123,7 +123,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("-1")] // Core < 0
+        [InlineData("-1")] // Leading minus: empty range start, not a negative core index
         [InlineData("0-")] // Malformed range
         [InlineData("0-1-2")] // Too many dashes
         [InlineData("abc")] // Non-numeric token

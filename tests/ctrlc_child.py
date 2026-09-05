@@ -1,3 +1,19 @@
+# Manual test fixture: despite the name, the ROOT of the deepest tree rather than anybody's
+# child. Nothing spawns it. It spawns ctrlc2.py and notepad.exe and then runs forever,
+# producing ctrlc_child -> (ctrlc2 -> ctrlc) plus notepad: three levels and a GUI leaf,
+# the widest case Servy's recursive termination has to reach. The actual leaf of the
+# ladder is ctrlc.py, which is the one that really is a child.
+#
+# The child interpreter comes from PYTHON_EXE, falling back to sys.executable; the Notepad
+# path is hardcoded to C:\Windows\System32\notepad.exe.
+# Logs to logs/ctrlc_child.log next to this script; set SERVY_TEST_LOG_DIR to write elsewhere.
+#
+# It deliberately does not terminate the processes it spawned: the tree is meant to be left
+# standing, so that what gets measured is Servy's own teardown.
+#
+# Install with:
+# .\servy-cli.exe install --name "ServyCtrlCTree" --path "C:\path\to\python.exe" --params "C:\path\to\tests\ctrlc_child.py" --env "PYTHON_EXE=C:\path\to\python.exe"
+
 import time
 import sys
 import logging
