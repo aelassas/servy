@@ -338,20 +338,23 @@ namespace Servy.Core.IntegrationTests.Security
                     $"Expected filesystem access error, but instead caught: {baseException.GetType().Name}");
 
                 // 2. Verify the backoff retry time logic contract.
-                // Loop behavior profiling constraints:
-                // Attempt 0: Fails -> Sleeps BaseMs * (1 << 0)
-                // Attempt 1: Fails -> Sleeps BaseMs * (1 << 1)
-                // Attempt 2: Max retries exhausted, rethrows without sleeping.
-                const int MaxRetries = 3;
+                // Both ends of that contract live in AppConfig: every attempt but the last sleeps
+                // KeyProviderReadRetryBackoffBaseMs * 2^attempt, and the last one rethrows without
+                // sleeping, so the total is the sum over KeyProviderReadMaxRetries - 1 attempts.
                 int expectedSleepMs = 0;
-                for (int attempt = 0; attempt < MaxRetries - 1; attempt++)
+                for (int attempt = 0; attempt < AppConfig.KeyProviderReadMaxRetries - 1; attempt++)
                 {
                     expectedSleepMs += AppConfig.KeyProviderReadRetryBackoffBaseMs * (1 << attempt);
                 }
 
+                // Thread.Sleep(n) never returns early, so the lower bound needs no slack.
                 var elapsedMs = stopwatch.ElapsedMilliseconds;
-                Assert.True(elapsedMs >= expectedSleepMs * 0.9,
-                    $"The key provider did not retry or back off exponentially. Expected at least ~{expectedSleepMs * 0.9}ms of accumulated backoff, but total execution time was only {elapsedMs}ms.");
+                Assert.True(elapsedMs >= expectedSleepMs,
+                    $"The key provider did not retry or back off exponentially. Expected at least {expectedSleepMs}ms of accumulated backoff, but total execution time was only {elapsedMs}ms.");
+
+                // Bound it from above too, so a grown retry count or base cannot pass unnoticed.
+                Assert.True(elapsedMs < expectedSleepMs * 3 + TestTimeouts.CiGenerousMs,
+                    $"The backoff took {elapsedMs}ms, far beyond the {expectedSleepMs}ms the retry policy allows - the retry count or the backoff base may have grown.");
             }
         }
 
