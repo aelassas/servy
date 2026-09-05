@@ -114,7 +114,8 @@ namespace Servy.Service.CommandLine
 
         /// <summary>
         /// Gets or sets the maximum time in seconds allowed for the external heartbeat URL request to complete before it is cancelled.
-        /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
+        /// Value must be between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>;
+        /// values outside that range are rejected by <see cref="Servy.Core.Validation.IServiceValidationRules"/> at install time.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
         public int HeartbeatUrlTimeoutInSeconds { get; set; } = AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
