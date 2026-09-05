@@ -5,6 +5,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Services;
 using Servy.Core.Validation;
+using System;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Services
@@ -19,6 +20,18 @@ namespace Servy.Core.UnitTests.Services
             _processHelperMock = new Mock<IProcessHelper>();
             _validator = new XmlServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
         }
+
+        #region Constructor Tests
+
+        [Fact]
+        public void Constructor_NullRules_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new XmlServiceValidator(null));
+            Assert.Equal("serviceValidationRules", ex.ParamName);
+        }
+
+        #endregion
 
         [Theory]
         [InlineData(null)]
