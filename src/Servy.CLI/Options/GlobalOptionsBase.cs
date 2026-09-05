@@ -1,4 +1,5 @@
 using CommandLine;
+using Servy.CLI.Resources;
 
 namespace Servy.CLI.Options
 {
@@ -18,7 +19,7 @@ namespace Servy.CLI.Options
         /// <value>
         /// <c>true</c> to enable quiet mode; otherwise, <c>false</c>.
         /// </value>
-        [Option('q', "quiet", Required = false, HelpText = "Suppress spinner and run in non-interactive mode.")]
+        [Option('q', "quiet", Required = false, HelpText = "Help_Global_Quiet", ResourceType = typeof(Strings))]
         public bool Quiet { get; set; }
     }
 }

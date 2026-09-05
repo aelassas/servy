@@ -183,7 +183,7 @@ $lastProcessed = Read-Watermark -TimestampFile $timestampFile
 $eventsToProcess = Get-EventsToProcess -ScriptDir $scriptDir -LastProcessed $lastProcessed
 
 if ($null -eq $eventsToProcess) {
-    Write-Host "No new errors to process."
+    Write-Host "没有需要处理的新错误。"
     exit 0
 }
 
@@ -208,7 +208,7 @@ foreach ($evt in $eventsToProcess) {
     }
 
     if ($deliveryStatus -eq 'TransientFailure') {
-        Write-Host "Notification failed due to a transient condition. Halting queue processing for retry."
+        Write-Host "通知因瞬时条件失败。暂停队列处理以便重试。"
         break
     }
 

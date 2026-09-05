@@ -1,7 +1,7 @@
 ﻿<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Author>Servy</Author>
-    <Description>Show Windows notifications when a Servy-managed service fails.</Description>
+    <Description>当 Servy 管理的服务失败时显示 Windows 通知。</Description>
     <URI>\ServyFailureNotification</URI>
   </RegistrationInfo>
   <Triggers>

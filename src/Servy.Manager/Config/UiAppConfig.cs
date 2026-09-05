@@ -11,18 +11,18 @@ namespace Servy.Manager.Config
         public const string Caption = "Servy Manager";
 
         /// <summary>
-        /// Local System Account name displayed in UI.
+        /// Local System account name displayed in UI.
         /// </summary>
-        public const string LocalSystem = "Local System";
+        public static string LocalSystem => Resources.Strings.Account_LocalSystem;
 
         /// <summary>
-        /// Label for the Local Service built-in account, often used for service log-on configurations.
+        /// Label for the Local Service built-in account.
         /// </summary>
-        public const string LocalService = "Local Service";
+        public static string LocalService => Resources.Strings.Account_LocalService;
 
         /// <summary>
-        /// Label for the Network Service built-in account, used for services requiring network-aware identity.
+        /// Label for the Network Service built-in account.
         /// </summary>
-        public const string NetworkService = "Network Service";
+        public static string NetworkService => Resources.Strings.Account_NetworkService;
     }
 }

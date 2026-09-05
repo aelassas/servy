@@ -69,14 +69,14 @@
 #>
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
-    [Parameter(Mandatory = $true, HelpMessage = 'Specify target archive output file path (e.g., "C:\Backups\Servy_Dump.zip").')]
+    [Parameter(Mandatory = $true, HelpMessage = '指定目标归档输出文件路径（例如 "C:\Backups\Servy_Dump.zip"）。')]
     [ValidateNotNullOrEmpty()]
     [string]$DestinationArchivePath,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Force overwrite of the target dump archive if it already exists.')]
+    [Parameter(Mandatory = $false, HelpMessage = '若目标转储归档已存在，则强制覆盖。')]
     [switch]$Overwrite,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Uninstall services from SCM and remove from database after successful export.')]
+    [Parameter(Mandatory = $false, HelpMessage = '导出成功后从 SCM 卸载服务并从数据库中移除。')]
     [switch]$Uninstall
 )
 
@@ -143,11 +143,11 @@ function Resolve-ServyDumpDestinationPath {
         $dirPart = $resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
         if ($dirPart.EndsWith(':')) { $dirPart += [System.IO.Path]::DirectorySeparatorChar }
         $resolvedArchivePath = [System.IO.Path]::Combine($dirPart, 'Servy_Dump.zip')
-        Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
+        Write-Host "目标路径是目录；已自动追加默认文件名到 '$resolvedArchivePath'。" -ForegroundColor Yellow
     }
     elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
         $resolvedArchivePath += '.zip'
-        Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
+        Write-Host "未指定文件扩展名；已将目标规范化为 '$resolvedArchivePath'。" -ForegroundColor Yellow
     }
 
     return $resolvedArchivePath
@@ -213,7 +213,7 @@ function Get-ServySanitizedFileName {
     }
 
     if ($candidateName -ne $baseFileName) {
-        Write-Host "  Name collision: '$ServiceName' sanitizes to '$baseFileName'; writing '$candidateName.xml' instead." -ForegroundColor Yellow
+        Write-Host "  名称冲突：'$ServiceName' 清理后为 '$baseFileName'；改为写入 '$candidateName.xml'。" -ForegroundColor Yellow
     }
 
     return $candidateName
@@ -261,7 +261,7 @@ try {
     $adminRole        = [System.Security.Principal.WindowsBuiltInRole]::Administrator
 
     if (-not $currentPrincipal.IsInRole($adminRole)) {
-        Write-Host "Servy-Dump.ps1 requires Administrator privileges. Please re-run script in an elevated PowerShell session." -ForegroundColor Red
+        Write-Host "Servy-Dump.ps1 需要管理员权限。请在提升的 PowerShell 会话中重新运行此脚本。" -ForegroundColor Red
         exit 1
     }
 
@@ -274,7 +274,7 @@ try {
     $servyModulePath = $moduleCandidates | Select-Object -First 1
 
     if (-not $servyModulePath) {
-        Write-Host "Servy PowerShell module (Servy.psm1) was not found next to this script or in %ProgramFiles%\Servy." -ForegroundColor Red
+        Write-Host "在此脚本旁或 %ProgramFiles%\Servy 中未找到 Servy PowerShell 模块（Servy.psm1）。" -ForegroundColor Red
         exit 2
     }
 
@@ -282,7 +282,7 @@ try {
         Import-Module -Name $servyModulePath -Force -ErrorAction Stop
     }
     catch {
-        Write-Host "Failed to import Servy PowerShell module from '$servyModulePath': $_" -ForegroundColor Red
+        Write-Host "无法从 '$servyModulePath' 导入 Servy PowerShell 模块：$_" -ForegroundColor Red
         exit 2
     }
 
@@ -294,10 +294,10 @@ try {
         # Check if destination dump file already exists
         if (Test-Path -LiteralPath $resolvedArchivePath) {
             if (-not $Overwrite.IsPresent) {
-                Write-Host "Destination dump file already exists: '$resolvedArchivePath'. Operation aborted to prevent overwriting." -ForegroundColor Red
+                Write-Host "目标转储文件已存在：'$resolvedArchivePath'。为防止覆盖，操作已中止。" -ForegroundColor Red
                 exit 3
             }
-            Write-Host "Existing dump archive found. -Overwrite specified; target file will be replaced." -ForegroundColor Yellow
+            Write-Host "发现现有转储归档。已指定 -Overwrite；将替换目标文件。" -ForegroundColor Yellow
         }
 
         # Verify existing sidecar file can be written/overwritten under -Overwrite before proceeding with exports
@@ -307,7 +307,7 @@ try {
                 $fs.Dispose()
             }
             catch {
-                Write-Host "Existing SHA-256 sidecar file '$sidecarPath' is locked or unwritable and could not be replaced. Operation aborted to prevent stale checksum mismatches." -ForegroundColor Red
+                Write-Host "现有 SHA-256 伴随文件 '$sidecarPath' 被锁定或不可写，无法替换。为防止校验和不匹配，操作已中止。" -ForegroundColor Red
                 exit 4
             }
         }
@@ -329,7 +329,7 @@ try {
                     $createdRootBoundary = $existingAncestor
                 }
                 catch {
-                    Write-Host "Cannot create target destination directory '$parentDir': $_" -ForegroundColor Red
+                    Write-Host "无法创建目标目录 '$parentDir'：$_" -ForegroundColor Red
                     exit 4
                 }
             }
@@ -340,17 +340,17 @@ try {
                 [System.IO.File]::WriteAllBytes($probeFile, @())
                 Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
                 if (Test-Path -LiteralPath $probeFile) {
-                    Write-Host "WARNING: The write probe '$probeFile' could not be removed from '$parentDir' (create is allowed but delete is not) - delete it manually." -ForegroundColor Yellow
+                    Write-Host "警告：无法从 '$parentDir' 删除写入探测文件 '$probeFile'（允许创建但不允许删除）——请手动删除。" -ForegroundColor Yellow
                 }
             }
             catch {
-                Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
+                Write-Host "目标目录 '$parentDir' 不可写：$_" -ForegroundColor Red
                 exit 4
             }
         }
     }
     catch {
-        Write-Host "Invalid destination path specified '$DestinationArchivePath': $_" -ForegroundColor Red
+        Write-Host "指定的目标路径无效 '$DestinationArchivePath'：$_" -ForegroundColor Red
         exit 4
     }
 
@@ -358,7 +358,7 @@ try {
     $dbPath = [System.IO.Path]::Combine($env:ProgramData, "Servy", "db", "Servy.db")
 
     if (-not (Test-Path -LiteralPath $dbPath)) {
-        Write-Host "Servy database not found at '$dbPath'. No services exist to export." -ForegroundColor Yellow
+        Write-Host "在 '$dbPath' 未找到 Servy 数据库。没有可导出的服务。" -ForegroundColor Yellow
         exit 0
     }
 
@@ -417,7 +417,7 @@ public static class ServyNativeWinSqliteRecord
         if (rc != 0)
         {
             if (db != IntPtr.Zero) sqlite3_close(db);
-            throw new InvalidOperationException(string.Format("sqlite3_open_v2 failed on '{0}' with result code {1}.", dbPath, rc));
+            throw new InvalidOperationException(string.Format("sqlite3_open_v2 在 '{0}' 上失败，结果代码 {1}。", dbPath, rc));
         }
 
         try
@@ -426,7 +426,7 @@ public static class ServyNativeWinSqliteRecord
             rc = sqlite3_prepare_v2(db, "SELECT Name, UserAccount FROM Services ORDER BY Name", -1, out stmt, IntPtr.Zero);
             if (rc != 0)
             {
-                throw new InvalidOperationException(string.Format("sqlite3_prepare_v2 failed with result code {0}.", rc));
+                throw new InvalidOperationException(string.Format("sqlite3_prepare_v2 失败，结果代码 {0}。", rc));
             }
 
             try
@@ -446,7 +446,7 @@ public static class ServyNativeWinSqliteRecord
                 }
                 if (stepRc != 101) // SQLITE_DONE
                 {
-                    throw new InvalidOperationException(string.Format("sqlite3_step failed with result code {0}; service list may be incomplete.", stepRc));
+                    throw new InvalidOperationException(string.Format("sqlite3_step 失败，结果代码 {0}；服务列表可能不完整。", stepRc));
                 }
             }
             finally
@@ -467,7 +467,7 @@ public static class ServyNativeWinSqliteRecord
             Add-Type -TypeDefinition $sqliteBinding
         }
         catch {
-            Write-Host "Failed to compile winsqlite3 P/Invoke binding assembly: $_" -ForegroundColor Red
+            Write-Host "编译 winsqlite3 P/Invoke 绑定程序集失败：$_" -ForegroundColor Red
             exit 5
         }
     }
@@ -483,8 +483,8 @@ public static class ServyNativeWinSqliteRecord
             Set-ServyHardenedFileAcl -Path $tempStagingDir -IsDirectory
         }
         catch {
-            Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
-            Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
+            Write-Host "警告：无法限制暂存目录 '$tempStagingDir' 的权限：$($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "该目录将存放未加密的纯文本服务配置。为避免泄露，操作已中止。" -ForegroundColor Red
             exit 4
         }
 
@@ -496,25 +496,25 @@ public static class ServyNativeWinSqliteRecord
             # Build and display service account table for debugging / diagnostic inspection
             $serviceTable = foreach ($svc in $servicesList) {
                 [PSCustomObject]@{
-                    'Service Name' = $svc.Name
-                    'User Account' = if ([string]::IsNullOrWhiteSpace($svc.UserAccount)) { '[LocalSystem]' } else { $svc.UserAccount }
+                    '服务名称' = $svc.Name
+                    '用户账户' = if ([string]::IsNullOrWhiteSpace($svc.UserAccount)) { '[LocalSystem]' } else { $svc.UserAccount }
                 }
             }
 
-            Write-Host "`nRegistered Servy Services:" -ForegroundColor Cyan
+            Write-Host "`n已注册的 Servy 服务：" -ForegroundColor Cyan
             $serviceTable | Format-Table -AutoSize | Out-String | Write-Host
         }
         catch {
-            Write-Host "Failed to query Servy database at '$dbPath': $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "查询 Servy 数据库 '$dbPath' 失败：$($_.Exception.Message)" -ForegroundColor Red
             exit 4
         }
 
         if ($serviceNames.Count -eq 0) {
-            Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
+            Write-Host "在数据库 '$dbPath' 中未找到任何服务。" -ForegroundColor Yellow
             exit 0
         }
 
-        Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
+        Write-Host "找到 $($serviceNames.Count) 个待导出的服务..." -ForegroundColor Cyan
 
         $exported      = New-Object System.Collections.Generic.List[string]
         $failed        = New-Object System.Collections.Generic.List[object]
@@ -527,21 +527,21 @@ public static class ServyNativeWinSqliteRecord
 
             $xmlExportPath = [System.IO.Path]::Combine($tempStagingDir, "$candidateName.xml")
 
-            Write-Host "Exporting configuration for '$serviceName' -> '$candidateName.xml'..." -ForegroundColor Green
+            Write-Host "正在导出 '$serviceName' 的配置 -> '$candidateName.xml'..." -ForegroundColor Green
 
             try {
                 Export-ServyServiceConfig -Name $serviceName -ConfigFileType "xml" -Path $xmlExportPath
                 $exported.Add($serviceName)
             }
             catch {
-                Write-Host "  FAILED to export '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = $_.Exception.Message })
+                Write-Host "  导出 '$serviceName' 失败：$($_.Exception.Message)" -ForegroundColor Red
+                $failed.Add([PSCustomObject]@{ '服务' = $serviceName; '原因' = $_.Exception.Message })
             }
         }
 
         # If zero configurations succeeded, terminate without creating an empty archive
         if ($exported.Count -eq 0) {
-            Write-Host "No service configurations could be exported. No dump archive was generated." -ForegroundColor Red
+            Write-Host "未能导出任何服务配置。未生成转储归档。" -ForegroundColor Red
             exit 6
         }
 
@@ -550,12 +550,12 @@ public static class ServyNativeWinSqliteRecord
         $stagedCount    = if ($null -eq $stagedXmlFiles) { 0 } else { @($stagedXmlFiles).Count }
 
         if ($stagedCount -ne $exported.Count) {
-            Write-Host "Expected $($exported.Count) exported configuration(s) but staged $stagedCount. Refusing to write an incomplete archive." -ForegroundColor Red
+            Write-Host "期望 $($exported.Count) 个已导出配置，但暂存了 $stagedCount 个。拒绝写入不完整的归档。" -ForegroundColor Red
             exit 8
         }
 
         # Compress the staging directory containing XML dumps into the target zip file
-        Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
+        Write-Host "正在将导出的配置压缩为 zip 归档..." -ForegroundColor Cyan
 
         $stagedItemsToCompress = $stagedXmlFiles | Select-Object -ExpandProperty FullName
 
@@ -573,8 +573,8 @@ public static class ServyNativeWinSqliteRecord
             Compress-Archive @compressParams
         }
         catch {
-            Write-Host "`nServy configuration dump FAILED during compression: $_" -ForegroundColor Red
-            Write-Host "No valid archive was produced at '$resolvedArchivePath'." -ForegroundColor Red
+            Write-Host "`nServy 配置转储在压缩期间失败：$_" -ForegroundColor Red
+            Write-Host "未能在 '$resolvedArchivePath' 生成有效归档。" -ForegroundColor Red
             exit 4
         }
 
@@ -583,22 +583,22 @@ public static class ServyNativeWinSqliteRecord
             Set-ServyHardenedFileAcl -Path $resolvedArchivePath
         }
         catch {
-            Write-Host "`nWARNING: Could not restrict permissions on the archive '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "`n警告：无法限制归档 '$resolvedArchivePath' 的权限：$($_.Exception.Message)" -ForegroundColor Red
 
             # Best-effort removal of the unprotected archive
             Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue
 
             if (Test-Path -LiteralPath $resolvedArchivePath) {
-                Write-Host "The archive could NOT be removed. It EXISTS UNPROTECTED at '$resolvedArchivePath' and contains plain-text service configurations - delete or protect it manually." -ForegroundColor Red
+                Write-Host "无法删除该归档。它以未受保护状态存在于 '$resolvedArchivePath'，并包含纯文本服务配置——请手动删除或保护。" -ForegroundColor Red
             }
             else {
-                Write-Host "The archive was removed because it contains unencrypted plain-text service configurations and could not be protected." -ForegroundColor Red
+                Write-Host "已删除该归档，因为它包含未加密的纯文本服务配置且无法加以保护。" -ForegroundColor Red
             }
 
             if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
                 Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
                 if (Test-Path -LiteralPath $sidecarPath) {
-                    Write-Host "WARNING: A pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
+                    Write-Host "警告：无法删除既有 SHA-256 伴随文件，它仍位于 '$sidecarPath'——请手动删除或更新。" -ForegroundColor Red
                 }
             }
 
@@ -609,7 +609,7 @@ public static class ServyNativeWinSqliteRecord
         if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
             Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
             if (Test-Path -LiteralPath $sidecarPath) {
-                Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
+                Write-Host "警告：无法删除既有 SHA-256 伴随文件，它仍位于 '$sidecarPath'——请手动删除或更新。" -ForegroundColor Red
             }
         }
 
@@ -620,29 +620,29 @@ public static class ServyNativeWinSqliteRecord
             $hashValue = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
             [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($false)))
             Set-ServyHardenedFileAcl -Path $sidecarPath
-            Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
+            Write-Host "已写入 SHA-256 校验和伴随文件 -> '$sidecarPath'" -ForegroundColor Cyan
         }
         catch {
             $sidecarWriteFailed = $true
             if (Test-Path -LiteralPath $sidecarPath) {
                 Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
             }
-            Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "已在 '$resolvedArchivePath' 创建归档，但无法写入 SHA-256 伴随文件：$($_.Exception.Message)" -ForegroundColor Red
 
             if (Test-Path -LiteralPath $sidecarPath) {
-                Write-Host "A stale SHA-256 sidecar could NOT be removed and remains at '$sidecarPath' - delete or regenerate it (Get-FileHash) before restoring, or restore verification will reject the archive." -ForegroundColor Red
+                Write-Host "无法删除过期的 SHA-256 伴随文件，它仍位于 '$sidecarPath'——还原前请手动删除或重新生成（Get-FileHash），否则还原校验将拒绝该归档。" -ForegroundColor Red
             }
             else {
-                Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
+                Write-Host "在依赖完整性校验前，请手动生成校验和（Get-FileHash）。" -ForegroundColor Yellow
             }
-            $failed.Add([PSCustomObject]@{ Service = "SHA256 Sidecar"; Reason = "Sidecar write failed: $($_.Exception.Message)" })
+            $failed.Add([PSCustomObject]@{ '服务' = "SHA256 伴随文件"; '原因' = "伴随文件写入失败：$($_.Exception.Message)" })
         }
 
         # If -Uninstall is specified, uninstall successfully exported services from SCM and DB
         if ($Uninstall.IsPresent) {
             if ($sidecarWriteFailed) {
-                Write-Host "`nWARNING: Services were NOT uninstalled because the SHA-256 integrity sidecar could not be written." -ForegroundColor Red
-                Write-Host "Verify archive protection and sidecar manually before running with -Uninstall." -ForegroundColor Yellow
+                Write-Host "`n警告：由于无法写入 SHA-256 完整性伴随文件，服务未被卸载。" -ForegroundColor Red
+                Write-Host "在使用 -Uninstall 运行前，请手动验证归档保护与伴随文件。" -ForegroundColor Yellow
             }
             else {
                 # Check for custom accounts that will lose credentials
@@ -658,29 +658,29 @@ public static class ServyNativeWinSqliteRecord
                 })
 
                 if ($customAccountServices.Count -gt 0) {
-                    Write-Host "`nWARNING: $($customAccountServices.Count) of $($exported.Count) service(s) use a custom logon account; their credentials are NOT in the archive and will be deleted from the database upon uninstallation (re-enter them manually after restore):" -ForegroundColor Yellow
+                    Write-Host "`n警告：$($customAccountServices.Count) / $($exported.Count) 个服务使用自定义登录账户；其凭据不在归档中，卸载时将从数据库删除（还原后请手动重新输入）：" -ForegroundColor Yellow
 
                     $affectedTable = foreach ($svc in $customAccountServices) {
                         [PSCustomObject]@{
-                            'Service Name' = $svc.Name
-                            'User Account' = $svc.UserAccount
+                            '服务名称' = $svc.Name
+                            '用户账户' = $svc.UserAccount
                         }
                     }
 
                     $affectedTable | Format-Table -AutoSize | Out-String | Write-Host
                 }
 
-                if ($PSCmdlet.ShouldProcess("$($exported.Count) exported service(s)", "Uninstall from SCM and delete from the Servy database")) {
-                    Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+                if ($PSCmdlet.ShouldProcess("$($exported.Count) 个已导出服务", "从 SCM 卸载并从 Servy 数据库删除")) {
+                    Write-Host "`n正在从 SCM 和数据库卸载已成功导出的服务..." -ForegroundColor Cyan
 
                     foreach ($serviceName in $exported) {
-                        Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
+                        Write-Host "正在卸载服务 '$serviceName'..." -ForegroundColor Yellow
                         try {
                             Uninstall-ServyService -Name $serviceName -ErrorAction Stop
                         }
                         catch {
-                            Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                            $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = "Uninstall failed: $($_.Exception.Message)" })
+                            Write-Host "  卸载 '$serviceName' 失败：$($_.Exception.Message)" -ForegroundColor Red
+                            $failed.Add([PSCustomObject]@{ '服务' = $serviceName; '原因' = "卸载失败：$($_.Exception.Message)" })
                         }
                     }
                 }
@@ -688,31 +688,30 @@ public static class ServyNativeWinSqliteRecord
         }
 
         # Display completion status and critical security warning
-        Write-Host "`nServy configuration dump completed!" -ForegroundColor Green
-        Write-Host "Successfully exported $($exported.Count) of $($serviceNames.Count) service(s)." -ForegroundColor Cyan
-        Write-Host "Dump location: $resolvedArchivePath" -ForegroundColor Cyan
+        Write-Host "`nServy 配置转储已完成！" -ForegroundColor Green
+        Write-Host "已成功导出 $($exported.Count) / $($serviceNames.Count) 个服务。" -ForegroundColor Cyan
+        Write-Host "转储位置：$resolvedArchivePath" -ForegroundColor Cyan
 
         if ($failed.Count -gt 0) {
-            Write-Host "`nThe following service(s) encountered errors during export or uninstallation:" -ForegroundColor Red
+            Write-Host "`n以下服务在导出或卸载期间遇到错误：" -ForegroundColor Red
             $failed | Format-Table -AutoSize | Out-String | Write-Host
         }
 
         Write-Host @"
 
 ================================================================================
-CRITICAL SECURITY WARNING:
+重要安全警告：
 ================================================================================
-The generated dump archive contains highly sensitive information!
-- Service execution parameters, environment variables, and startup arguments
-  are stored in unencrypted plain-text within the exported XML files.
-- Protect this file accordingly and restrict access to authorized admins.
+生成的转储归档包含高度敏感信息！
+- 服务执行参数、环境变量和启动参数以未加密纯文本形式
+  存储在导出的 XML 文件中。
+- 请妥善保护此文件，并仅允许授权管理员访问。
 
-NOTE ON SERVICE RESTORATION:
-- Service logon Usernames and Passwords are NOT exported for security reasons.
-- Restoring this backup via Servy-Restore.ps1, servy-cli, or Servy Manager will
-  automatically set all service logon accounts to 'LocalSystem' by default.
-- You must manually re-enter Logon Usernames and Passwords for any services that
-  require specific custom service runner accounts.
+关于服务还原的说明：
+- 出于安全考虑，服务登录用户名和密码不会导出。
+- 通过 Servy-Restore.ps1、servy-cli 或 Servy Manager 还原此备份时，
+  默认会将所有服务登录账户自动设为 'LocalSystem'。
+- 对于需要特定自定义服务运行账户的服务，必须手动重新输入登录用户名和密码。
 ================================================================================
 "@ -ForegroundColor Yellow
 
@@ -721,7 +720,7 @@ NOTE ON SERVICE RESTORATION:
         }
     }
     catch {
-        Write-Host "`nServy configuration dump FAILED: $_" -ForegroundColor Red
+        Write-Host "`nServy 配置转储失败：$_" -ForegroundColor Red
         exit 4
     }
     finally {
@@ -733,13 +732,13 @@ NOTE ON SERVICE RESTORATION:
                 Write-Host @"
 
 ================================================================================
-WARNING: STAGING CLEANUP FAILURE DETECTED
+警告：检测到暂存清理失败
 ================================================================================
-The temporary staging directory could not be fully removed:
+临时暂存目录未能完全删除：
   $tempStagingDir
 
-It contains UNENCRYPTED PLAIN-TEXT service configurations.
-Please delete this directory manually to prevent credential/config leaks.
+其中包含未加密的纯文本服务配置。
+请手动删除此目录，以防止凭据/配置泄露。
 ================================================================================
 "@ -ForegroundColor Red
             }

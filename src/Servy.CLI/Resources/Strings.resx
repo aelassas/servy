@@ -13,6 +13,243 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <data name="Help_Export_Config" xml:space="preserve">
+    <value>Configuration export file type (xml or json).</value>
+  </data>
+  <data name="Help_Export_Name" xml:space="preserve">
+    <value>Name of the service to export.</value>
+  </data>
+  <data name="Help_Export_Path" xml:space="preserve">
+    <value>Path of the configuration file to export.</value>
+  </data>
+  <data name="Help_Global_Quiet" xml:space="preserve">
+    <value>Suppress spinner and run in non-interactive mode.</value>
+  </data>
+  <data name="Help_Import_Config" xml:space="preserve">
+    <value>Configuration file type (xml or json).</value>
+  </data>
+  <data name="Help_Import_Install" xml:space="preserve">
+    <value>Install the service after import. If the service is already installed, restarting it is required for changes to take effect.</value>
+  </data>
+  <data name="Help_Import_Path" xml:space="preserve">
+    <value>Path of the configuration file to import.</value>
+  </data>
+  <data name="Help_Install_CpuAffinity" xml:space="preserve">
+    <value>Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>
+  </data>
+  <data name="Help_Install_DateRotationType" xml:space="preserve">
+    <value>Date rotation type. Options: Daily, Weekly, Monthly, None (None disables date-based rotation; use when only size rotation is desired).</value>
+  </data>
+  <data name="Help_Install_Debug" xml:space="preserve">
+    <value>Whether debug logs are enabled. When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.</value>
+  </data>
+  <data name="Help_Install_Deps" xml:space="preserve">
+    <value>Specify one or more Windows service names (not display names) that this service depends on separated with semicolons (;). Each service name must contain only letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($), optionally preceded by '+' to reference a load-order group, and must not exceed 256 characters. Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this service will not start.</value>
+  </data>
+  <data name="Help_Install_Description" xml:space="preserve">
+    <value>Description of the service.</value>
+  </data>
+  <data name="Help_Install_DisplayName" xml:space="preserve">
+    <value>The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead.</value>
+  </data>
+  <data name="Help_Install_EnableConsoleUI" xml:space="preserve">
+    <value>Enable console user interface for the service. When enabled, stdout/stderr redirection is disabled.</value>
+  </data>
+  <data name="Help_Install_EnableDateRotation" xml:space="preserve">
+    <value>Enable date-based log rotation based on the date interval specified by --dateRotationType. When both size-based and date-based rotation are enabled, size rotation takes precedence.</value>
+  </data>
+  <data name="Help_Install_EnableHealth" xml:space="preserve">
+    <value>Enable health monitoring.</value>
+  </data>
+  <data name="Help_Install_EnableHeartbeatUrlFlags" xml:space="preserve">
+    <value>Append /start and /fail to the heartbeat URL on service start and failure.</value>
+  </data>
+  <data name="Help_Install_EnableRotation" xml:space="preserve">
+    <value>Deprecated. Enable size-based log rotation. This option is kept only for backward compatibility. Use --enableSizeRotation instead.</value>
+  </data>
+  <data name="Help_Install_EnableSizeRotation" xml:space="preserve">
+    <value>Enable size-based log rotation.</value>
+  </data>
+  <data name="Help_Install_EnvVars" xml:space="preserve">
+    <value>Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \= to escape '=', \" to escape '"', \; to escape ';', \\ to escape '\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin. SECURITY WARNING: Use the SERVY_ENVIRONMENT_VARIABLES environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_FailureProgramParams" xml:space="preserve">
+    <value>Additional parameters for the failure program. SECURITY WARNING: Use the SERVY_FAILURE_PROGRAM_PARAMETERS environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_FailureProgramPath" xml:space="preserve">
+    <value>The failure program path. Configure a script or executable to run when the wrapped process exits with a non-zero exit code (recovery disabled) or after all recovery action retries have failed (recovery enabled). It is not run when the process fails to start; that path stops the service. Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_FailureProgramStartupDir" xml:space="preserve">
+    <value>Specifies the directory in which the failure program will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_HeartbeatInterval" xml:space="preserve">
+    <value>Heartbeat interval in seconds. Must be between 5 and 86400 seconds.</value>
+  </data>
+  <data name="Help_Install_HeartbeatUrl" xml:space="preserve">
+    <value>Absolute URL for out-of-band diagnostic heartbeat pings. Only used when health monitoring is enabled.</value>
+  </data>
+  <data name="Help_Install_HeartbeatUrlTimeoutSeconds" xml:space="preserve">
+    <value>Timeout in seconds for external heartbeat URL requests. Must be between 2 and 30 seconds. Defaults to 10 seconds.</value>
+  </data>
+  <data name="Help_Install_MaxFailedChecks" xml:space="preserve">
+    <value>Maximum allowed failed health checks. Must be between 1 and 100000.</value>
+  </data>
+  <data name="Help_Install_MaxRestartAttempts" xml:space="preserve">
+    <value>Maximum restart attempts on failure. Must be between 0 and 100000. Set to 0 for unlimited restart attempts.</value>
+  </data>
+  <data name="Help_Install_MaxRotations" xml:space="preserve">
+    <value>Maximum rotated log files to keep. Must be between 0 and 10000. Set to 0 or leave empty for unlimited.</value>
+  </data>
+  <data name="Help_Install_Name" xml:space="preserve">
+    <value>Unique service name to install.</value>
+  </data>
+  <data name="Help_Install_Params" xml:space="preserve">
+    <value>Additional parameters for the process. Supports environment variable expansion, example: --params="--data %ProgramData%\MyApp --bin %MY_VAR%\bin". SECURITY WARNING: Use the SERVY_PROCESS_PARAMETERS environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_Password" xml:space="preserve">
+    <value>The service account password. SECURITY WARNING: Use the SERVY_PASSWORD environment variable instead to avoid exposing credentials in OS process listings.</value>
+  </data>
+  <data name="Help_Install_Path" xml:space="preserve">
+    <value>Path to the executable process. Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PostLaunchParams" xml:space="preserve">
+    <value>Additional parameters for the post-launch executable. SECURITY WARNING: Use the SERVY_POST_LAUNCH_PARAMETERS environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_PostLaunchPath" xml:space="preserve">
+    <value>The post-launch executable path. Configure an optional script or executable to run after the process starts successfully. Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PostLaunchStartupDir" xml:space="preserve">
+    <value>Specifies the directory in which the post-launch executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PostStopParams" xml:space="preserve">
+    <value>Additional parameters for the post-stop executable. SECURITY WARNING: Use the SERVY_POST_STOP_PARAMETERS environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_PostStopPath" xml:space="preserve">
+    <value>The post-stop executable path. Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown. Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PostStopStartupDir" xml:space="preserve">
+    <value>Specifies the directory in which the post-stop executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PreLaunchEnv" xml:space="preserve">
+    <value>Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \= to escape '=', \" to escape '"', \; to escape ';', \\ to escape '\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin. SECURITY WARNING: Use the SERVY_PRE_LAUNCH_ENVIRONMENT_VARIABLES environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_PreLaunchIgnoreFailure" xml:space="preserve">
+    <value>Ignore failure and start service even if pre-launch executable fails.</value>
+  </data>
+  <data name="Help_Install_PreLaunchParams" xml:space="preserve">
+    <value>Additional parameters for the pre-launch executable. SECURITY WARNING: Use the SERVY_PRE_LAUNCH_PARAMETERS environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_PreLaunchPath" xml:space="preserve">
+    <value>The pre-launch executable path. Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable --preLaunchIgnoreFailure. Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PreLaunchRetryAttempts" xml:space="preserve">
+    <value>Number of retry attempts for the pre-launch executable if it fails. Must be between 0 and 100000.</value>
+  </data>
+  <data name="Help_Install_PreLaunchStartupDir" xml:space="preserve">
+    <value>Specifies the directory in which the pre-launch executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PreLaunchStderr" xml:space="preserve">
+    <value>Path to stderr log file of the pre-launch executable.</value>
+  </data>
+  <data name="Help_Install_PreLaunchStdout" xml:space="preserve">
+    <value>Path to stdout log file of the pre-launch executable.</value>
+  </data>
+  <data name="Help_Install_PreLaunchTimeout" xml:space="preserve">
+    <value>Timeout for the pre-launch executable. Must be between 0 and 86400 seconds. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use this only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
+  </data>
+  <data name="Help_Install_PreStopLogAsError" xml:space="preserve">
+    <value>Log pre-stop failure as error.</value>
+  </data>
+  <data name="Help_Install_PreStopParams" xml:space="preserve">
+    <value>Additional parameters for the pre-stop executable. SECURITY WARNING: Use the SERVY_PRE_STOP_PARAMETERS environment variable instead to avoid exposing sensitive parameters in OS process listings.</value>
+  </data>
+  <data name="Help_Install_PreStopPath" xml:space="preserve">
+    <value>The pre-stop executable path. Configure an optional script or executable to run before the main service stops. This can be used for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while it is running. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode. Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Help_Install_PreStopStartupDir" xml:space="preserve">
+    <value>Specifies the directory in which the pre-stop executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_PreStopTimeout" xml:space="preserve">
+    <value>Timeout for the pre-stop executable. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode. Must be between 0 and 86400 seconds.</value>
+  </data>
+  <data name="Help_Install_Priority" xml:space="preserve">
+    <value>Process priority level. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime. Defaults to Normal.</value>
+  </data>
+  <data name="Help_Install_RecoveryAction" xml:space="preserve">
+    <value>Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer. Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts.</value>
+  </data>
+  <data name="Help_Install_RecoveryOnCleanExit" xml:space="preserve">
+    <value>Enable running recovery action even if the process exits successfully. Default is false.</value>
+  </data>
+  <data name="Help_Install_RotationSize" xml:space="preserve">
+    <value>Log rotation size in Megabytes (MB). Must be between 1 and 10240 MB.</value>
+  </data>
+  <data name="Help_Install_StartTimeout" xml:space="preserve">
+    <value>Timeout in seconds to wait for the process to start successfully before considering the startup as failed. Must be between 1 and 86400 seconds. Defaults to 10 seconds.</value>
+  </data>
+  <data name="Help_Install_StartupDir" xml:space="preserve">
+    <value>Startup directory for the process. Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Help_Install_StartupType" xml:space="preserve">
+    <value>Service startup type. Options: Automatic, AutomaticDelayedStart, Manual, Disabled. Defaults to Automatic.</value>
+  </data>
+  <data name="Help_Install_Stderr" xml:space="preserve">
+    <value>Path to stderr log file.</value>
+  </data>
+  <data name="Help_Install_Stdout" xml:space="preserve">
+    <value>Path to stdout log file.</value>
+  </data>
+  <data name="Help_Install_StopTimeout" xml:space="preserve">
+    <value>Timeout in seconds to wait for the process to exit. Must be between 1 and 86400 seconds. Defaults to 5 seconds.</value>
+  </data>
+  <data name="Help_Install_UseLocalTimeForRotation" xml:space="preserve">
+    <value>Use local server time for log rotation instead of UTC. Default is false.</value>
+  </data>
+  <data name="Help_Install_User" xml:space="preserve">
+    <value>The service account username (e.g., .\username, DOMAIN\username, DOMAIN\gMSA$, or a built-in identity such as NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, NT SERVICE\MyService or IIS APPPOOL\MyPool). Leave the --password option or SERVY_PASSWORD environment variable empty for built-in, virtual and gMSA accounts. If this option is not set, the service runs under Local System. If the service runs under an account other than Local System, you must grant Modify access to %ProgramData%\Servy for the account running the service and execute the mandatory hardening script: Set-ServyExePermissions.ps1 -TargetAccount "domain\user" to prevent unprivileged binary tampering and local privilege escalation. Learn script location and execution usage at: https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory</value>
+  </data>
+  <data name="Help_Restart_Name" xml:space="preserve">
+    <value>Name of the service to restart.</value>
+  </data>
+  <data name="Help_Start_Name" xml:space="preserve">
+    <value>Name of the service to start.</value>
+  </data>
+  <data name="Help_Status_Name" xml:space="preserve">
+    <value>Name of the service to check.</value>
+  </data>
+  <data name="Help_Stop_Name" xml:space="preserve">
+    <value>Name of the service to stop.</value>
+  </data>
+  <data name="Help_Uninstall_Name" xml:space="preserve">
+    <value>Name of the service to uninstall.</value>
+  </data>
+  <data name="Help_Verb_Export" xml:space="preserve">
+    <value>Export a Servy Windows service configuration to a configuration file.</value>
+  </data>
+  <data name="Help_Verb_Help" xml:space="preserve">
+    <value>Display help information.</value>
+  </data>
+  <data name="Help_Verb_Import" xml:space="preserve">
+    <value>Import a Windows service configuration into the Servy database and optionally install the service.</value>
+  </data>
+  <data name="Help_Verb_Install" xml:space="preserve">
+    <value>Install a Windows service.</value>
+  </data>
+  <data name="Help_Verb_Restart" xml:space="preserve">
+    <value>Restart a Windows service.</value>
+  </data>
+  <data name="Help_Verb_Start" xml:space="preserve">
+    <value>Start a Windows service.</value>
+  </data>
+  <data name="Help_Verb_Status" xml:space="preserve">
+    <value>Get the current status of a Windows service. Possible results: NotInstalled, Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused, Unknown.</value>
+  </data>
+  <data name="Help_Verb_Stop" xml:space="preserve">
+    <value>Stop a Windows service.</value>
+  </data>
+  <data name="Help_Verb_Uninstall" xml:space="preserve">
+    <value>Uninstall a Windows service.</value>
+  </data>
   <data name="Msg_PreparingEnvironment" xml:space="preserve">
     <value>Preparing environment...</value>
   </data>
@@ -160,5 +397,23 @@
   </data>
   <data name="Msg_LogFailed" xml:space="preserve">
     <value>Failed to {0}</value>
+  </data>
+  <data name="Msg_CancellingForceExit" xml:space="preserve">
+    <value>Cancelling... press Ctrl+C again to force exit.</value>
+  </data>
+  <data name="Msg_UnknownCommand" xml:space="preserve">
+    <value>Error: Unknown command '{0}'. See '--help' for available options.</value>
+  </data>
+  <data name="Msg_VulnerableSqliteDetected" xml:space="preserve">
+    <value>[CRITICAL] Vulnerable SQLite version detected: {0}</value>
+  </data>
+  <data name="Msg_VulnerableSqliteRequirement" xml:space="preserve">
+    <value>This version of Servy requires SQLite {0}+.</value>
+  </data>
+  <data name="Msg_OperationCancelledByUser" xml:space="preserve">
+    <value>Operation cancelled by user.</value>
+  </data>
+  <data name="Msg_UnexpectedErrorWithDetail" xml:space="preserve">
+    <value>An unexpected error occurred: {0}</value>
   </data>
 </root>

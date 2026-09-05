@@ -8,6 +8,6 @@
 
     <!-- Globalization & Localization Optimizations -->
     <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
-    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
   </PropertyGroup>
 </Project>

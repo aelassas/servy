@@ -37,7 +37,9 @@
                        AutomationProperties.Name="{x:Static resx:Strings.Label_Level}" />
 
       <ComboBox Width="120"
-                      SelectedItem="{Binding SelectedLevel, Mode=TwoWay}"
+                      SelectedValue="{Binding SelectedLevel, Mode=TwoWay}"
+                      SelectedValuePath="Value"
+                      DisplayMemberPath="DisplayName"
                       ItemsSource="{Binding LogLevels}"
                       Margin="0,0,10,0"
                       AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelComboBox_Name}"
@@ -175,9 +177,9 @@
                                        Height="16"
                                        Margin="0,0,5,0"
                                        AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelIcon_Name}" />
-                <TextBlock Text="{Binding Level}"
+                <TextBlock Text="{Binding LevelDisplay}"
                                            VerticalAlignment="Center"
-                                           AutomationProperties.Name="{Binding Level}" />
+                                           AutomationProperties.Name="{Binding LevelDisplay}" />
               </StackPanel>
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>

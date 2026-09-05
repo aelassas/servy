@@ -1,0 +1,1116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_SecurityWarningTitle" xml:space="preserve">
+    <value>需要提升权限</value>
+  </data>
+  <data name="Msg_SecurityWarningMessage" xml:space="preserve">
+    <value>Servy 需要管理员权限才能管理系统服务。</value>
+  </data>
+
+  <data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
+    <value>安全警报</value>
+  </data>
+  <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
+    <value>严重安全风险：您的系统正在使用过时的 SQLite 引擎（{0}）。此版本的应用程序需要 SQLite {1} 或更高版本，以缓解 CVE-2025-6965。</value>
+  </data>
+
+  <!-- Splash screen -->
+  <data name="Splash_Text" xml:space="preserve">
+    <value>正在加载 Servy...</value>
+  </data>
+
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>导入 XML 配置</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>导入 JSON 配置</value>
+  </data>
+  <data name="Menu_Export" xml:space="preserve">
+    <value>导出</value>
+  </data>
+  <data name="Menu_ExportXml" xml:space="preserve">
+    <value>导出 XML 配置</value>
+  </data>
+  <data name="Menu_ExportJson" xml:space="preserve">
+    <value>导出 JSON 配置</value>
+  </data>
+
+  <data name="Menu_Manager" xml:space="preserve">
+    <value>管理器</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>帮助</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>帮助 / 文档</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>检查更新...</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>关于 Servy</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+    <value>
+Servy {0}
+
+Servy 可将任何应用程序作为原生 Windows 服务运行，并全面控制其工作目录、启动行为、日志记录、运行状况检查和恢复选项。
+
+它包含桌面应用、CLI 和 PowerShell 模块，让您可以手动管理服务，或通过脚本和 CI/CD 流水线实现全面自动化。
+
+基于 {1} 构建
+
+采用 MIT 许可证授权。
+
+Copyright © {2} Akram El Assas. 保留所有权利。
+    </value>
+  </data>
+
+  <!-- Tabs -->
+  <data name="Label_MainTab" xml:space="preserve">
+    <value>主要</value>
+  </data>
+  <data name="Label_LoggingTab" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="Label_RecoveryTab" xml:space="preserve">
+    <value>恢复</value>
+  </data>
+  <data name="Label_AdvancedTab" xml:space="preserve">
+    <value>高级</value>
+  </data>
+  <data name="Label_LogOnTab" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="Label_PreLaunchTab" xml:space="preserve">
+    <value>启动前</value>
+  </data>
+  <data name="Label_PreStopTab" xml:space="preserve">
+    <value>停止前</value>
+  </data>
+  <data name="Label_PostStopTab" xml:space="preserve">
+    <value>停止后</value>
+  </data>
+
+  <!-- Labels / Info -->
+  <data name="Label_ServiceName" xml:space="preserve">
+    <value>服务名称 *</value>
+  </data>
+  <data name="Label_ServiceDisplayName" xml:space="preserve">
+    <value>显示名称</value>
+  </data>
+  <data name="Info_ServiceDisplayName" xml:space="preserve">
+    <value>在 Windows 服务控制台（services.msc）中显示的可读名称。</value>
+  </data>
+  <data name="Label_ServiceDescription" xml:space="preserve">
+    <value>服务描述</value>
+  </data>
+  <data name="Label_ProcessPath" xml:space="preserve">
+    <value>进程路径 *</value>
+  </data>
+  <data name="Info_ProcessPath" xml:space="preserve">
+    <value>支持环境变量展开。例如：%JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Label_StartupDirectory" xml:space="preserve">
+    <value>启动目录</value>
+  </data>
+  <data name="Info_StartupDirectory" xml:space="preserve">
+    <value>支持环境变量展开。例如：%PROGRAMDATA%\MyApp</value>
+  </data>
+  <data name="Label_ProcessParameters" xml:space="preserve">
+    <value>进程参数</value>
+  </data>
+  <data name="Info_ProcessParameters" xml:space="preserve">
+    <value>支持环境变量展开。例如：--param="%MY_VAR%\bin"</value>
+  </data>
+  <data name="Label_RequiredFields" xml:space="preserve">
+    <value>* 必填项</value>
+  </data>
+
+  <data name="Dialog_SelectStdoutFile" xml:space="preserve">
+    <value>选择标准输出文件</value>
+  </data>
+  <data name="Dialog_SelectStderrFile" xml:space="preserve">
+    <value>选择标准错误文件</value>
+  </data>
+
+  <!-- Startup Type ComboBox Items -->
+  <data name="Label_StartupType" xml:space="preserve">
+    <value>启动类型</value>
+  </data>
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>自动（默认）</value>
+  </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>自动（延迟启动）</value>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>手动</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>已禁用</value>
+  </data>
+
+  <!-- Process Priority ComboBox Items -->
+  <data name="Label_ProcessPriority" xml:space="preserve">
+    <value>进程优先级</value>
+  </data>
+  <data name="ProcessPriority_Idle" xml:space="preserve">
+    <value>空闲</value>
+  </data>
+  <data name="ProcessPriority_BelowNormal" xml:space="preserve">
+    <value>低于正常</value>
+  </data>
+  <data name="ProcessPriority_Normal" xml:space="preserve">
+    <value>正常（默认）</value>
+  </data>
+  <data name="ProcessPriority_AboveNormal" xml:space="preserve">
+    <value>高于正常</value>
+  </data>
+  <data name="ProcessPriority_High" xml:space="preserve">
+    <value>高</value>
+  </data>
+  <data name="ProcessPriority_RealTime" xml:space="preserve">
+    <value>实时（请谨慎使用）</value>
+  </data>
+
+  <!-- CPU Affinity -->
+  <data name="Label_CpuAffinity" xml:space="preserve">
+    <value>CPU 亲和性</value>
+  </data>
+  <data name="Info_CpuAffinity" xml:space="preserve">
+    <value>进程可运行的逻辑 CPU（例如：'0-3,8' 或 '0xFF00'）。</value>
+  </data>
+
+  <!-- EnableConsoleUI-->
+  <data name="Label_EnableConsoleUI" xml:space="preserve">
+    <value>启用控制台 UI（适用于交互式控制台应用；将禁用 stdout/stderr 重定向）</value>
+  </data>
+
+  <!-- I/O redirection -->
+  <data name="Label_StdoutPath" xml:space="preserve">
+    <value>标准输出文件路径</value>
+  </data>
+  <data name="Label_StderrPath" xml:space="preserve">
+    <value>标准错误文件路径</value>
+  </data>
+  <data name="Label_EnableSizeRotation" xml:space="preserve">
+    <value>启用基于大小的轮转</value>
+  </data>
+  <data name="Label_RotationSize" xml:space="preserve">
+    <value>轮转大小</value>
+  </data>
+  <data name="Label_RotationSizeUnit" xml:space="preserve">
+    <value>兆字节 (MB)</value>
+  </data>
+  <data name="Label_EnableDateRotation" xml:space="preserve">
+    <value>启用基于日期的轮转</value>
+  </data>
+  <data name="Label_DateRotationType" xml:space="preserve">
+    <value>日期轮转间隔</value>
+  </data>
+  <data name="DateRotationType_Daily" xml:space="preserve">
+    <value>每天（默认）</value>
+  </data>
+  <data name="DateRotationType_Weekly" xml:space="preserve">
+    <value>每周</value>
+  </data>
+  <data name="DateRotationType_Monthly" xml:space="preserve">
+    <value>每月</value>
+  </data>
+  <data name="DateRotationType_None" xml:space="preserve">
+    <value>无</value>
+  </data>
+  <data name="Info_DateRotation" xml:space="preserve">
+    <value>当同时启用基于大小和基于日期的轮转时，大小轮转优先。</value>
+  </data>
+  <data name="Label_UseLocalTimeForRotation" xml:space="preserve">
+    <value>使用本地时间进行日志轮转（默认：UTC）</value>
+  </data>
+
+  <data name="Label_MaxRotations" xml:space="preserve">
+    <value>最大轮转数</value>
+  </data>
+  <data name="Info_MaxRotations" xml:space="preserve">
+    <value>要保留的已轮转日志文件的最大数量。设为 0 表示不限制。</value>
+  </data>
+
+  <!-- Health monitoring -->
+  <data name="Label_EnableHealthMonitoring" xml:space="preserve">
+    <value>启用运行状况监视</value>
+  </data>
+  <data name="Label_HeartbeatInterval" xml:space="preserve">
+    <value>心跳间隔</value>
+  </data>
+  <data name="Label_Seconds" xml:space="preserve">
+    <value>秒</value>
+  </data>
+  <data name="Label_MaxFailedChecks" xml:space="preserve">
+    <value>最大失败检查次数</value>
+  </data>
+
+  <data name="Label_Attempts" xml:space="preserve">
+    <value>次</value>
+  </data>
+  <data name="Info_MaxRestartAttempts" xml:space="preserve">
+    <value>设为 0 表示不限制重启尝试次数。</value>
+  </data>
+  <data name="Label_RecoveryAction" xml:space="preserve">
+    <value>恢复操作</value>
+  </data>
+  <data name="RecoveryAction_None" xml:space="preserve">
+    <value>无</value>
+  </data>
+  <data name="RecoveryAction_RestartService" xml:space="preserve">
+    <value>重启服务（默认）</value>
+  </data>
+  <data name="RecoveryAction_RestartProcess" xml:space="preserve">
+    <value>重启进程</value>
+  </data>
+  <data name="RecoveryAction_RestartComputer" xml:space="preserve">
+    <value>重启计算机</value>
+  </data>
+  <data name="Tooltip_RecoveryActionHelp" xml:space="preserve">
+    <value>恢复操作帮助</value>
+  </data>
+  <data name="Info_RecoveryAction" xml:space="preserve">
+    <value>如果服务在 NT AUTHORITY\NetworkService、NT AUTHORITY\LocalService 或没有所需权限的用户账户下运行，则无法使用重启服务和重启计算机操作。对于这些账户，仅可使用重启进程操作。</value>
+  </data>
+
+  <data name="Label_RecoveryOnCleanExit" xml:space="preserve">
+    <value>即使成功退出也执行恢复</value>
+  </data>
+  <data name="Info_RecoveryOnCleanExit" xml:space="preserve">
+    <value>即使进程成功退出，也执行恢复操作。</value>
+  </data>
+
+  <data name="Label_MaxRestartAttempts" xml:space="preserve">
+    <value>最大重启尝试次数</value>
+  </data>
+
+  <data name="Label_HeartbeatUrl" xml:space="preserve">
+    <value>心跳 URL</value>
+  </data>
+  <data name="Label_HeartbeatUrlTimeoutSeconds" xml:space="preserve">
+    <value>心跳 URL 超时</value>
+  </data>
+  <data name="Label_EnableHeartbeatUrlFlags" xml:space="preserve">
+    <value>心跳 URL 标志（/start、/fail）</value>
+  </data>
+
+  <data name="Info_FailureProgram" xml:space="preserve">
+    <value>配置在进程失败时运行的脚本或可执行文件。如果禁用了运行状况监视，则当进程以非零退出码退出时运行该程序。如果启用了运行状况监视，则仅在所有已配置的恢复操作重试均失败后才运行该程序。进程启动失败时不会运行。</value>
+  </data>
+  <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
+    <value>可选。未设置时，默认为服务工作目录。</value>
+  </data>
+
+  <!-- Environment Variables -->
+  <data name="Label_EnvironmentVariables" xml:space="preserve">
+    <value>环境变量</value>
+  </data>
+  <data name="Info_EnvironmentVariables" xml:space="preserve">
+    <value>按 varName=varValue 格式输入变量，每行一个或以分号（;）分隔。使用 \= 转义 '='，\" 转义 '"'，\; 转义 ';'，\\ 转义 '\'，%% 转义 '%'（折叠为单个 '%'）。支持环境变量展开。例如：VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
+  </data>
+
+  <!-- Service Dependencies -->
+  <data name="Label_ServiceDependencies" xml:space="preserve">
+    <value>服务依赖项</value>
+  </data>
+  <data name="Info_ServiceDependencies" xml:space="preserve">
+    <value>指定此服务所依赖的一个或多个 Windows 服务名称（不是显示名称）。每个服务名称另起一行或以分号（;）分隔。每个服务名称只能包含字母、数字、连字符、下划线、句点、空格和美元符号（$），可选地以 '+' 开头以引用加载顺序组，且不得超过 256 个字符。当此服务启动时，Windows 会自动启动已停止的依赖项；如果依赖项被禁用或启动失败，则此服务将无法启动。</value>
+  </data>
+
+  <!-- User Account -->
+  <data name="Label_RunAsLocalSystem" xml:space="preserve">
+    <value>以 Local System 运行</value>
+  </data>
+  <data name="Label_UserAccount" xml:space="preserve">
+    <value>用户账户</value>
+  </data>
+  <data name="Info_UserAccount" xml:space="preserve">
+    <value>服务账户用户名（例如：.\username、DOMAIN\username、DOMAIN\gMSA$，或内置标识如 NT AUTHORITY\LocalService、NT AUTHORITY\NetworkService、NT SERVICE\MyService 或 IIS APPPOOL\MyPool）。对于内置、虚拟和 gMSA 账户，请将密码字段留空。</value>
+  </data>
+  <data name="Label_Password" xml:space="preserve">
+    <value>密码</value>
+  </data>
+  <data name="Label_ConfirmPassword" xml:space="preserve">
+    <value>确认密码</value>
+  </data>
+  <data name="Info_SecurityHardeningNotice" xml:space="preserve">
+    <value>如果服务在 Local System 以外的账户下运行，必须为运行该服务的账户授予对
+%ProgramData%\Servy 的修改权限，并执行强制强化脚本：Set-ServyExePermissions.ps1 -TargetAccount "domain\user"，以防止非特权二进制篡改和本地权限提升。 </value>
+  </data>
+  <data name="Link_SecurityHardeningGuide" xml:space="preserve">
+    <value>了解脚本位置和执行用法。</value>
+  </data>
+
+  <!-- Pre-Launch -->
+  <data name="Info_PreLaunch" xml:space="preserve">
+    <value>可选脚本，在服务启动前运行。如果失败，除非启用了“忽略失败”，否则服务将不会启动。</value>
+  </data>
+  <data name="Label_ProcessPathNotRequired" xml:space="preserve">
+    <value>进程路径</value>
+  </data>
+  <data name="Info_PreLaunchStartupDirectory" xml:space="preserve">
+    <value>可选。未设置时，默认为服务工作目录。</value>
+  </data>
+  <data name="Label_PreLaunchTimeoutSeconds" xml:space="preserve">
+    <value>超时</value>
+  </data>
+  <data name="Label_PreLaunchRetryAttempts" xml:space="preserve">
+    <value>重试次数</value>
+  </data>
+  <data name="Label_PreLaunchIgnoreFailure" xml:space="preserve">
+    <value>忽略失败</value>
+  </data>
+  <data name="Info_PreLaunchTimeout" xml:space="preserve">
+    <value>等待启动前进程的超时时间（秒）。将超时设为 0 可按即发即弃模式运行。此模式下不可用标准输出/标准错误重定向和重试。</value>
+  </data>
+
+  <!-- XML/JSON import -->
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>加载 XML 服务配置失败。</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>加载 JSON 服务配置失败。</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>导出 XML 配置</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>导出 JSON 配置</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>XML 配置已成功导出。</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>JSON 配置已成功导出。</value>
+  </data>
+
+  <!-- Clear Action -->
+  <data name="Menu_ClearAll" xml:space="preserve">
+    <value>全部清除</value>
+  </data>
+  <data name="Confirm_ClearAll" xml:space="preserve">
+    <value>确定要清除所有配置值吗？</value>
+  </data>
+
+  <!-- Buttons -->
+  <data name="Button_Install" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>卸载</value>
+  </data>
+  <data name="Button_Start" xml:space="preserve">
+    <value>启动</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>重启</value>
+  </data>
+  <data name="Button_Browse" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>服务已成功安装。</value>
+  </data>
+  <data name="Msg_ServiceRemoved" xml:space="preserve">
+    <value>服务已成功删除。</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>发生意外错误。</value>
+  </data>
+  <data name="Msg_AdminRightsRequired" xml:space="preserve">
+    <value>需要管理员权限。</value>
+  </data>
+
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>服务已成功启动。</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>服务已成功停止。</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>服务已成功重启。</value>
+  </data>
+
+  <data name="Msg_ManagerAppNotFound" xml:space="preserve">
+    <value>未找到 Servy 管理器应用。</value>
+  </data>
+
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>已存在同名服务。是否要替换它？
+
+如果该服务已禁用并标记为删除，则在重启电脑之前安装将会失败。</value>
+  </data>
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>指定的服务已禁用。</value>
+  </data>
+
+  <!-- Post-Launch -->
+  <data name="Label_PostLaunchTab" xml:space="preserve">
+    <value>启动后</value>
+  </data>
+
+  <data name="Info_PostLaunch" xml:space="preserve">
+    <value>配置可选脚本或可执行文件，在进程成功启动后运行。</value>
+  </data>
+
+  <data name="Info_PostLaunchStartupDirectory" xml:space="preserve">
+    <value>可选。未设置时，默认为服务工作目录。</value>
+  </data>
+
+  <!-- Debug-Logs -->
+  <data name="Label_EnableDebugLogs" xml:space="preserve">
+    <value>启用调试日志</value>
+  </data>
+  <data name="Info_EnableDebugLogs" xml:space="preserve">
+    <value>启用后，环境变量和进程参数将记录到 Servy.Service.log 文件中。不建议在生产环境中使用，因为这些日志可能包含敏感信息。</value>
+  </data>
+
+  <!-- Start/Stop timeouts -->
+  <data name="Label_StartTimeout" xml:space="preserve">
+    <value>启动超时</value>
+  </data>
+  <data name="Info_StartTimeout" xml:space="preserve">
+    <value>等待进程成功启动的超时时间（秒），超时后将视为启动失败。</value>
+  </data>
+
+  <data name="Label_StopTimeout" xml:space="preserve">
+    <value>停止超时</value>
+  </data>
+  <data name="Info_StopTimeout" xml:space="preserve">
+    <value>等待进程退出的超时时间（秒）。</value>
+  </data>
+
+  <!-- Pre-Stop -->
+  <data name="Info_PreStop" xml:space="preserve">
+    <value>配置可选脚本或可执行文件，在主服务停止前运行。可用于优雅关闭任务，例如通知外部系统或排空资源。停止前进程同步运行，并在运行期间延长服务停止超时（除非超时设为 0）。</value>
+  </data>
+  <data name="Info_PreStopStartupDirectory" xml:space="preserve">
+    <value>可选。未设置时，默认为服务工作目录。</value>
+  </data>
+  <data name="Label_PreStopTimeoutSeconds" xml:space="preserve">
+    <value>超时</value>
+  </data>
+  <data name="Label_PreStopLogAsError" xml:space="preserve">
+    <value>将停止前失败记录为错误</value>
+  </data>
+  <data name="Info_PreStopTimeout" xml:space="preserve">
+    <value>等待停止前进程的超时时间（秒）。将超时设为 0 可按即发即弃模式运行。</value>
+  </data>
+
+  <!-- Post-Stop -->
+  <data name="Info_PostStop" xml:space="preserve">
+    <value>配置可选脚本或可执行文件，在包装进程及其所有子进程退出后运行。停止后进程以即发即弃模式启动，不会阻塞服务关闭。</value>
+  </data>
+  <data name="Info_PostStopStartupDirectory" xml:space="preserve">
+    <value>可选。未设置时，默认为服务工作目录。</value>
+  </data>
+
+  <!-- Miscellaneous -->
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>未找到服务包装可执行文件。</value>
+  </data>
+  <data name="Msg_ManagerAppLaunchFailed" xml:space="preserve">
+    <value>启动管理器应用程序失败。</value>
+  </data>
+
+  <!-- Automation Properties -->
+  <data name="Automation_ConfigMainWindow_Name" xml:space="preserve">
+    <value>Servy 配置窗口</value>
+  </data>
+  <data name="Automation_ConfigMainWindow_HelpText" xml:space="preserve">
+    <value>用于创建和配置 Servy Windows 服务的主窗口。</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>主菜单</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>用于导出、导入和帮助选项的应用程序菜单。</value>
+  </data>
+
+  <data name="Automation_MenuExport_HelpText" xml:space="preserve">
+    <value>导出服务配置菜单。</value>
+  </data>
+  <data name="Automation_MenuExportXml_HelpText" xml:space="preserve">
+    <value>将配置导出为 XML 文件。</value>
+  </data>
+  <data name="Automation_MenuExportJson_HelpText" xml:space="preserve">
+    <value>将配置导出为 JSON 文件。</value>
+  </data>
+
+  <data name="Automation_MenuImport_HelpText" xml:space="preserve">
+    <value>导入服务配置菜单。</value>
+  </data>
+  <data name="Automation_MenuImportXml_HelpText" xml:space="preserve">
+    <value>从 XML 文件导入配置。</value>
+  </data>
+  <data name="Automation_MenuImportJson_HelpText" xml:space="preserve">
+    <value>从 JSON 文件导入配置。</value>
+  </data>
+
+  <data name="Automation_MenuManager_HelpText" xml:space="preserve">
+    <value>打开 Servy 管理器应用程序。</value>
+  </data>
+  <data name="Automation_MenuClearAll_HelpText" xml:space="preserve">
+    <value>清除配置表单中的所有字段。</value>
+  </data>
+
+  <data name="Automation_MenuHelp_HelpText" xml:space="preserve">
+    <value>帮助和文档菜单。</value>
+  </data>
+  <data name="Automation_MenuDoc_HelpText" xml:space="preserve">
+    <value>打开官方 Servy 文档。</value>
+  </data>
+  <data name="Automation_MenuCheckUpdates_HelpText" xml:space="preserve">
+    <value>在线检查应用程序更新。</value>
+  </data>
+  <data name="Automation_MenuAbout_HelpText" xml:space="preserve">
+    <value>显示有关 Servy 应用程序的信息。</value>
+  </data>
+
+  <data name="Automation_ConfigurationTabControl_Name" xml:space="preserve">
+    <value>配置选项卡</value>
+  </data>
+  <data name="Automation_ConfigurationTabControl_HelpText" xml:space="preserve">
+    <value>在服务的不同配置部分之间导航。</value>
+  </data>
+
+  <data name="Automation_TabItemMain_HelpText" xml:space="preserve">
+    <value>服务的常规配置选项。</value>
+  </data>
+
+  <data name="Automation_TextBoxServiceName_Name" xml:space="preserve">
+    <value>服务名称</value>
+  </data>
+  <data name="Automation_TextBoxServiceName_HelpText" xml:space="preserve">
+    <value>输入服务的系统名称。</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_Name" xml:space="preserve">
+    <value>服务显示名称</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_HelpText" xml:space="preserve">
+    <value>输入服务的显示名称。</value>
+  </data>
+  <data name="Automation_TextBoxServiceDescription_Name" xml:space="preserve">
+    <value>服务描述</value>
+  </data>
+  <data name="Automation_TextBoxServiceDescription_HelpText" xml:space="preserve">
+    <value>输入服务的描述。</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_Name" xml:space="preserve">
+    <value>进程路径</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_HelpText" xml:space="preserve">
+    <value>输入服务的可执行文件路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseProcessPath_Name" xml:space="preserve">
+    <value>浏览进程路径</value>
+  </data>
+  <data name="Automation_ButtonBrowseProcessPath_HelpText" xml:space="preserve">
+    <value>浏览以选择可执行进程路径。</value>
+  </data>
+
+  <data name="Automation_TextBoxStartupDirectory_Name" xml:space="preserve">
+    <value>启动目录</value>
+  </data>
+  <data name="Automation_TextBoxStartupDirectory_HelpText" xml:space="preserve">
+    <value>输入启动工作目录。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStartupDirectory_Name" xml:space="preserve">
+    <value>浏览启动目录</value>
+  </data>
+  <data name="Automation_ButtonBrowseStartupDirectory_HelpText" xml:space="preserve">
+    <value>浏览以选择启动目录。</value>
+  </data>
+
+  <data name="Automation_TextBoxProcessParameters_Name" xml:space="preserve">
+    <value>进程参数</value>
+  </data>
+  <data name="Automation_TextBoxProcessParameters_HelpText" xml:space="preserve">
+    <value>输入进程的命令行参数。</value>
+  </data>
+  <data name="Automation_ComboBoxStartupType_HelpText" xml:space="preserve">
+    <value>选择服务启动类型。</value>
+  </data>
+  <data name="Automation_ComboBoxProcessPriority_HelpText" xml:space="preserve">
+    <value>选择进程优先级。</value>
+  </data>
+  <data name="Automation_TextBoxCpuAffinity_Name" xml:space="preserve">
+    <value>CPU 亲和性</value>
+  </data>
+  <data name="Automation_TextBoxCpuAffinity_HelpText" xml:space="preserve">
+    <value>输入进程可运行的逻辑 CPU（例如：'0-3,8' 或 '0xFF00'）。</value>
+  </data>
+  <data name="Automation_TextBoxStartTimeout_Name" xml:space="preserve">
+    <value>启动超时</value>
+  </data>
+  <data name="Automation_TextBoxStartTimeout_HelpText" xml:space="preserve">
+    <value>输入启动服务的超时时间（秒）。</value>
+  </data>
+  <data name="Automation_TextBoxStopTimeout_Name" xml:space="preserve">
+    <value>停止超时</value>
+  </data>
+  <data name="Automation_TextBoxStopTimeout_HelpText" xml:space="preserve">
+    <value>输入停止服务的超时时间（秒）。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableConsoleUI_HelpText" xml:space="preserve">
+    <value>选中以启用控制台 UI 支持。</value>
+  </data>
+
+  <data name="Automation_TabItemLogging_HelpText" xml:space="preserve">
+    <value>配置标准输出和错误日志设置。</value>
+  </data>
+
+  <data name="Automation_TextBoxStdoutPath_Name" xml:space="preserve">
+    <value>标准输出文件路径</value>
+  </data>
+  <data name="Automation_TextBoxStdoutPath_HelpText" xml:space="preserve">
+    <value>输入标准输出日志文件的路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStdout_Name" xml:space="preserve">
+    <value>浏览标准输出路径</value>
+  </data>
+  <data name="Automation_ButtonBrowseStdout_HelpText" xml:space="preserve">
+    <value>浏览以选择标准输出日志文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxStderrPath_Name" xml:space="preserve">
+    <value>标准错误文件路径</value>
+  </data>
+  <data name="Automation_TextBoxStderrPath_HelpText" xml:space="preserve">
+    <value>输入标准错误日志文件的路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStderr_Name" xml:space="preserve">
+    <value>浏览标准错误路径</value>
+  </data>
+  <data name="Automation_ButtonBrowseStderr_HelpText" xml:space="preserve">
+    <value>浏览以选择标准错误日志文件。</value>
+  </data>
+
+  <data name="Automation_CheckBoxEnableSizeRotation_HelpText" xml:space="preserve">
+    <value>选中以启用基于文件大小的日志轮转。</value>
+  </data>
+  <data name="Automation_TextBoxRotationSize_Name" xml:space="preserve">
+    <value>轮转大小</value>
+  </data>
+  <data name="Automation_TextBoxRotationSize_HelpText" xml:space="preserve">
+    <value>输入轮转前的最大日志文件大小。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDateRotation_HelpText" xml:space="preserve">
+    <value>选中以启用基于日期的日志轮转。</value>
+  </data>
+  <data name="Automation_ComboBoxDateRotationType_HelpText" xml:space="preserve">
+    <value>选择基于日期的日志轮转间隔。</value>
+  </data>
+  <data name="Automation_TextBoxMaxRotations_Name" xml:space="preserve">
+    <value>最大轮转数</value>
+  </data>
+  <data name="Automation_TextBoxMaxRotations_HelpText" xml:space="preserve">
+    <value>输入要保留的已轮转日志的最大数量。</value>
+  </data>
+  <data name="Automation_CheckBoxUseLocalTimeForRotation_HelpText" xml:space="preserve">
+    <value>选中以使用本地时间而非 UTC 进行日志轮转。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDebugLogs_HelpText" xml:space="preserve">
+    <value>选中以启用诊断调试日志。</value>
+  </data>
+
+  <data name="Automation_TabItemRecovery_HelpText" xml:space="preserve">
+    <value>配置自动运行状况检查和恢复操作。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHealthMonitoring_HelpText" xml:space="preserve">
+    <value>选中以为此服务启用后台运行状况监视。</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatInterval_Name" xml:space="preserve">
+    <value>心跳间隔</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatInterval_HelpText" xml:space="preserve">
+    <value>输入运行状况检查心跳间隔（秒）。</value>
+  </data>
+  <data name="Automation_TextBoxMaxFailedChecks_Name" xml:space="preserve">
+    <value>最大失败检查次数</value>
+  </data>
+  <data name="Automation_TextBoxMaxFailedChecks_HelpText" xml:space="preserve">
+    <value>输入触发恢复前允许的最大失败检查次数。</value>
+  </data>
+  <data name="Automation_ComboBoxRecoveryAction_HelpText" xml:space="preserve">
+    <value>选择服务运行状况检查失败时要执行的操作。</value>
+  </data>
+  <data name="Automation_ButtonRecoveryActionHelp_HelpText" xml:space="preserve">
+    <value>显示恢复操作的帮助信息。</value>
+  </data>
+  <data name="Automation_CheckBoxRecoveryOnCleanExit_HelpText" xml:space="preserve">
+    <value>选中以在进程成功退出时也执行恢复操作。</value>
+  </data>
+  <data name="Automation_TextBoxMaxRestartAttempts_Name" xml:space="preserve">
+    <value>最大重启尝试次数</value>
+  </data>
+  <data name="Automation_TextBoxMaxRestartAttempts_HelpText" xml:space="preserve">
+    <value>输入最大重启尝试次数。</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrl_Name" xml:space="preserve">
+    <value>心跳 URL</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatUrl_HelpText" xml:space="preserve">
+    <value>输入心跳终结点的 URL。</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_Name" xml:space="preserve">
+    <value>心跳 URL 超时</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText" xml:space="preserve">
+    <value>输入运行状况检查心跳 URL 超时时间（秒）。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHeartbeatUrlFlags_HelpText" xml:space="preserve">
+    <value>选中以启用心跳 URL 标志（/start、/fail）。</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramPath_Name" xml:space="preserve">
+    <value>失败程序路径</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramPath_HelpText" xml:space="preserve">
+    <value>输入失败时要运行的可执行文件路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramPath_Name" xml:space="preserve">
+    <value>浏览失败程序路径</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramPath_HelpText" xml:space="preserve">
+    <value>浏览以选择失败程序可执行文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramStartupDir_Name" xml:space="preserve">
+    <value>失败程序启动目录</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramStartupDir_HelpText" xml:space="preserve">
+    <value>输入失败程序的启动目录。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramDir_Name" xml:space="preserve">
+    <value>浏览失败程序启动目录</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramDir_HelpText" xml:space="preserve">
+    <value>浏览以选择失败程序启动目录。</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramParams_Name" xml:space="preserve">
+    <value>失败程序参数</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramParams_HelpText" xml:space="preserve">
+    <value>输入失败程序的命令行参数。</value>
+  </data>
+
+  <data name="Automation_TabItemAdvanced_HelpText" xml:space="preserve">
+    <value>配置环境变量和服务依赖项。</value>
+  </data>
+  <data name="Automation_TextBoxEnvVars_Name" xml:space="preserve">
+    <value>环境变量</value>
+  </data>
+  <data name="Automation_TextBoxEnvVars_HelpText" xml:space="preserve">
+    <value>输入服务的环境变量。</value>
+  </data>
+  <data name="Automation_TextBoxServiceDependencies_Name" xml:space="preserve">
+    <value>服务依赖项</value>
+  </data>
+  <data name="Automation_TextBoxServiceDependencies_HelpText" xml:space="preserve">
+    <value>输入 Windows 服务依赖项。</value>
+  </data>
+
+  <data name="Automation_TabItemLogOn_HelpText" xml:space="preserve">
+    <value>配置服务的用户账户上下文。</value>
+  </data>
+  <data name="Automation_RadioButtonLocalSystem_HelpText" xml:space="preserve">
+    <value>以内置 Local System 账户运行服务。</value>
+  </data>
+  <data name="Automation_RadioButtonUserAccount_HelpText" xml:space="preserve">
+    <value>以特定用户账户运行服务。</value>
+  </data>
+
+  <data name="Automation_TextBoxUserAccount_Name" xml:space="preserve">
+    <value>用户账户名</value>
+  </data>
+  <data name="Automation_TextBoxUserAccount_HelpText" xml:space="preserve">
+    <value>输入服务账户的用户名。</value>
+  </data>
+
+  <data name="Automation_PasswordBoxUser_HelpText" xml:space="preserve">
+    <value>输入服务账户的密码。</value>
+  </data>
+  <data name="Automation_PasswordBoxConfirm_HelpText" xml:space="preserve">
+    <value>确认服务账户的密码。</value>
+  </data>
+
+  <data name="Automation_TabItemPreLaunch_HelpText" xml:space="preserve">
+    <value>配置在服务启动前运行的脚本或进程。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchProcessPath_Name" xml:space="preserve">
+    <value>启动前进程路径</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchProcessPath_HelpText" xml:space="preserve">
+    <value>输入启动前可执行文件路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchProcessPath_Name" xml:space="preserve">
+    <value>浏览启动前进程路径</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchProcessPath_HelpText" xml:space="preserve">
+    <value>浏览以选择启动前可执行文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStartupDir_Name" xml:space="preserve">
+    <value>启动前启动目录</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStartupDir_HelpText" xml:space="preserve">
+    <value>输入启动前进程的启动目录。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStartupDir_Name" xml:space="preserve">
+    <value>浏览启动前启动目录</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStartupDir_HelpText" xml:space="preserve">
+    <value>浏览以选择启动前启动目录。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchParams_Name" xml:space="preserve">
+    <value>启动前进程参数</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchParams_HelpText" xml:space="preserve">
+    <value>输入启动前进程的命令行参数。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchEnvVars_Name" xml:space="preserve">
+    <value>启动前环境变量</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchEnvVars_HelpText" xml:space="preserve">
+    <value>输入启动前进程的环境变量。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStdout_Name" xml:space="preserve">
+    <value>启动前标准输出路径</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStdout_HelpText" xml:space="preserve">
+    <value>输入启动前标准输出日志的路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStdout_Name" xml:space="preserve">
+    <value>浏览启动前标准输出路径</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStdout_HelpText" xml:space="preserve">
+    <value>浏览以选择启动前标准输出日志文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStderr_Name" xml:space="preserve">
+    <value>启动前标准错误路径</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStderr_HelpText" xml:space="preserve">
+    <value>输入启动前标准错误日志的路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStderr_Name" xml:space="preserve">
+    <value>浏览启动前标准错误路径</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStderr_HelpText" xml:space="preserve">
+    <value>浏览以选择启动前标准错误日志文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchTimeout_Name" xml:space="preserve">
+    <value>启动前超时</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchTimeout_HelpText" xml:space="preserve">
+    <value>输入启动前超时时间（秒）。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchRetries_Name" xml:space="preserve">
+    <value>启动前重试次数</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchRetries_HelpText" xml:space="preserve">
+    <value>输入启动前进程的重试次数。</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreLaunchIgnoreFailure_HelpText" xml:space="preserve">
+    <value>选中以在启动前进程失败时仍启动服务。</value>
+  </data>
+
+  <data name="Automation_TabItemPostLaunch_HelpText" xml:space="preserve">
+    <value>配置在服务成功启动后运行的脚本或进程。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchPath_Name" xml:space="preserve">
+    <value>启动后进程路径</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchPath_HelpText" xml:space="preserve">
+    <value>输入启动后可执行文件路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchPath_Name" xml:space="preserve">
+    <value>浏览启动后进程路径</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchPath_HelpText" xml:space="preserve">
+    <value>浏览以选择启动后可执行文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchDir_Name" xml:space="preserve">
+    <value>启动后启动目录</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchDir_HelpText" xml:space="preserve">
+    <value>输入启动后进程的启动目录。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchDir_Name" xml:space="preserve">
+    <value>浏览启动后启动目录</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchDir_HelpText" xml:space="preserve">
+    <value>浏览以选择启动后启动目录。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchParams_Name" xml:space="preserve">
+    <value>启动后进程参数</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchParams_HelpText" xml:space="preserve">
+    <value>输入启动后进程的命令行参数。</value>
+  </data>
+
+  <data name="Automation_TabItemPreStop_HelpText" xml:space="preserve">
+    <value>配置在服务停止前运行的脚本或进程。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopPath_Name" xml:space="preserve">
+    <value>停止前进程路径</value>
+  </data>
+  <data name="Automation_TextBoxPreStopPath_HelpText" xml:space="preserve">
+    <value>输入停止前可执行文件路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopPath_Name" xml:space="preserve">
+    <value>浏览停止前进程路径</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopPath_HelpText" xml:space="preserve">
+    <value>浏览以选择停止前可执行文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopDir_Name" xml:space="preserve">
+    <value>停止前启动目录</value>
+  </data>
+  <data name="Automation_TextBoxPreStopDir_HelpText" xml:space="preserve">
+    <value>输入停止前进程的启动目录。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopDir_Name" xml:space="preserve">
+    <value>浏览停止前启动目录</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopDir_HelpText" xml:space="preserve">
+    <value>浏览以选择停止前启动目录。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopParams_Name" xml:space="preserve">
+    <value>停止前进程参数</value>
+  </data>
+  <data name="Automation_TextBoxPreStopParams_HelpText" xml:space="preserve">
+    <value>输入停止前进程的命令行参数。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopTimeout_Name" xml:space="preserve">
+    <value>停止前超时</value>
+  </data>
+  <data name="Automation_TextBoxPreStopTimeout_HelpText" xml:space="preserve">
+    <value>输入停止前超时时间（秒）。</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreStopLogAsError_HelpText" xml:space="preserve">
+    <value>选中以将停止前进程失败记录为错误。</value>
+  </data>
+
+  <data name="Automation_TabItemPostStop_HelpText" xml:space="preserve">
+    <value>配置在服务停止后运行的脚本或进程。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopPath_Name" xml:space="preserve">
+    <value>停止后进程路径</value>
+  </data>
+  <data name="Automation_TextBoxPostStopPath_HelpText" xml:space="preserve">
+    <value>输入停止后可执行文件路径。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopPath_Name" xml:space="preserve">
+    <value>浏览停止后进程路径</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopPath_HelpText" xml:space="preserve">
+    <value>浏览以选择停止后可执行文件。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopDir_Name" xml:space="preserve">
+    <value>停止后启动目录</value>
+  </data>
+  <data name="Automation_TextBoxPostStopDir_HelpText" xml:space="preserve">
+    <value>输入停止后进程的启动目录。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopDir_Name" xml:space="preserve">
+    <value>浏览停止后启动目录</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopDir_HelpText" xml:space="preserve">
+    <value>浏览以选择停止后启动目录。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopParams_Name" xml:space="preserve">
+    <value>停止后进程参数</value>
+  </data>
+  <data name="Automation_TextBoxPostStopParams_HelpText" xml:space="preserve">
+    <value>输入停止后进程的命令行参数。</value>
+  </data>
+
+  <data name="Automation_RequiredFieldsNote_Name" xml:space="preserve">
+    <value>必填项说明</value>
+  </data>
+
+  <data name="Automation_ButtonInstall_HelpText" xml:space="preserve">
+    <value>安装已配置的服务。</value>
+  </data>
+  <data name="Automation_ButtonUninstall_HelpText" xml:space="preserve">
+    <value>卸载已配置的服务。</value>
+  </data>
+  <data name="Automation_ButtonStart_HelpText" xml:space="preserve">
+    <value>启动已配置的服务。</value>
+  </data>
+  <data name="Automation_ButtonStop_HelpText" xml:space="preserve">
+    <value>停止已配置的服务。</value>
+  </data>
+  <data name="Automation_ButtonRestart_HelpText" xml:space="preserve">
+    <value>重启已配置的服务。</value>
+  </data>
+</root>

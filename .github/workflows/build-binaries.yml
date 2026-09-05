@@ -1,0 +1,235 @@
+# ==========================================================================================
+# GitHub Actions Workflow - Build Binaries (CI only, no release)
+# ------------------------------------------------------------------------------------------
+# Remotely compiles Servy (unsigned) and uploads installer + portable artifacts.
+# Does NOT create a GitHub Release and does NOT publish to WinGet / Chocolatey / Scoop.
+#
+# Triggers:
+#   - Push to feat/** or fix/** when the commit message contains [build]
+#   - Manual workflow_dispatch
+#
+# Download artifacts (via local proxy if needed):
+#   HTTPS_PROXY=http://127.0.0.1:10811 gh run download <run-id>
+# ==========================================================================================
+
+name: build-binaries
+
+on:
+  push:
+    branches:
+      - "feat/**"
+      - "fix/**"
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      arm64:
+        description: "Build for ARM64 architecture natively"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: build-binaries-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build binaries (${{ (github.event_name == 'workflow_dispatch' && inputs.arm64) && 'arm64' || 'x64' }})
+    # Push runs only when the commit carries an explicit [build] instruction.
+    # Manual dispatch always runs.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[build]')
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.arm64) && 'windows-11-arm' || 'windows-latest' }}
+    timeout-minutes: 60
+
+    env:
+      CONFIGURATION: Release
+      TFM: net10.0-windows
+      ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+      MAX_RETRIES: 5
+      RUNTIME: ${{ (github.event_name == 'workflow_dispatch' && inputs.arm64) && 'win-arm64' || 'win-x64' }}
+      ARCH: ${{ (github.event_name == 'workflow_dispatch' && inputs.arm64) && 'arm64' || 'x64' }}
+      ISS_FILE: 'setup\servy.iss'
+      INNO_SETUP_VERSION: "6.6.1"
+      INNO_SETUP_HASH: "d243ce440c02705530699554fb9612b9b2bd7a2a90629cdb7f41e66f5faeb91f"
+      SEVEN_ZIP_VERSION: "26.01"
+      SEVEN_ZIP_HASH: "d64a0468f5b5b0b0fc5b2188450bcd655b70809d97b1c4535f2884635094377d"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+
+      - name: Get version from build-config.ps1
+        shell: pwsh
+        id: get_version
+        run: |
+          $cfg = & setup/build-config.ps1
+          if (-not $cfg.Version) { throw "Version missing from setup/build-config.ps1" }
+          if ($cfg.Version -notmatch '^\d+\.\d+$') { throw "Version format invalid: $($cfg.Version)" }
+          Write-Host "Version: $($cfg.Version)"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$($cfg.Version)"
+
+      - name: Set VERSION env
+        shell: pwsh
+        env:
+          RESOLVED_VERSION: ${{ steps.get_version.outputs.version }}
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$env:RESOLVED_VERSION"
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}
+
+      - name: Stage Inno Setup Download Configuration
+        shell: pwsh
+        run: |
+          $version = $env:INNO_SETUP_VERSION
+          $urlVersion = $version.Replace(".", "_")
+          $url = "https://github.com/jrsoftware/issrc/releases/download/is-$urlVersion/innosetup-$version.exe"
+          Add-Content -Path $env:GITHUB_ENV -Value "INNO_URL=$url"
+          Add-Content -Path $env:GITHUB_ENV -Value "INNO_OUT=innosetup.exe"
+
+      - name: Download Inno Setup Payload
+        uses: ./.github/actions/download-with-retry
+        with:
+          url: ${{ env.INNO_URL }}
+          output_path: ${{ env.INNO_OUT }}
+          asset_name: 'Inno Setup Installer'
+          max_retries: ${{ env.MAX_RETRIES }}
+
+      - name: Verify and Install Inno Setup
+        shell: pwsh
+        run: |
+          $installer = "innosetup.exe"
+          $expectedHash = $env:INNO_SETUP_HASH
+          $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
+          if ($actualHash -ne $expectedHash) {
+            throw "Security Breach: Inno Setup hash mismatch! Expected: $expectedHash, Got: $actualHash"
+          }
+          $sig = Get-AuthenticodeSignature $installer
+          if ($sig.Status -ne 'Valid') {
+            throw "Inno Setup signature check failed: $($sig.Status)."
+          }
+          Start-Process ".\$installer" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+          if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
+
+      - name: Stage 7zip Download Configuration
+        shell: pwsh
+        run: |
+          $version = $env:SEVEN_ZIP_VERSION
+          $fileVersion = $version.Replace(".", "")
+          $url = "https://github.com/ip7z/7zip/releases/download/$version/7z$fileVersion-x64.exe"
+          Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_URL=$url"
+          Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_OUT=7z_setup.exe"
+
+      - name: Download 7-Zip Payload
+        uses: ./.github/actions/download-with-retry
+        with:
+          url: ${{ env.SEVENZ_URL }}
+          output_path: ${{ env.SEVENZ_OUT }}
+          asset_name: '7-Zip Installer'
+          max_retries: ${{ env.MAX_RETRIES }}
+
+      - name: Verify and Install 7-Zip
+        shell: pwsh
+        run: |
+          $installer = "7z_setup.exe"
+          $installDir = "C:\7-Zip"
+          $exePath = "$installDir\7z.exe"
+          $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
+          if ($actualHash -ne $env:SEVEN_ZIP_HASH) {
+            throw "Security Breach: 7-Zip hash mismatch! Expected: $($env:SEVEN_ZIP_HASH), Got: $actualHash"
+          }
+          Start-Process ".\$installer" -ArgumentList "/S", "/D=$installDir" -Wait
+          if (-not (Test-Path $exePath)) { throw "7z.exe not found at $exePath" }
+          Add-Content -Path $env:GITHUB_ENV -Value "SEVEN_ZIP=$exePath"
+
+      # -----------------------------------------------------
+      # Compile (unsigned). project publish.ps1 calls signpath.ps1,
+      # which no-ops when .signpath is absent — no signing, no release.
+      # -----------------------------------------------------
+      - name: Publish Servy apps (unsigned)
+        shell: pwsh
+        run: |
+          $tfm = $env:TFM
+          $cfg = $env:CONFIGURATION
+          $runtime = $env:RUNTIME
+
+          $projects = @(
+            "src\Servy\publish.ps1",
+            "src\Servy.Manager\publish.ps1",
+            "src\Servy.CLI\publish.ps1"
+          )
+
+          foreach ($script in $projects) {
+            Write-Host "=== Running $script ===" -ForegroundColor Cyan
+            & $script -Tfm $tfm -BuildConfiguration $cfg -Runtime $runtime
+            if ($LASTEXITCODE -ne 0) { throw "$script failed with exit $LASTEXITCODE" }
+          }
+
+      - name: Build installer (unsigned)
+        shell: pwsh
+        run: |
+          & "$env:ISCC" "$env:ISS_FILE" `
+            /DMyAppVersion=$env:VERSION `
+            /DArch=$env:ARCH `
+            /DBuildConfiguration=$env:CONFIGURATION `
+            /DTfm=$env:TFM
+          $installer = "setup\servy-$env:VERSION-$env:ARCH-installer.exe"
+          if (-not (Test-Path $installer)) { throw "Installer not found: $installer" }
+
+      - name: Build portable 7z package
+        shell: pwsh
+        run: |
+          . setup/publish-common.ps1
+
+          $pkg = "servy-$env:VERSION-$env:ARCH-portable"
+          New-Item -ItemType Directory -Force -Path $pkg | Out-Null
+
+          $servy   = "src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish"
+          $cli     = "src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish"
+          $manager = "src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish"
+
+          Copy-Item (Join-Path $servy 'Servy.exe') $pkg -Force
+          Copy-Item (Join-Path $manager 'Servy.Manager.exe') $pkg -Force
+          Copy-Item (Join-Path $cli 'Servy.CLI.exe') "$pkg\servy-cli.exe" -Force
+
+          Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy.psd1" $pkg -Force
+          Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy-Dump.ps1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy-Restore.ps1" $pkg -Force
+          Copy-Item "setup\Set-ServyExePermissions.ps1" $pkg -Force
+
+          $destPath = Join-Path $pkg "taskschd"
+          New-Item -Path $destPath -ItemType Directory -Force | Out-Null
+          Copy-TaskSchdArtifacts -SourcePath "setup\taskschd" -DestPath $destPath
+
+          $zip = "$pkg.7z"
+          & "$env:SEVEN_ZIP" a -t7z -m0=lzma2 -mx=9 -mfb=273 -md=128m -ms=on "$zip" "$pkg"
+          if ($LASTEXITCODE -ne 0) { throw "7-Zip packaging failed with exit code $LASTEXITCODE" }
+          Remove-Item $pkg -Recurse -Force
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          name: servy-${{ env.VERSION }}-${{ env.ARCH }}-installer
+          path: setup/servy-${{ env.VERSION }}-${{ env.ARCH }}-installer.exe
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          name: servy-${{ env.VERSION }}-${{ env.ARCH }}-portable
+          path: servy-${{ env.VERSION }}-${{ env.ARCH }}-portable.7z
+          if-no-files-found: error
+          retention-days: 14

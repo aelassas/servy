@@ -78,23 +78,61 @@ UsePreviousSetupType=no
 AlwaysRestart=no
 
 [Messages]
-SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
+english.SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
+chinesesimplified.SetupAppRunningError=安装程序检测到 %1 当前正在运行。%n%n请先关闭其所有实例，然后单击“确定”继续，或单击“取消”退出。
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+
+[CustomMessages]
+english.FullInstallation=Full installation
+chinesesimplified.FullInstallation=完整安装
+english.CustomInstallation=Custom installation
+chinesesimplified.CustomInstallation=自定义安装
+english.InstallDesktopApp=Install Desktop App ({#MyAppExeName})
+chinesesimplified.InstallDesktopApp=安装桌面应用 ({#MyAppExeName})
+english.InstallCLI=Install CLI ({#CliExeName})
+chinesesimplified.InstallCLI=安装命令行工具 ({#CliExeName})
+english.InstallManagerApp=Install Manager App ({#ManagerAppExeName})
+chinesesimplified.InstallManagerApp=安装管理器 ({#ManagerAppExeName})
+english.AdditionalOptions=Additional Options
+chinesesimplified.AdditionalOptions=其他选项
+english.AddServyToPATH=Add Servy to PATH
+chinesesimplified.AddServyToPATH=将 Servy 添加到 PATH
+english.OpenDocumentation=Open Documentation
+chinesesimplified.OpenDocumentation=打开文档
+english.ComponentRequired=You must select at least one component to continue.
+chinesesimplified.ComponentRequired=必须至少选择一个组件才能继续。
+english.UpgradeOlder=An older version of Servy is already installed. Would you like to upgrade to this newer version?
+chinesesimplified.UpgradeOlder=已安装较旧版本的 Servy。是否升级到此较新版本？
+english.DowngradeNewer=A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?
+chinesesimplified.DowngradeNewer=已安装较新版本的 Servy。确定要降级到此较旧版本吗？
+english.ReinstallSame=The same version of Servy is already installed. Would you like to reinstall it?
+chinesesimplified.ReinstallSame=已安装相同版本的 Servy。是否重新安装？
+english.UninstallFailed=Failed to uninstall the previous version.
+chinesesimplified.UninstallFailed=未能卸载先前版本。
+english.UninstallFailedResult=Failed to uninstall previous version
+chinesesimplified.UninstallFailedResult=未能卸载先前版本
+english.PathUpdateFailed=Failed to update system PATH environment variable.
+chinesesimplified.PathUpdateFailed=未能更新系统 PATH 环境变量。
+english.AclSecureFailed=Failed to secure service data directory permissions. Please review system ACLs manually.
+chinesesimplified.AclSecureFailed=未能加固服务数据目录权限。请手动检查系统 ACL。
+english.UninstallShortcut=Uninstall
+chinesesimplified.UninstallShortcut=卸载
 
 [Types]
-Name: "full"; Description: "Full installation"
-Name: "custom"; Description: "Custom installation"; Flags: iscustom
+Name: "full"; Description: "{cm:FullInstallation}"
+Name: "custom"; Description: "{cm:CustomInstallation}"; Flags: iscustom
 
 [Components]
-Name: "install_main_app"; Description: "Install Desktop App ({#MyAppExeName})"; Types: full
-Name: "install_cli"; Description: "Install CLI ({#CliExeName})"; Types: full custom
-Name: "install_manager"; Description: "Install Manager App ({#ManagerAppExeName})"; Types: full custom
+Name: "install_main_app"; Description: "{cm:InstallDesktopApp}"; Types: full
+Name: "install_cli"; Description: "{cm:InstallCLI}"; Types: full custom
+Name: "install_manager"; Description: "{cm:InstallManagerApp}"; Types: full custom
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Additional Options"; Flags: checkablealone
-Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone; Components: install_cli
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalOptions}"; Flags: checkablealone
+Name: "addpath"; Description: "{cm:AddServyToPATH}"; GroupDescription: "{cm:AdditionalOptions}"; Flags: checkablealone; Components: install_cli
 
 [Files]
 ; Main app EXE
@@ -148,12 +186,12 @@ Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: 
 Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
 Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
 
-Name: "{commonprograms}\{#MyAppName}\Uninstall"; Filename: "{uninstallexe}";
+Name: "{commonprograms}\{#MyAppName}\{cm:UninstallShortcut}"; Filename: "{uninstallexe}";
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_main_app
 ; Filename: "{app}\{#ManagerAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(ManagerAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_manager
-Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall shellexec skipifsilent unchecked
+Filename: "{#DocsURL}"; Description: "{cm:OpenDocumentation}"; Flags: postinstall shellexec skipifsilent unchecked
 
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
@@ -177,7 +215,7 @@ begin
        not WizardIsComponentSelected('install_cli') and
        not WizardIsComponentSelected('install_manager') then
     begin
-      MsgBox('You must select at least one component to continue.', mbError, MB_OK);
+      MsgBox(ExpandConstant('{cm:ComponentRequired}'), mbError, MB_OK);
       Result := False;
     end;
   end;
@@ -332,15 +370,15 @@ begin
 
     if installedVersion < myAppVersion  then
     begin
-      message := 'An older version of Servy is already installed. Would you like to upgrade to this newer version?';
+      message := ExpandConstant('{cm:UpgradeOlder}');
     end
     else if installedVersion > myAppVersion then
     begin
-      message := 'A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?';
+      message := ExpandConstant('{cm:DowngradeNewer}');
     end
     else
     begin
-      message := 'The same version of Servy is already installed. Would you like to reinstall it?';
+      message := ExpandConstant('{cm:ReinstallSame}');
     end;
 
     if WizardSilent then
@@ -372,9 +410,9 @@ begin
     if UnInstallOldVersion() <> 3 then
     begin
       if not WizardSilent then
-        MsgBox('Failed to uninstall the previous version.', mbError, MB_OK);
+        MsgBox(ExpandConstant('{cm:UninstallFailed}'), mbError, MB_OK);
 
-      Result := 'Failed to uninstall previous version';
+      Result := ExpandConstant('{cm:UninstallFailedResult}');
       Exit;
     end;
   end;
@@ -490,7 +528,7 @@ begin
       begin
         Log('Failed to update system PATH environment variable.');
         if not WizardSilent then
-          MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
+          MsgBox(ExpandConstant('{cm:PathUpdateFailed}'), mbError, MB_OK);
         Exit;
       end;
 
@@ -533,7 +571,7 @@ begin
   begin
     Log(Format('WARNING: icacls.exe failed with exit code %d while hardening data directory "%s".', [ResultCode, DataDir]));
     if not WizardSilent then
-      MsgBox('Failed to secure service data directory permissions. Please review system ACLs manually.', mbError, MB_OK);
+      MsgBox(ExpandConstant('{cm:AclSecureFailed}'), mbError, MB_OK);
   end;
 end;
 

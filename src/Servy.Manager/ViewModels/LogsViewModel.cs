@@ -191,10 +191,9 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Gets the list of all available log levels for filtering.
-        /// Used to populate a dropdown in the UI.
+        /// Gets the list of all available log levels for filtering, with localized display names.
         /// </summary>
-        public static IReadOnlyList<EventLogLevel> LogLevels { get; } = GetLogLevels().AsReadOnly();
+        public static IReadOnlyList<EnumDisplayItem<EventLogLevel>> LogLevels { get; } = GetLogLevels().AsReadOnly();
 
         #endregion
 
@@ -299,11 +298,23 @@ namespace Servy.Manager.ViewModels
         /// Gets the list of available log levels for filtering.
         /// Levels exposed in the filter dropdown - excludes Critical/Verbose because Servy itself never emits them
         /// </summary>
-        /// <returns>Log levels.</returns>
-        private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
-                                                                    .Cast<EventLogLevel>()
-                                                                    .Where(logLevel => logLevel != EventLogLevel.Critical && logLevel != EventLogLevel.Verbose)
-                                                                    .ToList();
+        /// <returns>Log levels with localized display names.</returns>
+        private static List<EnumDisplayItem<EventLogLevel>> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
+            .Cast<EventLogLevel>()
+            .Where(logLevel => logLevel != EventLogLevel.Critical && logLevel != EventLogLevel.Verbose)
+            .Select(level => new EnumDisplayItem<EventLogLevel>
+            {
+                Value = level,
+                DisplayName = level switch
+                {
+                    EventLogLevel.All => Strings.EventLogLevel_All,
+                    EventLogLevel.Information => Strings.EventLogLevel_Information,
+                    EventLogLevel.Warning => Strings.EventLogLevel_Warning,
+                    EventLogLevel.Error => Strings.EventLogLevel_Error,
+                    _ => level.ToString(),
+                },
+            })
+            .ToList();
 
         #endregion
 

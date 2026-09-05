@@ -1,4 +1,5 @@
 using Servy.Core.Enums;
+using Servy.Manager.Resources;
 using Servy.UI.ViewModels; // Inheriting from the centralized UI ViewModel base
 
 namespace Servy.Manager.Models
@@ -37,11 +38,23 @@ namespace Servy.Manager.Models
                 // Use the return value of Set to trigger dependent property notifications only on change
                 if (Set(ref _level, value))
                 {
-                    // LevelIcon is a dependent property; notify the UI to refresh it when Level changes
+                    // LevelIcon / LevelDisplay are dependent properties; notify the UI to refresh them when Level changes
                     OnPropertyChanged(nameof(LevelIcon));
+                    OnPropertyChanged(nameof(LevelDisplay));
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the localized display name for <see cref="Level"/>.
+        /// </summary>
+        public string LevelDisplay => Level switch
+        {
+            EventLogLevel.All => Strings.EventLogLevel_All,
+            EventLogLevel.Warning => Strings.EventLogLevel_Warning,
+            EventLogLevel.Error or EventLogLevel.Critical => Strings.EventLogLevel_Error,
+            _ => Strings.EventLogLevel_Information,
+        };
 
         /// <summary>
         /// Gets or sets the Windows Event Log identifier for the entry.

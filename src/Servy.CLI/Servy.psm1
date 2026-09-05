@@ -38,7 +38,7 @@ $script:ParentDirectoryExists = {
     $parent = Split-Path $_ -Parent
     if ([string]::IsNullOrEmpty($parent)) { return $true }
     if (Test-Path $parent -PathType Container) { return $true }
-    throw "Parent directory does not exist: $parent"
+    throw "父目录不存在：$parent"
 }
 
 # Specifies the name of the environment variables used to securely pass data from the CLI.
@@ -319,11 +319,11 @@ function Invoke-ServyCli {
 
     # Validate command (single token)
     if ($Command -match '\s') {
-        throw "Command must be a single word without spaces: '$Command'"
+        throw "命令必须是不含空格的单个单词：'$Command'"
     }
 
     if ($script:ServyTimeoutSeconds -lt 1) {
-        throw "ServyTimeoutSeconds must be >= 1 (current: $($script:ServyTimeoutSeconds))"
+        throw "ServyTimeoutSeconds 必须 >= 1（当前：$($script:ServyTimeoutSeconds)）"
     }
 
     # Build argument list
@@ -339,11 +339,10 @@ function Invoke-ServyCli {
     # Windows limit is 32,767 characters. We check against 32,000 to be safe
     # and account for the executable path length.
     if ($argString.Length -gt 32000) {
-        throw "$($ErrorContext): Command-line arguments exceed Windows maximum length ($($argString.Length) characters). " +
-        "To resolve this, shorten the path, directory and description arguments (-Path, -StartupDir, -Stdout, -Stderr, " +
-        "-Description, -Deps and the pre/post-launch and pre/post-stop path parameters), or use the 'import' command " +
-        "with a configuration file instead. Note that -Params, -EnvVars, -PreLaunchEnv and the other sensitive values " +
-        "are passed via environment variables and do not count toward this limit."
+        throw "$($ErrorContext)：命令行参数超过 Windows 最大长度（$($argString.Length) 个字符）。" +
+        "解决方法：缩短路径、目录和描述相关参数（-Path、-StartupDir、-Stdout、-Stderr、" +
+        "-Description、-Deps 以及启动前/后与停止前/后路径参数），或改用带配置文件的 'import' 命令。" +
+        "注意：-Params、-EnvVars、-PreLaunchEnv 及其他敏感值通过环境变量传递，不计入此长度限制。"
     }
 
     $process = $null
@@ -351,9 +350,9 @@ function Invoke-ServyCli {
     try {
         if (-not (Test-Path $script:ServyCliPath)) {
             if ($script:ServyCliFound) {
-                throw "Servy CLI was located at module load time but is no longer present at '$($script:ServyCliPath)'. The file may have been moved or deleted; re-import the module to re-probe."
+                throw "模块加载时已定位到 Servy CLI，但该文件现已不在 '$($script:ServyCliPath)'。文件可能已被移动或删除；请重新导入模块以再次探测。"
             } else {
-                throw "Servy CLI was not found at any of the probed locations (local module folder, Program Files, system PATH). Install Servy or add servy-cli.exe to PATH, then re-import the module."
+                throw "在所有探测位置（本地模块目录、Program Files、系统 PATH）均未找到 Servy CLI。请安装 Servy 或将 servy-cli.exe 添加到 PATH，然后重新导入模块。"
             }
         }
 
@@ -390,12 +389,12 @@ function Invoke-ServyCli {
             $started = $process.Start()
         }
         catch [System.ComponentModel.Win32Exception] {
-            throw "Failed to start Servy CLI: $($_.Exception.Message) (Win32 error $($_.Exception.NativeErrorCode)). Path: '$($script:ServyCliPath)'"
+            throw "无法启动 Servy CLI：$($_.Exception.Message)（Win32 错误 $($_.Exception.NativeErrorCode)）。路径：'$($script:ServyCliPath)'"
         }
 
         if (-not $started) {
-            throw "Failed to start Servy CLI process '$($script:ServyCliPath)'. " +
-            "Verify the file exists, is not locked, and the current user has execute permissions."
+            throw "无法启动 Servy CLI 进程 '$($script:ServyCliPath)'。" +
+            "请确认文件存在、未被锁定，且当前用户具有执行权限。"
         }
 
         # Non-blocking, concurrent stream reading via BaseStream.BeginRead (.NET 2.0 / PS 2.0 compatible)
@@ -481,13 +480,13 @@ function Invoke-ServyCli {
                 $killed = $process.HasExited
             }
             catch {
-                Write-Warning "Failed to kill process: $_"
+                Write-Warning "终止进程失败：$_"
             }
 
             if ($killed) {
-                throw "Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
+                throw "操作在 $($script:ServyTimeoutSeconds) 秒后超时，已被终止。"
             } else {
-                throw "Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
+                throw "操作在 $($script:ServyTimeoutSeconds) 秒后超时。警告：未能终止进程（PID：$($process.Id)）——该进程可能仍在运行。"
             }
         }
 
@@ -562,7 +561,7 @@ function Invoke-ServyCli {
 
         # Surface warning if execution loop exited due to timeout even if child exited during grace window
         if ($timedOut) {
-            Write-Warning "Operation timed out after $($script:ServyTimeoutSeconds) seconds. Output may be truncated."
+            Write-Warning "操作在 $($script:ServyTimeoutSeconds) 秒后超时。输出可能被截断。"
         }
 
         # Emit stdout lines sequentially in exact order
@@ -619,7 +618,7 @@ function Invoke-ServyCli {
         $scrubbedStderrFinal = Format-SecureLogMessage -Text $stderrTextFinal
         $errorMessage = if ($null -ne $scrubbedStderrFinal -and $scrubbedStderrFinal.Trim() -ne "") { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
 
-        throw "$($ErrorContext): Servy CLI exited with code $exitCode. Details: $errorMessage"
+        throw "$($ErrorContext)：Servy CLI 以代码 $exitCode 退出。详细信息：$errorMessage"
     }
 }
 
@@ -645,7 +644,7 @@ function Assert-Administrator {
         $principal = New-Object Security.Principal.WindowsPrincipal($identity)
 
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            throw "This operation requires Administrator privileges. Run PowerShell as Administrator."
+            throw "此操作需要管理员权限。请以管理员身份运行 PowerShell。"
         }
     }
     finally {
@@ -1181,13 +1180,13 @@ function Install-ServyService {
         [ValidateNotNullOrEmpty()]
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-            else { throw "Executable not found: $_" }
+            else { throw "找不到可执行文件：$_" }
           })]
         [string] $Path,
 
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-            else { throw "Startup directory not found: $_" }
+            else { throw "找不到启动目录：$_" }
           })]
         [string] $StartupDir,
 
@@ -1264,13 +1263,13 @@ function Install-ServyService {
 
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-            else { throw "Failure program executable not found: $_" }
+            else { throw "找不到故障处理程序可执行文件：$_" }
           })]
         [string] $FailureProgramPath,
 
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-            else { throw "Failure program startup directory not found: $_" }
+            else { throw "找不到故障处理程序启动目录：$_" }
           })]
         [string] $FailureProgramStartupDir,
 
@@ -1284,7 +1283,7 @@ function Install-ServyService {
         [ValidateLength(0, 28000)]
         [ValidateScript({
             if ($_ -match $script:EnvVarValidationPattern) { $true }
-            else { throw "Invalid -EnvVars format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\\`"'." }
+            else { throw "无效的 -EnvVars 格式。应为以 ';' 分隔的 KEY=VALUE 对（例如 'A=1; B=2'）。值中的字面量 ';'、'='、'\' 或 '`"' 请转义为 '\;'、'\='、'\\' 或 '\\`"'。" }
         })]
         [string] $EnvVars,
 
@@ -1301,13 +1300,13 @@ function Install-ServyService {
         # Pre-launch
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-            else { throw "Pre-launch executable not found: $_" }
+            else { throw "找不到启动前可执行文件：$_" }
           })]
         [string] $PreLaunchPath,
 
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-            else { throw "Pre-launch startup directory not found: $_" }
+            else { throw "找不到启动前启动目录：$_" }
           })]
         [string] $PreLaunchStartupDir,
 
@@ -1317,7 +1316,7 @@ function Install-ServyService {
         [ValidateLength(0, 28000)]
         [ValidateScript({
             if ($_ -match $script:EnvVarValidationPattern) { $true }
-            else { throw "Invalid -PreLaunchEnv format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\\`"'." }
+            else { throw "无效的 -PreLaunchEnv 格式。应为以 ';' 分隔的 KEY=VALUE 对（例如 'A=1; B=2'）。值中的字面量 ';'、'='、'\' 或 '`"' 请转义为 '\;'、'\='、'\\' 或 '\\`"'。" }
         })]
         [string] $PreLaunchEnv,
 
@@ -1338,13 +1337,13 @@ function Install-ServyService {
         # Post-launch
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-            else { throw "Post-launch executable not found: $_" }
+            else { throw "找不到启动后可执行文件：$_" }
           })]
         [string] $PostLaunchPath,
 
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-            else { throw "Post-launch startup directory not found: $_" }
+            else { throw "找不到启动后启动目录：$_" }
           })]
         [string] $PostLaunchStartupDir,
 
@@ -1357,13 +1356,13 @@ function Install-ServyService {
         # Pre-stop
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-            else { throw "Pre-stop executable not found: $_" }
+            else { throw "找不到停止前可执行文件：$_" }
           })]
         [string] $PreStopPath,
 
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-            else { throw "Pre-stop startup directory not found: $_" }
+            else { throw "找不到停止前启动目录：$_" }
           })]
         [string] $PreStopStartupDir,
 
@@ -1378,13 +1377,13 @@ function Install-ServyService {
         # Post-stop
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
-            else { throw "Post-stop executable not found: $_" }
+            else { throw "找不到停止后可执行文件：$_" }
           })]
         [string] $PostStopPath,
 
         [ValidateScript({
             if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
-            else { throw "Post-stop startup directory not found: $_" }
+            else { throw "找不到停止后启动目录：$_" }
           })]
         [string] $PostStopStartupDir,
 
@@ -1455,7 +1454,7 @@ function Install-ServyService {
 
     # 3. Handle standalone Flags/Switches separately
     if ($EnableConsoleUI)                         { $argsList = Add-Arg $argsList "--enableConsoleUI" -Flag }
-    if ($EnableRotation)                          { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
+    if ($EnableRotation)                          { Write-Warning "-EnableRotation 已弃用。请改用 -EnableSizeRotation。" }
     if ($EnableRotation -or $EnableSizeRotation)  { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
     if ($EnableDateRotation)                      { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
     if ($UseLocalTimeForRotation)                 { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
@@ -1497,7 +1496,7 @@ function Install-ServyService {
             # If marshalling resulted in an empty string but the SecureString had data,
             # we treat this as a critical failure.
             elseif ($Password.Length -gt 0) {
-                throw "Password parameter was provided but marshalling produced an empty value; refusing to call CLI without the credential."
+                throw "已提供 Password 参数，但封送结果为空；拒绝在没有凭据的情况下调用 CLI。"
             }
         }
         finally {
@@ -1787,7 +1786,7 @@ function Import-ServyServiceConfig {
         [ValidateNotNullOrEmpty()]
         [ValidateScript({
             if (Test-Path $_ -PathType Leaf) { $true }
-            else { throw "Import configuration file not found: $_" }
+            else { throw "找不到导入配置文件：$_" }
           })]
         [string] $Path,
 

@@ -1,4 +1,5 @@
 using CommandLine;
+using Servy.CLI.Resources;
 
 namespace Servy.CLI.Options
 {
@@ -7,7 +8,8 @@ namespace Servy.CLI.Options
     /// </summary>
     [Verb(
         "status",
-        HelpText = "Get the current status of a Windows service. Possible results: NotInstalled, Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused, Unknown."
+        HelpText = "Help_Verb_Status",
+        ResourceType = typeof(Strings)
     )]
     public class ServiceStatusOptions : GlobalOptionsBase
     {
@@ -15,7 +17,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the name of the Windows service to check.
         /// This option is required.
         /// </summary>
-        [Option('n', "name", Required = true, HelpText = "Name of the service to check.")]
+        [Option('n', "name", Required = true, HelpText = "Help_Status_Name", ResourceType = typeof(Strings))]
         public string? ServiceName { get; set; }
     }
 }
