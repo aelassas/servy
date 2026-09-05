@@ -167,6 +167,8 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ValidationError, UiAppConfig.Caption), Times.Once);
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
