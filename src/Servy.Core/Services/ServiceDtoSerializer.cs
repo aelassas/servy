@@ -49,8 +49,9 @@ namespace Servy.Core.Services
             {
                 var dto = DeserializeCore(input);
 
-                // Fill in missing timeouts and clear any identity carried in the payload, so an imported
-                // definition can never claim an existing service's Id.
+                // Hydrate defaults for absent optional fields, then apply the Global Identity Reset on Import
+                // policy: RunAsLocalSystem/UserAccount/Password are forced to the password-less LocalSystem
+                // baseline. Id is kept out of the payload by [JsonIgnore]/[XmlIgnore] on ServiceDto.Id, not here.
                 if (dto != null)
                 {
                     ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);

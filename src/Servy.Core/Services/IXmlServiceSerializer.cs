@@ -14,6 +14,11 @@ namespace Servy.Core.Services
         /// <returns>
         /// The deserialized <see cref="ServiceDto"/> instance, or <c>null</c> if the input is null, empty, or whitespace-only, or deserialization fails.
         /// </returns>
+        /// <remarks>
+        /// Absent optional fields are populated from <see cref="Servy.Core.Config.AppConfig"/> defaults, and the service
+        /// identity is reset to a password-less LocalSystem baseline: <c>UserAccount</c> and
+        /// <c>Password</c> in the payload are discarded. Configure a custom account after import.
+        /// </remarks>
         ServiceDto? Deserialize(string? xml);
 
         /// <summary>
