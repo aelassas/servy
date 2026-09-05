@@ -406,12 +406,13 @@ namespace Servy.Service.Helpers
         }
 
         /// <summary>
-        /// Truncates a string value to a specified maximum boundary limit, checking for and removing
-        /// any partial or malformed <see cref="PercentEscapeToken"/> segments split during the cut operation.
+        /// Truncates <paramref name="value"/> to <paramref name="maxLength"/> characters. If the cut would split a
+        /// <see cref="PercentEscapeToken"/>, the cut is moved back to the start of that token so no partial token remains.
         /// </summary>
-        /// <param name="value">The expanded string payload currently requiring boundary verification.</param>
-        /// <param name="maxLength">The maximum character allowance ceiling permitted for the environment block.</param>
-        /// <returns>A clean, validated string guaranteed to contain no corrupt sentinel marker fragments.</returns>
+        /// <param name="value">The string to truncate.</param>
+        /// <param name="maxLength">The maximum number of characters to keep.</param>
+        /// <returns><paramref name="value"/> if it is already short enough; otherwise a prefix of at most
+        /// <paramref name="maxLength"/> characters that does not end inside an escape token.</returns>
         private static string TrimToSafeBoundary(string value, int maxLength)
         {
             if (string.IsNullOrEmpty(value)) return string.Empty;
