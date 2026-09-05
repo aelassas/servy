@@ -85,17 +85,14 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Theory]
         [InlineData(-1)]
         [InlineData(0)]
-        public void GetChildren_InvalidPid_ReturnsEmptyList(int invalidPid)
+        public void GetChildren_InvalidPid_ThrowsArgumentOutOfRangeException(int invalidPid)
         {
-            // Arrange & Act
-            var children = ProcessExtensions.GetChildren(invalidPid, DateTime.Now);
-
-            // Assert
-            Assert.Empty(children);
+            // Arrange, Act & Assert
+            Assert.Throws<ArgumentOutOfRangeException>(() => ProcessExtensions.GetChildren(invalidPid, DateTime.Now));
         }
 
         [Fact]
-        public void GetChildren_InvalidStartTime_ReturnsEmptyList()
+        public void GetChildren_InvalidStartTime_ThrowsArgumentException()
         {
             // Arrange
             var root = SpawnProcessTree(1);
@@ -108,7 +105,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.NotEmpty(realChildren);
 
                 // Act & Assert: DateTime.MinValue must suppress the same children
-                Assert.Empty(ProcessExtensions.GetChildren(root.Id, DateTime.MinValue));
+                Assert.Throws<ArgumentException>(() => ProcessExtensions.GetChildren(root.Id, DateTime.MinValue));
             }
             finally
             {
@@ -119,19 +116,21 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Theory]
         [InlineData(-1)]
         [InlineData(0)]
-        public void GetAllDescendants_InvalidParameters_ReturnsEmptyList(int invalidPid)
+        public void GetAllDescendants_InvalidPid_ThrowsArgumentOutOfRangeException(int invalidPid)
         {
-            // Arrange & Act
-            var descendantsNullTime = ProcessExtensions.GetAllDescendants(invalidPid, DateTime.MinValue);
-            var descendantsValidTime = ProcessExtensions.GetAllDescendants(invalidPid, DateTime.Now);
-
-            // Assert
-            Assert.Empty(descendantsNullTime);
-            Assert.Empty(descendantsValidTime);
+            // Arrange, Act & Assert
+            Assert.Throws<ArgumentOutOfRangeException>(() => ProcessExtensions.GetAllDescendants(invalidPid, DateTime.MinValue));
         }
 
         [Fact]
-        public void GetAllDescendants_InvalidStartTime_ReturnsEmptyList()
+        public void GetAllDescendants_InvalidStartDate_ThrowsArgumentException()
+        {
+            // Arrange, Act & Assert
+            Assert.Throws<ArgumentException>(() => ProcessExtensions.GetAllDescendants(111, DateTime.MinValue));
+        }
+
+        [Fact]
+        public void GetAllDescendants_InvalidStartTime_ThrowsArgumentException()
         {
             // Arrange
             var root = SpawnProcessTree(1);
@@ -144,7 +143,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.NotEmpty(descendants);
 
                 // Act & Assert: DateTime.MinValue must suppress the same descendants
-                Assert.Empty(ProcessExtensions.GetAllDescendants(root.Id, DateTime.MinValue));
+                Assert.Throws<ArgumentException>(() => ProcessExtensions.GetAllDescendants(root.Id, DateTime.MinValue));
             }
             finally
             {

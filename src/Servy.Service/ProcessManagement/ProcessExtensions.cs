@@ -53,8 +53,10 @@ namespace Servy.Service.ProcessManagement
         {
             var children = new List<Process>();
 
-            if (parentPid <= 0 || parentStartTime == DateTime.MinValue)
-                return children;
+            if (parentPid <= 0)
+                throw new ArgumentOutOfRangeException(nameof(parentPid), parentPid, "A positive PID is required to enumerate descendants.");
+            if (parentStartTime == DateTime.MinValue)
+                throw new ArgumentException("A real parent start time is required for PID-reuse validation.", nameof(parentStartTime));
 
             // 1. ONE snapshot, build parent->children map (centralized)
             var (_, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
@@ -95,8 +97,10 @@ namespace Servy.Service.ProcessManagement
         {
             var allDescendants = new List<Process>();
 
-            if (parentPid <= 0 || parentStartTime == DateTime.MinValue)
-                return allDescendants;
+            if (parentPid <= 0)
+                throw new ArgumentOutOfRangeException(nameof(parentPid), parentPid, "A positive PID is required to enumerate descendants.");
+            if (parentStartTime == DateTime.MinValue)
+                throw new ArgumentException("A real parent start time is required for PID-reuse validation.", nameof(parentStartTime));
 
             // 1. ONE snapshot, build parent->children map
             var (_, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
