@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.0
+
 <#
 .SYNOPSIS
     Main build script for generating the Servy self-contained installer.

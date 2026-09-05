@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Mandatory Security Hardening: Hardens Servy executable and configuration file permissions to prevent privilege escalation, binary tampering, and unauthorized configuration modification.

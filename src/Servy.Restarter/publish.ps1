@@ -1,4 +1,5 @@
 ﻿#Requires -Version 5.0
+
 <#
 .SYNOPSIS
     Publishes the Servy.Restarter project as a self-contained, single-file executable.
