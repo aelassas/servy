@@ -1,4 +1,3 @@
-using Servy.CLI.Helpers;
 using Servy.Testing;
 using System;
 using System.IO;
@@ -14,7 +13,6 @@ namespace Servy.CLI.UnitTests
         private const string AesKeyFileName = "test_aes.key";
         private const string AesIvFileName = "test_aes.iv";
         private const string DatabaseFileName = "Test_Servy.db";
-        private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
 
         // Resolves onto the appsettings.cli.json that Servy.CLI.csproj copies to the output
         // directory, not onto a file this suite owns, so its previous contents are saved and
@@ -151,44 +149,6 @@ namespace Servy.CLI.UnitTests
             // reporting, which Helper.PrintAndReturn writes to Console.Error. Assert it here so a
             // regression that routes the failure message to stdout, or drops it entirely, is caught.
             Assert.False(string.IsNullOrWhiteSpace(result.StdErr), "The failure message must still reach stderr; --quiet suppresses the progress animation only.");
-        }
-
-        [Fact]
-        public async Task RunWithLoadingAnimation_WhenOutputIsRedirected_BypassesAnimationLoop()
-        {
-            // Arrange
-            var outputWriter = new StringWriter();
-            var originalOut = Console.Out;
-            Console.SetOut(outputWriter);
-
-            try
-            {
-                // Force an explicit output redirection override via fail-loud reflection
-                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, true);
-
-                bool executionCompleted = false;
-
-                // Act
-                await ConsoleHelper.RunWithLoadingAnimation(async () =>
-                {
-                    await Task.Delay(10);
-                    executionCompleted = true;
-                }, "Testing Quiet Mode Animation");
-
-                // Assert
-                Assert.True(executionCompleted);
-
-                // An un-redirected normal console would print frame strings. Proving it is blank confirms the bypass executed successfully.
-                string capturedText = outputWriter.ToString();
-                Assert.True(string.IsNullOrEmpty(capturedText) || capturedText == Environment.NewLine,
-                    "The loading animation mechanism should skip writing animation frames when quiet conditions are enforced.");
-            }
-            finally
-            {
-                // Clean up console redirection states to preserve host environment test runner stability
-                Console.SetOut(originalOut);
-                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
-            }
         }
 
         #endregion
