@@ -235,6 +235,7 @@ namespace Servy.Core.IntegrationTests.Native
         {
             IntPtr policyHandle = IntPtr.Zero;
             IntPtr sidBuffer = IntPtr.Zero;
+            IntPtr nativeStringAlloc = IntPtr.Zero;
 
             try
             {
@@ -262,7 +263,7 @@ namespace Servy.Core.IntegrationTests.Native
                 if (lsaOpenStatus == 0)
                 {
                     var privilegeString = new NativeMethods.LSA_UNICODE_STRING();
-                    IntPtr nativeStringAlloc = Marshal.StringToHGlobalUni(privilege);
+                    nativeStringAlloc = Marshal.StringToHGlobalUni(privilege);
 
                     privilegeString.Buffer = nativeStringAlloc;
                     privilegeString.Length = (ushort)(privilege.Length * 2);
@@ -272,8 +273,6 @@ namespace Servy.Core.IntegrationTests.Native
 
                     // Remove the privilege before the account is deleted, so no orphaned SID grant is left in LSA
                     LsaRemoveAccountRights(policyHandle, sidBuffer, false, rightsArray, 1);
-
-                    Marshal.FreeHGlobal(nativeStringAlloc);
                 }
             }
             catch
@@ -284,6 +283,7 @@ namespace Servy.Core.IntegrationTests.Native
             {
                 if (policyHandle != IntPtr.Zero) NativeMethods.LsaClose(policyHandle);
                 if (sidBuffer != IntPtr.Zero) Marshal.FreeHGlobal(sidBuffer);
+                if (nativeStringAlloc != IntPtr.Zero) Marshal.FreeHGlobal(nativeStringAlloc);
             }
         }
 
