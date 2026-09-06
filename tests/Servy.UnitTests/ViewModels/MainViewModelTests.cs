@@ -620,6 +620,13 @@ namespace Servy.UnitTests.ViewModels
             _messageBoxService.Verify(m => m.ShowInfoAsync(Strings.Info_RecoveryAction, UiAppConfig.Caption), Times.Once);
         }
 
+        [Fact]
+        public async Task OpenSecurityHardeningGuideCommand_Calls_OpenSecurityHardeningGuide()
+        {
+            await _viewModel.OpenSecurityHardeningGuideCommand.ExecuteAsync(null);
+            _serviceCommandsMock.Verify(s => s.OpenSecurityHardeningGuideAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         #endregion
 
         #region Service Configuration Repository & Lifecycles Tests
