@@ -28,6 +28,11 @@ namespace Servy.Manager.UnitTests.Utils
             // Act
             var result = new HistoryResult(sampleLines, expectedPosition, ExpectedCreationTime);
 
+            // The constructor stores a defensive copy, so mutating the caller's list afterwards
+            // must not reach the snapshot; without the copy these assertions fail.
+            sampleLines.Add(new LogLine("Line 3", LogType.StdOut, DateTime.Now));
+            sampleLines.Clear();
+
             // Assert
             Assert.NotNull(result.Lines);
             Assert.Equal(2, result.Lines.Count);
@@ -48,7 +53,7 @@ namespace Servy.Manager.UnitTests.Utils
             var result = new HistoryResult(nullLines, expectedPosition, ExpectedCreationTime);
 
             // Assert
-            // Verifies the null-coalescing branch (lines ?? new List<LogLine>()) evaluated successfully
+            // Verifies the null branch of the ternary yields an empty collection rather than a null reference
             Assert.NotNull(result.Lines);
             Assert.Empty(result.Lines);
             Assert.Equal(expectedPosition, result.Position);
