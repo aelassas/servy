@@ -165,7 +165,7 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Performs the asynchronous copy operation of currently selected log lines in the ListBox to the system clipboard.
-        /// Retries on transient clipboard COM locks.
+        /// Retries on transient clipboard COM locks and notifies the user upon failure after exhausted retries.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous copy operation.</returns>
         private async Task CopySelectedLinesAsync()
@@ -208,6 +208,11 @@ namespace Servy.Manager.Views
             }
 
             Logger.Warn($"Failed to copy {selected.Count} log line(s) to clipboard after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");
+
+            if (DataContext is ConsoleViewModel vm)
+            {
+                await vm.ShowClipboardErrorAsync();
+            }
         }
 
         /// <summary>

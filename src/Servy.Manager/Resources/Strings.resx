@@ -1001,4 +1001,7 @@ If the service is disabled and marked for deletion, installation will fail until
   <data name="Automation_ServiceNameHeader_Name" xml:space="preserve">
     <value>Service Name Header</value>
   </data>
+  <data name="Msg_ClipboardCopyFailed" xml:space="preserve">
+    <value>Failed to copy content to the clipboard. The clipboard may be in use by another application.</value>
+  </data>
 </root>
