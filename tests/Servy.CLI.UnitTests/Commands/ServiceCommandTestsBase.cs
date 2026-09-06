@@ -3,6 +3,7 @@ using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.Core.Resources;
 using Servy.Core.Services;
+using CliStrings = Servy.CLI.Resources.Strings;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -82,6 +83,13 @@ namespace Servy.CLI.UnitTests.Commands
         /// <param name="serviceName">The target service name.</param>
         /// <returns>The expected error message fragment.</returns>
         protected abstract string ExpectedGenericActionMessage(string serviceName);
+
+        /// <summary>
+        /// When overridden in a derived class, returns the command name the command under test passes to
+        /// <c>BaseCommand.ExecuteWithHandling</c>/<c>ExecuteWithHandlingAsync</c> (e.g. "start", "stop"),
+        /// which is the value formatted into <see cref="CliStrings.Msg_CommandCancelled"/>.
+        /// </summary>
+        protected abstract string ExpectedCommandName { get; }
 
         /// <summary>
         /// When overridden in a derived class, returns the expected error message when the target service is not installed.
@@ -255,6 +263,26 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
+        }
+
+        /// <summary>
+        /// Validates that a cancelled operation is reported as a clean cancellation result carrying the command name,
+        /// rather than being routed through the generic exception handler.
+        /// </summary>
+        [Fact]
+        public virtual async Task Execute_OperationCanceled_ReturnsCancelledResult()
+        {
+            // Arrange
+            const string serviceName = "TestService";
+            var options = CreateValidOptions(serviceName);
+            SetupServiceManagerException<OperationCanceledException>(MockServiceManager, serviceName);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(string.Format(CliStrings.Msg_CommandCancelled, ExpectedCommandName), result.Message);
         }
 
         /// <summary>
