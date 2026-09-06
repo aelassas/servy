@@ -7,6 +7,7 @@ using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class StopServiceCommandTests : ServiceCommandTestsBase<StopServiceCommand, StopServiceOptions>
     {
         protected override StopServiceCommand CreateCommandInstance() => new StopServiceCommand(MockServiceManager.Object);

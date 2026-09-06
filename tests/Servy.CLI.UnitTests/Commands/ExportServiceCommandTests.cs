@@ -9,6 +9,7 @@ using System.Security;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class ExportServiceCommandTests : IDisposable
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
@@ -17,6 +18,11 @@ namespace Servy.CLI.UnitTests.Commands
 
         public ExportServiceCommandTests()
         {
+            // ExportServiceCommand has run the elevation pre-flight since #5152, so take the
+            // test seam explicitly instead of relying on an elevated host or on a sibling
+            // class having left the process-global flag set.
+            BaseCommand.BypassElevationCheck = true;
+
             _serviceRepoMock = new Mock<IServiceRepository>();
             _command = new ExportServiceCommand(_serviceRepoMock.Object);
 
@@ -26,6 +32,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         public void Dispose()
         {
+            BaseCommand.BypassElevationCheck = false;
+
             if (Directory.Exists(_tempDir))
             {
                 try { Directory.Delete(_tempDir, recursive: true); } catch { /* fail-safe */ }
