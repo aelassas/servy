@@ -68,19 +68,6 @@ namespace Servy.Manager.UnitTests.Views
                 _mockServiceCommands.Object);
         }
 
-        /// <summary>
-        /// Centralized, non-blocking polling primitive helper to track asynchronous fire-and-forget processing blocks safely.
-        /// </summary>
-        private static async Task PollUntilTrueAsync(Func<bool> condition, int maxRetries = 25, int delayMs = 20)
-        {
-            int retries = 0;
-            while (!condition() && retries < maxRetries)
-            {
-                await Task.Delay(delayMs);
-                retries++;
-            }
-        }
-
         [Fact]
         public async Task UserControl_Loaded_WhenDataContextIsNull_DoesNotThrowAndCompletesSilently()
         {
@@ -95,7 +82,15 @@ namespace Servy.Manager.UnitTests.Views
                     control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent)));
 
                 Assert.Null(exception);
-                await Task.CompletedTask;
+
+                // Record.Exception only observes a synchronous throw. The "CompletesSilently" half of
+                // the name lives in the task UiTaskRunner started, so await the seam and pin its
+                // terminal state, exactly as the two exception-path tests below do.
+                var task = control.LastLoadedTask;
+                Assert.NotNull(task);
+                await task;
+
+                Assert.Equal(TaskStatus.RanToCompletion, task.Status);
             }, createApp: true);
         }
 
@@ -136,11 +131,16 @@ namespace Servy.Manager.UnitTests.Views
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
                 viewModel.CommandTcs.SetResult(null);
 
-                // Centralized poll tracking handles asynchronous execution window
-                await PollUntilTrueAsync(() => viewModel.ExecuteAsyncWasCalled);
+                // ExecuteAsyncWasCalled is set on the synchronous portion of the call chain, so it is
+                // already true when RaiseEvent returns and proves only that the delegate was entered.
+                // Await the seam for the "Successfully" half.
+                var task = control.LastLoadedTask;
+                Assert.NotNull(task);
+                await task;
 
                 // Assert
                 Assert.True(viewModel.ExecuteAsyncWasCalled);
+                Assert.Equal(TaskStatus.RanToCompletion, task.Status);
             }, createApp: true);
         }
 
