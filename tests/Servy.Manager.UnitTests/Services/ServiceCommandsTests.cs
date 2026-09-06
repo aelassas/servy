@@ -134,6 +134,7 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
                 _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Once);
                 _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string?>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportJson_Success, UiAppConfig.Caption), Times.Once);
                 Assert.True(_refreshCalled);
             }
             finally
@@ -224,6 +225,7 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Once);
                 _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string?>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportXml_Success, UiAppConfig.Caption), Times.Once);
                 Assert.True(_refreshCalled);
             }
             finally
@@ -1365,6 +1367,42 @@ namespace Servy.Manager.UnitTests.Services
             finally
             {
                 // Clean up the generated XML file if the exporter successfully wrote it to disk
+                if (File.Exists(targetPath))
+                {
+                    File.Delete(targetPath);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ExportServiceToJsonAsync_ValidPathAndDto_DisplaysSuccess()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "JsonExportService" };
+
+            // Generate a guaranteed unique filename without creating a zero-byte file on disk
+            var targetPath = Path.Combine(Path.GetTempPath(), $"{Path.GetRandomFileName()}_export_test.json");
+            var sampleDto = new ServiceDto { Name = service.Name, ExecutablePath = "test.exe" };
+
+            _fileDialogServiceMock.Setup(f => f.SaveJson(Strings.SaveFileDialog_JsonTitle))
+                .Returns(targetPath);
+
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(sampleDto);
+
+            try
+            {
+                // Act
+                await sut.ExportServiceToJsonAsync(service, TestContext.Current.CancellationToken);
+
+                // Assert
+                _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ExportJson_Success, UiAppConfig.Caption), Times.Once);
+            }
+            finally
+            {
+                // Clean up the generated JSON file if the exporter successfully wrote it to disk
                 if (File.Exists(targetPath))
                 {
                     File.Delete(targetPath);
