@@ -273,9 +273,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 wrapper.WaitForExit();
 
-                bool logged = SpinWait.SpinUntil(
-                    () => _logger.Errors.Any(m => m.Contains("Disabling stdout capture for")),
-                    TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+                bool logged = false;
+                for (int i = 0; i < TestTimeouts.MaxPollAttempts; i++)
+                {
+                    if (_logger.Errors.Any(m => m.Contains("Disabling stdout capture for")))
+                    {
+                        logged = true;
+                        break;
+                    }
+                    Thread.Sleep(TestTimeouts.PollIntervalMs);
+                }
 
                 // Assert
                 Assert.True(wrapper.HasExited);
