@@ -81,11 +81,14 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(string.Format(Strings.Msg_UnsupportedFileType, "invalid"), result.Message);
         }
 
-        [Fact]
-        public async Task Execute_ShouldFail_WhenPathIsNullOrEmpty()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Execute_ShouldFail_WhenPathIsNullOrWhiteSpace(string path)
         {
             // Arrange
-            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = "" };
+            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = path };
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
