@@ -659,6 +659,68 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RefreshAllServicesAsync_BlankAndDuplicateNamedOsServices_SkipsThemAndKeepsFirstOccurrence()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        Status = ServiceStatus.Stopped,
+                        Pid = null
+                    };
+
+                    var rowVm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object)
+                    {
+                        IsChecked = true
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(rowVm);
+
+                    // The OS enumeration carries a null name and a blank name, which must be skipped,
+                    // then the tracked service followed by a case-insensitive duplicate of it that
+                    // must be ignored rather than overwrite the first occurrence.
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo { Name = null, Status = ServiceStatus.Running },
+                            new ServiceInfo { Name = "   ", Status = ServiceStatus.Running },
+                            new ServiceInfo { Name = "TestService", Status = ServiceStatus.Running },
+                            new ServiceInfo { Name = "TESTSERVICE", Status = ServiceStatus.Stopped },
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto { Name = "TestService", Pid = 4321 },
+                        });
+
+                    _processHelperMock
+                        .Setup(p => p.GetProcessTreeMetrics(4321))
+                        .Returns(new ProcessMetrics(10.0, 1024));
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
+                    await task;
+
+                    // Assert: the refresh completed - the unnamed entries were skipped instead of
+                    // being used as dictionary keys - and the first "TestService" occurrence won,
+                    // so the later "TESTSERVICE" duplicate did not push the status back to Stopped.
+                    Assert.Equal(ServiceStatus.Running, service.Status);
+                    Assert.Equal(4321, service.Pid);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public void GetServiceUpdateInfo_ExceptionBranch_ReturnsNullsSafely()
         {
             // Arrange
