@@ -214,6 +214,25 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task ExecuteAsync_JsonFormatValidationFails_ReturnsInvalidFormatResult()
+        {
+            // Arrange
+            File.WriteAllText(_legalJsonPath, "{ \"Name\": ");
+            var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath };
+
+            MockJsonValidator(false, "Unexpected end of JSON input");
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            // The JSON twin of the XML case above: it pins the formatName argument
+            // ProcessJsonAsync supplies and puts MockJsonValidator's errorMsg to work.
+            Assert.False(result.IsSuccess);
+            Assert.Equal(string.Format(Strings.Msg_ImportFormatInvalid, "JSON", "Unexpected end of JSON input"), result.Message);
+        }
+
+        [Fact]
         public async Task ExecuteAsync_DeserializerReturnsNull_ReturnsDeserializationFailure()
         {
             // Arrange
