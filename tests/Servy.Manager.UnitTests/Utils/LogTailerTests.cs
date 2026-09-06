@@ -153,15 +153,28 @@ namespace Servy.Manager.UnitTests.Utils
             using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                int loopPassesCount = 0;
+                tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
+
                 // Act
                 var taskNull = tailer.RunFromPosition(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
                 var taskEmpty = tailer.RunFromPosition(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+
+                // Assert
+                // A guarded call never yields, so both tasks are already finished before the first await.
+                // LoopStartedSignal cannot carry this: the tailer replaces it with a fresh, uncompleted
+                // source in a finally block, so it also reads as incomplete after a loop that ran and ended.
+                Assert.True(taskNull.IsCompletedSuccessfully,
+                    "A null file path should return synchronously without entering the tailing loop.");
+                Assert.True(taskEmpty.IsCompletedSuccessfully,
+                    "An empty file path should return synchronously without entering the tailing loop.");
+
                 await taskNull;
                 await taskEmpty;
 
-                // Assert
-                Assert.False(tailer.LoopStartedSignal.Task.IsCompleted,
-                    "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
+                // OnLoopCompleted is raised only from inside the loop and is never reset, so it survives
+                // a loop that started and then finished.
+                Assert.Equal(0, Volatile.Read(ref loopPassesCount));
             }
         }
 
