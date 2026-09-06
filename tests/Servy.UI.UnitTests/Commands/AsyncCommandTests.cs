@@ -9,6 +9,12 @@ namespace Servy.UI.UnitTests.Commands
 {
     public class AsyncCommandTests
     {
+        /// <summary>
+        /// Upper bound on how long a tracked async void operation may take to complete.
+        /// Generous enough for a loaded CI agent; its purpose is to fail rather than hang.
+        /// </summary>
+        private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(20);
+
         #region Constructor Tests
 
         [Fact]
@@ -124,9 +130,18 @@ namespace Servy.UI.UnitTests.Commands
                     : throw new Exception("Command Failure"));
 
                 command.Execute(null);
-                await testContext.WaitForCompletionAsync();
 
-                Assert.Empty(testContext.UnhandledExceptions);
+                // Bound the wait: a change that leaves an operation pending must fail the run
+                // rather than hang it.
+                var completion = testContext.WaitForCompletionAsync();
+                var finished = await Task.WhenAny(completion, Task.Delay(CompletionTimeout));
+                Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
+
+                // Read under the same lock Post writes the list with.
+                lock (testContext.UnhandledExceptions)
+                {
+                    Assert.Empty(testContext.UnhandledExceptions);
+                }
             }
             finally
             {
@@ -195,6 +210,12 @@ namespace Servy.UI.UnitTests.Commands
             /// <param name="state">The object passed to the delegate.</param>
             public override void Post(SendOrPostCallback d, object state)
             {
+                // Count the posted callback as pending BEFORE queueing it. AsyncVoidMethodBuilder
+                // posts the rethrow and only then reports completion, so without this the counter
+                // could reach zero - and the waiter resume - before the callback had run and
+                // recorded the exception.
+                Interlocked.Increment(ref _pendingOperations);
+
                 ThreadPool.QueueUserWorkItem(_ =>
                 {
                     SetSynchronizationContext(this);
@@ -208,6 +229,10 @@ namespace Servy.UI.UnitTests.Commands
                         {
                             UnhandledExceptions.Add(ex);
                         }
+                    }
+                    finally
+                    {
+                        OperationCompleted();
                     }
                 });
             }
