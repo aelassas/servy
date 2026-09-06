@@ -20,6 +20,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_RestartServiceAction, serviceName);
 
+        protected override string ExpectedCommandName => "restart";
+
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {
             mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
