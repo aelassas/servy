@@ -1006,7 +1006,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task Search_DecryptsPasswords()
+        public async Task SearchAsync_MatchingKeyword_DecryptsPasswords()
         {
             // Arrange
             var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "enc1" } };
@@ -1026,7 +1026,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task Search_NullKeyword_ShortCircuitsToGetAll()
+        public async Task SearchAsync_NullKeyword_ShortCircuitsToGetAll()
         {
             // Arrange
             var list = new List<ServiceDto> { CreateEncryptedServiceDto() };
@@ -1067,7 +1067,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         #region Import/Export Tests
 
         [Fact]
-        public async Task ExportXML_ReturnsEmptyString()
+        public async Task ExportXmlAsync_ServiceMissing_ReturnsEmptyString()
         {
             // Arrange
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
@@ -1084,7 +1084,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ExportXML_ReturnsSerializedService()
+        public async Task ExportXmlAsync_ServiceFound_ReturnsSerializedService()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A", Password = "pwd1" };
@@ -1113,7 +1113,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_ValidXml_ReturnsSuccess()
+        public async Task ImportXmlAsync_ValidXml_ReturnsSuccess()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A" };
@@ -1131,7 +1131,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_EmptyXml_ReturnsFailure()
+        public async Task ImportXmlAsync_EmptyXml_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1146,7 +1146,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_InvalidXml_ReturnsFailure()
+        public async Task ImportXmlAsync_InvalidXml_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1162,7 +1162,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_ServiceNull_ReturnsFailure()
+        public async Task ImportXmlAsync_DeserializerReturnsNull_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1179,7 +1179,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ExportJSON_ReturnsEmptyString()
+        public async Task ExportJsonAsync_ServiceMissing_ReturnsEmptyString()
         {
             // Arrange
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
@@ -1196,7 +1196,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ExportJSON_ReturnsSerializedService()
+        public async Task ExportJsonAsync_ServiceFound_ReturnsSerializedService()
         {
             // Arrange
             var name = "A";
@@ -1221,7 +1221,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_ValidJson_ReturnsSuccess()
+        public async Task ImportJsonAsync_ValidJson_ReturnsSuccess()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A" };
@@ -1239,7 +1239,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_EmptyJson_ReturnsFailure()
+        public async Task ImportJsonAsync_EmptyJson_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1279,7 +1279,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_Throws_ReturnsFailure()
+        public async Task ImportJsonAsync_DeserializerThrows_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
