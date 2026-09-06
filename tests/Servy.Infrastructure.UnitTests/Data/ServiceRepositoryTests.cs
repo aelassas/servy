@@ -1096,6 +1096,84 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
+        public async Task GetAllAsync_DecryptFalse_ReturnsCiphertextAndNeverCallsDecrypt()
+        {
+            // Arrange - the exact negative control of GetAllAsync_DecryptsAll
+            var service1 = new ServiceDto { Id = 1 };
+            var type = typeof(ServiceDto);
+
+            foreach (var field in SensitiveFields)
+            {
+                type.GetProperty(field.Key)?.SetValue(service1, $"{field.Value}1_enc");
+            }
+
+            SetupDecryptPassthrough();
+
+            _mockDapper
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ServiceDto> { service1 });
+
+            var repo = CreateRepository();
+
+            // Act
+            var result = (await repo.GetAllAsync(false, CancellationToken.None)).ToList();
+
+            // Assert
+            var single = Assert.Single(result);
+            foreach (var field in SensitiveFields)
+            {
+                Assert.Equal($"{field.Value}1_enc", type.GetProperty(field.Key)?.GetValue(single));
+            }
+            _mockSecureData.Verify(s => s.Decrypt(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SearchAsync_MatchingKeyword_DecryptFalse_ForwardsFlagToFilteredPath()
+        {
+            // Arrange
+            var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "enc1" } };
+            _mockDapper
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(list);
+            SetupDecryptPassthrough();
+
+            var repo = CreateRepository();
+
+            // Act
+            var result = (await repo.SearchAsync("A", false, CancellationToken.None)).ToList();
+
+            // Assert
+            Assert.Single(result);
+            Assert.Equal("enc1", result[0].Password);
+            _mockSecureData.Verify(s => s.Decrypt(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SearchAsync_NullKeyword_DecryptFalse_ForwardsFlagToShortCircuit()
+        {
+            // Arrange
+            var list = new List<ServiceDto> { CreateEncryptedServiceDto() };
+            _mockDapper
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(list);
+            SetupDecryptPassthrough();
+
+            var repo = CreateRepository();
+
+            // Act
+            var result = (await repo.SearchAsync(null, false, CancellationToken.None)).ToList();
+
+            // Assert
+            var single = Assert.Single(result);
+            var type = typeof(ServiceDto);
+            foreach (var field in SensitiveFields)
+            {
+                Assert.Equal($"{field.Value}_enc", type.GetProperty(field.Key)?.GetValue(single));
+            }
+            _mockSecureData.Verify(s => s.Decrypt(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task SearchAsync_MatchingKeyword_DecryptsPasswords()
         {
             // Arrange
