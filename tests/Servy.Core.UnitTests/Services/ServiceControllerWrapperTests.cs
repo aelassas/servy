@@ -170,6 +170,61 @@ namespace Servy.Core.UnitTests.Services
             }
         }
 
+        [Fact]
+        public void GetDependencies_TokenAlreadyCancelled_ThrowsOperationCanceledException()
+        {
+            // Arrange
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            using (var cts = new CancellationTokenSource())
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ChildA" });
+                var mockChildA = CreateMockWrapper("ChildA", "Child A", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ChildA", mockChildA.Object }
+                };
+
+                cts.Cancel();
+
+                // Act & Assert
+                Assert.Throws<OperationCanceledException>(() =>
+                    wrapper.GetDependenciesInternal(name => mocks[name], cts.Token));
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_TokenCancelledDuringChildEnumeration_StopsWalking()
+        {
+            // Arrange: Root has three children; the factory cancels once the first child has been
+            // requested, so the walk has to abort on a per-child checkpoint rather than the entry one.
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            using (var cts = new CancellationTokenSource())
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ChildA", "ChildB", "ChildC" });
+                var mockChildA = CreateMockWrapper("ChildA", "Child A", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                int childrenBuilt = 0;
+
+                Func<string, IServiceControllerWrapper> factory = name =>
+                {
+                    if (string.Equals(name, "Root", StringComparison.OrdinalIgnoreCase)) return mockRoot.Object;
+
+                    childrenBuilt++;
+                    cts.Cancel();
+                    return mockChildA.Object;
+                };
+
+                // Act & Assert
+                Assert.Throws<OperationCanceledException>(() =>
+                    wrapper.GetDependenciesInternal(factory, cts.Token));
+
+                // The second and third children must never be requested.
+                Assert.Equal(1, childrenBuilt);
+            }
+        }
+
         #endregion
 
         #region Win32Exception & Edge Case Resolution Tests
