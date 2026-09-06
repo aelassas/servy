@@ -1,5 +1,6 @@
 using Servy.Core.Native;
 using Servy.Testing;
+using System.Diagnostics;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
@@ -149,6 +150,29 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(postGrantRights.Count, postIdempotentRights.Count);
         }
 
+        [Fact]
+        public void RevokeLsaPrivilegeBeforeDeletion_RemovesTheGrantItWasGiven()
+        {
+            // Arrange
+            if (!_canModifyLsaPolicy || !_accountCreatedLocally) Assert.Skip("Skipping test due to insufficient LSA policy access or account creation failure.");
+
+            byte[] sidBytes = ResolveSidBytes(FullAccountName);
+
+            // Act 1 - grant the right, so there is something to revoke
+            LogonAsServiceGrant.Ensure(FullAccountName);
+
+            // Assert 1 - baseline: the grant the teardown is responsible for removing is present
+            Assert.Contains("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
+
+            // Act 2 - run the teardown step Dispose relies on
+            RevokeLsaPrivilegeBeforeDeletion(_testAccountName, "SeServiceLogonRight");
+
+            // Assert 2 - the grant is gone from the host LSA policy. Without this the revocation could be
+            // reduced to an empty body and the suite would stay green, while the orphaned SID grants this
+            // teardown was added to prevent would silently accumulate on whichever machine runs elevated.
+            Assert.DoesNotContain("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
+        }
+
         #endregion
 
         #region Native Methods LSA Inspection Helper
@@ -277,7 +301,21 @@ namespace Servy.Core.IntegrationTests.Native
                     var rightsArray = new NativeMethods.LSA_UNICODE_STRING[] { privilegeString };
 
                     // Remove the privilege before the account is deleted, so no orphaned SID grant is left in LSA
-                    LsaRemoveAccountRights(policyHandle, sidBuffer, false, rightsArray, 1);
+                    int removeStatus = LsaRemoveAccountRights(policyHandle, sidBuffer, false, rightsArray, 1);
+
+                    // Every other LSA call in this file branches on its status. Report a failure here too:
+                    // a silent one deletes the account anyway and leaves the grant attached to a SID that no
+                    // longer resolves to a name, which is the host leakage this method exists to prevent.
+                    if (removeStatus != 0)
+                    {
+                        Trace.WriteLine($"Warning: failed to revoke {privilege} from {accountName} " +
+                                        $"(NTSTATUS 0x{removeStatus:X8}); the grant may be left orphaned in the LSA policy.");
+                    }
+                }
+                else
+                {
+                    Trace.WriteLine($"Warning: could not open the LSA policy to revoke {privilege} from {accountName} " +
+                                    $"(NTSTATUS 0x{lsaOpenStatus:X8}); the grant may be left orphaned in the LSA policy.");
                 }
             }
             catch
