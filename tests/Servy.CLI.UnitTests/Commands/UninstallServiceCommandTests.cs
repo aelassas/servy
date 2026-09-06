@@ -33,20 +33,28 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {
-            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
         }
 
         protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
-            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure(errorMsg));
         }
 
         protected override void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName)
         {
-            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).Throws<TException>();
+        }
+
+        /// <summary>
+        /// Uninstall passes <c>skipInstalledCheck: true</c>, so the not-installed outcome comes from
+        /// <see cref="IServiceManager.UninstallServiceAsync"/> rather than from the pre-flight check.
+        /// </summary>
+        protected override void SetupServiceNotInstalled(Mock<IServiceManager> mockManager, string serviceName)
+        {
+            mockManager
+                    .Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(OperationResult.Failure(Core.Resources.Strings.Msg_ServiceNotFound));
         }
 
         [Fact]
@@ -73,8 +81,8 @@ namespace Servy.CLI.UnitTests.Commands
             const string serviceName = "OrphanedDbService";
             var options = CreateValidOptions(serviceName);
 
-            // Mock IsServiceInstalled to true so ExecuteServiceOperationAsync passes the pre-flight check,
-            // and mock UninstallServiceAsync to return Success (simulating ServiceManager's internal orphan cleanup #6374).
+            // Uninstall skips the IsServiceInstalled pre-flight (skipInstalledCheck: true), so only
+            // UninstallServiceAsync is mocked, returning Success (simulating ServiceManager's internal orphan cleanup #6374).
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act

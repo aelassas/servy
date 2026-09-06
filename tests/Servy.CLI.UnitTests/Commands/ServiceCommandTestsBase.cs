@@ -1,7 +1,6 @@
 using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
-using Servy.Core.Common;
 using Servy.Core.Resources;
 using Servy.Core.Services;
 using System;
@@ -127,10 +126,6 @@ namespace Servy.CLI.UnitTests.Commands
         protected virtual void SetupServiceNotInstalled(Mock<IServiceManager> mockManager, string serviceName)
         {
             mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
-
-            mockManager
-                    .Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(OperationResult.Failure(Strings.Msg_ServiceNotFound));
         }
 
         /// <summary>
