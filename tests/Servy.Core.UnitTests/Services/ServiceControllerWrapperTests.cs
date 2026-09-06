@@ -187,6 +187,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "TargetService"), result.DisplayName);
                 Assert.False(result.IsRunning);
                 Assert.False(result.IsCyclic);
+                Assert.True(result.IsUnavailable);
             }
         }
 
@@ -207,6 +208,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(string.Format(Strings.Msg_DependencyAccessDenied, "TargetService"), result.DisplayName);
                 Assert.False(result.IsRunning);
                 Assert.False(result.IsCyclic);
+                Assert.True(result.IsUnavailable);
             }
         }
 
@@ -227,6 +229,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "TargetService"), result.DisplayName);
                 Assert.False(result.IsRunning);
                 Assert.False(result.IsCyclic);
+                Assert.True(result.IsUnavailable);
             }
         }
 
@@ -259,9 +262,42 @@ namespace Servy.Core.UnitTests.Services
                 var childMissingNode = result.Dependencies.Single(n => n.ServiceName == "ChildMissing");
                 Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "ChildMissing"), childMissingNode.DisplayName);
                 Assert.False(childMissingNode.IsRunning);
+                Assert.True(childMissingNode.IsUnavailable);
 
                 Assert.Contains(result.Dependencies, n => n.ServiceName == "ChildGoodA");
                 Assert.Contains(result.Dependencies, n => n.ServiceName == "ChildGoodB");
+
+                Assert.All(result.Dependencies.Where(n => n.ServiceName != "ChildMissing"),
+                    n => Assert.False(n.IsUnavailable));
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_UnavailableChild_SortsByServiceNameNotErrorMessage()
+        {
+            // Arrange: "Zulu" sorts last by ServiceName, but an unavailable node's DisplayName is
+            // the localized "Dependency 'Zulu' is unavailable." sentence, which sorts under 'D'.
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "Alpha", "Zulu", "Mike" });
+                var mockAlpha = CreateMockWrapper("Alpha", "Alpha Service", ServiceControllerStatus.Running, Array.Empty<string>());
+                var mockMike = CreateMockWrapper("Mike", "Mike Service", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                Func<string, IServiceControllerWrapper> factory = name =>
+                {
+                    if (string.Equals(name, "Root", StringComparison.OrdinalIgnoreCase)) return mockRoot.Object;
+                    if (string.Equals(name, "Alpha", StringComparison.OrdinalIgnoreCase)) return mockAlpha.Object;
+                    if (string.Equals(name, "Mike", StringComparison.OrdinalIgnoreCase)) return mockMike.Object;
+
+                    throw new InvalidOperationException($"Service {name} was not found on computer '.'.");
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(factory, TestContext.Current.CancellationToken);
+
+                // Assert: the unavailable child is ordered by its ServiceName, not by its error sentence
+                Assert.Equal(new[] { "Alpha", "Mike", "Zulu" }, result.Dependencies.Select(n => n.ServiceName).ToArray());
+                Assert.True(result.Dependencies.Single(n => n.ServiceName == "Zulu").IsUnavailable);
             }
         }
 
