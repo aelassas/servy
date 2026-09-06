@@ -138,8 +138,14 @@ namespace Servy.CLI.UnitTests
             // The command fails because the service is not found in the database/SCM, returning Error (1)
             Assert.Equal((int)CliExitCode.Error, result.Result);
 
-            // Verify that no loading animation frames or status text fragments were written to stdout/stderr
+            // Verify that no loading animation frames or status text fragments were written to stdout
             Assert.True(string.IsNullOrEmpty(result.StdOut), "Console output should be completely suppressed when the --quiet flag is supplied.");
+
+            // Stderr is the other half of the contract and the channel this scenario actually uses:
+            // --quiet bypasses the loading animation (Program.cs:237) but does not silence failure
+            // reporting, which Helper.PrintAndReturn writes to Console.Error. Assert it here so a
+            // regression that routes the failure message to stdout, or drops it entirely, is caught.
+            Assert.False(string.IsNullOrWhiteSpace(result.StdErr), "The failure message must still reach stderr; --quiet suppresses the progress animation only.");
         }
 
         [Fact]
