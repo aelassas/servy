@@ -266,16 +266,20 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void LogLevels_Get_ExcludesCriticalAndVerbose()
         {
+            // Arrange - derive the expectation from the enum itself, so a new EventLogLevel member
+            // forces a decision here instead of entering the dropdown unnoticed.
+            var excluded = new[] { EventLogLevel.Critical, EventLogLevel.Verbose };
+            var expected = Enum.GetValues(typeof(EventLogLevel))
+                .Cast<EventLogLevel>()
+                .Except(excluded)
+                .ToList();
+
             // Act
             var levels = LogsViewModel.LogLevels;
 
-            // Assert
-            Assert.DoesNotContain(EventLogLevel.Critical, levels);
-            Assert.DoesNotContain(EventLogLevel.Verbose, levels);
-            Assert.Contains(EventLogLevel.All, levels);
-            Assert.Contains(EventLogLevel.Error, levels);
-            Assert.Contains(EventLogLevel.Information, levels);
-            Assert.Contains(EventLogLevel.Warning, levels);
+            // Assert - pins content, order and count in one assertion
+            Assert.Equal(expected, levels);
+            Assert.All(excluded, level => Assert.DoesNotContain(level, levels));
         }
 
         #endregion
