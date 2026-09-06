@@ -463,7 +463,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Resource Management, Cleanup & Disposal Tests
 
         [Fact]
-        public async Task Cleanup_ShouldCancelAndDisposeToken()
+        public async Task CancelSearch_ActiveSearchInFlight_CancelsAndDisposesToken()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
