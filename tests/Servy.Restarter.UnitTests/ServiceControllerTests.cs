@@ -23,6 +23,12 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             var controller = new ServiceController(DummyServiceName);
+            var inner = TestReflection.GetField<System.ServiceProcess.ServiceController>(controller, "_controller");
+
+            // Component raises Disposed on every Dispose(true) call, so this sentinel observes
+            // the CleansUpState half: the wrapper releasing the inner controller.
+            var innerDisposals = 0;
+            inner.Disposed += (s, e) => innerDisposals++;
 
             // Act: Assert lifecycle field mutations using the centralized reflection infrastructure
             bool isDisposedBefore = TestReflection.GetField<bool>(controller, "_disposed");
@@ -33,6 +39,7 @@ namespace Servy.Restarter.UnitTests
             // Assert
             bool isDisposedAfter = TestReflection.GetField<bool>(controller, "_disposed");
             Assert.True(isDisposedAfter, "The internal _disposed state guard was not toggled to true during clean teardown execution.");
+            Assert.Equal(1, innerDisposals);
         }
 
         [Fact]
