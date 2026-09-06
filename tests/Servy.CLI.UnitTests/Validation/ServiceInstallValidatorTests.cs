@@ -143,7 +143,10 @@ namespace Servy.CLI.UnitTests.Validation
             _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto =>
                 dto.RotationSize == null &&
                 dto.Priority == null),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+                null,    // wrapperExePath - the CLI supplies none, so no ValidatePath check is added
+                null,    // confirmPassword - the CLI deliberately opts out of the confirm-password check
+                false),  // importMode - must stay false or credential validation is skipped
+                Times.Once);
         }
 
         #endregion
@@ -189,7 +192,10 @@ namespace Servy.CLI.UnitTests.Validation
             _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto =>
                 dto.Name == "ServyEngine" &&
                 dto.EnableSizeRotation == true),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+                null,    // wrapperExePath - the CLI supplies none, so no ValidatePath check is added
+                null,    // confirmPassword - the CLI deliberately opts out of the confirm-password check
+                false),  // importMode - must stay false or credential validation is skipped
+                Times.Once);
         }
 
         #endregion
