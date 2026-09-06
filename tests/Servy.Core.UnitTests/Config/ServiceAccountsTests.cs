@@ -1,4 +1,7 @@
 using Servy.Core.Config;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Config
@@ -24,11 +27,68 @@ namespace Servy.Core.UnitTests.Config
             Assert.True(ServiceAccounts.RunnableServiceAccounts.IsSupersetOf(ServiceAccounts.LocalServiceAliases));
             Assert.True(ServiceAccounts.RunnableServiceAccounts.IsSupersetOf(ServiceAccounts.NetworkServiceAliases));
 
-            int totalExpectedCount = ServiceAccounts.LocalSystemAliases.Count +
-                                     ServiceAccounts.LocalServiceAliases.Count +
-                                     ServiceAccounts.NetworkServiceAliases.Count;
+            // Completeness: nothing in the union comes from anywhere but the three sets. The count
+            // assertion this replaces compared Count against the sum of the three counts, which is a
+            // disjointness check under a completeness name (see the dedicated test below).
+            var expected = ServiceAccounts.LocalSystemAliases
+                .Union(ServiceAccounts.LocalServiceAliases)
+                .Union(ServiceAccounts.NetworkServiceAliases);
 
-            Assert.Equal(totalExpectedCount, ServiceAccounts.RunnableServiceAccounts.Count);
+            Assert.True(ServiceAccounts.RunnableServiceAccounts.SetEquals(expected));
+        }
+
+        [Fact]
+        public void AliasSets_ArePairwiseDisjoint()
+        {
+            // Assert
+            // RunnableServiceAccounts.Count == the sum of the three source counts only while the sets
+            // are pairwise disjoint. Asserting it here names the duplicated alias when it breaks,
+            // where the count comparison reported only "Expected 25, Actual 24".
+            AssertDisjoint(
+                nameof(ServiceAccounts.LocalSystemAliases), ServiceAccounts.LocalSystemAliases,
+                nameof(ServiceAccounts.LocalServiceAliases), ServiceAccounts.LocalServiceAliases);
+            AssertDisjoint(
+                nameof(ServiceAccounts.LocalSystemAliases), ServiceAccounts.LocalSystemAliases,
+                nameof(ServiceAccounts.NetworkServiceAliases), ServiceAccounts.NetworkServiceAliases);
+            AssertDisjoint(
+                nameof(ServiceAccounts.LocalServiceAliases), ServiceAccounts.LocalServiceAliases,
+                nameof(ServiceAccounts.NetworkServiceAliases), ServiceAccounts.NetworkServiceAliases);
+        }
+
+        private static void AssertDisjoint(
+            string leftName, IEnumerable<string> left,
+            string rightName, IEnumerable<string> right)
+        {
+            var shared = left.Intersect(right, StringComparer.OrdinalIgnoreCase).ToList();
+
+            Assert.True(shared.Count == 0,
+                $"{leftName} and {rightName} must not share an alias; shared: {string.Join(", ", shared)}.");
+        }
+
+        /// <summary>
+        /// Every alias in the union, so a newly added one is covered without editing a hand-listed theory.
+        /// </summary>
+        public static TheoryData<string> RunnableAliases()
+        {
+            var data = new TheoryData<string>();
+
+            foreach (var alias in ServiceAccounts.RunnableServiceAccounts)
+            {
+                data.Add(alias);
+            }
+
+            return data;
+        }
+
+        [Theory]
+        [MemberData(nameof(RunnableAliases))]
+        public void IsBuiltInServiceAccount_EveryRunnableAlias_ReturnsTrue(string alias)
+        {
+            // Act
+            bool result = ServiceAccounts.IsBuiltInServiceAccount(alias);
+
+            // Assert
+            Assert.True(result, $"'{alias}' is in RunnableServiceAccounts but is not recognised as built-in.");
         }
 
         #endregion
@@ -78,6 +138,11 @@ namespace Servy.Core.UnitTests.Config
         [InlineData(@"nt service\foobar", true)]
         [InlineData(@"IIS APPPOOL\MyAppPool", true)]
         [InlineData(@"iis apppool\DefaultAppPool", true)]
+        // Bare virtual-account prefixes: no account name after the backslash, the shape a trailing-
+        // backslash paste produces. StartsWith accepts them today, so these rows record the current
+        // classification rather than endorse it.
+        [InlineData(@"NT SERVICE\", true)]
+        [InlineData(@"IIS APPPOOL\", true)]
         // Standard Domain / Local User Accounts (Not Built-In)
         [InlineData(@"DOMAIN\SomeUser", false)]
         [InlineData(@".\CustomUser", false)]
