@@ -293,6 +293,28 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
+        public async Task ImportConfigAsync_SecurityGuardRejectsPath_DisplaysGuardErrorAndStops()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+
+            // A UNC path is refused by ImportGuard before the size check, so no file has to exist on disk
+            _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(@"\\MaliciousServer\Share\attack.json");
+
+            // Act
+            await sut.ImportJsonConfigAsync(CancellationToken.None);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_SecurityUncPathProhibited, UiAppConfig.Caption), Times.Once);
+
+            // Nothing after the guard runs on a refused path
+            _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Never);
+            _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.False(_refreshCalled);
+        }
+
+        [Fact]
         public async Task ImportConfigAsync_DeserializationYieldsNull_DisplaysLoadErrorMessage()
         {
             // Arrange
