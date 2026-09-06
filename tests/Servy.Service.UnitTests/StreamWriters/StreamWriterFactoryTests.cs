@@ -10,9 +10,14 @@ namespace Servy.Service.UnitTests.StreamWriters
     public class StreamWriterFactoryTests
     {
         [Theory]
-        [InlineData(true, false, true)]
+        // One flag on per row. Two complementary rows can never detect every transposition:
+        // "same in row 1" implies "same in row 2", which is how enableSizeRotation and
+        // useLocalTime stayed swappable after #5386. Here every pair differs in some row, and
+        // each flag takes both values across the set, so hardcoding one to a constant fails too.
+        [InlineData(true, false, false)]
         [InlineData(false, true, false)]
-        public void Create_ReturnsInstanceOfRotatingStreamWriterAdapter(
+        [InlineData(false, false, true)]
+        public void Create_ForwardsAllParametersToInnerWriter(
             bool enableSizeRotation,
             bool enableDateRotation,
             bool useLocalTime)
