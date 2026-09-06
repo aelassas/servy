@@ -72,5 +72,88 @@ namespace Servy.UI.IntegrationTests.Services
         }
 
         #endregion
+
+        #region InvokeAsync Tests
+
+        [Fact]
+        public async Task InvokeAsync_Action_RunsDelegateOnDispatcherThreadBeforeCompleting()
+        {
+            // Execute inside the active STA message loop thread context
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the wrapper captures Dispatcher.CurrentDispatcher, i.e. this STA thread
+                var uiDispatcher = new WpfUiDispatcher();
+                var staThreadId = Thread.CurrentThread.ManagedThreadId;
+                int observedThreadId = -1;
+                bool ranBeforeCompletion = false;
+
+                // Act
+                var invokeTask = uiDispatcher.InvokeAsync(() =>
+                {
+                    observedThreadId = Thread.CurrentThread.ManagedThreadId;
+                });
+
+                await invokeTask;
+                ranBeforeCompletion = observedThreadId != -1;
+
+                // Assert: the delegate ran, it ran on the dispatcher thread, and the returned task
+                // did not complete before it did
+                Assert.True(ranBeforeCompletion);
+                Assert.Equal(staThreadId, observedThreadId);
+            });
+        }
+
+        [Fact]
+        public async Task InvokeAsync_ActionWithPriority_HonoursTheRequestedPriority()
+        {
+            // Execute inside the active STA message loop thread context
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var uiDispatcher = new WpfUiDispatcher();
+                var executionOrder = new System.Collections.Concurrent.ConcurrentQueue<string>();
+
+                // Queue the low-priority work FIRST so the asserted sequence is reachable only
+                // through genuine priority ordering and not through FIFO handling of equal priorities
+                var backgroundTask = uiDispatcher.InvokeAsync(
+                    () => executionOrder.Enqueue("Background"),
+                    DispatcherPriority.Background);
+
+                var sendTask = uiDispatcher.InvokeAsync(
+                    () => executionOrder.Enqueue("Send"),
+                    DispatcherPriority.Send);
+
+                // Act
+                await Task.WhenAll(backgroundTask, sendTask);
+
+                // Assert
+                var results = executionOrder.ToArray();
+
+                Assert.Equal(2, results.Length);
+                Assert.Equal("Send", results[0]);
+                Assert.Equal("Background", results[1]);
+            });
+        }
+
+        [Fact]
+        public async Task InvokeAsync_Generic_ReturnsTheCallbackResult()
+        {
+            // Execute inside the active STA message loop thread context
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: this is the overload MessageBoxService's non-headless path carries the
+                // user's Yes/No answer back through
+                var uiDispatcher = new WpfUiDispatcher();
+                const string sentinel = "marshalled-result";
+
+                // Act
+                var result = await uiDispatcher.InvokeAsync(() => sentinel);
+
+                // Assert
+                Assert.Equal(sentinel, result);
+            });
+        }
+
+        #endregion
     }
 }
