@@ -732,11 +732,15 @@ namespace Servy.Manager.UnitTests.Services
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Manual);
 
             // Act
-            var result = await sut.StartServiceAsync(service, showMessageBox: false, cancellationToken: TestContext.Current.CancellationToken);
+            var result = await sut.StartServiceAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.StartServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+
+            // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
+            Assert.Equal(ServiceStatus.Running, service.Status);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStarted, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -768,11 +772,15 @@ namespace Servy.Manager.UnitTests.Services
                 .ReturnsAsync(new ServiceDto { Name = service.Name });
 
             // Act
-            var result = await sut.StopServiceAsync(service, showMessageBox: false, cancellationToken: TestContext.Current.CancellationToken);
+            var result = await sut.StopServiceAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.StopServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+
+            // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
+            Assert.Equal(ServiceStatus.Stopped, service.Status);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -788,11 +796,15 @@ namespace Servy.Manager.UnitTests.Services
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
             // Act
-            var result = await sut.RestartServiceAsync(service, showMessageBox: false, cancellationToken: TestContext.Current.CancellationToken);
+            var result = await sut.RestartServiceAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.RestartServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+
+            // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
+            Assert.Equal(ServiceStatus.Running, service.Status);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
