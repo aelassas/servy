@@ -96,7 +96,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
 
             /// <inheritdoc />
-            public override void Open() => ThrowSQLiteException();
+            public override void Open()
+            {
+                OpenAttempts++;
+                ThrowSQLiteException();
+            }
 
             /// <inheritdoc />
             public override Task OpenAsync(CancellationToken cancellationToken)
