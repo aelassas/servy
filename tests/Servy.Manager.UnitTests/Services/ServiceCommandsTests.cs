@@ -585,12 +585,17 @@ namespace Servy.Manager.UnitTests.Services
             }
         }
 
-        [Fact]
-        public async Task ConfigureServiceAsync_MissingOrInvalidAppPublishPath_ShowsNotFoundError()
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        // The "Invalid" arm: a configured path that is not on disk, which is what a stale
+        // DesktopAppPublishPath looks like after the desktop app is moved or uninstalled.
+        [InlineData(@"C:\definitely\not\here\Servy.exe")]
+        public async Task ConfigureServiceAsync_MissingOrInvalidAppPublishPath_ShowsNotFoundError(string configuredPath)
         {
             // Arrange
             var sut = CreateServiceCommands();
-            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(string.Empty);
+            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(configuredPath);
 
             // Act
             await sut.ConfigureServiceAsync(new Service { Name = "AnyService" }, CancellationToken.None);
@@ -826,7 +831,7 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
-        public async Task ExecuteServiceCommandAsync_ServiceNotFoundInRepository_ReturnsFalseAndLogsError()
+        public async Task ExecuteServiceCommandAsync_ServiceNotFoundInRepository_ReturnsFalseAndShowsNotFoundError()
         {
             // Arrange
             var sut = CreateServiceCommands();
