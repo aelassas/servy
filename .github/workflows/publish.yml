@@ -8,8 +8,8 @@
 # ARM64 builds are fully verified via dedicated ARM64 test matrices: build.yml verifies build
 # compatibility, and test.yml verifies both unit tests and integration tests.
 #
-# Both x64 and ARM64 pipelines generate full CycloneDX Software Bills of Materials (SBOM),
-# executing cross-architecture dependency graph mapping directly on the windows-latest host.
+# Both x64 and ARM64 publishes generate a full CycloneDX Software Bill of Materials (SBOM);
+# the SBOM is derived from the project files, so one windows-latest run covers either architecture.
 # ==========================================================================================
 
 name: publish
