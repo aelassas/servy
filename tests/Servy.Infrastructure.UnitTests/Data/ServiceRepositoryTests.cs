@@ -635,8 +635,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(1, rows);
         }
 
-        [Fact]
-        public async Task DeleteAsync_ByName_ReturnsZero()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task DeleteAsync_ByName_ReturnsZero(string? name)
         {
             // Arrange
             // Explicitly configure no database behavior setup for ExecuteAsync here.
@@ -645,7 +648,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
 
             // Act
-            var rows = await repo.DeleteAsync(string.Empty, TestContext.Current.CancellationToken);
+            var rows = await repo.DeleteAsync(name, TestContext.Current.CancellationToken);
 
             // Assert
             // 1. Verify that the method cleanly returned a neutral 0-row metric count
@@ -664,6 +667,93 @@ namespace Servy.Infrastructure.UnitTests.Data
         #endregion
 
         #region Retrieval Operations & Decryption
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetByNameAsync_BlankName_ReturnsNullWithoutQuerying(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.GetByNameAsync(name, true, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Null(result);
+            _mockDapper.Verify(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetByName_BlankName_ReturnsNullWithoutQuerying(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = repo.GetByName(name);
+
+            // Assert
+            Assert.Null(result);
+            _mockDapper.Verify(d => d.QuerySingleOrDefault<ServiceDto?>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>()),
+                Times.Never);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetServicePidAsync_BlankName_ReturnsNullWithoutQuerying(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.GetServicePidAsync(name, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Null(result);
+            _mockDapper.Verify(d => d.QuerySingleOrDefaultAsync<int?>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetServiceConsoleStateAsync_BlankName_ReturnsNullWithoutQuerying(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.GetServiceConsoleStateAsync(name, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Null(result);
+            _mockDapper.Verify(d => d.QuerySingleOrDefaultAsync<ServiceConsoleStateDto?>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
 
         private static ServiceDto CreateEncryptedServiceDto()
         {
@@ -1059,6 +1149,52 @@ namespace Servy.Infrastructure.UnitTests.Data
         #endregion
 
         #region Import/Export Tests
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task ExportXmlAsync_BlankName_ReturnsEmptyStringWithoutQuerying(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.ExportXmlAsync(name, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Empty(result);
+            _mockDapper.Verify(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
+            _mockXmlServiceSerializer.Verify(s => s.Serialize(It.IsAny<ServiceDto>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task ExportJsonAsync_BlankName_ReturnsEmptyStringWithoutQuerying(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.ExportJsonAsync(name, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Empty(result);
+            _mockDapper.Verify(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
+            _mockJsonServiceSerializer.Verify(s => s.Serialize(It.IsAny<ServiceDto>()), Times.Never);
+        }
 
         [Fact]
         public async Task ExportXmlAsync_ServiceMissing_ReturnsEmptyString()
