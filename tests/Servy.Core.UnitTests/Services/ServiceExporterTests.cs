@@ -65,6 +65,16 @@ namespace Servy.Core.UnitTests.Services
             try
             {
                 ServiceExporter.ExportXml(service, tempFile);
+
+                // The XML declaration says utf-8, so the bytes on disk must not carry a BOM.
+                // File.ReadAllText strips the preamble before the assertions below ever see it,
+                // so the guarantee has to be asserted at the byte level.
+                var bytes = File.ReadAllBytes(tempFile);
+
+                Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF,
+                    "Exported XML must be UTF-8 without a BOM.");
+                Assert.Equal((byte)'<', bytes[0]);
+
                 var content = File.ReadAllText(tempFile);
 
                 Assert.False(string.IsNullOrWhiteSpace(content));
@@ -146,6 +156,16 @@ namespace Servy.Core.UnitTests.Services
             try
             {
                 ServiceExporter.ExportJson(service, tempFile);
+
+                // The JSON writer is created with UTF8Encoding(false), so the bytes on disk must not
+                // carry a BOM. File.ReadAllText strips the preamble before the assertions below ever
+                // see it, so the guarantee has to be asserted at the byte level.
+                var bytes = File.ReadAllBytes(tempFile);
+
+                Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF,
+                    "Exported JSON must be UTF-8 without a BOM.");
+                Assert.Equal((byte)'{', bytes[0]);
+
                 var content = File.ReadAllText(tempFile);
 
                 Assert.False(string.IsNullOrWhiteSpace(content));
