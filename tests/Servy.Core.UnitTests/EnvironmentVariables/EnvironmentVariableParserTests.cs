@@ -151,21 +151,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
-        public void Validate_KeyContainingEquals_ReturnsExpectedErrorMessage()
-        {
-            // Arrange
-            var input = @"K\=EY=VAL";
-
-            // Act
-            var isValid = EnvironmentVariablesValidator.Validate(input, out var errors);
-
-            // Assert
-            Assert.False(isValid);
-            Assert.Single(errors);
-            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "K=EY"), errors[0]);
-        }
-
-        [Fact]
         public void Parse_SupportsEscapedEqualsInValue()
         {
             // Arrange
@@ -384,6 +369,19 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Contains("no unescaped '='", ex.Message);
             Assert.Contains("position ", ex.Message);
             Assert.DoesNotContain("Line2", ex.Message);
+        }
+
+        [Fact]
+        public void Parse_KeyContainingEquals_ThrowsFormatExceptionWithValidatorMessage()
+        {
+            // Arrange
+            var input = @"K\=EY=VAL";
+
+            // Act
+            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
+
+            // Assert
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "K=EY"), ex.Message);
         }
 
         [Theory]
