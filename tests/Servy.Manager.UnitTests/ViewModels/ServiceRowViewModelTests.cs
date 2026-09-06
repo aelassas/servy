@@ -10,6 +10,7 @@ using System.Windows.Threading;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
+    [Collection(AmbientTestCollection.Name)]
     public class ServiceRowViewModelTests
     {
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
