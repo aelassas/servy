@@ -4,14 +4,6 @@ using Servy.Service.Helpers;
 
 namespace Servy.Service.UnitTests.Helpers
 {
-    // Running sequentially to prevent Environment.SetEnvironmentVariable calls
-    // from causing race conditions across different tests.
-    [CollectionDefinition("SequentialEnvTests", DisableParallelization = true)]
-    public class SequentialEnvTestsCollection
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
     [Collection("SequentialEnvTests")]
     public class EnvironmentVariableHelperTests : IDisposable
     {
