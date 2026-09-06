@@ -16,7 +16,8 @@ namespace Servy.Core.IntegrationTests.Native
     {
         private readonly string _testAccountName;
         private readonly bool _canModifyLsaPolicy;
-        private readonly bool _accountCreatedLocally;
+        private bool _provisioningAttempted;
+        private bool _accountCreatedLocally;
 
         // P/Invoke definition necessary to tear down matching LSA security descriptors before user purging
         [DllImport("advapi32.dll", PreserveSig = true)]
@@ -36,31 +37,49 @@ namespace Servy.Core.IntegrationTests.Native
             // On standard GitHub Actions cloud agents, this prevents cascading Access Denied (0xC0000022) runtime breaks.
             _canModifyLsaPolicy = isAdministrator && Helper.CheckLsaPolicyAccess();
 
-            // Create a temporary, unique local user name
+            // Create a temporary, unique local user name. The account itself is provisioned lazily by
+            // TryEnsureTestAccount, so the tests that never touch it pay neither the SAM round-trip nor
+            // the commit wait - xUnit builds a fresh instance of this class for every test method.
             _testAccountName = "ServyTest_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+        }
 
-            if (_canModifyLsaPolicy)
+        /// <summary>
+        /// Creates the transient local account on first use and waits for the SAM subsystem to commit it.
+        /// </summary>
+        /// <returns><c>true</c> when the account exists and the test may proceed.</returns>
+        private bool TryEnsureTestAccount()
+        {
+            if (!_canModifyLsaPolicy || _provisioningAttempted) return _accountCreatedLocally;
+
+            _provisioningAttempted = true;
+
+            try
             {
-                try
+                using (var context = new PrincipalContext(ContextType.Machine))
+                using (var user = new UserPrincipal(context))
                 {
-                    using (var context = new PrincipalContext(ContextType.Machine))
-                    using (var user = new UserPrincipal(context))
-                    {
-                        user.Name = _testAccountName;
-                        user.SetPassword(Guid.NewGuid().ToString("P") + "A1!");
-                        user.Description = "Transient account for Servy LSA integration unit testing.";
-                        user.Save();
-                        _accountCreatedLocally = true;
-                    }
+                    user.Name = _testAccountName;
+                    user.SetPassword(Guid.NewGuid().ToString("P") + "A1!");
+                    user.Description = "Transient account for Servy LSA integration unit testing.";
+                    user.Save();
+                    _accountCreatedLocally = true;
                 }
-                catch
-                {
-                    _accountCreatedLocally = false;
-                }
+            }
+            catch (Exception ex)
+            {
+                // Keep the reason: a guard that only reports "access or creation failure" cannot tell a
+                // permissions problem from a provisioning one.
+                Trace.WriteLine($"Warning: could not create the transient test account {_testAccountName}: {ex.Message}");
+                _accountCreatedLocally = false;
+            }
 
+            if (_accountCreatedLocally)
+            {
                 // Introduce a synchronization window to let the Windows SAM subsystem fully commit
                 Thread.Sleep(500);
             }
+
+            return _accountCreatedLocally;
         }
 
         #region Account Parsing & SID Resolution Failure Branches
@@ -99,7 +118,7 @@ namespace Servy.Core.IntegrationTests.Native
         public void Ensure_ShorthandLocalNotation_CorrectlyTranslatesMachinePrefix()
         {
             // Arrange
-            if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
+            if (!_canModifyLsaPolicy || !TryEnsureTestAccount()) return;
 
             string shorthandAccount = $".\\{_testAccountName}";
 
@@ -123,7 +142,7 @@ namespace Servy.Core.IntegrationTests.Native
         public void Ensure_FreshAccountWithoutAnyRights_TriggersNotFoundBranchAndGrantsPrivilege()
         {
             // Arrange
-            if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
+            if (!_canModifyLsaPolicy || !TryEnsureTestAccount()) return;
 
             string fullAccountName = FullAccountName;
 
@@ -158,7 +177,7 @@ namespace Servy.Core.IntegrationTests.Native
         public void RevokeLsaPrivilegeBeforeDeletion_RemovesTheGrantItWasGiven()
         {
             // Arrange
-            if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
+            if (!_canModifyLsaPolicy || !TryEnsureTestAccount()) return;
 
             byte[] sidBytes = ResolveSidBytes(FullAccountName);
 
