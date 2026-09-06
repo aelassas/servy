@@ -35,6 +35,19 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void Constructor_KeyProviderThrows_RethrowsOriginalException()
+        {
+            // Arrange
+            var mockProvider = new Mock<IProtectedKeyProvider>();
+            mockProvider.Setup(p => p.GetKey()).Throws(new InvalidOperationException("DPAPI unavailable"));
+
+            // Act & Assert: the constructor's cleanup catch must rethrow the original exception
+            // unchanged, not swallow it or replace it.
+            var ex = Assert.Throws<InvalidOperationException>(() => new SecureData(mockProvider.Object));
+            Assert.Equal("DPAPI unavailable", ex.Message);
+        }
+
+        [Fact]
         public void Encrypt_Null_Throws()
         {
             // Arrange
