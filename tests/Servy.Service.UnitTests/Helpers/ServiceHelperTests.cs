@@ -446,6 +446,35 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.True(startActionInvoked);
         }
 
+        [Fact]
+        public void RestartProcess_StopDescendantsThrows_LogsWarningAndRestartsAnyway()
+        {
+            // Arrange
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(1234);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            mockProcess.Setup(p => p.StopDescendants(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<int>()))
+                .Throws(new InvalidOperationException("Snapshot failed"));
+
+            var mockLog = new Mock<IServyLogger>();
+            bool startActionInvoked = false;
+            StartProcessCallback startAction =
+                (exe, args, dir, env, ct) => startActionInvoked = true;
+
+            // Act
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+
+            // Assert
+            // Stop() itself succeeds here; only the descendant sweep fails, which is the inner of the
+            // two nested "log and keep going" catches and, unlike its sibling, had no test at all.
+            mockProcess.Verify(p => p.Stop(1000), Times.Once);
+            mockLog.Verify(l => l.Warn(It.Is<string>(s => s.Contains("descendant cleanup failed")), It.IsAny<Exception>()), Times.Once);
+            mockProcess.Verify(p => p.Dispose(), Times.Once);
+            Assert.True(startActionInvoked);
+            mockLog.Verify(l => l.Info("Process restarted.", It.IsAny<Exception>()), Times.Once);
+        }
+
         #endregion
 
         #region RestartService Tests
