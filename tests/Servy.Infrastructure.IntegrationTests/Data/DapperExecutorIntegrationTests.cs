@@ -29,9 +29,16 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         private abstract class TestDbConnectionBase : DbConnection
         {
             /// <summary>
+            /// Gets the number of times this connection container instance has been disposed.
+            /// Counted rather than flagged so a test can pin one release per acquisition on the
+            /// retry paths, where the executor re-enters the whole action once per attempt.
+            /// </summary>
+            public int DisposeCount { get; private set; }
+
+            /// <summary>
             /// Gets a value indicating whether this connection container instance has been disposed.
             /// </summary>
-            public bool WasDisposed { get; private set; }
+            public bool WasDisposed => DisposeCount > 0;
 
             /// <inheritdoc />
             public override string ConnectionString { get; set; } = "Data Source=:memory:;";
@@ -62,7 +69,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 if (disposing)
                 {
-                    WasDisposed = true;
+                    DisposeCount++;
                 }
                 base.Dispose(disposing);
             }
@@ -482,7 +489,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 await _executor.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TestServices;", cancellationToken: CancellationToken.None);
             });
 
+            // Verify the engine systematically retried across the configured loop allocation space,
+            // releasing the connection its using block acquired on every one of those attempts.
             Assert.Equal(AppConfig.DbAsyncMaxAttempts, busyConnectionSpy.OpenAttempts);
+            Assert.Equal(AppConfig.DbAsyncMaxAttempts, busyConnectionSpy.DisposeCount);
         }
 
         /// <summary>
@@ -530,6 +540,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // the retried lambda would open one connection three times and fail these two assertions.
             Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
             Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.DisposeCount));
         }
 
         [Fact]
@@ -546,6 +557,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(2, count);
             Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
             Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.DisposeCount));
         }
 
         [Fact]
@@ -564,6 +576,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(2, count);
             Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
             Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.DisposeCount));
         }
 
         [Fact]
@@ -582,6 +595,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(2, count);
             Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
             Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.DisposeCount));
         }
 
         [Fact]
