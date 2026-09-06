@@ -152,6 +152,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     var service = new ConsoleService { Name = "AppService", StdoutPath = "C:\\out.log" };
 
+                    // Seed the buffer so the reset half of this test can actually fail. SwitchServiceAsync
+                    // clears RawLines before its first await, so the clear has already happened when the
+                    // SelectedService setter returns.
+                    vm.RawLines.Add(new LogLine("Stale line from the previously selected service", LogType.StdOut));
+                    Assert.NotEmpty(vm.RawLines);
+
                     // Act
                     vm.SelectedService = service;
 
