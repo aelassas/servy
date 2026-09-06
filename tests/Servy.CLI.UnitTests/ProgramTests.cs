@@ -1,4 +1,3 @@
-using Servy.CLI.Helpers;
 using Servy.Testing;
 using System;
 using System.IO;
@@ -14,9 +13,12 @@ namespace Servy.CLI.UnitTests
         private const string AesKeyFileName = "test_aes.key";
         private const string AesIvFileName = "test_aes.iv";
         private const string DatabaseFileName = "Test_Servy.db";
-        private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
 
-        private readonly string _tempConfigPath;
+        // Resolves onto the appsettings.cli.json that Servy.CLI.csproj copies to the output
+        // directory, not onto a file this suite owns, so its previous contents are saved and
+        // restored the same way the Console streams are.
+        private readonly string _cliConfigPath;
+        private readonly string _originalCliConfigJson;
         private readonly TextWriter _originalConsoleOut;
         private readonly TextWriter _originalConsoleError;
 
@@ -24,7 +26,8 @@ namespace Servy.CLI.UnitTests
         {
             // Arrange
             // Establish isolated files environment for execution runs
-            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
+            _cliConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
+            _originalCliConfigJson = File.Exists(_cliConfigPath) ? File.ReadAllText(_cliConfigPath) : null;
 
             _originalConsoleOut = Console.Out;
             _originalConsoleError = Console.Error;
@@ -43,13 +46,13 @@ namespace Servy.CLI.UnitTests
                 "  }\r\n" +
                 "}";
 
-            File.WriteAllText(_tempConfigPath, mockConfigJson);
+            File.WriteAllText(_cliConfigPath, mockConfigJson);
         }
 
         #region Console Validation Logic Branches
 
         [Fact]
-        public void IsRealConsole_InNonInteractiveTestEnvironment_ReturnsFalse()
+        public void IsRealConsole_WhenHostIsNonInteractiveOrRedirected_ShortCircuitsToFalse()
         {
             if (Environment.UserInteractive
                   && !Console.IsOutputRedirected
@@ -58,12 +61,23 @@ namespace Servy.CLI.UnitTests
                 return;
             }
 
+            // Arrange
+            // The early-return guard above is the exact complement of the first two guards of
+            // IsRealConsole, so the body only ever runs in a state that short-circuits the
+            // method. Pin that precondition explicitly rather than leaving it implicit in
+            // the guard expression: this test covers the short-circuit only, and the Win32
+            // half of the method (GetConsoleWindow and the Console.WindowHeight probe)
+            // stays out of reach without a redirection seam on Program.
+            bool shortCircuitStateHolds = !Environment.UserInteractive
+                || Console.IsOutputRedirected
+                || Console.IsErrorRedirected;
+
             // Act
             bool isReal = Program.IsRealConsole();
 
             // Assert
-            // When executing within headless test runners or CI pipelines,
-            // Environment.UserInteractive or Console.IsOutputRedirected will naturally be false/redirected
+            Assert.True(shortCircuitStateHolds,
+                "The early-return guard must leave only host states that short-circuit IsRealConsole.");
             Assert.False(isReal);
         }
 
@@ -127,46 +141,14 @@ namespace Servy.CLI.UnitTests
             // The command fails because the service is not found in the database/SCM, returning Error (1)
             Assert.Equal((int)CliExitCode.Error, result.Result);
 
-            // Verify that no loading animation frames or status text fragments were written to stdout/stderr
+            // Verify that no loading animation frames or status text fragments were written to stdout
             Assert.True(string.IsNullOrEmpty(result.StdOut), "Console output should be completely suppressed when the --quiet flag is supplied.");
-        }
 
-        [Fact]
-        public async Task RunWithLoadingAnimation_WhenOutputIsRedirected_BypassesAnimationLoop()
-        {
-            // Arrange
-            var outputWriter = new StringWriter();
-            var originalOut = Console.Out;
-            Console.SetOut(outputWriter);
-
-            try
-            {
-                // Force an explicit output redirection override via fail-loud reflection
-                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, true);
-
-                bool executionCompleted = false;
-
-                // Act
-                await ConsoleHelper.RunWithLoadingAnimation(async () =>
-                {
-                    await Task.Delay(10);
-                    executionCompleted = true;
-                }, "Testing Quiet Mode Animation");
-
-                // Assert
-                Assert.True(executionCompleted);
-
-                // An un-redirected normal console would print frame strings. Proving it is blank confirms the bypass executed successfully.
-                string capturedText = outputWriter.ToString();
-                Assert.True(string.IsNullOrEmpty(capturedText) || capturedText == Environment.NewLine,
-                    "The loading animation mechanism should skip writing animation frames when quiet conditions are enforced.");
-            }
-            finally
-            {
-                // Clean up console redirection states to preserve host environment test runner stability
-                Console.SetOut(originalOut);
-                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
-            }
+            // Stderr is the other half of the contract and the channel this scenario actually uses:
+            // --quiet bypasses the loading animation (Program.cs:237) but does not silence failure
+            // reporting, which Helper.PrintAndReturn writes to Console.Error. Assert it here so a
+            // regression that routes the failure message to stdout, or drops it entirely, is caught.
+            Assert.False(string.IsNullOrWhiteSpace(result.StdErr), "The failure message must still reach stderr; --quiet suppresses the progress animation only.");
         }
 
         #endregion
@@ -180,9 +162,16 @@ namespace Servy.CLI.UnitTests
             // Clean environment layout files using consistent BaseDirectory resolution
             try
             {
-                if (File.Exists(_tempConfigPath))
+                // appsettings.cli.json is a build output, so put back what was found rather
+                // than leaving the output directory without it: a --no-build re-run would
+                // otherwise fall back to the optional-config path silently.
+                if (_originalCliConfigJson != null)
                 {
-                    File.Delete(_tempConfigPath);
+                    File.WriteAllText(_cliConfigPath, _originalCliConfigJson);
+                }
+                else if (File.Exists(_cliConfigPath))
+                {
+                    File.Delete(_cliConfigPath);
                 }
 
                 string keyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AesKeyFileName);

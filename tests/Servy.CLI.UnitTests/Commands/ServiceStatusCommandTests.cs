@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class ServiceStatusCommandTests : ServiceCommandTestsBase<ServiceStatusCommand, ServiceStatusOptions>
     {
         protected override ServiceStatusCommand CreateCommandInstance() => new ServiceStatusCommand(MockServiceManager.Object);
@@ -51,22 +52,6 @@ namespace Servy.CLI.UnitTests.Commands
         protected override void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName)
         {
             mockManager.Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>())).Throws<TException>();
-        }
-
-        [Fact]
-        public override async Task Execute_UnauthorizedAccessException_ReturnsFailure()
-        {
-            // Arrange
-            const string serviceName = "RestrictedService";
-            var options = CreateValidOptions(serviceName);
-            SetupServiceManagerException<UnauthorizedAccessException>(MockServiceManager, serviceName);
-
-            // Act
-            var result = await ExecuteCommandAsync(Command, options);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Equal(string.Format(Strings.Msg_AdminPrivilegesRequired, "status"), result.Message);
         }
 
         [Fact]

@@ -228,7 +228,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that an <see cref="UnauthorizedAccessException"/> thrown by the service manager is caught and returns an "Access Denied" failure result.
+        /// Validates that an <see cref="UnauthorizedAccessException"/> thrown by the service manager is caught and returns the admin-privileges failure result for this command's verb.
         /// </summary>
         [Fact]
         public virtual async Task Execute_UnauthorizedAccessException_ReturnsFailure()
@@ -242,8 +242,11 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
+            // Assert the resource rather than the first two English words of its value: a
+            // reworded or localised Msg_AdminPrivilegesRequired must not fail this test, and
+            // the substring form pinned nothing about the {0} verb argument.
             Assert.False(result.IsSuccess);
-            Assert.Contains("Access Denied", result.Message);
+            Assert.Equal(string.Format(CliStrings.Msg_AdminPrivilegesRequired, ExpectedCommandName), result.Message);
         }
 
         /// <summary>
