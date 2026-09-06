@@ -307,6 +307,28 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(ExpectedServiceNotFoundMessage(serviceName), result.Message);
         }
 
+        /// <summary>
+        /// Runs the Disabled-startup-type refusal scenario: an installed service whose startup type is
+        /// Disabled must be refused with <see cref="CliStrings.Msg_ServiceDisabledError"/>.
+        /// Only the commands that perform that pre-check call it, which is why it is a helper here
+        /// rather than a [Fact] every derived class would inherit.
+        /// </summary>
+        protected async Task AssertDisabledStartupTypeIsRefusedAsync()
+        {
+            // Arrange
+            const string serviceName = "DisabledService";
+            var options = CreateValidOptions(serviceName);
+            MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            MockServiceManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Disabled);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(CliStrings.Msg_ServiceDisabledError, result.Message);
+        }
+
         #endregion
 
         #region IDisposable Implementation
