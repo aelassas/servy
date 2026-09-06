@@ -512,11 +512,13 @@ namespace Servy.Manager.UnitTests.Services
 
                 ProcessStartInfo capturedPsi = null;
 
-                // INTERCEPTION SEAM: Capture launch metadata via callback to inspect arguments and prevent actual process creation
+                // INTERCEPTION SEAM: Capture launch metadata via callback to inspect arguments and prevent actual
+                // process creation. The current process is handed back as a non-null Process the SUT can dispose,
+                // so this test stays on the successful-launch branch (a null result is the failure branch).
                 _processHelperMock
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
                     .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
-                    .Returns((Process)null);
+                    .Returns(() => Process.GetCurrentProcess());
 
                 // Act
                 await sut.ConfigureServiceAsync(service, CancellationToken.None);
@@ -529,6 +531,9 @@ namespace Servy.Manager.UnitTests.Services
 
                 // Argument Validation: Verify the skip-splash flag and quoted service name arguments
                 Assert.Equal($"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)}", capturedPsi.Arguments.Trim());
+
+                // The launch succeeded, so no failure dialog was shown
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             }
             finally
             {
@@ -562,10 +567,11 @@ namespace Servy.Manager.UnitTests.Services
 
                 ProcessStartInfo capturedPsi = null;
 
+                // A non-null Process keeps this test on the successful-launch branch
                 _processHelperMock
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
                     .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
-                    .Returns((Process)null);
+                    .Returns(() => Process.GetCurrentProcess());
 
                 // Act
                 await sut.ConfigureServiceAsync(service, CancellationToken.None);
@@ -575,6 +581,9 @@ namespace Servy.Manager.UnitTests.Services
                 Assert.Equal(
                     $"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)} {AppConfig.ForceSoftwareRenderingArg}",
                     capturedPsi.Arguments.Trim());
+
+                // The launch succeeded, so no failure dialog was shown
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             }
             finally
             {
@@ -622,12 +631,12 @@ namespace Servy.Manager.UnitTests.Services
 
                 ProcessStartInfo capturedPsi = null;
 
-                // INTERCEPTION SEAM: Capture the launch metadata via callback and return null
-                // to safely complete the fire-and-forget execution block without triggering ShellExecute.
+                // INTERCEPTION SEAM: Capture the launch metadata via callback and hand back the current
+                // process, a non-null Process the SUT can dispose, without triggering ShellExecute.
                 _processHelperMock
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
                     .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
-                    .Returns((Process)null);
+                    .Returns(() => Process.GetCurrentProcess());
 
                 var sut = CreateServiceCommands();
 
@@ -652,10 +661,88 @@ namespace Servy.Manager.UnitTests.Services
                 // Confirm the arguments consist solely of the splash skip payload (and optional whitespace) without any service parameters
                 string expectedArgs = $"\"{AppConfig.SkipSplashArgument}\"";
                 Assert.Equal(expectedArgs, capturedPsi.Arguments.Trim());
+
+                // 4. The launch succeeded, so no failure dialog was shown
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             }
             finally
             {
                 // Delete temporary executable path on test completion
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_ProcessStartReturnsNull_ShowsLaunchFailedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempExe = Path.Combine(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe");
+
+            try
+            {
+                File.WriteAllText(tempExe, "dummy");
+
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe);
+
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = service.Name });
+
+                // A null Process is the launch-failure branch introduced by #5268
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns((Process)null);
+
+                // Act
+                await sut.ConfigureServiceAsync(service, CancellationToken.None);
+
+                // Assert
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption), Times.Once);
+            }
+            finally
+            {
+                if (File.Exists(tempExe))
+                {
+                    try { File.Delete(tempExe); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_NullServiceParameterAndProcessStartReturnsNull_ShowsLaunchFailedError()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe");
+
+            try
+            {
+                File.WriteAllText(tempTrackingFile, string.Empty);
+
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempTrackingFile);
+                _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+
+                // A null Process is the launch-failure branch of the no-service launch site
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns((Process)null);
+
+                var sut = CreateServiceCommands();
+
+                // Act
+                await sut.ConfigureServiceAsync(null, CancellationToken.None);
+
+                // Assert
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption), Times.Once);
+            }
+            finally
+            {
                 if (File.Exists(tempTrackingFile))
                 {
                     try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
