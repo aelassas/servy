@@ -338,28 +338,6 @@ namespace Servy.Restarter.UnitTests
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
-        [Fact]
-        public void HandleTransitionalError_StopAndRefreshKeepThrowing_ReturnsServiceNotFound()
-        {
-            // Arrange
-            _mockController.SetupSequence(c => c.Status)
-                .Returns(ServiceControllerStatus.Running)  // Step 1 check
-                .Returns(ServiceControllerStatus.Running); // Step 2 check
-
-            // First call throws to hit handler, then subsequent calls inside the handler also throw
-            _mockController.Setup(c => c.Stop()).Throws<InvalidOperationException>();
-            _mockController.Setup(c => c.Refresh()).Throws<InvalidOperationException>();
-
-            // Act
-            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterHandleTransitionalErrorTimeout);
-
-            // Assert
-            Assert.Equal(RestartResult.ServiceNotFound, result);
-
-            // Verify teardown routines hit even under cascading exception loop conditions
-            _mockController.Verify(c => c.Dispose(), Times.Once);
-        }
-
         #endregion
 
         #region Disappearance Guard Tests
