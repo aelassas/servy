@@ -150,6 +150,30 @@ namespace Servy.Restarter.UnitTests
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
+        [Fact]
+        public void RestartService_StopSucceedsAndWaitForStoppedSucceeds_ProceedsToStartPhase()
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)   // Settle phase check bypass (not pending)
+                .Returns(ServiceControllerStatus.Running)   // Stop-phase entry check (not yet Stopped)
+                .Returns(ServiceControllerStatus.Stopped);  // Start-phase check after Refresh (not Running -> proceeds to Start)
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            // No test up to this point lets Stop() AND WaitForStatus(Stopped, ...) both return normally;
+            // every other Stop-phase test either skips the stop block entirely (already Stopped) or makes
+            // one of the two calls throw to exercise the timeout / transitional-error branches instead.
+            Assert.Equal(RestartResult.Restarted, result);
+            _mockController.Verify(c => c.Stop(), Times.Once);
+            _mockController.Verify(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()), Times.Once);
+            _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.WaitForStatus(ServiceControllerStatus.Running, It.IsAny<TimeSpan>()), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
         [Theory]
         [InlineData(true)]  // Test InvalidOperationException path
         [InlineData(false)] // Test Win32Exception path
