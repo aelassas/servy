@@ -172,8 +172,10 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
             // Assert
+            // Assert the resource rather than the first two English words of its value, and pin
+            // the {0} verb argument the substring form left unchecked.
             Assert.False(result.IsSuccess);
-            Assert.Contains("Access Denied", result.Message);
+            Assert.Equal(string.Format(Strings.Msg_AdminPrivilegesRequired, "install"), result.Message);
         }
 
         [Fact]

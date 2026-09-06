@@ -54,22 +54,6 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public override async Task Execute_UnauthorizedAccessException_ReturnsFailure()
-        {
-            // Arrange
-            const string serviceName = "RestrictedService";
-            var options = CreateValidOptions(serviceName);
-            SetupServiceManagerException<UnauthorizedAccessException>(MockServiceManager, serviceName);
-
-            // Act
-            var result = await ExecuteCommandAsync(Command, options);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Equal(string.Format(Strings.Msg_AdminPrivilegesRequired, "status"), result.Message);
-        }
-
-        [Fact]
         public override async Task Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange
