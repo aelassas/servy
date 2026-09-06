@@ -56,7 +56,7 @@ namespace Servy.CLI.UnitTests.Commands
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public async Task Execute_ShouldFail_WhenServiceNameIsNullOrWhiteSpace(string? name)
         {
             // Arrange
@@ -87,7 +87,7 @@ namespace Servy.CLI.UnitTests.Commands
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public async Task Execute_ShouldFail_WhenPathIsNullOrWhiteSpace(string? path)
         {
             // Arrange
@@ -262,8 +262,8 @@ namespace Servy.CLI.UnitTests.Commands
             InvokeSaveFile(filePath, content);
 
             // Assert
-            Assert.True(Directory.Exists(deepSubDir), "The multi-level parent directory chain should be created successfully.");
-            Assert.True(File.Exists(filePath), "The targeted service export payload file should be created.");
+            Assert.True(Directory.Exists(deepSubDir), "The parent directory chain should be created.");
+            Assert.True(File.Exists(filePath), "The output file should be created.");
             Assert.Equal(content, File.ReadAllText(filePath));
         }
 
@@ -276,16 +276,14 @@ namespace Servy.CLI.UnitTests.Commands
             var content = "[Stale Config Payload Data]";
 
             // Act & Assert
-            // 1. Catch the unwrapped exception directly from TestReflection
             var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, content));
 
-            // 2. Assert against the actual exception content profile
             Assert.Contains(".txt", actualEx.Message);
 
-            // Transactional Rollback Integrity Assertions
-            Assert.False(File.Exists(filePath), "The target file should not have been generated.");
-            Assert.False(Directory.Exists(deepSubDir), "The nested parent leaf folder should be rolled back and deleted.");
-            Assert.False(Directory.Exists(Path.Combine(_tempDir, "orphaned_tree")), "The entire newly created parent path root should be swept away if empty.");
+            // Directory cleanup assertions
+            Assert.False(File.Exists(filePath), "The output file should not have been created.");
+            Assert.False(Directory.Exists(deepSubDir), "The nested parent folder should be removed on failure.");
+            Assert.False(Directory.Exists(Path.Combine(_tempDir, "orphaned_tree")), "The entire newly created parent path root should be removed if empty.");
         }
 
         [Fact]
@@ -304,7 +302,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Nothing SaveFile created may remain on disk
             Assert.False(File.Exists(filePath));
-            Assert.False(Directory.Exists(deepSubDir), "The directory allocated for the device name target should be atomically removed on error.");
+            Assert.False(Directory.Exists(deepSubDir), "The directory created before validation failed must be removed.");
         }
 
         [Fact]
