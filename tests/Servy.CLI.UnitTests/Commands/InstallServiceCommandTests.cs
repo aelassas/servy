@@ -9,6 +9,7 @@ using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class InstallServiceCommandTests : IDisposable
     {
         private readonly Mock<IServiceManager> _mockServiceManager;

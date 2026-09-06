@@ -10,6 +10,7 @@ using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class ImportServiceCommandTests : IDisposable
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
