@@ -124,7 +124,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Core index &apos;{0}&apos; is out of bounds (0-{1})..
+        ///   Looks up a localized string similar to CPU affinity core index &apos;{0}&apos; is out of bounds (0-{1})..
         /// </summary>
         public static string Msg_CoreIndexOutOfBounds {
             get {
@@ -133,7 +133,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Core index in range &apos;{0}&apos; is out of bounds (0-{1})..
+        ///   Looks up a localized string similar to CPU affinity core index in range &apos;{0}&apos; is out of bounds (0-{1})..
         /// </summary>
         public static string Msg_CoreIndexRangeOutOfBounds {
             get {
@@ -187,7 +187,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Affinity mask &apos;{0}&apos; selects no processor..
+        ///   Looks up a localized string similar to CPU affinity mask &apos;{0}&apos; selects no processors..
         /// </summary>
         public static string Msg_EmptyAffinityMask {
             get {
@@ -286,7 +286,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Affinity mask &apos;{0}&apos; selects processors outside allowable range (0-{1})..
+        ///   Looks up a localized string similar to CPU affinity mask &apos;{0}&apos; selects processors outside the allowable range (0-{1})..
         /// </summary>
         public static string Msg_HexMaskOutOfBounds {
             get {
@@ -412,7 +412,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid core specification: &apos;{0}&apos;..
+        ///   Looks up a localized string similar to Invalid CPU affinity core specification: &apos;{0}&apos;..
         /// </summary>
         public static string Msg_InvalidCoreSpecification {
             get {
@@ -466,7 +466,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid hex affinity format: &apos;{0}&apos;..
+        ///   Looks up a localized string similar to Invalid CPU affinity hexadecimal format: &apos;{0}&apos;..
         /// </summary>
         public static string Msg_InvalidHexAffinityFormat {
             get {
@@ -718,7 +718,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Inverted core range &apos;{0}&apos;: the start index is greater than the end index..
+        ///   Looks up a localized string similar to Inverted CPU affinity core range &apos;{0}&apos;: the start index is greater than the end index..
         /// </summary>
         public static string Msg_InvertedCoreRange {
             get {
