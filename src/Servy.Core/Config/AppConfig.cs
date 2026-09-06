@@ -1286,6 +1286,7 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// Specifies the minimum allowed value, in seconds, for the pre-stop timeout setting.
+        /// A value of 0 is valid and explicitly triggers fire-and-forget execution mode.
         /// </summary>
         public const int MinPreStopTimeoutSeconds = 0;
 
@@ -1322,7 +1323,7 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// Minimum pre-launch timeout in seconds.
-        /// Set to 0 to run the pre-launch hook in fire-and-forget mode.
+        /// A value of 0 is valid and explicitly triggers fire-and-forget execution mode.
         /// </summary>
         public const int MinPreLaunchTimeoutSeconds = 0;
 

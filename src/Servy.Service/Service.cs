@@ -970,7 +970,7 @@ namespace Servy.Service
             }
 
             // 3. Handle Synchronous Mode with Retries
-            launchOptions.TimeoutMs = ClampTimeout(Math.Max(options.PreLaunchTimeoutInSeconds, AppConfig.MinPreLaunchTimeoutSeconds));
+            launchOptions.TimeoutMs = ClampTimeout(options.PreLaunchTimeoutInSeconds);
             return RunSynchronousPreLaunch(launchOptions, options);
         }
 
