@@ -2,6 +2,7 @@ using Moq;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
+using Servy.Testing;
 using System.Diagnostics;
 
 namespace Servy.Service.UnitTests
@@ -62,7 +63,7 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
 
             // Act
-            service.InvokeSafeKillProcess(mockProcess.Object);
+            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
             // Assert
             mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
@@ -80,7 +81,7 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Throws(new Exception("Boom!"));
 
             // Act
-            service.InvokeSafeKillProcess(mockProcess.Object);
+            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
             // Assert
             _ctx.Logger.Verify(l => l.Error("SafeKillProcess background task failed: Boom!", It.IsAny<Exception>()), Times.Once);
