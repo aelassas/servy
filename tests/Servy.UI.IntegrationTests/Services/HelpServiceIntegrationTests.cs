@@ -183,6 +183,128 @@ namespace Servy.UI.IntegrationTests.Services
             _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption), Times.Once);
         }
 
+        [Fact]
+        public async Task CheckUpdates_UnparseableTag_ShowsInvalidTagError()
+        {
+            // Arrange
+            // Branch: ROBUSTNESS guard, if (latestVersion == null)
+            // A non-empty tag clears the IsNullOrEmpty guard above it, and "not-a-version" does not
+            // start with a digit, so the sanitization regex does not match and ParseVersion returns null.
+            const string tagName = "not-a-version";
+
+            SetupHandlerResponse($"{{ \"tag_name\": \"{tagName}\" }}");
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(
+                m => m.ShowErrorAsync(
+                    It.Is<string>(s => s == string.Format(Strings.Msg_UpdateCheckInvalidTag, tagName)),
+                    Caption),
+                Times.Once);
+
+            // Without the guard this tag reaches the comparison and is reported as "No updates available"
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CheckUpdates_RequestTimesOut_ShowsTimeoutError()
+        {
+            // Arrange
+            // Branch: catch (OperationCanceledException)
+            SetupHandlerFailure(new OperationCanceledException());
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(
+                m => m.ShowErrorAsync(It.Is<string>(s => s == Strings.Msg_UpdateCheckTimeout), Caption),
+                Times.Once);
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CheckUpdates_RequestFails_ShowsUpdateCheckFailedError()
+        {
+            // Arrange
+            // Branch: catch (Exception ex)
+            SetupHandlerFailure(new HttpRequestException("no route to host"));
+
+            string shownError = string.Empty;
+            _mockMessageBox
+                .Setup(m => m.ShowErrorAsync(It.IsAny<string>(), Caption))
+                .Callback<string, string>((message, _) => shownError = message)
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            // The substituted text is the exception message HttpClient surfaces, which is not pinned here;
+            // the literal head of the format string is, so the assertion still fails if the general arm
+            // starts reporting through a different resource.
+            string prefix = FormatPrefix(Strings.Msg_UpdateCheckFailed);
+            Assert.NotEmpty(prefix);
+
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), Caption), Times.Once);
+            Assert.StartsWith(prefix, shownError);
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        /// <summary>
+        /// Injects a strict handler mock that answers every request with an OK response carrying the given body.
+        /// </summary>
+        /// <param name="json">The response body the mocked GitHub release endpoint returns.</param>
+        private void SetupHandlerResponse(string json)
+        {
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent(json)
+                });
+
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+        }
+
+        /// <summary>
+        /// Injects a strict handler mock that fails every request with the given exception.
+        /// </summary>
+        /// <param name="exception">The exception the mocked transport raises.</param>
+        private void SetupHandlerFailure(Exception exception)
+        {
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+        }
+
+        /// <summary>
+        /// Returns the literal head of a composite format string, i.e. everything before its first
+        /// placeholder, so an assertion can pin which resource produced a message without depending
+        /// on the runtime text substituted into it.
+        /// </summary>
+        /// <param name="format">The composite format string to inspect.</param>
+        private static string FormatPrefix(string format)
+        {
+            int placeholder = format.IndexOf("{0}", StringComparison.Ordinal);
+            return placeholder < 0 ? format : format.Substring(0, placeholder);
+        }
+
         #endregion
 
         #region Private Mock Injection Framework
