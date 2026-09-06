@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using Servy.Core.Helpers;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -77,17 +75,17 @@ namespace Servy.Core.UnitTests.Helpers
         public void EnsureFolders_EmptyDataSourceValue_ThrowsInvalidOperationException()
         {
             // Arrange
-            var conn = "Data Source=;";
+            // A quoted blank value is kept by DbConnectionStringBuilder; an unquoted empty
+            // one is dropped, which lands on the missing-key guard instead (covered above).
+            var conn = "Data Source=\"   \";";
             var key = Path.Combine(_tempDir, "key.aes");
             var iv = Path.Combine(_tempDir, "iv.aes");
 
             // Act
             var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
 
-            // Assert: DbConnectionStringBuilder treats 'Data Source=;' as either missing or empty
-            Assert.True(
-                ex.Message == "The database path provided in the connection string is empty." ||
-                ex.Message == "Connection string does not contain a valid 'Data Source' or 'DataSource' key.");
+            // Assert
+            Assert.Equal("The database path provided in the connection string is empty.", ex.Message);
         }
 
         [Fact]
@@ -212,12 +210,22 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetAppDirectory_ReturnsDirectoryContainingProcessOrBaseDir()
         {
+            // Arrange: the SUT prefers the process path and falls back to the base directory
+            var expected = !string.IsNullOrEmpty(Environment.ProcessPath)
+                ? Path.GetDirectoryName(Environment.ProcessPath)!
+                : AppContext.BaseDirectory;
+
             // Act
             var appDir = AppFoldersHelper.GetAppDirectory();
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(appDir));
             Assert.True(Directory.Exists(appDir));
+
+            // AppContext.BaseDirectory carries a trailing separator and Path.GetDirectoryName does not
+            Assert.Equal(
+                expected.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                appDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         }
 
         #endregion
