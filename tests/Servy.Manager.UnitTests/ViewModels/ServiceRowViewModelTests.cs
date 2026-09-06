@@ -486,8 +486,23 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.Dispose();
 
             // A genuinely different value, so the model definitely raises PropertyChanged.
-            service.Status = ServiceStatus.Stopped;
-            Assert.NotEqual(ServiceStatus.Running, service.Status);   // guards the arrange itself
+            // Observe the model's own event instead of re-reading the value just written: Status is
+            // an equality-guarded setter, so whether it raises depends on the baseline set above,
+            // which a comparison against the freshly assigned value cannot see.
+            var modelRaised = false;
+            PropertyChangedEventHandler probe = (s, e) => modelRaised = true;
+            service.PropertyChanged += probe;
+            try
+            {
+                service.Status = ServiceStatus.Stopped;
+            }
+            finally
+            {
+                service.PropertyChanged -= probe;
+            }
+
+            // The arrange is only valid if the model actually notified.
+            Assert.True(modelRaised, "The model did not raise PropertyChanged, so this test cannot prove the view model unsubscribed.");
 
             // Assert
             Assert.Equal(0, receivedNotifications);
