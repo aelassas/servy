@@ -578,20 +578,51 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(AppConfig.DbAsyncMaxAttempts, busyConnectionSpy.OpenAttempts);
         }
 
+        /// <summary>
+        /// Registers a <see cref="IAppDbContext.CreateConnection"/> factory that mints a FRESH
+        /// <see cref="TransientFailureDbConnection"/> per call, the way production behaves: the connection is
+        /// created inside the retried lambda and released by its using block at the end of every attempt.
+        /// The first <paramref name="failuresBeforeSuccess"/> connections refuse to open; the next one succeeds.
+        /// </summary>
+        /// <param name="errorCode">The transient SQLite error code the failing connections raise.</param>
+        /// <param name="failuresBeforeSuccess">How many connections fail to open before one succeeds.</param>
+        /// <returns>The live list of connections handed out, in creation order.</returns>
+        private List<TransientFailureDbConnection> SetupTransientConnectionFactory(SQLiteErrorCode errorCode, int failuresBeforeSuccess)
+        {
+            var createdConnections = new List<TransientFailureDbConnection>();
+
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(() =>
+            {
+                // Each instance is opened at most once, so it fails on its own first (and only) attempt
+                // until the configured number of failing connections has been handed out.
+                int failuresForThisInstance = createdConnections.Count < failuresBeforeSuccess ? 1 : 0;
+
+                var connection = new TransientFailureDbConnection(errorCode, failuresForThisInstance, _connectionString);
+                createdConnections.Add(connection);
+
+                return connection;
+            });
+
+            return createdConnections;
+        }
+
         [Fact]
         public void ExecuteWithRetry_TransientBusyThenSuccess_RecoversAndReturnsResult()
         {
             // Arrange
             const int failuresBeforeSuccess = 2;
-            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Busy, failuresBeforeSuccess, _connectionString);
-            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+            var createdConnections = SetupTransientConnectionFactory(SQLiteErrorCode.Busy, failuresBeforeSuccess);
 
             // Act
             long count = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
 
             // Assert
             Assert.Equal(2, count);
-            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
+
+            // A fresh connection per attempt, each opened exactly once. Hoisting CreateConnection() out of
+            // the retried lambda would open one connection three times and fail these two assertions.
+            Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
         }
 
         [Fact]
@@ -599,15 +630,15 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             const int failuresBeforeSuccess = 1;
-            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Locked, failuresBeforeSuccess, _connectionString);
-            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+            var createdConnections = SetupTransientConnectionFactory(SQLiteErrorCode.Locked, failuresBeforeSuccess);
 
             // Act
             long count = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
 
             // Assert
             Assert.Equal(2, count);
-            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
+            Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
         }
 
         [Fact]
@@ -615,8 +646,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             const int failuresBeforeSuccess = 2;
-            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Busy, failuresBeforeSuccess, _connectionString);
-            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+            var createdConnections = SetupTransientConnectionFactory(SQLiteErrorCode.Busy, failuresBeforeSuccess);
 
             // Act
             long count = await _executor.ExecuteScalarAsync<long>(
@@ -625,7 +655,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal(2, count);
-            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
+            Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
         }
 
         [Fact]
@@ -633,8 +664,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             const int failuresBeforeSuccess = 1;
-            var transientConn = new TransientFailureDbConnection(SQLiteErrorCode.Locked, failuresBeforeSuccess, _connectionString);
-            _mockDbContext.Setup(db => db.CreateConnection()).Returns(transientConn);
+            var createdConnections = SetupTransientConnectionFactory(SQLiteErrorCode.Locked, failuresBeforeSuccess);
 
             // Act
             long count = await _executor.ExecuteScalarAsync<long>(
@@ -643,7 +673,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal(2, count);
-            Assert.Equal(failuresBeforeSuccess + 1, transientConn.OpenAttempts);
+            Assert.Equal(failuresBeforeSuccess + 1, createdConnections.Count);
+            Assert.All(createdConnections, connection => Assert.Equal(1, connection.OpenAttempts));
         }
 
         [Fact]
