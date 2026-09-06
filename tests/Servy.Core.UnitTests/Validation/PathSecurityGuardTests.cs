@@ -1,3 +1,4 @@
+using Microsoft.Win32.SafeHandles;
 using Servy.Core.Resources;
 using Servy.Core.Validation;
 using Servy.Testing;
@@ -646,6 +647,50 @@ namespace Servy.Core.UnitTests.Validation
                 Assert.True(resolved);
                 Assert.Equal(Path.GetFullPath(filePath), Path.GetFullPath(finalPath), ignoreCase: true);
             }
+        }
+
+        [Fact]
+        public void TryGetFinalPathByHandle_NullHandle_ReturnsFalse()
+        {
+            // Act
+            bool resolved = PathSecurityGuard.TryGetFinalPathByHandle(null!, out string finalPath);
+
+            // Assert
+            Assert.False(resolved);
+            Assert.Equal(string.Empty, finalPath);
+        }
+
+        [Fact]
+        public void TryGetFinalPathByHandle_InvalidHandle_ReturnsFalse()
+        {
+            // Arrange: a zero handle is IsInvalid without ever reaching the native call
+            var handle = new SafeFileHandle(IntPtr.Zero, ownsHandle: false);
+
+            // Act
+            bool resolved = PathSecurityGuard.TryGetFinalPathByHandle(handle, out string finalPath);
+
+            // Assert
+            Assert.False(resolved);
+            Assert.Equal(string.Empty, finalPath);
+        }
+
+        [Fact]
+        public void TryGetFinalPathByHandle_ClosedHandle_ReturnsFalse()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "closed_handle.json");
+            File.WriteAllText(filePath, "{}");
+
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var handle = stream.SafeFileHandle;
+            stream.Dispose();
+
+            // Act
+            bool resolved = PathSecurityGuard.TryGetFinalPathByHandle(handle, out string finalPath);
+
+            // Assert
+            Assert.False(resolved);
+            Assert.Equal(string.Empty, finalPath);
         }
 
         [Theory]
