@@ -1,4 +1,5 @@
 using Servy.Core.Config;
+using Servy.Testing;
 using System.Runtime.InteropServices;
 
 namespace Servy.Core.UnitTests.Config
@@ -9,8 +10,31 @@ namespace Servy.Core.UnitTests.Config
         public void UpdateCheckTimeouts_AreConsistent()
         {
             // Act & Assert
-            Assert.True(AppConfig.UpdateCheckTimeoutSeconds <= AppConfig.UpdateCheckHttpTimeoutSeconds,
-                "Cooperative cancellation timeout must not exceed the HTTP client timeout.");
+            // Strictly less, not <=: at equal values the cooperative CancellationTokenSource and the
+            // HttpClient transport timeout fire at the same instant and which one wins is
+            // scheduler-dependent, which is the generic connection error the remarks on
+            // UpdateCheckTimeoutSeconds say this invariant exists to prevent.
+            Assert.True(AppConfig.UpdateCheckTimeoutSeconds < AppConfig.UpdateCheckHttpTimeoutSeconds,
+                "Cooperative cancellation must fire strictly before the HTTP client timeout.");
+        }
+
+        [Fact]
+        public void SkipSplashArgument_IsAValueBoolTryParseReadsAsFalse()
+        {
+            // Act & Assert
+            // The consumer (AppBootstrapper.OnStartup) parses the positional argument with
+            // bool.TryParse and never reads this constant, so producer and consumer are bound by
+            // string value only and nothing but this assertion notices a change to "0" or "no".
+            Assert.True(bool.TryParse(AppConfig.SkipSplashArgument, out var skipSplash) && !skipSplash,
+                $"SkipSplashArgument must be a string bool.TryParse accepts as false; got '{AppConfig.SkipSplashArgument}'.");
+        }
+
+        [Fact]
+        public void ChildSleepSeconds_OutlastsChildTimeoutSeconds()
+        {
+            // Act & Assert
+            Assert.True(TestTimeouts.ChildSleepSeconds >= TestTimeouts.ChildTimeoutSeconds,
+                "The spawned leaf process must still be alive when the enumeration budget expires.");
         }
 
         [Fact]
