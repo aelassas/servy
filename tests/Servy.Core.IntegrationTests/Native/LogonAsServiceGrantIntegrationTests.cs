@@ -168,8 +168,10 @@ namespace Servy.Core.IntegrationTests.Native
             var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES { Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>() };
             IntPtr policyHandle;
 
-            // Access permission combination required to inspect the account privilege definitions safely
-            uint desiredAccess = 0x00010000 /* STANDARD_RIGHTS_REQUIRED */ | NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES;
+            // POLICY_LOOKUP_NAMES is the only access LsaEnumerateAccountRights needs. Requesting more
+            // than that on the policy handle is what a hardened host is most likely to refuse, and a
+            // refused LsaOpenPolicy is reported below as an empty rights list.
+            uint desiredAccess = NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES;
 
             int openStatus = NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref objectAttributes, desiredAccess, out policyHandle);
             if (openStatus != 0) return rightsList; // LsaOpenPolicy failed; report no rights
