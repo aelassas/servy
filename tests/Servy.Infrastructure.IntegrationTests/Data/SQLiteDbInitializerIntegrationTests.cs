@@ -1,4 +1,6 @@
 using Dapper;
+using Servy.Core.Enums;
+using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System.Data.Common;
@@ -599,6 +601,59 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal(2, names.Count);
                 Assert.Contains("zombietest", names);
                 Assert.Contains(" zombietest ", names);
+            }
+        }
+
+        [Fact]
+        public void Initialize_WhitespacePaddedZombieAndTwin_LogsCriticalAnomalyNamingBothRows()
+        {
+            // Arrange: the detector is read-only and its only observable output is a Logger.Warn line,
+            // so the sibling test above (which asserts the rows survive) stays green with the whole
+            // detector deleted. Redirect the logger to a private directory to read that line back.
+            var logDirectory = Path.Combine(Path.GetTempPath(), $"servy_zombie_log_{Guid.NewGuid():N}");
+            var logFileName = $"ZombieDetector_{Guid.NewGuid():N}.log";
+            var logFilePath = Path.Combine(logDirectory, logFileName);
+
+            Directory.CreateDirectory(logDirectory);
+
+            try
+            {
+                using (var conn = CreateConnection())
+                {
+                    SQLiteDbInitializer.Initialize(conn);
+
+                    // Seed the clean row and its whitespace-padded twin; the unique index tolerates both
+                    // because ' zombielog ' and 'zombielog' differ outside of casing.
+                    conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('zombielog', 'C:\\path\\exe');");
+                    conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES (' zombielog ', 'C:\\path\\exe');");
+
+                    try
+                    {
+                        Logger.Initialize(logFileName, LogLevel.Warn, logDirectory: logDirectory);
+
+                        // Act: re-run Initialize so the detector scans a database that already holds a collision
+                        SQLiteDbInitializer.Initialize(conn);
+                    }
+                    finally
+                    {
+                        // Flush and release the handle, then hand the process-wide logger back to its default state
+                        Logger.Shutdown();
+                        Logger.Initialize((string?)null, logDirectory: string.Empty);
+                    }
+                }
+
+                // Assert: the detector ran and reported the collision, naming the padded row and its clean twin
+                Assert.True(File.Exists(logFilePath), $"Expected the redirected logger to write {logFilePath}.");
+
+                var logContent = File.ReadAllText(logFilePath);
+
+                Assert.Contains("CRITICAL DATA LIFECYCLE ANOMALY", logContent);
+                Assert.Contains("service record ' zombielog '", logContent);
+                Assert.Contains("clean twin 'zombielog'", logContent);
+            }
+            finally
+            {
+                try { Directory.Delete(logDirectory, recursive: true); } catch { /* best-effort cleanup */ }
             }
         }
 
