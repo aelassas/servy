@@ -329,7 +329,7 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
-        public void Dispose_ZeroesAllKeyMaterialAndHandlesIdempotency()
+        public void Dispose_ZeroesV2KeyMaterialAndHandlesIdempotency()
         {
             // Arrange: Setup Mock Provider with dummy key data
             var mockProvider = new Mock<IProtectedKeyProvider>();
@@ -344,27 +344,19 @@ namespace Servy.Core.UnitTests.Security
             // To verify zeroing, we use Reflection to grab the internal byte arrays.
             // This is necessary because the fields are private and we need to check
             // the content of the memory after Dispose.
-            var v1Key = TestReflection.GetField<byte[]>(secureData, "_v1MasterKey");
-            var v1Iv = TestReflection.GetField<byte[]>(secureData, "_v1StaticIv");
+            // Only the two v2 sub-keys exist in shipped builds: _v1MasterKey and _v1StaticIv are
+            // assigned solely inside the AllowLegacyV1Decryption const-gated block in the constructor,
+            // so there is no v1 material to zero here. See #2193, #2215.
             var v2Enc = TestReflection.GetField<byte[]>(secureData, "_v2EncryptionKey");
             var v2Hmac = TestReflection.GetField<byte[]>(secureData, "_v2HmacKey");
 
             // Pre-condition check: Ensure keys are not zero before Dispose
-            if (AppConfig.AllowLegacyV1Decryption)
-            {
-                Assert.Contains(v1Key, b => b != 0);
-            }
             Assert.Contains(v2Enc, b => b != 0);
 
             // Act 1: First Dispose (Covers all null-checks and zeroing logic)
             secureData.Dispose();
 
             // Assert 1: Verify all memory is zeroed
-            if (AppConfig.AllowLegacyV1Decryption)
-            {
-                Assert.All(v1Key, b => Assert.Equal(0, b));
-                Assert.All(v1Iv, b => Assert.Equal(0, b));
-            }
             Assert.All(v2Enc, b => Assert.Equal(0, b));
             Assert.All(v2Hmac, b => Assert.Equal(0, b));
 
