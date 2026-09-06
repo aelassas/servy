@@ -163,7 +163,7 @@ function Update-Watermark {
                 if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
                     try {
                         $fileTimestamp = ConvertFrom-WatermarkString -Value $currentFileContent
-                        if ($fileTimestamp -ne $null -and $newestTimestamp -le $fileTimestamp) {
+                        if ($null -ne $fileTimestamp -and $newestTimestamp -le $fileTimestamp) {
                             $shouldWrite = $false
                         }
                     } catch {

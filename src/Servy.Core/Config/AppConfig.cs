@@ -143,7 +143,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// The base file name (without extension) of the Servy Service CLI executable.
         /// </summary>
-        public static readonly string ServyServiceCLIFileName = "Servy.Service.CLI.Net48";
+        public const string ServyServiceCLIFileName = "Servy.Service.CLI.Net48";
 
         /// <summary>
         /// The full file name (with extension) of the Servy Service CLI executable.
@@ -153,7 +153,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// The root folder name under ProgramData.
         /// </summary>
-        public static readonly string AppFolderName = "Servy";
+        public const string AppFolderName = "Servy";
 
         /// <summary>
         /// The full root path under ProgramData where Servy stores its data.

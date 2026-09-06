@@ -568,6 +568,7 @@ namespace Servy.Core.Helpers
                 {
                     Logger.Warn("Last write time of the host process executable is equal to DateTime.MinValue, "
                         + $"resource re-extraction will be skipped this session until the existing file '{fileName}' is removed.");
+                    return false;
                 }
 
                 Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
