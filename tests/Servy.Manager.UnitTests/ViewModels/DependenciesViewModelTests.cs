@@ -270,7 +270,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Command Traversal & Tree Expansion Structure Tests
 
         [Fact]
-        public void ExpandAllCommand_Executes_RecursivelyExpandsNodesWithCycleGuard()
+        public void ExpandAllCommand_Executes_ExpandsEveryNodeWithCycleGuard()
         {
             Helper.RunOnSTA(() =>
             {
@@ -306,7 +306,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void CollapseAllCommand_Executes_RecursivelyCollapsesNodes()
+        public void CollapseAllCommand_Executes_CollapsesEveryNode()
         {
             Helper.RunOnSTA(() =>
             {
