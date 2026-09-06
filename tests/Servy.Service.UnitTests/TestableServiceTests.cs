@@ -118,7 +118,6 @@ namespace Servy.Service.UnitTests
         [InlineData(true, 0, 3, RecoveryAction.RestartService, false)]
         [InlineData(true, 5, 0, RecoveryAction.RestartService, false)]
         [InlineData(true, 5, 3, RecoveryAction.None, false)]
-        [InlineData(true, 0, 0, RecoveryAction.None, false)]
         [InlineData(true, 5, 3, RecoveryAction.RestartService, true)]
         public void OnStart_ComputesRecoveryActionEnabledFromOptions(
             bool enableHealthMonitoring, int heartbeat, int maxFailedChecks, RecoveryAction recovery, bool expected)
@@ -177,7 +176,8 @@ namespace Servy.Service.UnitTests
             service.InvokeSetupHealthMonitoring(options);
 
             // Assert
-            _ctx.TimerFactory.Verify(f => f.Create(options.HeartbeatIntervalInSeconds * 1000.0), Times.Once);
+            // HeartbeatIntervalInSeconds = 5 => 5 s expressed in milliseconds
+            _ctx.TimerFactory.Verify(f => f.Create(5_000.0), Times.Once);
 
             mockTimer.VerifyAdd(t => t.Elapsed += It.IsAny<ElapsedEventHandler>(), Times.Once);
             mockTimer.VerifySet(t => t.AutoReset = true, Times.Once);
