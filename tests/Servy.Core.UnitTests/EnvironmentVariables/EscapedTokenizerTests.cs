@@ -49,7 +49,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             var result = EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);
 
             // Assert
-            Assert.Equal(expectedSegments.Length, result.Length);
             Assert.Equal(expectedSegments, result);
         }
 
@@ -72,8 +71,8 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         /// <summary>
-        /// CONSOLIDATION VARIATION: Ported and unified from internal parser/validator test classes
-        /// to comprehensively cover boundary limits, single/multiple backslash loops, and index shifts.
+        /// Verifies delimiter splitting across delimiter sets, backslash-run parity, and boundary
+        /// positions (delimiter at index 0, trailing delimiter, multiple delimiters).
         /// </summary>
         [Theory]
         // No delimiter
@@ -103,6 +102,27 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Equal(expected, result);
         }
 
+        /// <summary>
+        /// Validates that SplitByUnescapedDelimiters treats standard backslash-escaped
+        /// CR and LF control characters as part of the token value rather than splitting records on them.
+        /// </summary>
+        [Fact]
+        public void SplitByUnescapedDelimiters_KeepsEscapedControlLineBreaksInternal()
+        {
+            // Arrange
+            string input = "KEY1\\=value1\\;contains\\\r\\\ncontinued;KEY2\\=value2";
+
+            // Act
+            var tokens = EscapedTokenizer.SplitByUnescapedDelimiters(input, EscapedTokenizer.EnvVarRecordDelimiters)
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+
+            // Assert
+            Assert.Equal(2, tokens.Count);
+            Assert.Equal("KEY1\\=value1\\;contains\\\r\\\ncontinued", tokens[0]);
+            Assert.Equal("KEY2\\=value2", tokens[1]);
+        }
+
         #endregion
 
         #region IndexOfUnescapedChar Tests
@@ -123,6 +143,24 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.Equal(expected, result);
+        }
+
+        /// <summary>
+        /// Validates IndexOfUnescapedChar boundary evaluation rules, ensuring that a target character
+        /// is ignored if it is preceded by an active escaping operator but detected normally otherwise.
+        /// </summary>
+        [Fact]
+        public void IndexOfUnescapedChar_EscapedVsUnescapedTargets_LocatesCorrectIndex()
+        {
+            // Arrange
+            string input = "PREFIX\\=HIDDEN=VALID_VALUE";
+
+            // Act
+            int index = EscapedTokenizer.IndexOfUnescapedChar(input, '=');
+
+            // Assert
+            Assert.Equal(14, index);
+            Assert.Equal('=', input[index]);
         }
 
         #endregion
@@ -217,45 +255,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.Equal(expected, result);
-        }
-
-        /// <summary>
-        /// Validates that SplitByUnescapedDelimiters treats standard backslash-escaped
-        /// CR and LF control characters as part of the token value rather than splitting records on them.
-        /// </summary>
-        [Fact]
-        public void SplitByUnescapedDelimiters_KeepsEscapedControlLineBreaksInternal()
-        {
-            // Arrange
-            string input = "KEY1\\=value1\\;contains\\\r\\\ncontinued;KEY2\\=value2";
-
-            // Act
-            var tokens = EscapedTokenizer.SplitByUnescapedDelimiters(input, EscapedTokenizer.EnvVarRecordDelimiters)
-                .Where(t => !string.IsNullOrWhiteSpace(t))
-                .ToList();
-
-            // Assert
-            Assert.Equal(2, tokens.Count);
-            Assert.Equal("KEY1\\=value1\\;contains\\\r\\\ncontinued", tokens[0]);
-            Assert.Equal("KEY2\\=value2", tokens[1]);
-        }
-
-        /// <summary>
-        /// Validates IndexOfUnescapedChar boundary evaluation rules, ensuring that a target character
-        /// is ignored if it is preceded by an active escaping operator but detected normally otherwise.
-        /// </summary>
-        [Fact]
-        public void IndexOfUnescapedChar_EscapedVsUnescapedTargets_LocatesCorrectIndex()
-        {
-            // Arrange
-            string input = "PREFIX\\=HIDDEN=VALID_VALUE";
-
-            // Act
-            int index = EscapedTokenizer.IndexOfUnescapedChar(input, '=');
-
-            // Assert
-            Assert.Equal(14, index);
-            Assert.Equal('=', input[index]);
         }
 
         #endregion
