@@ -176,7 +176,18 @@ namespace Servy.UI.UnitTests
             for (int i = 0; i < 10; i++) collection.Add(i);
 
             int collectionChangedCount = 0;
-            collection.CollectionChanged += (s, e) => collectionChangedCount++;
+            NotifyCollectionChangedAction? lastAction = null;
+            var changedProperties = new List<string>();
+
+            collection.CollectionChanged += (s, e) =>
+            {
+                collectionChangedCount++;
+                lastAction = e.Action;
+            };
+            ((INotifyPropertyChanged)collection).PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName != null) changedProperties.Add(e.PropertyName);
+            };
 
             // Act
             collection.TrimToSize(3); // Remove 7 items
@@ -184,7 +195,10 @@ namespace Servy.UI.UnitTests
             // Assert
             Assert.Equal(3, collection.Count);
             Assert.Equal(7, collection[0]); // Verification: 0-6 removed, 7 is the new first item
-            Assert.Equal(1, collectionChangedCount); // Reset event
+            Assert.Equal(1, collectionChangedCount); // Only one event raised
+            Assert.Equal(NotifyCollectionChangedAction.Reset, lastAction);
+            Assert.Contains("Count", changedProperties);
+            Assert.Contains("Item[]", changedProperties);
         }
 
         [Fact]
