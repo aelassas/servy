@@ -204,7 +204,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Core.Resources.Strings.Msg_ServiceNameRequired, result.Message);
+            Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
 
         /// <summary>
