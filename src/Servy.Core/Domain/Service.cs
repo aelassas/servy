@@ -445,7 +445,7 @@ namespace Servy.Core.Domain
         /// An <see cref="OperationResult"/> describing whether the start succeeded
         /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
-        public async Task<OperationResult> Start(CancellationToken cancellationToken = default)
+        public async Task<OperationResult> StartAsync(CancellationToken cancellationToken = default)
         {
             return await _serviceManager.StartServiceAsync(Name, logSuccessfulStart: true, cancellationToken);
         }
@@ -458,7 +458,7 @@ namespace Servy.Core.Domain
         /// An <see cref="OperationResult"/> describing whether the stop succeeded
         /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
-        public async Task<OperationResult> Stop(CancellationToken cancellationToken = default)
+        public async Task<OperationResult> StopAsync(CancellationToken cancellationToken = default)
         {
             return await _serviceManager.StopServiceAsync(Name, logSuccessfulStop: true, cancellationToken);
         }
@@ -471,7 +471,7 @@ namespace Servy.Core.Domain
         /// An <see cref="OperationResult"/> describing whether the restart succeeded
         /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
-        public async Task<OperationResult> Restart(CancellationToken cancellationToken = default)
+        public async Task<OperationResult> RestartAsync(CancellationToken cancellationToken = default)
         {
             return await _serviceManager.RestartServiceAsync(Name, logSuccessfulRestart: true, cancellationToken);
         }
@@ -545,7 +545,7 @@ namespace Servy.Core.Domain
         /// Thrown if the Service Control Manager cannot be accessed or the service
         /// cannot be created/updated.
         /// </exception>
-        public async Task<OperationResult> Install(string? wrapperExeDir = null, bool isCLI = false, CancellationToken cancellationToken = default)
+        public async Task<OperationResult> InstallAsync(string? wrapperExeDir = null, bool isCLI = false, CancellationToken cancellationToken = default)
         {
             var servyServiceFilename = isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe;
 #if DEBUG
@@ -649,7 +649,7 @@ namespace Servy.Core.Domain
         /// Thrown if the Service Control Manager cannot be accessed or the service
         /// cannot be removed.
         /// </exception>
-        public async Task<OperationResult> Uninstall(CancellationToken cancellationToken = default)
+        public async Task<OperationResult> UninstallAsync(CancellationToken cancellationToken = default)
         {
             return await _serviceManager.UninstallServiceAsync(Name, cancellationToken);
         }

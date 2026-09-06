@@ -482,6 +482,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("My<Service")]
         [InlineData("My>Service")]
         [InlineData("My|Service")]
+        [InlineData("My;Service")]
         public void IsServiceNameValid_ForbiddenCharacters_ReturnsInvalidCharError(string input)
         {
             // Act
@@ -519,6 +520,11 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("Servy-Agent")]
         [InlineData("Wexflow_Service")]
         [InlineData("Service.123")]
+        [InlineData("Servy-Café")]
+        [InlineData("My Service (v2)")]
+        [InlineData("Backup,Sync")]
+        [InlineData("net_svc+1")]
+        [InlineData("데이터베이스")]
         public void IsServiceNameValid_ValidInput_ReturnsSuccess(string input)
         {
             // Act

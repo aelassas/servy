@@ -55,7 +55,7 @@ namespace Servy.Core.Helpers
         /// Failures to restart previously-running services do not affect the return value;
         /// they are surfaced via <see cref="Logger.Error(string, Exception)"/>.
         /// </returns>
-        public async Task<bool> CopyEmbeddedResource(
+        public async Task<bool> CopyEmbeddedResourceAsync(
             Assembly assembly,
             string resourceNamespace,
             string fileName,

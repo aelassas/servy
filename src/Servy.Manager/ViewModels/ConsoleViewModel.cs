@@ -564,7 +564,7 @@ namespace Servy.Manager.ViewModels
                     throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported LogType provided for live tailing.");
             }
 
-            _ = tailer.RunFromPosition(path, type, pos, created, cancellationToken)
+            _ = tailer.RunFromPositionAsync(path, type, pos, created, cancellationToken)
                 .ContinueWith(t =>
                 {
                     // OnlyOnFaulted guarantees t.IsFaulted, so t.Exception is non-null here.

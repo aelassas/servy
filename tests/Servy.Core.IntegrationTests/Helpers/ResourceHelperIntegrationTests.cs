@@ -48,7 +48,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
@@ -71,7 +71,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                          .Returns(() => new MemoryStream(dummyResourceBytes));
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _mockAssembly.Object, "Servy.Resources", "lockedapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
@@ -90,7 +90,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns((Stream?)null); // Simulate missing resource
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _mockAssembly.Object, "Servy.Resources", "missingapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
@@ -113,7 +113,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(memoryStream);
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
@@ -157,7 +157,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _mockAssembly.Object,
                 "Servy.Resources",
                 fileName,
@@ -196,7 +196,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assembly nullAssembly = null!;
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 nullAssembly, "Servy.Resources", "crashapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert

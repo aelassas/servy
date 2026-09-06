@@ -27,11 +27,11 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <remarks>
         /// This set extends the basic Service Control Manager (SCM) restrictions to include characters
-        /// that are invalid in Windows Registry key names and the Windows file system. Because a service name
-        /// acts as a registry key under <c>HKLM\SYSTEM\CurrentControlSet\Services</c> and is often used
-        /// to generate log files or directories, prohibiting these characters prevents downstream systemic errors.
+        /// that are invalid in Windows Registry key names, the Windows file system, and SCM dependency list delimiters.
+        /// Because a service name acts as a registry key under <c>HKLM\SYSTEM\CurrentControlSet\Services</c>
+        /// and is often used to generate log files or directories, prohibiting these characters prevents downstream systemic errors.
         /// </remarks>
-        private static readonly char[] InvalidServiceChars = new[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
+        private static readonly char[] InvalidServiceChars = new[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|', ';' };
 
         // Cache the invalid characters to avoid array allocations on high-frequency validation calls
         private static readonly char[] InvalidPathChars = Path.GetInvalidPathChars();
@@ -609,6 +609,17 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Evaluates whether a candidate string contains only characters valid for use in Windows Service names.
+        /// </summary>
+        /// <param name="name">The proposed service name string.</param>
+        /// <returns>
+        /// <c>true</c> if the string contains no forbidden file system, registry, or delimiter characters
+        /// and no non-printable Unicode control/format characters; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool IsValidServiceNameCharset(string name) =>
+            name.IndexOfAny(InvalidServiceChars) < 0 && !name.Any(IsDisallowedNameChar);
+
+        /// <summary>
         /// Validates whether a proposed string can be safely used as a Windows Service name.
         /// </summary>
         /// <param name="serviceName">The unique identifier proposed for the service.</param>
@@ -636,12 +647,8 @@ namespace Servy.Core.Helpers
                 return (false, string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
 
             // 4. Structural Integrity Check
-            // We reject the input if it contains:
-            //  a) Forbidden file system/registry characters (InvalidServiceChars).
-            //  b) Unicode control, format, line separator, or paragraph separator characters
-            //     (as defined in IsDisallowedNameChar) which can compromise display formatting
-            //     or cause malformed output in console/CLI parsers.
-            if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(IsDisallowedNameChar))
+            // We reject the input if it fails the shared service name character set rules.
+            if (!IsValidServiceNameCharset(serviceName))
                 return (false, Strings.Msg_InvalidServiceName);
 
             // 5. Reserved Windows device names (case-insensitive across all segments)

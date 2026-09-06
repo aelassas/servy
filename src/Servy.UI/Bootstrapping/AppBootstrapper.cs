@@ -371,7 +371,7 @@ namespace Servy.UI.Bootstrapping
                     var ct = _appLifetimeCts.Token;
 
                     // Copy embedded files
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe", cancellationToken: ct))
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe", cancellationToken: ct))
                     {
                         string resourceName = $"{AppConfig.ServyServiceUIFileName}.exe";
                         throw new InvalidOperationException($"Failed to extract embedded resource '{resourceName}'. " +
@@ -382,7 +382,7 @@ namespace Servy.UI.Bootstrapping
                         ? AppConfig.HandleExeARM64FileName
                         : AppConfig.HandleExeX64FileName;
 
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", false, cancellationToken: ct))
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", false, cancellationToken: ct))
                     {
                         string resourceName = $"{handleExeFileName}.exe";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
@@ -395,7 +395,7 @@ namespace Servy.UI.Bootstrapping
                     }
 
 #if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                             splash ?? (Window?)app.MainWindow,

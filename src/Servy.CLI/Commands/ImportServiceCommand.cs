@@ -266,7 +266,7 @@ namespace Servy.CLI.Commands
             var serviceDomain = ServiceDtoMapper.ToDomain(_serviceManager, serviceDto);
 
             // 2. Attempt service installation
-            var res = await serviceDomain.Install(isCLI: true, cancellationToken: cancellationToken);
+            var res = await serviceDomain.InstallAsync(isCLI: true, cancellationToken: cancellationToken);
 
             if (res.IsSuccess)
             {
