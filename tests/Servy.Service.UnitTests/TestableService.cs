@@ -35,6 +35,7 @@ namespace Servy.Service.UnitTests
             public static readonly FieldInfo RecoveryActionField = GetField("_recoveryAction");
             public static readonly FieldInfo FailedChecksField = GetField("_failedChecks");
             public static readonly FieldInfo MaxRestartAttemptsField = GetField("_maxRestartAttempts");
+            public static readonly FieldInfo RestartAttemptsFileField = GetField("_restartAttemptsFile");
             public static readonly FieldInfo ServiceNameField = GetField("_serviceName");
             public static readonly FieldInfo RecoveryActionEnabledField = GetField("_recoveryActionEnabled");
 
@@ -89,6 +90,11 @@ namespace Servy.Service.UnitTests
 
         public void SetMaxRestartAttempts(int value) =>
             ServiceReflection.MaxRestartAttemptsField.SetValue(this, value);
+
+        // Only OnStart sets this field, so the health-check tests must supply it themselves;
+        // while it is blank the restart-attempt counter is pinned to 0 and the cap is unreachable.
+        public void SetRestartAttemptsFile(string? path) =>
+            ServiceReflection.RestartAttemptsFileField.SetValue(this, path);
 
         public void SetServiceName(string serviceName) =>
             ServiceReflection.ServiceNameField.SetValue(this, serviceName);
