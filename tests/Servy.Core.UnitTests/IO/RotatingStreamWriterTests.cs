@@ -546,6 +546,36 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        public void EnforceMaxRotations_UsesLocalTimeOrderingClock_WhenConfigured()
+        {
+            // Arrange
+            string baseLog = Path.Combine(_testDir, "local-time.log");
+            File.WriteAllText(baseLog, "base");
+
+            using (var writer = CreateWriter(baseLog, true, 1000, false, DateRotationType.Daily, 0, true))
+            {
+                writer.Write(""); // force file creation
+
+                string older = Path.Combine(_testDir, "local-time.20260325_000001.log");
+                string newer = Path.Combine(_testDir, "local-time.20260325_000002.log");
+
+                File.WriteAllText(older, "old");
+                File.WriteAllText(newer, "new");
+                File.SetLastWriteTime(older, DateTime.Now.AddMinutes(-10));
+                File.SetLastWriteTime(newer, DateTime.Now);
+
+                // Act: the writer was built with useLocalTimeForRotation, so the ordering clock
+                // is File.GetLastWriteTime rather than File.GetLastWriteTimeUtc.
+                TestReflection.SetField(writer, "_maxRotations", 1);
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+                // Assert
+                Assert.True(File.Exists(newer), "Newest rotated file should be kept.");
+                Assert.False(File.Exists(older), "Oldest rotated file should be deleted.");
+            }
+        }
+
+        [Fact]
         public void EnforceMaxRotations_PartialDeletionFailure_IncrementsPassCounter()
         {
             // Arrange
