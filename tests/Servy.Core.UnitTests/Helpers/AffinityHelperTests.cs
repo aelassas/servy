@@ -233,6 +233,7 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(isValid);
             Assert.NotNull(errorMessage);
             Assert.Contains(expected, errorMessage);
+            Assert.DoesNotContain("(Parameter 'affinityInput')", errorMessage);
         }
     }
 }

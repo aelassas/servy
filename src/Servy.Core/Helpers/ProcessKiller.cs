@@ -291,7 +291,10 @@ namespace Servy.Core.Helpers
                 // SECURITY: Resolve process handle and apply full safety check
                 Process target;
                 try { target = Process.GetProcessById(pid); }
-                catch (ArgumentException) { return true; } // Already exited
+                catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+                {
+                    return true; // Process exited before the handle could be opened
+                }
 
                 try
                 {

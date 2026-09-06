@@ -289,9 +289,10 @@ namespace Servy.Core.Helpers
                 totalRam += metrics.RamUsage;
             }
 
-            // CPU is normalized 0-100% of whole-machine capacity. The sum across a tree
-            // is bounded by 100% because they share the same physical cores.
-            totalCpu = Math.Min(Math.Max(totalCpu, 0.0), 100.0);
+            // CPU is normalized 0-100% of whole-machine capacity. Per-process values are non-negative by
+            // construction, so only the upper bound needs enforcing: the sum across a tree is bounded by
+            // 100% because the processes share the same physical cores.
+            totalCpu = Math.Min(totalCpu, 100.0);
             return new ProcessMetrics(totalCpu, totalRam);
         }
 

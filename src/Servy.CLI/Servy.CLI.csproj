@@ -18,9 +18,13 @@
     <PublishTrimmed>true</PublishTrimmed>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TrimMode>partial</TrimMode>
-    <DebuggerSupport>false</DebuggerSupport>
     <PublishReadyToRun>false</PublishReadyToRun>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+
+    <DebuggerSupport>true</DebuggerSupport>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <CopyOutputSymbolsToPublishDirectory>true</CopyOutputSymbolsToPublishDirectory>
   </PropertyGroup>
 
   <ItemGroup>

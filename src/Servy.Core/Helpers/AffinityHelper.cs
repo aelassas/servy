@@ -142,6 +142,16 @@ namespace Servy.Core.Helpers
                 ParseAffinity(affinityInput);
                 return true;
             }
+            catch (ArgumentException ex)
+            {
+                errorMessage = ex.Message;
+                var suffix = ex.ParamName == null ? null : $" (Parameter '{ex.ParamName}')";
+                if (suffix != null && errorMessage.EndsWith(suffix, StringComparison.Ordinal))
+                {
+                    errorMessage = errorMessage.Substring(0, errorMessage.Length - suffix.Length);
+                }
+                return false;
+            }
             catch (Exception ex)
             {
                 errorMessage = ex.Message;
