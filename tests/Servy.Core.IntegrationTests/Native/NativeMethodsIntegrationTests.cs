@@ -197,9 +197,20 @@ namespace Servy.Core.IntegrationTests.Native
                 Assert.Equal(0, status);
                 Assert.Equal((uint)size, returnLength);
                 Assert.NotEqual(IntPtr.Zero, pbi.PebBaseAddress);
-                using (var h = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id))
+            }
+        }
+
+        [Fact]
+        public void OpenProcess_CurrentProcessId_ReturnsValidHandle()
+        {
+            // Arrange
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
+                // Act
+                using (var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id))
                 {
-                    Assert.False(h.IsInvalid);
+                    // Assert
+                    Assert.False(handle.IsInvalid);
                 }
             }
         }
@@ -342,7 +353,7 @@ namespace Servy.Core.IntegrationTests.Native
             // Assert
             Assert.False(loggedOn);
             Assert.Equal(IntPtr.Zero, token);
-            Assert.NotEqual(0, lastError);                 // e.g. ERROR_LOGON_FAILURE (1326)
+            Assert.Equal(Errors.ERROR_LOGON_FAILURE, lastError);
         }
 
         #endregion
@@ -465,8 +476,7 @@ namespace Servy.Core.IntegrationTests.Native
 
                 // STATUS_ACCESS_DENIED -> ERROR_ACCESS_DENIED (5) is the only valid non-zero outcome for a
                 // least-privilege token context. Any other Win32 error signals a P/Invoke or struct layout failure.
-                const int ERROR_ACCESS_DENIED = 5;
-                Assert.Equal(ERROR_ACCESS_DENIED, win32Error);
+                Assert.Equal(Errors.ERROR_ACCESS_DENIED, win32Error);
             }
         }
 
@@ -476,8 +486,10 @@ namespace Servy.Core.IntegrationTests.Native
             // Act & Assert
             int result = NativeMethods.LsaFreeMemory(IntPtr.Zero);
 
-            // LsaFreeMemory returns status codes; verifying zero-pointers are swallowed without memory segmentation faults
-            Assert.True(result >= 0);
+            // LsaFreeMemory returns status codes; verifying zero-pointers are swallowed without memory segmentation faults.
+            // STATUS_SUCCESS, matching the exact-zero NTSTATUS checks elsewhere in this file: >= 0 would also
+            // accept the informational 0x4xxxxxxx range, which is not "swallowed without a fault".
+            Assert.Equal(0, result);
         }
 
         #endregion
