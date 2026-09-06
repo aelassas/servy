@@ -7,14 +7,14 @@
 #      - winget.yml        -> Publishes the WinGet manifest
 #      - choco.yml         -> Publishes the Chocolatey package
 #      - scoop.yml         -> Publishes the Scoop manifest to aelassas/scoop-bucket
-#      - bump-version.yml -> Bumps version
-#      - changelog.yml    -> Updates the project changelog
+#      - bump-version.yml  -> Bumps version
+#      - changelog.yml     -> Updates the project changelog
 #
 #  Behavior:
-#    • Automatically runs after any of the above workflows complete.
-#    • Checks their latest runs.
-#    • Fails if any of them failed, were skipped, or did not run.
-#    • Can also be triggered manually from the GitHub Actions tab.
+#    - Automatically runs after any of the above workflows complete.
+#    - Checks their latest runs.
+#    - Fails if any of them failed, were skipped, or did not run.
+#    - Can also be triggered manually from the GitHub Actions tab.
 #
 #  Badge:
 #    ![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)
