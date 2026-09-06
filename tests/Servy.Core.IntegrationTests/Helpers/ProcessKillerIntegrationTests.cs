@@ -234,7 +234,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                 // The upward walk reports success unless a PID vanished mid-walk. Both processes are confirmed
                 // dead above, so a false here means the walk itself failed, not that a target raced ahead of it.
-                Assert.True(result, "KillProcessTreeAndParents returned false although both processes were terminated.");
+                Assert.True(result, $"KillProcessTreeAndParents returned false and the target child process (PID {childId}) or parent process (PID {parentId}) was not cleanly handled.");
             }
             finally
             {
@@ -252,11 +252,12 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             // Arrange
             var (parent, child) = SpawnProcessTree();
+            int childId = child.Id;
 
             try
             {
                 // Act
-                bool result = _processKiller.KillProcessTreeAndParents(child.Id, killParents: false);
+                bool result = _processKiller.KillProcessTreeAndParents(childId, killParents: false);
 
                 bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
                 parent.Refresh();
@@ -267,7 +268,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                 // The downward walk reports success unless a PID vanished mid-walk. The child is confirmed
                 // dead above, so a false here means the walk itself failed.
-                Assert.True(result, "KillProcessTreeAndParents returned false although the target child was terminated.");
+                Assert.True(result, $"KillProcessTreeAndParents returned false and the target child process (PID {childId}) is still running.");
             }
             finally
             {
