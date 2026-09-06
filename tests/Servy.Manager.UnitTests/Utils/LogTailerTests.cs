@@ -482,9 +482,21 @@ namespace Servy.Manager.UnitTests.Utils
                 var fileInfo = new FileInfo(_tempFilePath);
 
                 var capturedBatches = new List<List<LogLine>>();
+                int throwOnce = 1;
                 tailer.OnNewLines += (lines) =>
                 {
                     lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
+
+                    // Fault the pass immediately after the first threshold flush has been published, so the
+                    // loop lands in the unhandled-error handler and reopens the file from lastPosition. That
+                    // is the only way to observe the commit-before-publish ordering at the flush point: if the
+                    // offset were committed after the publish instead, the reopen would replay this batch.
+                    // A subscriber that throws from this handler is the realistic trigger - ConsoleViewModel
+                    // marshals to the UI thread from here.
+                    if (Interlocked.Exchange(ref throwOnce, 0) == 1)
+                    {
+                        throw new InvalidOperationException("Simulated subscriber fault immediately after a threshold flush.");
+                    }
                 };
 
                 var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -517,13 +529,18 @@ namespace Servy.Manager.UnitTests.Utils
                     await writer.WriteAsync("PostFlushLine1\nPostFlushLine2\n");
                 }
 
+                // The faulted pass costs one linear back-off (LogTailerUnhandledErrorRecoveryDelayMs)
+                // before the reopen, so this wait is longer than its siblings.
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedBatches) return capturedBatches.SelectMany(b => b).Any(l => l.Text == "PostFlushLine2");
-                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(15), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert - the mid-pass fault must actually have fired, or nothing below is meaningful
+                Assert.Equal(0, Volatile.Read(ref throwOnce));
 
                 // Assert - Flushed lines from earlier passes must not be duplicated
                 lock (capturedBatches)
