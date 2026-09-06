@@ -1173,10 +1173,18 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto { Name = "serviceä" });
 
-            _mockWindowsServiceApi.Setup(x => x.GetServices()).Returns(Array.Empty<WindowsServiceInfo>());
-
             using (var cts = new CancellationTokenSource())
             {
+                // OS side already gone -> the else branch. Cancelling from the installed-check
+                // callback leaves the token live for InstallServiceAsync's own entry guard and
+                // cancelled by the time the else branch observes it; cancelling before the call
+                // would be intercepted at the top of InstallServiceAsync and the casing-variant
+                // cleanup would never run at all.
+                _mockWindowsServiceApi
+                    .Setup(x => x.GetServices())
+                    .Callback(() => cts.Cancel())
+                    .Returns(Array.Empty<WindowsServiceInfo>());
+
                 _mockServiceRepository
                     .Setup(x => x.DeleteAsync("serviceä", It.IsAny<CancellationToken>()))
                     .ThrowsAsync(new OperationCanceledException(cts.Token));
@@ -1184,6 +1192,50 @@ namespace Servy.Core.UnitTests.Services
                 // Act & Assert
                 await Assert.ThrowsAsync<OperationCanceledException>(() =>
                     _serviceManager.InstallServiceAsync(options, cts.Token));
+
+                Assert.True(cts.IsCancellationRequested);
+
+                // The rethrow must not be converted into a failure result by the sibling catch.
+                _mockServiceRepository.Verify(
+                    x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task InstallService_UnicodeCasingVariance_UninstallCancelled_Rethrows()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            _mockServiceRepository
+                .Setup(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "serviceä" });
+
+            using (var cts = new CancellationTokenSource())
+            {
+                // OS side still registered -> the if branch, where UninstallServiceAsync observes
+                // the cancelled token and rethrows.
+                _mockWindowsServiceApi
+                    .Setup(x => x.GetServices())
+                    .Callback(() => cts.Cancel())
+                    .Returns(new[] { new WindowsServiceInfo { ServiceName = "serviceä" } });
+
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                    _serviceManager.InstallServiceAsync(options, cts.Token));
+
+                Assert.True(cts.IsCancellationRequested);
+
+                // The rethrow must not be converted into a failure result by the sibling catch below it.
+                _mockServiceRepository.Verify(
+                    x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
             }
         }
 
