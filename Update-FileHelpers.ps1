@@ -96,6 +96,7 @@ function Update-FilesContent {
 
             $matchCount = 0
             $newContent = $content
+            $fileHadEditFailure = $false
 
             foreach ($edit in $Edits) {
                 $editPattern = $edit.Pattern
@@ -117,10 +118,12 @@ function Update-FilesContent {
                     if ($found -ne $expectedCount) {
                         Write-Warning "Match count mismatch for pattern '$editPattern' in $path. Expected: $expectedCount, Found: $found"
                         $script:HadFailure = $true
+                        $fileHadEditFailure = $true
                     }
                 } elseif ($found -eq 0 -and $ExpectMatch) {
                     Write-Warning "No matches found for pattern '$editPattern' in explicitly-targeted path: $path"
                     $script:HadFailure = $true
+                    $fileHadEditFailure = $true
                 }
 
                 if ($found -gt 0) {
@@ -133,7 +136,9 @@ function Update-FilesContent {
                 }
             }
 
-            if ($matchCount -gt 0) {
+            if ($fileHadEditFailure) {
+                Write-Warning "Skipping write to ${path}: one or more edits in this set failed validation; leaving the file untouched rather than applying a partial update."
+            } elseif ($matchCount -gt 0) {
                 $script:filesModified++
                 $script:totalReplacements += $matchCount
 
