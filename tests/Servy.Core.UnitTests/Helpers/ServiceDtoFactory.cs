@@ -9,10 +9,13 @@ namespace Servy.Core.UnitTests.Helpers
     {
         /// <summary>
         /// Creates a DTO with non-default values for every writable, serialized property.
-        /// Properties marked [JsonIgnore] and [XmlIgnore] (Id, Pid, PreviousStopTimeout,
-        /// ActiveStdoutPath, ActiveStderrPath) are deliberately left at their defaults, since
-        /// no serializer round-trip covers them. <c>CreateFull_PopulatesEverySerializedProperty</c>
-        /// enforces this.
+        /// Five properties are deliberately left at their defaults because no serializer
+        /// round-trip covers them: Id and Pid (database and runtime identity),
+        /// PreviousStopTimeout, ActiveStdoutPath and ActiveStderrPath (runtime state).
+        /// The credential trio RunAsLocalSystem, UserAccount and Password is marked
+        /// [JsonIgnore] and [XmlIgnore] as well, but IS populated, because the mapper and
+        /// validation tests need it. <c>CreateFull_PopulatesEverySerializedProperty</c>
+        /// enforces the rest through its [XmlIgnore] filter.
         /// </summary>
         /// <param name="suffix">An optional string suffix used to vary property text values and numbers for specialized provider lookups (e.g., "Xml").</param>
         /// <returns>A completely populated <see cref="ServiceDto"/> instance with specific non-default configuration criteria.</returns>
