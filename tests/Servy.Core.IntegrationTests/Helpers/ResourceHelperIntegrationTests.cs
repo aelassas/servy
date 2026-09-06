@@ -71,7 +71,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _fakeAssembly, "Servy.Resources", fileName, extension, stopServices: false);
 
             // Assert
@@ -98,7 +98,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 .Returns(true);
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _fakeAssembly,
                 resourceNamespace,
                 fileName,
@@ -121,7 +121,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 .Returns(false);
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _fakeAssembly, "Servy.Core.Resources", "lockedapp", "exe", stopServices: false);
 
             // Assert
@@ -152,7 +152,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResource(
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
                 _fakeAssembly,
                 "Servy.Resources",
                 fileName,

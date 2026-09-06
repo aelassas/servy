@@ -105,7 +105,7 @@ namespace Servy.Manager.Utils
         /// <param name="startCreated">The creation timestamp of the file when history was loaded, used to detect rotation.</param>
         /// <param name="token">A token used to stop the tailing loop when switching services or closing the app.</param>
         /// <returns>A Task representing the long-running polling operation.</returns>
-        public async Task RunFromPosition(string path, LogType type, long startPos, DateTime startCreated, CancellationToken token)
+        public async Task RunFromPositionAsync(string path, LogType type, long startPos, DateTime startCreated, CancellationToken token)
         {
             if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
 

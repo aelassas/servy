@@ -191,8 +191,8 @@ namespace Servy.Manager.UnitTests.Utils
                 tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
 
                 // Act
-                var taskNull = tailer.RunFromPosition(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
-                var taskEmpty = tailer.RunFromPosition(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                var taskNull = tailer.RunFromPositionAsync(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                var taskEmpty = tailer.RunFromPositionAsync(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                 // Assert
                 // A guarded call never yields, so both tasks are already finished before the first await.
@@ -232,7 +232,7 @@ namespace Servy.Manager.UnitTests.Utils
                 tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
 
                 // Act
-                var tailTask = tailer.RunFromPosition(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                 await Task.Delay(150, CancellationToken.None);
                 cts.Cancel();
@@ -263,7 +263,7 @@ namespace Servy.Manager.UnitTests.Utils
                 using (var exclusiveLock = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
                     // Act
-                    var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                    var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                     await Task.Delay(150, CancellationToken.None);
                     cts.Cancel();
@@ -330,7 +330,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // Query precise FileInfo metadata so CreationTimeUtc matches and doesn't trigger a false rotation reset to offset 0
                 var fileInfo = new FileInfo(_tempFilePath);
                 var startPos = fileInfo.Length;
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, startPos, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, startPos, fileInfo.CreationTimeUtc, cts.Token);
 
                 // Wait for the background reader loop to fully complete its initial cycle
                 // and position its internal StreamReader handle directly at the EOF boundary.
@@ -382,7 +382,7 @@ namespace Servy.Manager.UnitTests.Utils
                     lock (capturedLines) capturedLines.AddRange(lines);
                 };
 
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
 
                 int threshold = AppConfig.LogTailerBatchFlushThreshold;
@@ -429,7 +429,7 @@ namespace Servy.Manager.UnitTests.Utils
                     lock (capturedLines) capturedLines.AddRange(lines);
                 };
 
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
 
                 // Construct AppConfig.LogTailerBatchFlushThreshold lines where the last line lacks a trailing newline
@@ -509,7 +509,7 @@ namespace Servy.Manager.UnitTests.Utils
                 var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
                 await loopCompletedTcs.Task;
 
@@ -584,7 +584,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 // Act
                 // Start tailing from the end of the "Old content"
-                var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
 
                 // DETERMINISTIC WAIT 1: Ensure the loop has fully completed its first pass setup
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
@@ -639,7 +639,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // to force operand #2 (info.Length < lastPosition) to evaluate as FALSE.
                 // Pass a stale timestamp to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as TRUE.
                 var fileInfo = new FileInfo(_tempFilePath);
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, (long)fileInfo.Length, DateTime.UtcNow.AddDays(-1), cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, (long)fileInfo.Length, DateTime.UtcNow.AddDays(-1), cts.Token);
 
                 // Enforce execution stabilization before running content validations
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
@@ -681,7 +681,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // Pass a highly advanced past lastPosition (999999) that forces the metadata check branch
                 // (info.Length < lastPosition) to evaluate as TRUE to validate initial attach truncation logic.
                 var fileInfo = new FileInfo(_tempFilePath);
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 999999, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 999999, fileInfo.CreationTimeUtc, cts.Token);
 
                 // Enforce execution stabilization before running content validations
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
@@ -744,7 +744,7 @@ namespace Servy.Manager.UnitTests.Utils
             {
                 using (var cts = new CancellationTokenSource())
                 {
-                    var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                    var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                     // Await initial execution attach before triggering disposal path
                     await WaitForLoopStartAsync(tailer, CancellationToken.None);

@@ -369,7 +369,7 @@ namespace Servy.UI.Bootstrapping
                     var ct = _appLifetimeCts.Token;
 
                     // Binary Resource Extraction
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: ct))
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: ct))
                     {
                         string resourceName = $"{AppConfig.HandleExeFileName}.exe";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
@@ -387,7 +387,7 @@ namespace Servy.UI.Bootstrapping
                     };
 
 #if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
                     {
                         string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");

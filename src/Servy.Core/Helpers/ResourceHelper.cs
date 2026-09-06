@@ -62,7 +62,7 @@ namespace Servy.Core.Helpers
         /// True if the copy succeeded (or was not needed) AND all stopped services were successfully restarted;
         /// otherwise, false.
         /// </returns>
-        public async Task<bool> CopyEmbeddedResource(
+        public async Task<bool> CopyEmbeddedResourceAsync(
             Assembly assembly,
             string resourceNamespace,
             string fileName,

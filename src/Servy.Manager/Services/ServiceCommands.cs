@@ -194,7 +194,7 @@ namespace Servy.Manager.Services
         public Task<bool> StartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(
                 service,
-                d => d.Start(cancellationToken),
+                d => d.StartAsync(cancellationToken),
                 ServiceStatus.Running,
                 Strings.Msg_ServiceStarted,
                 checkDisabled: true,
@@ -204,7 +204,7 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public Task<bool> StopServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(service,
-                d => d.Stop(cancellationToken),
+                d => d.StopAsync(cancellationToken),
                 ServiceStatus.Stopped,
                 Strings.Msg_ServiceStopped,
                 checkDisabled: false,
@@ -214,7 +214,7 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(service,
-                d => d.Restart(cancellationToken),
+                d => d.RestartAsync(cancellationToken),
                 ServiceStatus.Running,
                 Strings.Msg_ServiceRestarted,
                 checkDisabled: true,
@@ -343,7 +343,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 #endif
-                    var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir, cancellationToken: cancellationToken), cancellationToken);
+                    var res = await Task.Run(() => serviceDomain.InstallAsync(wrapperExeDir, cancellationToken: cancellationToken), cancellationToken);
 
                     if (!res.IsSuccess)
                     {
@@ -391,7 +391,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 
-                    var res = await Task.Run(() => serviceDomain.Uninstall(cancellationToken), cancellationToken);
+                    var res = await Task.Run(() => serviceDomain.UninstallAsync(cancellationToken), cancellationToken);
 
                     if (!res.IsSuccess)
                     {
