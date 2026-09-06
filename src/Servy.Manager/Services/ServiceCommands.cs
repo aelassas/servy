@@ -237,6 +237,11 @@ namespace Servy.Manager.Services
 
 #if !DEBUG
                 // Security invariant check: re-verify target path is safely contained within application directory
+                // (the config-time check in App.xaml.cs runs once at startup and can go stale afterwards).
+                // Compiled out in Debug deliberately: App.xaml.cs points a Debug build at
+                // AppConfig.DesktopAppPublishReleasePath, the repository's bin/Release publish folder, which is a
+                // sibling of the running app directory and would therefore be refused on every launch. This
+                // assumes Debug builds are never distributed and the repository checkout is a trusted location.
                 if (!PathSecurityGuard.IsSafelyContainedWithinAppDirectory(desktopPath, baseDir))
                 {
                     Logger.Error($"Refusing to launch Desktop application: Target path '{desktopPath}' is not contained within application directory '{baseDir}'.");
