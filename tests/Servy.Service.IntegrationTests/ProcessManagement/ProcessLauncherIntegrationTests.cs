@@ -551,7 +551,12 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
 
             public MockThrowingProcessWrapper CreatedWrapper { get; }
-            public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger) => CreatedWrapper;
+
+            public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger)
+            {
+                CreatedWrapper.StartInfo = startInfo;
+                return CreatedWrapper;
+            }
         }
 
         /// <summary>
@@ -577,7 +582,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public DateTime StartTime => DateTime.Now;
             public StreamReader StandardOutput => StreamReader.Null;
             public StreamReader StandardError => StreamReader.Null;
-            public ProcessStartInfo StartInfo => new ProcessStartInfo();
+            public ProcessStartInfo StartInfo { get; internal set; } = new ProcessStartInfo();
             public IntPtr MainWindowHandle => IntPtr.Zero;
             public ProcessPriorityClass PriorityClass { get; set; }
             public IntPtr ProcessorAffinity { get; set; }
