@@ -2086,6 +2086,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to copy content to the clipboard. The clipboard may be in use by another application..
+        /// </summary>
+        public static string Msg_ClipboardCopyFailed {
+            get {
+                return ResourceManager.GetString("Msg_ClipboardCopyFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to launch the Desktop application..
         /// </summary>
         public static string Msg_DesktopAppLaunchFailed {

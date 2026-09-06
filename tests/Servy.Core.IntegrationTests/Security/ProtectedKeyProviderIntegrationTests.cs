@@ -175,6 +175,30 @@ namespace Servy.Core.IntegrationTests.Security
             }
         }
 
+        [Fact]
+        public void GetIV_ExistingValidFile_UnprotectsSuccessfully()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("existing_iv.key");
+            var ivPath = GetTempFilePath("existing_iv.iv");
+            byte[] originalIv;
+
+            // Generation phase
+            using (var generatorProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                originalIv = generatorProvider.GetIV();
+            } // disposed
+
+            // Act - Retrieval phase (simulating a service restart)
+            using (var readerProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var retrievedIv = readerProvider.GetIV();
+
+                // Assert
+                Assert.Equal(originalIv, retrievedIv);
+            }
+        }
+
         #endregion
 
         #region Migration and Resilience Tests
@@ -186,56 +210,47 @@ namespace Servy.Core.IntegrationTests.Security
             var keyPath = GetTempFilePath("legacy.key");
             var ivPath = GetTempFilePath("legacy.iv");
 
-            try
+            // 1. Manually create a legacy v7.8 key without machine entropy
+            var rawLegacyData = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
             {
-                // 1. Manually create a legacy v7.8 key without machine entropy
-                var rawLegacyData = new byte[32];
-                using (var rng = RandomNumberGenerator.Create())
-                {
-                    rng.GetBytes(rawLegacyData);
-                }
-
-                // Encrypted with NULL entropy
-                byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
-                File.WriteAllBytes(keyPath, legacyEncrypted);
-
-                // Capture the exact file bytes prior to migration
-                byte[] bytesBeforeMigration = File.ReadAllBytes(keyPath);
-
-                // Act
-                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
-                {
-                    var retrievedKey = provider.GetKey();
-
-                    // Assert 1: Must successfully decrypt the legacy data
-                    Assert.Equal(rawLegacyData, retrievedKey);
-
-                    // Assert 2: The file on disk was rewritten
-                    byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
-                    Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
-                }
-
-                // Assert 3: Verify the migrated file is genuinely entropy-protected
-                // Path A: A fresh provider instance can successfully read it (using machine entropy)
-                using (var freshProvider = new ProtectedKeyProvider(keyPath, ivPath))
-                {
-                    var roundTripKey = freshProvider.GetKey();
-                    Assert.Equal(rawLegacyData, roundTripKey);
-                }
-
-                // Path B: Raw decryption without entropy MUST fail
-                byte[] migratedBytes = File.ReadAllBytes(keyPath);
-                Assert.Throws<CryptographicException>(() =>
-                {
-                    ProtectedData.Unprotect(migratedBytes, null, DataProtectionScope.LocalMachine);
-                });
+                rng.GetBytes(rawLegacyData);
             }
-            finally
+
+            // Encrypted with NULL entropy
+            byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
+            File.WriteAllBytes(keyPath, legacyEncrypted);
+
+            // Capture the exact file bytes prior to migration
+            byte[] bytesBeforeMigration = File.ReadAllBytes(keyPath);
+
+            // Act
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
-                // Clean up disk footprint
-                if (File.Exists(keyPath)) File.Delete(keyPath);
-                if (File.Exists(ivPath)) File.Delete(ivPath);
+                var retrievedKey = provider.GetKey();
+
+                // Assert 1: Must successfully decrypt the legacy data
+                Assert.Equal(rawLegacyData, retrievedKey);
+
+                // Assert 2: The file on disk was rewritten
+                byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
+                Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
             }
+
+            // Assert 3: Verify the migrated file is genuinely entropy-protected
+            // Path A: A fresh provider instance can successfully read it (using machine entropy)
+            using (var freshProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var roundTripKey = freshProvider.GetKey();
+                Assert.Equal(rawLegacyData, roundTripKey);
+            }
+
+            // Path B: Raw decryption without entropy MUST fail
+            byte[] migratedBytes = File.ReadAllBytes(keyPath);
+            Assert.Throws<CryptographicException>(() =>
+            {
+                ProtectedData.Unprotect(migratedBytes, null, DataProtectionScope.LocalMachine);
+            });
         }
 
         [Fact]
@@ -270,6 +285,23 @@ namespace Servy.Core.IntegrationTests.Security
                 byte[] bytesAfterMigration = File.ReadAllBytes(ivPath);
                 Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
             }
+
+            // Assert 3: Verify the migrated file is genuinely entropy-protected.
+            // The byte comparison above cannot show this on its own - DPAPI output differs on every
+            // Protect call, so it would also pass if the migration rewrote the IV without entropy.
+            // Path A: A fresh provider instance can successfully read it (using machine entropy)
+            using (var freshProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var roundTripIv = freshProvider.GetIV();
+                Assert.Equal(rawLegacyIvData, roundTripIv);
+            }
+
+            // Path B: Raw decryption without entropy MUST fail
+            byte[] migratedBytes = File.ReadAllBytes(ivPath);
+            Assert.Throws<CryptographicException>(() =>
+            {
+                ProtectedData.Unprotect(migratedBytes, null, DataProtectionScope.LocalMachine);
+            });
         }
 
         [Theory]
@@ -328,24 +360,30 @@ namespace Servy.Core.IntegrationTests.Security
                     ? exception.InnerException
                     : exception;
 
-                Assert.True(baseException is IOException || baseException is System.Security.SecurityException,
+                // The read-retry loop catches and, on the final attempt, rethrows exactly IOException
+                // (other than the not-found pair) and UnauthorizedAccessException, so those are the
+                // two classes a caller can observe from this path.
+                Assert.True(baseException is IOException || baseException is UnauthorizedAccessException,
                     $"Expected filesystem access error, but instead caught: {baseException.GetType().Name}");
 
                 // 2. Verify the backoff retry time logic contract.
-                // Loop behavior profiling constraints:
-                // Attempt 0: Fails -> Sleeps BaseMs * (1 << 0)
-                // Attempt 1: Fails -> Sleeps BaseMs * (1 << 1)
-                // Attempt 2: Max retries exhausted, rethrows without sleeping.
-                const int MaxRetries = 3;
+                // Both ends of that contract live in AppConfig: every attempt but the last sleeps
+                // KeyProviderReadRetryBackoffBaseMs * 2^attempt, and the last one rethrows without
+                // sleeping, so the total is the sum over KeyProviderReadMaxRetries - 1 attempts.
                 int expectedSleepMs = 0;
-                for (int attempt = 0; attempt < MaxRetries - 1; attempt++)
+                for (int attempt = 0; attempt < AppConfig.KeyProviderReadMaxRetries - 1; attempt++)
                 {
                     expectedSleepMs += AppConfig.KeyProviderReadRetryBackoffBaseMs * (1 << attempt);
                 }
 
+                // Thread.Sleep(n) never returns early, so the lower bound needs no slack.
                 var elapsedMs = stopwatch.ElapsedMilliseconds;
-                Assert.True(elapsedMs >= expectedSleepMs * 0.9,
-                    $"The key provider did not retry or back off exponentially. Expected at least ~{expectedSleepMs * 0.9}ms of accumulated backoff, but total execution time was only {elapsedMs}ms.");
+                Assert.True(elapsedMs >= expectedSleepMs,
+                    $"The key provider did not retry or back off exponentially. Expected at least {expectedSleepMs}ms of accumulated backoff, but total execution time was only {elapsedMs}ms.");
+
+                // Bound it from above too, so a grown retry count or base cannot pass unnoticed.
+                Assert.True(elapsedMs < expectedSleepMs * 3 + TestTimeouts.CiGenerousMs,
+                    $"The backoff took {elapsedMs}ms, far beyond the {expectedSleepMs}ms the retry policy allows - the retry count or the backoff base may have grown.");
             }
         }
 
@@ -362,8 +400,17 @@ namespace Servy.Core.IntegrationTests.Security
             var provider = new ProtectedKeyProvider(keyPath, ivPath);
 
             // Populate the cache
-            var key1 = provider.GetKey();
-            var iv1 = provider.GetIV();
+            provider.GetKey();
+            provider.GetIV();
+
+            // GetKey/GetIV hand out defensive clones, so hold the internal buffers instead:
+            // those are the arrays Dispose zeroes in place before nulling the fields.
+            var internalKey = TestReflection.GetField<byte[]>(provider, "_cachedKey");
+            var internalIv = TestReflection.GetField<byte[]>(provider, "_cachedIv");
+
+            // Baseline, so an all-zero buffer cannot make the zeroing assertions vacuous
+            Assert.Contains(internalKey, b => b != 0);
+            Assert.Contains(internalIv, b => b != 0);
 
             // Act
             provider.Dispose();
@@ -371,7 +418,11 @@ namespace Servy.Core.IntegrationTests.Security
             // Assert
             // Verify that subsequent access throws ObjectDisposedException
             Assert.Throws<ObjectDisposedException>(provider.GetKey);
-            Assert.Throws<ObjectDisposedException>( provider.GetIV);
+            Assert.Throws<ObjectDisposedException>(provider.GetIV);
+
+            // Verify the buffers were actually zeroed, not merely dropped
+            Assert.All(internalKey, b => Assert.Equal(0, b));
+            Assert.All(internalIv, b => Assert.Equal(0, b));
 
             // Verify the backing fields are fully cleared out to null post-disposal
             var cachedKey = TestReflection.GetField<byte[]?>(provider, "_cachedKey");
@@ -386,6 +437,11 @@ namespace Servy.Core.IntegrationTests.Security
         {
             // Arrange
             var provider = new ProtectedKeyProvider(GetTempFilePath("k.key"), GetTempFilePath("i.iv"));
+
+            // Populate the cache, so the zeroing branch of Dispose runs on the first call
+            // and has to stay safe on the second and third
+            provider.GetKey();
+            provider.GetIV();
 
             // Act
             var exception = Record.Exception(() =>

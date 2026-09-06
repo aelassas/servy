@@ -144,11 +144,11 @@ function Resolve-ServyDumpDestinationPath {
         $dirPart = $resolvedArchivePath.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
         if ($dirPart.EndsWith(':')) { $dirPart += [System.IO.Path]::DirectorySeparatorChar }
         $resolvedArchivePath = [System.IO.Path]::Combine($dirPart, 'Servy_Dump.zip')
-        Write-Host "Destination path is a directory; auto-appended default filename to '$resolvedArchivePath'." -ForegroundColor Yellow
+        Write-Host "Destination path is a directory; auto-appended default filename to '${resolvedArchivePath}'." -ForegroundColor Yellow
     }
     elseif ([string]::IsNullOrEmpty([System.IO.Path]::GetExtension($resolvedArchivePath))) {
         $resolvedArchivePath += '.zip'
-        Write-Host "No file extension specified; normalized destination to '$resolvedArchivePath'." -ForegroundColor Yellow
+        Write-Host "No file extension specified; normalized destination to '${resolvedArchivePath}'." -ForegroundColor Yellow
     }
 
     return $resolvedArchivePath
@@ -653,7 +653,10 @@ public static class ServyNativeWinSqliteRecord
 
                     $isExported = $exported.Contains($svcName)
                     $isCustomAccount = (-not [string]::IsNullOrWhiteSpace($account)) -and
-                                       (-not $script:runnableServiceAccounts.Contains($account))
+                                       (-not $script:runnableServiceAccounts.Contains($account)) -and
+                                       (-not $account.StartsWith('NT SERVICE\', [System.StringComparison]::OrdinalIgnoreCase)) -and
+                                       (-not $account.StartsWith('IIS APPPOOL\', [System.StringComparison]::OrdinalIgnoreCase)) -and
+                                       (-not $account.TrimEnd().EndsWith('$'))
 
                     $isExported -and $isCustomAccount
                 })

@@ -19,6 +19,8 @@ namespace Servy.Restarter.UnitTests
         private const string SharedInMemoryConnectionString = "Data Source=RestarterTestDb;Mode=Memory;Cache=Shared;Version=3;";
 
         private readonly string _tempConfigPath;
+        private readonly string _configBackupPath;
+        private readonly bool _hasConfigBackup;
         private readonly string _tempLogDir;
         private readonly string _expectedLogFilePath;
         private readonly SQLiteConnection _dbKeepAliveConnection;
@@ -37,6 +39,16 @@ namespace Servy.Restarter.UnitTests
 
             // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
             Logger.Initialize(LogFileName, logDirectory: _tempLogDir);
+
+            // Program.Main reads its configuration strictly from the app directory, so the tests must
+            // clobber the build-deployed appsettings.restarter.json. Back it up so Dispose can put the
+            // build's own artifact back instead of leaving the output directory without it.
+            _configBackupPath = _tempConfigPath + ".bak";
+            _hasConfigBackup = File.Exists(_tempConfigPath);
+            if (_hasConfigBackup)
+            {
+                File.Copy(_tempConfigPath, _configBackupPath, overwrite: true);
+            }
 
             File.WriteAllText(_tempConfigPath, BuildConfigJson("30"));
 
@@ -74,6 +86,11 @@ namespace Servy.Restarter.UnitTests
             // Assert
             Assert.Equal(1, Environment.ExitCode);
             AssertLogContainsMessage("Missing required argument: service name.");
+
+            // The ExitsEarly half: without the guard's return, args[0] throws on the empty array
+            // and the catch-all logs the pre-scoped-logger failure instead.
+            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to initialize or execute.");
+            AssertLogDoesNotContainMessage("Attempting to restart service");
         }
 
         [Theory]
@@ -90,6 +107,11 @@ namespace Servy.Restarter.UnitTests
             // Assert
             Assert.Equal(1, Environment.ExitCode);
             AssertLogContainsMessage("Service name cannot be empty.");
+
+            // The ExitsEarly half: without the guard's return, the blank name flows on to the
+            // repository lookup and the not-managed branch logs and sets ExitCode = 1 as well.
+            AssertLogDoesNotContainMessage("is not managed by Servy.");
+            AssertLogDoesNotContainMessage("Attempting to restart service");
         }
 
         #endregion
@@ -239,6 +261,21 @@ namespace Servy.Restarter.UnitTests
             Assert.Contains(expectedMessage, logContent);
         }
 
+        /// <summary>
+        /// Asserts the physical log output stream carries no signature from a later pipeline stage,
+        /// which is what pins that a guard returned instead of logging and falling through.
+        /// </summary>
+        private void AssertLogDoesNotContainMessage(string unexpectedMessage)
+        {
+            // Force the static logger to flush its handle completely to disk
+            Logger.Shutdown();
+
+            Assert.True(File.Exists(_expectedLogFilePath), $"The diagnostic restarter log file was never initialized on disk at '{_expectedLogFilePath}'.");
+
+            string logContent = File.ReadAllText(_expectedLogFilePath);
+            Assert.DoesNotContain(unexpectedMessage, logContent);
+        }
+
         #endregion
 
         public void Dispose()
@@ -252,7 +289,13 @@ namespace Servy.Restarter.UnitTests
             // Clean dynamic runtime artifacts cleanly
             try
             {
-                if (File.Exists(_tempConfigPath))
+                if (_hasConfigBackup && File.Exists(_configBackupPath))
+                {
+                    // Restore the build-deployed artifact rather than deleting it
+                    File.Copy(_configBackupPath, _tempConfigPath, overwrite: true);
+                    File.Delete(_configBackupPath);
+                }
+                else if (File.Exists(_tempConfigPath))
                 {
                     File.Delete(_tempConfigPath);
                 }

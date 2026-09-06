@@ -167,6 +167,8 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ValidationError, UiAppConfig.Caption), Times.Once);
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -364,6 +366,169 @@ namespace Servy.UnitTests.Services
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
+        [Fact]
+        public async Task InstallService_ValidConfiguration_MapsEveryDtoFieldOntoInstallServiceOptions()
+        {
+            // Arrange
+            // Every property carries a distinct value, and every boolean and enum differs from its
+            // AppConfig default, so both a transposition between same-typed fields and a dropped
+            // assignment (which would leave the option at its default) are detectable.
+            var sut = CreateSut();
+            var config = new ServiceConfiguration { Name = "MappedService", EnableDebugLogs = true };
+            var dto = new ServiceDto
+            {
+                Name = "MappedService",
+                DisplayName = "Mapped Service Display",
+                Description = "Mapped service description",
+                ExecutablePath = @"C:\mapped\main.exe",
+                StartupDirectory = @"C:\mapped\main-dir",
+                Parameters = "--main-args",
+                StartupType = (int)ServiceStartType.Manual,
+                Priority = (int)ProcessPriority.High,
+                CpuAffinity = "3",
+                EnableConsoleUI = true,
+                UserAccount = @"MAPPED\user",
+                Password = "mapped-password",
+
+                StdoutPath = @"C:\mapped\out.log",
+                StderrPath = @"C:\mapped\err.log",
+                EnableSizeRotation = true,
+                RotationSize = 7,
+                MaxRotations = 11,
+                EnableDateRotation = true,
+                DateRotationType = (int)Core.Enums.DateRotationType.Weekly,
+                UseLocalTimeForRotation = true,
+
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 41,
+                MaxFailedChecks = 43,
+                RecoveryAction = (int)Core.Enums.RecoveryAction.RestartComputer,
+                RecoveryOnCleanExit = true,
+                MaxRestartAttempts = 47,
+                HeartbeatUrl = "https://mapped.example/heartbeat",
+                HeartbeatUrlTimeoutSeconds = 53,
+                EnableHeartbeatUrlFlags = true,
+
+                EnvironmentVariables = "MAPPED_ENV=1",
+                ServiceDependencies = "MappedDependency",
+
+                PreLaunchExecutablePath = @"C:\mapped\prelaunch.exe",
+                PreLaunchStartupDirectory = @"C:\mapped\prelaunch-dir",
+                PreLaunchParameters = "--prelaunch-args",
+                PreLaunchEnvironmentVariables = "MAPPED_PRELAUNCH_ENV=1",
+                PreLaunchStdoutPath = @"C:\mapped\prelaunch-out.log",
+                PreLaunchStderrPath = @"C:\mapped\prelaunch-err.log",
+                PreLaunchTimeoutSeconds = 59,
+                PreLaunchRetryAttempts = 61,
+                PreLaunchIgnoreFailure = true,
+
+                FailureProgramPath = @"C:\mapped\failure.exe",
+                FailureProgramStartupDirectory = @"C:\mapped\failure-dir",
+                FailureProgramParameters = "--failure-args",
+
+                PostLaunchExecutablePath = @"C:\mapped\postlaunch.exe",
+                PostLaunchStartupDirectory = @"C:\mapped\postlaunch-dir",
+                PostLaunchParameters = "--postlaunch-args",
+
+                StartTimeout = 67,
+                StopTimeout = 71,
+
+                PreStopExecutablePath = @"C:\mapped\prestop.exe",
+                PreStopStartupDirectory = @"C:\mapped\prestop-dir",
+                PreStopParameters = "--prestop-args",
+                PreStopTimeoutSeconds = 73,
+                PreStopLogAsError = true,
+
+                PostStopExecutablePath = @"C:\mapped\poststop.exe",
+                PostStopStartupDirectory = @"C:\mapped\poststop-dir",
+                PostStopParameters = "--poststop-args",
+            };
+
+            InstallServiceOptions? captured = null;
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(dto.Name, It.IsAny<CancellationToken>())).Returns(false);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(config, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(captured);
+
+            Assert.Equal(dto.Name, captured.ServiceName);
+            Assert.Equal(dto.DisplayName, captured.DisplayName);
+            Assert.Equal(dto.Description, captured.Description);
+            Assert.Equal(Core.Config.AppConfig.GetServyUIServicePath(), captured.WrapperExePath);
+            Assert.Equal(dto.ExecutablePath, captured.RealExePath);
+            Assert.Equal(dto.StartupDirectory, captured.StartupDirectory);
+            Assert.Equal(dto.Parameters, captured.RealArgs);
+            Assert.Equal(ServiceStartType.Manual, captured.StartType);
+            Assert.Equal(ProcessPriority.High, captured.ProcessPriority);
+            Assert.Equal(dto.CpuAffinity, captured.CpuAffinity);
+            Assert.Equal(dto.EnableConsoleUI, captured.EnableConsoleUI);
+            Assert.Equal(dto.UserAccount, captured.Username);
+            Assert.Equal(dto.Password, captured.Password);
+
+            Assert.Equal(dto.StdoutPath, captured.StdoutPath);
+            Assert.Equal(dto.StderrPath, captured.StderrPath);
+            Assert.Equal(dto.EnableSizeRotation, captured.EnableSizeRotation);
+            Assert.Equal(Core.Config.AppConfig.ToBytes(dto.RotationSize!.Value), captured.RotationSizeInBytes);
+            Assert.Equal(dto.MaxRotations, captured.MaxRotations);
+            Assert.Equal(dto.EnableDateRotation, captured.EnableDateRotation);
+            Assert.Equal(Core.Enums.DateRotationType.Weekly, captured.DateRotationType);
+            Assert.Equal(dto.UseLocalTimeForRotation, captured.UseLocalTimeForRotation);
+
+            Assert.Equal(dto.EnableHealthMonitoring, captured.EnableHealthMonitoring);
+            Assert.Equal(dto.HeartbeatInterval, captured.HeartbeatInterval);
+            Assert.Equal(dto.MaxFailedChecks, captured.MaxFailedChecks);
+            Assert.Equal(Core.Enums.RecoveryAction.RestartComputer, captured.RecoveryAction);
+            Assert.Equal(dto.RecoveryOnCleanExit, captured.RecoveryOnCleanExit);
+            Assert.Equal(dto.MaxRestartAttempts, captured.MaxRestartAttempts);
+            Assert.Equal(dto.HeartbeatUrl, captured.HeartbeatUrl);
+            Assert.Equal(dto.HeartbeatUrlTimeoutSeconds, captured.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(dto.EnableHeartbeatUrlFlags, captured.EnableHeartbeatUrlFlags);
+
+            Assert.Equal(dto.EnvironmentVariables, captured.EnvironmentVariables);
+            Assert.Equal(dto.ServiceDependencies, captured.ServiceDependencies);
+
+            Assert.Equal(dto.PreLaunchExecutablePath, captured.PreLaunchExePath);
+            Assert.Equal(dto.PreLaunchStartupDirectory, captured.PreLaunchStartupDirectory);
+            Assert.Equal(dto.PreLaunchParameters, captured.PreLaunchArgs);
+            Assert.Equal(dto.PreLaunchEnvironmentVariables, captured.PreLaunchEnvironmentVariables);
+            Assert.Equal(dto.PreLaunchStdoutPath, captured.PreLaunchStdoutPath);
+            Assert.Equal(dto.PreLaunchStderrPath, captured.PreLaunchStderrPath);
+            Assert.Equal(dto.PreLaunchTimeoutSeconds, captured.PreLaunchTimeout);
+            Assert.Equal(dto.PreLaunchRetryAttempts, captured.PreLaunchRetryAttempts);
+            Assert.Equal(dto.PreLaunchIgnoreFailure, captured.PreLaunchIgnoreFailure);
+
+            Assert.Equal(dto.FailureProgramPath, captured.FailureProgramPath);
+            Assert.Equal(dto.FailureProgramStartupDirectory, captured.FailureProgramStartupDirectory);
+            Assert.Equal(dto.FailureProgramParameters, captured.FailureProgramExecutableArgs);
+
+            Assert.Equal(dto.PostLaunchExecutablePath, captured.PostLaunchExePath);
+            Assert.Equal(dto.PostLaunchStartupDirectory, captured.PostLaunchStartupDirectory);
+            Assert.Equal(dto.PostLaunchParameters, captured.PostLaunchArgs);
+
+            Assert.Equal(dto.StartTimeout, captured.StartTimeout);
+            Assert.Equal(dto.StopTimeout, captured.StopTimeout);
+
+            Assert.Equal(dto.PreStopExecutablePath, captured.PreStopExePath);
+            Assert.Equal(dto.PreStopStartupDirectory, captured.PreStopStartupDirectory);
+            Assert.Equal(dto.PreStopParameters, captured.PreStopArgs);
+            Assert.Equal(dto.PreStopTimeoutSeconds, captured.PreStopTimeout);
+            Assert.Equal(dto.PreStopLogAsError, captured.PreStopLogAsError);
+
+            Assert.Equal(dto.PostStopExecutablePath, captured.PostStopExePath);
+            Assert.Equal(dto.PostStopStartupDirectory, captured.PostStopStartupDirectory);
+            Assert.Equal(dto.PostStopParameters, captured.PostStopArgs);
+
+            Assert.Equal(config.EnableDebugLogs, captured.EnableDebugLogs);
+        }
+
         #endregion
 
         #region OpenManager Method and Exceptions Tests
@@ -472,6 +637,77 @@ namespace Servy.UnitTests.Services
                 if (File.Exists(tempTrackingFile))
                 {
                     File.Delete(tempTrackingFile);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task OpenManager_ProcessStartReturnsNull_DisplaysLaunchFailedError()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+            _processHelperMock.Setup(h => h.Start(It.IsAny<ProcessStartInfo>())).Returns((Process?)null);
+
+            var sut = CreateSut();
+
+            try
+            {
+                // Act
+                await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert: unlike the browser hand-off in OpenSecurityHardeningGuide, a null process
+                // here means the Manager app did not launch and must be reported to the user
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(
+                    Resources.Strings.Msg_ManagerAppLaunchFailed,
+                    UiAppConfig.Caption),
+                    Times.Once);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task OpenManager_ProcessStartsSuccessfully_DisplaysNoError()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+
+            var sut = CreateSut();
+
+            try
+            {
+                using (var currentProcess = Process.GetCurrentProcess())
+                {
+                    _processHelperMock.Setup(h => h.Start(It.IsAny<ProcessStartInfo>())).Returns(currentProcess);
+
+                    // Act
+                    await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
+                }
+
+                // Assert
+                _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
                 }
             }
         }
@@ -695,6 +931,28 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopService_ServiceDisabled_StillStopsWithoutDisabledError()
+        {
+            // Arrange
+            // A service whose startup type is Disabled can still be running - Disabled governs
+            // starting, not stopping - which is why StopService passes checkDisabled: false.
+            var sut = CreateSut();
+            var serviceName = "DisabledButRunningService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(serviceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.StopServiceAsync(serviceName, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceDisabledError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -973,7 +1231,6 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "StuckService";
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Service marked for deletion."));
 
@@ -994,7 +1251,6 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "SilentFailureService";
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateBlankFailureOperationResult(blankMessage));
 
@@ -1012,7 +1268,6 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "SecureSystemService";
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new UnauthorizedAccessException());
 
@@ -1030,7 +1285,6 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "CrashingUninstallService";
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("WMI Registry Failure"));
 
@@ -1051,11 +1305,7 @@ namespace Servy.UnitTests.Services
             var serviceName = "ValidInstalledService";
 
             // 1. Pass the IsServiceNameValid gate implicitly by using a standard name string
-            // 2. Pass the IsServiceInstalled check gate
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
-                .Returns(true);
-
-            // 3. Force UninstallServiceAsync to return a successful operational track result
+            // 2. Force UninstallServiceAsync to return a successful operational track result
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
@@ -1378,7 +1628,6 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "CancelledUninstallService";
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 

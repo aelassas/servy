@@ -33,7 +33,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             foreach (var wrapper in _spawnedWrappers)
             {
-                TestProcessCleanup.KillAndDispose(wrapper, TestTimeouts.CleanupWaitMs);
+                TestProcessCleanup.KillAndDispose(wrapper);
             }
 
             foreach (var file in _tempFiles)
@@ -112,14 +112,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var options = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.CiGenerousSeconds}\"", fireAndForget: true, timeoutMs: 0);
 
             // Act
+            var stopwatch = Stopwatch.StartNew();
             var wrapper = ProcessLauncher.Start(options, _realFactory, _logger);
+            stopwatch.Stop();
             _spawnedWrappers.Add(wrapper);
 
             try
             {
                 // Assert
-                Assert.NotNull(wrapper);
                 Assert.False(wrapper.HasExited);
+                Assert.True(stopwatch.ElapsedMilliseconds < TestTimeouts.ProcessLauncherTimeoutMs,
+                    $"Fire-and-forget launch should return promptly, but took {stopwatch.ElapsedMilliseconds} ms.");
             }
             finally
             {
@@ -193,7 +196,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             string exe = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
             var options = CreateOptions(exe, "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
-            options.StartupDirectory = null!; // Triggers Path.GetDirectoryName fallback branch
+            options.StartupDirectory = null; // Triggers Path.GetDirectoryName fallback branch
 
             // Act
             using (var wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
@@ -264,9 +267,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 wrapper.WaitForExit();
 
-                bool logged = SpinWait.SpinUntil(
-                    () => _logger.Errors.Any(m => m.Contains("Disabling stdout capture for")),
-                    TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+                bool logged = false;
+                for (int i = 0; i < TestTimeouts.MaxPollAttempts; i++)
+                {
+                    if (_logger.Errors.Any(m => m.Contains("Disabling stdout capture for")))
+                    {
+                        logged = true;
+                        break;
+                    }
+                    Thread.Sleep(TestTimeouts.PollIntervalMs);
+                }
 
                 // Assert
                 Assert.True(wrapper.HasExited);
@@ -278,25 +288,36 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         #region Language Fixes & Regex Timeout Coverage
 
+        /// <summary>
+        /// The environment variables <see cref="ProcessLauncher.ApplyLanguageFixes"/> sets for Python
+        /// runtimes, asserted as absent on every non-Python row.
+        /// </summary>
+        private static readonly string[] PythonEnvKeys =
+            { "PYTHONUTF8", "PYTHONIOENCODING", "PYTHONLEGACYWINDOWSSTDIO", "PYTHONUNBUFFERED" };
+
         [Theory]
-        [InlineData("python.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("pythonw.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("python3.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("py.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("java.exe", false, null, null, null, null, "-Dfile.encoding=UTF-8 -version")]
-        [InlineData("javaw.exe", false, null, null, null, null, "-Dfile.encoding=UTF-8 -version")]
-        [InlineData("javac.exe", false, null, null, null, null, "-J-Dfile.encoding=UTF-8 -version")]
+        [InlineData("python.exe", true, "-version")]
+        [InlineData("pythonw.exe", true, "-version")]
+        [InlineData("python3.exe", true, "-version")]
+        [InlineData("py.exe", true, "-version")]
+        [InlineData("java.exe", false, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("javaw.exe", false, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("javac.exe", false, "-J-Dfile.encoding=UTF-8 -version")]
         public void ApplyLanguageFixes_RuntimesDetection_AppliesExpectedArgumentsAndVariables(
             string fileName,
             bool isPython,
-            string? expectedUtf8,
-            string? expectedIoEncoding,
-            string? expectedLegacyStdio,
-            string? expectedUnbuffered,
             string expectedArguments)
         {
             // Arrange
             var psi = new ProcessStartInfo { FileName = fileName, Arguments = "-version" };
+
+            // ProcessStartInfo.Environment is seeded from this process, so drop any inherited
+            // PYTHON* value: it would defeat SetIfMissing on the Python rows and the absence
+            // assertion on the others.
+            foreach (var key in PythonEnvKeys)
+            {
+                psi.Environment.Remove(key);
+            }
 
             // Act
             ProcessLauncher.ApplyLanguageFixes(psi, logger: null);
@@ -306,10 +327,18 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             if (isPython)
             {
-                Assert.Equal(expectedUtf8, psi.Environment["PYTHONUTF8"]);
-                Assert.Equal(expectedIoEncoding, psi.Environment["PYTHONIOENCODING"]);
-                Assert.Equal(expectedLegacyStdio, psi.Environment["PYTHONLEGACYWINDOWSSTDIO"]);
-                Assert.Equal(expectedUnbuffered, psi.Environment["PYTHONUNBUFFERED"]);
+                Assert.Equal("1", psi.Environment["PYTHONUTF8"]);
+                Assert.Equal("utf-8", psi.Environment["PYTHONIOENCODING"]);
+                Assert.Equal("0", psi.Environment["PYTHONLEGACYWINDOWSSTDIO"]);
+                Assert.Equal("1", psi.Environment["PYTHONUNBUFFERED"]);
+            }
+            else
+            {
+                foreach (var key in PythonEnvKeys)
+                {
+                    Assert.False(psi.Environment.ContainsKey(key),
+                        $"'{fileName}' must not receive the Python fix '{key}'.");
+                }
             }
         }
 
@@ -426,21 +455,24 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             try
             {
-                // Create file reparse point/symlink
-                var fileInfo = new FileInfo(targetFile);
-                fileInfo.CreateAsSymbolicLink(linkFile);
+                try
+                {
+                    // Create the file reparse point: the link path comes first, the target second.
+                    File.CreateSymbolicLink(linkFile, targetFile);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    // Symbolic link creation on Windows may require elevated permissions in non-developer mode environments.
+                    Assert.Skip("Symlink creation unavailable on this runner");
+                }
 
                 // Act
                 using (var writer = InvokeTryOpenAppendWriter(linkFile, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
                 {
                     // Assert
                     Assert.Null(writer);
-                    mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("is a junction or symbolic link")), It.IsAny<Exception>()), Times.Once);
+                    mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("target file") && s.Contains("is a junction or symbolic link")), It.IsAny<Exception>()), Times.Once);
                 }
-            }
-            catch (IOException)
-            {
-                // Symbolic link creation on Windows may require elevated permissions in non-developer mode environments.
             }
             finally
             {
@@ -519,7 +551,12 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
 
             public MockThrowingProcessWrapper CreatedWrapper { get; }
-            public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger) => CreatedWrapper;
+
+            public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger)
+            {
+                CreatedWrapper.StartInfo = startInfo;
+                return CreatedWrapper;
+            }
         }
 
         /// <summary>
@@ -545,7 +582,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public DateTime StartTime => DateTime.Now;
             public StreamReader StandardOutput => StreamReader.Null;
             public StreamReader StandardError => StreamReader.Null;
-            public ProcessStartInfo StartInfo => new ProcessStartInfo();
+            public ProcessStartInfo StartInfo { get; internal set; } = new ProcessStartInfo();
             public IntPtr MainWindowHandle => IntPtr.Zero;
             public ProcessPriorityClass PriorityClass { get; set; }
             public IntPtr ProcessorAffinity { get; set; }

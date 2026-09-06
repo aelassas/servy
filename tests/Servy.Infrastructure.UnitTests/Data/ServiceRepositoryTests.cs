@@ -63,28 +63,32 @@ namespace Servy.Infrastructure.UnitTests.Data
         public void Constructor_NullDapper_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null!, _mockSecureData.Object, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null!, _mockSecureData.Object, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            Assert.Equal("dapper", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullSecureData_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, null!, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, null!, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            Assert.Equal("secureData", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullXmlServiceSerializer_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, null!, _mockJsonServiceSerializer.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, null!, _mockJsonServiceSerializer.Object));
+            Assert.Equal("xmlServiceSerializer", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullJsonServiceSerializer_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object, null!));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object, null!));
+            Assert.Equal("jsonServiceSerializer", ex.ParamName);
         }
 
         #endregion
@@ -705,7 +709,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetByIdAsync_NullPassword()
         {
             // Arrange
-            var dto = new ServiceDto { Id = 1, Password = null! };
+            var dto = new ServiceDto { Id = 1, Password = null };
             _mockDapper
                 .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dto);
@@ -942,7 +946,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                     sql.Contains($"FROM {SqlConstants.ServicesTableName}") &&
                     sql.Contains("WHERE Name = @Name") &&
                     sql.Contains("LIMIT 1")),
-                It.Is<object>(p => p.GetType().GetProperty("Name") != null!),
+                It.Is<object>(p => (string?)p.GetType().GetProperty("Name")!.GetValue(p) == serviceName),
                 It.IsAny<IDbTransaction>(),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
@@ -996,7 +1000,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task Search_DecryptsPasswords()
+        public async Task SearchAsync_MatchingKeyword_DecryptsPasswords()
         {
             // Arrange
             var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "enc1" } };
@@ -1016,7 +1020,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task Search_NullKeyword_ShortCircuitsToGetAll()
+        public async Task SearchAsync_NullKeyword_ShortCircuitsToGetAll()
         {
             // Arrange
             var list = new List<ServiceDto> { CreateEncryptedServiceDto() };
@@ -1057,7 +1061,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         #region Import/Export Tests
 
         [Fact]
-        public async Task ExportXML_ReturnsEmptyString()
+        public async Task ExportXmlAsync_ServiceMissing_ReturnsEmptyString()
         {
             // Arrange
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
@@ -1074,7 +1078,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ExportXML_ReturnsSerializedService()
+        public async Task ExportXmlAsync_ServiceFound_ReturnsSerializedService()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A", Password = "pwd1" };
@@ -1103,7 +1107,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_ValidXml_ReturnsSuccess()
+        public async Task ImportXmlAsync_ValidXml_ReturnsSuccess()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A" };
@@ -1121,7 +1125,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_EmptyXml_ReturnsFailure()
+        public async Task ImportXmlAsync_EmptyXml_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1136,7 +1140,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_InvalidXml_ReturnsFailure()
+        public async Task ImportXmlAsync_InvalidXml_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1152,7 +1156,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_ServiceNull_ReturnsFailure()
+        public async Task ImportXmlAsync_DeserializerReturnsNull_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1169,7 +1173,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ExportJSON_ReturnsEmptyString()
+        public async Task ExportJsonAsync_ServiceMissing_ReturnsEmptyString()
         {
             // Arrange
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
@@ -1186,7 +1190,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ExportJSON_ReturnsSerializedService()
+        public async Task ExportJsonAsync_ServiceFound_ReturnsSerializedService()
         {
             // Arrange
             var name = "A";
@@ -1211,7 +1215,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_ValidJson_ReturnsSuccess()
+        public async Task ImportJsonAsync_ValidJson_ReturnsSuccess()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A" };
@@ -1229,7 +1233,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_EmptyJson_ReturnsFailure()
+        public async Task ImportJsonAsync_EmptyJson_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1269,7 +1273,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_Throws_ReturnsFailure()
+        public async Task ImportJsonAsync_DeserializerThrows_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();

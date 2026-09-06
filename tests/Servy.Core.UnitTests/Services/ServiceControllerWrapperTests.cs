@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Native;
 using Servy.Core.Resources;
 using Servy.Core.Services;
 using System.ComponentModel;
@@ -165,6 +166,61 @@ namespace Servy.Core.UnitTests.Services
             }
         }
 
+        [Fact]
+        public void GetDependencies_TokenAlreadyCancelled_ThrowsOperationCanceledException()
+        {
+            // Arrange
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            using (var cts = new CancellationTokenSource())
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ChildA" });
+                var mockChildA = CreateMockWrapper("ChildA", "Child A", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ChildA", mockChildA.Object }
+                };
+
+                cts.Cancel();
+
+                // Act & Assert
+                Assert.Throws<OperationCanceledException>(() =>
+                    wrapper.GetDependenciesInternal(name => mocks[name], cts.Token));
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_TokenCancelledDuringChildEnumeration_StopsWalking()
+        {
+            // Arrange: Root has three children; the factory cancels once the first child has been
+            // requested, so the walk has to abort on a per-child checkpoint rather than the entry one.
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            using (var cts = new CancellationTokenSource())
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ChildA", "ChildB", "ChildC" });
+                var mockChildA = CreateMockWrapper("ChildA", "Child A", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                int childrenBuilt = 0;
+
+                Func<string, IServiceControllerWrapper> factory = name =>
+                {
+                    if (string.Equals(name, "Root", StringComparison.OrdinalIgnoreCase)) return mockRoot.Object;
+
+                    childrenBuilt++;
+                    cts.Cancel();
+                    return mockChildA.Object;
+                };
+
+                // Act & Assert
+                Assert.Throws<OperationCanceledException>(() =>
+                    wrapper.GetDependenciesInternal(factory, cts.Token));
+
+                // The second and third children must never be requested.
+                Assert.Equal(1, childrenBuilt);
+            }
+        }
+
         #endregion
 
         #region Win32Exception & Edge Case Resolution Tests
@@ -187,6 +243,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "TargetService"), result.DisplayName);
                 Assert.False(result.IsRunning);
                 Assert.False(result.IsCyclic);
+                Assert.True(result.IsUnavailable);
             }
         }
 
@@ -207,6 +264,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(string.Format(Strings.Msg_DependencyAccessDenied, "TargetService"), result.DisplayName);
                 Assert.False(result.IsRunning);
                 Assert.False(result.IsCyclic);
+                Assert.True(result.IsUnavailable);
             }
         }
 
@@ -216,7 +274,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             using (var wrapper = new ServiceControllerWrapper("TargetService"))
             {
-                Func<string, IServiceControllerWrapper> factory = name => throw new Win32Exception(1060); // ERROR_SERVICE_DOES_NOT_EXIST
+                Func<string, IServiceControllerWrapper> factory = name => throw new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
                 // Act
                 var result = wrapper.GetDependenciesInternal(factory, TestContext.Current.CancellationToken);
@@ -227,6 +285,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "TargetService"), result.DisplayName);
                 Assert.False(result.IsRunning);
                 Assert.False(result.IsCyclic);
+                Assert.True(result.IsUnavailable);
             }
         }
 
@@ -259,9 +318,42 @@ namespace Servy.Core.UnitTests.Services
                 var childMissingNode = result.Dependencies.Single(n => n.ServiceName == "ChildMissing");
                 Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "ChildMissing"), childMissingNode.DisplayName);
                 Assert.False(childMissingNode.IsRunning);
+                Assert.True(childMissingNode.IsUnavailable);
 
                 Assert.Contains(result.Dependencies, n => n.ServiceName == "ChildGoodA");
                 Assert.Contains(result.Dependencies, n => n.ServiceName == "ChildGoodB");
+
+                Assert.All(result.Dependencies.Where(n => n.ServiceName != "ChildMissing"),
+                    n => Assert.False(n.IsUnavailable));
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_UnavailableChild_SortsByServiceNameNotErrorMessage()
+        {
+            // Arrange: "Zulu" sorts last by ServiceName, but an unavailable node's DisplayName is
+            // the localized "Dependency 'Zulu' is unavailable." sentence, which sorts under 'D'.
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "Alpha", "Zulu", "Mike" });
+                var mockAlpha = CreateMockWrapper("Alpha", "Alpha Service", ServiceControllerStatus.Running, Array.Empty<string>());
+                var mockMike = CreateMockWrapper("Mike", "Mike Service", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                Func<string, IServiceControllerWrapper> factory = name =>
+                {
+                    if (string.Equals(name, "Root", StringComparison.OrdinalIgnoreCase)) return mockRoot.Object;
+                    if (string.Equals(name, "Alpha", StringComparison.OrdinalIgnoreCase)) return mockAlpha.Object;
+                    if (string.Equals(name, "Mike", StringComparison.OrdinalIgnoreCase)) return mockMike.Object;
+
+                    throw new InvalidOperationException($"Service {name} was not found on computer '.'.");
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(factory, TestContext.Current.CancellationToken);
+
+                // Assert: the unavailable child is ordered by its ServiceName, not by its error sentence
+                Assert.Equal(new[] { "Alpha", "Mike", "Zulu" }, result.Dependencies.Select(n => n.ServiceName).ToArray());
+                Assert.True(result.Dependencies.Single(n => n.ServiceName == "Zulu").IsUnavailable);
             }
         }
 

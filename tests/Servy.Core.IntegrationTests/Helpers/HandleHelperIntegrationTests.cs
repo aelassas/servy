@@ -122,10 +122,10 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                     // Assert
                     Assert.True(handleDetected, $"Current process (PID {currentPid}) failed to be detected holding a handle to {testFile} after retries.");
-                    Assert.NotEmpty(results);
 
-                    var selfMatch = results.FirstOrDefault(p => p.ProcessId == currentPid);
-                    Assert.NotNull(selfMatch);
+                    // First, not FirstOrDefault: the assertion above has already established the element exists.
+                    var selfMatch = results.First(p => p.ProcessId == currentPid);
+                    Assert.NotNull(selfMatch.ProcessName);
 
                     // handle.exe output might include .exe or not, HandleHelper trims whitespace.
                     Assert.Contains(currentName, selfMatch.ProcessName, StringComparison.OrdinalIgnoreCase);
@@ -162,31 +162,25 @@ namespace Servy.Core.IntegrationTests.Helpers
                 {
                     // Act
                     var currentPid = self.Id;
-                    List<HandleHelper.ProcessHandleInfo> results = null!;
-                    List<HandleHelper.ProcessHandleInfo> selfHandles = null!;
-                    bool multiHandlesDetected = false;
 
-                    // Wrap the query inside a retry loop identical to its sibling test.
-                    // This absorbs underlying Windows kernel table sync latency before evaluating assertions.
+                    // handle.exe can lag the kernel handle table by a few milliseconds, so the query is retried.
+                    // The Where filters out concurrent background system handles (like security indexers)
+                    // that also target our file; handle.exe returns one line per handle found.
                     const int maxRetries = 5;
-                    for (int i = 0; i < maxRetries; i++)
+                    var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+                    var selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
+                    bool multiHandlesDetected = selfHandles.Count >= 2;
+
+                    for (int i = 1; i < maxRetries && !multiHandlesDetected; i++)
                     {
+                        Thread.Sleep(50); // Small backoff window
                         results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
                         selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
-
-                        // handle.exe returns one line per handle found.
-                        if (selfHandles.Count >= 2)
-                        {
-                            multiHandlesDetected = true;
-                            break;
-                        }
-
-                        Thread.Sleep(50); // Small backoff window
+                        multiHandlesDetected = selfHandles.Count >= 2;
                     }
 
                     // Assert
-                    // Filter out potential concurrent background system handles (like security indexers) targeting our file
-                    Assert.True(multiHandlesDetected, $"Should have detected at least two handles owned by this running test process (PID {currentPid}). Total found self handles: {selfHandles?.Count ?? 0}, overall system handles found: {results?.Count ?? 0}");
+                    Assert.True(multiHandlesDetected, $"Should have detected at least two handles owned by this running test process (PID {currentPid}). Total found self handles: {selfHandles.Count}, overall system handles found: {results.Count}");
                 }
             }
         }

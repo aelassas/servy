@@ -39,8 +39,10 @@ namespace Servy.Core.UnitTests.Helpers
         #region FormatRamUsage Tests
 
         [Theory]
+        [InlineData(0L, "0.0 B")]                                   // zero case, mirrors FormatCpuUsage
         [InlineData(512L, "512.0 B")]                               // < KB
         [InlineData(1023L, "1023.0 B")]                             // top of B branch, must NOT promote to KB
+        [InlineData(1024L, "1.0 KB")]                               // exact KB, first promotion step
         [InlineData(2048L, "2.0 KB")]                               // exact KB
         [InlineData(3072L, "3.0 KB")]                               // KB range
         [InlineData(1048575L, "1.0 MB")]                            // 1 MB - 1, must promote rather than print 1024.0 KB
@@ -66,21 +68,14 @@ namespace Servy.Core.UnitTests.Helpers
 
         #region ResolvePath Tests
 
-        [Fact]
-        public void ResolvePath_NullInput_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public void ResolvePath_NullOrWhitespace_ReturnsNull(string? input)
         {
             // Arrange & Act
-            var result = _processHelper.ResolvePath(null!);
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public void ResolvePath_EmptyInput_ReturnsNull()
-        {
-            // Arrange & Act
-            var result = _processHelper.ResolvePath(string.Empty);
+            var result = _processHelper.ResolvePath(input!);
 
             // Assert
             Assert.Null(result);

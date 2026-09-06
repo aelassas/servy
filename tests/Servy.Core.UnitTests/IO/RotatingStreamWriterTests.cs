@@ -347,23 +347,6 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
-        [Fact]
-        public void Flush_EmptyWrite_CoversBaseStreamLengthZero()
-        {
-            // Arrange
-            var filePath = Path.Combine(_testDir, "flush_empty.txt");
-
-            // Act
-            using (var writer = CreateWriter(filePath, true, 10))
-            {
-                writer.Write(""); // Forces lazy initialization, _baseStream is created
-                writer.Flush();   // Length could be 0, covers the extra boundary
-            }
-
-            // Assert
-            Assert.True(File.Exists(filePath));
-        }
-
         private string InvokeGenerateUniqueFileName(string path)
         {
             // Arrange & Act
@@ -498,56 +481,68 @@ namespace Servy.Core.UnitTests.IO
             string baseLog = Path.Combine(_testDir, "service.log");
             File.WriteAllText(baseLog, "base");
 
-            var writer = CreateWriter(baseLog, true, 1000);
-            writer.Write(""); // force file creation
-
-            // ---- BRANCH 1: _maxRotations <= 0 ----
-            TestReflection.SetField(writer, "_maxRotations", 0);
-            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
-
-            // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
-            string f1 = Path.Combine(_testDir, "service.20260325_000001.log");
-            string noise1 = Path.Combine(_testDir, "service_backup.log");
-            string noise2 = Path.Combine(_testDir, "service.20260325.txt");
-
-            File.WriteAllText(f1, "valid");
-            File.WriteAllText(noise1, "noise");
-            File.WriteAllText(noise2, "noise");
-
-            // ---- BRANCH 3: rotatedFiles.Count <= _maxRotations ----
-            TestReflection.SetField(writer, "_maxRotations", 5);
-            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
-
-            Assert.True(File.Exists(f1));
-            Assert.True(File.Exists(noise1));
-            Assert.True(File.Exists(noise2));
-
-            // ---- BRANCH 4: Deletion happens (rotatedFiles.Count > _maxRotations) ----
-            string f2 = Path.Combine(_testDir, "service.20260325_000002.log");
-            File.WriteAllText(f2, "valid2");
-            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
-            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
-
-            TestReflection.SetField(writer, "_maxRotations", 1);
-            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
-
-            Assert.True(File.Exists(f2));     // Kept (newest)
-            Assert.False(File.Exists(f1));    // Deleted
-            Assert.True(File.Exists(noise1));
-            Assert.True(File.Exists(noise2));
-
-            // ---- BRANCH 5: Deletion Failure (IOException) ----
-            File.WriteAllText(f1, "recreate");
-            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
-
-            // Act & Assert
-            using (var locked = new FileStream(f1, FileMode.Open, FileAccess.Read, FileShare.None))
+            using (var writer = CreateWriter(baseLog, true, 1000))
             {
-                var ex = Record.Exception(() => TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations"));
-                Assert.Null(ex); // Resilient against locks
-            }
+                writer.Write(""); // force file creation
 
-            writer.Dispose();
+                // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
+                string f1 = Path.Combine(_testDir, "service.20260325_000001.log");
+                string noise1 = Path.Combine(_testDir, "service_backup.log");
+                string noise2 = Path.Combine(_testDir, "service.20260325.txt");
+
+                File.WriteAllText(f1, "valid");
+                File.WriteAllText(noise1, "noise");
+                File.WriteAllText(noise2, "noise");
+
+                // ---- BRANCH 1: _maxRotations <= 0 means unlimited, so nothing is ever deleted ----
+                // Exercised with rotated files already on disk: without the early return the
+                // "count <= maxRotations" check is false and every rotated file gets deleted.
+                string f0 = Path.Combine(_testDir, "service.20260325_000000.log");
+                File.WriteAllText(f0, "oldest");
+                File.SetLastWriteTimeUtc(f0, DateTime.UtcNow.AddHours(-1));
+
+                TestReflection.SetField(writer, "_maxRotations", 0);
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+                Assert.True(File.Exists(f0), "maxRotations 0 means unlimited; no rotated file may be deleted.");
+                Assert.True(File.Exists(f1));
+
+                // Remove the extra rotated file again so the branch 3 and 4 counts are unchanged
+                File.Delete(f0);
+
+                // ---- BRANCH 3: rotatedFiles.Count <= _maxRotations ----
+                TestReflection.SetField(writer, "_maxRotations", 5);
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+                Assert.True(File.Exists(f1));
+                Assert.True(File.Exists(noise1));
+                Assert.True(File.Exists(noise2));
+
+                // ---- BRANCH 4: Deletion happens (rotatedFiles.Count > _maxRotations) ----
+                string f2 = Path.Combine(_testDir, "service.20260325_000002.log");
+                File.WriteAllText(f2, "valid2");
+                File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
+                File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
+
+                TestReflection.SetField(writer, "_maxRotations", 1);
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+                Assert.True(File.Exists(f2));     // Kept (newest)
+                Assert.False(File.Exists(f1));    // Deleted
+                Assert.True(File.Exists(noise1));
+                Assert.True(File.Exists(noise2));
+
+                // ---- BRANCH 5: Deletion Failure (IOException) ----
+                File.WriteAllText(f1, "recreate");
+                File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
+
+                // Act & Assert
+                using (var locked = new FileStream(f1, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    var ex = Record.Exception(() => TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations"));
+                    Assert.Null(ex); // Resilient against locks
+                }
+            }
         }
 
         [Fact]
@@ -601,27 +596,27 @@ namespace Servy.Core.UnitTests.IO
             string baseLog = Path.Combine(_testDir, "plainfile");
             File.WriteAllText(baseLog, "base");
 
-            var writer = CreateWriter(baseLog, true, 1000);
-            writer.Write(""); // Trigger lazy init
+            using (var writer = CreateWriter(baseLog, true, 1000))
+            {
+                writer.Write(""); // Trigger lazy init
 
-            string f1 = Path.Combine(_testDir, "plainfile.20260325_000001");
-            File.WriteAllText(f1, "rotated");
-            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
+                string f1 = Path.Combine(_testDir, "plainfile.20260325_000001");
+                File.WriteAllText(f1, "rotated");
+                File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
 
-            TestReflection.SetField(writer, "_maxRotations", 1);
+                TestReflection.SetField(writer, "_maxRotations", 1);
 
-            string f2 = Path.Combine(_testDir, "plainfile.20260325_000002");
-            File.WriteAllText(f2, "rotated2");
-            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
+                string f2 = Path.Combine(_testDir, "plainfile.20260325_000002");
+                File.WriteAllText(f2, "rotated2");
+                File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
 
-            // Act
-            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+                // Act
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
 
-            // Assert
-            Assert.True(File.Exists(f2));
-            Assert.False(File.Exists(f1));
-
-            writer.Dispose();
+                // Assert
+                Assert.True(File.Exists(f2));
+                Assert.False(File.Exists(f1));
+            }
         }
 
         [Fact]

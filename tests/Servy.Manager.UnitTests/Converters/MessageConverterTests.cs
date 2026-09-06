@@ -21,15 +21,21 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Convert_NonStringValue_ReturnsFirstLineOfToString()
         {
-            // Arrange - an object whose ToString() is multi-line, as an Exception's is.
-            var value = new InvalidOperationException("Boom");
-            var expected = value.ToString().Split('\n')[0].TrimEnd('\r');
+            // Arrange - an exception renders multi-line only once it has been thrown and its
+            // StackTrace populated; an unthrown one is a single "Type: Message" line.
+            InvalidOperationException value;
+            try { throw new InvalidOperationException("Boom"); }
+            catch (InvalidOperationException ex) { value = ex; }
+
+            // Guard the arrange: if the premise stops holding the test must fail here rather
+            // than degrade to comparing a single line with itself.
+            Assert.Contains('\n', value.ToString());
 
             // Act
             var result = _converter.Convert(value, typeof(string), null!, CultureInfo.InvariantCulture);
 
             // Assert
-            Assert.Equal(expected, result);
+            Assert.Equal("System.InvalidOperationException: Boom", result);
             Assert.DoesNotContain('\n', (string)result);
         }
 

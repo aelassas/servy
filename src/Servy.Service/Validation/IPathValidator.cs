@@ -10,6 +10,6 @@ namespace Servy.Service.Validation
         /// </summary>
         /// <param name="path">The file system path to validate.</param>
         /// <returns><c>true</c> if the path is valid; otherwise, <c>false</c>.</returns>
-        bool IsValidPath(string path);
+        bool IsValidPath(string? path);
     }
 }

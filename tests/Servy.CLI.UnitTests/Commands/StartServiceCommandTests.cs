@@ -7,6 +7,7 @@ using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class StartServiceCommandTests : ServiceCommandTestsBase<StartServiceCommand, StartServiceOptions>
     {
         protected override StartServiceCommand CreateCommandInstance() => new StartServiceCommand(MockServiceManager.Object);
@@ -20,6 +21,8 @@ namespace Servy.CLI.UnitTests.Commands
         protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_StartSuccess, serviceName);
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_StartServiceAction, serviceName);
+
+        protected override string ExpectedCommandName => "start";
 
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {

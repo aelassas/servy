@@ -97,12 +97,9 @@ namespace Servy.Core.IntegrationTests.Native
             if (!_canModifyLsaPolicy || !_accountCreatedLocally) Assert.Skip("Skipping test due to insufficient LSA policy access or account creation failure.");
 
             string shorthandAccount = $".\\{_testAccountName}";
-            string fullyQualifiedAccount = $"{Environment.MachineName}\\{_testAccountName}";
 
             // Resolve the SID via the fully-qualified name - this is the target identity the shorthand must expand to.
-            var sid = (SecurityIdentifier)new NTAccount(fullyQualifiedAccount).Translate(typeof(SecurityIdentifier));
-            byte[] sidBytes = new byte[sid.BinaryLength];
-            sid.GetBinaryForm(sidBytes, 0);
+            byte[] sidBytes = ResolveSidBytes(FullAccountName);
 
             Assert.DoesNotContain("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
 
@@ -123,15 +120,10 @@ namespace Servy.Core.IntegrationTests.Native
             // Arrange
             if (!_canModifyLsaPolicy || !_accountCreatedLocally) Assert.Skip("Skipping test due to insufficient LSA policy access or account creation failure.");
 
-            string fullAccountName = $"{Environment.MachineName}\\{_testAccountName}";
+            string fullAccountName = FullAccountName;
 
             // Resolve the account name to a SecurityIdentifier (SID) to query LSA
-            var ntAccount = new NTAccount(fullAccountName);
-            var sid = (SecurityIdentifier)ntAccount.Translate(typeof(SecurityIdentifier));
-
-            // Allocate the buffer and use GetBinaryForm instead of GetBinaryBytes
-            byte[] sidBytes = new byte[sid.BinaryLength];
-            sid.GetBinaryForm(sidBytes, 0);
+            byte[] sidBytes = ResolveSidBytes(fullAccountName);
 
             // Assert baseline - The freshly created account must not hold the logon right prior to execution
             var initialRights = GetAccountRightsViaNativeMethods(sidBytes);
@@ -161,6 +153,32 @@ namespace Servy.Core.IntegrationTests.Native
 
         #region Native Methods LSA Inspection Helper
 
+        /// <summary>
+        /// The machine-qualified name of the transient test account.
+        /// </summary>
+        private string FullAccountName => $"{Environment.MachineName}\\{_testAccountName}";
+
+        /// <summary>
+        /// Resolves an account name to the binary SID form the LSA APIs take.
+        /// </summary>
+        private static byte[] ResolveSidBytes(string accountName)
+        {
+            var sid = (SecurityIdentifier)new NTAccount(accountName).Translate(typeof(SecurityIdentifier));
+            var sidBytes = new byte[sid.BinaryLength];
+            sid.GetBinaryForm(sidBytes, 0);
+            return sidBytes;
+        }
+
+        /// <summary>
+        /// Copies a binary SID into a freshly allocated unmanaged buffer. The caller owns the buffer.
+        /// </summary>
+        private static IntPtr AllocSidBuffer(byte[] sidBytes)
+        {
+            IntPtr buffer = Marshal.AllocHGlobal(sidBytes.Length);
+            Marshal.Copy(sidBytes, 0, buffer, sidBytes.Length);
+            return buffer;
+        }
+
         private static List<string> GetAccountRightsViaNativeMethods(byte[] sidBytes)
         {
             var rightsList = new List<string>();
@@ -168,17 +186,17 @@ namespace Servy.Core.IntegrationTests.Native
             var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES { Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>() };
             IntPtr policyHandle;
 
-            // Access permission combination required to inspect the account privilege definitions safely
-            uint desiredAccess = 0x00010000 /* STANDARD_RIGHTS_REQUIRED */ | NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES;
+            // POLICY_LOOKUP_NAMES is the only access LsaEnumerateAccountRights needs. Requesting more
+            // than that on the policy handle is what a hardened host is most likely to refuse, and a
+            // refused LsaOpenPolicy is reported below as an empty rights list.
+            uint desiredAccess = NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES;
 
             int openStatus = NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref objectAttributes, desiredAccess, out policyHandle);
             if (openStatus != 0) return rightsList; // LsaOpenPolicy failed; report no rights
 
-            IntPtr rawSidAllocationPtr = Marshal.AllocHGlobal(sidBytes.Length);
+            IntPtr rawSidAllocationPtr = AllocSidBuffer(sidBytes);
             try
             {
-                Marshal.Copy(sidBytes, 0, rawSidAllocationPtr, sidBytes.Length);
-
                 IntPtr outUserRightsBufferPtr;
                 uint countOfRights;
 
@@ -229,18 +247,12 @@ namespace Servy.Core.IntegrationTests.Native
         {
             IntPtr policyHandle = IntPtr.Zero;
             IntPtr sidBuffer = IntPtr.Zero;
+            IntPtr nativeStringAlloc = IntPtr.Zero;
 
             try
             {
                 // Resolve user domain string back to an active NT Security Identifier structure
-                var ntAccount = new NTAccount(accountName);
-                var sid = (SecurityIdentifier)ntAccount.Translate(typeof(SecurityIdentifier));
-
-                byte[] sidBytes = new byte[sid.BinaryLength];
-                sid.GetBinaryForm(sidBytes, 0);
-
-                sidBuffer = Marshal.AllocHGlobal(sidBytes.Length);
-                Marshal.Copy(sidBytes, 0, sidBuffer, sidBytes.Length);
+                sidBuffer = AllocSidBuffer(ResolveSidBytes(accountName));
 
                 var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES
                 {
@@ -256,7 +268,7 @@ namespace Servy.Core.IntegrationTests.Native
                 if (lsaOpenStatus == 0)
                 {
                     var privilegeString = new NativeMethods.LSA_UNICODE_STRING();
-                    IntPtr nativeStringAlloc = Marshal.StringToHGlobalUni(privilege);
+                    nativeStringAlloc = Marshal.StringToHGlobalUni(privilege);
 
                     privilegeString.Buffer = nativeStringAlloc;
                     privilegeString.Length = (ushort)(privilege.Length * 2);
@@ -266,8 +278,6 @@ namespace Servy.Core.IntegrationTests.Native
 
                     // Remove the privilege before the account is deleted, so no orphaned SID grant is left in LSA
                     LsaRemoveAccountRights(policyHandle, sidBuffer, false, rightsArray, 1);
-
-                    Marshal.FreeHGlobal(nativeStringAlloc);
                 }
             }
             catch
@@ -278,6 +288,7 @@ namespace Servy.Core.IntegrationTests.Native
             {
                 if (policyHandle != IntPtr.Zero) NativeMethods.LsaClose(policyHandle);
                 if (sidBuffer != IntPtr.Zero) Marshal.FreeHGlobal(sidBuffer);
+                if (nativeStringAlloc != IntPtr.Zero) Marshal.FreeHGlobal(nativeStringAlloc);
             }
         }
 

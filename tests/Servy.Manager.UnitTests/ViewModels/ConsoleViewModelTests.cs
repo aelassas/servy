@@ -21,6 +21,7 @@ namespace Servy.Manager.UnitTests.ViewModels
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
@@ -30,6 +31,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+            _messageBoxServiceMock = new Mock<IMessageBoxService>();
             _cursorServiceMock = new Mock<ICursorService>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
             _mockProcessKiller = new Mock<IProcessKiller>();
@@ -52,6 +54,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             return new ConsoleViewModel(
                 _serviceRepoMock.Object,
                 _serviceCommandsMock.Object,
+                _messageBoxServiceMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
                 _uiDispatcherMock.Object);
@@ -64,7 +67,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("serviceRepository", () => new ConsoleViewModel(
-                null!, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
+                null!, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -72,7 +75,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("appConfig", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, _serviceCommandsMock.Object, null!, _cursorServiceMock.Object, _uiDispatcherMock.Object));
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, null!, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -80,7 +83,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("serviceCommands", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, null!, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
+                _serviceRepoMock.Object, null!, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -88,7 +91,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("cursorService", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, null!, _uiDispatcherMock.Object));
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, null!, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -96,7 +99,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("uiDispatcher", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, null!));
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, null!));
+        }
+
+        [Fact]
+        public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>("messageBoxService", () => new ConsoleViewModel(
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, null!, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -133,6 +144,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (var vm = CreateViewModel())
                 {
                     var service = new ConsoleService { Name = "AppService", StdoutPath = "C:\\out.log" };
+
+                    // Seed the buffer so the reset half of this test can actually fail. SwitchServiceAsync
+                    // clears RawLines before its first await, so the clear has already happened when the
+                    // SelectedService setter returns.
+                    vm.RawLines.Add(new LogLine("Stale line from the previously selected service", LogType.StdOut));
+                    Assert.NotEmpty(vm.RawLines);
 
                     // Act
                     vm.SelectedService = service;
@@ -439,7 +456,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Assert
                         // Both lines share a timestamp, so stable-sort order must follow arrival order.
-                        Assert.NotEmpty(viewModel.RawLines);
                         Assert.Equal(2, viewModel.RawLines.Count);
 
                         // The LogLine loaded via LogTailer preserves the entire trace line format.
@@ -592,8 +608,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act - Start a live tailer for stdout
                     TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, TestContext.Current.CancellationToken);
 
-                    // Pull the dynamic internal event handler delegate out via reflection
-                    var tailerInstance = TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer");
+                    // StartLiveTail must record the tailer, because StopActiveTailers relies on it to
+                    // sever the handler closure later.
+                    Assert.NotNull(TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer"));
 
                     // Construct a test payload batch block of 3 log lines to pass directly through the tailer's event handler pipeline
                     var newLinesBatch = new List<LogLine>

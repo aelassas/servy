@@ -8,19 +8,46 @@ namespace Servy.Manager.UnitTests.Utils
     public class LogTailerTests : IDisposable
     {
         private readonly string _tempFilePath;
+        private readonly List<string> _extraTempFiles = new List<string>();
 
         public LogTailerTests()
         {
             _tempFilePath = Path.Combine(Path.GetTempPath(), $"logtailer_test_{Guid.NewGuid()}.log");
         }
 
+        /// <summary>
+        /// Builds an additional temp file path and registers it for cleanup in <see cref="Dispose"/>,
+        /// so a failing assertion cannot orphan it.
+        /// </summary>
+        /// <param name="prefix">A short prefix identifying the scenario that owns the file.</param>
+        /// <returns>The registered path. The file itself is not created.</returns>
+        private string NewTempFilePath(string prefix)
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"{prefix}_{Guid.NewGuid()}.log");
+            _extraTempFiles.Add(path);
+            return path;
+        }
+
         public void Dispose()
         {
-            // Best-effort delete; swallow exceptions if a running test still holds the file open
+            foreach (var path in _extraTempFiles)
+            {
+                DeleteQuietly(path);
+            }
+
+            DeleteQuietly(_tempFilePath);
+        }
+
+        /// <summary>
+        /// Best-effort delete; swallows exceptions if a running test still holds the file open.
+        /// </summary>
+        /// <param name="path">The file to remove.</param>
+        private static void DeleteQuietly(string path)
+        {
             try
             {
-                if (File.Exists(_tempFilePath))
-                    File.Delete(_tempFilePath);
+                if (File.Exists(path))
+                    File.Delete(path);
             }
             catch
             {
@@ -126,6 +153,7 @@ namespace Servy.Manager.UnitTests.Utils
             using (var tailer = new LogTailer())
             {
                 File.WriteAllLines(_tempFilePath, new[] { "Line1", "Line2" });
+                var expectedLastWrite = new FileInfo(_tempFilePath).LastWriteTimeUtc;
 
                 // Act
                 var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
@@ -134,7 +162,12 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.NotNull(result);
                 Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
                 Assert.Equal(2, result.Lines.Count);
-                Assert.True(result?.Lines[0].Timestamp < result?.Lines[1].Timestamp);
+
+                // The last line is anchored exactly on the file's last-write time...
+                Assert.Equal(expectedLastWrite, result.Lines[1].Timestamp);
+                // ...and every earlier line is exactly one tick older than the one after it.
+                Assert.Equal(expectedLastWrite.AddTicks(-1), result.Lines[0].Timestamp);
+
                 Assert.True(result?.Lines[0].IsSyntheticTime);
                 Assert.True(result?.Lines[1].IsSyntheticTime);
             }
@@ -147,15 +180,28 @@ namespace Servy.Manager.UnitTests.Utils
             using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                int loopPassesCount = 0;
+                tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
+
                 // Act
-                var taskNull = tailer.RunFromPosition(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
-                var taskEmpty = tailer.RunFromPosition(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                var taskNull = tailer.RunFromPositionAsync(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                var taskEmpty = tailer.RunFromPositionAsync(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+
+                // Assert
+                // A guarded call never yields, so both tasks are already finished before the first await.
+                // LoopStartedSignal cannot carry this: the tailer replaces it with a fresh, uncompleted
+                // source in a finally block, so it also reads as incomplete after a loop that ran and ended.
+                Assert.True(taskNull.IsCompletedSuccessfully,
+                    "A null file path should return synchronously without entering the tailing loop.");
+                Assert.True(taskEmpty.IsCompletedSuccessfully,
+                    "An empty file path should return synchronously without entering the tailing loop.");
+
                 await taskNull;
                 await taskEmpty;
 
-                // Assert
-                Assert.False(tailer.LoopStartedSignal.Task.IsCompleted,
-                    "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
+                // OnLoopCompleted is raised only from inside the loop and is never reset, so it survives
+                // a loop that started and then finished.
+                Assert.Equal(0, Volatile.Read(ref loopPassesCount));
             }
         }
 
@@ -179,7 +225,7 @@ namespace Servy.Manager.UnitTests.Utils
                 tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
 
                 // Act
-                var tailTask = tailer.RunFromPosition(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                 await Task.Delay(150, TestContext.Current.CancellationToken);
                 cts.Cancel();
@@ -210,7 +256,7 @@ namespace Servy.Manager.UnitTests.Utils
                 using (var exclusiveLock = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
                     // Act
-                    var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                    var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                     await Task.Delay(150, TestContext.Current.CancellationToken);
                     cts.Cancel();
@@ -225,12 +271,19 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
-        public async Task GetHistoryAsync_FileNotFoundRaceConditionCatch_ReturnsEmptyList()
+        public async Task GetHistoryAsync_FileLockedWithIOException_ReturnsEmptyList()
         {
             // Arrange
+            // Opening the file with FileShare.None makes LoadHistory's own FileStream open throw
+            // IOException, so this test covers the IOException arm and nothing else. ACCEPTED: the
+            // FileNotFoundException, DirectoryNotFoundException and UnauthorizedAccessException arms
+            // of LoadHistory stay untested here. The first two are reachable only if the file
+            // disappears between the File.Exists guard and the open one statement later, and the
+            // third needs an ACL-denied file; arranging either from a test requires the file system
+            // access to be injectable, which this class has no seam for.
             using (var tailer = new LogTailer())
             {
-                string lockTestPath = Path.Combine(Path.GetTempPath(), $"lock_race_{Guid.NewGuid()}.log");
+                string lockTestPath = NewTempFilePath("lock_race");
                 File.WriteAllText(lockTestPath, "Historical line context payload stream\n");
 
                 // Act
@@ -241,16 +294,6 @@ namespace Servy.Manager.UnitTests.Utils
                     // Assert
                     Assert.NotNull(result);
                     Assert.Empty(result.Lines);
-                }
-
-                try
-                {
-                    if (File.Exists(lockTestPath))
-                        File.Delete(lockTestPath);
-                }
-                catch
-                {
-                    // Swallow cleanup failures to protect runtime step bounds
                 }
             }
         }
@@ -280,7 +323,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // Query precise FileInfo metadata so CreationTimeUtc matches and doesn't trigger a false rotation reset to offset 0
                 var fileInfo = new FileInfo(_tempFilePath);
                 var startPos = fileInfo.Length;
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, startPos, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, startPos, fileInfo.CreationTimeUtc, cts.Token);
 
                 // Wait for the background reader loop to fully complete its initial cycle
                 // and position its internal StreamReader handle directly at the EOF boundary.
@@ -332,7 +375,7 @@ namespace Servy.Manager.UnitTests.Utils
                     lock (capturedLines) capturedLines.AddRange(lines);
                 };
 
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
 
                 int threshold = AppConfig.LogTailerBatchFlushThreshold;
@@ -379,7 +422,7 @@ namespace Servy.Manager.UnitTests.Utils
                     lock (capturedLines) capturedLines.AddRange(lines);
                 };
 
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
 
                 // Construct AppConfig.LogTailerBatchFlushThreshold lines where the last line lacks a trailing newline
@@ -439,15 +482,27 @@ namespace Servy.Manager.UnitTests.Utils
                 var fileInfo = new FileInfo(_tempFilePath);
 
                 var capturedBatches = new List<List<LogLine>>();
+                int throwOnce = 1;
                 tailer.OnNewLines += (lines) =>
                 {
                     lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
+
+                    // Fault the pass immediately after the first threshold flush has been published, so the
+                    // loop lands in the unhandled-error handler and reopens the file from lastPosition. That
+                    // is the only way to observe the commit-before-publish ordering at the flush point: if the
+                    // offset were committed after the publish instead, the reopen would replay this batch.
+                    // A subscriber that throws from this handler is the realistic trigger - ConsoleViewModel
+                    // marshals to the UI thread from here.
+                    if (Interlocked.Exchange(ref throwOnce, 0) == 1)
+                    {
+                        throw new InvalidOperationException("Simulated subscriber fault immediately after a threshold flush.");
+                    }
                 };
 
                 var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
                 await loopCompletedTcs.Task;
 
@@ -474,13 +529,18 @@ namespace Servy.Manager.UnitTests.Utils
                     await writer.WriteAsync("PostFlushLine1\nPostFlushLine2\n");
                 }
 
+                // The faulted pass costs one linear back-off (LogTailerUnhandledErrorRecoveryDelayMs)
+                // before the reopen, so this wait is longer than its siblings.
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedBatches) return capturedBatches.SelectMany(b => b).Any(l => l.Text == "PostFlushLine2");
-                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(15), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert - the mid-pass fault must actually have fired, or nothing below is meaningful
+                Assert.Equal(0, Volatile.Read(ref throwOnce));
 
                 // Assert - Flushed lines from earlier passes must not be duplicated
                 lock (capturedBatches)
@@ -517,7 +577,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 // Act
                 // Start tailing from the end of the "Old content"
-                var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
 
                 // DETERMINISTIC WAIT 1: Ensure the loop has fully completed its first pass setup
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
@@ -547,7 +607,6 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 lock (capturedLines)
                 {
-                    Assert.NotEmpty(capturedLines);
                     Assert.Contains(capturedLines, l => l.Text.Contains("ROTATED_CONTENT"));
                 }
             }
@@ -573,7 +632,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // to force operand #2 (info.Length < lastPosition) to evaluate as FALSE.
                 // Pass a stale timestamp to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as TRUE.
                 var fileInfo = new FileInfo(_tempFilePath);
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, (long)fileInfo.Length, DateTime.UtcNow.AddDays(-1), cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, (long)fileInfo.Length, DateTime.UtcNow.AddDays(-1), cts.Token);
 
                 // Enforce execution stabilization before running content validations
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
@@ -589,7 +648,6 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 lock (capturedLines)
                 {
-                    Assert.NotEmpty(capturedLines);
                     Assert.Contains(capturedLines, l => l.Text.Contains("Line After Truncated Rotation"));
                 }
             }
@@ -616,7 +674,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // Pass a highly advanced past lastPosition (999999) that forces the metadata check branch
                 // (info.Length < lastPosition) to evaluate as TRUE to validate initial attach truncation logic.
                 var fileInfo = new FileInfo(_tempFilePath);
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 999999, fileInfo.CreationTimeUtc, cts.Token);
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 999999, fileInfo.CreationTimeUtc, cts.Token);
 
                 // Enforce execution stabilization before running content validations
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
@@ -632,7 +690,6 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 lock (capturedLines)
                 {
-                    Assert.NotEmpty(capturedLines);
                     Assert.Contains(capturedLines, l => l.Text.Contains("Line After Truncated Rotation"));
                 }
             }
@@ -680,7 +737,7 @@ namespace Servy.Manager.UnitTests.Utils
             {
                 using (var cts = new CancellationTokenSource())
                 {
-                    var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                    var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                     // Await initial execution attach before triggering disposal path
                     await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);

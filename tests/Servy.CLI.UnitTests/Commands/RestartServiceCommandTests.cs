@@ -7,6 +7,7 @@ using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class RestartServiceCommandTests : ServiceCommandTestsBase<RestartServiceCommand, RestartServiceOptions>
     {
         protected override RestartServiceCommand CreateCommandInstance() => new RestartServiceCommand(MockServiceManager.Object);
@@ -19,6 +20,8 @@ namespace Servy.CLI.UnitTests.Commands
         protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_RestartSuccess, serviceName);
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_RestartServiceAction, serviceName);
+
+        protected override string ExpectedCommandName => "restart";
 
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {

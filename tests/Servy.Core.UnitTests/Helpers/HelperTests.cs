@@ -333,10 +333,8 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Pass the freshly-built dynamic assembly explicitly so GetBuiltWithFramework
             // reads the BuiltWithFramework metadata from it instead of the executing assembly.
-            return InvokeInAssembly(assemblyBuilder);
+            return Helper.GetBuiltWithFramework(assemblyBuilder);
         }
-
-        private string InvokeInAssembly(Assembly assembly) => Helper.GetBuiltWithFramework(assembly);
 
         [Fact]
         public void GetBuiltWithFramework_AttributeMissing_ReturnsUnknown()
@@ -398,6 +396,10 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             // Confirm the parameterless overload targets the core library assembly frame as its baseline
             Assert.Equal(expectedFrameworkString, actualFrameworkString);
+
+            // Both sides are the same call, so pin the result against the "Unknown" fallback:
+            // if the BuiltWithFramework metadata stops resolving, the equality alone stays green.
+            Assert.NotEqual("Unknown", actualFrameworkString);
         }
 
         /// <summary>
@@ -480,6 +482,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("My<Service")]
         [InlineData("My>Service")]
         [InlineData("My|Service")]
+        [InlineData("My;Service")]
         public void IsServiceNameValid_ForbiddenCharacters_ReturnsInvalidCharError(string input)
         {
             // Act
@@ -517,6 +520,11 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("Servy-Agent")]
         [InlineData("Wexflow_Service")]
         [InlineData("Service.123")]
+        [InlineData("Servy-Café")]
+        [InlineData("My Service (v2)")]
+        [InlineData("Backup,Sync")]
+        [InlineData("net_svc+1")]
+        [InlineData("데이터베이스")]
         public void IsServiceNameValid_ValidInput_ReturnsSuccess(string input)
         {
             // Act
@@ -703,6 +711,28 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void WriteFileAtomic_CreatesNestedDirectories()
+        {
+            // Arrange
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            string nestedPath = Path.Combine(tempDir, "deeply", "nested", "path");
+            string targetPath = Path.Combine(nestedPath, "test.log");
+
+            // Act: WriteFileAtomic calls Directory.CreateDirectory
+            Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+            {
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                {
+                    writer.Write("nesting-test");
+                }
+            }, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(Directory.Exists(nestedPath));
+            Assert.True(File.Exists(targetPath));
+        }
+
+        [Fact]
         public void WriteFileAtomic_OnException_CleansUpTempAndDoesNotCreateTarget()
         {
             // Arrange
@@ -714,7 +744,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 Helper.WriteFileAtomic(targetPath, (Stream stream) =>
                 {
-                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
                     {
                         writer.Write("partial-data");
                         throw new InvalidOperationException("Simulated failure");
@@ -822,7 +852,6 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
             string targetPath = Path.Combine(tempDir, "target.txt");
-            Directory.CreateDirectory(tempDir);
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -1015,14 +1044,17 @@ namespace Servy.Core.UnitTests.Helpers
                 {
                     Assert.Skip("Symlink creation unavailable on this runner (SeCreateSymbolicLinkPrivilege not held; enable Developer Mode or run elevated).");
                 }
-                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && i < MaxFileSystemRetries - 1)
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
+                    if (i == MaxFileSystemRetries - 1)
+                    {
+                        Assert.Fail($"Failed to establish a directory link from '{linkPath}' to '{targetPath}' after {MaxFileSystemRetries} attempts: {ex.Message}");
+                    }
+
                     try { if (Directory.Exists(linkPath)) Directory.Delete(linkPath); } catch { }
                     Thread.Sleep(200 * (i + 1));
                 }
             }
-
-            Assert.Fail($"Failed to establish a directory link from '{linkPath}' to '{targetPath}' after {MaxFileSystemRetries} attempts.");
         }
 
         /// <summary>
@@ -1043,8 +1075,16 @@ namespace Servy.Core.UnitTests.Helpers
                     }
                     break;
                 }
-                catch (Exception ex) when (i < MaxFileSystemRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
+                    if (i == MaxFileSystemRetries - 1)
+                    {
+                        // Every call site runs this from a finally block, so a teardown
+                        // failure must not hide the test result - same stance as Dispose().
+                        Console.WriteLine($"Failed to tear down directory link '{linkPath}': {ex.Message}");
+                        return;
+                    }
+
                     Thread.Sleep(200 * (i + 1));
                 }
             }

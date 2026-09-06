@@ -27,6 +27,18 @@ namespace Servy.Testing
         public const int CiGenerousMs = 5000;
 
         /// <summary>
+        /// Observation window (1 second) for negative waits - the "wait, then assert nothing was
+        /// observed" shape, where the delay is the whole test and a value that is too short lets the
+        /// assertion pass vacuously because the work was never scheduled.
+        /// </summary>
+        /// <remarks>
+        /// One second matches the scheduling ceiling the suite already assumes for a fire-and-forget
+        /// body, and is deliberately far below <see cref="CiGenerous"/> so that a handful of these
+        /// waits does not add a minute of pure sleep to the run.
+        /// </remarks>
+        public static readonly TimeSpan NegativeObservationWindow = TimeSpan.FromSeconds(1);
+
+        /// <summary>
         /// How long (15 seconds) a spawned PowerShell leaf process in a process tree fixture stays alive.
         /// </summary>
         /// <remarks>
@@ -49,6 +61,18 @@ namespace Servy.Testing
         public const int ProcessTreeTimeoutSeconds = 20;
 
         /// <summary>
+        /// Spin duration (100 ms) that lets a process accumulate measurable processor time between two
+        /// consecutive metric samples, so the second sample can report a CPU delta rather than a bare baseline.
+        /// </summary>
+        public const int CpuSampleSpinMs = 100;
+
+        /// <summary>
+        /// Poll interval (50 ms) between successive process-metric samples while waiting for a process tree
+        /// to spawn and allocate.
+        /// </summary>
+        public const int MetricsPollIntervalMs = 50;
+
+        /// <summary>
         /// Default timeout (30,000 ms / 30 seconds) allocated for process launcher execution blocks.
         /// </summary>
         public const int ProcessLauncherTimeoutMs = 30_000;
@@ -60,6 +84,18 @@ namespace Servy.Testing
         /// Used in conjunction with shorter execution budgets to intentionally trigger timeout handling logic.
         /// </remarks>
         public const int ProcessLauncherSynchronousTimeoutSeconds = 15;
+
+        /// <summary>
+        /// Timeout budget (10 seconds) for the file-lock fixture of the process killer tests: both the poll that
+        /// waits for the spawned child to acquire the exclusive lock and that child's LOCKED stdout handshake.
+        /// </summary>
+        public const int ProcessKillerFileLockTimeoutSeconds = 10;
+
+        /// <summary>
+        /// Per-attempt window (3 seconds) allowed for a locking process to actually exit after a single
+        /// <c>KillProcessesUsingFile</c> call, before the test retries the kill.
+        /// </summary>
+        public const int ProcessKillerPerAttemptExitWaitSeconds = 3;
 
         /// <summary>
         /// Standard timeout budget (5,000 ms / 5 seconds) for waiting for process exit in process wrapper unit tests.

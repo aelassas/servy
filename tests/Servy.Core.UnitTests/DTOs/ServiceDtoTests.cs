@@ -16,11 +16,17 @@ namespace Servy.Core.UnitTests.DTOs
         [Fact]
         public void Clone_AllProperties_MatchSourceValues()
         {
-            // 1. Arrange: Create a source with non-default values for ALL properties
+            // 1. Arrange: Create a source with non-default values for ALL properties.
+            // ServiceDto.Clone() is MemberwiseClone(), which cannot omit or transpose a member, so
+            // this test is a tripwire for a future hand-written Clone(): closed #1290 was exactly
+            // that defect (a dropped EnableConsoleUI), which is why every property is compared
+            // reflectively rather than by hand.
             var sourcePass1 = CreateFullyPopulatedServiceDto();
             var sourcePass2 = CreateFullyPopulatedServiceDto();
 
-            // Invert boolean properties on pass 2 to ensure two-pass complete boolean swap detection
+            // Pass 2 flips every bool so each one is compared in both states. Note this does NOT
+            // detect a swap between two bools whose ordinal indices share a parity: they are seeded
+            // equal and inverted together, so they are equal in both passes.
             InvertAllBooleanProperties(sourcePass2);
 
             var testPasses = new[] { sourcePass1, sourcePass2 };
@@ -55,27 +61,31 @@ namespace Servy.Core.UnitTests.DTOs
         public void SensitiveProperties_MustCarryIgnoreSerializationAttributes()
         {
             // Arrange
-            var sensitiveProperties = new List<string>
+            var expected = new List<string>
             {
                 "Id", "Pid", "RunAsLocalSystem", "UserAccount", "Password",
                 "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath"
-            };
+            }.OrderBy(n => n, StringComparer.Ordinal).ToList();
 
-            // Act & Assert
-            foreach (string propName in sensitiveProperties)
-            {
-                // Safely extract property data via the target public type reflection framework
-                var prop = typeof(ServiceDto).GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+            var props = typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-                Assert.NotNull(prop);
+            // Act
+            // Enumerate by attribute rather than by name, the shape ServicePathAttributeAntiDriftTests
+            // uses: walking the hand-maintained list could only catch an attribute removed from a
+            // listed property, never one of ServiceDto's other 55 properties - or a newly added
+            // secret - that should be ignored and is not.
+            var jsonIgnored = props.Where(p => p.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+                .Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList();
+            var xmlIgnored = props.Where(p => p.GetCustomAttribute<XmlIgnoreAttribute>() != null)
+                .Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList();
 
-                // Actively assert protection attributes are registered to enforce security constraints
-                bool hasJsonIgnore = prop.GetCustomAttribute<JsonIgnoreAttribute>() != null;
-                bool hasXmlIgnore = prop.GetCustomAttribute<XmlIgnoreAttribute>() != null;
-
-                Assert.True(hasJsonIgnore, $"Security Regression: Property '{propName}' is missing [JsonIgnore].");
-                Assert.True(hasXmlIgnore, $"Security Regression: Property '{propName}' is missing [XmlIgnore].");
-            }
+            // Assert
+            // Security Regression: the ignored set must be exactly the set listed above, so adding
+            // or removing either attribute has to be a deliberate edit of this test. Comparing both
+            // attributes against the same list also pins that they never diverge - a value hidden
+            // from JSON but present in the XML export still reaches disk.
+            Assert.Equal(expected, jsonIgnored);
+            Assert.Equal(expected, xmlIgnored);
         }
 
         [Fact]
@@ -148,8 +158,8 @@ namespace Servy.Core.UnitTests.DTOs
         }
 
         /// <summary>
-        /// Inverts all boolean property values on the target <see cref="ServiceDto"/> instance.
-        /// Enables complete mapping swap detection across boolean fields.
+        /// Inverts all boolean property values on the target <see cref="ServiceDto"/> instance,
+        /// so the second clone pass compares every boolean in its other state.
         /// </summary>
         private static void InvertAllBooleanProperties(ServiceDto dto)
         {
@@ -198,9 +208,9 @@ namespace Servy.Core.UnitTests.DTOs
             }
             else if (targetType == typeof(bool))
             {
-                // NOTE: bool? has only two non-null values, so same-typed swap detection is not
-                // achievable in a single pass - alternating keeps the pattern reproducible while
-                // dual-pass cloning validates all boolean states.
+                // NOTE: bool? has only two non-null values, so alternating on the ordinal index
+                // gives a reproducible pattern in which each boolean is populated non-default in
+                // one of the two passes. It does not separate two booleans of the same parity.
                 p.SetValue(dto, (seed & 1) == 0);
             }
             else if (targetType == typeof(double))

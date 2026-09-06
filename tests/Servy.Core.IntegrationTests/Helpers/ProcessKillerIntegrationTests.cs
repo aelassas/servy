@@ -1,4 +1,5 @@
 using Servy.Core.Helpers;
+using Servy.Testing;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -80,21 +81,43 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         /// <summary>
+        /// Supplies every entry of the ProcessKiller safelist, so the coverage of the guard cannot drift from the list it guards.
+        /// </summary>
+        /// <returns>One theory row per entry of the CriticalSystemProcesses safelist.</returns>
+        public static TheoryData<string> AllCriticalProcessNames()
+        {
+            // GetFieldStatic throws when the field is renamed or removed, so the theory can never
+            // degrade silently into an empty (and therefore vacuously green) data set.
+            var safelist = TestReflection.GetFieldStatic<HashSet<string>>(
+                typeof(ProcessKiller), "CriticalSystemProcesses");
+
+            var data = new TheoryData<string>();
+            foreach (var name in safelist)
+            {
+                data.Add(name);
+            }
+
+            return data;
+        }
+
+        /// <summary>
         /// Verifies that attempting to terminate a critical Windows system process by name is actively blocked by the internal guardrails.
         /// </summary>
-        /// <param name="protectedName">The name of the critical system process, optionally including the executable extension.</param>
+        /// <param name="protectedName">The name of the critical system process, taken from the safelist itself.</param>
         [Theory]
-        [InlineData("svchost")]
-        [InlineData("csrss.exe")]
-        [InlineData("explorer")]
+        [MemberData(nameof(AllCriticalProcessNames))]
         public void KillProcessTreeAndParents_ProtectedProcessName_ReturnsFalse(string protectedName)
         {
             // Arrange & Act
+            // Every entry must be refused with and without the .exe suffix the guard normalizes away,
+            // whether or not the process happens to be running on this host.
             bool result = _processKiller.KillProcessTreeAndParents(protectedName, killParents: true);
+            bool resultWithExtension = _processKiller.KillProcessTreeAndParents(protectedName + ".exe", killParents: true);
 
             // Assert
             // Names on the CriticalSystemProcesses safelist are never killed
             Assert.False(result);
+            Assert.False(resultWithExtension);
         }
 
         /// <summary>
@@ -164,7 +187,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 _processKiller.KillChildren(parent!.Id);
 
                 // Polling loop with refreshes to handle OS termination latency and eliminate CI flake
-                bool childExited = WaitForProcessExit(child, 5000);
+                bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
                 parent!.Refresh();
 
                 // Assert
@@ -196,24 +219,16 @@ namespace Servy.Core.IntegrationTests.Helpers
                 bool result = _processKiller.KillProcessTreeAndParents(childId, killParents: true);
 
                 // Validation: Use a polling loop with refreshes to handle OS termination latency
-                bool childExited = WaitForProcessExit(child, 5000);
-                bool parentExited = WaitForProcessExit(parent, 5000);
+                bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
+                bool parentExited = WaitForProcessExit(parent, TestTimeouts.CiGenerousMs);
 
                 // Assert
                 Assert.True(childExited, $"The child process (PID {childId}) should have exited within the timeout.");
                 Assert.True(parentExited, $"The parent process (PID {parentId}) should have been terminated through the upward walk.");
 
-                // Hardening: If both processes are dead, a false return value usually indicates an acceptable
-                // native race condition (e.g., trying to inspect a PID that vanished mid-walk).
-                if (!result)
-                {
-                    Debug.WriteLine("WARNING: KillProcessTreeAndParents returned false, but both processes were confirmed dead.");
-
-                    // Verify if the method returned false simply because the processes died ahead of the signal chain.
-                    // If they are dead, we bypass the result flag assertion to protect the CI runner pipeline.
-                    bool recordsConfirmDead = !IsPidActive(childId) && !IsPidActive(parentId);
-                    Assert.True(recordsConfirmDead, "The termination method returned false, and one or more processes are still running in the OS space.");
-                }
+                // The upward walk reports success unless a PID vanished mid-walk. Both processes are confirmed
+                // dead above, so a false here means the walk itself failed, not that a target raced ahead of it.
+                Assert.True(result, $"KillProcessTreeAndParents returned false and the target child process (PID {childId}) or parent process (PID {parentId}) was not cleanly handled.");
             }
             finally
             {
@@ -231,25 +246,23 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             // Arrange
             var (parent, child) = SpawnProcessTree();
+            int childId = child!.Id;
 
             try
             {
                 // Act
-                bool result = _processKiller.KillProcessTreeAndParents(child!.Id, killParents: false);
+                bool result = _processKiller.KillProcessTreeAndParents(childId, killParents: false);
 
-                bool childExited = WaitForProcessExit(child, 5000);
+                bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
                 parent!.Refresh();
 
                 // Assert
                 Assert.True(childExited, "The target child process should have been terminated.");
                 Assert.False(parent.HasExited, "The parent process should remain alive because killParents was false.");
 
-                // If child exit took down the parent via unintended cascade, assert evaluation catches it here.
-                if (!result)
-                {
-                    bool isChildGenuinelyDead = !IsPidActive(child.Id);
-                    Assert.True(isChildGenuinelyDead, "The tracking core returned failure and the target thread is running.");
-                }
+                // The downward walk reports success unless a PID vanished mid-walk. The child is confirmed
+                // dead above, so a false here means the walk itself failed.
+                Assert.True(result, $"KillProcessTreeAndParents returned false and the target child process (PID {childId}) is still running.");
             }
             finally
             {
@@ -317,7 +330,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 {
                     return false;
                 }
-            }, TimeSpan.FromSeconds(10)); // Generous timeout for slow CI environments
+            }, TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds)); // Generous timeout for slow CI environments
 
             if (!lockConfirmed)
             {
@@ -333,26 +346,25 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Act
             while (killAttempts < maxKillAttempts && !exited)
             {
+                // Count every attempt, so the failure message below reports what was actually tried
+                killAttempts++;
+
                 // Attempt to kill processes holding the lock
                 result = _processKiller.KillProcessesUsingFile(testFile);
 
                 // GitHub Actions runners can be slow; wait up to 3 seconds per attempt for the process to actually exit
-                exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(3));
+                exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(TestTimeouts.ProcessKillerPerAttemptExitWaitSeconds));
 
-                if (!exited)
+                if (!exited && killAttempts < maxKillAttempts)
                 {
-                    killAttempts++;
-                    if (killAttempts < maxKillAttempts)
-                    {
-                        // Give the OS handle table a moment to update before attempting the kill again
-                        Thread.Sleep(1000);
-                    }
+                    // Give the OS handle table a moment to update before attempting the kill again
+                    Thread.Sleep(1000);
                 }
             }
 
             // Assert
             Assert.True(result, "KillProcessesUsingFile should return true.");
-            Assert.True(exited, $"The background process holding the file lock should have been terminated after {killAttempts + 1} attempts.");
+            Assert.True(exited, $"The background process holding the file lock should have been terminated after {killAttempts} attempts.");
 
             // 5. Backoff/Retry Phase for File Deletion
             bool deleted = false;
@@ -373,7 +385,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
 
             Assert.True(deleted, $"Failed to delete '{testFile}' after process termination. The lock was not genuinely released.");
-            Assert.False(File.Exists(testFile));
         }
 
         #region Helpers & Tool Utilities
@@ -393,22 +404,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Thread.Sleep(200);
             }
             return false;
-        }
-
-        /// <summary>
-        /// Determines whether a specified process identifier (PID) is currently active and running in the operating system.
-        /// </summary>
-        private static bool IsPidActive(int pid)
-        {
-            try
-            {
-                using (var process = Process.GetProcessById(pid))
-                    return !process.HasExited;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
         }
 
         /// <summary>
@@ -445,11 +440,12 @@ namespace Servy.Core.IntegrationTests.Helpers
                 WorkingDirectory = tempPath,
             };
 
-            var parentProcess = Process.Start(psi);
-            _trackedProcesses.Add(parentProcess!);
+            var parentProcess = Process.Start(psi)
+                ?? throw new InvalidOperationException("Failed to spawn the orchestration PowerShell process.");
+            _trackedProcesses.Add(parentProcess);
 
             var errBuilder = new StringBuilder();
-            parentProcess!.ErrorDataReceived += (s, e) =>
+            parentProcess.ErrorDataReceived += (s, e) =>
             {
                 if (e.Data != null)
                 {
@@ -464,7 +460,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             int childPid = -1;
             var readTask = Task.Run(() =>
             {
-                while (parentProcess != null && !parentProcess.HasExited)
+                while (!parentProcess.HasExited)
                 {
                     string? line = parentProcess.StandardOutput.ReadLine();
                     const string marker = "CHILD_PID:";
@@ -476,7 +472,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 return -1;
             });
 
-            if (readTask.Wait(TimeSpan.FromSeconds(15)))
+            if (readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ChildTimeoutSeconds)))
             {
                 childPid = readTask.Result;
             }
@@ -498,7 +494,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 childProcess.Refresh();
                 return !childProcess.HasExited;
-            }, TimeSpan.FromSeconds(5));
+            }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
 
             Assert.True(childAlive, "Spawned child process exited prematurely.");
 
@@ -541,7 +537,12 @@ namespace Servy.Core.IntegrationTests.Helpers
                 return false;
             });
 
-            readTask.Wait(TimeSpan.FromSeconds(10));
+            // Validate the handshake the same way SpawnProcessTree validates its CHILD_PID one:
+            // a timeout, or a child that exited without ever printing LOCKED, is a failed spawn.
+            if (!readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds)) || !readTask.Result)
+            {
+                return null;
+            }
 
             return lockingProcess;
         }

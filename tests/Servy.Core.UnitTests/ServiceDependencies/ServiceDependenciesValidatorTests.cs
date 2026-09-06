@@ -9,6 +9,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         #region Valid Input Verification Pathways
 
         [Theory]
+        [InlineData(null)]                                       // Validate's parameter is string?, and the sibling Parse theory covers null for the same guard
         [InlineData("")]                                         // Validate_EmptyString_ReturnsTrue
         [InlineData("   \r\n   ")]                               // Validate_WhitespaceOnly_ReturnsTrue
         [InlineData("MyService1")]                               // Validate_SingleValidServiceName_ReturnsTrue
@@ -22,7 +23,13 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("My Service;Another Service")]               // internal spaces are allowed (edge spaces are trimmed, internal ones are not)
         [InlineData("+TDI")]                                     // load-order group dependency prefix (+) is allowed
         [InlineData("+NetworkProvider;+Base;+PNP_TDI")]          // multiple load-order group dependencies
-        public void Validate_ValidInput_ReturnsTrueWithNoErrors(string input)
+        [InlineData("ServiceA;servicea")]                        // a case-insensitive duplicate is collapsed by Tokenize, not reported as an error
+        [InlineData("Servy-Café")]                               // non-ASCII unicode letters match creation rule
+        [InlineData("My Service (v2)")]                          // parentheses match creation rule
+        [InlineData("Backup,Sync")]                              // comma matches creation rule
+        [InlineData("net_svc+1")]                                // plus matches creation rule
+        [InlineData("데이터베이스")]                              // Korean characters match creation rule
+        public void Validate_ValidInput_ReturnsTrueWithNoErrors(string? input)
         {
             // Arrange & Act
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
@@ -51,11 +58,16 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         #region Invalid Input Constraint Validation Tests
 
         [Theory]
-        [InlineData("Bad#Service")]
-        [InlineData("Service@Name")]
-        [InlineData("Bad^Service")]
-        [InlineData("TD+I")]                                      // '+' in non-leading position is invalid
-        [InlineData("++TDI")]                                     // multiple leading '+' symbols are invalid
+        [InlineData(@"My\Service")]
+        [InlineData("My/Service")]
+        [InlineData("My:Service")]
+        [InlineData("My*Service")]
+        [InlineData("My?Service")]
+        [InlineData("My\"Service")]
+        [InlineData("My<Service")]
+        [InlineData("My>Service")]
+        [InlineData("My|Service")]
+        [InlineData("+")]                                         // Sole '+' group prefix with empty name
         public void Validate_NameWithInvalidCharacter_ReturnsFalse(string invalidName)
         {
             // Arrange & Act
@@ -87,8 +99,8 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         public void Validate_MixedValidAndInvalidNames_ReturnsFalse()
         {
             // Arrange
-            // 'MSSQL$SQLEXPRESS' is treated as valid, while 'Bad#Service' and 'Another@Bad' fail
-            var input = "MSSQL$SQLEXPRESS;Bad#Service;Another@Bad";
+            // 'MSSQL$SQLEXPRESS' is treated as valid, while 'Bad<Service' and 'Another>Bad' fail
+            var input = "MSSQL$SQLEXPRESS;Bad<Service;Another>Bad";
 
             // Act
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
@@ -96,8 +108,8 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             // Assert
             Assert.False(result);
             Assert.Equal(2, errors.Count);
-            Assert.Contains(errors, e => e.Contains("Bad#Service"));
-            Assert.Contains(errors, e => e.Contains("Another@Bad"));
+            Assert.Contains(errors, e => e.Contains("Bad<Service"));
+            Assert.Contains(errors, e => e.Contains("Another>Bad"));
         }
 
         [Fact]
@@ -106,7 +118,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             // Arrange
             var validName = "ValidService";
             var tooLongName = new string('B', AppConfig.MaxServiceNameLength + 1);
-            var invalidCharName = "Bad#Service";
+            var invalidCharName = "Bad<Service";
             var input = $"{validName};{tooLongName};{invalidCharName}";
             var expectedLengthError = string.Format(Strings.Msg_ServiceDependencyNameLengthReachedForName, tooLongName, AppConfig.MaxServiceNameLength);
 
@@ -117,14 +129,31 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             Assert.False(result);
             Assert.Equal(2, errors.Count);
             Assert.Contains(expectedLengthError, errors);
-            Assert.Contains(errors, e => e.Contains("Bad#Service"));
+            Assert.Contains(errors, e => e.Contains("Bad<Service"));
+        }
+
+        [Fact]
+        public void Validate_DuplicateInvalidName_ReportsItOnce()
+        {
+            // Arrange
+            // Regression guard for #4513: Validate must consume the de-duplicated token stream
+            // from ServiceDependenciesParser.Tokenize, not report one error per occurrence.
+            var input = "Bad<Service;bad<service;Bad<Service";
+
+            // Act
+            var result = ServiceDependenciesValidator.Validate(input, out var errors);
+
+            // Assert
+            Assert.False(result);
+            Assert.Single(errors);
+            Assert.Contains(errors, e => e.Contains("Bad<Service"));
         }
 
         [Fact]
         public void Validate_AllInvalidNames_ReturnsFalse()
         {
             // Arrange
-            var input = "Bad^Service;Another#One;With@Symbol";
+            var input = "Bad<Service;Another>One;With|Symbol";
 
             // Act
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
@@ -132,9 +161,9 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             // Assert
             Assert.False(result);
             Assert.Equal(3, errors.Count);
-            Assert.Contains(errors, e => e.Contains("Bad^Service"));
-            Assert.Contains(errors, e => e.Contains("Another#One"));
-            Assert.Contains(errors, e => e.Contains("With@Symbol"));
+            Assert.Contains(errors, e => e.Contains("Bad<Service"));
+            Assert.Contains(errors, e => e.Contains("Another>One"));
+            Assert.Contains(errors, e => e.Contains("With|Symbol"));
         }
 
         #endregion

@@ -30,6 +30,13 @@ namespace Servy.Core.IntegrationTests.Logging
             {
                 // Assert
                 Assert.False(logger.IsEventLogEnabled);
+
+                // _isInitialized is only ever set on a successful InitializeEventLog, so this
+                // distinguishes "never attempted" - the "DoesNotInitializeEventLog" half of the
+                // name - from "attempted and failed", which is what an unelevated run would give
+                // if the constructor's isEventLogEnabled guard were dropped.
+                Assert.False(TestReflection.GetField<bool>(logger, "_isInitialized"));
+
                 Assert.Null(logger.Prefix);
             }
         }
@@ -130,17 +137,17 @@ namespace Servy.Core.IntegrationTests.Logging
         }
 
         [Theory]
-        [InlineData(LogLevel.Debug)]
-        [InlineData(LogLevel.Info)]
-        [InlineData(LogLevel.Warn)]
-        [InlineData(LogLevel.Error)]
-        public void LogMethods_AllSeverities_ExecuteWithoutThrowingAndMaintainPrefix(LogLevel targetLevel)
+        [InlineData(LogLevel.Debug, 4)]  // everything emits
+        [InlineData(LogLevel.Info, 3)]   // Debug suppressed
+        [InlineData(LogLevel.Warn, 2)]
+        [InlineData(LogLevel.Error, 1)]  // only Error emits
+        public void LogMethods_AllSeverities_EmitOnlyAtOrAboveTheConfiguredLevel(LogLevel targetLevel, int expectedEmitted)
         {
             // Arrange
             string source = GenerateSourceName();
 
             // Start with Error level (strictest), so Debug/Info/Warn should be ignored
-            using (var logger = new EventLogLogger(source, LogLevel.Error, false, "TestPrefix"))
+            using (var logger = new RecordingEventLogLogger(source, LogLevel.Error, "TestPrefix"))
             {
                 // Act
                 logger.SetLogLevel(targetLevel);
@@ -154,7 +161,24 @@ namespace Servy.Core.IntegrationTests.Logging
                 logger.Error("Error msg", null);
 
                 // Assert
-                // No exceptions thrown means branches were safely evaluated
+                // Format runs only for an entry that passed the currentLevel <= targetLevel check,
+                // so the set of severities it saw is the filter decision this theory parameterizes.
+                // Counting severities rather than calls keeps it independent of how many times a
+                // single emitted entry is formatted (Debug once, the other three twice).
+                int emitted = 0;
+                foreach (var probe in new[] { "Debug msg", "Info msg", "Warn msg", "Error msg" })
+                {
+                    foreach (var formatted in logger.Formatted)
+                    {
+                        if (formatted.StartsWith(probe, StringComparison.Ordinal))
+                        {
+                            emitted++;
+                            break;
+                        }
+                    }
+                }
+
+                Assert.Equal(expectedEmitted, emitted);
                 Assert.Equal("[TestPrefix]", logger.Prefix);
             }
         }
@@ -232,6 +256,13 @@ namespace Servy.Core.IntegrationTests.Logging
 
                                 Assert.EndsWith(truncationSuffix, foundEntry.Message);
                             }
+                            else
+                            {
+                                // The polling window can expire without the entry appearing (slow Event Log flush,
+                                // rotation eviction, write routed elsewhere). Report it the same way the ACL-restricted
+                                // read-back below does, so a run that verified nothing is distinguishable from one that did.
+                                Trace.WriteLine($"Warning: No EventLog entry from source '{source}' appeared after {maxRetries} retries; truncation contract not verified this run.");
+                            }
                         }
                     }
                     catch (Exception readEx) when (readEx is Win32Exception || readEx is SecurityException || readEx is UnauthorizedAccessException)
@@ -256,7 +287,10 @@ namespace Servy.Core.IntegrationTests.Logging
         public void WriteRawToWindowsEventLog_OnNativeException_CatchesAndProceeds()
         {
             // Arrange
-            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
+            // No elevation guard here on purpose: WriteRawToWindowsEventLog wraps its whole body
+            // in a catch, so the asserted outcome is the same elevated or not - unelevated, the
+            // malformed source simply fails inside the try, which is the path being tested.
+            // Guarding it would skip the fail-safe boundary on every ordinary runner.
 
             // CRITICAL CONTRACT: Test the exception isolation boundaries directly on the
             // internal structural wrapper method by feeding it an illegal, un-creatable source layout configuration.
@@ -311,6 +345,14 @@ namespace Servy.Core.IntegrationTests.Logging
 
                 // Act - Change scope settings
                 scopedLogger.SetLogLevel(LogLevel.Debug);
+
+                // Assert
+                // The scope keeps its own level and does not push it onto the parent,
+                // which is the threshold WriteLeveled is handed for every scoped call.
+                Assert.Equal((int)LogLevel.Debug, TestReflection.GetField<int>(scopedLogger, "_currentLogLevel"));
+                Assert.Equal((int)LogLevel.Error, TestReflection.GetField<int>(rootLogger, "_currentLogLevel"));
+
+                // Act
                 scopedLogger.SetIsEventLogEnabled(true);
 
                 // Assert
@@ -324,8 +366,18 @@ namespace Servy.Core.IntegrationTests.Logging
                 scopedLogger.Warn("Scope Warn");
                 scopedLogger.Error("Scope Error", ex);
 
-                // Cover the no-op Dispose
+                // Act & Assert
+                // "Disabling a scope never affects the parent" - the other half of the
+                // documented self-heal contract, which only enables through the parent.
+                scopedLogger.SetIsEventLogEnabled(false);
+                Assert.True(rootLogger.IsEventLogEnabled);
+
+                // Act & Assert
+                // The scope's Dispose is documented as a no-op, so it must not tear down
+                // the shared parent that the other scopes are still writing through.
                 scopedLogger.Dispose();
+                Assert.True(rootLogger.IsEventLogEnabled);
+                Assert.True(TestReflection.GetField<bool>(rootLogger, "_isInitialized"));
             }
         }
 
@@ -370,6 +422,27 @@ namespace Servy.Core.IntegrationTests.Logging
         #endregion
 
         #region Teardown & Utilities
+
+        /// <summary>
+        /// Records every message the log pipeline formats. Format is only reached for an entry
+        /// that passed the level threshold, so the recorded messages are the observable side of
+        /// the filter without needing a seam in the production sink.
+        /// </summary>
+        private sealed class RecordingEventLogLogger : EventLogLogger
+        {
+            public readonly List<string> Formatted = new List<string>();
+
+            public RecordingEventLogLogger(string source, LogLevel level, string prefix)
+                : base(source, level, false, prefix)
+            {
+            }
+
+            protected override string Format(string message)
+            {
+                Formatted.Add(message);
+                return base.Format(message);
+            }
+        }
 
         private string GenerateSourceName()
         {

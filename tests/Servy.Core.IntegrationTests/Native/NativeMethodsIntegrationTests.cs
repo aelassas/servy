@@ -65,6 +65,12 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(0x00010000u, NativeMethods.SERVICE_DELETE);
             Assert.Equal(0x00000001u, NativeMethods.SERVICE_ERROR_NORMAL);
             Assert.Equal(7, NativeMethods.SERVICE_CONFIG_PRESHUTDOWN_INFO);
+
+            // The LSA policy access mask that #586 narrowed from POLICY_ALL_ACCESS to minimum rights.
+            // A wrong bit here surfaces as an ordinary "Access is denied", so nothing else would catch it.
+            Assert.Equal(0x00000800u, NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES);
+            Assert.Equal(0x00000010u, NativeMethods.POLICY_ACCESS.POLICY_CREATE_ACCOUNT);
+            Assert.Equal(0x00000400u, NativeMethods.POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE);
         }
 
         #endregion
@@ -191,9 +197,20 @@ namespace Servy.Core.IntegrationTests.Native
                 Assert.Equal(0, status);
                 Assert.Equal((uint)size, returnLength);
                 Assert.NotEqual(IntPtr.Zero, pbi.PebBaseAddress);
-                using (var h = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id))
+            }
+        }
+
+        [Fact]
+        public void OpenProcess_CurrentProcessId_ReturnsValidHandle()
+        {
+            // Arrange
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
+                // Act
+                using (var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id))
                 {
-                    Assert.False(h.IsInvalid);
+                    // Assert
+                    Assert.False(handle.IsInvalid);
                 }
             }
         }
@@ -260,7 +277,7 @@ namespace Servy.Core.IntegrationTests.Native
         public void FileIdentity_HandleValidityMismatch_ReturnsTrue()
         {
             // Arrange
-            // Branch (1) Probe: Validation status asymmetry must trigger immediate difference flag
+            // Unnumbered Guard: Validation status asymmetry must trigger immediate difference flag
             var idValid = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = true, PrefixDigest = "SAME" };
             var idInvalid = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "SAME" };
 
@@ -272,14 +289,20 @@ namespace Servy.Core.IntegrationTests.Native
         public void FileIdentity_SecondaryProbeFAT32Fallback_ValidatesDigestEquality()
         {
             // Arrange
-            // Branch (3) Probe: Both handle checks fail (e.g. FAT32 volume layers). Compare contents using PrefixDigest
+            // Branch (2) Secondary Probe: Both handle checks fail (e.g. FAT32 volume layers). Compare contents using PrefixDigest
             var baseId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
             var matchingId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
             var differingId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_B" };
 
+            // Branch (2) Secondary Probe Asymmetric Null: one side has no digest - the conjunction guard must fail,
+            // falling through to Branch (3) Fallback rather than attempting string comparison against null.
+            var digestMissing = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null! };
+
             // Act & Assert
             Assert.False(baseId.IsDifferentFrom(matchingId), "Identical content hashes on invalid handle states must evaluate as unchanged.");
             Assert.True(baseId.IsDifferentFrom(differingId), "Differing content hashes on invalid handle states must trigger a rotation switch signal.");
+            Assert.True(baseId.IsDifferentFrom(digestMissing), "Asymmetric null digest must fall through conjunction guard to return true.");
+            Assert.True(digestMissing.IsDifferentFrom(baseId), "Symmetric reverse null digest must fall through conjunction guard to return true.");
         }
 
         [Fact]
@@ -330,7 +353,7 @@ namespace Servy.Core.IntegrationTests.Native
             // Assert
             Assert.False(loggedOn);
             Assert.Equal(IntPtr.Zero, token);
-            Assert.NotEqual(0, lastError);                 // e.g. ERROR_LOGON_FAILURE (1326)
+            Assert.Equal(Errors.ERROR_LOGON_FAILURE, lastError);
         }
 
         #endregion
@@ -362,9 +385,7 @@ namespace Servy.Core.IntegrationTests.Native
 
                     // Assert
                     Assert.True(serviceHandle.IsInvalid);
-
-                    // 1060 == ERROR_SERVICE_DOES_NOT_EXIST
-                    Assert.Equal(1060, lastError);
+                    Assert.Equal(Errors.ERROR_SERVICE_DOES_NOT_EXIST, lastError);
                 }
                 finally
                 {
@@ -453,8 +474,7 @@ namespace Servy.Core.IntegrationTests.Native
 
                 // STATUS_ACCESS_DENIED -> ERROR_ACCESS_DENIED (5) is the only valid non-zero outcome for a
                 // least-privilege token context. Any other Win32 error signals a P/Invoke or struct layout failure.
-                const int ERROR_ACCESS_DENIED = 5;
-                Assert.Equal(ERROR_ACCESS_DENIED, win32Error);
+                Assert.Equal(Errors.ERROR_ACCESS_DENIED, win32Error);
             }
         }
 
@@ -464,8 +484,10 @@ namespace Servy.Core.IntegrationTests.Native
             // Act & Assert
             int result = NativeMethods.LsaFreeMemory(IntPtr.Zero);
 
-            // LsaFreeMemory returns status codes; verifying zero-pointers are swallowed without memory segmentation faults
-            Assert.True(result >= 0);
+            // LsaFreeMemory returns status codes; verifying zero-pointers are swallowed without memory segmentation faults.
+            // STATUS_SUCCESS, matching the exact-zero NTSTATUS checks elsewhere in this file: >= 0 would also
+            // accept the informational 0x4xxxxxxx range, which is not "swallowed without a fault".
+            Assert.Equal(0, result);
         }
 
         #endregion

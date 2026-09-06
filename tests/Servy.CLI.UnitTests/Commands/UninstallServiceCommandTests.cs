@@ -9,6 +9,7 @@ using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class UninstallServiceCommandTests : ServiceCommandTestsBase<UninstallServiceCommand, UninstallServiceOptions>
     {
         private Mock<IServiceRepository> _mockRepository = new Mock<IServiceRepository>();
@@ -28,22 +29,32 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_UninstallServiceAction, serviceName);
 
+        protected override string ExpectedCommandName => "uninstall";
+
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {
-            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
         }
 
         protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
-            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure(errorMsg));
         }
 
         protected override void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName)
         {
-            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).Throws<TException>();
+        }
+
+        /// <summary>
+        /// Uninstall passes <c>skipInstalledCheck: true</c>, so the not-installed outcome comes from
+        /// <see cref="IServiceManager.UninstallServiceAsync"/> rather than from the pre-flight check.
+        /// </summary>
+        protected override void SetupServiceNotInstalled(Mock<IServiceManager> mockManager, string serviceName)
+        {
+            mockManager
+                    .Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(OperationResult.Failure(Core.Resources.Strings.Msg_ServiceNotFound));
         }
 
         [Fact]
@@ -70,8 +81,14 @@ namespace Servy.CLI.UnitTests.Commands
             const string serviceName = "OrphanedDbService";
             var options = CreateValidOptions(serviceName);
 
-            // Mock IsServiceInstalled to true so ExecuteServiceOperationAsync passes the pre-flight check,
-            // and mock UninstallServiceAsync to return Success (simulating ServiceManager's internal orphan cleanup #6374).
+            // Arrange the orphan state the test name describes: absent from the SCM, still present in
+            // the repository. Uninstall passes skipInstalledCheck: true, so the command must reach
+            // UninstallServiceAsync regardless, which succeeds via ServiceManager's internal orphan
+            // cleanup (#6374). Without the skip the pre-flight would short-circuit on
+            // Msg_ServiceNotFound, which is the #6405 regression this test pins.
+            MockServiceManager
+                .Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
+                .Returns(false);
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act

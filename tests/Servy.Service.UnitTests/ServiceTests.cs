@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -342,8 +343,15 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
         }
 
-        [Fact]
-        public void HandleLogWriters_ValidPaths_CreatesStreamWriters()
+        // One row per rotation flag, each turning exactly one of the three on, so every
+        // transposition of the two bool arguments differs in at least one row. The previous
+        // single-fixture form left EnableSizeRotation and EnableDateRotation at their shared
+        // false default, which made swapping them at the call site undetectable.
+        [Theory]
+        [InlineData(true, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(false, false, true)]
+        public void HandleLogWriters_ValidPaths_CreatesStreamWriters(bool enableSizeRotation, bool enableDateRotation, bool useLocalTime)
         {
             // Arrange
             var service = _ctx.Build();
@@ -352,16 +360,18 @@ namespace Servy.Service.UnitTests
                 StdoutPath = "valid_stdout.log",
                 StderrPath = "valid_stderr.log",
                 RotationSizeInBytes = 12345,
-                UseLocalTimeForRotation = true,
+                EnableSizeRotation = enableSizeRotation,
+                EnableDateRotation = enableDateRotation,
+                UseLocalTimeForRotation = useLocalTime,
             };
 
             var mockStdOutWriter = new Mock<IStreamWriter>();
             var mockStdErrWriter = new Mock<IStreamWriter>();
 
-            _ctx.StreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            _ctx.StreamWriterFactory.Setup(f => f.Create("valid_stdout.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime))
                 .Returns(mockStdOutWriter.Object);
 
-            _ctx.StreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            _ctx.StreamWriterFactory.Setup(f => f.Create("valid_stderr.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime))
                 .Returns(mockStdErrWriter.Object);
 
             _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
@@ -369,9 +379,10 @@ namespace Servy.Service.UnitTests
             // Act
             service.InvokeHandleLogWriters(options);
 
-            // Assert
-            _ctx.StreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-            _ctx.StreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            // Assert: the expected values are the literals the theory supplies rather than reads
+            // back off the same options object, so a hop that reads the wrong property is caught too.
+            _ctx.StreamWriterFactory.Verify(f => f.Create("valid_stdout.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime), Times.Once);
+            _ctx.StreamWriterFactory.Verify(f => f.Create("valid_stderr.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime), Times.Once);
 
             // Check no errors logged
             _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
@@ -580,16 +591,14 @@ namespace Servy.Service.UnitTests
             string outDot = Service.MakeFilenameSafe(nameWithDot);
             string outSpaces = Service.MakeFilenameSafe(nameWithSpaces);
 
-            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely
-            Assert.NotEqual(outBase, outSpace);
-            Assert.NotEqual(outBase, outDot);
-            Assert.NotEqual(outSpace, outDot);
-            Assert.NotEqual(outSpace, outSpaces);
+            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely.
+            // Asserting over the whole set covers all six pairs, including outBase/outSpaces and
+            // outDot/outSpaces, and keeps the comparison count correct if a fifth variant is added.
+            var all = new[] { outBase, outSpace, outDot, outSpaces };
+            Assert.Equal(all.Length, all.Distinct(StringComparer.Ordinal).Count());
 
             // All must preserve base readability prefixing
-            Assert.StartsWith("MyService_", outBase);
-            Assert.StartsWith("MyService_", outSpace);
-            Assert.StartsWith("MyService_", outDot);
+            Assert.All(all, o => Assert.StartsWith("MyService_", o));
         }
 
         [Theory]
@@ -860,10 +869,10 @@ namespace Servy.Service.UnitTests
 
                 // Act
                 TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object?[] { invalidUrl, "/start", 2 });
-                await Task.Delay(100, TestContext.Current.CancellationToken);
+                await Task.Delay(TestTimeouts.NegativeObservationWindow, TestContext.Current.CancellationToken);
 
                 // Assert
-                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -885,10 +894,10 @@ namespace Servy.Service.UnitTests
 
                 // Act
                 TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object?[] { "http://localhost:12345/ping", "/start", 2 });
-                await Task.Delay(100, TestContext.Current.CancellationToken);
+                await Task.Delay(TestTimeouts.NegativeObservationWindow, TestContext.Current.CancellationToken);
 
                 // Assert
-                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -910,10 +919,10 @@ namespace Servy.Service.UnitTests
 
                 // Act
                 TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object?[] { "http://localhost:12345/ping", "/start", 2 });
-                await Task.Delay(100, TestContext.Current.CancellationToken);
+                await Task.Delay(TestTimeouts.NegativeObservationWindow, TestContext.Current.CancellationToken);
 
                 // Assert
-                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -1102,7 +1111,7 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var eventArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null!);
+            var eventArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
 
             // Act
             TestReflection.InvokeNonPublic(_service, "OnOutputDataReceived", this, eventArgs);
@@ -1148,8 +1157,8 @@ namespace Servy.Service.UnitTests
             TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
             // Assert
-            // Await the stop event completion signal deterministically
-            await Task.WhenAny(stoppedSignal.Task, Task.Delay(2000, TestContext.Current.CancellationToken));
+            // Await the stop event completion signal deterministically, bounded by the shared CI timeout budget.
+            await Task.WhenAny(stoppedSignal.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
 
             Assert.True(stopped, "The background clean exit stop sequence failed to invoke the OnStoppedForTest event callback.");
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Service will stop.")), It.IsAny<Exception>()), Times.Once);
@@ -1198,7 +1207,7 @@ namespace Servy.Service.UnitTests
                 "The internal recovery sequence was not scheduled or executed within the time limit.");
 
             // Verify exactly once at the tail end. If a regression occurs, Moq will now surface its precise mismatch diagnostics.
-            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), null), Times.Once());
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), null), Times.Once);
         }
 
         #endregion

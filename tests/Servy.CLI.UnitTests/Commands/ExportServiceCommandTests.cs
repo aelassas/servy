@@ -9,6 +9,7 @@ using System.Security;
 
 namespace Servy.CLI.UnitTests.Commands
 {
+    [Collection("SequentialElevationTests")]
     public class ExportServiceCommandTests : IDisposable
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
@@ -17,6 +18,11 @@ namespace Servy.CLI.UnitTests.Commands
 
         public ExportServiceCommandTests()
         {
+            // ExportServiceCommand has run the elevation pre-flight since #5152, so take the
+            // test seam explicitly instead of relying on an elevated host or on a sibling
+            // class having left the process-global flag set.
+            BaseCommand.BypassElevationCheck = true;
+
             _serviceRepoMock = new Mock<IServiceRepository>();
             _command = new ExportServiceCommand(_serviceRepoMock.Object);
 
@@ -26,6 +32,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         public void Dispose()
         {
+            BaseCommand.BypassElevationCheck = false;
+
             if (Directory.Exists(_tempDir))
             {
                 try { Directory.Delete(_tempDir, recursive: true); } catch { /* fail-safe */ }
@@ -76,11 +84,14 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(string.Format(Strings.Msg_UnsupportedFileType, "invalid"), result.Message);
         }
 
-        [Fact]
-        public async Task Execute_ShouldFail_WhenPathIsNullOrEmpty()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Execute_ShouldFail_WhenPathIsNullOrWhiteSpace(string? path)
         {
             // Arrange
-            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = "" };
+            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = path! };
 
             // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
@@ -94,7 +105,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldFail_WhenServiceNotFound()
         {
             // Arrange
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
 
             // Act
@@ -110,7 +121,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var filePath = Path.Combine(_tempDir, "out.xml");
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportXmlAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("<xml>data</xml>");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = filePath };
@@ -123,6 +134,10 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "XML", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("<xml>data</xml>", File.ReadAllText(filePath));
+
+            // The existence check must not decrypt secrets it never reads (#5267)
+            _serviceRepoMock.Verify(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>()), Times.Once);
+            _serviceRepoMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -130,7 +145,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var filePath = Path.Combine(_tempDir, "out.json");
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportJsonAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("{\"name\":\"svc\"}");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "json", Path = filePath };
@@ -149,7 +164,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldHandleException()
         {
             // Arrange
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("boom"));
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("boom"));
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
 
             // Act
@@ -281,22 +296,11 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(deepSubDir, "COM1.json");
             var content = "{ }";
 
-            // Act
-            var actualEx = Record.Exception(() => InvokeSaveFile(filePath, content));
-            Assert.NotNull(actualEx);
-
-            // Assert
-            bool isValidExceptionType = actualEx is ArgumentException || actualEx is SecurityException;
-            Assert.True(isValidExceptionType, $"Expected ArgumentException or SecurityException, but caught: {actualEx.GetType().Name}");
-
-            // When the guard rejected the path as an argument error, the message must name the reserved device
-            if (actualEx is ArgumentException)
-            {
-                bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1");
-
-                Assert.True(matchedExpectedSecurityRules,
-                    $"The security guard rejected the path, but with an unexpected message profile: '{actualEx.Message}'");
-            }
+            // Act & Assert
+            // The reserved-device check fails with PathSecurityFailureKind.InvalidArgument, which SaveFile
+            // maps to ArgumentException, and the message names the offending device segment.
+            var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, content));
+            Assert.Contains("COM1", actualEx.Message);
 
             // Nothing SaveFile created may remain on disk
             Assert.False(File.Exists(filePath));

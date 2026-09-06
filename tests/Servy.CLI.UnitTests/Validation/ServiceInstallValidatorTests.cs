@@ -3,6 +3,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.CLI.Validation;
 using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using Servy.Core.Validation;
 using Servy.Testing;
 
@@ -51,15 +52,17 @@ namespace Servy.CLI.UnitTests.Validation
             var opts = CreateValidOptions();
             opts.ServiceStartType = "CorruptEnumValue"; // Triggers MapEnum error branch
 
-            // Determine expected option flag matching internal mapping logic
-            var expectedError = string.Format(Strings.Msg_InvalidEnumValue, "--startupType", "CorruptEnumValue", string.Empty).TrimEnd();
+            // The full message: option flag, offending value, and the valid-values list MapEnum builds.
+            // ServiceStartType carries no [Flags], so the list is comma-separated.
+            var expectedList = string.Join(", ", Enum.GetNames(typeof(ServiceStartType)));
+            var expectedError = string.Format(Strings.Msg_InvalidEnumValue, "--startupType", "CorruptEnumValue", expectedList);
 
             // Act
             var result = _validator.Validate(opts);
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.StartsWith(expectedError, result.Message);
+            Assert.Equal(expectedError, result.Message);
             _rulesMock.Verify(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         }
 
@@ -140,7 +143,10 @@ namespace Servy.CLI.UnitTests.Validation
             _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto =>
                 dto.RotationSize == null &&
                 dto.Priority == null),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+                null,    // wrapperExePath - the CLI supplies none, so no ValidatePath check is added
+                null,    // confirmPassword - the CLI deliberately opts out of the confirm-password check
+                false),  // importMode - must stay false or credential validation is skipped
+                Times.Once);
         }
 
         #endregion
@@ -186,7 +192,10 @@ namespace Servy.CLI.UnitTests.Validation
             _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto =>
                 dto.Name == "ServyEngine" &&
                 dto.EnableSizeRotation == true),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+                null,    // wrapperExePath - the CLI supplies none, so no ValidatePath check is added
+                null,    // confirmPassword - the CLI deliberately opts out of the confirm-password check
+                false),  // importMode - must stay false or credential validation is skipped
+                Times.Once);
         }
 
         #endregion

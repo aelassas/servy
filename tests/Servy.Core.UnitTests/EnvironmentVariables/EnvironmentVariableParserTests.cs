@@ -151,21 +151,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
-        public void Validate_KeyContainingEquals_ReturnsExpectedErrorMessage()
-        {
-            // Arrange
-            var input = @"K\=EY=VAL";
-
-            // Act
-            var isValid = EnvironmentVariablesValidator.Validate(input, out var errors);
-
-            // Assert
-            Assert.False(isValid);
-            Assert.Single(errors);
-            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "K=EY"), errors[0]);
-        }
-
-        [Fact]
         public void Parse_SupportsEscapedEqualsInValue()
         {
             // Arrange
@@ -386,16 +371,41 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.DoesNotContain("Line2", ex.Message);
         }
 
+        [Fact]
+        public void Parse_KeyContainingEquals_ThrowsFormatExceptionWithValidatorMessage()
+        {
+            // Arrange
+            var input = @"K\=EY=VAL";
+
+            // Act
+            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
+
+            // Assert
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, "K=EY"), ex.Message);
+        }
+
         [Theory]
-        [InlineData("KEY=VAL\0UE")]
-        [InlineData("K\0EY=VALUE")]
-        public void Parse_NulCharacter_ThrowsFormatExceptionWithValidatorMessage(string input)
+        // Value-side guard -> Msg_EnvironmentVariableValueInvalidChars, formatted with the key
+        [InlineData("KEY=VAL\0UE", "KEY", false)]
+        // Key-side guard -> Msg_EnvironmentVariableKeyInvalidChars, formatted with the unescaped key
+        [InlineData("K\0EY=VALUE", "K\0EY", true)]
+        public void Parse_NulCharacter_ThrowsFormatExceptionWithValidatorMessage(string input, string expectedName, bool keySide)
         {
             // Arrange & Act
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert
+            var expected = string.Format(
+                keySide ? Strings.Msg_EnvironmentVariableKeyInvalidChars : Strings.Msg_EnvironmentVariableValueInvalidChars,
+                expectedName);
+
+            // The validator's own message has to survive the GeneralFailure arm ...
+            Assert.Equal(expected, ex.Message);
+
+            // ... rather than being misreported as a newline failure or degrading to the arm's
+            // blank-errorMessage fallback.
             Assert.DoesNotContain("forbidden newline", ex.Message);
+            Assert.DoesNotContain("failed validation tracking", ex.Message);
         }
     }
 }

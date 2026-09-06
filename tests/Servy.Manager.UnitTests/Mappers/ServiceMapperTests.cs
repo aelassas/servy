@@ -78,6 +78,35 @@ namespace Servy.Manager.UnitTests.Mappers
         }
 
         [Fact]
+        public async Task ToModelAsync_NullOptionalStrings_CoalesceToEmptyNotNull()
+        {
+            // Arrange - every nullable source property left null
+            var domainService = new Core.Domain.Service(_mockServiceManager.Object)
+            {
+                Name = "Test",
+                Description = null,
+                StdoutPath = null,
+                StderrPath = null,
+                ActiveStdoutPath = null,
+                ActiveStderrPath = null
+            };
+
+            // Act
+            var result = await ServiceMapper.ToModelAsync(domainService, true, false,
+                _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert - ToModelAsync normalises; unlike ToModel, which deliberately leaves them null (#2697).
+            // Assert.Equal rather than Assert.Empty: Assert.Empty throws on null, which reads as a crash
+            // instead of a clear "the coalesce was removed" failure.
+            Assert.NotNull(result);
+            Assert.Equal(string.Empty, result.Description);
+            Assert.Equal(string.Empty, result.StdoutPath);
+            Assert.Equal(string.Empty, result.StderrPath);
+            Assert.Equal(string.Empty, result.ActiveStdoutPath);
+            Assert.Equal(string.Empty, result.ActiveStderrPath);
+        }
+
+        [Fact]
         public async Task ToModelAsync_ValidService_MapsPropertiesCorrectly()
         {
             // Arrange

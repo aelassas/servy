@@ -48,12 +48,16 @@ namespace Servy.UI.UnitTests.Commands
             Assert.Equal(expected, result);
         }
 
-        [Fact]
-        public void CanExecute_MismatchingType_PassesDefaultTToPredicate()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("not an int")]
+        public void CanExecute_NullOrMismatchingType_PassesDefaultTToPredicate(object? parameter)
         {
             // Arrange
-            // Branch: parameter is T typed ? typed : default(T) (Mismatching Type)
-            // We use int to verify that default(int) which is 0 is passed to the predicate
+            // Branch: parameter is T typed ? typed : default(T) (Null and Mismatching Type)
+            // We use int to verify that default(int) which is 0 is passed to the predicate.
+            // Null is the input the guard comment names, and the one WPF supplies on every
+            // requery for a binding with no CommandParameter.
             bool receivedZero = false;
             var command = new RelayCommand<int>(_ => { }, p =>
             {
@@ -62,8 +66,8 @@ namespace Servy.UI.UnitTests.Commands
             });
 
             // Act
-            // Pass a string to a Command expecting an int
-            command.CanExecute("not an int");
+            // Pass null or a string to a Command expecting an int
+            command.CanExecute(parameter);
 
             // Assert
             Assert.True(receivedZero);
@@ -107,6 +111,27 @@ namespace Servy.UI.UnitTests.Commands
         #endregion
 
         #region Event and Manager Tests
+
+        [Fact]
+        public void CanExecuteChanged_SubscribeAndUnsubscribe_DoesNotThrow()
+        {
+            // Arrange
+            // Exercises the custom add/remove accessors, which are the only members of the
+            // SUT no test reaches; they deliberately forward to CommandManager.RequerySuggested.
+            // Firing the event needs a pumped dispatcher and is intentionally out of scope here.
+            var command = new RelayCommand<string>(_ => { });
+            EventHandler handler = (s, e) => { };
+
+            // Act
+            var exception = Record.Exception(() =>
+            {
+                command.CanExecuteChanged += handler;
+                command.CanExecuteChanged -= handler;
+            });
+
+            // Assert
+            Assert.Null(exception);
+        }
 
         [Fact]
         public void RaiseCanExecuteChanged_DoesNotThrow()

@@ -47,26 +47,36 @@ namespace Servy.Manager.UnitTests.Validation
 
         #endregion
 
-        #region Validate Tests
+        #region ValidateAsync Tests
 
         [Fact]
-        public async Task ValidateAsync_CancelledToken_ThrowsOperationCanceledException()
+        public async Task ValidateAsync_CancelledToken_ThrowsOperationCanceledExceptionBeforeValidating()
         {
             // Arrange
+            var dto = new ServiceDto();
+
             using (var cts = new CancellationTokenSource())
             {
                 cts.Cancel();
 
                 // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                    _validator.ValidateAsync(new ServiceDto(), cancellationToken: cts.Token));
+                    _validator.ValidateAsync(dto, cancellationToken: cts.Token));
+
+                // The guard exists to skip the rules engine's credential stage, so pin that it ran first:
+                // without this, swapping the guard and the Validate call leaves the test green.
+                _validationRulesMock.Verify(
+                    r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()),
+                    Times.Never);
+                _messageBoxServiceMock.Verify(
+                    m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             }
         }
 
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task Validate_WhenConfigurationIsValid_ReturnsTrueAndDoesNotShowMessage(bool importMode)
+        public async Task ValidateAsync_WhenConfigurationIsValid_ReturnsTrueAndDoesNotShowMessage(bool importMode)
         {
             // Arrange
             var dto = new ServiceDto();
@@ -89,7 +99,7 @@ namespace Servy.Manager.UnitTests.Validation
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task Validate_WhenConfigurationIsInvalid_ShowsErrorAndReturnsFalse(bool importMode)
+        public async Task ValidateAsync_WhenConfigurationIsInvalid_ShowsErrorAndReturnsFalse(bool importMode)
         {
             // Arrange
             var dto = new ServiceDto();

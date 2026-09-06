@@ -13,17 +13,12 @@ namespace Servy.Core.IntegrationTests.Helpers
     public class ProcessHelperIntegrationTests : IDisposable
     {
         private readonly ProcessHelper _sut;
-        private readonly string _tempDirectory;
         private readonly List<Process> _spawnedProcesses;
 
         public ProcessHelperIntegrationTests()
         {
             _sut = new ProcessHelper();
             _spawnedProcesses = new List<Process>();
-
-            // Setup real file system artifacts for path integration tests
-            _tempDirectory = Path.Combine(Path.GetTempPath(), $"Servy_Test_{Guid.NewGuid()}");
-            Directory.CreateDirectory(_tempDirectory);
         }
 
         #region Process Metrics Integration Tests
@@ -44,7 +39,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Assert.True(firstCall.RamUsage > 0, "RAM usage should be greater than 0 for a running process.");
 
                 // Act 2: Simulate time passing and active CPU work using a dedicated spin wait loop
-                SpinWait.SpinUntil(() => false, TimeSpan.FromMilliseconds(100));
+                SpinWait.SpinUntil(() => false, TimeSpan.FromMilliseconds(TestTimeouts.CpuSampleSpinMs));
                 var secondCall = _sut.GetProcessMetrics(currentPid);
 
                 // Assert 2
@@ -84,7 +79,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                     targetPid = transientProcess.Id;
 
                     // Force the thread block to wait until the OS fully unregisters the process image
-                    transientProcess.WaitForExit(5000);
+                    transientProcess.WaitForExit(TestTimeouts.CiGenerousMs);
                     Assert.True(transientProcess.HasExited, "Transient test process failed to exit within the allowed timeout window.");
                 }
             }
@@ -133,32 +128,29 @@ namespace Servy.Core.IntegrationTests.Helpers
             var stopwatch = Stopwatch.StartNew();
             var timeout = TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds);
 
-            ProcessMetrics singleMetrics = _sut.GetProcessMetrics(childPid);
-            ProcessMetrics treeMetrics = _sut.GetProcessTreeMetrics(childPid);
-
             while (stopwatch.Elapsed < timeout)
             {
-                singleMetrics = _sut.GetProcessMetrics(childPid);
-                treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+                var polledSingle = _sut.GetProcessMetrics(childPid);
+                var polledTree = _sut.GetProcessTreeMetrics(childPid);
 
-                if (singleMetrics.RamUsage > 0 && treeMetrics.RamUsage > singleMetrics.RamUsage)
+                if (polledSingle.RamUsage > 0 && polledTree.RamUsage > polledSingle.RamUsage)
                 {
                     break;
                 }
 
-                Thread.Sleep(50);
+                Thread.Sleep(TestTimeouts.MetricsPollIntervalMs);
             }
 
             // 2. CAPTURE METRICS BACK-TO-BACK:
             // Act
-            singleMetrics = _sut.GetProcessMetrics(childPid);
-            treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+            var singleMetrics = _sut.GetProcessMetrics(childPid);
+            var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
             // Assert
             Assert.True(singleMetrics.RamUsage > 0, "Root process RAM should be captured.");
             Assert.True(treeMetrics.RamUsage > 0, "Tree process RAM aggregation should be captured.");
 
-            // 4. ROBUST DELTA VALUATION:
+            // 3. ROBUST DELTA VALUATION:
             // Verifies that tree metrics accurately sum memory across the nested worker processes.
             // Tree memory must be noticeably larger than the isolated root process node's footprint.
             Assert.True(treeMetrics.RamUsage > singleMetrics.RamUsage,
@@ -182,15 +174,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                     catch { /* Ignore cleanup errors */ }
                 }
                 process.Dispose();
-            }
-
-            // Clean up integration test environment variables
-            Environment.SetEnvironmentVariable("SERVY_TEST_VAR", null);
-
-            // Clean up integration test artifacts
-            if (Directory.Exists(_tempDirectory))
-            {
-                try { Directory.Delete(_tempDirectory, true); } catch { /* Ignore locking issues on teardown */ }
             }
         }
     }

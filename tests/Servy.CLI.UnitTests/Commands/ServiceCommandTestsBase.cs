@@ -1,9 +1,9 @@
 using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
-using Servy.Core.Common;
 using Servy.Core.Resources;
 using Servy.Core.Services;
+using CliStrings = Servy.CLI.Resources.Strings;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -81,6 +81,13 @@ namespace Servy.CLI.UnitTests.Commands
         protected abstract string ExpectedGenericActionMessage(string serviceName);
 
         /// <summary>
+        /// When overridden in a derived class, returns the command name the command under test passes to
+        /// <c>BaseCommand.ExecuteWithHandling</c>/<c>ExecuteWithHandlingAsync</c> (e.g. "start", "stop"),
+        /// which is the value formatted into <see cref="CliStrings.Msg_CommandCancelled"/>.
+        /// </summary>
+        protected abstract string ExpectedCommandName { get; }
+
+        /// <summary>
         /// When overridden in a derived class, returns the expected error message when the target service is not installed.
         /// Defaults to <see cref="Strings.Msg_ServiceNotFound"/>.
         /// </summary>
@@ -123,15 +130,12 @@ namespace Servy.CLI.UnitTests.Commands
         protected virtual void SetupServiceNotInstalled(Mock<IServiceManager> mockManager, string serviceName)
         {
             mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
-
-            mockManager
-                    .Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(OperationResult.Failure(Strings.Msg_ServiceNotFound));
         }
 
         /// <summary>
         /// Executes the command under test with the provided options.
-        /// Checks for an asynchronous <c>ExecuteAsync</c> method via dynamic dispatch, falling back to synchronous <c>Execute</c>.
+        /// Invokes the asynchronous <c>ExecuteAsync</c> entry point via dynamic dispatch, since the commands do not share an interface.
+        /// A command exposing a synchronous <c>Execute</c> instead overrides this method (see <c>ServiceStatusCommandTests</c>).
         /// </summary>
         /// <param name="command">The command instance to execute.</param>
         /// <param name="options">The options instance to pass to the command.</param>
@@ -140,15 +144,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             dynamic cmd = command!;
 
-            try
-            {
-                var result = cmd.ExecuteAsync(options, TestContext.Current.CancellationToken);
-                return await result;
-            }
-            catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
-            {
-                return cmd.Execute(options, TestContext.Current.CancellationToken);
-            }
+            return await cmd.ExecuteAsync(options, TestContext.Current.CancellationToken);
         }
 
         #endregion
@@ -204,7 +200,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(Core.Resources.Strings.Msg_ServiceNameRequired, result.Message);
+            Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
 
         /// <summary>
@@ -228,7 +224,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that an <see cref="UnauthorizedAccessException"/> thrown by the service manager is caught and returns an "Access Denied" failure result.
+        /// Validates that an <see cref="UnauthorizedAccessException"/> thrown by the service manager is caught and returns the admin-privileges failure result for this command's verb.
         /// </summary>
         [Fact]
         public virtual async Task Execute_UnauthorizedAccessException_ReturnsFailure()
@@ -242,8 +238,11 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
+            // Assert the resource rather than the first two English words of its value: a
+            // reworded or localised Msg_AdminPrivilegesRequired must not fail this test, and
+            // the substring form pinned nothing about the {0} verb argument.
             Assert.False(result.IsSuccess);
-            Assert.Contains("Access Denied", result.Message);
+            Assert.Equal(string.Format(CliStrings.Msg_AdminPrivilegesRequired, ExpectedCommandName), result.Message);
         }
 
         /// <summary>
@@ -263,6 +262,26 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
+        }
+
+        /// <summary>
+        /// Validates that a cancelled operation is reported as a clean cancellation result carrying the command name,
+        /// rather than being routed through the generic exception handler.
+        /// </summary>
+        [Fact]
+        public virtual async Task Execute_OperationCanceled_ReturnsCancelledResult()
+        {
+            // Arrange
+            const string serviceName = "TestService";
+            var options = CreateValidOptions(serviceName);
+            SetupServiceManagerException<OperationCanceledException>(MockServiceManager, serviceName);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(string.Format(CliStrings.Msg_CommandCancelled, ExpectedCommandName), result.Message);
         }
 
         /// <summary>

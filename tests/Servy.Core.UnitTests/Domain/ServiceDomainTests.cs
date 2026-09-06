@@ -35,7 +35,7 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(s => s.StartServiceAsync("TestService", true, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await service.Start(TestContext.Current.CancellationToken);
+            var result = await service.StartAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -50,10 +50,11 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to start service."));
 
             // Act
-            var result = await service.Start(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.StartAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to start service.", result.ErrorMessage);
             _serviceManagerMock.Verify(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -65,7 +66,7 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(s => s.StopServiceAsync("TestService", true, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await service.Stop(TestContext.Current.CancellationToken);
+            var result = await service.StopAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -80,10 +81,11 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to stop service."));
 
             // Act
-            var result = await service.Stop(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to stop service.", result.ErrorMessage);
             _serviceManagerMock.Verify(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -95,7 +97,7 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(s => s.RestartServiceAsync("TestService", true, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await service.Restart(TestContext.Current.CancellationToken);
+            var result = await service.RestartAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -110,10 +112,11 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to restart service."));
 
             // Act
-            var result = await service.Restart(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.RestartAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to restart service.", result.ErrorMessage);
             _serviceManagerMock.Verify(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -280,7 +283,7 @@ namespace Servy.Core.UnitTests.Domain
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await service.Install("C:\\wrapper", cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync("C:\\wrapper", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -298,7 +301,7 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.StdoutPath, captured.StdoutPath);
             Assert.Equal(service.StderrPath, captured.StderrPath);
             Assert.Equal(service.EnableSizeRotation, captured.EnableSizeRotation);
-            Assert.Equal(3 * 1024L * 1024L, captured.RotationSizeInBytes);
+            Assert.Equal(AppConfig.ToBytes(Math.Max(1, service.RotationSize)), captured.RotationSizeInBytes);
             Assert.Equal(service.EnableDateRotation, captured.EnableDateRotation);
             Assert.Equal(service.DateRotationType, captured.DateRotationType);
             Assert.Equal(service.MaxRotations, captured.MaxRotations);
@@ -353,7 +356,7 @@ namespace Servy.Core.UnitTests.Domain
                 .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
             // Act
-            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccess);
@@ -374,7 +377,7 @@ namespace Servy.Core.UnitTests.Domain
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await service.Install(@"C:\customWrapper", cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync(@"C:\customWrapper", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -407,7 +410,7 @@ namespace Servy.Core.UnitTests.Domain
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -447,7 +450,7 @@ namespace Servy.Core.UnitTests.Domain
                 .Verifiable();
 
             // Act
-            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -480,7 +483,7 @@ namespace Servy.Core.UnitTests.Domain
                 .Verifiable();
 
             // Act
-            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -506,7 +509,7 @@ namespace Servy.Core.UnitTests.Domain
                  .Verifiable();
 
             // Act
-            var result = await service.Install(isCLI: true, cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync(isCLI: true, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -535,7 +538,7 @@ namespace Servy.Core.UnitTests.Domain
                 .Verifiable();
 
             // Act
-            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
+            var result = await service.InstallAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -550,7 +553,7 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await service.Uninstall(TestContext.Current.CancellationToken);
+            var result = await service.UninstallAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -566,7 +569,7 @@ namespace Servy.Core.UnitTests.Domain
                 .ReturnsAsync(OperationResult.Failure("Failed to uninstall service."));
 
             // Act
-            var result = await service.Uninstall(TestContext.Current.CancellationToken);
+            var result = await service.UninstallAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccess);

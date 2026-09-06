@@ -8,6 +8,6 @@ namespace Servy.Service.Validation
     public class PathValidator : IPathValidator
     {
         /// <inheritdoc />
-        public bool IsValidPath(string path) => Helper.IsValidPath(path);
+        public bool IsValidPath(string? path) => Helper.IsValidPath(path);
     }
 }

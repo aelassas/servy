@@ -6,6 +6,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
 using System.Diagnostics;
+using System.Security;
 
 namespace Servy.Service.UnitTests.CommandLine
 {
@@ -138,7 +139,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 15,
                 MaxFailedChecks = 3,
-                RecoveryAction = 1, // RestartService
+                RecoveryAction = 2, // RestartProcess - deliberately not AppConfig.DefaultRecoveryAction (RestartService), so the mapping cannot be replaced by the bare default
                 RecoveryOnCleanExit = false,
                 MaxRestartAttempts = 5,
                 HeartbeatUrl = "https://hc.example.com/ping/abc",
@@ -166,7 +167,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 PostLaunchExecutablePath = @"C:\App\post.exe",
                 PostLaunchStartupDirectory = @"C:\App\post_dir",
                 PostLaunchParameters = "--sync",
-                DateRotationType = 0, // Daily
+                DateRotationType = 1, // Weekly - deliberately not AppConfig.DefaultDateRotationType (Daily), which is also default(DateRotationType)
                 EnableSizeRotation = true,
                 EnableDateRotation = true,
                 EnableDebugLogs = true,
@@ -207,7 +208,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.True(result.EnableHealthMonitoring);
             Assert.Equal(15, result.HeartbeatIntervalInSeconds);
             Assert.Equal(3, result.MaxFailedChecks);
-            Assert.Equal(RecoveryAction.RestartService, result.RecoveryAction);
+            Assert.Equal(RecoveryAction.RestartProcess, result.RecoveryAction);
             Assert.False(result.RecoveryOnCleanExit);
             Assert.Equal(5, result.MaxRestartAttempts);
 
@@ -246,7 +247,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.True(result.EnableSizeRotation);
             Assert.True(result.EnableDateRotation);
             Assert.Equal(10, result.MaxRotations);
-            Assert.Equal(DateRotationType.Daily, result.DateRotationType);
+            Assert.Equal(DateRotationType.Weekly, result.DateRotationType);
             Assert.True(result.EnableDebugLogs);
 
             // Assert Lifespan Timeouts
@@ -274,7 +275,7 @@ namespace Servy.Service.UnitTests.CommandLine
             string[] args = { "Servy.Service.exe", serviceName };
 
             // Leaves all fields at their implicit object defaults so the AppConfig fallback paths are exercised
-            var sparseDto = new ServiceDto { Priority = null! };
+            var sparseDto = new ServiceDto { Priority = null };
             _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(sparseDto);
 
             // Act
@@ -304,6 +305,28 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeoutInSeconds);
             Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, result.PreStopTimeoutInSeconds);
             Assert.Equal(AppConfig.DefaultPreStopLogAsError, result.PreStopLogAsError);
+            Assert.Equal(AppConfig.DefaultDateRotationType, result.DateRotationType);
+            Assert.Equal(AppConfig.ToBytes(AppConfig.DefaultRotationSizeMB), result.RotationSizeInBytes);
+        }
+
+        [Fact]
+        public void Parse_HealthMonitoringEnabledWithNullRecoveryAction_AppliesAppConfigDefault()
+        {
+            // Arrange
+            // The RecoveryAction fallback sits behind the EnableHealthMonitoring ternary, and
+            // DefaultEnableHealthMonitoring is false, so the defaults test above takes the None arm
+            // and never reaches ParseEnum. This is the only arrangement that does.
+            string serviceName = "MonitoredService";
+            string[] args = { "Servy.Service.exe", serviceName };
+
+            var serviceDto = new ServiceDto { EnableHealthMonitoring = true, RecoveryAction = null };
+            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
+
+            // Act
+            var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+
+            // Assert
+            Assert.Equal(AppConfig.DefaultRecoveryAction, result.RecoveryAction);
         }
 
         [Fact]
@@ -359,8 +382,14 @@ namespace Servy.Service.UnitTests.CommandLine
         }
 
         [Theory]
+        // One row per arm of SafeResolvePath's catch filter. The last three were added by the
+        // #2188 fix and were never pinned, so narrowing the filter back to the first two left
+        // the suite green while a real Path.GetFullPath failure of those kinds would escape Parse.
         [InlineData(typeof(ArgumentException))]
         [InlineData(typeof(InvalidOperationException))]
+        [InlineData(typeof(NotSupportedException))]
+        [InlineData(typeof(PathTooLongException))]
+        [InlineData(typeof(SecurityException))]
         public void Parse_PathResolutionThrows_FallsBackToRawConfiguredPath(Type exceptionType)
         {
             // Arrange

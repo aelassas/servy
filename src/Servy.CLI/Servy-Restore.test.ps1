@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Unit test harness for Servy-Restore.ps1 helper functions.
+    Unit test harness for Servy-Dump.ps1 helper functions.
 
 .DESCRIPTION
     Tests path resolution, sidecar expected hash extraction, ACL hardening (inheritance break,
@@ -99,7 +99,7 @@ Assert-True "Duplicate archive entry rejected" (-not $e4.IsValid -and $e4.ErrorM
 # Test 3.5: Path traversal attack
 $seenEntries2 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $e5 = Test-ServyDumpArchiveEntry -EntryName "..\..\Evil.xml" -EntryFullName "..\..\Evil.xml" -RootPath $rootPath -SeenEntryNames $seenEntries2
-Assert-True "Path traversal entry rejected" (-not $e5.IsValid -and ($e5.ErrorMessage.Contains("outside staging directory") -or $e5.ErrorMessage.Contains("subdirectories")))
+Assert-True "Path traversal entry rejected" (-not $e5.IsValid -and $e5.ErrorMessage.Contains("outside staging directory"))
 
 # Test 3.6: Non-XML file extension
 $seenEntries3 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)

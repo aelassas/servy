@@ -9,72 +9,76 @@ using System.Data.SQLite;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
-    /// <summary>
-    /// A lightweight, concrete test factory for managing a shared in-memory SQLite state lifespan.
-    /// In-memory SQLite databases disappear the moment their connection drops; keeping a master connection
-    /// handle open allows DapperExecutor to safely open and close transient connection pools during execution.
-    /// </summary>
-    public sealed class TestDbContext : IAppDbContext, IDisposable
-    {
-        private readonly SQLiteConnection _masterConnection;
-        private readonly string _connectionString;
-
-        public TestDbContext()
-        {
-            // Share the same in-memory database instance name across connection requests
-            _connectionString = $"Data Source=InMemoryTestDb_{Guid.NewGuid()};Mode=Memory;Cache=Shared;";
-            _masterConnection = new SQLiteConnection(_connectionString);
-            _masterConnection.Open(); // Keeps database alive
-        }
-
-        public DbConnection CreateConnection()
-        {
-            return new SQLiteConnection(_connectionString);
-        }
-
-        public void InitializeSchema()
-        {
-            // Execute the production migration sequence onto the active in-memory connection
-            SQLiteDbInitializer.Initialize(_masterConnection);
-        }
-
-        public void Dispose()
-        {
-            _masterConnection.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Fake encryption helper to evaluate secure data-loss and recovery paths deterministically.
-    /// </summary>
-    public sealed class TestSecureData : ISecureData
-    {
-        public string Encrypt(string plainText) => $"SECRET_HASH:{plainText}";
-
-        public string Decrypt(string cipherText)
-        {
-            if (cipherText == "POISON_PAYLOAD")
-            {
-                // Throw a raw CryptographicException directly.
-                // ServiceRepository.DecryptDto will catch this and wrap it inside the single InvalidOperationException
-                // that HandleCorruptServiceDecryption expects.
-                throw new System.Security.Cryptography.CryptographicException("Padding check failed.");
-            }
-
-            return cipherText.StartsWith("SECRET_HASH:", StringComparison.Ordinal)
-                ? cipherText.Substring("SECRET_HASH:".Length)
-                : cipherText;
-        }
-
-        public void Dispose()
-        {
-            /* no-op */
-        }
-    }
-
     [Collection("SequentialDatabaseTests")]
     public class ServiceRepositoryIntegrationTests : IDisposable
     {
+        #region Shared Test Doubles
+
+        /// <summary>
+        /// A lightweight, concrete test factory for managing a shared in-memory SQLite state lifespan.
+        /// In-memory SQLite databases disappear the moment their connection drops; keeping a master connection
+        /// handle open allows DapperExecutor to safely open and close transient connection pools during execution.
+        /// </summary>
+        private sealed class TestDbContext : IAppDbContext, IDisposable
+        {
+            private readonly SQLiteConnection _masterConnection;
+            private readonly string _connectionString;
+
+            public TestDbContext()
+            {
+                // Share the same in-memory database instance name across connection requests
+                _connectionString = $"Data Source=InMemoryTestDb_{Guid.NewGuid()};Mode=Memory;Cache=Shared;";
+                _masterConnection = new SQLiteConnection(_connectionString);
+                _masterConnection.Open(); // Keeps database alive
+            }
+
+            public DbConnection CreateConnection()
+            {
+                return new SQLiteConnection(_connectionString);
+            }
+
+            public void InitializeSchema()
+            {
+                // Execute the production migration sequence onto the active in-memory connection
+                SQLiteDbInitializer.Initialize(_masterConnection);
+            }
+
+            public void Dispose()
+            {
+                _masterConnection.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Fake encryption helper to evaluate secure data-loss and recovery paths deterministically.
+        /// </summary>
+        private sealed class TestSecureData : ISecureData
+        {
+            public string Encrypt(string plainText) => $"SECRET_HASH:{plainText}";
+
+            public string Decrypt(string cipherText)
+            {
+                if (cipherText == "POISON_PAYLOAD")
+                {
+                    // Throw a raw CryptographicException directly.
+                    // ServiceRepository.DecryptDto will catch this and wrap it inside the single InvalidOperationException
+                    // that HandleCorruptServiceDecryption expects.
+                    throw new System.Security.Cryptography.CryptographicException("Padding check failed.");
+                }
+
+                return cipherText.StartsWith("SECRET_HASH:", StringComparison.Ordinal)
+                    ? cipherText.Substring("SECRET_HASH:".Length)
+                    : cipherText;
+            }
+
+            public void Dispose()
+            {
+                /* no-op */
+            }
+        }
+
+        #endregion
+
         private readonly TestDbContext _dbContext;
         private readonly DapperExecutor _executor;
         private readonly TestSecureData _secureData;
@@ -201,16 +205,42 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void AppDbContext_Ensures_UnicodeNoCaseCollation_Is_Registered()
+        public void AppDbContext_DeclaresStaticInitializer_RegisteringUnicodeNoCaseCollation()
         {
-            // 1. Instantiating AppDbContext guarantees static AppDbContext() has executed
+            // The collation is registered process-wide at three sites (SQLiteDbInitializer,
+            // AppDbContext's static constructor, DatabaseInitializer) and registration cannot be undone,
+            // so no query-based test can attribute the registration to this one. Assert the two things a
+            // consolidation of those three sites would break, which do not depend on execution order:
+
+            // 1. AppDbContext declares a type initializer. It holds no static fields, so removing the
+            //    explicit static constructor that fixed #5631 leaves TypeInitializer null.
+            Assert.NotNull(typeof(AppDbContext).TypeInitializer);
+
+            // 2. The collation type it registers still advertises the name the schema's unique index uses.
+            var functionAttribute = typeof(UnicodeNoCaseCollation)
+                .GetCustomAttributes(typeof(SQLiteFunctionAttribute), inherit: false)
+                .Cast<SQLiteFunctionAttribute>()
+                .SingleOrDefault();
+
+            Assert.NotNull(functionAttribute);
+            Assert.Equal("UNICODE_NOCASE", functionAttribute.Name);
+            Assert.Equal(FunctionType.Collation, functionAttribute.FuncType);
+        }
+
+        [Fact]
+        public void AppDbContext_Connection_RunsUnicodeNoCaseQuery_WhenCollationIsRegistered()
+        {
+            // NOTE: this test cannot guard the static constructor, and its name no longer claims to.
+            // This class's own fixture runs SQLiteDbInitializer.Initialize before every test, whose first
+            // statement registers UNICODE_NOCASE process-wide, so the query below succeeds even with
+            // AppDbContext's registration deleted. What it does verify is that a connection handed out by
+            // AppDbContext resolves the collation - see the sibling test above for the constructor itself.
             var context = new AppDbContext("Data Source=:memory:");
 
             using (var connection = context.CreateConnection())
             {
                 connection.Open();
 
-                // 2. Verify query requiring UNICODE_NOCASE succeeds without throwing
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = "SELECT 1 WHERE 'test' = 'TEST' COLLATE UNICODE_NOCASE;";
@@ -454,7 +484,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(1, deletedByNameCount);
             var searchByName = await _repository.GetByIdAsync(nameId, decrypt: true, cancellationToken);
             Assert.Null(searchByName);
-
 
             // --- 2. Verify "ById" deletion path ---
             // Arrange

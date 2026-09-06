@@ -58,70 +58,7 @@ namespace Servy.Core.UnitTests.Mappers
         public void ToDomain_MapsAllPropertiesCorrectly()
         {
             // Arrange
-            var dto = new ServiceDto
-            {
-                Name = "MyService",
-                DisplayName = "Custom Friendly Display Name",
-                Description = "Test Service",
-                ExecutablePath = @"C:\app\service.exe",
-                StartupDirectory = @"C:\app",
-                Parameters = "-arg1 -arg2",
-                StartupType = (int)ServiceStartType.Manual,
-                Priority = (int)ProcessPriority.BelowNormal,
-                CpuAffinity = "0x1",
-                EnableConsoleUI = true,
-                StdoutPath = "stdout.log",
-                StderrPath = "stderr.log",
-                EnableSizeRotation = true,
-                RotationSize = 4096,
-                EnableDateRotation = true,
-                DateRotationType = (int)DateRotationType.Weekly,
-                MaxRotations = 5,
-                UseLocalTimeForRotation = true,
-                EnableDebugLogs = true,
-                EnableHealthMonitoring = true,
-                HeartbeatInterval = 90,
-                MaxFailedChecks = 7,
-                RecoveryAction = (int)RecoveryAction.None,
-                RecoveryOnCleanExit = true,
-                MaxRestartAttempts = 20,
-                HeartbeatUrl = "https://hc-ping.com/test-uuid",
-                HeartbeatUrlTimeoutSeconds = 10,
-                EnableHeartbeatUrlFlags = true,
-                FailureProgramPath = @"C:\apps\failure_prog.exe",
-                FailureProgramParameters = "--param1",
-                FailureProgramStartupDirectory = @"C:\apps",
-                EnvironmentVariables = "KEY1=VALUE1",
-                ServiceDependencies = "DepA,DepB",
-                RunAsLocalSystem = false,
-                UserAccount = "User2",
-                Password = "TopSecret",
-                Pid = 1234,
-                ActiveStdoutPath = @"C:\app\active_out.log",
-                ActiveStderrPath = @"C:\app\active_err.log",
-                PreLaunchExecutablePath = @"C:\prelaunch.exe",
-                PreLaunchStartupDirectory = @"C:\prelaunch",
-                PreLaunchParameters = "-pre2",
-                PreLaunchEnvironmentVariables = "PRE2=VAL2",
-                PreLaunchStdoutPath = "pre_stdout.log",
-                PreLaunchStderrPath = "pre_stderr.log",
-                PreLaunchTimeoutSeconds = 50,
-                PreLaunchRetryAttempts = 3,
-                PreLaunchIgnoreFailure = true,
-                PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
-                PostLaunchParameters = "--post-param1",
-                PostLaunchStartupDirectory = @"C:\apps\post_launch\",
-                StartTimeout = 40,
-                StopTimeout = 50,
-                PreStopExecutablePath = @"C:\prestop.exe",
-                PreStopStartupDirectory = @"C:\prestop",
-                PreStopParameters = "-pre-stop",
-                PreStopTimeoutSeconds = 15,
-                PreStopLogAsError = true,
-                PostStopExecutablePath = @"C:\poststop.exe",
-                PostStopStartupDirectory = @"C:\poststop",
-                PostStopParameters = "-post-stop"
-            };
+            var dto = CreateFullyPopulatedDto();
 
             // Act
             var service = ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, dto);
@@ -249,31 +186,102 @@ namespace Servy.Core.UnitTests.Mappers
         [Fact]
         public void ToDomain_DoesNotMutateInputDto()
         {
-            // Arrange
-            var dto = new ServiceDto
-            {
-                Name = "NonMutatingService",
-                ExecutablePath = @"C:\app\service.exe"
-            };
+            // Arrange: a fully populated DTO, so an overwrite or a clear is observable. A DTO left
+            // at its constructed state makes the assertion below compare null to null, which stays
+            // green even when the call to the mapper is deleted.
+            var dto = CreateFullyPopulatedDto();
 
-            // Reflectively capture all nullable value-type or reference-type property names on ServiceDto
-            var nullableProperties = typeof(ServiceDto)
+            var writableProperties = typeof(ServiceDto)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.CanRead && p.CanWrite &&
-                            p.Name != nameof(ServiceDto.Name) &&
-                            p.Name != nameof(ServiceDto.ExecutablePath) &&
-                            (Nullable.GetUnderlyingType(p.PropertyType) != null || !p.PropertyType.IsValueType))
+                .Where(p => p.CanRead && p.CanWrite)
                 .ToList();
+
+            var before = writableProperties.ToDictionary(p => p.Name, p => p.GetValue(dto));
 
             // Act
             _ = ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, dto);
 
-            // Assert: Verify that every nullable DTO field remains null after mapping
-            foreach (var prop in nullableProperties)
+            // Assert: every property still holds exactly the value it held before the mapping
+            foreach (var prop in writableProperties)
             {
-                var value = prop.GetValue(dto);
-                Assert.Null(value);
+                Assert.Equal(before[prop.Name], prop.GetValue(dto));
             }
+        }
+
+        /// <summary>
+        /// Builds a <see cref="ServiceDto"/> with every mapped property populated, each value chosen
+        /// so the hydration fallback would not produce it. Shared by the mapping test and the
+        /// non-mutation test, which needs a populated DTO for an overwrite to be observable.
+        /// </summary>
+        private static ServiceDto CreateFullyPopulatedDto()
+        {
+            return new ServiceDto
+            {
+                Name = "MyService",
+                DisplayName = "Custom Friendly Display Name",
+                Description = "Test Service",
+                ExecutablePath = @"C:\app\service.exe",
+                StartupDirectory = @"C:\app",
+                Parameters = "-arg1 -arg2",
+                StartupType = (int)ServiceStartType.Manual,
+                Priority = (int)ProcessPriority.BelowNormal,
+                CpuAffinity = "0x1",
+                EnableConsoleUI = true,
+                StdoutPath = "stdout.log",
+                StderrPath = "stderr.log",
+                EnableSizeRotation = true,
+                RotationSize = 4096,
+                EnableDateRotation = true,
+                DateRotationType = (int)DateRotationType.Weekly,
+                MaxRotations = 5,
+                UseLocalTimeForRotation = true,
+                EnableDebugLogs = true,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 90,
+                MaxFailedChecks = 7,
+                RecoveryAction = (int)RecoveryAction.None,
+                RecoveryOnCleanExit = true,
+                MaxRestartAttempts = 20,
+                HeartbeatUrl = "https://hc-ping.com/test-uuid",
+                // Must differ from AppConfig.DefaultHeartbeatUrlTimeoutSeconds (10), which
+                // Service.HeartbeatUrlTimeoutSeconds carries as its own field initializer: at 10
+                // the mapping assertion stays green even with the mapping line removed.
+                HeartbeatUrlTimeoutSeconds = 25,
+                EnableHeartbeatUrlFlags = true,
+                FailureProgramPath = @"C:\apps\failure_prog.exe",
+                FailureProgramParameters = "--param1",
+                FailureProgramStartupDirectory = @"C:\apps",
+                EnvironmentVariables = "KEY1=VALUE1",
+                ServiceDependencies = "DepA,DepB",
+                RunAsLocalSystem = false,
+                UserAccount = "User2",
+                Password = "TopSecret",
+                Pid = 1234,
+                ActiveStdoutPath = @"C:\app\active_out.log",
+                ActiveStderrPath = @"C:\app\active_err.log",
+                PreLaunchExecutablePath = @"C:\prelaunch.exe",
+                PreLaunchStartupDirectory = @"C:\prelaunch",
+                PreLaunchParameters = "-pre2",
+                PreLaunchEnvironmentVariables = "PRE2=VAL2",
+                PreLaunchStdoutPath = "pre_stdout.log",
+                PreLaunchStderrPath = "pre_stderr.log",
+                PreLaunchTimeoutSeconds = 50,
+                PreLaunchRetryAttempts = 3,
+                PreLaunchIgnoreFailure = true,
+                PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
+                PostLaunchParameters = "--post-param1",
+                PostLaunchStartupDirectory = @"C:\apps\post_launch\",
+                StartTimeout = 40,
+                StopTimeout = 50,
+                PreStopExecutablePath = @"C:\prestop.exe",
+                PreStopStartupDirectory = @"C:\prestop",
+                PreStopParameters = "-pre-stop",
+                PreStopTimeoutSeconds = 15,
+                PreStopLogAsError = true,
+                PostStopExecutablePath = @"C:\poststop.exe",
+                PostStopStartupDirectory = @"C:\poststop",
+                PostStopParameters = "-post-stop"
+            };
         }
     }
 }

@@ -39,7 +39,7 @@ def main():
 
     python_exe = os.environ.get("PYTHON_EXE") or sys.executable
     if not python_exe or not os.path.exists(python_exe):
-        logging.error("PYTHON_EXE is not set and sys.executable is unusable; cannot spawn the child tree")
+        logging.error("PYTHON_EXE is not set and sys.executable is unusable; cannot spawn the child process")
         sys.exit(1)
 
     try:
@@ -50,7 +50,7 @@ def main():
             ],
         )
     except OSError:
-        logging.exception("Failed to spawn the child process tree")
+        logging.exception("Failed to spawn the child process")
         sys.exit(1)
 
     logging.info(f"Spawned PID: {proc.pid}")

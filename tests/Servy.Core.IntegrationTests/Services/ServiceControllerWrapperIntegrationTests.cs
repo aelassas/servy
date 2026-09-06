@@ -10,11 +10,17 @@ namespace Servy.Core.IntegrationTests.Services
         private const string StandardTestService = "LanmanServer";
 
         /// <summary>
+        /// Enforces the OS platform check required by every live service query in this class.
+        /// </summary>
+        private static void SkipUnlessWindows() =>
+            Assert.SkipUnless(OperatingSystem.IsWindows(), "Live SCM dependency resolution requires Windows OS.");
+
+        /// <summary>
         /// Enforces OS platform and SCM availability checks before executing live service queries.
         /// </summary>
         private static void SkipUnlessScmAndServiceAvailable(string serviceName)
         {
-            Assert.SkipUnless(OperatingSystem.IsWindows(), "Live SCM dependency resolution requires Windows OS.");
+            SkipUnlessWindows();
 
             bool isInstalled = false;
             try
@@ -51,11 +57,15 @@ namespace Servy.Core.IntegrationTests.Services
                 Assert.SkipWhen(rootNode.Dependencies.Count < 2,
                     $"'{StandardTestService}' resolved {rootNode.Dependencies.Count} dependencies on this host; alphabetical ordering evaluation requires at least 2.");
 
-                // Dependencies collection must verify accurate structural sorting parameters
+                // Dependencies collection must verify accurate structural sorting parameters.
+                // Mirror the SUT's conditional sort key (ServiceControllerWrapper.cs): unavailable nodes are
+                // ordered by ServiceName, since their DisplayName holds a formatted error message instead.
+                static string SortKey(ServiceDependencyNode node) => node.IsUnavailable ? node.ServiceName : node.DisplayName;
+
                 for (int i = 0; i < rootNode.Dependencies.Count - 1; i++)
                 {
-                    var current = rootNode.Dependencies[i].DisplayName;
-                    var next = rootNode.Dependencies[i + 1].DisplayName;
+                    var current = SortKey(rootNode.Dependencies[i]);
+                    var next = SortKey(rootNode.Dependencies[i + 1]);
                     Assert.True(string.Compare(current, next, StringComparison.OrdinalIgnoreCase) <= 0,
                         $"Dependencies are incorrectly ordered: '{current}' appeared before '{next}'");
                 }
@@ -65,10 +75,12 @@ namespace Servy.Core.IntegrationTests.Services
         [Fact]
         public void GetDependencies_CancellationRequested_AbortsExecutionAndThrows()
         {
-            Assert.SkipUnless(OperatingSystem.IsWindows(), "Live SCM dependency resolution requires Windows OS.");
+            SkipUnlessWindows();
 
             // Arrange
-            using (var wrapper = new ServiceControllerWrapper(StandardTestService))
+            // A phantom name keeps this test independent of which services the host has installed:
+            // the token is observed before any SCM query, so the name is never resolved.
+            using (var wrapper = new ServiceControllerWrapper($"PhantomService_{Guid.NewGuid()}"))
             using (var cts = new CancellationTokenSource())
             {
                 cts.Cancel();
@@ -81,7 +93,7 @@ namespace Servy.Core.IntegrationTests.Services
         [Fact]
         public void GetDependencies_NonExistentService_ReturnsGracefulUnavailableNode()
         {
-            Assert.SkipUnless(OperatingSystem.IsWindows(), "Live SCM dependency resolution requires Windows OS.");
+            SkipUnlessWindows();
 
             // Arrange
             string phantomService = $"PhantomService_{Guid.NewGuid()}";

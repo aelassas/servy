@@ -9,6 +9,13 @@ namespace Servy.Core.Enums
     /// They must never be renumbered, reordered, or deleted. In particular, <see cref="AutomaticDelayedStart"/> (5) is
     /// a Servy-defined internal sentinel with no native Win32 anchor, and changing its underlying integer value will
     /// corrupt existing database rows across upgrades.
+    /// <para>
+    /// Note: <c>default(ServiceStartType)</c> yields <see cref="Unknown"/>, which is not the product default
+    /// (<see cref="Servy.Core.Config.AppConfig.DefaultStartupType"/> is <see cref="Automatic"/>) and is not a valid
+    /// Win32 <c>dwStartType</c> either - zero is <c>SERVICE_BOOT_START</c> to the SCM. When initializing new fields,
+    /// configurations, or data transfer objects, you must explicitly assign an appropriate default state value rather
+    /// than relying on the CLR zero-initialization layout.
+    /// </para>
     /// </remarks>
     public enum ServiceStartType : uint
     {

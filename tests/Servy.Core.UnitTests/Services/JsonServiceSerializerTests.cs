@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
 using Servy.Testing;
@@ -119,7 +120,7 @@ namespace Servy.Core.UnitTests.Services
             // these properties never hit the serialized string payload loop during SerializeObject passes.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
-            Assert.True(actual.RunAsLocalSystem);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, actual.RunAsLocalSystem);
         }
 
         [Fact]
@@ -149,7 +150,8 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
-            Assert.True(actual.RunAsLocalSystem, "RunAsLocalSystem must fall back to its safe system default (true).");
+            // Identity is reset to the configured default, never taken from the payload.
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, actual.RunAsLocalSystem);
         }
 
         [Fact]
@@ -161,6 +163,58 @@ namespace Servy.Core.UnitTests.Services
             // Act & Assert
             Assert.Null(_serializer.Deserialize(invalidJson));
         }
+
+        #region FormatLineInfo Tests
+
+        [Fact]
+        public void FormatLineInfo_JsonReaderException_ReportsLineAndPosition()
+        {
+            // Arrange
+            // A reader-level failure carries real line/position metadata, the first switch case.
+            var ex = Assert.Throws<JsonReaderException>(() =>
+                JsonConvert.DeserializeObject<ServiceDto>("{\n  \"StopTimeout\": 12x\n}", JsonSecurity.UntrustedDataSettings));
+
+            // Act
+            var info = (string?)TestReflection.InvokeNonPublic(_serializer, "FormatLineInfo", ex);
+
+            // Assert
+            Assert.Equal($" at line {ex.LineNumber}, position {ex.LinePosition}", info);
+            Assert.NotEqual(string.Empty, info);
+        }
+
+        [Fact]
+        public void FormatLineInfo_JsonSerializationException_ReportsLineAndPosition()
+        {
+            // Arrange
+            // MissingMemberHandling.Error in UntrustedDataSettings turns an unknown property into a
+            // JsonSerializationException, the switch's second case. It does not derive from
+            // JsonReaderException, so the pre-#4459 IJsonLineInfo cast reported nothing for it.
+            var ex = Assert.Throws<JsonSerializationException>(() =>
+                JsonConvert.DeserializeObject<ServiceDto>(
+                    "{\n  \"NoSuchProperty\": 1\n}", JsonSecurity.UntrustedDataSettings));
+
+            // Act
+            var info = (string?)TestReflection.InvokeNonPublic(_serializer, "FormatLineInfo", ex);
+
+            // Assert
+            Assert.Equal($" at line {ex.LineNumber}, position {ex.LinePosition}", info);
+            Assert.NotEqual(string.Empty, info);
+        }
+
+        [Fact]
+        public void FormatLineInfo_ExceptionWithoutPositionMetadata_ReturnsEmpty()
+        {
+            // Arrange & Act
+            // Pins the default branch and the lineNumber/linePosition > 0 gate, so that no
+            // " at line 0, position 0" suffix can reach the log.
+            var info = (string?)TestReflection.InvokeNonPublic(
+                _serializer, "FormatLineInfo", new InvalidOperationException("no position"));
+
+            // Assert
+            Assert.Equal(string.Empty, info);
+        }
+
+        #endregion
 
         #region Serialize Tests
 
@@ -236,7 +290,7 @@ namespace Servy.Core.UnitTests.Services
             // Confirm structural integrity for unmapped fallback security fields (credentials are dropped by [JsonIgnore] in both directions)
             Assert.Null(recovered.UserAccount);
             Assert.Null(recovered.Password);
-            Assert.True(recovered.RunAsLocalSystem);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, recovered.RunAsLocalSystem);
         }
 
         #endregion

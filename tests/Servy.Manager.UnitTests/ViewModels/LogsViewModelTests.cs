@@ -93,6 +93,29 @@ namespace Servy.Manager.UnitTests.ViewModels
             }
         }
 
+        [Fact]
+        public void ResetDateWindowToNow_AfterConstruction_ReSeedsBothEndsOfTheWindow()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange - a Manager left open long enough for the constructor's window to go stale
+                var stale = new DateTime(2020, 1, 1);
+                vm.FromDate = stale;
+                vm.ToDate = stale;
+
+                // Act
+                vm.ResetDateWindowToNow();
+
+                // Assert - the window now ends at "now" and spans LogsWindowDays (mocked to 7),
+                // which the constructor test cannot show because it starts from an unset window.
+                Assert.NotNull(vm.FromDate);
+                Assert.NotNull(vm.ToDate);
+                Assert.True((vm.ToDate.Value - DateTime.Now).Duration() < TimeSpan.FromMinutes(1));
+                Assert.True((vm.ToDate.Value - vm.FromDate.Value - TimeSpan.FromDays(7)).Duration() < TimeSpan.FromMinutes(1));
+            }
+        }
+
         #endregion
 
         #region Properties & Change Notification Validation Tests
@@ -260,16 +283,20 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void LogLevels_Get_ExcludesCriticalAndVerbose()
         {
+            // Arrange - derive the expectation from the enum itself, so a new EventLogLevel member
+            // forces a decision here instead of entering the dropdown unnoticed.
+            var excluded = new[] { EventLogLevel.Critical, EventLogLevel.Verbose };
+            var expected = Enum.GetValues(typeof(EventLogLevel))
+                .Cast<EventLogLevel>()
+                .Except(excluded)
+                .ToList();
+
             // Act
             var levels = LogsViewModel.LogLevels;
 
-            // Assert
-            Assert.DoesNotContain(EventLogLevel.Critical, levels);
-            Assert.DoesNotContain(EventLogLevel.Verbose, levels);
-            Assert.Contains(EventLogLevel.All, levels);
-            Assert.Contains(EventLogLevel.Error, levels);
-            Assert.Contains(EventLogLevel.Information, levels);
-            Assert.Contains(EventLogLevel.Warning, levels);
+            // Assert - pins content, order and count in one assertion
+            Assert.Equal(expected, levels);
+            Assert.All(excluded, level => Assert.DoesNotContain(level, levels));
         }
 
         #endregion
@@ -436,7 +463,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Resource Management, Cleanup & Disposal Tests
 
         [Fact]
-        public async Task Cleanup_ShouldCancelAndDisposeToken()
+        public async Task CancelSearch_ActiveSearchInFlight_CancelsAndDisposesToken()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {

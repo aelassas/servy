@@ -66,63 +66,80 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 null!, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            Assert.Equal("serviceRepository", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullServiceManager_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, null!, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            Assert.Equal("serviceManager", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 null!, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            Assert.Equal("appConfig", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, null!));
+
+            Assert.Equal("messageBoxService", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullServiceCommands_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, null!,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            // Guarded by the ServiceSearchViewModelBase constructor, which runs before this class's body
+            Assert.Equal("serviceCommands", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullCursorService_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, null!, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            // Guarded by the SearchableViewModelBase constructor, which runs before this class's body
+            Assert.Equal("cursorService", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullUiDispatcher_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, null!, _mockMessageBoxService.Object));
+
+            // Guarded by the ServiceSearchViewModelBase constructor, which runs before this class's body
+            Assert.Equal("uiDispatcher", ex.ParamName);
         }
 
         [Fact]
@@ -195,9 +212,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void SelectedService_SetSameReference_DoesNotFireEventsOrReload()
+        public async Task SelectedService_SetSameReference_DoesNotFireEventsOrReload()
         {
-            Helper.RunOnSTA(() =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -211,13 +228,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // First assignment: Legitimately triggers the initial dependency load pipeline loop
                         viewModel.SelectedService = mockService;
 
-                        // Wait briefly for the fire-and-forget first load to land on the mock layer
-                        const int maxPollAttempts = 50; // Up to 500ms max total wait time
-                        int attempts = 0;
-                        while (_mockServiceManager.Invocations.Count == 0 && attempts++ < maxPollAttempts)
-                        {
-                            Thread.Sleep(10);
-                        }
+                        // Fail loudly if the fire-and-forget first load never lands, so the Times.Once
+                        // assertion below can only be about the second assignment. Yielding here also
+                        // lets the STA dispatcher message pump run, which Thread.Sleep would block.
+                        await Helper.WaitUntilAsync(
+                            () => _mockServiceManager.Invocations.Count > 0,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            TestContext.Current.CancellationToken);
 
                         bool anyPropertyChangedFired = false;
                         viewModel.PropertyChanged += (s, e) => anyPropertyChangedFired = true;
@@ -231,7 +249,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         Assert.False(anyPropertyChangedFired);
 
                         // 2. Verify the 'OrReload' optimization contract.
-                        // Since we verified that the initial load was registered by the polling loop above,
+                        // Since we verified that the initial load was registered by the wait above,
                         // a count of EXACTLY once proves that the redundant second assignment was cleanly ignored.
                         _mockServiceManager.Verify(m => m.GetDependencies("TestService", It.IsAny<CancellationToken>()), Times.Once);
                     }
@@ -248,7 +266,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Command Traversal & Tree Expansion Structure Tests
 
         [Fact]
-        public void ExpandAllCommand_Executes_RecursivelyExpandsNodesWithCycleGuard()
+        public void ExpandAllCommand_Executes_ExpandsEveryNodeWithCycleGuard()
         {
             Helper.RunOnSTA(() =>
             {
@@ -284,7 +302,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void CollapseAllCommand_Executes_RecursivelyCollapsesNodes()
+        public void CollapseAllCommand_Executes_CollapsesEveryNode()
         {
             Helper.RunOnSTA(() =>
             {

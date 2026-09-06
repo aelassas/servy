@@ -24,7 +24,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Iterate over all tracked wrappers and clean up their associated OS processes
             foreach (var wrapper in _wrappersToCleanup)
             {
-                TestProcessCleanup.KillAndDispose(wrapper, TestTimeouts.CleanupWaitMs);
+                TestProcessCleanup.KillAndDispose(wrapper);
             }
         }
 
@@ -52,7 +52,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Disposal & Precondition Tests
 
         [Fact]
-        public void ObjectDisposed_AccessingProperties_ThrowsObjectDisposedException()
+        public async Task ObjectDisposed_AccessingProperties_ThrowsObjectDisposedException()
         {
             // Arrange
             var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
@@ -87,6 +87,27 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Throws<ObjectDisposedException>(() => wrapper.BeginErrorReadLine());
             Assert.Throws<ObjectDisposedException>(() => wrapper.CancelOutputRead());
             Assert.Throws<ObjectDisposedException>(() => wrapper.CancelErrorRead());
+
+            // The blocking members: without their guard a disposed wrapper would block or fault
+            // inside a released Process instead of throwing.
+            Assert.Throws<ObjectDisposedException>(() => wrapper.WaitForExit());
+
+            // WaitAndCheckStillRunningAsync is an async method, so its ThrowIfDisposed lands on the
+            // returned task rather than on the call: the awaiting overload is the one that observes it.
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+                wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
+
+            // The six event accessors each carry their own guard, so dropping one of them is
+            // invisible to every other test in the suite.
+            DataReceivedEventHandler dataHandler = (s, e) => { };
+            EventHandler exitHandler = (s, e) => { };
+
+            Assert.Throws<ObjectDisposedException>(() => wrapper.OutputDataReceived += dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.OutputDataReceived -= dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.ErrorDataReceived += dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.ErrorDataReceived -= dataHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Exited += exitHandler);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Exited -= exitHandler);
         }
 
         [Fact]
@@ -122,11 +143,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert: Immediately verify active-handle properties while the process lifecycle is valid
                 Assert.True(started);
-                Assert.True(wrapper.Id > 0);
-                Assert.NotNull(wrapper.StartInfo);
-                Assert.NotNull(wrapper.UnderlyingProcess);
+                Assert.Equal("powershell.exe", Path.GetFileName(wrapper.StartInfo.FileName));
                 Assert.True(wrapper.EnableRaisingEvents); // Constructor default
-                Assert.True(wrapper.StartTime > DateTime.MinValue);
+                Assert.InRange(wrapper.StartTime, DateTime.Now.AddMinutes(-1), DateTime.Now.AddMinutes(1));
 
                 string formatString = wrapper.Format();
                 Assert.Contains(wrapper.Id.ToString(), formatString);
@@ -300,6 +319,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
+                // cmd.exe is launched by bare name with UseShellExecute = false, so CreateProcess
+                // searches the working directory before the system directory. Every cmd.exe launch
+                // in this file pins System32 so the writable temp default cannot decide which
+                // cmd.exe runs.
                 wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
                 wrapper.Start();
 
@@ -336,6 +359,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
+                // Same bare-name resolution pin as the other two cmd.exe launches in this file.
                 wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
                 wrapper.Start();
 
@@ -352,8 +376,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Stop & Kill Tests
 
         [Fact]
-        public void Stop_GracefulShutdown_ReturnsTrue()
+        public void Stop_RunningHeadlessProcess_ReturnsNonNullAndExits()
         {
+            // The name states what the assertion backs. Stop's graceful-success branch - true for a
+            // windowed process whose CloseMainWindow() causes a clean exit within the timeout - is
+            // still covered by no test: this arrangement is headless, so it reaches the force-kill
+            // fallback and Assert.NotNull accepts that false just as readily.
+
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
             {
@@ -569,7 +598,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     FileName = "cmd.exe",
                     Arguments = "/c exit 0",
                     CreateNoWindow = true,
-                    UseShellExecute = false
+                    UseShellExecute = false,
+                    // Same bare-name resolution pin as the other two cmd.exe launches in this file.
+                    WorkingDirectory = Environment.SystemDirectory,
                 };
 
                 // Act
@@ -825,12 +856,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact(Skip = "Skipping SendCtrlC test to prevent console IPC pipe crash.")]
         public void SendCtrlC_ProcessWithAttachedConsole_SendsSignalSuccessfully()
         {
-            // Skip execution on ARM64 environments (native or emulated) where conhost/GenerateConsoleCtrlEvent
-            // severs testhost.exe's stdio IPC pipe and crashes the test host process.
-            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
-            {
-                Assert.Skip("Skipping SendCtrlC test on ARM64 environment to prevent console IPC pipe crash.");
-            }
+            // The attribute-level Skip above is unconditional, so this body never runs on any
+            // architecture; conhost/GenerateConsoleCtrlEvent severs testhost.exe's stdio IPC pipe
+            // and crashes the test host, first observed on ARM64 (native and emulated).
 
             // Arrange
             // Launch cmd.exe with CreateNoWindow = false so Windows allocates a console buffer.
@@ -956,6 +984,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.BeginErrorReadLine();
 
                 bool processExited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessGenerousTimeoutMs);
+
+                // Assert the timed wait before draining: the parameterless overload below blocks
+                // without a timeout, so a child that did not exit must fail here rather than hang.
+                Assert.True(processExited, "Process should have exited within timeout.");
+
                 // Parameterless WaitForExit also waits for async output/error event handlers to drain;
                 // the timeout overload above does not.
                 wrapper.WaitForExit();
@@ -965,7 +998,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
 
                 // Assert
-                Assert.True(processExited, "Process should have exited within timeout.");
                 Assert.True(signalsReceived, "Did not receive expected stdout/stderr signals.");
                 Assert.Contains("HELLO_OUT", stdOut);
                 Assert.Contains("HELLO_ERR", stdErr);
