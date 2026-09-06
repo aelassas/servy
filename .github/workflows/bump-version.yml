@@ -3,8 +3,8 @@
 # -------------------------------------------
 # Automatically bumps the Servy version number
 # after a completed "choco" workflow.
-# It determines the next semantic version, updates
-# version files on both main and net48 branches,
+# It determines the next version (decimal-point scheme), 
+# updates version files on both main and net48 branches,
 # and commits the changes back to the repository.
 # ===========================================
 name: bump-version
@@ -52,8 +52,8 @@ jobs:
         with:
           manual_tag: ${{ github.event.inputs.tag }}
 
-      # 2a. Calculate Next Target Minor Component Version
-      - name: Compute next semantic increment
+      # 2a. Compute the next version
+      - name: Compute next version
         shell: pwsh
         run: |
           # Calculate NEXT_VERSION: increment minor, roll over major if minor >= 9
@@ -68,7 +68,7 @@ jobs:
               $minor = 0
           }
           $next_version = "$major.$minor"
-          Write-Host "Next computed baseline deployment version: $next_version"
+          Write-Host "Next version: $next_version"
           Add-Content -Path $env:GITHUB_ENV -Value "NEXT_VERSION=$next_version"
 
       # 3. Bump version on main and net48 branches sequentially
@@ -83,7 +83,7 @@ jobs:
 
           $branches = @("main", "net48")
           foreach ($branch in $branches) {
-              Write-Host "Starting semantic version bump sequence for branch: $branch"
+              Write-Host "Starting version bump for branch: $branch"
 
               # Fetch the branch tips safely without modifying active local branch head refs directly
               Invoke-Git fetch origin $branch
