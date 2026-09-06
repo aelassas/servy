@@ -322,6 +322,14 @@ namespace Servy.Core.IntegrationTests.Logging
 
                 // Act - Change scope settings
                 scopedLogger.SetLogLevel(LogLevel.Debug);
+
+                // Assert
+                // The scope keeps its own level and does not push it onto the parent,
+                // which is the threshold WriteLeveled is handed for every scoped call.
+                Assert.Equal((int)LogLevel.Debug, TestReflection.GetField<int>(scopedLogger, "_currentLogLevel"));
+                Assert.Equal((int)LogLevel.Error, TestReflection.GetField<int>(rootLogger, "_currentLogLevel"));
+
+                // Act
                 scopedLogger.SetIsEventLogEnabled(true);
 
                 // Assert
@@ -335,8 +343,18 @@ namespace Servy.Core.IntegrationTests.Logging
                 scopedLogger.Warn("Scope Warn");
                 scopedLogger.Error("Scope Error", ex);
 
-                // Cover the no-op Dispose
+                // Act & Assert
+                // "Disabling a scope never affects the parent" - the other half of the
+                // documented self-heal contract, which only enables through the parent.
+                scopedLogger.SetIsEventLogEnabled(false);
+                Assert.True(rootLogger.IsEventLogEnabled);
+
+                // Act & Assert
+                // The scope's Dispose is documented as a no-op, so it must not tear down
+                // the shared parent that the other scopes are still writing through.
                 scopedLogger.Dispose();
+                Assert.True(rootLogger.IsEventLogEnabled);
+                Assert.True(TestReflection.GetField<bool>(rootLogger, "_isInitialized"));
             }
         }
 
