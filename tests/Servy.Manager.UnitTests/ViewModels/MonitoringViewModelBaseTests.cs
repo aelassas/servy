@@ -295,6 +295,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Equal(1, activeExecutionsCount);
                 Assert.Equal(1, vm.ExposeIsTickRunningFlag);
 
+                // The tick must forward the current selection to ApplyTickAsync, not a stale or null one
+                Assert.Same(vm.MockedSelectedService, vm.LastAppliedSelection);
+
                 // Act - Concurrently trigger subsequent tick entry attempts while first loop is running
                 vm.ExposeOnTick();
                 vm.ExposeOnTick();
@@ -309,6 +312,28 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // so no suspended async void operation survives the test.
                 tcs.TrySetResult(null);
             }
+        }
+
+        [Fact]
+        public void OnTick_SelectionLostAfterBeingSet_ResetsMonitoringStateOnce()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+            vm.MockedSelectedService = CreateLiveService();
+            vm.StartMonitoring();
+
+            // Act - a first tick with a selection latches _hadSelectedService
+            vm.ExposeOnTick();
+
+            // Assert - the latching tick must not report a lost selection
+            Assert.False(vm.IsResetMonitoringStateCalled);
+
+            // Act - the selection is lost before the next tick
+            vm.MockedSelectedService = null;
+            vm.ExposeOnTick();
+
+            // Assert
+            Assert.True(vm.IsResetMonitoringStateCalled);
         }
 
         [Fact]
