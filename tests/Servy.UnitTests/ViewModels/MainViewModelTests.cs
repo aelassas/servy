@@ -811,9 +811,11 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(dto.PostStopExecutablePath, _viewModel.PostStopExecutablePath);
             Assert.Equal(dto.PostStopStartupDirectory, _viewModel.PostStopStartupDirectory);
             Assert.Equal(dto.PostStopParameters, _viewModel.PostStopParameters);
-            Assert.Equal(StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables), _viewModel.EnvironmentVariables);
-            Assert.Equal(StringHelper.FormatServiceDependencies(dto.ServiceDependencies), _viewModel.ServiceDependencies);
-            Assert.Equal(StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables), _viewModel.PreLaunchEnvironmentVariables);
+            // Asserted as literals rather than by calling the same helper the SUT calls, so a change
+            // of separator in the helper cannot move both sides of the comparison together.
+            Assert.Equal($"A=1{Environment.NewLine}b=2", _viewModel.EnvironmentVariables);
+            Assert.Equal($"ServiceA{Environment.NewLine}ServiceB", _viewModel.ServiceDependencies);
+            Assert.Equal($"X=9{Environment.NewLine}Y=10", _viewModel.PreLaunchEnvironmentVariables);
             Assert.Equal(dto.RunAsLocalSystem, _viewModel.RunAsLocalSystem);
         }
 
@@ -851,15 +853,15 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.FailureProgramPath = "kill.exe";
             _viewModel.FailureProgramStartupDirectory = "kill_dir";
             _viewModel.FailureProgramParameters = "--now";
-            _viewModel.EnvironmentVariables = "Env=True";
-            _viewModel.ServiceDependencies = "Deps";
+            _viewModel.EnvironmentVariables = $"A=1{Environment.NewLine}B=2";
+            _viewModel.ServiceDependencies = $"ServiceA{Environment.NewLine}ServiceB";
             _viewModel.RunAsLocalSystem = true;
             _viewModel.UserAccount = "LocalSystem";
             _viewModel.Password = "Pass";
             _viewModel.PreLaunchExecutablePath = "p.exe";
             _viewModel.PreLaunchStartupDirectory = "p_dir";
             _viewModel.PreLaunchParameters = "-p";
-            _viewModel.PreLaunchEnvironmentVariables = "V=1";
+            _viewModel.PreLaunchEnvironmentVariables = $"X=9{Environment.NewLine}Y=10";
             _viewModel.PreLaunchStdoutPath = "p.log";
             _viewModel.PreLaunchStderrPath = "p_err.log";
             _viewModel.PreLaunchTimeoutSeconds = "5";
@@ -919,14 +921,16 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.Password, dto.Password);
 
             // Core Dependency & Environment Variables Mappings
-            Assert.Equal(_viewModel.EnvironmentVariables, dto.EnvironmentVariables);
-            Assert.Equal(_viewModel.ServiceDependencies, dto.ServiceDependencies);
+            // Asserted as the semicolon-delimited storage form, not as an echo of the view model,
+            // so the NormalizeString conversion itself is what is measured.
+            Assert.Equal("A=1;B=2", dto.EnvironmentVariables);
+            Assert.Equal("ServiceA;ServiceB", dto.ServiceDependencies);
 
             // Pre-Launch Life-cycle Assertions
             Assert.Equal(_viewModel.PreLaunchExecutablePath, dto.PreLaunchExecutablePath);
             Assert.Equal(_viewModel.PreLaunchStartupDirectory, dto.PreLaunchStartupDirectory);
             Assert.Equal(_viewModel.PreLaunchParameters, dto.PreLaunchParameters);
-            Assert.Equal(_viewModel.PreLaunchEnvironmentVariables, dto.PreLaunchEnvironmentVariables);
+            Assert.Equal("X=9;Y=10", dto.PreLaunchEnvironmentVariables);
             Assert.Equal(_viewModel.PreLaunchStdoutPath, dto.PreLaunchStdoutPath);
             Assert.Equal(_viewModel.PreLaunchStderrPath, dto.PreLaunchStderrPath);
             Assert.Equal(5, dto.PreLaunchTimeoutSeconds);
