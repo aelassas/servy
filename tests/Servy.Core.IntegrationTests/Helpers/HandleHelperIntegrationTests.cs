@@ -122,10 +122,10 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                     // Assert
                     Assert.True(handleDetected, $"Current process (PID {currentPid}) failed to be detected holding a handle to {testFile} after retries.");
-                    Assert.NotEmpty(results);
 
-                    var selfMatch = results.FirstOrDefault(p => p.ProcessId == currentPid);
-                    Assert.NotNull(selfMatch);
+                    // First, not FirstOrDefault: the assertion above has already established the element exists.
+                    var selfMatch = results.First(p => p.ProcessId == currentPid);
+                    Assert.NotNull(selfMatch.ProcessName);
 
                     // handle.exe output might include .exe or not, HandleHelper trims whitespace.
                     Assert.Contains(currentName, selfMatch.ProcessName, StringComparison.OrdinalIgnoreCase);
