@@ -13,6 +13,7 @@ using Servy.Service.Validation;
 using Servy.Testing;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -584,16 +585,14 @@ namespace Servy.Service.UnitTests
             string outDot = Service.MakeFilenameSafe(nameWithDot);
             string outSpaces = Service.MakeFilenameSafe(nameWithSpaces);
 
-            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely
-            Assert.NotEqual(outBase, outSpace);
-            Assert.NotEqual(outBase, outDot);
-            Assert.NotEqual(outSpace, outDot);
-            Assert.NotEqual(outSpace, outSpaces);
+            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely.
+            // Asserting over the whole set covers all six pairs, including outBase/outSpaces and
+            // outDot/outSpaces, and keeps the comparison count correct if a fifth variant is added.
+            var all = new[] { outBase, outSpace, outDot, outSpaces };
+            Assert.Equal(all.Length, all.Distinct(StringComparer.Ordinal).Count());
 
             // All must preserve base readability prefixing
-            Assert.StartsWith("MyService_", outBase);
-            Assert.StartsWith("MyService_", outSpace);
-            Assert.StartsWith("MyService_", outDot);
+            Assert.All(all, o => Assert.StartsWith("MyService_", o));
         }
 
         [Theory]
