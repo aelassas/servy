@@ -330,25 +330,25 @@
   </data>
 
   <data name="Msg_InvalidHexAffinityFormat" xml:space="preserve">
-    <value>Invalid hex affinity format: '{0}'.</value>
+    <value>Invalid CPU affinity hexadecimal format: '{0}'.</value>
   </data>
   <data name="Msg_CoreIndexRangeOutOfBounds" xml:space="preserve">
-    <value>Core index in range '{0}' is out of bounds (0-{1}).</value>
+    <value>CPU affinity core index in range '{0}' is out of bounds (0-{1}).</value>
   </data>
   <data name="Msg_CoreIndexOutOfBounds" xml:space="preserve">
-    <value>Core index '{0}' is out of bounds (0-{1}).</value>
+    <value>CPU affinity core index '{0}' is out of bounds (0-{1}).</value>
   </data>
   <data name="Msg_InvalidCoreSpecification" xml:space="preserve">
-    <value>Invalid core specification: '{0}'.</value>
+    <value>Invalid CPU affinity core specification: '{0}'.</value>
   </data>
   <data name="Msg_InvertedCoreRange" xml:space="preserve">
-    <value>Inverted core range '{0}': the start index is greater than the end index.</value>
+    <value>Inverted CPU affinity core range '{0}': the start index is greater than the end index.</value>
   </data>
   <data name="Msg_EmptyAffinityMask" xml:space="preserve">
-    <value>Affinity mask '{0}' selects no processor.</value>
+    <value>CPU affinity mask '{0}' selects no processors.</value>
   </data>
   <data name="Msg_HexMaskOutOfBounds" xml:space="preserve">
-    <value>Affinity mask '{0}' selects processors outside allowable range (0-{1}).</value>
+    <value>CPU affinity mask '{0}' selects processors outside the allowable range (0-{1}).</value>
   </data>
 
   <data name="Msg_ImportXmlNullOrEmpty" xml:space="preserve">
