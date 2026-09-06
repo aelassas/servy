@@ -1487,8 +1487,10 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(true);
 
             // Act & Assert
-            // Test 1: Verify UpdateServiceConfig executes without exception
-            var exception1 = Record.Exception(() => _serviceManager.UpdateServiceConfig(
+            // A null display name must be coerced to the service name, not forwarded as NULL:
+            // NULL is Win32 for "leave the current value unchanged", which would preserve a stale
+            // display name instead of resetting it.
+            _serviceManager.UpdateServiceConfig(
                 scmHandle,
                 serviceName,
                 description,
@@ -1498,11 +1500,26 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 null,
                 null
-            ));
-            Assert.Null(exception1);
+            );
 
-            // Test 2: Verify UpdateServiceConfig executes without exception with service name
-            var exception2 = Record.Exception(() => _serviceManager.UpdateServiceConfig(
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                binPath,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                serviceName),
+                Times.Once);
+
+            // An explicit display name that differs from the service name must be forwarded unchanged.
+            var displayName = "My Display Name";
+
+            _serviceManager.UpdateServiceConfig(
                 scmHandle,
                 serviceName,
                 description,
@@ -1511,9 +1528,49 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 null,
                 null,
-                serviceName
-            ));
-            Assert.Null(exception2);
+                displayName
+            );
+
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                binPath,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                displayName),
+                Times.Once);
+
+            // The guard is IsNullOrWhiteSpace, not IsNullOrEmpty, so a blank display name is coerced too.
+            _serviceManager.UpdateServiceConfig(
+                scmHandle,
+                serviceName,
+                description,
+                binPath,
+                ServiceStartType.Automatic,
+                null,
+                null,
+                null,
+                "   "
+            );
+
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                binPath,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                serviceName),
+                Times.Exactly(2));
         }
 
         [Fact]
