@@ -209,8 +209,7 @@ namespace Servy.Restarter.UnitTests
             _mockController.SetupSequence(c => c.Status)
                 .Returns(ServiceControllerStatus.Stopped)  // Step 1 check
                 .Returns(ServiceControllerStatus.Stopped)  // Step 2 check (skips stop block)
-                .Returns(ServiceControllerStatus.Stopped)  // Step 3 pre-start refresh state
-                .Returns(ServiceControllerStatus.Stopped); // Step 3 check block entry
+                .Returns(ServiceControllerStatus.Stopped); // Step 3 pre-start validation check
 
             // Act & Assert
             var ex = Assert.Throws<System.TimeoutException>(() =>
