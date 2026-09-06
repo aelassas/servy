@@ -635,7 +635,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     }
                     else if (col != "Id")
                     {
-                        corruptedTableDef.Add($"{col} INTEGER");
+                        // Preserve each column's declared type so 'EnableSizeRotation' stays the ONLY mismatch
+                        // in this fixture. Declaring every remaining column INTEGER also turned the 33 columns
+                        // the DTO declares TEXT into mismatches, none of them intended or asserted.
+                        string sqlType = (string)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetSqlType", col)!;
+                        corruptedTableDef.Add($"{col} {sqlType}");
                     }
                 }
 
@@ -659,6 +663,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Note: Mismatches are logged, not automatically altered, because SQLite doesn't support ALTER COLUMN type.
                 var typeMismatchType = conn.QuerySingle<string>($"SELECT type FROM pragma_table_info('{SqlConstants.ServicesTableName}') WHERE name = 'EnableSizeRotation';");
                 Assert.Equal("TEXT", typeMismatchType); // Should still be TEXT as we sabotaged it
+
+                // 'EnableSizeRotation' is the only sabotaged type: every other column was rebuilt with the
+                // type the DTO declares, so a TEXT column must still read back as TEXT. This pins the
+                // fixture to the single documented mismatch instead of the ~33 accidental ones it used to carry.
+                var untouchedTextType = conn.QuerySingle<string>($"SELECT type FROM pragma_table_info('{SqlConstants.ServicesTableName}') WHERE name = 'ExecutablePath';");
+                Assert.Equal("TEXT", untouchedTextType);
             }
         }
 
