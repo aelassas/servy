@@ -175,6 +175,30 @@ namespace Servy.Core.IntegrationTests.Security
             }
         }
 
+        [Fact]
+        public void GetIV_ExistingValidFile_UnprotectsSuccessfully()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("existing_iv.key");
+            var ivPath = GetTempFilePath("existing_iv.iv");
+            byte[] originalIv;
+
+            // Generation phase
+            using (var generatorProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                originalIv = generatorProvider.GetIV();
+            } // disposed
+
+            // Act - Retrieval phase (simulating a service restart)
+            using (var readerProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var retrievedIv = readerProvider.GetIV();
+
+                // Assert
+                Assert.Equal(originalIv, retrievedIv);
+            }
+        }
+
         #endregion
 
         #region Migration and Resilience Tests
