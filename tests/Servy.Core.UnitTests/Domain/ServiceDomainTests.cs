@@ -54,6 +54,7 @@ namespace Servy.Core.UnitTests.Domain
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to start service.", result.ErrorMessage);
             _serviceManagerMock.Verify(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -84,6 +85,7 @@ namespace Servy.Core.UnitTests.Domain
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to stop service.", result.ErrorMessage);
             _serviceManagerMock.Verify(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -114,6 +116,7 @@ namespace Servy.Core.UnitTests.Domain
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal("Failed to restart service.", result.ErrorMessage);
             _serviceManagerMock.Verify(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
