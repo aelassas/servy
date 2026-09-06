@@ -12,10 +12,10 @@ namespace Servy.Service.UnitTests.Validation
         [InlineData(@"C:\Valid\Path.txt", true)]
         [InlineData(@"C:\my..folder\path", true)] // Tests proper path-normalization delegation vs naive substring traversal checks
         [InlineData(@"..\Traversal.txt", false)]  // Directory traversal
-        public void IsValidPath_EvaluatesCorrectly(string? path, bool expected)
+        public void IsValidPath_EvaluatesCorrectly(string path, bool expected)
         {
             var validator = new PathValidator();
-            Assert.Equal(expected, validator.IsValidPath(path!));
+            Assert.Equal(expected, validator.IsValidPath(path));
         }
     }
 }
