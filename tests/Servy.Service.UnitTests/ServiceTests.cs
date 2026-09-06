@@ -867,7 +867,7 @@ namespace Servy.Service.UnitTests
                 await Task.Delay(100, CancellationToken.None);
 
                 // Assert
-                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -892,7 +892,7 @@ namespace Servy.Service.UnitTests
                 await Task.Delay(100, CancellationToken.None);
 
                 // Assert
-                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -917,7 +917,7 @@ namespace Servy.Service.UnitTests
                 await Task.Delay(100, CancellationToken.None);
 
                 // Assert
-                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never());
+                loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -1200,7 +1200,7 @@ namespace Servy.Service.UnitTests
                 "The internal recovery sequence was not scheduled or executed within the time limit.");
 
             // Verify exactly once at the tail end. If a regression occurs, Moq will now surface its precise mismatch diagnostics.
-            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), null), Times.Once());
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), null), Times.Once);
         }
 
         #endregion
