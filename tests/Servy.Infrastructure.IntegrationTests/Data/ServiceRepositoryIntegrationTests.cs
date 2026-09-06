@@ -207,16 +207,42 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void AppDbContext_Ensures_UnicodeNoCaseCollation_Is_Registered()
+        public void AppDbContext_DeclaresStaticInitializer_RegisteringUnicodeNoCaseCollation()
         {
-            // 1. Instantiating AppDbContext guarantees static AppDbContext() has executed
+            // The collation is registered process-wide at three sites (SQLiteDbInitializer,
+            // AppDbContext's static constructor, DatabaseInitializer) and registration cannot be undone,
+            // so no query-based test can attribute the registration to this one. Assert the two things a
+            // consolidation of those three sites would break, which do not depend on execution order:
+
+            // 1. AppDbContext declares a type initializer. It holds no static fields, so removing the
+            //    explicit static constructor that fixed #5631 leaves TypeInitializer null.
+            Assert.NotNull(typeof(AppDbContext).TypeInitializer);
+
+            // 2. The collation type it registers still advertises the name the schema's unique index uses.
+            var functionAttribute = typeof(UnicodeNoCaseCollation)
+                .GetCustomAttributes(typeof(SQLiteFunctionAttribute), inherit: false)
+                .Cast<SQLiteFunctionAttribute>()
+                .SingleOrDefault();
+
+            Assert.NotNull(functionAttribute);
+            Assert.Equal("UNICODE_NOCASE", functionAttribute.Name);
+            Assert.Equal(FunctionType.Collation, functionAttribute.FuncType);
+        }
+
+        [Fact]
+        public void AppDbContext_Connection_RunsUnicodeNoCaseQuery_WhenCollationIsRegistered()
+        {
+            // NOTE: this test cannot guard the static constructor, and its name no longer claims to.
+            // This class's own fixture runs SQLiteDbInitializer.Initialize before every test, whose first
+            // statement registers UNICODE_NOCASE process-wide, so the query below succeeds even with
+            // AppDbContext's registration deleted. What it does verify is that a connection handed out by
+            // AppDbContext resolves the collation - see the sibling test above for the constructor itself.
             var context = new AppDbContext("Data Source=:memory:");
 
             using (var connection = context.CreateConnection())
             {
                 connection.Open();
 
-                // 2. Verify query requiring UNICODE_NOCASE succeeds without throwing
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = "SELECT 1 WHERE 'test' = 'TEST' COLLATE UNICODE_NOCASE;";
