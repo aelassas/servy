@@ -211,7 +211,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Scenario 1: Not initialized yet -> Returns CancellationToken.None
             // Act & Assert
             Assert.Equal(CancellationToken.None, vm.ExposeCurrentToken());
-            Assert.False(vm.ExposeCurrentToken().IsCancellationRequested);
 
             // Scenario 2: Active monitoring session running -> Valid, live token
             // Act
@@ -236,7 +235,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Assert
             Assert.Equal(CancellationToken.None, postDisposeToken);
-            Assert.False(postDisposeToken.IsCancellationRequested);
 
             // Scenario 5: Disposed CancellationTokenSource instance in _monitoringCts -> Catches ObjectDisposedException and returns canceled token
             // Act
