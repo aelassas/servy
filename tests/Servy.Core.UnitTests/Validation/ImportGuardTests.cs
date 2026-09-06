@@ -69,7 +69,20 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
             Assert.Null(content);
 
-            string expectedMessage = string.Format(Strings.Msg_ConfigSizeLimitReached, filePath, AppConfig.MaxConfigFileSizeMB);
+            // The production message is formatted with securityCheck.ValidPath.ResolvedPath - the
+            // kernel-resolved target (GetFinalPathNameByHandle) - not the caller's string. 8.3
+            // components such as C:\Users\RUNNER~1 are expanded there, so comparing against
+            // filePath fails on any runner whose temp path is shortened (the #5757 class).
+            // Resolve through the same gate the production code uses.
+            var pathCheck = PathSecurityGuard.ValidatePath(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var validatedStream);
+            string resolvedPath;
+            using (validatedStream)
+            {
+                Assert.True(pathCheck.IsValid);
+                resolvedPath = pathCheck.ValidPath.ResolvedPath;
+            }
+
+            string expectedMessage = string.Format(Strings.Msg_ConfigSizeLimitReached, resolvedPath, AppConfig.MaxConfigFileSizeMB);
             Assert.Equal(expectedMessage, result.ErrorMessage);
         }
     }
