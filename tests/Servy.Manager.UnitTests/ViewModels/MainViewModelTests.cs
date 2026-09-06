@@ -16,6 +16,7 @@ using Servy.UI.Services;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Windows.Threading;
 using static Servy.Manager.ViewModels.MainViewModel;
 using Helper = Servy.Testing.Helper;
@@ -135,6 +136,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private static void RunOnPump(Dispatcher dispatcher, Func<Task> action)
         {
             var frame = new DispatcherFrame();
+            ExceptionDispatchInfo? pumpFailure = null;
 
             _ = dispatcher.InvokeAsync(async () =>
             {
@@ -142,9 +144,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     await action();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Suppress expected target exceptions to let the frame unwind cleanly
+                    // Capture rather than swallow, so the frame still unwinds cleanly but a command that
+                    // throws fails its test instead of disappearing. Callers that expect an exception
+                    // catch it inside their own action before it reaches here.
+                    pumpFailure = ExceptionDispatchInfo.Capture(ex);
                 }
                 finally
                 {
@@ -162,6 +167,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             try { Dispatcher.PushFrame(frame); }
             finally { watchdog.Stop(); }
             Assert.True(sw.Elapsed < TimeSpan.FromSeconds(10), "Pump timed out");
+            pumpFailure?.Throw();
         }
 
         #endregion
@@ -788,13 +794,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
                 // Act
-                await SetupAndRunBulkOperation(vm =>
+                var exception = await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
                     _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
 
                 // Assert
+                Assert.Null(exception);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, It.IsAny<string>()), Times.Once);
             }, createApp: true);
         }
@@ -808,7 +815,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _messageBoxServiceMock.Setup(m => m.ShowWarningAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
                 // Act
-                await SetupAndRunBulkOperation(vm =>
+                var exception = await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
@@ -817,6 +824,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }, async vm => await vm.StopSelectedCommand.ExecuteAsync(null));
 
                 // Assert
+                Assert.Null(exception);
                 _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(It.Is<string>(msg => msg.Contains("S2")), It.IsAny<string>()), Times.Once);
             }, createApp: true);
         }
@@ -830,13 +838,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _messageBoxServiceMock.Setup(m => m.ShowWarningAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
                 // Act
-                await SetupAndRunBulkOperation(vm =>
+                var exception = await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
                     _serviceCommandsMock.Setup(c => c.RestartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(false);
                 }, async vm => await vm.RestartSelectedCommand.ExecuteAsync(null));
 
                 // Assert
+                Assert.Null(exception);
                 _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(Strings.Msg_AllOperationsFailed, It.IsAny<string>()), Times.Once);
             }, createApp: true);
         }
@@ -850,15 +859,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var vmRef = (MainViewModel)null!;
 
                 // Act
-                await SetupAndRunBulkOperation(vm =>
+                var exception = await SetupAndRunBulkOperation(vm =>
                 {
                     vmRef = vm;
 
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()))
                                           .ReturnsAsync(true);
-
-                    _messageBoxServiceMock.Setup(m => m.ShowWarningAsync(It.IsAny<string>(), It.IsAny<string>()))
-                                          .Returns(Task.CompletedTask);
 
                     _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
                                           .ThrowsAsync(new InvalidOperationException("Fatal Access Violation"));
@@ -867,7 +873,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await vm.StartSelectedCommand.ExecuteAsync(null);
                 });
 
-                // Assert
+                // Assert - the "Handled" half: the catch swallowed it, so nothing escaped the command.
+                // Without this the IsBusy and ResetCursor assertions are satisfied by the finally block
+                // alone, and deleting ExecuteBulkOperationAsync's catch keeps the test green.
+                Assert.Null(exception);
                 Assert.False(vmRef.IsBusy);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.AtLeastOnce);
             }, createApp: true);
