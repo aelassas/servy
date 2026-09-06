@@ -130,6 +130,13 @@ namespace Servy.Manager.UnitTests.ViewModels
             return vm;
         }
 
+        /// <summary>
+        /// The single definition of "a valid selection" for the tick-path tests: a service item
+        /// whose <see cref="ServiceItemBase.Pid"/> passes the CopyPid CanExecute check.
+        /// </summary>
+        private static ConcreteServiceItem CreateLiveService() =>
+            new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
+
         #endregion
 
         #region Unit Tests
@@ -259,7 +266,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
 
             // A valid selection: the ONLY thing that may block the payload is _isMonitoringFlag == 0.
-            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
+            vm.MockedSelectedService = CreateLiveService();
             vm.ExposeInitTimer();          // timer exists, but StartMonitoring() was never called
 
             // Act
@@ -285,7 +292,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
 
             // Set a valid selection so OnTickAsync forwards the tick to ApplyTickAsync
-            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
+            vm.MockedSelectedService = CreateLiveService();
             vm.StartMonitoring();
 
             // Act - Trigger initial tick execution flow
@@ -310,7 +317,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange
             var vm = CreateViewModel(onTick: _ => throw new OperationCanceledException());
-            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
+            vm.MockedSelectedService = CreateLiveService();
             vm.StartMonitoring();
 
             // Pre-set error count to verify cancellation resets the consecutive error counter
@@ -330,7 +337,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange
             var vm = CreateViewModel(onTick: _ => throw new InvalidOperationException("SCM connection drop out panic."));
-            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
+            vm.MockedSelectedService = CreateLiveService();
             vm.StartMonitoring();
 
             // Act & Assert Loop Chain Simulation
@@ -358,7 +365,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             var vm = CreateViewModel();
 
-            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
+            vm.MockedSelectedService = CreateLiveService();
             vm.StartMonitoring();
 
             // Retain reference to the underlying DispatcherTimer object instance before it is wiped
