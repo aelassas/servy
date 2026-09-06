@@ -1582,7 +1582,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void Dispose_PerformanceAndChildViewModels_DisposesAllChildrenWithoutThrowing()
+        public void Dispose_DisposesAllFourChildViewModelsTheRowVmsAndTheCommandEngine()
         {
             // Arrange
             Helper.RunOnSTA(() =>
@@ -1595,6 +1595,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object) { CallBase = true };
                 var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object) { CallBase = true };
 
+                // The class-level _logsViewModelMock has no CallBase, so its generated Dispose(bool) does
+                // nothing and _isDisposed stays 0 whatever MainViewModel does. LogsVM needs its own mock.
+                var mockLogs = new Mock<LogsViewModel>(_appConfigMock.Object, _eventLogServiceMock.Object, _cursorServiceMock.Object, _messageBoxServiceMock.Object) { CallBase = true };
+
                 var vm = new MainViewModel(
                     _serviceManagerMock.Object,
                     _serviceRepositoryMock.Object,
@@ -1604,7 +1608,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     mockPerformance.Object,
                     mockConsole.Object,
                     mockDependencies.Object,
-                    _logsViewModelMock.Object,
+                    mockLogs.Object,
                     _appConfigMock.Object,
                     _cursorServiceMock.Object,
                     _processHelperMock.Object,
@@ -1612,6 +1616,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 );
 
                 _allocatedViewModels.Add(vm);
+
+                // Seed one row so the drain loop's per-row Dispose is reached
+                var rowVm = new ServiceRowViewModel(new Service(), _serviceCommandsMock.Object, _cursorServiceMock.Object);
+                TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services").Add(rowVm);
 
                 // Act
                 var exception = Record.Exception(() => vm.Dispose());
@@ -1621,6 +1629,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Equal(1, TestReflection.GetField<int>(mockPerformance.Object, "_isDisposed"));
                 Assert.Equal(1, TestReflection.GetField<int>(mockConsole.Object, "_isDisposed"));
                 Assert.Equal(1, TestReflection.GetField<int>(mockDependencies.Object, "_isDisposed"));
+                Assert.Equal(1, TestReflection.GetField<int>(mockLogs.Object, "_isDisposed"));
+
+                // The per-row Dispose is what runs each row's Service.PropertyChanged unsubscription
+                Assert.True(TestReflection.GetField<bool>(rowVm, "_disposed"));
+
+                // The shared command engine is torn down last, after the child VMs stopped referencing it
+                _serviceCommandsMock.Verify(c => c.Dispose(), Times.Once);
             }, createApp: true);
         }
 
