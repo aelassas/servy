@@ -67,6 +67,7 @@ namespace Servy.UI.UnitTests.Design
             repo.Delete("test");
             Assert.Equal(0, repo.Update(new ServiceDto(), true, true));
             Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: ct));
+            Assert.Equal(0, await repo.DeleteAsync("test", cancellationToken: ct));
             Assert.Equal(0, await repo.AddAsync(new ServiceDto(), cancellationToken: ct));
             Assert.Equal(0, await repo.UpdateAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
             Assert.Equal(0, await repo.UpsertAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
