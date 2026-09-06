@@ -99,6 +99,29 @@ namespace Servy.Manager.UnitTests.ViewModels
             }
         }
 
+        [Fact]
+        public void ResetDateWindowToNow_AfterConstruction_ReSeedsBothEndsOfTheWindow()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange - a Manager left open long enough for the constructor's window to go stale
+                var stale = new DateTime(2020, 1, 1);
+                vm.FromDate = stale;
+                vm.ToDate = stale;
+
+                // Act
+                vm.ResetDateWindowToNow();
+
+                // Assert - the window now ends at "now" and spans LogsWindowDays (mocked to 7),
+                // which the constructor test cannot show because it starts from an unset window.
+                Assert.NotNull(vm.FromDate);
+                Assert.NotNull(vm.ToDate);
+                Assert.True((vm.ToDate.Value - DateTime.Now).Duration() < TimeSpan.FromMinutes(1));
+                Assert.True((vm.ToDate.Value - vm.FromDate.Value - TimeSpan.FromDays(7)).Duration() < TimeSpan.FromMinutes(1));
+            }
+        }
+
         #endregion
 
         #region Properties & Change Notification Validation Tests
