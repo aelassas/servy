@@ -203,6 +203,51 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task StopMonitoring_DuringInFlightTick_DoesNotResurrectTheTimer()
+        {
+            // Arrange
+            var tcs = new TaskCompletionSource<object?>();
+            var vm = CreateViewModel(onTick: async _ => await tcs.Task);
+            vm.MockedSelectedService = CreateLiveService();
+            vm.StartMonitoring();
+
+            // Act - a tick is in flight (OnTick stopped the timer), then a stop is requested
+            vm.ExposeOnTick();
+            Assert.Equal(1, vm.ExposeIsTickRunningFlag);
+
+            vm.StopMonitoring();
+
+            // Act - let the in-flight tick complete so its finally block runs
+            tcs.SetResult(null);
+            await Helper.WaitUntilAsync(
+                () => vm.ExposeIsTickRunningFlag == 0,
+                TimeSpan.FromSeconds(5),
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert - the safety check must keep the timer stopped after the stop request
+            Assert.False(vm.ExposeTimer!.IsEnabled);
+            Assert.Equal(0, vm.ExposeIsMonitoringFlag);
+        }
+
+        [Fact]
+        public void StartMonitoring_CalledTwice_CancelsAndReplacesThePreviousSession()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+            vm.StartMonitoring();
+            var firstCts = vm.ExposeCts;
+            var firstToken = vm.ExposeCurrentToken();
+
+            // Act
+            vm.StartMonitoring();
+
+            // Assert
+            Assert.NotSame(firstCts, vm.ExposeCts);
+            Assert.True(firstToken.IsCancellationRequested);
+            Assert.False(vm.ExposeCurrentToken().IsCancellationRequested);
+        }
+
+        [Fact]
         public void GetCurrentMonitoringToken_LifecycleStates_ReturnsExpectedTokens()
         {
             // Arrange
