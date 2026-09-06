@@ -42,7 +42,10 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("    ")]
         public void ValidateCredentials_EmptyUsername_ThrowsArgumentException(string invalidUsername)
         {
-            Assert.Throws<ArgumentException>(() => NativeMethodsHelpers.ValidateCredentials(invalidUsername, null));
+            var ex = Assert.Throws<ArgumentException>("username",
+                () => NativeMethodsHelpers.ValidateCredentials(invalidUsername, null));
+
+            Assert.Contains("cannot be empty or whitespace", ex.Message);
         }
 
         [Theory]
