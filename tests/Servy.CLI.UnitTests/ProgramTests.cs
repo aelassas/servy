@@ -49,7 +49,7 @@ namespace Servy.CLI.UnitTests
         #region Console Validation Logic Branches
 
         [Fact]
-        public void IsRealConsole_InNonInteractiveTestEnvironment_ReturnsFalse()
+        public void IsRealConsole_WhenHostIsNonInteractiveOrRedirected_ShortCircuitsToFalse()
         {
             if (Environment.UserInteractive
                   && !Console.IsOutputRedirected
@@ -58,12 +58,23 @@ namespace Servy.CLI.UnitTests
                 return;
             }
 
+            // Arrange
+            // The early-return guard above is the exact complement of the first two guards of
+            // IsRealConsole, so the body only ever runs in a state that short-circuits the
+            // method. Pin that precondition explicitly rather than leaving it implicit in
+            // the guard expression: this test covers the short-circuit only, and the Win32
+            // half of the method (GetConsoleWindow and the Console.WindowHeight probe)
+            // stays out of reach without a redirection seam on Program.
+            bool shortCircuitStateHolds = !Environment.UserInteractive
+                || Console.IsOutputRedirected
+                || Console.IsErrorRedirected;
+
             // Act
             bool isReal = Program.IsRealConsole();
 
             // Assert
-            // When executing within headless test runners or CI pipelines,
-            // Environment.UserInteractive or Console.IsOutputRedirected will naturally be false/redirected
+            Assert.True(shortCircuitStateHolds,
+                "The early-return guard must leave only host states that short-circuit IsRealConsole.");
             Assert.False(isReal);
         }
 
