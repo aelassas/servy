@@ -35,13 +35,9 @@ namespace Servy.UI.IntegrationTests.Services
                 var uiDispatcher = new WpfUiDispatcher();
                 var executionOrder = new System.Collections.Concurrent.ConcurrentQueue<string>();
 
-                // Queue a higher priority operation (Send priority)
-                var highPriorityTask = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
-                {
-                    executionOrder.Enqueue("HighPriority");
-                }, DispatcherPriority.Send);
-
-                // Queue the yield operation which targets a lower priority (Background)
+                // Queue the yield operation FIRST, at its documented Background priority, so the
+                // asserted sequence is reachable only through genuine priority ordering and not
+                // through the dispatcher's FIFO handling of equal priorities.
                 async Task RunYieldAsync()
                 {
                     await uiDispatcher.YieldAsync();
@@ -50,15 +46,28 @@ namespace Servy.UI.IntegrationTests.Services
 
                 var yieldTask = RunYieldAsync();
 
+                // Then queue Input, the priority directly above Background, and Send, the highest
+                // of all. Both must still run first, which pins the yield strictly below Input.
+                var inputTask = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+                {
+                    executionOrder.Enqueue("Input");
+                }, DispatcherPriority.Input);
+
+                var highPriorityTask = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+                {
+                    executionOrder.Enqueue("HighPriority");
+                }, DispatcherPriority.Send);
+
                 // Act: Await the tasks concurrently so the dispatcher pump handles them by priority
-                await Task.WhenAll(highPriorityTask.Task, yieldTask);
+                await Task.WhenAll(highPriorityTask.Task, inputTask.Task, yieldTask);
 
                 // Assert: Verify that the queue tracks the correct prioritized processing flow
                 var results = executionOrder.ToArray();
 
-                Assert.Equal(2, results.Length);
+                Assert.Equal(3, results.Length);
                 Assert.Equal("HighPriority", results[0]);
-                Assert.Equal("YieldBackground", results[1]);
+                Assert.Equal("Input", results[1]);
+                Assert.Equal("YieldBackground", results[2]);
             });
         }
 
