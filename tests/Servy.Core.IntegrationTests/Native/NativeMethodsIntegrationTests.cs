@@ -65,6 +65,12 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(0x00010000u, NativeMethods.SERVICE_DELETE);
             Assert.Equal(0x00000001u, NativeMethods.SERVICE_ERROR_NORMAL);
             Assert.Equal(7, NativeMethods.SERVICE_CONFIG_PRESHUTDOWN_INFO);
+
+            // The LSA policy access mask that #586 narrowed from POLICY_ALL_ACCESS to minimum rights.
+            // A wrong bit here surfaces as an ordinary "Access is denied", so nothing else would catch it.
+            Assert.Equal(0x00000800u, NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES);
+            Assert.Equal(0x00000010u, NativeMethods.POLICY_ACCESS.POLICY_CREATE_ACCOUNT);
+            Assert.Equal(0x00000400u, NativeMethods.POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE);
         }
 
         #endregion
