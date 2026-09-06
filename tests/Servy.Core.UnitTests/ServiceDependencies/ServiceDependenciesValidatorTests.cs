@@ -10,6 +10,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         #region Valid Input Verification Pathways
 
         [Theory]
+        [InlineData(null)]                                       // null is an accepted input, and the sibling Parse theory covers it for the same guard
         [InlineData("")]                                         // Validate_EmptyString_ReturnsTrue
         [InlineData("   \r\n   ")]                               // Validate_WhitespaceOnly_ReturnsTrue
         [InlineData("MyService1")]                               // Validate_SingleValidServiceName_ReturnsTrue
@@ -23,6 +24,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("My Service;Another Service")]               // internal spaces are allowed (edge spaces are trimmed, internal ones are not)
         [InlineData("+TDI")]                                     // load-order group dependency prefix (+) is allowed
         [InlineData("+NetworkProvider;+Base;+PNP_TDI")]          // multiple load-order group dependencies
+        [InlineData("ServiceA;servicea")]                        // a case-insensitive duplicate is collapsed by Tokenize, not reported as an error
         public void Validate_ValidInput_ReturnsTrueWithNoErrors(string input)
         {
             // Arrange & Act
@@ -118,6 +120,23 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             Assert.False(result);
             Assert.Equal(2, errors.Count);
             Assert.Contains(expectedLengthError, errors);
+            Assert.Contains(errors, e => e.Contains("Bad#Service"));
+        }
+
+        [Fact]
+        public void Validate_DuplicateInvalidName_ReportsItOnce()
+        {
+            // Arrange
+            // Regression guard for #4513: Validate must consume the de-duplicated token stream
+            // from ServiceDependenciesParser.Tokenize, not report one error per occurrence.
+            var input = "Bad#Service;bad#service;Bad#Service";
+
+            // Act
+            var result = ServiceDependenciesValidator.Validate(input, out var errors);
+
+            // Assert
+            Assert.False(result);
+            Assert.Single(errors);
             Assert.Contains(errors, e => e.Contains("Bad#Service"));
         }
 
