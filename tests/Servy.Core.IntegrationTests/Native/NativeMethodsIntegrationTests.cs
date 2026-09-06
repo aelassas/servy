@@ -284,14 +284,20 @@ namespace Servy.Core.IntegrationTests.Native
         public void FileIdentity_SecondaryProbeFAT32Fallback_ValidatesDigestEquality()
         {
             // Arrange
-            // Branch (3) Probe: Both handle checks fail (e.g. FAT32 volume layers). Compare contents using PrefixDigest
+            // Branch (2) Secondary Probe: Both handle checks fail (e.g. FAT32 volume layers). Compare contents using PrefixDigest
             var baseId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
             var matchingId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
             var differingId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_B" };
 
+            // Branch (2) Secondary Probe Asymmetric Null: one side has no digest - the conjunction guard must fail,
+            // falling through to Branch (3) Fallback rather than attempting string comparison against null.
+            var digestMissing = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
+
             // Act & Assert
             Assert.False(baseId.IsDifferentFrom(matchingId), "Identical content hashes on invalid handle states must evaluate as unchanged.");
             Assert.True(baseId.IsDifferentFrom(differingId), "Differing content hashes on invalid handle states must trigger a rotation switch signal.");
+            Assert.True(baseId.IsDifferentFrom(digestMissing), "Asymmetric null digest must fall through conjunction guard to return true.");
+            Assert.True(digestMissing.IsDifferentFrom(baseId), "Symmetric reverse null digest must fall through conjunction guard to return true.");
         }
 
         [Fact]
