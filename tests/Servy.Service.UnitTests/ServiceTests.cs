@@ -874,7 +874,7 @@ namespace Servy.Service.UnitTests
 
                 // Act
                 TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { invalidUrl, "/start", 2 });
-                await Task.Delay(100, CancellationToken.None);
+                await Task.Delay(TestTimeouts.NegativeObservationWindow, CancellationToken.None);
 
                 // Assert
                 loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
@@ -899,7 +899,7 @@ namespace Servy.Service.UnitTests
 
                 // Act
                 TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
-                await Task.Delay(100, CancellationToken.None);
+                await Task.Delay(TestTimeouts.NegativeObservationWindow, CancellationToken.None);
 
                 // Assert
                 loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
@@ -924,7 +924,7 @@ namespace Servy.Service.UnitTests
 
                 // Act
                 TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", new object[] { "http://localhost:12345/ping", "/start", 2 });
-                await Task.Delay(100, CancellationToken.None);
+                await Task.Delay(TestTimeouts.NegativeObservationWindow, CancellationToken.None);
 
                 // Assert
                 loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
@@ -1160,8 +1160,8 @@ namespace Servy.Service.UnitTests
             TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
             // Assert
-            // Await the stop event completion signal deterministically
-            await Task.WhenAny(stoppedSignal.Task, Task.Delay(2000, CancellationToken.None));
+            // Await the stop event completion signal deterministically, bounded by the shared CI timeout budget.
+            await Task.WhenAny(stoppedSignal.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
 
             Assert.True(stopped, "The background clean exit stop sequence failed to invoke the OnStoppedForTest event callback.");
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Service will stop.")), It.IsAny<Exception>()), Times.Once);
