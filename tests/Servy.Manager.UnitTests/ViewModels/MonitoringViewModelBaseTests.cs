@@ -290,21 +290,27 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.MockedSelectedService = CreateLiveService();
             vm.StartMonitoring();
 
-            // Act - Trigger initial tick execution flow
-            vm.ExposeOnTick();
-            Assert.Equal(1, activeExecutionsCount);
-            Assert.Equal(1, vm.ExposeIsTickRunningFlag);
+            try
+            {
+                // Act - Trigger initial tick execution flow
+                vm.ExposeOnTick();
+                Assert.Equal(1, activeExecutionsCount);
+                Assert.Equal(1, vm.ExposeIsTickRunningFlag);
 
-            // Act - Concurrently trigger subsequent tick entry attempts while first loop is running
-            vm.ExposeOnTick();
-            vm.ExposeOnTick();
+                // Act - Concurrently trigger subsequent tick entry attempts while first loop is running
+                vm.ExposeOnTick();
+                vm.ExposeOnTick();
 
-            // Assert
-            Assert.Equal(1, activeExecutionsCount);
-            Assert.False(vm.ExposeTimer!.IsEnabled);
-
-            // Teardown
-            tcs.SetResult(null);
+                // Assert
+                Assert.Equal(1, activeExecutionsCount);
+                Assert.False(vm.ExposeTimer!.IsEnabled);
+            }
+            finally
+            {
+                // Teardown: release the in-flight tick even when an assert above fails,
+                // so no suspended async void operation survives the test.
+                tcs.TrySetResult(null);
+            }
         }
 
         [Fact]
