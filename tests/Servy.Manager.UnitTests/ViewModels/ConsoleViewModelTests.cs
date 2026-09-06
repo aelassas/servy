@@ -439,7 +439,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Assert
                         // Both lines share a timestamp, so stable-sort order must follow arrival order.
-                        Assert.NotEmpty(viewModel.RawLines);
                         Assert.Equal(2, viewModel.RawLines.Count);
 
                         // The LogLine loaded via LogTailer preserves the entire trace line format.

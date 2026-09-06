@@ -607,7 +607,6 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 lock (capturedLines)
                 {
-                    Assert.NotEmpty(capturedLines);
                     Assert.Contains(capturedLines, l => l.Text.Contains("ROTATED_CONTENT"));
                 }
             }
@@ -649,7 +648,6 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 lock (capturedLines)
                 {
-                    Assert.NotEmpty(capturedLines);
                     Assert.Contains(capturedLines, l => l.Text.Contains("Line After Truncated Rotation"));
                 }
             }
@@ -692,7 +690,6 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 lock (capturedLines)
                 {
-                    Assert.NotEmpty(capturedLines);
                     Assert.Contains(capturedLines, l => l.Text.Contains("Line After Truncated Rotation"));
                 }
             }
