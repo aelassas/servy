@@ -160,12 +160,13 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="raw">The source <see cref="DateTime"/> to convert.</param>
         /// <returns>
-        /// The converted <see cref="DateTimeOffset"/>; or <see cref="DateTimeOffset.MinValue"/> if the input is null.
+        /// The converted <see cref="DateTimeOffset"/>; <see cref="DateTimeOffset.MinValue"/> if the input is null or near <see cref="DateTime.MinValue"/>;
+        /// or <see cref="DateTimeOffset.MaxValue"/> if near <see cref="DateTime.MaxValue"/>.
         /// </returns>
         /// <remarks>
         /// .evtx timestamps are persisted as UTC FILETIMEs. This method evaluates the incoming
         /// <see cref="DateTimeKind"/> to preserve correct offsets while preventing local-offset
-        /// arithmetic overflows for values approaching <see cref="DateTime.MinValue"/>.
+        /// arithmetic overflows for values approaching <see cref="DateTime.MinValue"/> or <see cref="DateTime.MaxValue"/>.
         /// </remarks>
         internal static DateTimeOffset SafeToOffset(DateTime? raw)
         {
@@ -174,13 +175,16 @@ namespace Servy.Core.Logging
             // Explicitly-UTC values project straight to a Zero offset.
             if (raw.Value.Kind == DateTimeKind.Utc)
             {
-                // Zero offset cannot overflow, so no MinValue guard is needed here.
+                // Zero offset cannot overflow, so no MinValue/MaxValue guard is needed here.
                 return new DateTimeOffset(raw.Value, TimeSpan.Zero);
             }
 
-            // Local/Unspecified are shifted by the machine's current UTC offset, which overflows near MinValue.
+            // Local/Unspecified are shifted by the machine's current UTC offset, which overflows near MinValue or MaxValue.
             if (raw.Value < DateTime.MinValue.AddDays(1))
                 return DateTimeOffset.MinValue;
+
+            if (raw.Value > DateTime.MaxValue.AddDays(-1))
+                return DateTimeOffset.MaxValue;
 
             // Local and Unspecified are both interpreted with the reading machine's current
             // UTC offset by this constructor; Unspecified .evtx timestamps therefore inherit

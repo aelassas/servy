@@ -53,8 +53,10 @@ namespace Servy.Core.Logging
             _isEventLogEnabled = isEventLogEnabled;
             _currentLogLevel = (int)level;
 
-            // Enforce clean layout validation if a top-level global instance prefix is supplied.
-            Prefix = string.IsNullOrWhiteSpace(prefix) ? null : $"[{prefix.Trim()}]";
+            // Sanitize and wrap the optional instance prefix if supplied.
+            Prefix = string.IsNullOrWhiteSpace(prefix)
+                ? null
+                : $"[{ScopedEventLogLogger.SanitizePrefixSegment(prefix)}]";
 
             if (_isEventLogEnabled)
             {

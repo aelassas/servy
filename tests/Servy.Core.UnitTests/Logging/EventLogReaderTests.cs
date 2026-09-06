@@ -73,6 +73,19 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal(DateTimeOffset.MinValue, result);
         }
 
+        [Fact]
+        public void SafeToOffset_WhenNearMaxValue_ReturnsDateTimeOffsetMaxValue()
+        {
+            // Arrange - Any timestamp within 1 day of DateTime.MaxValue would overflow on west-of-UTC (negative offset) shifts
+            var nearMaxTime = DateTime.MaxValue.AddHours(-12);
+
+            // Act
+            var result = EventLogReader.SafeToOffset(nearMaxTime);
+
+            // Assert
+            Assert.Equal(DateTimeOffset.MaxValue, result);
+        }
+
         [Theory]
         [InlineData(DateTimeKind.Unspecified)]
         [InlineData(DateTimeKind.Local)]

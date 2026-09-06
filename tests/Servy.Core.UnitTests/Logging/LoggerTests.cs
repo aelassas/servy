@@ -518,22 +518,24 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains($"Exception: Depth level {targetOverflow} wrapper", content);
 
             // 2. Verify that the deepest "Root" text was dropped because it exceeded the depth safety cutoff
-            // Re-verify string parsing matches depth cutoff expectation boundary context parameters
             Assert.DoesNotContain("Root Exception Context", content);
 
-            // 3. Isolate the exact formatted exception text segment to avoid picking up layout brackets
+            // 3. Verify that the depth truncation marker is emitted explicitly
+            Assert.Contains("[Inner -> ... depth limit reached]", content);
+
+            // 4. Isolate the exact formatted exception text segment to avoid picking up layout brackets
             Assert.Contains("Deeply nested exception test", content);
             int exceptionMessageIndex = content.IndexOf("Deeply nested exception test", StringComparison.Ordinal);
             string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
 
-            // 4. Calculate depth by counting structural depth tracking brackets inside the exception block
+            // 5. Calculate depth by counting structural depth tracking brackets inside the exception block
             int innerBracketCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
             // STRUCTURAL BRACKET COUNT: Target only the structural closing brackets that terminate the inner exception blocks at the tail end.
             var structuralCloseMatches = Regex.Matches(exceptionSegment, @"\]+$");
             int closingBracketCount = structuralCloseMatches.Count > 0 ? structuralCloseMatches[0].Value.Length : 0;
 
             // The formatted string should never unroll more blocks than the max depth allowed
-            Assert.True(innerBracketCount < AppConfig.LoggerMaxInnerExceptionDepth,
+            Assert.True(innerBracketCount <= AppConfig.LoggerMaxInnerExceptionDepth,
                 $"Exception unroller processed more inner loops than allowed. Counted: {innerBracketCount}");
 
             // The closing brackets will be exactly innerBracketCount because the

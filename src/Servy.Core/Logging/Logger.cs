@@ -577,6 +577,10 @@ namespace Servy.Core.Logging
 
                 if (depth >= AppConfig.LoggerMaxInnerExceptionDepth)
                 {
+                    if (currentStructuralDepth > 0)
+                    {
+                        sb.Append(" [Inner -> ... depth limit reached]");
+                    }
                     continue;
                 }
 

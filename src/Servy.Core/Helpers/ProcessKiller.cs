@@ -175,6 +175,7 @@ namespace Servy.Core.Helpers
                     }
                 }
                 catch (ArgumentException) { /* Process already dead */ }
+                catch (InvalidOperationException) { /* Process exited mid-operation */ }
                 catch (Exception ex) { Logger.Warn($"Failed to kill descendant {childPid}.", ex); }
             }
         }
@@ -579,6 +580,7 @@ namespace Servy.Core.Helpers
                 }
             }
             catch (ArgumentException) { /* Already dead */ }
+            catch (InvalidOperationException) { /* Already dead mid-operation */ }
             catch (Exception ex)
             {
                 Logger.Warn($"Failed to kill parent {parentId}.", ex);
