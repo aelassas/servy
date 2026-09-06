@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Servy.Core.Helpers;
-using System.Globalization;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -319,25 +318,18 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ParseEnum_String_FlagsEnum_NegativeUnmappedInput_UnderNonInvariantCulture_ReturnsDefault()
+        public void ParseEnum_String_FlagsEnum_NegativeUnmappedInput_ReturnsDefault()
         {
-            // Arrange
-            var originalCulture = CultureInfo.CurrentCulture;
-            try
-            {
-                // Culture where negative sign is U+2212 instead of standard ASCII '-'
-                CultureInfo.CurrentCulture = new CultureInfo("sv-SE");
+            // Act - unmapped negative value "-5" for a long-backed flags enum.
+            // Both parse outcomes land on the default here: a rejected parse skips the block,
+            // and an accepted one yields (LongFlagsEnum)(-5), whose ToString is the raw number,
+            // so the flags parity check does not return early either. The assertion is therefore
+            // blind to the culture the numeric parse runs under, and the culture scaffolding this
+            // test used to carry described an axis it could not fail on.
+            var result = ConfigParser.ParseEnum("-5", LongFlagsEnum.None);
 
-                // Act - unmapped negative value "-5" for a long-backed flags enum
-                var result = ConfigParser.ParseEnum("-5", LongFlagsEnum.None);
-
-                // Assert
-                Assert.Equal(LongFlagsEnum.None, result);
-            }
-            finally
-            {
-                CultureInfo.CurrentCulture = originalCulture;
-            }
+            // Assert
+            Assert.Equal(LongFlagsEnum.None, result);
         }
 
         [Theory]
