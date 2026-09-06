@@ -27,6 +27,18 @@ namespace Servy.Testing
         public const int CiGenerousMs = 5000;
 
         /// <summary>
+        /// Observation window (1 second) for negative waits - the "wait, then assert nothing was
+        /// observed" shape, where the delay is the whole test and a value that is too short lets the
+        /// assertion pass vacuously because the work was never scheduled.
+        /// </summary>
+        /// <remarks>
+        /// One second matches the scheduling ceiling the suite already assumes for a fire-and-forget
+        /// body, and is deliberately far below <see cref="CiGenerous"/> so that a handful of these
+        /// waits does not add a minute of pure sleep to the run.
+        /// </remarks>
+        public static readonly TimeSpan NegativeObservationWindow = TimeSpan.FromSeconds(1);
+
+        /// <summary>
         /// How long (15 seconds) a spawned PowerShell leaf process in a process tree fixture stays alive.
         /// </summary>
         /// <remarks>
