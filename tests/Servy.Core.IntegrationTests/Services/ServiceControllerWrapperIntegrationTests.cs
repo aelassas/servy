@@ -14,12 +14,17 @@ namespace Servy.Core.IntegrationTests.Services
         private const string StandardTestService = "LanmanServer";
 
         /// <summary>
+        /// The OS platform check required by every live service query in this class.
+        /// </summary>
+        private static bool IsWindowsPlatform() => Environment.OSVersion.Platform == PlatformID.Win32NT;
+
+        /// <summary>
         /// Enforces OS platform and SCM availability checks before executing live service queries.
         /// Returns false if the test should be skipped gracefully.
         /// </summary>
         private static bool IsScmAndServiceAvailable(string serviceName)
         {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            if (!IsWindowsPlatform())
             {
                 return false;
             }
@@ -79,13 +84,15 @@ namespace Servy.Core.IntegrationTests.Services
         [Fact]
         public void GetDependencies_CancellationRequested_AbortsExecutionAndThrows()
         {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            if (!IsWindowsPlatform())
             {
                 return;
             }
 
             // Arrange
-            using (var wrapper = new ServiceControllerWrapper(StandardTestService))
+            // A phantom name keeps this test independent of which services the host has installed:
+            // the token is observed before any SCM query, so the name is never resolved.
+            using (var wrapper = new ServiceControllerWrapper($"PhantomService_{Guid.NewGuid()}"))
             using (var cts = new CancellationTokenSource())
             {
                 cts.Cancel();
@@ -98,7 +105,7 @@ namespace Servy.Core.IntegrationTests.Services
         [Fact]
         public void GetDependencies_NonExistentService_ReturnsGracefulUnavailableNode()
         {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            if (!IsWindowsPlatform())
             {
                 return;
             }
