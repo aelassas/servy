@@ -66,63 +66,80 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 null!, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            Assert.Equal("serviceRepository", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullServiceManager_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, null!, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            Assert.Equal("serviceManager", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 null!, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            Assert.Equal("appConfig", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, null!));
+
+            Assert.Equal("messageBoxService", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullServiceCommands_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, null!,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            // Guarded by the ServiceSearchViewModelBase constructor, which runs before this class's body
+            Assert.Equal("serviceCommands", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullCursorService_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, null!, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+
+            // Guarded by the SearchableViewModelBase constructor, which runs before this class's body
+            Assert.Equal("cursorService", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullUiDispatcher_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+            var ex = Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, null!, _mockMessageBoxService.Object));
+
+            // Guarded by the ServiceSearchViewModelBase constructor, which runs before this class's body
+            Assert.Equal("uiDispatcher", ex.ParamName);
         }
 
         [Fact]
