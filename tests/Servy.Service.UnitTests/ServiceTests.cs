@@ -320,7 +320,7 @@ namespace Servy.Service.UnitTests
             _mockProcess.SetupProperty(p => p.PriorityClass);
 
             // Act
-            service.InvokeSetProcessPriority(ProcessPriorityClass.High);
+            service.SetProcessPriority(ProcessPriorityClass.High);
 
             // Assert
             _mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
@@ -337,7 +337,7 @@ namespace Servy.Service.UnitTests
                        .Throws(new Exception("Priority error"));
 
             // Act
-            service.InvokeSetProcessPriority(ProcessPriorityClass.High);
+            service.SetProcessPriority(ProcessPriorityClass.High);
 
             // Assert
             _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);

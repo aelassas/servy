@@ -23,8 +23,8 @@ namespace Servy.Service.UnitTests
         /// loads, and a failed binding throws (wrapped in a
         /// <see cref="TypeInitializationException"/>, so the message is one InnerException down)
         /// rather than letting a renamed member degrade into a silently skipped assertion.
-        /// Members that reach <see cref="Service"/> directly, such as InvokeSetProcessPriority
-        /// and InvokeCheckHealthAsync, do not pass through here and validate nothing.
+        /// Members that reach <see cref="Service"/> directly, such as InvokeCheckHealthAsync,
+        /// do not pass through here and validate nothing.
         /// </summary>
         private static class ServiceReflection
         {
@@ -68,8 +68,6 @@ namespace Servy.Service.UnitTests
             : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, processKiller)
         {
         }
-
-        public void InvokeSetProcessPriority(ProcessPriorityClass priority) => SetProcessPriority(priority);
 
         public void SetChildProcess(IProcessWrapper process) =>
             ServiceReflection.ChildProcessField.SetValue(this, process);
