@@ -51,7 +51,7 @@ namespace Servy.Manager.UnitTests.Validation
 
         #endregion
 
-        #region Validate Tests
+        #region ValidateAsync Tests
 
         [Fact]
         public async Task ValidateAsync_CancelledToken_ThrowsOperationCanceledExceptionBeforeValidating()
@@ -80,7 +80,7 @@ namespace Servy.Manager.UnitTests.Validation
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task Validate_WhenConfigurationIsValid_ReturnsTrueAndDoesNotShowMessage(bool importMode)
+        public async Task ValidateAsync_WhenConfigurationIsValid_ReturnsTrueAndDoesNotShowMessage(bool importMode)
         {
             // Arrange
             var dto = new ServiceDto();
@@ -103,7 +103,7 @@ namespace Servy.Manager.UnitTests.Validation
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task Validate_WhenConfigurationIsInvalid_ShowsErrorAndReturnsFalse(bool importMode)
+        public async Task ValidateAsync_WhenConfigurationIsInvalid_ShowsErrorAndReturnsFalse(bool importMode)
         {
             // Arrange
             var dto = new ServiceDto();
