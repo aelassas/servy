@@ -247,17 +247,18 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
-        public void Validate_UnescapedNewlineWithinSegment_FailsValidation()
+        public void Validate_NewlineSeparatedRecordMissingEquals_ReturnsFalse()
         {
-            // Arrange
-            string corruptedInput = "KEY=line1\nline2_with_no_equals";
+            // Arrange: the newline separates two records; the second one has no equals sign
+            string input = "KEY=line1\nline2_with_no_equals";
 
             // Act
             List<string> errorMessages;
-            bool isValid = EnvironmentVariablesValidator.Validate(corruptedInput, out errorMessages);
+            bool isValid = EnvironmentVariablesValidator.Validate(input, out errorMessages);
 
             // Assert
             Assert.False(isValid);
+            Assert.Single(errorMessages);
             Assert.Contains(errorMessages, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
         }
 
