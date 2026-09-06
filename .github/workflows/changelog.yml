@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       reset:
-        description: 'Rebuild all servy CHANGELOG.md'
+        description: 'Rebuild CHANGELOG.md from all published releases (unchecked: append latest release only)'
         required: false
         type: boolean
         default: false
