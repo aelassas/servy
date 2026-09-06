@@ -63,6 +63,18 @@ namespace Servy.Testing
         public const int ProcessTreeTimeoutSeconds = 20;
 
         /// <summary>
+        /// Spin duration (100 ms) that lets a process accumulate measurable processor time between two
+        /// consecutive metric samples, so the second sample can report a CPU delta rather than a bare baseline.
+        /// </summary>
+        public const int CpuSampleSpinMs = 100;
+
+        /// <summary>
+        /// Poll interval (50 ms) between successive process-metric samples while waiting for a process tree
+        /// to spawn and allocate.
+        /// </summary>
+        public const int MetricsPollIntervalMs = 50;
+
+        /// <summary>
         /// Default timeout (30,000 ms / 30 seconds) allocated for process launcher execution blocks.
         /// </summary>
         public const int ProcessLauncherTimeoutMs = 30_000;

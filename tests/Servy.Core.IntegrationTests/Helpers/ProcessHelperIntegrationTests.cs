@@ -44,7 +44,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Assert.True(firstCall.RamUsage > 0, "RAM usage should be greater than 0 for a running process.");
 
                 // Act 2: Simulate time passing and active CPU work using a dedicated spin wait loop
-                SpinWait.SpinUntil(() => false, TimeSpan.FromMilliseconds(100));
+                SpinWait.SpinUntil(() => false, TimeSpan.FromMilliseconds(TestTimeouts.CpuSampleSpinMs));
                 var secondCall = _sut.GetProcessMetrics(currentPid);
 
                 // Assert 2
@@ -84,7 +84,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                     targetPid = transientProcess.Id;
 
                     // Force the thread block to wait until the OS fully unregisters the process image
-                    transientProcess.WaitForExit(5000);
+                    transientProcess.WaitForExit(TestTimeouts.CiGenerousMs);
                     Assert.True(transientProcess.HasExited, "Transient test process failed to exit within the allowed timeout window.");
                 }
             }
@@ -143,7 +143,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                     break;
                 }
 
-                Thread.Sleep(50);
+                Thread.Sleep(TestTimeouts.MetricsPollIntervalMs);
             }
 
             // 2. CAPTURE METRICS BACK-TO-BACK:
