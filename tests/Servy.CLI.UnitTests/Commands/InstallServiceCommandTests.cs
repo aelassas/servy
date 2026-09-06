@@ -5,6 +5,7 @@ using Servy.CLI.Resources;
 using Servy.CLI.Validation;
 using Servy.Core.Common;
 using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
@@ -195,6 +196,198 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Contains(string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), result.Message);
+        }
+
+        [Fact]
+        public async Task Execute_ValidOptions_MapsEveryOptionOntoInstallServiceOptions()
+        {
+            // Arrange
+            // Every string input gets a distinct value so a transposition between two adjacent
+            // same-typed fields is observable, and every bool is set to true because all the
+            // AppConfig defaults are false, so a dropped assignment is observable too.
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "MappingService",
+                ServiceDisplayName = "Mapping Display Name",
+                ServiceDescription = "Mapping description",
+                ProcessPath = "C:\\map\\app.exe",
+                StartupDirectory = "C:\\map\\workdir",
+                ProcessParameters = "--real-args",
+                ServiceStartType = "Manual",
+                ProcessPriority = "High",
+                CpuAffinity = "3",
+                StartTimeout = "31",
+                StopTimeout = "32",
+                EnableConsoleUI = true,
+                StdoutPath = "C:\\map\\out.log",
+                StderrPath = "C:\\map\\err.log",
+                EnableSizeRotation = true,
+                RotationSize = "7",
+                EnableDateRotation = true,
+                DateRotationType = "Weekly",
+                MaxRotations = "33",
+                UseLocalTimeForRotation = true,
+                EnableDebugLogs = true,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = "34",
+                MaxFailedChecks = "35",
+                RecoveryAction = "RestartProcess",
+                RecoveryOnCleanExit = true,
+                MaxRestartAttempts = "36",
+                HeartbeatUrl = "https://mapping.example/health",
+                HeartbeatUrlTimeoutSeconds = "17",
+                EnableHeartbeatUrlFlags = true,
+                FailureProgramPath = "C:\\map\\failure.exe",
+                FailureProgramStartupDir = "C:\\map\\failure-dir",
+                FailureProgramParameters = "--failure-args",
+                EnvironmentVariables = "MAP_ENV=1",
+                ServiceDependencies = "MapDependency",
+                User = "  MapUser  ",
+                Password = "MapPassword",
+                PreLaunchPath = "C:\\map\\pre-launch.exe",
+                PreLaunchStartupDir = "C:\\map\\pre-launch-dir",
+                PreLaunchParameters = "--pre-launch-args",
+                PreLaunchEnvironmentVariables = "MAP_PRE_LAUNCH_ENV=1",
+                PreLaunchStdoutPath = "C:\\map\\pre-launch-out.log",
+                PreLaunchStderrPath = "C:\\map\\pre-launch-err.log",
+                PreLaunchTimeout = "38",
+                PreLaunchRetryAttempts = "39",
+                PreLaunchIgnoreFailure = true,
+                PostLaunchPath = "C:\\map\\post-launch.exe",
+                PostLaunchStartupDir = "C:\\map\\post-launch-dir",
+                PostLaunchParameters = "--post-launch-args",
+                PreStopPath = "C:\\map\\pre-stop.exe",
+                PreStopStartupDir = "C:\\map\\pre-stop-dir",
+                PreStopParameters = "--pre-stop-args",
+                PreStopTimeout = "40",
+                PreStopLogAsError = true,
+                PostStopPath = "C:\\map\\post-stop.exe",
+                PostStopStartupDir = "C:\\map\\post-stop-dir",
+                PostStopParameters = "--post-stop-args"
+            };
+
+            InstallServiceOptions? captured = null;
+
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(captured);
+
+            Assert.Equal("MappingService", captured!.ServiceName);
+            Assert.Equal("Mapping Display Name", captured.DisplayName);
+            Assert.Equal("Mapping description", captured.Description);
+            Assert.Equal(_wrapperExePath, captured.WrapperExePath);
+            Assert.Equal("C:\\map\\app.exe", captured.RealExePath);
+            Assert.Equal("C:\\map\\workdir", captured.StartupDirectory);
+            Assert.Equal("--real-args", captured.RealArgs);
+            Assert.Equal(ServiceStartType.Manual, captured.StartType);
+            Assert.Equal(ProcessPriority.High, captured.ProcessPriority);
+            Assert.Equal("3", captured.CpuAffinity);
+            Assert.Equal(31, captured.StartTimeout);
+            Assert.Equal(32, captured.StopTimeout);
+            Assert.True(captured.EnableConsoleUI);
+
+            // Log paths and rotation
+            Assert.Equal("C:\\map\\out.log", captured.StdoutPath);
+            Assert.Equal("C:\\map\\err.log", captured.StderrPath);
+            Assert.True(captured.EnableSizeRotation);
+            Assert.Equal(AppConfig.ToBytes(7), captured.RotationSizeInBytes);
+            Assert.True(captured.EnableDateRotation);
+            Assert.Equal(DateRotationType.Weekly, captured.DateRotationType);
+            Assert.Equal(33, captured.MaxRotations);
+            Assert.True(captured.UseLocalTimeForRotation);
+            Assert.True(captured.EnableDebugLogs);
+
+            // Health monitoring
+            Assert.True(captured.EnableHealthMonitoring);
+            Assert.Equal(34, captured.HeartbeatInterval);
+            Assert.Equal(35, captured.MaxFailedChecks);
+            Assert.Equal(RecoveryAction.RestartProcess, captured.RecoveryAction);
+            Assert.True(captured.RecoveryOnCleanExit);
+            Assert.Equal(36, captured.MaxRestartAttempts);
+            Assert.Equal("https://mapping.example/health", captured.HeartbeatUrl);
+            Assert.Equal(17, captured.HeartbeatUrlTimeoutSeconds);
+            Assert.True(captured.EnableHeartbeatUrlFlags);
+
+            // Failure program
+            Assert.Equal("C:\\map\\failure.exe", captured.FailureProgramPath);
+            Assert.Equal("C:\\map\\failure-dir", captured.FailureProgramStartupDirectory);
+            Assert.Equal("--failure-args", captured.FailureProgramExecutableArgs);
+
+            Assert.Equal("MAP_ENV=1", captured.EnvironmentVariables);
+            Assert.Equal("MapDependency", captured.ServiceDependencies);
+
+            // The account name is trimmed on the way through (#5949)
+            Assert.Equal("MapUser", captured.Username);
+            Assert.Equal("MapPassword", captured.Password);
+
+            // Pre-Launch
+            Assert.Equal("C:\\map\\pre-launch.exe", captured.PreLaunchExePath);
+            Assert.Equal("C:\\map\\pre-launch-dir", captured.PreLaunchStartupDirectory);
+            Assert.Equal("--pre-launch-args", captured.PreLaunchArgs);
+            Assert.Equal("MAP_PRE_LAUNCH_ENV=1", captured.PreLaunchEnvironmentVariables);
+            Assert.Equal("C:\\map\\pre-launch-out.log", captured.PreLaunchStdoutPath);
+            Assert.Equal("C:\\map\\pre-launch-err.log", captured.PreLaunchStderrPath);
+            Assert.Equal(38, captured.PreLaunchTimeout);
+            Assert.Equal(39, captured.PreLaunchRetryAttempts);
+            Assert.True(captured.PreLaunchIgnoreFailure);
+
+            // Post-Launch
+            Assert.Equal("C:\\map\\post-launch.exe", captured.PostLaunchExePath);
+            Assert.Equal("C:\\map\\post-launch-dir", captured.PostLaunchStartupDirectory);
+            Assert.Equal("--post-launch-args", captured.PostLaunchArgs);
+
+            // Pre-Stop
+            Assert.Equal("C:\\map\\pre-stop.exe", captured.PreStopExePath);
+            Assert.Equal("C:\\map\\pre-stop-dir", captured.PreStopStartupDirectory);
+            Assert.Equal("--pre-stop-args", captured.PreStopArgs);
+            Assert.Equal(40, captured.PreStopTimeout);
+            Assert.True(captured.PreStopLogAsError);
+
+            // Post-Stop
+            Assert.Equal("C:\\map\\post-stop.exe", captured.PostStopExePath);
+            Assert.Equal("C:\\map\\post-stop-dir", captured.PostStopStartupDirectory);
+            Assert.Equal("--post-stop-args", captured.PostStopArgs);
+        }
+
+        [Theory]
+        [InlineData(false, false, false)]
+        [InlineData(true, false, true)]
+        [InlineData(false, true, true)]
+        [InlineData(true, true, true)]
+        public async Task Execute_RotationFlags_EnableSizeRotationIsTheOrOfBothFlags(bool enableRotation, bool enableSizeRotation, bool expected)
+        {
+            // Arrange
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "TestService",
+                ProcessPath = "C:\\path\\to\\app.exe",
+                EnableRotation = enableRotation,
+                EnableSizeRotation = enableSizeRotation
+            };
+
+            InstallServiceOptions? captured = null;
+
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(captured);
+            Assert.Equal(expected, captured!.EnableSizeRotation);
         }
 
         public void Dispose()
