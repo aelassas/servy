@@ -30,6 +30,13 @@ namespace Servy.Core.IntegrationTests.Logging
             {
                 // Assert
                 Assert.False(logger.IsEventLogEnabled);
+
+                // _isInitialized is only ever set on a successful InitializeEventLog, so this
+                // distinguishes "never attempted" - the "DoesNotInitializeEventLog" half of the
+                // name - from "attempted and failed", which is what an unelevated run would give
+                // if the constructor's isEventLogEnabled guard were dropped.
+                Assert.False(TestReflection.GetField<bool>(logger, "_isInitialized"));
+
                 Assert.Null(logger.Prefix);
             }
         }
@@ -263,7 +270,10 @@ namespace Servy.Core.IntegrationTests.Logging
         public void WriteRawToWindowsEventLog_OnNativeException_CatchesAndProceeds()
         {
             // Arrange
-            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
+            // No elevation guard here on purpose: WriteRawToWindowsEventLog wraps its whole body
+            // in a catch, so the asserted outcome is the same elevated or not - unelevated, the
+            // malformed source simply fails inside the try, which is the path being tested.
+            // Guarding it would skip the fail-safe boundary on every ordinary runner.
 
             // CRITICAL CONTRACT: Test the exception isolation boundaries directly on the
             // internal structural wrapper method by feeding it an illegal, un-creatable source layout configuration.
