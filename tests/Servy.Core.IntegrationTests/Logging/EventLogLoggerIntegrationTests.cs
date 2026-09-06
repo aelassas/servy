@@ -236,6 +236,13 @@ namespace Servy.Core.IntegrationTests.Logging
 
                                 Assert.EndsWith(truncationSuffix, foundEntry.Message);
                             }
+                            else
+                            {
+                                // The polling window can expire without the entry appearing (slow Event Log flush,
+                                // rotation eviction, write routed elsewhere). Report it the same way the ACL-restricted
+                                // read-back below does, so a run that verified nothing is distinguishable from one that did.
+                                Trace.WriteLine($"Warning: No EventLog entry from source '{source}' appeared after {maxRetries} retries; truncation contract not verified this run.");
+                            }
                         }
                     }
                     catch (Exception readEx) when (readEx is Win32Exception || readEx is SecurityException || readEx is UnauthorizedAccessException)
