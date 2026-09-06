@@ -18,17 +18,12 @@ namespace Servy.Core.IntegrationTests.Helpers
     public class ProcessHelperIntegrationTests : IDisposable
     {
         private readonly ProcessHelper _sut;
-        private readonly string _tempDirectory;
         private readonly List<Process> _spawnedProcesses;
 
         public ProcessHelperIntegrationTests()
         {
             _sut = new ProcessHelper();
             _spawnedProcesses = new List<Process>();
-
-            // Setup real file system artifacts for path integration tests
-            _tempDirectory = Path.Combine(Path.GetTempPath(), $"Servy_Test_{Guid.NewGuid()}");
-            Directory.CreateDirectory(_tempDirectory);
         }
 
         #region Process Metrics Integration Tests
@@ -187,15 +182,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                     catch { /* Ignore cleanup errors */ }
                 }
                 process.Dispose();
-            }
-
-            // Clean up integration test environment variables
-            Environment.SetEnvironmentVariable("SERVY_TEST_VAR", null);
-
-            // Clean up integration test artifacts
-            if (Directory.Exists(_tempDirectory))
-            {
-                try { Directory.Delete(_tempDirectory, true); } catch { /* Ignore locking issues on teardown */ }
             }
         }
     }
