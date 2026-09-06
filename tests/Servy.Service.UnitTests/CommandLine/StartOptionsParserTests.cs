@@ -7,6 +7,8 @@ using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Security;
 using Xunit;
 
 namespace Servy.Service.UnitTests.CommandLine
@@ -383,8 +385,14 @@ namespace Servy.Service.UnitTests.CommandLine
         }
 
         [Theory]
+        // One row per arm of SafeResolvePath's catch filter. The last three were added by the
+        // #2188 fix and were never pinned, so narrowing the filter back to the first two left
+        // the suite green while a real Path.GetFullPath failure of those kinds would escape Parse.
         [InlineData(typeof(ArgumentException))]
         [InlineData(typeof(InvalidOperationException))]
+        [InlineData(typeof(NotSupportedException))]
+        [InlineData(typeof(PathTooLongException))]
+        [InlineData(typeof(SecurityException))]
         public void Parse_PathResolutionThrows_FallsBackToRawConfiguredPath(Type exceptionType)
         {
             // Arrange
