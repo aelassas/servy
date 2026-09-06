@@ -81,8 +81,14 @@ namespace Servy.CLI.UnitTests.Commands
             const string serviceName = "OrphanedDbService";
             var options = CreateValidOptions(serviceName);
 
-            // Uninstall skips the IsServiceInstalled pre-flight (skipInstalledCheck: true), so only
-            // UninstallServiceAsync is mocked, returning Success (simulating ServiceManager's internal orphan cleanup #6374).
+            // Arrange the orphan state the test name describes: absent from the SCM, still present in
+            // the repository. Uninstall passes skipInstalledCheck: true, so the command must reach
+            // UninstallServiceAsync regardless, which succeeds via ServiceManager's internal orphan
+            // cleanup (#6374). Without the skip the pre-flight would short-circuit on
+            // Msg_ServiceNotFound, which is the #6405 regression this test pins.
+            MockServiceManager
+                .Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
+                .Returns(false);
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
