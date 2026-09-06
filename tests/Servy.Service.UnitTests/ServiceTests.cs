@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -342,8 +343,15 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
         }
 
-        [Fact]
-        public void HandleLogWriters_ValidPaths_CreatesStreamWriters()
+        // One row per rotation flag, each turning exactly one of the three on, so every
+        // transposition of the two bool arguments differs in at least one row. The previous
+        // single-fixture form left EnableSizeRotation and EnableDateRotation at their shared
+        // false default, which made swapping them at the call site undetectable.
+        [Theory]
+        [InlineData(true, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(false, false, true)]
+        public void HandleLogWriters_ValidPaths_CreatesStreamWriters(bool enableSizeRotation, bool enableDateRotation, bool useLocalTime)
         {
             // Arrange
             var service = _ctx.Build();
@@ -352,16 +360,18 @@ namespace Servy.Service.UnitTests
                 StdoutPath = "valid_stdout.log",
                 StderrPath = "valid_stderr.log",
                 RotationSizeInBytes = 12345,
-                UseLocalTimeForRotation = true,
+                EnableSizeRotation = enableSizeRotation,
+                EnableDateRotation = enableDateRotation,
+                UseLocalTimeForRotation = useLocalTime,
             };
 
             var mockStdOutWriter = new Mock<IStreamWriter>();
             var mockStdErrWriter = new Mock<IStreamWriter>();
 
-            _ctx.StreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            _ctx.StreamWriterFactory.Setup(f => f.Create("valid_stdout.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime))
                 .Returns(mockStdOutWriter.Object);
 
-            _ctx.StreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            _ctx.StreamWriterFactory.Setup(f => f.Create("valid_stderr.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime))
                 .Returns(mockStdErrWriter.Object);
 
             _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
@@ -369,9 +379,10 @@ namespace Servy.Service.UnitTests
             // Act
             service.InvokeHandleLogWriters(options);
 
-            // Assert
-            _ctx.StreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-            _ctx.StreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            // Assert: the expected values are the literals the theory supplies rather than reads
+            // back off the same options object, so a hop that reads the wrong property is caught too.
+            _ctx.StreamWriterFactory.Verify(f => f.Create("valid_stdout.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime), Times.Once);
+            _ctx.StreamWriterFactory.Verify(f => f.Create("valid_stderr.log", enableSizeRotation, 12345L, enableDateRotation, AppConfig.DefaultDateRotationType, AppConfig.DefaultMaxRotations, useLocalTime), Times.Once);
 
             // Check no errors logged
             _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
