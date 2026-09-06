@@ -461,20 +461,25 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             try
             {
-                // Create file reparse point/symlink
-                Helper.CreateFileSymlink(linkFile, targetFile);
+                try
+                {
+                    // Create the file reparse point: the link path comes first, the target second.
+                    Helper.CreateFileSymlink(linkFile, targetFile);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    // Skip - symbolic link creation on Windows may require elevated permissions in
+                    // non-developer mode environments.
+                    return;
+                }
 
                 // Act
                 using (var writer = InvokeTryOpenAppendWriter(linkFile, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
                 {
                     // Assert
                     Assert.Null(writer);
-                    mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("is a junction or symbolic link")), It.IsAny<Exception>()), Times.Once);
+                    mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("target file") && s.Contains("is a junction or symbolic link")), It.IsAny<Exception>()), Times.Once);
                 }
-            }
-            catch (IOException)
-            {
-                // Symbolic link creation on Windows may require elevated permissions in non-developer mode environments.
             }
             finally
             {
