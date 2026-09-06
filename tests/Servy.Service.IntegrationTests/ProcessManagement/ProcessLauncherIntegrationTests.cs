@@ -294,25 +294,36 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         #region Language Fixes & Regex Timeout Coverage
 
+        /// <summary>
+        /// The environment variables <see cref="ProcessLauncher.ApplyLanguageFixes"/> sets for Python
+        /// runtimes, asserted as absent on every non-Python row.
+        /// </summary>
+        private static readonly string[] PythonEnvKeys =
+            { "PYTHONUTF8", "PYTHONIOENCODING", "PYTHONLEGACYWINDOWSSTDIO", "PYTHONUNBUFFERED" };
+
         [Theory]
-        [InlineData("python.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("pythonw.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("python3.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("py.exe", true, "1", "utf-8", "0", "1", "-version")]
-        [InlineData("java.exe", false, null, null, null, null, "-Dfile.encoding=UTF-8 -version")]
-        [InlineData("javaw.exe", false, null, null, null, null, "-Dfile.encoding=UTF-8 -version")]
-        [InlineData("javac.exe", false, null, null, null, null, "-J-Dfile.encoding=UTF-8 -version")]
+        [InlineData("python.exe", true, "-version")]
+        [InlineData("pythonw.exe", true, "-version")]
+        [InlineData("python3.exe", true, "-version")]
+        [InlineData("py.exe", true, "-version")]
+        [InlineData("java.exe", false, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("javaw.exe", false, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("javac.exe", false, "-J-Dfile.encoding=UTF-8 -version")]
         public void ApplyLanguageFixes_RuntimesDetection_AppliesExpectedArgumentsAndVariables(
             string fileName,
             bool isPython,
-            string expectedUtf8,
-            string expectedIoEncoding,
-            string expectedLegacyStdio,
-            string expectedUnbuffered,
             string expectedArguments)
         {
             // Arrange
             var psi = new ProcessStartInfo { FileName = fileName, Arguments = "-version" };
+
+            // ProcessStartInfo.Environment is seeded from this process, so drop any inherited
+            // PYTHON* value: it would defeat SetIfMissing on the Python rows and the absence
+            // assertion on the others.
+            foreach (var key in PythonEnvKeys)
+            {
+                psi.Environment.Remove(key);
+            }
 
             // Act
             ProcessLauncher.ApplyLanguageFixes(psi, logger: null);
@@ -322,10 +333,18 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             if (isPython)
             {
-                Assert.Equal(expectedUtf8, psi.Environment["PYTHONUTF8"]);
-                Assert.Equal(expectedIoEncoding, psi.Environment["PYTHONIOENCODING"]);
-                Assert.Equal(expectedLegacyStdio, psi.Environment["PYTHONLEGACYWINDOWSSTDIO"]);
-                Assert.Equal(expectedUnbuffered, psi.Environment["PYTHONUNBUFFERED"]);
+                Assert.Equal("1", psi.Environment["PYTHONUTF8"]);
+                Assert.Equal("utf-8", psi.Environment["PYTHONIOENCODING"]);
+                Assert.Equal("0", psi.Environment["PYTHONLEGACYWINDOWSSTDIO"]);
+                Assert.Equal("1", psi.Environment["PYTHONUNBUFFERED"]);
+            }
+            else
+            {
+                foreach (var key in PythonEnvKeys)
+                {
+                    Assert.False(psi.Environment.ContainsKey(key),
+                        $"'{fileName}' must not receive the Python fix '{key}'.");
+                }
             }
         }
 
