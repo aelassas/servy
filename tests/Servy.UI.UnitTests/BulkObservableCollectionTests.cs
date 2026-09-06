@@ -24,7 +24,7 @@ namespace Servy.UI.UnitTests
         }
 
         [Fact]
-        public void AddRange_ValidItems_SuppressesIndividualEventsAndRaisesReset()
+        public void AddRange_ValidItems_RaisesSingleResetInsteadOfPerItemEvents()
         {
             // Arrange
             var collection = new BulkObservableCollection<int>();
@@ -127,10 +127,10 @@ namespace Servy.UI.UnitTests
 
         #endregion
 
-        #region OnCollectionChanged Suppression Tests
+        #region Per-Item Event Tests
 
         [Fact]
-        public void StandardAdd_NoSuppression_RaisesIndividualEvent()
+        public void StandardAdd_RaisesIndividualAddEvent()
         {
             // Arrange
             var collection = new BulkObservableCollection<int>();
