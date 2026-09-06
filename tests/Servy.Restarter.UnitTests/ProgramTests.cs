@@ -64,6 +64,11 @@ namespace Servy.Restarter.UnitTests
             // Assert
             Assert.Equal(1, Environment.ExitCode);
             AssertLogContainsMessage("Missing required argument: service name.");
+
+            // The ExitsEarly half: without the guard's return, args[0] throws on the empty array
+            // and the catch-all logs the pre-scoped-logger failure instead.
+            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to initialize or execute.");
+            AssertLogDoesNotContainMessage("Attempting to restart service");
         }
 
         [Theory]
@@ -80,6 +85,11 @@ namespace Servy.Restarter.UnitTests
             // Assert
             Assert.Equal(1, Environment.ExitCode);
             AssertLogContainsMessage("Service name cannot be empty.");
+
+            // The ExitsEarly half: without the guard's return, the blank name flows on to the
+            // repository lookup and the not-managed branch logs and sets ExitCode = 1 as well.
+            AssertLogDoesNotContainMessage("is not managed by Servy.");
+            AssertLogDoesNotContainMessage("Attempting to restart service");
         }
 
         #endregion
@@ -190,6 +200,21 @@ namespace Servy.Restarter.UnitTests
 
             string logContent = File.ReadAllText(_expectedLogFilePath);
             Assert.Contains(expectedMessage, logContent);
+        }
+
+        /// <summary>
+        /// Asserts the physical log output stream carries no signature from a later pipeline stage,
+        /// which is what pins that a guard returned instead of logging and falling through.
+        /// </summary>
+        private void AssertLogDoesNotContainMessage(string unexpectedMessage)
+        {
+            // Force the static logger to flush its handle completely to disk
+            Logger.Shutdown();
+
+            Assert.True(File.Exists(_expectedLogFilePath), $"The diagnostic restarter log file was never initialized on disk at '{_expectedLogFilePath}'.");
+
+            string logContent = File.ReadAllText(_expectedLogFilePath);
+            Assert.DoesNotContain(unexpectedMessage, logContent);
         }
 
         #endregion
