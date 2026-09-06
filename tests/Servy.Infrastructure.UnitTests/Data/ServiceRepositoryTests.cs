@@ -69,28 +69,32 @@ namespace Servy.Infrastructure.UnitTests.Data
         public void Constructor_NullDapper_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null, _mockSecureData.Object, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null, _mockSecureData.Object, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            Assert.Equal("dapper", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullSecureData_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, null, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, null, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
+            Assert.Equal("secureData", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullXmlServiceSerializer_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, null, _mockJsonServiceSerializer.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, null, _mockJsonServiceSerializer.Object));
+            Assert.Equal("xmlServiceSerializer", ex.ParamName);
         }
 
         [Fact]
         public void Constructor_NullJsonServiceSerializer_Throws()
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object, null));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object, null));
+            Assert.Equal("jsonServiceSerializer", ex.ParamName);
         }
 
         #endregion
