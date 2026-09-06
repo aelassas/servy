@@ -46,10 +46,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
 
                 var tables = conn.Query<string>("SELECT name FROM sqlite_master WHERE type='table';").ToList();
-                Assert.Contains("Services", tables);
+                Assert.Contains(SqlConstants.ServicesTableName, tables);
                 Assert.Contains("SchemaInfo", tables);
 
-                var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
                 Assert.Contains("EnableSizeRotation", columns); // Applied by V2
                 Assert.Contains("EnableConsoleUI", columns); // Applied by V3
                 Assert.Contains("RecoveryOnCleanExit", columns); // Applied by V5
@@ -63,7 +63,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("CpuAffinity", columns);
 
                 // Verify the structural index details map directly to the modern COLLATE UNICODE_NOCASE layout rules (Applied by V6)
-                var indexList = conn.Query("PRAGMA index_list('Services');")
+                var indexList = conn.Query($"PRAGMA index_list('{SqlConstants.ServicesTableName}');")
                                     .Select(x => (IDictionary<string, object>)x)
                                     .ToList();
 
@@ -147,12 +147,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal(1L, (long)services[0].Id);
 
                 // Verify the old index was dropped and replaced with a UNIQUE index
-                var indexInfo = conn.QuerySingle("PRAGMA index_list('Services');");
+                var indexInfo = conn.QuerySingle($"PRAGMA index_list('{SqlConstants.ServicesTableName}');");
                 Assert.Equal("idx_services_name_unique", (string)indexInfo.name);
                 Assert.Equal(1L, (long)indexInfo.unique);
 
                 // Verify 'EnableRotation' was renamed to 'EnableSizeRotation'
-                var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
                 Assert.DoesNotContain("EnableRotation", columns);
                 Assert.Contains("EnableSizeRotation", columns);
             }
@@ -189,12 +189,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.True(version >= 4);
 
                 // 1. Verify the active production table was rebuilt clean without the orphan column
-                var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
                 Assert.DoesNotContain("OldOrphanData", columns);
 
                 // 2. Confirms backup side-table exists and retains original structure
                 var tables = conn.Query<string>("SELECT name FROM sqlite_master WHERE type='table';").ToList();
-                Assert.Contains("Services_orphans_v4", tables);
+                Assert.Contains($"{SqlConstants.ServicesTableName}_orphans_v4", tables);
 
                 // 3. Confirm exact values and binding Id keys survived the drop sequence completely
                 var orphanData = conn.QuerySingle($"SELECT Id, OldOrphanData FROM {SqlConstants.ServicesTableName}_orphans_v4;");
@@ -233,7 +233,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn);
 
                 // Assert
-                var dependents = conn.Query<(string Type, string Name)>("SELECT type, name FROM sqlite_master WHERE tbl_name='Services' AND type IN ('index', 'trigger');").ToList();
+                var dependents = conn.Query<(string Type, string Name)>($"SELECT type, name FROM sqlite_master WHERE tbl_name='{SqlConstants.ServicesTableName}' AND type IN ('index', 'trigger');").ToList();
 
                 Assert.Contains(dependents, d => d.Type == "index" && d.Name == "idx_custom_displayname");
                 Assert.Contains(dependents, d => d.Type == "trigger" && d.Name == "trg_custom_after_update");
@@ -284,7 +284,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     tx.Commit();
 
                     // Assert
-                    var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                    var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
                     Assert.Contains("EnableRotation", columns); // Left alone
                     Assert.Contains("EnableSizeRotation", columns); // Left alone
                 }
@@ -331,7 +331,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal("Alpha-Service", (string)remainingServices[0].Name);
 
                 // Verify the structural index details map directly to the modern COLLATE UNICODE_NOCASE layout rules
-                var indexList = conn.Query("PRAGMA index_list('Services');")
+                var indexList = conn.Query($"PRAGMA index_list('{SqlConstants.ServicesTableName}');")
                                     .Select(x => (IDictionary<string, object>)x)
                                     .ToList();
 
@@ -479,7 +479,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
                 Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
 
-                var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
 
                 // Confirm the structural migration successfully appended the specific external heartbeat properties
                 Assert.Contains("HeartbeatUrl", columns);
@@ -519,7 +519,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
                 Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
 
-                var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
 
                 // Confirm the structural migration successfully appended the CpuAffinity property
                 Assert.Contains("CpuAffinity", columns);
@@ -614,7 +614,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 // Step 1: Perform a full baseline initialization to get the perfect expected schema.
                 SQLiteDbInitializer.Initialize(conn);
-                var expectedColumns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                var expectedColumns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
 
                 // Step 2: Sabotage the schema
                 conn.Execute($"DROP TABLE {SqlConstants.ServicesTableName};");
@@ -649,7 +649,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn);
 
                 // Assert
-                var finalColumns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+                var finalColumns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
 
                 // The missing column should have been successfully restored
                 Assert.Contains(missingColumn, finalColumns);
@@ -657,7 +657,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("OrphanColumn", finalColumns);
 
                 // Note: Mismatches are logged, not automatically altered, because SQLite doesn't support ALTER COLUMN type.
-                var typeMismatchType = conn.QuerySingle<string>("SELECT type FROM pragma_table_info('Services') WHERE name = 'EnableSizeRotation';");
+                var typeMismatchType = conn.QuerySingle<string>($"SELECT type FROM pragma_table_info('{SqlConstants.ServicesTableName}') WHERE name = 'EnableSizeRotation';");
                 Assert.Equal("TEXT", typeMismatchType); // Should still be TEXT as we sabotaged it
             }
         }
