@@ -21,8 +21,15 @@ namespace Servy.UI.IntegrationTests.Services
 
         public void Dispose()
         {
-            // Restore the original process-global Application instance to avoid cross-test static state pollution
-            TestReflection.SetFieldStatic(typeof(Application), "_appInstance", _originalApp);
+            // Restore the original process-global Application instance to avoid cross-test static state pollution.
+            // Only put back an Application that existed before the test and that the test cleared: when a test
+            // creates one through Helper.EnsureApplication, the snapshot taken in the constructor is null, and
+            // writing it back would discard the new instance while Helper's memo flag stays set, so every later
+            // EnsureApplication call returns null for the rest of the process (#4637).
+            if (_originalApp != null && Application.Current == null)
+            {
+                TestReflection.SetFieldStatic(typeof(Application), "_appInstance", _originalApp);
+            }
         }
 
         #region Branch: Headless / Null Dispatcher
