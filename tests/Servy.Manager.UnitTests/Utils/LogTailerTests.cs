@@ -8,19 +8,46 @@ namespace Servy.Manager.UnitTests.Utils
     public class LogTailerTests : IDisposable
     {
         private readonly string _tempFilePath;
+        private readonly List<string> _extraTempFiles = new List<string>();
 
         public LogTailerTests()
         {
             _tempFilePath = Path.Combine(Path.GetTempPath(), $"logtailer_test_{Guid.NewGuid()}.log");
         }
 
+        /// <summary>
+        /// Builds an additional temp file path and registers it for cleanup in <see cref="Dispose"/>,
+        /// so a failing assertion cannot orphan it.
+        /// </summary>
+        /// <param name="prefix">A short prefix identifying the scenario that owns the file.</param>
+        /// <returns>The registered path. The file itself is not created.</returns>
+        private string NewTempFilePath(string prefix)
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"{prefix}_{Guid.NewGuid()}.log");
+            _extraTempFiles.Add(path);
+            return path;
+        }
+
         public void Dispose()
         {
-            // Best-effort delete; swallow exceptions if a running test still holds the file open
+            foreach (var path in _extraTempFiles)
+            {
+                DeleteQuietly(path);
+            }
+
+            DeleteQuietly(_tempFilePath);
+        }
+
+        /// <summary>
+        /// Best-effort delete; swallows exceptions if a running test still holds the file open.
+        /// </summary>
+        /// <param name="path">The file to remove.</param>
+        private static void DeleteQuietly(string path)
+        {
             try
             {
-                if (File.Exists(_tempFilePath))
-                    File.Delete(_tempFilePath);
+                if (File.Exists(path))
+                    File.Delete(path);
             }
             catch
             {
@@ -256,7 +283,7 @@ namespace Servy.Manager.UnitTests.Utils
             // access to be injectable, which this class has no seam for.
             using (var tailer = new LogTailer())
             {
-                string lockTestPath = Path.Combine(Path.GetTempPath(), $"lock_race_{Guid.NewGuid()}.log");
+                string lockTestPath = NewTempFilePath("lock_race");
                 File.WriteAllText(lockTestPath, "Historical line context payload stream\n");
 
                 // Act
@@ -267,16 +294,6 @@ namespace Servy.Manager.UnitTests.Utils
                     // Assert
                     Assert.NotNull(result);
                     Assert.Empty(result.Lines);
-                }
-
-                try
-                {
-                    if (File.Exists(lockTestPath))
-                        File.Delete(lockTestPath);
-                }
-                catch
-                {
-                    // Swallow cleanup failures to protect runtime step bounds
                 }
             }
         }
