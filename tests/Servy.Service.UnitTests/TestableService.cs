@@ -121,9 +121,9 @@ namespace Servy.Service.UnitTests
             ServiceReflection.StartProcessMethod.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables, cancellationToken });
         }
 
-        // Expose the private SafeKillProcess method
-        public void InvokeSafeKillProcess(IProcessWrapper process) =>
-            ServiceReflection.SafeKillProcessMethod.Invoke(this, new object[] { process, 5000 });
+        // Expose the private SafeKillProcess method, including the timeout it computes its deadline from
+        public void InvokeSafeKillProcess(IProcessWrapper process, int timeoutMs) =>
+            ServiceReflection.SafeKillProcessMethod.Invoke(this, new object[] { process, timeoutMs });
 
         // Forces the state of the private backer field '_recoveryActionEnabled' via reflection.
         public void SetRecoveryActionEnabled(bool enabled) =>
