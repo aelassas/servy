@@ -31,9 +31,9 @@ namespace Servy.UI.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task GetVisualChild_ImmediateChildFound_ReturnsChild()
+        public void GetVisualChild_ImmediateChildFound_ReturnsChild()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 // Branch: if (child is T t) return t;
@@ -55,9 +55,9 @@ namespace Servy.UI.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task GetVisualChild_DeepChildFound_ReturnsChild()
+        public void GetVisualChild_DeepChildFound_ReturnsChild()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 // Branch: var res = GetVisualChild<T>(child); if (res != null) return res;
