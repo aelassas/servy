@@ -29,6 +29,11 @@ namespace Servy.CLI.UnitTests.Commands
 
         public ImportServiceCommandTests()
         {
+            // ImportServiceCommand has run the elevation pre-flight since #5152, so take the
+            // test seam explicitly instead of relying on an elevated host or on a sibling
+            // class having left the process-global flag set.
+            BaseCommand.BypassElevationCheck = true;
+
             _serviceRepoMock = new Mock<IServiceRepository>();
             _xmlServiceSerializer = new Mock<IXmlServiceSerializer>();
             _jsonServiceSerializer = new Mock<IJsonServiceSerializer>();
@@ -56,6 +61,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         public void Dispose()
         {
+            BaseCommand.BypassElevationCheck = false;
+
             // Wipe physical artifacts and the tracking directory completely to clean up the workspace safely
             if (Directory.Exists(_tempDirectory))
             {
