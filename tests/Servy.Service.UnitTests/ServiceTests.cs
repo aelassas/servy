@@ -1058,6 +1058,46 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Start(), Times.Once); // Main process starts anyway
         }
 
+        [Fact]
+        public void OnStart_PreLaunchSynchronous_RetriesAfterBackoff_ThenSucceeds()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 10,
+                PreLaunchIgnoreFailure = false,
+                PreLaunchRetryAttempts = 1 // maxAttempts = 2, so attempt 1 < maxAttempts reaches the back-off branch
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            // WaitForExit must be stubbed: ProcessLauncher polls it, and an unstubbed mock returns
+            // false forever, which turns every attempt into a timeout instead of an exit-code check.
+            var mockFailedPreLaunch = new Mock<IProcessWrapper>();
+            mockFailedPreLaunch.Setup(p => p.Start()).Returns(true);
+            mockFailedPreLaunch.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            mockFailedPreLaunch.Setup(p => p.ExitCode).Returns(1); // first attempt fails
+
+            var mockSucceededPreLaunch = new Mock<IProcessWrapper>();
+            mockSucceededPreLaunch.Setup(p => p.Start()).Returns(true);
+            mockSucceededPreLaunch.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            mockSucceededPreLaunch.Setup(p => p.ExitCode).Returns(0); // second attempt succeeds
+
+            _ctx.ProcessFactory.SetupSequence(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Returns(mockFailedPreLaunch.Object)
+                .Returns(mockSucceededPreLaunch.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert: the back-off branch ran, so a second attempt was started and it succeeded
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Once);
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Pre-launch process completed successfully")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.Verify(p => p.Start(), Times.Once); // Main process starts after the retried pre-launch succeeds
+        }
+
         #endregion
 
         #region Stream Redirection Tests
