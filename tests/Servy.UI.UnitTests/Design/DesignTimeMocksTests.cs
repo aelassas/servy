@@ -1,6 +1,5 @@
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.UI.Design;
 using System.ServiceProcess;
@@ -22,11 +21,12 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public void DesignTimeProcessHelper_CanBeInstantiated()
         {
-            // Arrange & Act
-            var helper = new DesignTimeProcessHelper();
-
-            // Assert: Verify it inherits from the base ProcessHelper
-            Assert.IsAssignableFrom<ProcessHelper>(helper);
+            // Arrange & Act & Assert
+            // Covers the parameterless constructor the XAML designer needs, which runs the
+            // base ProcessHelper constructor. Inheritance from ProcessHelper is compile-time
+            // enforced, so asserting it here cannot fail.
+            var exception = Record.Exception(() => new DesignTimeProcessHelper());
+            Assert.Null(exception);
         }
 
         #endregion
