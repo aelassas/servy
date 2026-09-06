@@ -118,14 +118,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var options = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.CiGenerousSeconds}\"", fireAndForget: true, timeoutMs: 0);
 
             // Act
+            var stopwatch = Stopwatch.StartNew();
             var wrapper = ProcessLauncher.Start(options, _realFactory, _logger);
+            stopwatch.Stop();
             _spawnedWrappers.Add(wrapper);
 
             try
             {
                 // Assert
-                Assert.NotNull(wrapper);
                 Assert.False(wrapper.HasExited);
+                Assert.True(stopwatch.ElapsedMilliseconds < TestTimeouts.ProcessLauncherTimeoutMs,
+                    $"Fire-and-forget launch should return promptly, but took {stopwatch.ElapsedMilliseconds} ms.");
             }
             finally
             {
