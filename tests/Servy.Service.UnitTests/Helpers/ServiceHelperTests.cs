@@ -468,7 +468,7 @@ namespace Servy.Service.UnitTests.Helpers
                 (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, CancellationToken.None);
 
             // Assert
             // Stop() itself succeeds here; only the descendant sweep fails, which is the inner of the
