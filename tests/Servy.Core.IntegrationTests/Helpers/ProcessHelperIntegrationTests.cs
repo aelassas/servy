@@ -133,15 +133,12 @@ namespace Servy.Core.IntegrationTests.Helpers
             var stopwatch = Stopwatch.StartNew();
             var timeout = TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds);
 
-            ProcessMetrics singleMetrics = _sut.GetProcessMetrics(childPid);
-            ProcessMetrics treeMetrics = _sut.GetProcessTreeMetrics(childPid);
-
             while (stopwatch.Elapsed < timeout)
             {
-                singleMetrics = _sut.GetProcessMetrics(childPid);
-                treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+                var polledSingle = _sut.GetProcessMetrics(childPid);
+                var polledTree = _sut.GetProcessTreeMetrics(childPid);
 
-                if (singleMetrics.RamUsage > 0 && treeMetrics.RamUsage > singleMetrics.RamUsage)
+                if (polledSingle.RamUsage > 0 && polledTree.RamUsage > polledSingle.RamUsage)
                 {
                     break;
                 }
@@ -151,14 +148,14 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // 2. CAPTURE METRICS BACK-TO-BACK:
             // Act
-            singleMetrics = _sut.GetProcessMetrics(childPid);
-            treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+            var singleMetrics = _sut.GetProcessMetrics(childPid);
+            var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
             // Assert
             Assert.True(singleMetrics.RamUsage > 0, "Root process RAM should be captured.");
             Assert.True(treeMetrics.RamUsage > 0, "Tree process RAM aggregation should be captured.");
 
-            // 4. ROBUST DELTA VALUATION:
+            // 3. ROBUST DELTA VALUATION:
             // Verifies that tree metrics accurately sum memory across the nested worker processes.
             // Tree memory must be noticeably larger than the isolated root process node's footprint.
             Assert.True(treeMetrics.RamUsage > singleMetrics.RamUsage,
