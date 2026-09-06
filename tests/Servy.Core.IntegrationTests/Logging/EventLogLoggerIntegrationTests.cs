@@ -10,6 +10,8 @@ namespace Servy.Core.IntegrationTests.Logging
     [Collection("CoreOsIntegration")]
     public class EventLogLoggerIntegrationTests : IDisposable
     {
+        private const string InsufficientPrivilegesSkipReason = "Skipping test due to insufficient privileges.";
+
         private readonly bool _isElevated;
         private readonly List<string> _createdSources = new List<string>();
 
@@ -58,7 +60,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void SetIsEventLogEnabled_TogglesStateAndHandlesCorrectly()
         {
-            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
+            Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
 
             string source = GenerateSourceName();
             using (var logger = new EventLogLogger(source, LogLevel.Info, isEventLogEnabled: false))
@@ -85,7 +87,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void InitializeEventLog_WhenSourceAssignedToDifferentLog_DisablesLogger()
         {
-            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
+            Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
 
             string mismatchSource = GenerateSourceName();
 
@@ -187,7 +189,7 @@ namespace Servy.Core.IntegrationTests.Logging
         public void WriteRawToWindowsEventLog_OversizedMessage_TruncatesSuccessfully()
         {
             // Arrange
-            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
+            Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
 
             string source = GenerateSourceName();
 
@@ -332,7 +334,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void ScopedLogger_SetIsEventLogEnabled_PropagatesToParent()
         {
-            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
+            Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
 
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Error, false))

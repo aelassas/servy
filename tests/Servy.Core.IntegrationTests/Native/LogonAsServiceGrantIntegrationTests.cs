@@ -125,8 +125,8 @@ namespace Servy.Core.IntegrationTests.Native
         public void Ensure_ShorthandLocalNotation_CorrectlyTranslatesMachinePrefix()
         {
             // Arrange
-            if (!_canModifyLsaPolicy) Assert.Skip(NoLsaAccessSkipReason);
-            if (!TryEnsureTestAccount()) Assert.Skip(AccountProvisioningSkipReason());
+            Assert.SkipUnless(_canModifyLsaPolicy, NoLsaAccessSkipReason);
+            Assert.SkipUnless(TryEnsureTestAccount(), AccountProvisioningSkipReason());
 
             string shorthandAccount = $".\\{_testAccountName}";
 
@@ -150,8 +150,8 @@ namespace Servy.Core.IntegrationTests.Native
         public void Ensure_FreshAccountWithoutAnyRights_TriggersNotFoundBranchAndGrantsPrivilege()
         {
             // Arrange
-            if (!_canModifyLsaPolicy) Assert.Skip(NoLsaAccessSkipReason);
-            if (!TryEnsureTestAccount()) Assert.Skip(AccountProvisioningSkipReason());
+            Assert.SkipUnless(_canModifyLsaPolicy, NoLsaAccessSkipReason);
+            Assert.SkipUnless(TryEnsureTestAccount(), AccountProvisioningSkipReason());
 
             string fullAccountName = FullAccountName;
 
@@ -186,8 +186,8 @@ namespace Servy.Core.IntegrationTests.Native
         public void RevokeLsaPrivilegeBeforeDeletion_RemovesTheGrantItWasGiven()
         {
             // Arrange
-            if (!_canModifyLsaPolicy) Assert.Skip(NoLsaAccessSkipReason);
-            if (!TryEnsureTestAccount()) Assert.Skip(AccountProvisioningSkipReason());
+            Assert.SkipUnless(_canModifyLsaPolicy, NoLsaAccessSkipReason);
+            Assert.SkipUnless(TryEnsureTestAccount(), AccountProvisioningSkipReason());
 
             byte[] sidBytes = ResolveSidBytes(FullAccountName);
 
