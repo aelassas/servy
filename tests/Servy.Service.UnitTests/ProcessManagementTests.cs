@@ -5,7 +5,9 @@ using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using Xunit;
 
@@ -54,6 +56,71 @@ namespace Servy.Service.UnitTests
             // Verify asynchronous stream reading calls
             mockProcess.Verify(p => p.BeginOutputReadLine(), Times.Once);
             mockProcess.Verify(p => p.BeginErrorReadLine(), Times.Once);
+        }
+
+        [Fact]
+        public void StartProcess_StartFails_LogsCleansUpAndRethrows()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Start()).Throws(new Win32Exception(2)); // file not found
+
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(mockProcess.Object);
+
+            // Act
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                service.InvokeStartProcess("C:\\missing.exe", "", "C:\\", new List<EnvironmentVariable>(), CancellationToken.None));
+
+            // Assert: the failure is rethrown to the caller so OnStart can signal the SCM
+            Assert.IsType<Win32Exception>(ex.InnerException);
+
+            // The single source of truth for start-up failure logging
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.StartsWith("Failed to start process")), It.IsAny<Exception>()), Times.Once);
+
+            // CleanupFailedProcess detaches every handler attached before Start()
+            mockProcess.VerifyRemove(p => p.OutputDataReceived -= It.IsAny<DataReceivedEventHandler>(), Times.Once);
+            mockProcess.VerifyRemove(p => p.ErrorDataReceived -= It.IsAny<DataReceivedEventHandler>(), Times.Once);
+            mockProcess.VerifyRemove(p => p.Exited -= It.IsAny<EventHandler>(), Times.Once);
+
+            // ... disposes the failed wrapper and clears the field
+            mockProcess.Verify(p => p.Dispose(), Times.Once);
+            Assert.Null(service.GetChildProcess());
+
+            // ... and the stream pumps are never started for a process that did not start
+            mockProcess.Verify(p => p.BeginOutputReadLine(), Times.Never);
+            mockProcess.Verify(p => p.BeginErrorReadLine(), Times.Never);
+        }
+
+        [Fact]
+        public void StartProcess_StartFailsAndDisposeThrows_WarnsAndStillClearsChildProcess()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Start()).Throws(new Win32Exception(5)); // access denied
+            mockProcess.Setup(p => p.Dispose()).Throws(new InvalidOperationException("dispose failed"));
+
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(mockProcess.Object);
+
+            // Act
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                service.InvokeStartProcess("C:\\denied.exe", "", "C:\\", new List<EnvironmentVariable>(), CancellationToken.None));
+
+            // Assert: the secondary failure is downgraded to a warning and never masks the original one
+            Assert.IsType<Win32Exception>(ex.InnerException);
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.StartsWith("Secondary error during failed process cleanup")), It.IsAny<Exception>()), Times.Once);
+
+            // The finally arm clears the field even when disposal threw
+            Assert.Null(service.GetChildProcess());
         }
 
         [Fact]
