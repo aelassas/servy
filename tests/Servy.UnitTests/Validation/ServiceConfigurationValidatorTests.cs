@@ -159,6 +159,26 @@ namespace Servy.UnitTests.Validation
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
+        [Fact]
+        public async Task ValidateAsync_WithInvalidWrapperExePath_ForwardsPathAndReturnsFalse()
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "ValidService", ExecutablePath = @"C:\ValidService.exe", RunAsLocalSystem = true };
+            string wrapperExePath = @"C:\Servy\Missing.exe";
+
+            _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
+            _mockProcessHelper.Setup(p => p.ValidatePath(wrapperExePath, true)).Returns(false);
+
+            // Act: the wrapper-path rule can only fire if the argument is still forwarded
+            var result = await _validator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: null, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(
+                It.Is<string>(s => s != null && s.IndexOf(Strings.Msg_InvalidWrapperExePath, StringComparison.OrdinalIgnoreCase) >= 0),
+                It.IsAny<string>()), Times.Once);
+        }
+
         #endregion
 
         #region ImportMode Tests
