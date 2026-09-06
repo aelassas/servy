@@ -144,43 +144,6 @@ namespace Servy.Core.UnitTests.Security
             }
         }
 
-        [Theory]
-        // Branch 1: !IsStrictBase64(payload) -> returns the raw plaintext payload string directly.
-        [InlineData("Plain_Legacy_Password_123!", false)]
-        // Branch 2: IsStrictBase64(payload) -> blocked while AllowLegacyV1Decryption is false; throws SecureDataLegacyBlockedException.
-        [InlineData(null, true)]
-        public void Decrypt_LegacyFormat_HandlesBothBranches(string input, bool isBase64LegacyBranch)
-        {
-            // Arrange
-            var rawKey = _mockProvider.Object.GetKey();
-            var rawIv = _mockProvider.Object.GetIV();
-
-            if (isBase64LegacyBranch)
-            {
-                const string plaintextToEncrypt = "DecryptedValueFromV1";
-                input = SecureDataHelper.CreateLegacyV1Base64(rawKey, rawIv, plaintextToEncrypt);
-            }
-
-            using (var sp = new SecureData(_mockProvider.Object))
-            {
-                if (isBase64LegacyBranch && !AppConfig.AllowLegacyV1Decryption)
-                {
-                    // Act & Assert
-                    // Raw legacy ciphertext detected with legacy decryption disabled must throw SecureDataLegacyBlockedException
-                    var ex = Assert.Throws<SecureDataLegacyBlockedException>(() => sp.Decrypt(input));
-                    Assert.Contains("Raw legacy ciphertext detected", ex.Message);
-                }
-                else
-                {
-                    // Act
-                    var result = sp.Decrypt(input);
-
-                    // Assert
-                    Assert.Equal(input, result);
-                }
-            }
-        }
-
         [Fact]
         public void Decrypt_UnmarkedStrictBase64_WhenLegacyDisabled_ThrowsSecureDataLegacyBlockedException()
         {
