@@ -61,11 +61,15 @@ namespace Servy.Core.IntegrationTests.Services
                     return;
                 }
 
-                // Dependencies collection must verify accurate structural sorting parameters
+                // Dependencies collection must verify accurate structural sorting parameters.
+                // Mirror the SUT's conditional sort key (ServiceControllerWrapper.cs): unavailable nodes are
+                // ordered by ServiceName, since their DisplayName holds a formatted error message instead.
+                string SortKey(ServiceDependencyNode node) => node.IsUnavailable ? node.ServiceName : node.DisplayName;
+
                 for (int i = 0; i < rootNode.Dependencies.Count - 1; i++)
                 {
-                    var current = rootNode.Dependencies[i].DisplayName;
-                    var next = rootNode.Dependencies[i + 1].DisplayName;
+                    var current = SortKey(rootNode.Dependencies[i]);
+                    var next = SortKey(rootNode.Dependencies[i + 1]);
                     Assert.True(string.Compare(current, next, StringComparison.OrdinalIgnoreCase) <= 0,
                         $"Dependencies are incorrectly ordered: '{current}' appeared before '{next}'");
                 }
