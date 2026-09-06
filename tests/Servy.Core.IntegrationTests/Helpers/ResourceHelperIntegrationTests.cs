@@ -170,7 +170,12 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // 3. Confirm that the targeted services were both cleanly stopped and subsequently revived
             _mockServiceHelper.Verify(s => s.StopServicesAsync(testServices, CancellationToken.None), Times.Once);
-            _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
+
+            // The CancellationToken.None below is deliberate, not an oversight: ResourceHelper restarts
+            // with None on purpose, so an upfront pipeline cancellation cannot leave the services it
+            // stopped orphaned. Do not "fix" this to a caller-supplied token.
+            _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once,
+                "StartServicesAsync must be called with CancellationToken.None so a cancelled copy still restarts the services it stopped.");
         }
 
         [Fact]
@@ -374,7 +379,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         #region Helper Method Tests
 
         [Fact]
-        public void GetHostProcessLastWriteTimeUTC_ExecutesSuccessfullyAndReturnsValidDate()
+        public void GetHostProcessLastWriteTimeUtc_ExecutesSuccessfullyAndReturnsValidDate()
         {
             // Arrange (Static execution pipeline framework proxy metrics context)
 
