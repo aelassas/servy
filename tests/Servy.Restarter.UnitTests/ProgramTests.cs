@@ -19,6 +19,8 @@ namespace Servy.Restarter.UnitTests
         private const string SharedInMemoryConnectionString = "Data Source=RestarterTestDb;Mode=Memory;Cache=Shared;Version=3;";
 
         private readonly string _tempConfigPath;
+        private readonly string _configBackupPath;
+        private readonly bool _hasConfigBackup;
         private readonly string _tempLogDir;
         private readonly string _expectedLogFilePath;
         private readonly SQLiteConnection _dbKeepAliveConnection;
@@ -37,6 +39,16 @@ namespace Servy.Restarter.UnitTests
 
             // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
             Logger.Initialize(LogFileName, logDirectory: _tempLogDir);
+
+            // Program.Main reads its configuration strictly from the app directory, so the tests must
+            // clobber the build-deployed appsettings.restarter.json. Back it up so Dispose can put the
+            // build's own artifact back instead of leaving the output directory without it.
+            _configBackupPath = _tempConfigPath + ".bak";
+            _hasConfigBackup = File.Exists(_tempConfigPath);
+            if (_hasConfigBackup)
+            {
+                File.Copy(_tempConfigPath, _configBackupPath, overwrite: true);
+            }
 
             File.WriteAllText(_tempConfigPath, BuildConfigJson("30"));
 
@@ -277,7 +289,13 @@ namespace Servy.Restarter.UnitTests
             // Clean dynamic runtime artifacts cleanly
             try
             {
-                if (File.Exists(_tempConfigPath))
+                if (_hasConfigBackup && File.Exists(_configBackupPath))
+                {
+                    // Restore the build-deployed artifact rather than deleting it
+                    File.Copy(_configBackupPath, _tempConfigPath, overwrite: true);
+                    File.Delete(_configBackupPath);
+                }
+                else if (File.Exists(_tempConfigPath))
                 {
                     File.Delete(_tempConfigPath);
                 }
