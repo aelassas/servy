@@ -442,5 +442,25 @@ namespace Servy.Core.UnitTests.Validation
             // Assert
             Assert.DoesNotContain(Strings.Msg_PasswordsDontMatch, result.Errors);
         }
+
+        [Fact]
+        public void Validate_ImportMode_SkipsNativeCredentialValidation()
+        {
+            // Arrange: the account shape that Validate_Credentials_NativeValidationFailure_SurfacesExceptionMessageInResult
+            // proves drives NativeMethodsHelpers.ValidateCredentials to throw.
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "InvalidAccountFormatWithoutPrefix";
+            dto.Password = "Password123!";
+
+            // Act: confirmPassword is left null, which is what every production import path passes
+            // (ServiceDtoImportValidator and both ServiceConfigurationValidator call sites). With it null
+            // the password comparison is inert, so ValidateCredentials is the only thing importMode suppresses.
+            var result = _sut.Validate(dto, importMode: true);
+
+            // Assert: no logon round trip was attempted, so no credential error surfaced.
+            Assert.True(result.IsValid);
+            Assert.Empty(result.Errors);
+        }
     }
 }
