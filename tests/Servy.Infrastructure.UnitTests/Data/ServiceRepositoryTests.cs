@@ -952,7 +952,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                     sql.Contains($"FROM {SqlConstants.ServicesTableName}") &&
                     sql.Contains("WHERE Name = @Name") &&
                     sql.Contains("LIMIT 1")),
-                It.Is<object>(p => p.GetType().GetProperty("Name") != null),
+                It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName),
                 It.IsAny<IDbTransaction>(),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
