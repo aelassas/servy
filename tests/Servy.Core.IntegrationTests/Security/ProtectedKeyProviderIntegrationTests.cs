@@ -264,6 +264,23 @@ namespace Servy.Core.IntegrationTests.Security
                 byte[] bytesAfterMigration = File.ReadAllBytes(ivPath);
                 Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
             }
+
+            // Assert 3: Verify the migrated file is genuinely entropy-protected.
+            // The byte comparison above cannot show this on its own - DPAPI output differs on every
+            // Protect call, so it would also pass if the migration rewrote the IV without entropy.
+            // Path A: A fresh provider instance can successfully read it (using machine entropy)
+            using (var freshProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var roundTripIv = freshProvider.GetIV();
+                Assert.Equal(rawLegacyIvData, roundTripIv);
+            }
+
+            // Path B: Raw decryption without entropy MUST fail
+            byte[] migratedBytes = File.ReadAllBytes(ivPath);
+            Assert.Throws<CryptographicException>(() =>
+            {
+                ProtectedData.Unprotect(migratedBytes, null, DataProtectionScope.LocalMachine);
+            });
         }
 
         [Theory]
