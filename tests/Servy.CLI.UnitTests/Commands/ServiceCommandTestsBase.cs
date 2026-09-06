@@ -135,7 +135,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         /// <summary>
         /// Executes the command under test with the provided options.
-        /// Checks for an asynchronous <c>ExecuteAsync</c> method via dynamic dispatch, falling back to synchronous <c>Execute</c>.
+        /// Invokes the asynchronous <c>ExecuteAsync</c> entry point via dynamic dispatch, since the commands do not share an interface.
+        /// A command exposing a synchronous <c>Execute</c> instead overrides this method (see <c>ServiceStatusCommandTests</c>).
         /// </summary>
         /// <param name="command">The command instance to execute.</param>
         /// <param name="options">The options instance to pass to the command.</param>
@@ -144,15 +145,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             dynamic cmd = command;
 
-            try
-            {
-                var result = cmd.ExecuteAsync(options, CancellationToken.None);
-                return await result;
-            }
-            catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
-            {
-                return cmd.Execute(options, CancellationToken.None);
-            }
+            return await cmd.ExecuteAsync(options, CancellationToken.None);
         }
 
         #endregion
