@@ -45,10 +45,15 @@ namespace Servy.Core.UnitTests.Helpers
 
         #region ParseInt Tests
 
+        // Each input is exercised against more than one default, so a hardcoded fallback
+        // cannot be mistaken for "the method returned defaultValue".
         [Theory]
         [InlineData(null, 10, 10)]
+        [InlineData(null, -7, -7)]
         [InlineData("", 10, 10)]
+        [InlineData("", 0, 0)]
         [InlineData("    ", 10, 10)]
+        [InlineData("    ", int.MaxValue, int.MaxValue)]
         public void ParseInt_NullOrWhitespace_ReturnsDefault(string? input, int @default, int expected)
         {
             // Act
@@ -78,24 +83,31 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(42, result);
         }
 
-        [Fact]
-        public void ParseInt_MalformedInput_ReturnsDefault()
+        [Theory]
+        [InlineData("not-a-number", 10, 10)]
+        [InlineData("not-a-number", -7, -7)]
+        public void ParseInt_MalformedInput_ReturnsDefault(string input, int @default, int expected)
         {
             // Act
-            var result = ConfigParser.ParseInt("not-a-number", 10);
+            var result = ConfigParser.ParseInt(input, @default);
 
             // Assert
-            Assert.Equal(10, result);
+            Assert.Equal(expected, result);
         }
 
         #endregion
 
         #region ParseBool Tests
 
+        // All three inputs are exercised in both polarities, as #3992 established for
+        // ParseBool_InvalidInput: a single-polarity row cannot tell defaultValue apart from
+        // a hardcoded return.
         [Theory]
         [InlineData(null, true, true)]
+        [InlineData(null, false, false)]
         [InlineData("", true, true)]
         [InlineData("", false, false)]
+        [InlineData("    ", true, true)]
         [InlineData("    ", false, false)]
         public void ParseBool_NullOrWhitespace_ReturnsDefault(string? input, bool @default, bool expected)
         {
@@ -195,10 +207,10 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseEnum_Int_UndefinedValue_ReturnsDefault()
         {
             // Act
-            var result = ConfigParser.ParseEnum(999, TestStatus.None);
+            var result = ConfigParser.ParseEnum(999, TestStatus.Paused);
 
             // Assert
-            Assert.Equal(TestStatus.None, result);
+            Assert.Equal(TestStatus.Paused, result);
         }
 
         [Theory]
@@ -217,20 +229,20 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseEnum_Int_FlagsEnum_UnmappedBits_ReturnsDefault()
         {
             // Act
-            var result = ConfigParser.ParseEnum(5, TestFlags.None);
+            var result = ConfigParser.ParseEnum(5, TestFlags.B);
 
             // Assert
-            Assert.Equal(TestFlags.None, result);
+            Assert.Equal(TestFlags.B, result);
         }
 
         [Fact]
         public void ParseEnum_Int_OverflowUnderlyingType_CatchesExceptionAndReturnsDefault()
         {
             // Act
-            var result = ConfigParser.ParseEnum(999, ByteBackedEnum.None);
+            var result = ConfigParser.ParseEnum(999, ByteBackedEnum.Member);
 
             // Assert
-            Assert.Equal(ByteBackedEnum.None, result);
+            Assert.Equal(ByteBackedEnum.Member, result);
         }
 
         #endregion
@@ -283,10 +295,10 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseEnum_String_FlagsEnum_UnmappedInput_ReturnsDefault(string input)
         {
             // Act
-            var result = ConfigParser.ParseEnum(input, TestFlags.None);
+            var result = ConfigParser.ParseEnum(input, TestFlags.B);
 
             // Assert
-            Assert.Equal(TestFlags.None, result);
+            Assert.Equal(TestFlags.B, result);
         }
 
         [Fact]
@@ -339,10 +351,10 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Act
             // Numeric values parse successfully but fail Enum.IsDefined verification, falling through to the default
-            var result = ConfigParser.ParseEnum(undefinedNumeric, TestStatus.None);
+            var result = ConfigParser.ParseEnum(undefinedNumeric, TestStatus.Paused);
 
             // Assert
-            Assert.Equal(TestStatus.None, result);
+            Assert.Equal(TestStatus.Paused, result);
         }
 
         [Fact]
@@ -353,10 +365,10 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Act
             // Non-numeric arbitrary text cannot be parsed by Enum.TryParse, executing the true malformed branch
-            var result = ConfigParser.ParseEnum(malformedInput, TestStatus.None);
+            var result = ConfigParser.ParseEnum(malformedInput, TestStatus.Paused);
 
             // Assert
-            Assert.Equal(TestStatus.None, result);
+            Assert.Equal(TestStatus.Paused, result);
         }
 
         [Theory]
@@ -366,7 +378,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseEnum_String_NonFlagsEnum_CommaSeparatedInput_ReturnsDefault(string commaSeparatedInput)
         {
             // Arrange
-            var defaultValue = TestStatus.None;
+            var defaultValue = TestStatus.Paused;
 
             // Act
             // Enum.TryParse bitwise ORs comma-separated enum names even on non-Flags enums;
