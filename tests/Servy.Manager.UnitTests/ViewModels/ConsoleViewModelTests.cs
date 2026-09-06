@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
+using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
@@ -220,6 +221,27 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService" && s.Pid == 5555), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            });
+        }
+
+        [Fact]
+        public async Task ShowClipboardErrorAsync_InvokesMessageBoxServiceWithClipboardFailureMessage()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Act - the view calls this from the catch around its clipboard write
+                    await vm.ShowClipboardErrorAsync();
+
+                    // Assert - the failure is reported through the message box seam with the clipboard message and caption
+                    _messageBoxServiceMock.Verify(
+                        m => m.ShowErrorAsync(Strings.Msg_ClipboardCopyFailed, UiAppConfig.Caption),
+                        Times.Once);
                 }
             });
         }
