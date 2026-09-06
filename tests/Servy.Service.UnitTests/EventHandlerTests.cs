@@ -7,6 +7,7 @@ using Servy.Service.UnitTests.Helpers;
 using Servy.Testing;
 using System;
 using System.Diagnostics;
+using System.IO;
 using Xunit;
 
 namespace Servy.Service.UnitTests
@@ -132,7 +133,9 @@ namespace Servy.Service.UnitTests
 
             var startOptions = ServiceTestContext.CreateDefaultStartOptions();
             startOptions.StdoutPath = "shared-path.log";
-            startOptions.StderrPath = "shared-path.log";
+            // A different spelling of the same file: the multiplex decision is made on the
+            // canonicalized paths (Helper.NormalizePath), so a raw string comparison misses it.
+            startOptions.StderrPath = Path.Combine(".", "shared-path.log");
 
             // Act
             service.InvokeHandleLogWriters(startOptions);
