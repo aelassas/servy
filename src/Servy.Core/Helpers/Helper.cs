@@ -42,7 +42,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="path">The path to validate.</param>
         /// <returns>True if the path is valid, otherwise false.</returns>
-        public static bool IsValidPath(string path)
+        public static bool IsValidPath(string? path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -281,7 +281,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="version">The raw version string to evaluate.</param>
         /// <returns>A valid <see cref="Version"/> object if parsing succeeds; otherwise, <see langword="null"/>.</returns>
-        public static Version? ParseVersion(string version)
+        public static Version? ParseVersion(string? version)
         {
             if (string.IsNullOrWhiteSpace(version))
                 return null;
