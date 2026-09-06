@@ -203,6 +203,37 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         /// <summary>
+        /// Verifies that if a child process exits in the middle of processing (throwing InvalidOperationException),
+        /// WalkAndKillChildren catches the exception cleanly as a benign process exit instead of logging a warning or throwing.
+        /// </summary>
+        [Fact]
+        public void WalkAndKillChildren_WhenChildExitsMidOperation_HandlesInvalidOperationExceptionGracefully()
+        {
+            // Arrange
+            var (parent, child) = SpawnProcessTree();
+            int parentId = parent!.Id;
+            int childId = child!.Id;
+
+            try
+            {
+                // Kill the child first so it is already exited when WalkAndKillChildren evaluates it
+                child!.Kill();
+                child.WaitForExit(1000);
+
+                // Act & Assert
+                // WalkAndKillChildren should process the exited child without throwing an unhandled exception or failing
+                Exception? ex = Record.Exception(() => _processKiller.KillChildren(parentId));
+
+                Assert.Null(ex);
+            }
+            finally
+            {
+                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
+                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+            }
+        }
+
+        /// <summary>
         /// Verifies that executing the tree termination method with the kill parents flag enabled successfully walks up the process hierarchy and terminates both the target and its creator.
         /// </summary>
         [Fact]

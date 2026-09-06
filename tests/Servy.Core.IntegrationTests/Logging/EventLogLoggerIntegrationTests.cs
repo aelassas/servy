@@ -58,6 +58,20 @@ namespace Servy.Core.IntegrationTests.Logging
         }
 
         [Fact]
+        public void Constructor_WhenPrefixContainsBrackets_SanitizesToParentheses()
+        {
+            string source = GenerateSourceName();
+
+            // Act
+            using (var logger = new EventLogLogger(source, LogLevel.Info, false, "Worker] [Admin"))
+            {
+                // Assert
+                // Internal square brackets are converted to parentheses, and the whole segment is wrapped in brackets.
+                Assert.Equal("[Worker) (Admin]", logger.Prefix);
+            }
+        }
+
+        [Fact]
         public void SetIsEventLogEnabled_TogglesStateAndHandlesCorrectly()
         {
             Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
