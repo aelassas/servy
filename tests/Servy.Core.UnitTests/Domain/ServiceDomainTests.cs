@@ -306,7 +306,7 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.StdoutPath, captured.StdoutPath);
             Assert.Equal(service.StderrPath, captured.StderrPath);
             Assert.Equal(service.EnableSizeRotation, captured.EnableSizeRotation);
-            Assert.Equal(3 * 1024L * 1024L, captured.RotationSizeInBytes);
+            Assert.Equal(AppConfig.ToBytes(Math.Max(1, service.RotationSize)), captured.RotationSizeInBytes);
             Assert.Equal(service.EnableDateRotation, captured.EnableDateRotation);
             Assert.Equal(service.DateRotationType, captured.DateRotationType);
             Assert.Equal(service.MaxRotations, captured.MaxRotations);
