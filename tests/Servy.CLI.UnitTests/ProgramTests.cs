@@ -12,7 +12,11 @@ namespace Servy.CLI.UnitTests
         private const string DatabaseFileName = "Test_Servy.db";
         private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
 
-        private readonly string _tempConfigPath;
+        // Resolves onto the appsettings.cli.json that Servy.CLI.csproj copies to the output
+        // directory, not onto a file this suite owns, so its previous contents are saved and
+        // restored the same way the Console streams are.
+        private readonly string _cliConfigPath;
+        private readonly string? _originalCliConfigJson;
         private readonly TextWriter _originalConsoleOut;
         private readonly TextWriter _originalConsoleError;
 
@@ -20,7 +24,8 @@ namespace Servy.CLI.UnitTests
         {
             // Arrange
             // Establish isolated files environment for execution runs
-            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
+            _cliConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
+            _originalCliConfigJson = File.Exists(_cliConfigPath) ? File.ReadAllText(_cliConfigPath) : null;
 
             _originalConsoleOut = Console.Out;
             _originalConsoleError = Console.Error;
@@ -39,7 +44,7 @@ namespace Servy.CLI.UnitTests
                 "  }\r\n" +
                 "}";
 
-            File.WriteAllText(_tempConfigPath, mockConfigJson);
+            File.WriteAllText(_cliConfigPath, mockConfigJson);
         }
 
         #region Console Validation Logic Branches
@@ -191,9 +196,16 @@ namespace Servy.CLI.UnitTests
             // Clean environment layout files using consistent BaseDirectory resolution
             try
             {
-                if (File.Exists(_tempConfigPath))
+                // appsettings.cli.json is a build output, so put back what was found rather
+                // than leaving the output directory without it: a --no-build re-run would
+                // otherwise fall back to the optional-config path silently.
+                if (_originalCliConfigJson != null)
                 {
-                    File.Delete(_tempConfigPath);
+                    File.WriteAllText(_cliConfigPath, _originalCliConfigJson);
+                }
+                else if (File.Exists(_cliConfigPath))
+                {
+                    File.Delete(_cliConfigPath);
                 }
 
                 string keyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AesKeyFileName);
