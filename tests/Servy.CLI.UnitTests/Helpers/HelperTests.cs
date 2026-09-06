@@ -94,6 +94,56 @@ namespace Servy.CLI.UnitTests.Helpers
             Assert.Empty(consoleOutput.StdErr);
         }
 
+        [Fact]
+        public void PrintAndReturn_NullResult_ReturnsOneWithoutPrinting()
+        {
+            // Arrange & Act
+            var consoleOutput = ConsoleCapture.Run(() => Helper.PrintAndReturn(null!));
+
+            // Assert
+            // The null guard returns the literal 1, not result.ExitCode, so it is a distinct
+            // contract rather than an alias of the failure path.
+            Assert.Equal(1, consoleOutput.Result);
+            Assert.Empty(consoleOutput.StdOut);
+            Assert.Empty(consoleOutput.StdErr);
+        }
+
+        [Fact]
+        public void PrintAndReturn_BlankMessage_PrintsNothingButKeepsExitCode()
+        {
+            // Arrange
+            var result = CommandResult.Fail("   ", 3);
+
+            // Act
+            var consoleOutput = ConsoleCapture.Run(() => Helper.PrintAndReturn(result));
+
+            // Assert
+            // The blank-message arm is the only path where a non-zero exit code arrives with
+            // nothing written to either stream.
+            Assert.Equal(3, consoleOutput.Result);
+            Assert.Empty(consoleOutput.StdOut);
+            Assert.Empty(consoleOutput.StdErr);
+        }
+
+        [Fact]
+        public async Task PrintAndReturnAsync_FailureResult_RoutesToStdErrAndReturnsExitCode()
+        {
+            // Arrange
+            var task = Task.FromResult(CommandResult.Fail("Async Error", 1));
+
+            // Act: the direct mirror of PrintAndReturn_FailureResult_PrintsRedMessage, so the
+            // "behavior is identical across both paths" claim is verified on both outcomes.
+            var consoleOutput = await ConsoleCapture.RunAsync(async () =>
+            {
+                return await Helper.PrintAndReturnAsync(task);
+            });
+
+            // Assert
+            Assert.Equal(1, consoleOutput.Result);
+            Assert.Contains("Async Error", consoleOutput.StdErr);
+            Assert.Empty(consoleOutput.StdOut);
+        }
+
         [Theory]
         [InlineData("Xml", ConfigFileType.Xml)]
         [InlineData("JSON", ConfigFileType.Json)]
