@@ -141,17 +141,17 @@ namespace Servy.Core.IntegrationTests.Logging
         }
 
         [Theory]
-        [InlineData(LogLevel.Debug)]
-        [InlineData(LogLevel.Info)]
-        [InlineData(LogLevel.Warn)]
-        [InlineData(LogLevel.Error)]
-        public void LogMethods_AllSeverities_ExecuteWithoutThrowingAndMaintainPrefix(LogLevel targetLevel)
+        [InlineData(LogLevel.Debug, 4)]  // everything emits
+        [InlineData(LogLevel.Info, 3)]   // Debug suppressed
+        [InlineData(LogLevel.Warn, 2)]
+        [InlineData(LogLevel.Error, 1)]  // only Error emits
+        public void LogMethods_AllSeverities_EmitOnlyAtOrAboveTheConfiguredLevel(LogLevel targetLevel, int expectedEmitted)
         {
             // Arrange
             string source = GenerateSourceName();
 
             // Start with Error level (strictest), so Debug/Info/Warn should be ignored
-            using (var logger = new EventLogLogger(source, LogLevel.Error, false, "TestPrefix"))
+            using (var logger = new RecordingEventLogLogger(source, LogLevel.Error, "TestPrefix"))
             {
                 // Act
                 logger.SetLogLevel(targetLevel);
@@ -165,7 +165,24 @@ namespace Servy.Core.IntegrationTests.Logging
                 logger.Error("Error msg", null);
 
                 // Assert
-                // No exceptions thrown means branches were safely evaluated
+                // Format runs only for an entry that passed the currentLevel <= targetLevel check,
+                // so the set of severities it saw is the filter decision this theory parameterizes.
+                // Counting severities rather than calls keeps it independent of how many times a
+                // single emitted entry is formatted (Debug once, the other three twice).
+                int emitted = 0;
+                foreach (var probe in new[] { "Debug msg", "Info msg", "Warn msg", "Error msg" })
+                {
+                    foreach (var formatted in logger.Formatted)
+                    {
+                        if (formatted.StartsWith(probe, StringComparison.Ordinal))
+                        {
+                            emitted++;
+                            break;
+                        }
+                    }
+                }
+
+                Assert.Equal(expectedEmitted, emitted);
                 Assert.Equal("[TestPrefix]", logger.Prefix);
             }
         }
@@ -409,6 +426,27 @@ namespace Servy.Core.IntegrationTests.Logging
         #endregion
 
         #region Teardown & Utilities
+
+        /// <summary>
+        /// Records every message the log pipeline formats. Format is only reached for an entry
+        /// that passed the level threshold, so the recorded messages are the observable side of
+        /// the filter without needing a seam in the production sink.
+        /// </summary>
+        private sealed class RecordingEventLogLogger : EventLogLogger
+        {
+            public readonly List<string> Formatted = new List<string>();
+
+            public RecordingEventLogLogger(string source, LogLevel level, string prefix)
+                : base(source, level, false, prefix)
+            {
+            }
+
+            protected override string Format(string message)
+            {
+                Formatted.Add(message);
+                return base.Format(message);
+            }
+        }
 
         private string GenerateSourceName()
         {
