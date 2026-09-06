@@ -1111,7 +1111,7 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var eventArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null!);
+            var eventArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
 
             // Act
             TestReflection.InvokeNonPublic(_service, "OnOutputDataReceived", this, eventArgs);

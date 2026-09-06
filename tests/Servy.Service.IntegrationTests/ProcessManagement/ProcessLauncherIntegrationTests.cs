@@ -196,7 +196,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             string exe = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
             var options = CreateOptions(exe, "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
-            options.StartupDirectory = null!; // Triggers Path.GetDirectoryName fallback branch
+            options.StartupDirectory = null; // Triggers Path.GetDirectoryName fallback branch
 
             // Act
             using (var wrapper = ProcessLauncher.Start(options, _realFactory, _logger))

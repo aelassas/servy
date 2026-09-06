@@ -705,7 +705,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetByIdAsync_NullPassword()
         {
             // Arrange
-            var dto = new ServiceDto { Id = 1, Password = null! };
+            var dto = new ServiceDto { Id = 1, Password = null };
             _mockDapper
                 .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dto);

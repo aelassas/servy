@@ -275,7 +275,7 @@ namespace Servy.Service.UnitTests.CommandLine
             string[] args = { "Servy.Service.exe", serviceName };
 
             // Leaves all fields at their implicit object defaults so the AppConfig fallback paths are exercised
-            var sparseDto = new ServiceDto { Priority = null! };
+            var sparseDto = new ServiceDto { Priority = null };
             _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(sparseDto);
 
             // Act
