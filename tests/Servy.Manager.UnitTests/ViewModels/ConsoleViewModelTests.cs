@@ -615,8 +615,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act - Start a live tailer for stdout
                     TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None);
 
-                    // Pull the dynamic internal event handler delegate out via reflection
-                    var tailerInstance = TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer");
+                    // StartLiveTail must record the tailer, because StopActiveTailers relies on it to
+                    // sever the handler closure later.
+                    Assert.NotNull(TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer"));
 
                     // Construct a test payload batch block of 3 log lines to pass directly through the tailer's event handler pipeline
                     var newLinesBatch = new List<LogLine>
