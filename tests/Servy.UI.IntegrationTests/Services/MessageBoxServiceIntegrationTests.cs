@@ -14,24 +14,26 @@ namespace Servy.UI.IntegrationTests.Services
             _service = new MessageBoxService(new WpfUiDispatcher());
         }
 
-        #region Smoke Tests (Dispatcher Verification)
+        #region Branch: Headless Short-Circuit
+
+        // UiHeadlessFixture, reached through [Collection("UiSta")], sets UiHeadless.IsEnabled for the
+        // whole collection, and ShowCoreAsync returns on exactly that condition before it touches the
+        // dispatcher. These two tests therefore pin the headless contract - the console line and the
+        // auto-confirm - rather than any dispatch, which is what their names used to claim.
 
         [Fact]
-        public async Task ShowInfoAsync_InvokesDispatcher()
+        public async Task ShowInfoAsync_InHeadlessMode_WritesHeadlessLineAndCompletes()
         {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange
-                string message = "Test";
-                string caption = "Caption";
+            // Arrange
+            string message = "Test";
+            string caption = "Caption";
 
-                // Act
-                var task = _service.ShowInfoAsync(message, caption);
+            // Act
+            var captured = await ConsoleCapture.RunAsync(() => _service.ShowInfoAsync(message, caption));
 
-                // Assert
-                Assert.NotNull(task);
-                await task;
-            });
+            // Assert
+            Assert.Contains($"[HEADLESS INFO] {caption}: {message}", captured.StdOut);
+            Assert.DoesNotContain("Auto-answering", captured.StdOut);
         }
 
         #endregion
@@ -39,20 +41,18 @@ namespace Servy.UI.IntegrationTests.Services
         #region Confirmation Logic Branch Tests
 
         [Fact]
-        public async Task ShowConfirmAsync_ReturnsValueFromDispatcher()
+        public async Task ShowConfirmAsync_InHeadlessMode_AutoAnswersYes()
         {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange
-                string message = "Confirm?";
-                string caption = "Caption";
+            // Arrange
+            string message = "Confirm?";
+            string caption = "Caption";
 
-                // Act
-                bool result = await _service.ShowConfirmAsync(message, caption);
+            // Act
+            var captured = await ConsoleCapture.RunAsync(() => _service.ShowConfirmAsync(message, caption));
 
-                // Assert
-                Assert.True(result);
-            });
+            // Assert
+            Assert.True(captured.Result);
+            Assert.Contains($"[HEADLESS CONFIRM] {caption}: {message} -> Auto-answering 'Yes'.", captured.StdOut);
         }
 
         #endregion
