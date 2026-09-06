@@ -115,6 +115,27 @@ namespace Servy.UI.UnitTests.Commands
         #region Event and Manager Tests
 
         [Fact]
+        public void CanExecuteChanged_SubscribeAndUnsubscribe_DoesNotThrow()
+        {
+            // Arrange
+            // Exercises the custom add/remove accessors, which are the only members of the
+            // SUT no test reaches; they deliberately forward to CommandManager.RequerySuggested.
+            // Firing the event needs a pumped dispatcher and is intentionally out of scope here.
+            var command = new RelayCommand<string>(_ => { });
+            EventHandler handler = (s, e) => { };
+
+            // Act
+            var exception = Record.Exception(() =>
+            {
+                command.CanExecuteChanged += handler;
+                command.CanExecuteChanged -= handler;
+            });
+
+            // Assert
+            Assert.Null(exception);
+        }
+
+        [Fact]
         public void RaiseCanExecuteChanged_DoesNotThrow()
         {
             // Arrange
