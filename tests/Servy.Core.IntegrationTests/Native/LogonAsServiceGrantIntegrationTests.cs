@@ -101,12 +101,9 @@ namespace Servy.Core.IntegrationTests.Native
             if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
 
             string shorthandAccount = $".\\{_testAccountName}";
-            string fullyQualifiedAccount = $"{Environment.MachineName}\\{_testAccountName}";
 
             // Resolve the SID via the fully-qualified name - this is the target identity the shorthand must expand to.
-            var sid = (SecurityIdentifier)new NTAccount(fullyQualifiedAccount).Translate(typeof(SecurityIdentifier));
-            byte[] sidBytes = new byte[sid.BinaryLength];
-            sid.GetBinaryForm(sidBytes, 0);
+            byte[] sidBytes = ResolveSidBytes(FullAccountName);
 
             Assert.DoesNotContain("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
 
@@ -127,15 +124,10 @@ namespace Servy.Core.IntegrationTests.Native
             // Arrange
             if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
 
-            string fullAccountName = $"{Environment.MachineName}\\{_testAccountName}";
+            string fullAccountName = FullAccountName;
 
             // Resolve the account name to a SecurityIdentifier (SID) to query LSA
-            var ntAccount = new NTAccount(fullAccountName);
-            var sid = (SecurityIdentifier)ntAccount.Translate(typeof(SecurityIdentifier));
-
-            // Allocate the buffer and use GetBinaryForm instead of GetBinaryBytes
-            byte[] sidBytes = new byte[sid.BinaryLength];
-            sid.GetBinaryForm(sidBytes, 0);
+            byte[] sidBytes = ResolveSidBytes(fullAccountName);
 
             // Assert baseline - The freshly created account must not hold the logon right prior to execution
             var initialRights = GetAccountRightsViaNativeMethods(sidBytes);
@@ -165,6 +157,32 @@ namespace Servy.Core.IntegrationTests.Native
 
         #region Native Methods LSA Inspection Helper
 
+        /// <summary>
+        /// The machine-qualified name of the transient test account.
+        /// </summary>
+        private string FullAccountName => $"{Environment.MachineName}\\{_testAccountName}";
+
+        /// <summary>
+        /// Resolves an account name to the binary SID form the LSA APIs take.
+        /// </summary>
+        private static byte[] ResolveSidBytes(string accountName)
+        {
+            var sid = (SecurityIdentifier)new NTAccount(accountName).Translate(typeof(SecurityIdentifier));
+            var sidBytes = new byte[sid.BinaryLength];
+            sid.GetBinaryForm(sidBytes, 0);
+            return sidBytes;
+        }
+
+        /// <summary>
+        /// Copies a binary SID into a freshly allocated unmanaged buffer. The caller owns the buffer.
+        /// </summary>
+        private static IntPtr AllocSidBuffer(byte[] sidBytes)
+        {
+            IntPtr buffer = Marshal.AllocHGlobal(sidBytes.Length);
+            Marshal.Copy(sidBytes, 0, buffer, sidBytes.Length);
+            return buffer;
+        }
+
         private static List<string> GetAccountRightsViaNativeMethods(byte[] sidBytes)
         {
             var rightsList = new List<string>();
@@ -180,11 +198,9 @@ namespace Servy.Core.IntegrationTests.Native
             int openStatus = NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref objectAttributes, desiredAccess, out policyHandle);
             if (openStatus != 0) return rightsList; // LsaOpenPolicy failed; report no rights
 
-            IntPtr rawSidAllocationPtr = Marshal.AllocHGlobal(sidBytes.Length);
+            IntPtr rawSidAllocationPtr = AllocSidBuffer(sidBytes);
             try
             {
-                Marshal.Copy(sidBytes, 0, rawSidAllocationPtr, sidBytes.Length);
-
                 IntPtr outUserRightsBufferPtr;
                 uint countOfRights;
 
@@ -240,14 +256,7 @@ namespace Servy.Core.IntegrationTests.Native
             try
             {
                 // Resolve user domain string back to an active NT Security Identifier structure
-                var ntAccount = new NTAccount(accountName);
-                var sid = (SecurityIdentifier)ntAccount.Translate(typeof(SecurityIdentifier));
-
-                byte[] sidBytes = new byte[sid.BinaryLength];
-                sid.GetBinaryForm(sidBytes, 0);
-
-                sidBuffer = Marshal.AllocHGlobal(sidBytes.Length);
-                Marshal.Copy(sidBytes, 0, sidBuffer, sidBytes.Length);
+                sidBuffer = AllocSidBuffer(ResolveSidBytes(accountName));
 
                 var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES
                 {
