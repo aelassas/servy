@@ -46,20 +46,6 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task Execute_ServiceIsDisabled_ReturnsServiceDisabledError()
-        {
-            // Arrange
-            const string serviceName = "DisabledService";
-            var options = CreateValidOptions(serviceName);
-            MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
-            MockServiceManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Disabled);
-
-            // Act
-            var result = await ExecuteCommandAsync(Command, options);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Equal(Strings.Msg_ServiceDisabledError, result.Message);
-        }
+        public Task Execute_ServiceIsDisabled_ReturnsServiceDisabledError() => AssertDisabledStartupTypeIsRefusedAsync();
     }
 }
