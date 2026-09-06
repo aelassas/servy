@@ -19,9 +19,36 @@ namespace Servy.CLI.UnitTests.Commands
         private readonly string _wrapperExePath;
         private readonly string? _backupPath;
 
+        /// <summary>
+        /// The SERVY_* variables GetSecureValue consults, and the host values saved on entry.
+        /// </summary>
+        private static readonly string[] SecureEnvVarNames =
+        {
+            AppConfig.PasswordEnvVarName,
+            AppConfig.ProcessParametersEnvVarName,
+            AppConfig.EnvironmentVariablesEnvVarName,
+            AppConfig.FailureProgramParametersEnvVarName,
+            AppConfig.PreLaunchParametersEnvVarName,
+            AppConfig.PreLaunchEnvironmentVariablesEnvVarName,
+            AppConfig.PostLaunchParametersEnvVarName,
+            AppConfig.PreStopParametersEnvVarName,
+            AppConfig.PostStopParametersEnvVarName
+        };
+
+        private readonly Dictionary<string, string?> _savedEnvVars = new Dictionary<string, string?>();
+
         public InstallServiceCommandTests()
         {
             BaseCommand.BypassElevationCheck = true;
+
+            // GetSecureValue lets a SERVY_* variable win over the command-line option, so a host
+            // or CI machine that happens to have one set would silently change what the validator
+            // and the service manager receive. Isolate the whole class from the host environment.
+            foreach (var name in SecureEnvVarNames)
+            {
+                _savedEnvVars[name] = Environment.GetEnvironmentVariable(name);
+                Environment.SetEnvironmentVariable(name, null);
+            }
 
             _mockServiceManager = new Mock<IServiceManager>();
             _mockValidator = new Mock<IServiceInstallValidator>();
@@ -390,6 +417,95 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(expected, captured!.EnableSizeRotation);
         }
 
+        [Theory]
+        [InlineData(AppConfig.PasswordEnvVarName, nameof(CLI.Options.InstallServiceOptions.Password))]
+        [InlineData(AppConfig.ProcessParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.ProcessParameters))]
+        [InlineData(AppConfig.EnvironmentVariablesEnvVarName, nameof(CLI.Options.InstallServiceOptions.EnvironmentVariables))]
+        [InlineData(AppConfig.FailureProgramParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.FailureProgramParameters))]
+        [InlineData(AppConfig.PreLaunchParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.PreLaunchParameters))]
+        [InlineData(AppConfig.PreLaunchEnvironmentVariablesEnvVarName, nameof(CLI.Options.InstallServiceOptions.PreLaunchEnvironmentVariables))]
+        [InlineData(AppConfig.PostLaunchParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.PostLaunchParameters))]
+        [InlineData(AppConfig.PreStopParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.PreStopParameters))]
+        [InlineData(AppConfig.PostStopParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.PostStopParameters))]
+        public async Task Execute_SecureEnvVarSet_OverridesCommandLineOption(string envVarName, string propertyName)
+        {
+            // Arrange
+            var property = typeof(CLI.Options.InstallServiceOptions).GetProperty(propertyName);
+            Assert.NotNull(property);
+
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "TestService",
+                ProcessPath = "C:\\path\\to\\app.exe"
+            };
+            property!.SetValue(options, "from-command-line");
+
+            Environment.SetEnvironmentVariable(envVarName, "from-environment");
+
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("from-environment", property.GetValue(options));
+        }
+
+        [Fact]
+        public async Task Execute_SecureEnvVarIsWhitespaceOnly_KeepsCommandLineOption()
+        {
+            // Arrange
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "TestService",
+                ProcessPath = "C:\\path\\to\\app.exe",
+                Password = "from-command-line"
+            };
+
+            Environment.SetEnvironmentVariable(AppConfig.PasswordEnvVarName, "   ");
+
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
+
+            // Assert
+            // A whitespace-only variable is warned about and ignored, never used as the value.
+            Assert.True(result.IsSuccess);
+            Assert.Equal("from-command-line", options.Password);
+        }
+
+        [Fact]
+        public async Task Execute_SecureEnvVarUnset_KeepsCommandLineOption()
+        {
+            // Arrange
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "TestService",
+                ProcessPath = "C:\\path\\to\\app.exe",
+                Password = "from-command-line"
+            };
+
+            // The constructor already cleared every SERVY_* variable, so this is the unset branch.
+            Assert.Null(Environment.GetEnvironmentVariable(AppConfig.PasswordEnvVarName));
+
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("from-command-line", options.Password);
+        }
+
         public void Dispose()
         {
             // Clean up the dummy file
@@ -418,6 +534,12 @@ namespace Servy.CLI.UnitTests.Commands
                 {
                     // Best-effort recovery catch
                 }
+            }
+
+            // Restores the host's SERVY_* variables saved during the arrangement phase.
+            foreach (var saved in _savedEnvVars)
+            {
+                Environment.SetEnvironmentVariable(saved.Key, saved.Value);
             }
 
             // Resets process-wide static state altered during test execution.
