@@ -20,18 +20,25 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal("displayName", ex.ParamName);
         }
 
-        [Fact]
-        public void Constructor_ShouldInitializePropertiesCorrectly()
+        [Theory]
+        // isRunning, isCyclic and isUnavailable are adjacent positional bools, so a swap between
+        // any two of them is undetectable while every row gives them the same value. Each pair
+        // disagrees in at least one row below.
+        [InlineData(true, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(false, false, true)]
+        [InlineData(true, true, true)]
+        public void Constructor_ShouldInitializePropertiesCorrectly(bool isRunning, bool isCyclic, bool isUnavailable)
         {
             // Arrange & Act
-            var node = new ServiceDependencyNode("wuauserv", "Windows Update", true, true, true);
+            var node = new ServiceDependencyNode("wuauserv", "Windows Update", isRunning, isCyclic, isUnavailable);
 
             // Assert
             Assert.Equal("wuauserv", node.ServiceName);
             Assert.Equal("Windows Update", node.DisplayName);
-            Assert.True(node.IsRunning);
-            Assert.True(node.IsCyclic);
-            Assert.True(node.IsUnavailable);
+            Assert.Equal(isRunning, node.IsRunning);
+            Assert.Equal(isCyclic, node.IsCyclic);
+            Assert.Equal(isUnavailable, node.IsUnavailable);
             Assert.False(node.IsExpanded); // Verifies the authentic constructor default initialization value
             Assert.NotNull(node.Dependencies);
             Assert.Empty(node.Dependencies);
