@@ -244,9 +244,16 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
-        public async Task GetHistoryAsync_FileNotFoundRaceConditionCatch_ReturnsEmptyList()
+        public async Task GetHistoryAsync_FileLockedWithIOException_ReturnsEmptyList()
         {
             // Arrange
+            // Opening the file with FileShare.None makes LoadHistory's own FileStream open throw
+            // IOException, so this test covers the IOException arm and nothing else. ACCEPTED: the
+            // FileNotFoundException, DirectoryNotFoundException and UnauthorizedAccessException arms
+            // of LoadHistory stay untested here. The first two are reachable only if the file
+            // disappears between the File.Exists guard and the open one statement later, and the
+            // third needs an ACL-denied file; arranging either from a test requires the file system
+            // access to be injectable, which this class has no seam for.
             using (var tailer = new LogTailer())
             {
                 string lockTestPath = Path.Combine(Path.GetTempPath(), $"lock_race_{Guid.NewGuid()}.log");
