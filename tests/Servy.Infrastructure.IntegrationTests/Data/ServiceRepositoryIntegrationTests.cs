@@ -9,72 +9,76 @@ using System.Data.SQLite;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
-    /// <summary>
-    /// A lightweight, concrete test factory for managing a shared in-memory SQLite state lifespan.
-    /// In-memory SQLite databases disappear the moment their connection drops; keeping a master connection
-    /// handle open allows DapperExecutor to safely open and close transient connection pools during execution.
-    /// </summary>
-    public sealed class TestDbContext : IAppDbContext, IDisposable
-    {
-        private readonly SQLiteConnection _masterConnection;
-        private readonly string _connectionString;
-
-        public TestDbContext()
-        {
-            // Share the same in-memory database instance name across connection requests
-            _connectionString = $"Data Source=InMemoryTestDb_{Guid.NewGuid()};Mode=Memory;Cache=Shared;";
-            _masterConnection = new SQLiteConnection(_connectionString);
-            _masterConnection.Open(); // Keeps database alive
-        }
-
-        public DbConnection CreateConnection()
-        {
-            return new SQLiteConnection(_connectionString);
-        }
-
-        public void InitializeSchema()
-        {
-            // Execute the production migration sequence onto the active in-memory connection
-            SQLiteDbInitializer.Initialize(_masterConnection);
-        }
-
-        public void Dispose()
-        {
-            _masterConnection.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Fake encryption helper to evaluate secure data-loss and recovery paths deterministically.
-    /// </summary>
-    public sealed class TestSecureData : ISecureData
-    {
-        public string Encrypt(string plainText) => $"SECRET_HASH:{plainText}";
-
-        public string Decrypt(string cipherText)
-        {
-            if (cipherText == "POISON_PAYLOAD")
-            {
-                // Throw a raw CryptographicException directly.
-                // ServiceRepository.DecryptDto will catch this and wrap it inside the single InvalidOperationException
-                // that HandleCorruptServiceDecryption expects.
-                throw new System.Security.Cryptography.CryptographicException("Padding check failed.");
-            }
-
-            return cipherText.StartsWith("SECRET_HASH:", StringComparison.Ordinal)
-                ? cipherText.Substring("SECRET_HASH:".Length)
-                : cipherText;
-        }
-
-        public void Dispose()
-        {
-            /* no-op */
-        }
-    }
-
     [Collection("SequentialDatabaseTests")]
     public class ServiceRepositoryIntegrationTests : IDisposable
     {
+        #region Shared Test Doubles
+
+        /// <summary>
+        /// A lightweight, concrete test factory for managing a shared in-memory SQLite state lifespan.
+        /// In-memory SQLite databases disappear the moment their connection drops; keeping a master connection
+        /// handle open allows DapperExecutor to safely open and close transient connection pools during execution.
+        /// </summary>
+        private sealed class TestDbContext : IAppDbContext, IDisposable
+        {
+            private readonly SQLiteConnection _masterConnection;
+            private readonly string _connectionString;
+
+            public TestDbContext()
+            {
+                // Share the same in-memory database instance name across connection requests
+                _connectionString = $"Data Source=InMemoryTestDb_{Guid.NewGuid()};Mode=Memory;Cache=Shared;";
+                _masterConnection = new SQLiteConnection(_connectionString);
+                _masterConnection.Open(); // Keeps database alive
+            }
+
+            public DbConnection CreateConnection()
+            {
+                return new SQLiteConnection(_connectionString);
+            }
+
+            public void InitializeSchema()
+            {
+                // Execute the production migration sequence onto the active in-memory connection
+                SQLiteDbInitializer.Initialize(_masterConnection);
+            }
+
+            public void Dispose()
+            {
+                _masterConnection.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Fake encryption helper to evaluate secure data-loss and recovery paths deterministically.
+        /// </summary>
+        private sealed class TestSecureData : ISecureData
+        {
+            public string Encrypt(string plainText) => $"SECRET_HASH:{plainText}";
+
+            public string Decrypt(string cipherText)
+            {
+                if (cipherText == "POISON_PAYLOAD")
+                {
+                    // Throw a raw CryptographicException directly.
+                    // ServiceRepository.DecryptDto will catch this and wrap it inside the single InvalidOperationException
+                    // that HandleCorruptServiceDecryption expects.
+                    throw new System.Security.Cryptography.CryptographicException("Padding check failed.");
+                }
+
+                return cipherText.StartsWith("SECRET_HASH:", StringComparison.Ordinal)
+                    ? cipherText.Substring("SECRET_HASH:".Length)
+                    : cipherText;
+            }
+
+            public void Dispose()
+            {
+                /* no-op */
+            }
+        }
+
+        #endregion
+
         private readonly TestDbContext _dbContext;
         private readonly DapperExecutor _executor;
         private readonly TestSecureData _secureData;
@@ -480,7 +484,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(1, deletedByNameCount);
             var searchByName = await _repository.GetByIdAsync(nameId, decrypt: true, cancellationToken);
             Assert.Null(searchByName);
-
 
             // --- 2. Verify "ById" deletion path ---
             // Arrange
