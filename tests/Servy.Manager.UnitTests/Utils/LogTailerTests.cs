@@ -133,6 +133,7 @@ namespace Servy.Manager.UnitTests.Utils
             using (var tailer = new LogTailer())
             {
                 File.WriteAllLines(_tempFilePath, new[] { "Line1", "Line2" });
+                var expectedLastWrite = new FileInfo(_tempFilePath).LastWriteTimeUtc;
 
                 // Act
                 var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: CancellationToken.None);
@@ -141,7 +142,12 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.NotNull(result);
                 Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
                 Assert.Equal(2, result.Lines.Count);
-                Assert.True(result?.Lines[0].Timestamp < result?.Lines[1].Timestamp);
+
+                // The last line is anchored exactly on the file's last-write time...
+                Assert.Equal(expectedLastWrite, result.Lines[1].Timestamp);
+                // ...and every earlier line is exactly one tick older than the one after it.
+                Assert.Equal(expectedLastWrite.AddTicks(-1), result.Lines[0].Timestamp);
+
                 Assert.True(result?.Lines[0].IsSyntheticTime);
                 Assert.True(result?.Lines[1].IsSyntheticTime);
             }
