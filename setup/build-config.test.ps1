@@ -19,7 +19,29 @@ if (-not (Test-Path $configPath)) {
 }
 
 try {
-    # Execute build-config.ps1
+    # Dot-source build-config.ps1 to load ConvertTo-NormalizedConfig helper function
+    . $configPath | Out-Null
+
+    # Verify normalization function explicitly trims padded hashtable values
+    $paddedInput = @{
+        Version            = "  10.0  "
+        Tfm                = " net10.0-windows "
+        BuildConfiguration = "Release "
+        Runtime            = " win-x64 "
+    }
+
+    $normalizedResult = ConvertTo-NormalizedConfig -Config $paddedInput
+    foreach ($key in $paddedInput.Keys) {
+        $expected = $paddedInput[$key].Trim()
+        $actual = $normalizedResult[$key]
+        if ($actual -ne $expected) {
+            Write-Host "FAIL: ConvertTo-NormalizedConfig failed to trim key '$key'. Expected '$expected', got '$actual'." -ForegroundColor Red
+            exit 1
+        }
+    }
+    Write-Host "  [OK] ConvertTo-NormalizedConfig successfully normalizes and trims whitespace." -ForegroundColor Gray
+
+    # Execute build-config.ps1 script execution
     $cfg = & $configPath
 
     if ($null -eq $cfg -or -not ($cfg -is [hashtable])) {
