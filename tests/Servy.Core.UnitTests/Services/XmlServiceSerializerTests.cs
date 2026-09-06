@@ -53,8 +53,9 @@ namespace Servy.Core.UnitTests.Services
             // Arrange: Create a DTO with specific values for every single field
             var expected = ServiceDtoFactory.CreateFull("Xml");
 
-            // Convert to XML string using the standard Serializer
-            var xml = ServiceDtoXml.Serialize(expected);
+            // Convert to XML string using the product serializer, so the fixture carries the
+            // same preamble and indentation a real export file has
+            var xml = _serializer.Serialize(expected);
 
             // Act
             var actual = _serializer.Deserialize(xml);

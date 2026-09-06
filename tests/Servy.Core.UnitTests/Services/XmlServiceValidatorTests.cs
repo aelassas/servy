@@ -15,6 +15,9 @@ namespace Servy.Core.UnitTests.Services
         private readonly XmlServiceValidator _validator;
         private readonly Mock<IProcessHelper> _processHelperMock;
 
+        // The product serializer, so every fixture below is shaped like a real export file
+        private readonly XmlServiceSerializer _serializer = new XmlServiceSerializer();
+
         public XmlServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
@@ -137,7 +140,7 @@ namespace Servy.Core.UnitTests.Services
                 Name = new string('A', AppConfig.MaxServiceNameLength + 1),
                 ExecutablePath = "C:\\path\\to\\exe"
             };
-            var xml = ServiceDtoXml.Serialize(dto);
+            var xml = _serializer.Serialize(dto);
 
             // Act
             var result = _validator.TryValidate(xml, out var error);
@@ -159,7 +162,7 @@ namespace Servy.Core.UnitTests.Services
                 ExecutablePath = "C:\\path\\to\\exe",
                 StartTimeout = invalidTimeout
             };
-            var xml = ServiceDtoXml.Serialize(dto);
+            var xml = _serializer.Serialize(dto);
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
@@ -180,7 +183,7 @@ namespace Servy.Core.UnitTests.Services
                 Name = "MyService",
                 ExecutablePath = "INVALID_PATH_CHAR_<>|"
             };
-            var xml = ServiceDtoXml.Serialize(dto);
+            var xml = _serializer.Serialize(dto);
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(false);
 
@@ -202,7 +205,7 @@ namespace Servy.Core.UnitTests.Services
                 ExecutablePath = "C:\\Windows\\System32\\notepad.exe",
                 StopTimeout = 30
             };
-            var xml = ServiceDtoXml.Serialize(dto);
+            var xml = _serializer.Serialize(dto);
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 

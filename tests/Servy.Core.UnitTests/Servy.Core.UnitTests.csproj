@@ -143,7 +143,6 @@
     <Compile Include="Helpers\ServiceDtoFactory.cs" />
     <Compile Include="Helpers\ServiceDtoFactoryTests.cs" />
     <Compile Include="Helpers\ServiceDtoHelperTests.cs" />
-    <Compile Include="Helpers\ServiceDtoXml.cs" />
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="Logging\EventLogReaderTests.cs" />
     <Compile Include="Logging\LoggerTests.cs" />
