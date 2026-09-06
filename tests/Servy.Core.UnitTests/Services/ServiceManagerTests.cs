@@ -2349,6 +2349,34 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(ServiceControllerStatus.Running, result);
         }
 
+        [Fact]
+        public void GetServiceStatus_ServiceRemovedMidFlight_ReturnsNull()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
+
+            // Act
+            var result = _serviceManager.GetServiceStatus("TestService", CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetServiceStatus_UnexpectedError_ReturnsNull()
+        {
+            // Arrange
+            // InvalidCastException is used so the assertion provably exercises the general catch
+            // clause and not the InvalidOperationException one above it.
+            _mockController.Setup(c => c.Status).Throws(new InvalidCastException("Boom!"));
+
+            // Act
+            var result = _serviceManager.GetServiceStatus("TestService", CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
