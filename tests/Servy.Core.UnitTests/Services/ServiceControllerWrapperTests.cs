@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Native;
 using Servy.Core.Resources;
 using Servy.Core.Services;
 using System.ComponentModel;
@@ -273,7 +274,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             using (var wrapper = new ServiceControllerWrapper("TargetService"))
             {
-                Func<string, IServiceControllerWrapper> factory = name => throw new Win32Exception(1060); // ERROR_SERVICE_DOES_NOT_EXIST
+                Func<string, IServiceControllerWrapper> factory = name => throw new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
                 // Act
                 var result = wrapper.GetDependenciesInternal(factory, TestContext.Current.CancellationToken);

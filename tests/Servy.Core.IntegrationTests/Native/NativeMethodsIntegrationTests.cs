@@ -385,9 +385,7 @@ namespace Servy.Core.IntegrationTests.Native
 
                     // Assert
                     Assert.True(serviceHandle.IsInvalid);
-
-                    // 1060 == ERROR_SERVICE_DOES_NOT_EXIST
-                    Assert.Equal(1060, lastError);
+                    Assert.Equal(Errors.ERROR_SERVICE_DOES_NOT_EXIST, lastError);
                 }
                 finally
                 {
