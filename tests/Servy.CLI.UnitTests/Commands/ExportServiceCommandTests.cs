@@ -284,22 +284,11 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(deepSubDir, "COM1.json");
             var content = "{ }";
 
-            // Act
-            var actualEx = Record.Exception(() => InvokeSaveFile(filePath, content));
-            Assert.NotNull(actualEx);
-
-            // Assert
-            bool isValidExceptionType = actualEx is ArgumentException || actualEx is SecurityException;
-            Assert.True(isValidExceptionType, $"Expected ArgumentException or SecurityException, but caught: {actualEx.GetType().Name}");
-
-            // When the guard rejected the path as an argument error, the message must name the reserved device
-            if (actualEx is ArgumentException)
-            {
-                bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1");
-
-                Assert.True(matchedExpectedSecurityRules,
-                    $"The security guard rejected the path, but with an unexpected message profile: '{actualEx.Message}'");
-            }
+            // Act & Assert
+            // The reserved-device check fails with PathSecurityFailureKind.InvalidArgument, which SaveFile
+            // maps to ArgumentException, and the message names the offending device segment.
+            var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, content));
+            Assert.Contains("COM1", actualEx.Message);
 
             // Nothing SaveFile created may remain on disk
             Assert.False(File.Exists(filePath));
