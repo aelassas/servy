@@ -1823,7 +1823,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(CreateServiceHandle(0));
 
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
-                .Returns(1060); // ERROR_SERVICE_DOES_NOT_EXIST
+                .Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
             _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto { Name = serviceName });
@@ -1853,7 +1853,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(CreateServiceHandle(0));
 
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
-                .Returns(1060); // ERROR_SERVICE_DOES_NOT_EXIST
+                .Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
             _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceDto)null);
