@@ -4,6 +4,7 @@ using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
 using Servy.Manager.Models;
+using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.UI;
@@ -27,6 +28,7 @@ namespace Servy.Manager.ViewModels
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
+        private readonly IMessageBoxService _messageBoxService;
 
         // Controls console log filter debouncing
         private CancellationTokenSource? _logFilterCts;
@@ -163,18 +165,21 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
+        /// <param name="messageBoxService">Service used to display modal user dialogs.</param>
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public ConsoleViewModel(
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
+            IMessageBoxService messageBoxService,
             IAppConfiguration appConfig,
             ICursorService cursorService,
             IUiDispatcher uiDispatcher
             ) : base(cursorService, uiDispatcher, serviceCommands)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             ClearSelectionCommand = new RelayCommand<object>(_ => SetPaused(false));
 
@@ -200,6 +205,7 @@ namespace Servy.Manager.ViewModels
         public ConsoleViewModel() : this(
             new UI.Design.DesignTimeServiceRepository(),
             new DesignTimeServiceCommands(),
+            new UI.Design.DesignTimeMessageBoxService(),
             new DesignTimeAppConfig(),
             new UI.Design.DesignTimeCursorService(),
             new UI.Design.DesignTimeUiDispatcher()
@@ -403,11 +409,11 @@ namespace Servy.Manager.ViewModels
                 {
                     var stdoutTask = !string.IsNullOrWhiteSpace(stdoutPath)
                         ? stdoutHistoryTailer.GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit, cancellationToken: token)
-                        : Task.FromResult<HistoryResult?>(null);
+                        : Task.FromResult<HistoryResult>(null!);
 
                     var stderrTask = hasUniqueStderr
                         ? stderrHistoryTailer.GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit, cancellationToken: token)
-                        : Task.FromResult<HistoryResult?>(null);
+                        : Task.FromResult<HistoryResult>(null!);
 
                     // Wait for the necessary reads to complete
                     var results = await Task.WhenAll(stdoutTask, stderrTask);
@@ -577,6 +583,15 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        /// Displays an error modal dialog informing the user that copying log lines to the system clipboard failed.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task ShowClipboardErrorAsync()
+        {
+            await _messageBoxService.ShowErrorAsync(Strings.Msg_ClipboardCopyFailed, UiAppConfig.Caption);
+        }
 
         /// <summary>
         /// Sets the paused state of log tailing, used to manage UI selection preservation during log updates.

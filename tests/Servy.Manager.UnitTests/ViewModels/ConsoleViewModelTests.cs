@@ -21,6 +21,7 @@ namespace Servy.Manager.UnitTests.ViewModels
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
@@ -30,6 +31,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+            _messageBoxServiceMock = new Mock<IMessageBoxService>();
             _cursorServiceMock = new Mock<ICursorService>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
             _mockProcessKiller = new Mock<IProcessKiller>();
@@ -52,6 +54,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             return new ConsoleViewModel(
                 _serviceRepoMock.Object,
                 _serviceCommandsMock.Object,
+                _messageBoxServiceMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
                 _uiDispatcherMock.Object);
@@ -64,7 +67,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("serviceRepository", () => new ConsoleViewModel(
-                null!, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
+                null!, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -72,7 +75,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("appConfig", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, _serviceCommandsMock.Object, null!, _cursorServiceMock.Object, _uiDispatcherMock.Object));
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, null!, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -80,7 +83,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("serviceCommands", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, null!, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
+                _serviceRepoMock.Object, null!, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -88,7 +91,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("cursorService", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, null!, _uiDispatcherMock.Object));
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, null!, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -96,7 +99,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>("uiDispatcher", () => new ConsoleViewModel(
-                _serviceRepoMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, null!));
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, null!));
+        }
+
+        [Fact]
+        public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>("messageBoxService", () => new ConsoleViewModel(
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, null!, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]

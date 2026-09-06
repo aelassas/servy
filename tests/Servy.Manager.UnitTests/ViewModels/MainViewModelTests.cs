@@ -79,6 +79,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _consoleViewModelMock = new Mock<ConsoleViewModel>(
                 _serviceRepositoryMock.Object,
                 _serviceCommandsMock.Object,
+                _messageBoxServiceMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
                 uiDispatcherMock.Object);
@@ -1583,7 +1584,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Set CallBase = true so Moq executes MonitoringViewModelBase.Dispose() and sets _isDisposed = 1
                 var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, uiDispatcherMock.Object) { CallBase = true };
-                var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object) { CallBase = true };
+                var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _messageBoxServiceMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object) { CallBase = true };
                 var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object) { CallBase = true };
 
                 var vm = new MainViewModel(
