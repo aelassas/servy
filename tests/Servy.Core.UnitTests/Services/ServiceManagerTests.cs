@@ -1999,8 +1999,9 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
 
-            mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
-            mockController.Verify(c => c.Status, Times.AtLeastOnce);
+            // Running -> Stopped resolves on the pre-loop Refresh, so the wait loop never iterates
+            mockController.Verify(c => c.Refresh(), Times.Once);
+            mockController.Verify(c => c.Status, Times.Once);
         }
 
         [Fact]
@@ -2074,9 +2075,10 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
 
-            // Verify the methods were called at least once
-            mockController.Verify(sc => sc.Refresh(), Times.AtLeastOnce);
-            mockController.Verify(sc => sc.Status, Times.AtLeastOnce);
+            // Three states means the wait loop must iterate once past the pre-loop Refresh,
+            // which is the only thing that distinguishes this test from its plain sibling
+            mockController.Verify(sc => sc.Refresh(), Times.Exactly(2));
+            mockController.Verify(sc => sc.Status, Times.Exactly(2));
         }
 
         [Fact]
@@ -2095,49 +2097,10 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Verify(c => c.Start(), Times.Never);
         }
 
-        [Fact]
-        public async Task StartService_ShouldStartAndPollUntilRunning_WithPreLaunch()
-        {
-            // Arrange
-            var serviceName = "TestService";
-
-            // 1. Initial Check (Stopped) -> Proceed to Start()
-            // 2. First Loop Poll (Stopped) -> Wait and Refresh
-            // 3. Second Loop Poll (Running) -> Exit Loop
-            _mockController.SetupSequence(c => c.Status)
-                .Returns(ServiceControllerStatus.Stopped)
-                .Returns(ServiceControllerStatus.Stopped)
-                .Returns(ServiceControllerStatus.Running);
-
-            var preLaunchDto = new ServiceDto
-            {
-                Name = serviceName,
-                PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe"
-            };
-
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(preLaunchDto);
-
-            // Act
-            var result = await _serviceManager.StartServiceAsync(serviceName, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.True(result.IsSuccess);
-
-            // Verify the native Start command was sent
-            _mockController.Verify(c => c.Start(), Times.Once);
-
-            // Verify that the loop actually checked the SCM for updates
-            _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
-
-            // Verify that the pre-launch window widens the calculated timeout compared to a baseline without pre-launch
-            var withHook = ServiceHelper.CalculateStartTimeout(preLaunchDto.StartTimeout, AppConfig.DefaultPreLaunchTimeoutSeconds, 0);
-            var withoutHook = ServiceHelper.CalculateStartTimeout(preLaunchDto.StartTimeout, 0, 0);
-            Assert.True(withHook > withoutHook);
-        }
-
-        [Fact]
-        public async Task StartService_ShouldStartAndPollUntilRunning()
+        [Theory]
+        [InlineData(null, 5)]                          // no pre-launch hook configured
+        [InlineData(@"C:\Apps\pre-launch.exe", null)]  // pre-launch hook configured
+        public async Task StartService_ShouldStartAndPollUntilRunning(string? preLaunchExecutablePath, int? startTimeout)
         {
             // Arrange
             var serviceName = "TestService";
@@ -2155,7 +2118,8 @@ namespace Servy.Core.UnitTests.Services
                 .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
-                    StartTimeout = 5
+                    StartTimeout = startTimeout,
+                    PreLaunchExecutablePath = preLaunchExecutablePath
                 });
 
             // Act
@@ -2167,8 +2131,8 @@ namespace Servy.Core.UnitTests.Services
             // Verify the native Start command was issued
             _mockController.Verify(c => c.Start(), Times.Once);
 
-            // Verify that we are now using Refresh() to get updated status from the SCM
-            _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
+            // One Refresh before the loop, one inside it - the status sequence above pins the count
+            _mockController.Verify(c => c.Refresh(), Times.Exactly(2));
         }
 
         [Fact]
@@ -2234,54 +2198,13 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Verify(c => c.Stop(), Times.Never);
         }
 
-        [Fact]
-        public async Task StopService_ShouldStopAndPollUntilStopped_WithPreStop()
+        [Theory]
+        [InlineData(null, 5)]                       // no pre-stop hook configured
+        [InlineData(@"C:\Apps\pre-stop.exe", null)] // pre-stop hook configured
+        public async Task StopService_ShouldStopAndPollUntilStopped(string? preStopExecutablePath, int? stopTimeout)
         {
             // Arrange
             var serviceName = "TestService";
-
-            // We want:
-            // 1. Initial check (Running) -> Proceed to Stop()
-            // 2. First loop poll (Running) -> Wait and Refresh
-            // 3. Second loop poll (Stopped) -> Exit Loop
-            _mockController.SetupSequence(c => c.Status)
-                .Returns(ServiceControllerStatus.Running)
-                .Returns(ServiceControllerStatus.Running)
-                .Returns(ServiceControllerStatus.Stopped);
-
-            var preStopDto = new ServiceDto
-            {
-                Name = serviceName,
-                PreStopExecutablePath = @"C:\Apps\pre-stop.exe"
-            };
-
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(preStopDto);
-
-            // Act
-            var result = await _serviceManager.StopServiceAsync(serviceName, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.True(result.IsSuccess);
-
-            // Verify the Stop command was sent
-            _mockController.Verify(c => c.Stop(), Times.Once);
-
-            // Verify the polling logic actually refreshed the status from the SCM
-            _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
-
-            // Verify that the pre-stop window widens the calculated timeout compared to a baseline without pre-stop
-            var withHook = ServiceHelper.CalculateStopTimeout(preStopDto.StopTimeout, preStopDto.PreviousStopTimeout, ServiceHelper.ResolvePreStopTimeout(preStopDto));
-            var withoutHook = ServiceHelper.CalculateStopTimeout(preStopDto.StopTimeout, preStopDto.PreviousStopTimeout, 0);
-            Assert.True(withHook > withoutHook);
-        }
-
-        [Fact]
-        public async Task StopService_ShouldStopAndPollUntilStopped()
-        {
-            // Arrange
-            var serviceName = "TestService";
-            var stopTimeout = 5; // Keep it short for the test
 
             // We want the status to be Running the first time it's checked,
             // then Stopped the next time to satisfy the loop.
@@ -2294,7 +2217,8 @@ namespace Servy.Core.UnitTests.Services
                 .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
-                    StopTimeout = stopTimeout
+                    StopTimeout = stopTimeout,
+                    PreStopExecutablePath = preStopExecutablePath
                 });
 
             // Act
@@ -2306,8 +2230,8 @@ namespace Servy.Core.UnitTests.Services
             // Verify sc.Stop() was called
             _mockController.Verify(c => c.Stop(), Times.Once);
 
-            // Verify we polled for status (Refresh is called inside the loop)
-            _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
+            // One Refresh before the loop, one inside it - the status sequence above pins the count
+            _mockController.Verify(c => c.Refresh(), Times.Exactly(2));
         }
 
         [Fact]
