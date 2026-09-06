@@ -1,6 +1,7 @@
 using Moq;
 using Moq.Protected;
 using Servy.Testing;
+using Servy.UI.Resources;
 using Servy.UI.Services;
 using System.Net;
 using System.Reflection;
@@ -111,7 +112,11 @@ namespace Servy.UI.IntegrationTests.Services
             await _service.CheckUpdatesAsync(Caption);
 
             // Assert
-            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), Caption), Times.Once);
+            _mockMessageBox.Verify(
+                m => m.ShowErrorAsync(
+                    It.Is<string>(s => s == string.Format(Strings.Msg_UpdateCheckInvalidTag, string.Empty)),
+                    Caption),
+                Times.Once);
         }
 
         [Fact]
@@ -139,7 +144,9 @@ namespace Servy.UI.IntegrationTests.Services
             await _service.CheckUpdatesAsync(Caption);
 
             // Assert
-            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), Caption), Times.Once);
+            _mockMessageBox.Verify(
+                m => m.ShowInfoAsync(It.Is<string>(s => s == Strings.Msg_NoUpdatesAvailable), Caption),
+                Times.Once);
         }
 
         [Fact]
