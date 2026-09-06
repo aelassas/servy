@@ -70,9 +70,12 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that attempting to query status on an uninstalled service returns a failure result.
-        /// Note: The SCM signals an unknown service name with an ArgumentException in GetServiceStatus, which the status
-        /// command maps to its generic action message (Msg_ServiceStatusAction) rather than Msg_ServiceNotFound.
+        /// Validates that querying the status of a service the SCM does not have reports the NotInstalled
+        /// token rather than failing. The method name comes from the base skeleton; for the status verb an
+        /// absent service is a successful query whose result is a token, not a Msg_ServiceNotFound failure.
+        /// Note: <see cref="IServiceManager.GetServiceStatus"/> returns <c>null</c> for a service that does
+        /// not exist and reserves <see cref="ArgumentException"/> for a null or whitespace name, which the
+        /// command rejects before it ever reaches the manager.
         /// </summary>
         [Fact]
         public override async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
@@ -81,22 +84,50 @@ namespace Servy.CLI.UnitTests.Commands
             const string serviceName = "MissingService";
             var options = CreateValidOptions(serviceName);
 
-            var ex = new ArgumentException("Service does not exist");
-
-            // SCM throws ArgumentException when looking up a non-existent service name status
+            // A missing service is a null status; IsServiceInstalled is what distinguishes absent from unreadable.
             MockServiceManager
                 .Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>()))
-                .Throws(ex);
+                .Returns((ServiceControllerStatus?)null);
+            MockServiceManager
+                .Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
+                .Returns(false);
 
-            var action = ExpectedGenericActionMessage(serviceName);
-            var expectedMessage = string.Format(Strings.Msg_CommandFailedTemplate, action, ex.Message) +
-                $"{Environment.NewLine}{string.Format(Strings.Msg_SuggestionTemplate, Strings.Msg_ServiceStatusSuggestion)}";
+            var expectedMessage = string.Format(Strings.Msg_ServiceStatusResult, serviceName, nameof(ServiceStatus.NotInstalled));
 
             // Act
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.IsSuccess);
+            Assert.True(result.IsSuccess);
+            Assert.Equal(expectedMessage, result.Message);
+        }
+
+        /// <summary>
+        /// Validates that a null status from an installed service reports the Unknown token, the access-denied
+        /// case the nullable contract covers. Together with the NotInstalled test above this pins both arms of
+        /// the null-status fallback, so replacing them with an empty string would no longer leave the class green.
+        /// </summary>
+        [Fact]
+        public async Task Execute_StatusUnavailableForInstalledService_ReturnsUnknownToken()
+        {
+            // Arrange
+            const string serviceName = "ProtectedService";
+            var options = CreateValidOptions(serviceName);
+
+            MockServiceManager
+                .Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>()))
+                .Returns((ServiceControllerStatus?)null);
+            MockServiceManager
+                .Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
+                .Returns(true);
+
+            var expectedMessage = string.Format(Strings.Msg_ServiceStatusResult, serviceName, nameof(ServiceStatus.Unknown));
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.True(result.IsSuccess);
             Assert.Equal(expectedMessage, result.Message);
         }
 
