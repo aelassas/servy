@@ -1587,6 +1587,146 @@ namespace Servy.Manager.UnitTests.Services
 
         #endregion
 
+        #region OperationCanceledException Propagation Tests
+
+        // One test per distinct catch (OperationCanceledException) arm in ServiceCommands. Each arm only
+        // exists to keep the generic catch below it from turning a cancellation into an Error log and an
+        // "Unexpected error" dialog, so every test asserts the propagation AND that no such dialog appeared.
+
+        [Fact]
+        public async Task ConfigureServiceAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Throws(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.ConfigureServiceAsync(new Service { Name = "CancelledService" }, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallServiceAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CancelledInstall" };
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(false);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.InstallServiceAsync(service, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task UninstallServiceAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CancelledUninstall" };
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.UninstallServiceAsync(service, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task RemoveServiceAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CancelledRemove" };
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.RemoveServiceAsync(service, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task CopyPidAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CancelledCopyPid", Pid = 1234 };
+            _uiDispatcherMock.Setup(d => d.InvokeAsync(It.IsAny<Func<bool>>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.CopyPidAsync(service, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task ExecuteServiceCommandAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CancelledLifecycle" };
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.StartServiceAsync(service, showMessageBox: true, cancellationToken: CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task ExportServiceConfigAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CancelledExport" };
+            _fileDialogServiceMock.Setup(f => f.SaveXml(It.IsAny<string>())).Returns(@"C:\out.xml");
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.ExportServiceToXmlAsync(service, CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task ImportConfigAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act & Assert - the pipeline opens with ThrowIfCancellationRequested
+                await Assert.ThrowsAsync<OperationCanceledException>(() => sut.ImportJsonConfigAsync(cts.Token));
+            }
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _fileDialogServiceMock.Verify(d => d.OpenJson(It.IsAny<string>()), Times.Never);
+        }
+
+        #endregion
+
         #region Dispose Tests
 
         [Fact]
