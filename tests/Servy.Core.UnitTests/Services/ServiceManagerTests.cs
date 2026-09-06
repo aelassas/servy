@@ -1791,11 +1791,75 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "ServiceName", It.IsAny<uint>()))
                 .Returns(CreateServiceHandle(0));
 
+            // A code other than ERROR_SERVICE_DOES_NOT_EXIST must not reach the orphan repair below
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
+                .Returns(5); // ERROR_ACCESS_DENIED
+
             // Act
             var result = await _serviceManager.UninstallServiceAsync("ServiceName", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Contains("Win32 Error: 5", result.ErrorMessage);
+            _mockServiceRepository.Verify(r => r.DeleteAsync("ServiceName", It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UninstallService_ScmEntryMissing_DbRowExists_DeletesRowAndSucceeds()
+        {
+            // Arrange
+            var serviceName = "ServiceName";
+            var scmHandle = CreateScmHandle(123);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(CreateServiceHandle(0));
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
+                .Returns(1060); // ERROR_SERVICE_DOES_NOT_EXIST
+
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = serviceName });
+
+            _mockServiceRepository.Setup(x => x.DeleteAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1);
+
+            // Act
+            var result = await _serviceManager.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _mockServiceRepository.Verify(r => r.DeleteAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UninstallService_ScmEntryMissing_NoDbRow_ReturnsDoesNotExistFailure()
+        {
+            // Arrange
+            var serviceName = "ServiceName";
+            var scmHandle = CreateScmHandle(123);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(CreateServiceHandle(0));
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
+                .Returns(1060); // ERROR_SERVICE_DOES_NOT_EXIST
+
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto?)null);
+
+            // Act
+            var result = await _serviceManager.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains($"Service '{serviceName}' does not exist.", result.ErrorMessage);
+            _mockServiceRepository.Verify(r => r.DeleteAsync(serviceName, It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
