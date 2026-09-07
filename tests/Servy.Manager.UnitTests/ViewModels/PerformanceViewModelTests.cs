@@ -320,6 +320,56 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #endregion
 
+        #region Advanced Code-Gap Coverage (CreateServiceItem)
+
+        [Fact]
+        public void CreateServiceItem_ValidServiceInput_MapsToPerformanceServiceWithMatchingNameAndPid()
+        {
+            // Arrange, Act & Assert
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service { Name = "EngineService", Pid = 4321 };
+
+                    // Act
+                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service) as PerformanceService;
+
+                    // Assert
+                    var unused = result ?? throw new InvalidOperationException("Result mapping cannot be null");
+                    Assert.Equal("EngineService", result.Name);
+                    Assert.Equal(4321, result.Pid);
+                }
+            });
+        }
+
+        [Fact]
+        public void CreateServiceItem_NullServiceInput_ReturnsInstanceWithNullFields()
+        {
+            // Arrange, Act & Assert
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Act
+                    // The override tolerates a null row via ?. - closed #2843 changed this from throwing,
+                    // so the tolerant behaviour is pinned separately from the valid-input mapping.
+                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", (Service)null) as PerformanceService;
+
+                    // Assert
+                    var unused = result ?? throw new InvalidOperationException("Result mapping cannot be null");
+                    Assert.Null(result.Name);
+                    Assert.Null(result.Pid);
+                }
+            });
+        }
+
+        #endregion
+
         #region Disposal & Teardown
 
         /// <summary>
