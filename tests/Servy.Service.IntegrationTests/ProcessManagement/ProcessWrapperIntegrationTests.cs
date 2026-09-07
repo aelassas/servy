@@ -77,11 +77,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Throws<ObjectDisposedException>(() => wrapper.UnderlyingProcess);
 
             Assert.Throws<ObjectDisposedException>(() => wrapper.Start());
-            Assert.Throws<ObjectDisposedException>(() => wrapper.Stop(1000));
-            Assert.Throws<ObjectDisposedException>(() => wrapper.StopDescendants(1, DateTime.Now, 1000));
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs));
+            Assert.Throws<ObjectDisposedException>(() => wrapper.StopDescendants(1, DateTime.Now, TestTimeouts.CleanupWaitMs));
             Assert.Throws<ObjectDisposedException>(() => wrapper.Format());
             Assert.Throws<ObjectDisposedException>(() => wrapper.Kill());
-            Assert.Throws<ObjectDisposedException>(() => wrapper.WaitForExit(1000));
+            Assert.Throws<ObjectDisposedException>(() => wrapper.WaitForExit(TestTimeouts.CleanupWaitMs));
             Assert.Throws<ObjectDisposedException>(() => wrapper.CloseMainWindow());
             Assert.Throws<ObjectDisposedException>(() => wrapper.BeginOutputReadLine());
             Assert.Throws<ObjectDisposedException>(() => wrapper.BeginErrorReadLine());
@@ -95,7 +95,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // WaitAndCheckStillRunningAsync is an async method, so its ThrowIfDisposed lands on the
             // returned task rather than on the call: the awaiting overload is the one that observes it.
             await Assert.ThrowsAsync<ObjectDisposedException>(() =>
-                wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
+                wrapper.WaitAndCheckStillRunningAsync(TestTimeouts.NegativeObservationWindow, TestContext.Current.CancellationToken));
 
             // The six event accessors each carry their own guard, so dropping one of them is
             // invisible to every other test in the suite.
@@ -301,7 +301,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act
-                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TestTimeouts.NegativeObservationWindow, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.True(isHealthy);
@@ -341,7 +341,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                    wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(10), cts.Token));
+                    wrapper.WaitAndCheckStillRunningAsync(TestTimeouts.CiGenerous, cts.Token));
 
                 // Cleanup
                 TestProcessCleanup.KillNow(wrapper);
@@ -384,7 +384,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act: Stop triggers standard stop sequence; on headless CI, unattached console calls fall back to force kill safely
-                bool? result = wrapper.Stop(1000);
+                bool? result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
 
                 // Assert: Verify process was terminated safely without tearing down testhost
                 Assert.NotNull(result);
@@ -402,7 +402,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Act
-                bool? result = wrapper.Stop(1000);
+                bool? result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
 
                 // Assert
                 Assert.Null(result);
@@ -469,7 +469,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Act
                 // Pass the actual parent process identity to execute tree termination via the SUT
-                wrapper.StopDescendants(parentPid, parentStartTime, 1000);
+                wrapper.StopDescendants(parentPid, parentStartTime, TestTimeouts.CleanupWaitMs);
 
                 // Assert
                 Assert.True(childSpawned && childPid > 0, "Child cmd.exe never spawned; the test cannot verify descendant termination.");
@@ -494,7 +494,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                         // Process state tracking references are dead/gone
                         return true;
                     }
-                }, TimeSpan.FromSeconds(3));
+                }, TestTimeouts.DescendantExitWait);
 
                 Assert.True(childCleanedUp, $"Descendant process with PID {childPid} survived StopDescendants.");
 
@@ -514,7 +514,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act - Trigger scan on a dummy lookup range that contains no cascading process children
-                wrapper.StopDescendants(wrapper.Id, DateTime.Now.AddDays(1), 1000);
+                wrapper.StopDescendants(wrapper.Id, DateTime.Now.AddDays(1), TestTimeouts.CleanupWaitMs);
 
                 // Assert
                 Assert.Contains(_logger.Infos, m => m.Contains("No active descendants found for PID"));
@@ -554,7 +554,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.True(childSpawned, "Child process never spawned; the foreach branch cannot be verified.");
 
                 // Act - Call StopDescendants on the active parent process
-                wrapper.StopDescendants(parentPid, parentStartTime, 1000);
+                wrapper.StopDescendants(parentPid, parentStartTime, TestTimeouts.CleanupWaitMs);
 
                 // Assert - Verify that descendant scanning log messages were produced
                 Assert.Contains(_logger.Infos, m => m.Contains($"Scanning for top-level descendants of PID {parentPid}"));
@@ -590,7 +590,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 exitedProcess.Close(); // Id/StartTime access inside StopTree throws InvalidOperationException
 
                 var exception = Record.Exception(() =>
-                    TestReflection.InvokeNonPublic(wrapper, "StopTree", exitedProcess, 1000));
+                    TestReflection.InvokeNonPublic(wrapper, "StopTree", exitedProcess, TestTimeouts.ProcessWrapperGracefulStopMs));
 
                 // Assert
                 Assert.Null(exception);
@@ -608,7 +608,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Act - Pass an exited process to StopTree (TryStopGracefullyOrKill returns null)
-                TestReflection.InvokeNonPublic(wrapper, "StopTree", wrapper.UnderlyingProcess, 1000);
+                TestReflection.InvokeNonPublic(wrapper, "StopTree", wrapper.UnderlyingProcess, TestTimeouts.ProcessWrapperGracefulStopMs);
 
                 // Assert
                 Assert.Contains(_logger.Infos, m => m.Contains("has already exited."));
@@ -790,7 +790,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Act
                 // Act on an already exited process handle to trigger the initial null/exited evaluation checks
-                var result = TestReflection.InvokeNonPublic(wrapper, "TryStopGracefullyOrKill", wrapper.UnderlyingProcess, 1000, 500);
+                var result = TestReflection.InvokeNonPublic(wrapper, "TryStopGracefullyOrKill", wrapper.UnderlyingProcess, TestTimeouts.ProcessWrapperGracefulStopMs, TestTimeouts.ProcessWrapperPostKillWaitMs);
 
                 // Assert
                 Assert.Null(result);

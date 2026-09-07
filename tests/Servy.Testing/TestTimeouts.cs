@@ -118,6 +118,26 @@ namespace Servy.Testing
         public const int ProcessWrapperStopTimeoutMs = 50;
 
         /// <summary>
+        /// Graceful-stop budget (1,000 ms) handed to the process wrapper stop entry points
+        /// (<c>Stop</c>, <c>StopTree</c>, <c>TryStopGracefullyOrKill</c>) when the test wants the
+        /// graceful attempt to be given a realistic chance rather than be tripped deliberately.
+        /// </summary>
+        /// <seealso cref="ProcessWrapperStopTimeoutMs"/>
+        public const int ProcessWrapperGracefulStopMs = 1000;
+
+        /// <summary>
+        /// Settle window (500 ms) allowed after a force kill before the stop sequence re-checks the
+        /// process, matching the production post-kill wait.
+        /// </summary>
+        /// <seealso cref="ProcessWrapperGracefulStopMs"/>
+        public const int ProcessWrapperPostKillWaitMs = 500;
+
+        /// <summary>
+        /// Spin budget (3 seconds) for a descendant process to disappear after the tree was stopped.
+        /// </summary>
+        public static readonly TimeSpan DescendantExitWait = TimeSpan.FromSeconds(3);
+
+        /// <summary>
         /// Tight launcher budget (2,000 ms) raced against <see cref="ProcessLauncherSynchronousTimeoutSeconds"/>
         /// to deliberately trip the synchronous-launch timeout path.
         /// </summary>
