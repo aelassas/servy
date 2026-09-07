@@ -1792,6 +1792,46 @@ namespace Servy.Infrastructure.UnitTests.Data
             }
         }
 
+        [Fact]
+        public void HandleLegacyBlockedDecryption_AllBranchesAndNullGuards_Covered()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            var dto = new ServiceDto { Name = "LegacyRow", Description = "KeepMe", Password = "XYZ" };
+            var ex = new SecureDataLegacyBlockedException("v1 payload refused by policy");
+
+            // Act & Assert
+            // 1. Branch path verification: Guard tracking on null DTO elements
+            TestReflection.InvokeNonPublic(repo, "HandleLegacyBlockedDecryption", null, ex);
+
+            // 2. The description is flagged and, unlike the corrupt-record handler above, the sensitive
+            // fields are deliberately left as stored ciphertext - the record is intact, not corrupt.
+            TestReflection.InvokeNonPublic(repo, "HandleLegacyBlockedDecryption", dto, ex);
+
+            Assert.Contains("[LEGACY ENCRYPTION BLOCKED]", dto.Description);
+            Assert.Contains("KeepMe", dto.Description);
+            Assert.Equal("XYZ", dto.Password);
+        }
+
+        [Fact]
+        public void SafeDecrypt_LegacyBlockedException_RoutesToLegacyHandlerNotCorruptHandler()
+        {
+            // Arrange
+            _mockSecureData.Setup(s => s.Decrypt(It.IsAny<string>()))
+                           .Throws(new SecureDataLegacyBlockedException("v1 payload refused by policy"));
+
+            var repo = CreateRepository();
+            var dto = new ServiceDto { Name = "LegacyRow", Description = "KeepMe", Password = "XYZ" };
+
+            // Act
+            TestReflection.InvokeNonPublic(repo, "SafeDecrypt", dto);
+
+            // Assert: flagged as policy-refused, not scrubbed as corrupt
+            Assert.Contains("[LEGACY ENCRYPTION BLOCKED]", dto.Description);
+            Assert.DoesNotContain("[DECRYPTION FAILED", dto.Description);
+            Assert.Equal("XYZ", dto.Password);
+        }
+
         #endregion
     }
 }
