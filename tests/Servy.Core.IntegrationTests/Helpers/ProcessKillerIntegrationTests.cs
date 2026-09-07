@@ -13,7 +13,8 @@ using Xunit;
 namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
-    /// Integration tests for ProcessKiller: process tree termination, the critical-process safelist, and file-lock release.
+    /// Integration tests for ProcessKiller: process tree termination and file-lock release.
+    /// Guard-only checks that spawn no process (input validation, the critical-process safelist) live in ProcessKillerTests.
     /// </summary>
     [Collection("ProcessIntegrationTests")]
     public class ProcessKillerIntegrationTests : HandleExeIntegrationTestBase, IDisposable
@@ -66,81 +67,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             // DO NOT delete handle64.exe here.
             // Deleting an executable while another test's constructor is initializing causes the IOException.
             // Leaving it in the bin folder is completely safe for integration tests.
-        }
-
-        /// <summary>
-        /// Verifies that providing a null, empty, or whitespace process name to the termination method results in a safe bypass returning false.
-        /// </summary>
-        /// <param name="invalidName">The invalid string input simulating a malformed process name.</param>
-        [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("    ")]
-        public void KillProcessTreeAndParents_NullOrEmptyName_ReturnsFalse(string invalidName)
-        {
-            // Arrange & Act
-            bool result = _processKiller.KillProcessTreeAndParents(invalidName, killParents: true);
-
-            // Assert
-            // A null, empty or whitespace name is rejected before any process lookup
-            Assert.False(result);
-        }
-
-        /// <summary>
-        /// Supplies every entry of the ProcessKiller safelist, so the coverage of the guard cannot drift from the list it guards.
-        /// </summary>
-        /// <returns>One theory row per entry of the CriticalSystemProcesses safelist.</returns>
-        public static TheoryData<string> AllCriticalProcessNames()
-        {
-            // GetFieldStatic throws when the field is renamed or removed, so the theory can never
-            // degrade silently into an empty (and therefore vacuously green) data set.
-            var safelist = TestReflection.GetFieldStatic<HashSet<string>>(
-                typeof(ProcessKiller), "CriticalSystemProcesses");
-
-            var data = new TheoryData<string>();
-            foreach (var name in safelist)
-            {
-                data.Add(name);
-            }
-
-            return data;
-        }
-
-        /// <summary>
-        /// Verifies that attempting to terminate a critical Windows system process by name is actively blocked by the internal guardrails.
-        /// </summary>
-        /// <param name="protectedName">The name of the critical system process, taken from the safelist itself.</param>
-        [Theory]
-        [MemberData(nameof(AllCriticalProcessNames))]
-        public void KillProcessTreeAndParents_ProtectedProcessName_ReturnsFalse(string protectedName)
-        {
-            // Arrange & Act
-            // Every entry must be refused with and without the .exe suffix the guard normalizes away,
-            // whether or not the process happens to be running on this host.
-            bool result = _processKiller.KillProcessTreeAndParents(protectedName, killParents: true);
-            bool resultWithExtension = _processKiller.KillProcessTreeAndParents(protectedName + ".exe", killParents: true);
-
-            // Assert
-            // Names on the CriticalSystemProcesses safelist are never killed
-            Assert.False(result);
-            Assert.False(resultWithExtension);
-        }
-
-        /// <summary>
-        /// Verifies that providing an invalid or non-positive process identifier results in a safe bypass returning false.
-        /// </summary>
-        /// <param name="invalidPid">The numerical identifier simulating an invalid process ID.</param>
-        [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        [InlineData(-999)]
-        public void KillProcessTreeAndParents_InvalidPid_ReturnsFalse(int invalidPid)
-        {
-            // Arrange & Act
-            bool result = _processKiller.KillProcessTreeAndParents(invalidPid, killParents: true);
-
-            // Assert
-            Assert.False(result);
         }
 
         /// <summary>
