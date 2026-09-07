@@ -110,7 +110,6 @@ namespace Servy.Restarter
                 }
 
                 // 7. Initialize database and helpers
-                AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
                 dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
                 protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);

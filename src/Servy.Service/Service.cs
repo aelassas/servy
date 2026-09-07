@@ -310,7 +310,6 @@ namespace Servy.Service
                 }
 
                 // Initialize database and helpers
-                AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
                 _dbContext = new AppDbContext(connectionString);
                 DatabaseInitializer.InitializeDatabase(_dbContext, SQLiteDbInitializer.Initialize);
 
