@@ -25,14 +25,16 @@ When updating Sysinternals Handle:
 1. Download `Handle.zip` directly from official Microsoft channels (`https://download.sysinternals.com/files/Handle.zip`).
 2. Extract `handle64.exe` and `handle64a.exe`.
 3. Verify the digital signature of the extracted binaries to confirm publisher authenticity (`Microsoft Corporation`):
-```powershell
-Get-AuthenticodeSignature handle64.exe, handle64a.exe
-```
+
+   ```powershell
+   Get-AuthenticodeSignature handle64.exe, handle64a.exe
+   ```
 
 4. Replace the binaries in all four project resource directories across the repository:
-* `src/Servy.CLI/Resources/`
-* `src/Servy.Manager/Resources/`
-* `src/Servy/Resources/`
-* `tests/Servy.Testing/Resources/`
+
+   * `src/Servy.CLI/Resources/`
+   * `src/Servy.Manager/Resources/`
+   * `src/Servy/Resources/`
+   * `tests/Servy.Testing/Resources/`
 
 5. Compute the new SHA-256 hashes and update `THIRD-PARTY-NOTICES.md` at the repository root.
