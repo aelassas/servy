@@ -492,6 +492,51 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public async Task LoadDependencyTreeAsync_ManagerThrowsOperationCanceledException_SwallowsSilently()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        // Arrange
+                        viewModel = CreateViewModel();
+                        var mockService = new DependencyService { Name = "CancelledService" };
+
+                        _mockServiceManager.Setup(m => m.GetDependencies("CancelledService", It.IsAny<CancellationToken>()))
+                                           .Throws(new OperationCanceledException());
+
+                        // Act
+                        viewModel.SelectedService = mockService; // Triggers the 1st Load invocation internally (fire-and-forget)
+
+                        // Wait securely for the fire-and-forget task to drain its catch/finally frames
+                        await Helper.WaitUntilAsync(
+                            () => !viewModel.IsBusy,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // Act: Manual second call, fully awaited
+                        await viewModel.LoadDependencyTreeAsync(null); // Triggers the 2nd Load invocation
+
+                        // Assert: unlike the general catch above, cancellation stays silent - no dialog at all
+                        _mockMessageBoxService.Verify(
+                            m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()),
+                            Times.Never);
+
+                        Assert.False(viewModel.IsBusy);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
         #endregion
 
         #region Background Worker Loop Ticking Framework Evaluation Tests
