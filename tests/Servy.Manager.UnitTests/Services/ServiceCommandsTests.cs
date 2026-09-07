@@ -1601,6 +1601,23 @@ namespace Servy.Manager.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
+        // Mirror image of the test above, from the same seam: a non-cancellation exception must fall through to
+        // the generic catch, be swallowed and reported through the "Unexpected error" dialog. Without it, the
+        // propagation assertions above would still pass if the cancellation arm were widened to catch everything.
+        [Fact]
+        public async Task ConfigureServiceAsync_UnexpectedException_ShowsUnexpectedErrorAndDoesNotPropagate()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Throws(new InvalidOperationException("Boom!"));
+
+            // Act
+            await sut.ConfigureServiceAsync(new Service { Name = "FaultyService" }, TestContext.Current.CancellationToken);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
         [Fact]
         public async Task InstallServiceAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
         {
