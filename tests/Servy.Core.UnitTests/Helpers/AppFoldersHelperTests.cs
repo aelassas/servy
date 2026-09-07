@@ -44,6 +44,74 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Throws<ArgumentException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath));
         }
 
+        // The theory above only asserts the exception TYPE, and its "key.aes" is relative, so every row using it
+        // throws at the aesKeyFilePath absolute-path guard before the iv/rootVaultPath value is ever inspected.
+        // These four give every parameter but the one under test an absolute, non-root path and assert the
+        // message, so each guard below is genuinely the first one that can fire.
+
+        [Fact]
+        public void EnsureFolders_WhitespaceAesIVFilePath_ThrowsForCorrectReason()
+        {
+            // Arrange
+            var conn = $"Data Source={Path.Combine(_tempDir, "Servy.db")};";
+            var key = Path.Combine(_tempDir, "key.aes");
+
+            // Act
+            var ex = Assert.Throws<ArgumentException>(() =>
+                AppFoldersHelper.EnsureFolders(conn, key, "    ", rootVaultPath: _tempDir));
+
+            // Assert
+            Assert.StartsWith("aesIVFilePath cannot be null or whitespace", ex.Message);
+        }
+
+        [Fact]
+        public void EnsureFolders_WhitespaceRootVaultPath_ThrowsForCorrectReason()
+        {
+            // Arrange
+            var conn = $"Data Source={Path.Combine(_tempDir, "Servy.db")};";
+            var key = Path.Combine(_tempDir, "key.aes");
+            var iv = Path.Combine(_tempDir, "iv.aes");
+
+            // Act
+            var ex = Assert.Throws<ArgumentException>(() =>
+                AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: "   "));
+
+            // Assert
+            Assert.StartsWith("rootVaultPath cannot be whitespace", ex.Message);
+        }
+
+        [Fact]
+        public void EnsureFolders_AesKeyFilePathIsDriveRoot_ThrowsCannotDetermineFolder()
+        {
+            // Arrange
+            var conn = $"Data Source={Path.Combine(_tempDir, "Servy.db")};";
+            var key = Path.GetPathRoot(_tempDir); // absolute, but Path.GetDirectoryName has no parent to return
+            var iv = Path.Combine(_tempDir, "iv.aes");
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
+
+            // Assert
+            Assert.Equal("Cannot determine AES key folder path.", ex.Message);
+        }
+
+        [Fact]
+        public void EnsureFolders_AesIVFilePathIsDriveRoot_ThrowsCannotDetermineFolder()
+        {
+            // Arrange
+            var conn = $"Data Source={Path.Combine(_tempDir, "Servy.db")};";
+            var key = Path.Combine(_tempDir, "key.aes");
+            var iv = Path.GetPathRoot(_tempDir);
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: _tempDir));
+
+            // Assert
+            Assert.Equal("Cannot determine AES IV folder path.", ex.Message);
+        }
+
         [Fact]
         public void EnsureFolders_MalformedConnectionString_ThrowsInvalidOperationException()
         {
