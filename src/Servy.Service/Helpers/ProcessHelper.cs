@@ -5,6 +5,7 @@ using Servy.Core.RegexWrapper;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Servy.Service.Helpers
@@ -91,10 +92,13 @@ namespace Servy.Service.Helpers
             // 1. Expand environment variables list
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
 
-            // 2. Audit expanded variables for leftover placeholders
-            foreach (var kvp in expandedEnv)
+            // 2. Audit the user-configured variables (system entries were inherited, not configured)
+            foreach (var name in vars.Select(v => v.Name).Where(n => !string.IsNullOrWhiteSpace(n)))
             {
-                LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"{prefix}Environment Variable '{kvp.Key}'", logger);
+                if (expandedEnv.TryGetValue(name, out var value))
+                {
+                    LogUnexpandedPlaceholders(value ?? string.Empty, $"{prefix}Environment Variable '{name}'", logger);
+                }
             }
 
             // 3. Expand command-line arguments using the expanded environment

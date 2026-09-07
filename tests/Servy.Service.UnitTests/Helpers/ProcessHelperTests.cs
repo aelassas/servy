@@ -146,8 +146,8 @@ namespace Servy.Service.UnitTests.Helpers
             try
             {
                 // Act
-                // Pass a non-empty string to trigger the try block
-                ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "trigger", _mockLogger.Object);
+                // Pass a custom environment variable so the audit step executes
+                ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable> { new EnvironmentVariable { Name = "TRIGGER", Value = "trigger" } }, "trigger", _mockLogger.Object);
 
                 // Assert
                 _mockLogger.Verify(l => l.Error(

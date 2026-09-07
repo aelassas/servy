@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Native;
 using Servy.Testing;
 using System;
 using System.ComponentModel;
@@ -192,8 +193,11 @@ namespace Servy.Restarter.UnitTests
             // First call to Stop() in Stop phase throws to enter HandleTransitionalError. Both arms of the
             // command-site filter are exercised: the SCM raises Win32Exception (ERROR_SERVICE_CANNOT_ACCEPT_CTRL)
             // as readily as InvalidOperationException when the control request lands mid-transition.
-            _mockController.Setup(c => c.Stop())
-                .Throws(throwInvalidOperation ? new InvalidOperationException() : (Exception)new Win32Exception());
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+
+            _mockController.Setup(c => c.Stop()).Throws(exceptionToThrow);
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -273,10 +277,10 @@ namespace Servy.Restarter.UnitTests
                 {
                     if (throwInvalidOperation)
                     {
-                        throw new InvalidOperationException("Service is in a transitional lock state.");
+                        throw new InvalidOperationException("Service is in a transitional lock state.", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
                     }
 
-                    throw new Win32Exception();
+                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
                 }
 
                 // 2. Second call to Start() happens inside HandleTransitionalError
@@ -320,7 +324,7 @@ namespace Servy.Restarter.UnitTests
                 .Returns(ServiceControllerStatus.Running); // 4. HandleTransitionalError: First dynamic loop refresh evaluates true
 
             // Trigger an initial transitional error state to bounce execution into the handler
-            _mockController.Setup(c => c.Start()).Throws<InvalidOperationException>();
+            _mockController.Setup(c => c.Start()).Throws(new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)));
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -353,7 +357,8 @@ namespace Servy.Restarter.UnitTests
 
             // 2. Stop() throws InvalidOperationException on the 1st call to force entry into HandleTransitionalError.
             // On subsequent calls inside HandleTransitionalError, it also throws so execution stays in the loop.
-            _mockController.Setup(c => c.Stop()).Callback(() => stopCallCount++).Throws<InvalidOperationException>();
+            _mockController.Setup(c => c.Stop()).Callback(() => stopCallCount++)
+                .Throws(new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)));
 
             // 3. Refresh() burns the budget ONCE after HandleTransitionalError has been entered (stopCallCount > 0)
             _mockController.Setup(c => c.Refresh()).Callback(() =>
@@ -400,7 +405,7 @@ namespace Servy.Restarter.UnitTests
             {
                 stopThrown = true;
                 status = ServiceControllerStatus.StopPending;
-            }).Throws<InvalidOperationException>();
+            }).Throws(new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)));
 
             // Burn the whole remaining budget on the first Refresh() inside the handler loop.
             _mockController.Setup(c => c.Refresh()).Callback(() =>
@@ -453,7 +458,7 @@ namespace Servy.Restarter.UnitTests
                 // 1. The primary Stop phase fails, bouncing execution into the handler.
                 if (stopCallCount == 1)
                 {
-                    throw new InvalidOperationException("Service is in a transitional lock state.");
+                    throw new InvalidOperationException("Service is in a transitional lock state.", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
                 }
 
                 // 2. The handler re-issues Stop successfully and then waits.
@@ -482,7 +487,7 @@ namespace Servy.Restarter.UnitTests
             // the next handler iteration observed Stopped and the start phase completed the restart.
             Assert.Equal(RestartResult.Restarted, result);
             Assert.Equal(1, stoppedWaitCount);
-            _mockController.Verify(c => c.Stop(), Times.Exactly(2));
+            Assert.Equal(2, stopCallCount);
             _mockController.Verify(c => c.Start(), Times.Once);
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
@@ -497,14 +502,11 @@ namespace Servy.Restarter.UnitTests
         public void RestartService_StatusThrowsInSettleLoop_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
         {
             // Arrange
-            if (throwInvalidOperation)
-            {
-                _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
-            }
-            else
-            {
-                _mockController.Setup(c => c.Status).Throws<Win32Exception>();
-            }
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            _mockController.Setup(c => c.Status).Throws(exceptionToThrow);
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -524,14 +526,11 @@ namespace Servy.Restarter.UnitTests
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StopPending);
 
-            if (throwInvalidOperation)
-            {
-                _mockController.Setup(c => c.Refresh()).Throws<InvalidOperationException>();
-            }
-            else
-            {
-                _mockController.Setup(c => c.Refresh()).Throws<Win32Exception>();
-            }
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            _mockController.Setup(c => c.Refresh()).Throws(exceptionToThrow);
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -549,9 +548,13 @@ namespace Servy.Restarter.UnitTests
         public void RestartService_StatusThrowsAtStopEntry_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
         {
             // Arrange
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
             _mockController.SetupSequence(c => c.Status)
                 .Returns(ServiceControllerStatus.Running) // Settle loop check (not pending)
-                .Throws(throwInvalidOperation ? new InvalidOperationException() : (Exception)new Win32Exception()); // Stop-entry status check
+                .Throws(exceptionToThrow); // Stop-entry status check
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -574,14 +577,11 @@ namespace Servy.Restarter.UnitTests
                 .Returns(ServiceControllerStatus.Stopped)  // Settle loop entry
                 .Returns(ServiceControllerStatus.Stopped); // Stop phase skip-check
 
-            if (throwInvalidOperation)
-            {
-                _mockController.Setup(c => c.Refresh()).Throws<InvalidOperationException>();
-            }
-            else
-            {
-                _mockController.Setup(c => c.Refresh()).Throws<Win32Exception>();
-            }
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            _mockController.Setup(c => c.Refresh()).Throws(exceptionToThrow);
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -602,11 +602,15 @@ namespace Servy.Restarter.UnitTests
                 .Returns(ServiceControllerStatus.Running)  // Step 1 check
                 .Returns(ServiceControllerStatus.Running); // Step 2 check
 
-            _mockController.Setup(c => c.Stop()).Throws<InvalidOperationException>();
+            _mockController.Setup(c => c.Stop()).Throws(new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)));
+
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
             // First Refresh call in HandleTransitionalError throws, triggering catch block;
             // re-probe Refresh call inside catch block throws to signal ServiceNotFound.
-            _mockController.Setup(c => c.Refresh()).Throws(throwInvalidOperation ? new InvalidOperationException() : (Exception)new Win32Exception());
+            _mockController.Setup(c => c.Refresh()).Throws(exceptionToThrow);
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
