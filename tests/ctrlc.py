@@ -10,24 +10,11 @@
 # Ladder: ctrlc_child.py spawns ctrlc2.py and notepad.exe; ctrlc2.py spawns this script.
 
 import time
-import sys
 import logging
-import os
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = os.environ.get("SERVY_TEST_LOG_DIR", os.path.join(SCRIPT_DIR, "logs"))
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE = os.path.join(LOG_DIR, f"{os.path.splitext(os.path.basename(__file__))[0]}.log")
+from _fixture_logging import run_fixture, setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] => %(message)s",
-    datefmt="%Y%m%d %H:%M:%S",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+setup_logging(__file__)
 
 def main():
     logging.info("Service started")
@@ -39,11 +26,4 @@ def main():
         logging.exception("Error in loop")
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        logging.info("(ctrlc) Service stopped!")
-        for handler in logging.root.handlers:
-            handler.flush()
+    run_fixture(main, "(ctrlc) Service stopped!")
