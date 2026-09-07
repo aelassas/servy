@@ -81,6 +81,35 @@ namespace Servy.UI.IntegrationTests.Helpers
             });
         }
 
+        [Fact]
+        public void GetVisualChild_SiblingWithoutMatch_ContinuesToNextChild()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                // Branch: the for loop's back-edge - the first child and its subtree are not a
+                // match, so both ifs are false on that iteration and the loop has to continue to
+                // the next sibling instead of returning on i == 0.
+                var grid = new Grid();
+                var emptyBorder = new Border();
+                var scrollViewer = new ScrollViewer();
+
+                grid.Children.Add(emptyBorder);
+                grid.Children.Add(scrollViewer);
+
+                // Force WPF to build the visual tree in memory
+                grid.Measure(new Size(100, 100));
+                grid.Arrange(new Rect(0, 0, 100, 100));
+                grid.UpdateLayout();
+
+                // Act
+                var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(grid);
+
+                // Assert
+                Assert.Same(scrollViewer, result);
+            });
+        }
+
         #endregion
 
         #region FormatDuration Tests
