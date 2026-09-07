@@ -20,14 +20,17 @@ namespace Servy.Service.UnitTests
     {
         private readonly List<IDisposable> _builtServices = new List<IDisposable>();
 
-        public Mock<IServyLogger> Logger { get; set; } = new Mock<IServyLogger>();
-        public Mock<IServiceHelper> Helper { get; set; } = new Mock<IServiceHelper>();
-        public Mock<IStreamWriterFactory> StreamWriterFactory { get; set; } = new Mock<IStreamWriterFactory>();
-        public Mock<ITimerFactory> TimerFactory { get; set; } = new Mock<ITimerFactory>();
-        public Mock<IProcessFactory> ProcessFactory { get; set; } = new Mock<IProcessFactory>();
-        public Mock<IPathValidator> PathValidator { get; set; } = new Mock<IPathValidator>();
-        public Mock<IServiceRepository> ServiceRepository { get; set; } = new Mock<IServiceRepository>();
-        public Mock<Core.Helpers.IProcessKiller> ProcessKiller { get; set; } = new Mock<Core.Helpers.IProcessKiller>();
+        // Get-only: Build() and BuildService() hand .Object to the SUT, which keeps that reference,
+        // so replacing a mock afterwards would leave the test verifying an instance the SUT never saw.
+        // Steer a dependency with Setup(), or pass a different instance to BuildService().
+        public Mock<IServyLogger> Logger { get; } = new Mock<IServyLogger>();
+        public Mock<IServiceHelper> Helper { get; } = new Mock<IServiceHelper>();
+        public Mock<IStreamWriterFactory> StreamWriterFactory { get; } = new Mock<IStreamWriterFactory>();
+        public Mock<ITimerFactory> TimerFactory { get; } = new Mock<ITimerFactory>();
+        public Mock<IProcessFactory> ProcessFactory { get; } = new Mock<IProcessFactory>();
+        public Mock<IPathValidator> PathValidator { get; } = new Mock<IPathValidator>();
+        public Mock<IServiceRepository> ServiceRepository { get; } = new Mock<IServiceRepository>();
+        public Mock<Core.Helpers.IProcessKiller> ProcessKiller { get; } = new Mock<Core.Helpers.IProcessKiller>();
 
         public ServiceTestContext()
         {
