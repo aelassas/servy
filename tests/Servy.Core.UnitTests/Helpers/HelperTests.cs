@@ -373,6 +373,17 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(".NET 8.0", result);
         }
 
+        [Theory]
+        [InlineData("netstandard2.0", ".NET Standard 2.0")]
+        [InlineData("netcoreapp3.1", ".NET Core 3.1")]
+        [InlineData("net48", ".NET Framework 4.8")]
+        [InlineData("net472", ".NET Framework 4.7.2")]
+        public void GetBuiltWithFramework_LegacyMonikers_AreFormatted(string tfm, string expected)
+        {
+            var result = Run(tfm);
+            Assert.Equal(expected, result);
+        }
+
         [Fact]
         public void GetBuiltWithFramework_NotNetTfm_ReturnsRawValue()
         {
