@@ -258,5 +258,43 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         #endregion
+
+        #region Delimiter / Unescape Parity Tests
+
+        /// <summary>
+        /// Verifies the containment invariant between <see cref="EscapedTokenizer.EnvVarRecordDelimiters"/>
+        /// and the character set <see cref="EscapedTokenizer.Unescape"/> strips a backslash from.
+        /// A delimiter is escapable so it can be kept inside a value; the split honours the escape, so
+        /// Unescape has to strip that backslash. When the two sets diverge the value silently keeps a
+        /// stray backslash - which is #1114 verbatim.
+        /// </summary>
+        [Fact]
+        public void EveryRecordDelimiter_IsUnescapable()
+        {
+            // Arrange & Act & Assert
+            foreach (char delimiter in EscapedTokenizer.EnvVarRecordDelimiters)
+            {
+                Assert.Equal(delimiter.ToString(), EscapedTokenizer.Unescape("\\" + delimiter));
+            }
+
+            // '=' is not a record delimiter but is the key/value separator IndexOfUnescapedChar honours,
+            // so it carries the same requirement.
+            Assert.Equal("=", EscapedTokenizer.Unescape("\\="));
+        }
+
+        /// <summary>
+        /// Pins the contents of <see cref="EscapedTokenizer.EnvVarRecordDelimiters"/> so that adding a
+        /// delimiter is a deliberate act: the author has to update this expectation, at which point
+        /// <see cref="EveryRecordDelimiter_IsUnescapable"/> tells them whether Unescape needs the same
+        /// character.
+        /// </summary>
+        [Fact]
+        public void EnvVarRecordDelimiters_AreTheDocumentedThree()
+        {
+            // Arrange & Act & Assert
+            Assert.Equal(new[] { ';', '\r', '\n' }, EscapedTokenizer.EnvVarRecordDelimiters);
+        }
+
+        #endregion
     }
 }
