@@ -94,27 +94,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(actual);
 
             // Reflection-driven comprehensive comparison of all properties mapped across serialization boundaries
-            var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
-            var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
-
-            int compared = 0;
-            foreach (var prop in properties)
-            {
-                var expectedValue = prop.GetValue(expected);
-                var actualValue = prop.GetValue(actual);
-
-                // If the expected fixture value is null, it skips evaluation to prevent
-                // breaking on values hydrated to system defaults during deserialization.
-                if (expectedValue == null)
-                {
-                    continue;
-                }
-
-                Assert.Equal(expectedValue, actualValue);
-                compared++;
-            }
-
-            Assert.True(compared >= 50, $"Only {compared} of {properties.Count()} properties were compared; the fixture has gone sparse.");
+            ServiceDtoRoundTrip.AssertPropertiesSurvived(expected, actual);
 
             // Assert baseline defaults here. Due to [JsonIgnore] decorations,
             // these properties never hit the serialized string payload loop during SerializeObject passes.
@@ -272,20 +252,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.NotNull(recovered);
 
-            var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
-            var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
-
-            int compared = 0;
-            foreach (var prop in properties)
-            {
-                var expectedValue = prop.GetValue(original);
-                if (expectedValue == null) continue;
-
-                Assert.Equal(expectedValue, prop.GetValue(recovered));
-                compared++;
-            }
-
-            Assert.True(compared >= 50, $"Only {compared} of {properties.Count()} properties were compared; the fixture has gone sparse.");
+            ServiceDtoRoundTrip.AssertPropertiesSurvived(original, recovered);
 
             // Confirm structural integrity for unmapped fallback security fields (credentials are dropped by [JsonIgnore] in both directions)
             Assert.Null(recovered.UserAccount);
