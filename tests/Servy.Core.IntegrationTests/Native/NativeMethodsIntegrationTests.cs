@@ -1,4 +1,5 @@
 using Servy.Core.Native;
+using Servy.Testing;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -219,7 +220,7 @@ namespace Servy.Core.IntegrationTests.Native
         public void OpenProcess_InvalidProcessId_ReturnsInvalidHandle()
         {
             // Act
-            using (var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryLimitedInformation, false, 999999))
+            using (var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryLimitedInformation, false, TestProcessIds.NeverValid))
             {
                 // Assert
                 Assert.True(handle.IsInvalid);
