@@ -108,6 +108,23 @@ namespace Servy.UnitTests.ViewModels
             Assert.True(_viewModel.IsManagerAppAvailable, "The view model incorrectly reacted to an unrelated PropertyChanged event.");
         }
 
+        [Theory]
+        [InlineData(false, false, false)]
+        [InlineData(true, false, true)]
+        [InlineData(false, true, true)]
+        [InlineData(true, true, true)]
+        public void EnableRotation_ReflectsSizeOrDateRotation(bool enableSize, bool enableDate, bool expected)
+        {
+            // Arrange & Act
+            _viewModel.EnableSizeRotation = enableSize;
+            _viewModel.EnableDateRotation = enableDate;
+
+            // Assert
+            // EnableRotation is the OR of the two operands; the full truth table pins the operator
+            // itself, which no test that only reads the operands can do.
+            Assert.Equal(expected, _viewModel.EnableRotation);
+        }
+
         #endregion
 
         #region Service Action Command Tests
