@@ -567,21 +567,16 @@ namespace Servy.Testing
                     return;
                 }
 
+                // The predicate is evaluated at the top of each iteration, so it is always
+                // re-checked once more after the final delay before the deadline is declared
+                // missed (#4150). No further re-check is needed below this point.
                 if (sw.Elapsed >= timeout)
                 {
-                    break;
+                    throw new TimeoutException($"Test execution boundary reached a timeout condition while waiting for state fulfillment after {timeout.TotalSeconds}s.");
                 }
 
                 await Task.Delay(interval, cancellationToken);
             }
-
-            // Final check: Re-evaluate once in case another thread satisfied the condition while the deadline was being evaluated.
-            if (predicate())
-            {
-                return;
-            }
-
-            throw new TimeoutException($"Test execution boundary reached a timeout condition while waiting for state fulfillment after {timeout.TotalSeconds}s.");
         }
     }
 }
