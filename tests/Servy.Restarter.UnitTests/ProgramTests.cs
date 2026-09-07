@@ -1,10 +1,16 @@
+using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
+using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System;
 using System.Configuration;
 using System.Data.SQLite;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Restarter.UnitTests
@@ -39,11 +45,17 @@ namespace Servy.Restarter.UnitTests
             _aesKeyFilePath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
             _aesIvFilePath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
 
-            // Open the persistent handle to anchor the shared memory segment lifecycle
-            _dbKeepAliveConnection = new SQLiteConnection(_defaultConnection);
-            _dbKeepAliveConnection.Open();
+            // Supply an absolute file-backed SQLite database path and key paths in TempDirectory to satisfy AppFoldersHelper
+            string fileDbPath = Path.Combine(TempDirectory, "RestarterTestDbNet48.db");
+            string fileConnString = $"Data Source={fileDbPath};Version=3;";
 
-            // Bootstrap the schema table directly into the shared memory segment
+            ConfigurationManager.AppSettings["DefaultConnection"] = fileConnString;
+            ConfigurationManager.AppSettings["Security:AESKeyFilePath"] = Path.Combine(TempDirectory, "test_restarter.key");
+            ConfigurationManager.AppSettings["Security:AESIVFilePath"] = Path.Combine(TempDirectory, "test_restarter.iv");
+
+            // Open the persistent handle and initialize database schema
+            _dbKeepAliveConnection = new SQLiteConnection(fileConnString);
+            _dbKeepAliveConnection.Open();
             SQLiteDbInitializer.Initialize(_dbKeepAliveConnection);
         }
 
@@ -70,7 +82,7 @@ namespace Servy.Restarter.UnitTests
 
         [Theory]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void Main_EmptyOrWhitespaceServiceName_SetsExitCodeTo1AndExitsEarly(string invalidName)
         {
             // Arrange
@@ -116,7 +128,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_ValidNameButServiceNotManaged_TriggersValidationFailureBranch()
         {
             // Arrange
-            // We pass an unmanaged service identifier string. Since the memory database is fresh and empty,
+            // We pass an unmanaged service identifier string. Since the database is fresh and empty,
             // serviceRepository.GetByName(...) will return null, exercising the managed validation check.
             string serviceName = "UnmanagedNet48Service";
             string[] args = new string[] { serviceName, TempDirectory };
@@ -130,26 +142,38 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
-        public void Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
+        public async Task Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
         {
             // Arrange
             // Inject an unparseable non-integer token directly into the runtime configuration matrix
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "NotAnInteger";
 
             string connString = ConfigurationManager.AppSettings["DefaultConnection"];
+            string keyPath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
+            string ivPath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
+
             string serviceName = "UnmanagedNet48Service";
             string[] args = new string[] { serviceName, TempDirectory };
 
-            using (var connection = new SQLiteConnection(connString))
+            // Ensure application key files and folder environment exist for Program.Main
+            AppFoldersHelper.EnsureFolders(connString, keyPath, ivPath);
+
+            // Seed a valid managed service via ServiceRepository so GetByName() can deserialize it properly
+            using (var dbContext = new AppDbContext(connString))
+            using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            using (var secureData = new SecureData(protectedKeyProvider))
             {
-                connection.Open();
-                using (var command = connection.CreateCommand())
+                var dapperExecutor = new DapperExecutor(dbContext);
+                var xmlSerializer = new XmlServiceSerializer();
+                var jsonSerializer = new JsonServiceSerializer();
+                var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+
+                var service = new ServiceDto
                 {
-                    command.CommandText = "INSERT OR IGNORE INTO Services (Name, ExecutablePath) VALUES (@name, @path);";
-                    command.Parameters.AddWithValue("@name", serviceName);
-                    command.Parameters.AddWithValue("@path", "C:\\MockPath\\Service.exe");
-                    command.ExecuteNonQuery();
-                }
+                    Name = serviceName,
+                    ExecutablePath = @"C:\MockPath\Service.exe"
+                };
+                await repository.AddAsync(service, CancellationToken.None);
             }
 
             try
@@ -168,14 +192,19 @@ namespace Servy.Restarter.UnitTests
             {
                 // Clean up the seeded service entry from the shared database context to prevent
                 // side-effects or collision state leaks on subsequent unit test runs.
-                using (var connection = new SQLiteConnection(connString))
+                using (var dbContext = new AppDbContext(connString))
+                using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
+                using (var secureData = new SecureData(protectedKeyProvider))
                 {
-                    connection.Open();
-                    using (var command = connection.CreateCommand())
+                    var dapperExecutor = new DapperExecutor(dbContext);
+                    var xmlSerializer = new XmlServiceSerializer();
+                    var jsonSerializer = new JsonServiceSerializer();
+                    var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+
+                    var existing = repository.GetByName(serviceName, decrypt: false);
+                    if (existing != null && existing.Id.HasValue)
                     {
-                        command.CommandText = "DELETE FROM Services WHERE Name = @name;";
-                        command.Parameters.AddWithValue("@name", serviceName);
-                        command.ExecuteNonQuery();
+                        await repository.DeleteAsync(existing.Id.Value, CancellationToken.None);
                     }
                 }
             }
@@ -227,12 +256,16 @@ namespace Servy.Restarter.UnitTests
             // Rollback AppSettings matrix states to maintain complete isolation integrity across sibling execution tracks
             ConfigurationManager.AppSettings["DefaultConnection"] = _defaultConnection;
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = _restartTimeoutSeconds;
+            ConfigurationManager.AppSettings["Security:AESKeyFilePath"] = _aesKeyFilePath;
+            ConfigurationManager.AppSettings["Security:AESIVFilePath"] = _aesIvFilePath;
 
             // Clean up temporary local workspace state file markers if generated
             try
             {
-                if (!string.IsNullOrEmpty(_aesKeyFilePath) && File.Exists(_aesKeyFilePath)) File.Delete(_aesKeyFilePath);
-                if (!string.IsNullOrEmpty(_aesIvFilePath) && File.Exists(_aesIvFilePath)) File.Delete(_aesIvFilePath);
+                string keyPath = Path.Combine(TempDirectory, "test_restarter.key");
+                string ivPath = Path.Combine(TempDirectory, "test_restarter.iv");
+                if (File.Exists(keyPath)) File.Delete(keyPath);
+                if (File.Exists(ivPath)) File.Delete(ivPath);
             }
             catch
             {
