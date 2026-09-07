@@ -49,9 +49,9 @@ namespace Servy.Manager.Views
         {
             try
             {
-                // Only trigger the search if the ViewModel is initialized and the list is empty
+                // Only trigger the search if the ViewModel is initialized and the search has not yet run
                 // to avoid redundant API/DB calls on view switching.
-                if (DataContext is ServiceSearchViewModelBase vm && !vm.Services.Any())
+                if (DataContext is ServiceSearchViewModelBase vm && !vm.HasSearched)
                 {
                     await vm.SearchCommand.ExecuteAsync(null);
                 }

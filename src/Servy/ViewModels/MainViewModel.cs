@@ -1497,8 +1497,8 @@ namespace Servy.ViewModels
             FailureProgramPath = dto.FailureProgramPath ?? string.Empty;
             FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory ?? string.Empty;
             FailureProgramParameters = dto.FailureProgramParameters ?? string.Empty;
-            EnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables) ?? string.Empty;
-            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies) ?? string.Empty;
+            EnvironmentVariables = SafeFormatEnvironmentVariables(dto.EnvironmentVariables, nameof(dto.EnvironmentVariables), dto.Name);
+            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies);
             RunAsLocalSystem = dto.RunAsLocalSystem ?? DefaultRunAsLocalSystem;
             UserAccount = dto.UserAccount ?? string.Empty;
             Password = dto.Password ?? string.Empty;
@@ -1506,7 +1506,7 @@ namespace Servy.ViewModels
             PreLaunchExecutablePath = dto.PreLaunchExecutablePath ?? string.Empty;
             PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory ?? string.Empty;
             PreLaunchParameters = dto.PreLaunchParameters ?? string.Empty;
-            PreLaunchEnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables) ?? string.Empty;
+            PreLaunchEnvironmentVariables = SafeFormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables, nameof(dto.PreLaunchEnvironmentVariables), dto.Name);
             PreLaunchStdoutPath = dto.PreLaunchStdoutPath ?? string.Empty;
             PreLaunchStderrPath = dto.PreLaunchStderrPath ?? string.Empty;
             PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.Value.ToString();
@@ -1531,6 +1531,35 @@ namespace Servy.ViewModels
             PostStopExecutablePath = dto.PostStopExecutablePath ?? string.Empty;
             PostStopStartupDirectory = dto.PostStopStartupDirectory ?? string.Empty;
             PostStopParameters = dto.PostStopParameters ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Safely formats environment variables for display, falling back to the raw unparsed string 
+        /// if a <see cref="FormatException"/> is encountered.
+        /// </summary>
+        /// <param name="raw">The raw environment variables string retrieved from the database.</param>
+        /// <param name="field">The property or field name being bound, used for diagnostic logging.</param>
+        /// <param name="serviceName">The name of the service associated with the environment variables, used for diagnostic logging.</param>
+        /// <returns>
+        /// A newline-delimited, escaped string of environment variables if parsing succeeds; 
+        /// otherwise, the raw unparsed string (or <see cref="string.Empty"/> if <paramref name="raw"/> is <see langword="null"/>).
+        /// </returns>
+        /// <remarks>
+        /// This guard ensures that legacy or malformed environment variable records written prior to parser validation 
+        /// tightening do not throw an unhandled exception during DTO binding, allowing the user interface to populate 
+        /// completely so an operator can inspect and correct the record.
+        /// </remarks>
+        private static string SafeFormatEnvironmentVariables(string? raw, string field, string? serviceName)
+        {
+            try
+            {
+                return StringHelper.FormatEnvironmentVariables(raw);
+            }
+            catch (FormatException ex)
+            {
+                Logger.Warn($"Stored {field} for service '{serviceName}' does not parse under the current rules; showing the raw value so it can be corrected. {ex.Message}");
+                return raw ?? string.Empty;
+            }
         }
 
         /// <summary>

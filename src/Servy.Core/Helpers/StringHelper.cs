@@ -71,6 +71,10 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="vars">The raw environment variables string.</param>
         /// <returns>A string where each environment variable is on a separate line.</returns>
+        /// <exception cref="FormatException">
+        /// Propagated from <see cref="EnvironmentVariableParser.Parse"/> when a record is missing an
+        /// unescaped equals sign, has an empty key, or carries a literal newline.
+        /// </exception>
         public static string FormatEnvironmentVariables(string? vars)
         {
             var normalizedEnvVars = EnvironmentVariableParser.Parse(vars)
@@ -93,10 +97,10 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Escapes special characters in environment variable keys/values.
         /// </summary>
+        /// <param name="value">The string value to escape.</param>
+        /// <returns>The escaped string value with special characters prefixed by backslashes.</returns>
         /// <remarks>
-        /// Newline characters ('\n') and carriage returns ('\r') are strictly forbidden
-        /// in environment variable values. Attempting to parse strings containing these
-        /// characters will result in a <see cref="FormatException"/>.
+        /// Escapes backslashes ('\'), equals signs ('='), semicolons (';'), and double quotes ('"').
         /// </remarks>
         public static string Escape(string? value)
         {
