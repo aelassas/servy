@@ -29,6 +29,23 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
         }
 
+        // Tokenize is public and the validator consumes it as a shared tokenizer, but both production
+        // callers re-check IsNullOrWhiteSpace and return before calling it, so its own guard is only
+        // reachable through a direct call. This pins the empty-sequence contract the validator's
+        // foreach relies on.
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   \r\n  ")]
+        public void Tokenize_NullOrWhitespaceInput_ReturnsEmptySequence(string input)
+        {
+            // Arrange & Act
+            var result = ServiceDependenciesParser.Tokenize(input);
+
+            // Assert
+            Assert.Empty(result);
+        }
+
         #endregion
 
         #region String Tokenization & Null-Separation Formatting Tests
