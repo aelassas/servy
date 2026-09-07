@@ -182,6 +182,43 @@ namespace Servy.Testing
         public static readonly TimeSpan ServiceRestarterMidLoopExpiryBurn = TimeSpan.FromMilliseconds(750);
 
         /// <summary>
+        /// Standard wait budget (5 seconds) for the log tailer suite: the background loop startup
+        /// deadline, the graceful termination deadline and the polls that observe a single pass.
+        /// </summary>
+        /// <remarks>
+        /// Interpolate this constant into any exception or assertion message that states the budget,
+        /// so a retune cannot leave the message naming a window that is no longer waited for.
+        /// </remarks>
+        public const int LogTailerWaitSeconds = 5;
+
+        /// <summary>
+        /// Extended wait budget (10 seconds) for the log tailer rotation observation, which has to
+        /// outlast a reopen of the rotated file and so is deliberately longer than
+        /// <see cref="LogTailerWaitSeconds"/>.
+        /// </summary>
+        /// <seealso cref="LogTailerWaitSeconds"/>
+        public const int LogTailerRotationWaitSeconds = 10;
+
+        /// <summary>
+        /// Wait budget (15 seconds) for the log tailer pass that follows an unhandled error, which
+        /// costs one linear back-off before the reopen and is therefore the longest of the three.
+        /// </summary>
+        /// <seealso cref="LogTailerWaitSeconds"/>
+        public const int LogTailerErrorRecoveryWaitSeconds = 15;
+
+        /// <summary>
+        /// Delay (150 ms) that lets the log tailer background loop complete at least one pass before
+        /// the test cancels it.
+        /// </summary>
+        public const int LogTailerLoopPassDelayMs = 150;
+
+        /// <summary>
+        /// Settle window (50 ms) after disposing a log tailer, long enough for a rogue background
+        /// pass to surface before the post-dispose assertion reads the pass counter.
+        /// </summary>
+        public const int LogTailerPostDisposeSettleMs = 50;
+
+        /// <summary>
         /// Standard wait time in milliseconds for process teardown and kill cleanup operations.
         /// </summary>
         public const int CleanupWaitMs = 2000;

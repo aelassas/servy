@@ -62,12 +62,13 @@ namespace Servy.Manager.UnitTests.Utils
         /// <param name="cancellationToken">Cancels the wait (propagated to the timeout delay).</param>
         private static async Task WaitForLoopStartAsync(LogTailer tailer, CancellationToken cancellationToken)
         {
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken);
             var completedTask = await Task.WhenAny(tailer.LoopStartedSignal.Task, timeoutTask);
 
             if (completedTask == timeoutTask)
             {
-                throw new TimeoutException("The LogTailer background loop failed to start within 5 seconds.");
+                throw new TimeoutException(
+                    $"The LogTailer background loop failed to start within {TestTimeouts.LogTailerWaitSeconds} seconds.");
             }
         }
 
@@ -227,7 +228,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // Act
                 var tailTask = tailer.RunFromPositionAsync(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
-                await Task.Delay(150, TestContext.Current.CancellationToken);
+                await Task.Delay(TestTimeouts.LogTailerLoopPassDelayMs, TestContext.Current.CancellationToken);
                 cts.Cancel();
 
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -258,7 +259,7 @@ namespace Servy.Manager.UnitTests.Utils
                     // Act
                     var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
-                    await Task.Delay(150, TestContext.Current.CancellationToken);
+                    await Task.Delay(TestTimeouts.LogTailerLoopPassDelayMs, TestContext.Current.CancellationToken);
                     cts.Cancel();
 
                     try { await tailTask; } catch (OperationCanceledException) { }
@@ -343,7 +344,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedBatches) return capturedBatches.Count >= 2;
-                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -392,7 +393,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedLines) return capturedLines.Count >= threshold;
-                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert - Line 'threshold' must be published in the threshold batch and NOT held back or merged
                 lock (capturedLines)
@@ -437,7 +438,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedLines) return capturedLines.Count == threshold - 1;
-                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert - The torn tail line should be held back and not published prematurely
                 lock (capturedLines)
@@ -457,7 +458,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedLines) return capturedLines.Count == threshold;
-                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -520,7 +521,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedBatches) return capturedBatches.Count >= 1;
-                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
 
                 // Append additional lines after the threshold flush using shared write permissions
                 using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
@@ -534,7 +535,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedBatches) return capturedBatches.SelectMany(b => b).Any(l => l.Text == "PostFlushLine2");
-                }, TimeSpan.FromSeconds(15), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerErrorRecoveryWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -599,7 +600,7 @@ namespace Servy.Manager.UnitTests.Utils
                     {
                         return capturedLines.Exists(l => l.Text.Contains("ROTATED_CONTENT"));
                     }
-                }, TimeSpan.FromSeconds(10), cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerRotationWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -639,7 +640,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await loopCompletedTcs.Task;
 
                 await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; },
-                    TimeSpan.FromSeconds(5),
+                    TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds),
                     cancellationToken: TestContext.Current.CancellationToken);
                 cts.Cancel();
 
@@ -681,7 +682,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await loopCompletedTcs.Task;
 
                 await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; },
-                    TimeSpan.FromSeconds(5),
+                    TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds),
                     cancellationToken: TestContext.Current.CancellationToken);
                 cts.Cancel();
 
@@ -748,10 +749,11 @@ namespace Servy.Manager.UnitTests.Utils
                     tailer.Dispose();
 
                     // Assert 1: Verify prompt task completion (HandlesLinkedCancellation) via a deterministic timeout check
-                    var completionDeadlineTask = Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+                    var completionDeadlineTask = Task.Delay(TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), TestContext.Current.CancellationToken);
                     var completedTask = await Task.WhenAny(tailTask, completionDeadlineTask);
 
-                    Assert.True(completedTask == tailTask, "The background tailer task failed to gracefully terminate within the 5-second cancellation timeout.");
+                    Assert.True(completedTask == tailTask,
+                        $"The background tailer task failed to gracefully terminate within the {TestTimeouts.LogTailerWaitSeconds}-second cancellation timeout.");
 
                     // Unroll any aggregate or operation cancelled exceptions to confirm safe termination
                     try
@@ -764,7 +766,7 @@ namespace Servy.Manager.UnitTests.Utils
                     }
 
                     // Let the thread pools settle for a brief window frame to guarantee no secondary ticks leak out
-                    await Task.Delay(50, TestContext.Current.CancellationToken);
+                    await Task.Delay(TestTimeouts.LogTailerPostDisposeSettleMs, TestContext.Current.CancellationToken);
 
                     // Assert 2: Verify that the background loop is completely halted and not spinning recursively
                     Assert.True(loopPassesPostDisposeCount <= 1,
