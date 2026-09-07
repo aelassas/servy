@@ -377,6 +377,58 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
+        public void HandleTransitionalError_TimeExpiresAfterPendingCheckSucceeds_ThrowsBeforeWaitForStatus()
+        {
+            // Arrange
+            bool stopThrown = false;
+            bool hasSlept = false;
+
+            // The status is Running until the primary Stop command is issued, so the settle phase and
+            // the stop-phase entry check both pass, and StopPending afterwards, so the handler loop
+            // takes the pending branch that re-issues nothing and therefore never throws. That
+            // isolates the "time ran out right after the pending check, before WaitForStatus" exit
+            // from the exception-driven one the sibling RemainingTimeExpiresInsideLoop test covers.
+            var status = ServiceControllerStatus.Running;
+            _mockController.Setup(c => c.Status).Returns(() => status);
+
+            // Stop() throws to route execution into HandleTransitionalError, and flips the status to
+            // pending on its way out.
+            _mockController.Setup(c => c.Stop()).Callback(() =>
+            {
+                stopThrown = true;
+                status = ServiceControllerStatus.StopPending;
+            }).Throws<InvalidOperationException>();
+
+            // Burn the whole remaining budget on the first Refresh() inside the handler loop.
+            _mockController.Setup(c => c.Refresh()).Callback(() =>
+            {
+                if (stopThrown && !hasSlept)
+                {
+                    Thread.Sleep(TestTimeouts.ServiceRestarterMidLoopExpiryBurn);
+                    hasSlept = true;
+                }
+            });
+
+            // Act & Assert
+            var ex = Assert.Throws<System.TimeoutException>(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterMidLoopExpiryBudget));
+
+            // Assert
+            Assert.True(hasSlept, "The handler loop body was never reached; the budget expired before entry.");
+            Assert.Contains("failed to reach Stopped within the timeout period", ex.Message);
+
+            // The throw happens right after the pending check, so the wait is never entered - neither
+            // here nor in the primary stop phase, which Stop() left before reaching it.
+            _mockController.Verify(c => c.WaitForStatus(It.IsAny<ServiceControllerStatus>(), It.IsAny<TimeSpan>()), Times.Never);
+
+            // Only the primary Stop is issued: the recovery poll takes the pending branch, which
+            // deliberately does not re-issue the command.
+            _mockController.Verify(c => c.Stop(), Times.Once);
+
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
         public void HandleTransitionalError_WaitForStatusTimesOutInsideLoop_RetriesUntilTargetIsReached()
         {
             // Arrange
