@@ -3,9 +3,15 @@ using System.Linq;
 namespace Servy.Infrastructure.Data
 {
     /// <summary>
-    /// Centralized source of truth for all Service table operations.
-    /// Dynamically builds SQL clauses to prevent column divergence using inline initialization.
+    /// Centralized source of truth for the column SET of the Service table: every SQL clause below
+    /// is built from the one list, so the clauses cannot diverge from each other.
     /// </summary>
+    /// <remarks>
+    /// It owns which columns exist, not what type they get - the column types come from the
+    /// <c>[SqlColumn]</c> attributes on <c>ServiceDto</c>. Adding a name here without the matching
+    /// attribute is caught at the first database open; adding the attribute without a name here has no
+    /// runtime guard, which is why both directions are pinned by <c>SqlColumnContractAntiDriftTests</c>.
+    /// </remarks>
     public static class SqlConstants
     {
         /// <summary>
