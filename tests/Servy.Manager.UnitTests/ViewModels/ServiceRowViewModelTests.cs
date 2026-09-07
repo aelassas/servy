@@ -474,6 +474,28 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task ExecuteSafeAsync_OperationCanceledException_SwallowsAndResetsCursor()
+        {
+            // Arrange
+            var service = new Service { Name = "CancelledService" };
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Act
+            // A cancelled action must reach the dedicated catch (OperationCanceledException) arm,
+            // which swallows it silently instead of logging it like the general catch (Exception) arm.
+            Func<Task> cancelledAction = () => Task.FromException(new OperationCanceledException());
+
+            var taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), cancelledAction);
+            await taskResult;
+
+            // Assert
+            // Awaiting without throwing is the proof the cancellation was absorbed, not rethrown.
+            Assert.Equal(TaskStatus.RanToCompletion, taskResult.Status);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
         public void Dispose_ShouldUnsubscribeFromModelEvents()
         {
             // Arrange
