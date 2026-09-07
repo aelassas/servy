@@ -1,9 +1,7 @@
-using Microsoft.Win32.SafeHandles;
 using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Native;
 using Servy.Core.Validation;
 using System.Diagnostics;
 using System.Text;
@@ -526,7 +524,7 @@ namespace Servy.Service.ProcessManagement
                 // 1. Check whether any parent or ancestor directory is a reparse point (junction/symlink)
                 if (Helper.HasAncestorReparsePoint(fullPath))
                 {
-                    logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction or symbolic link.");
+                    logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction, symbolic link, or mount point.");
                     return null;
                 }
 
@@ -535,7 +533,7 @@ namespace Servy.Service.ProcessManagement
                 // Re-verify ancestor directories after EnsureDirectoryExists creates any missing paths
                 if (Helper.HasAncestorReparsePoint(fullPath))
                 {
-                    logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction or symbolic link.");
+                    logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction, symbolic link, or mount point.");
                     return null;
                 }
 
@@ -545,7 +543,7 @@ namespace Servy.Service.ProcessManagement
                     var fileInfo = new FileInfo(fullPath);
                     if (fileInfo.Attributes.HasFlag(FileAttributes.ReparsePoint))
                     {
-                        logger.Error($"Refusing to write {scope} for '{exePath}': target file '{path}' is a junction or symbolic link.");
+                        logger.Error($"Refusing to write {scope} for '{exePath}': target file '{path}' is a junction, symbolic link, or mount point.");
                         return null;
                     }
                 }

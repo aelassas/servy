@@ -1030,6 +1030,19 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public void HasAncestorReparsePoint_WhenAncestorIsVolumeMountPoint_ReturnsFalse()
+        {
+            // Arrange
+            string fakeMountPoint = Path.Combine(_testRoot, "VolumeMountPoint");
+            Directory.CreateDirectory(fakeMountPoint);
+
+            // Act & Assert
+            // Standard directory without reparse point attributes returns false
+            string targetPath = Path.Combine(fakeMountPoint, "sub", "test.log");
+            Assert.False(Helper.HasAncestorReparsePoint(targetPath));
+        }
+
         #endregion
 
         #region Reparse Points Management Helpers

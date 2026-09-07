@@ -1,5 +1,5 @@
+using Servy.Core.DTOs;
 using Servy.Design;
-using Servy.Models;
 
 namespace Servy.UnitTests.Design
 {
@@ -10,11 +10,11 @@ namespace Servy.UnitTests.Design
         {
             // Arrange
             var commands = new DesignTimeServiceCommands();
-            var dummyConfig = new ServiceConfiguration();
+            var dummyDto = new ServiceDto();
             var ct = TestContext.Current.CancellationToken;
 
             // Act & Assert - Boolean returning methods
-            Assert.True(await commands.InstallServiceAsync(dummyConfig, ct));
+            Assert.True(await commands.InstallServiceAsync(dummyDto, cancellationToken: ct));
             Assert.True(await commands.UninstallServiceAsync("testService", ct));
             Assert.True(await commands.StartServiceAsync("testService", ct));
             Assert.True(await commands.StopServiceAsync("testService", ct));

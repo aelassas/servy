@@ -1,3 +1,4 @@
+using Servy.Core.DTOs;
 using Servy.Services;
 
 namespace Servy.Design
@@ -7,7 +8,7 @@ namespace Servy.Design
     /// </summary>
     public class DesignTimeServiceCommands : IServiceCommands
     {
-        public Task<bool> InstallServiceAsync(Models.ServiceConfiguration config, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public Task<bool> InstallServiceAsync(ServiceDto dto, string? confirmPassword = null, bool runAsLocalSystem = true, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public Task<bool> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public Task<bool> StartServiceAsync(string? serviceName, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public Task<bool> StopServiceAsync(string? serviceName, CancellationToken cancellationToken = default) => Task.FromResult(true);

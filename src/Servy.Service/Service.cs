@@ -2574,9 +2574,9 @@ namespace Servy.Service
 
                 // 2. Pre-Stop Hook
                 // Even if this fails, we usually want to continue killing the main process
-                var preStopSuccess = StartPreStopProcess(_options!);
+                var preStopSuccess = StartPreStopProcess(_options);
 
-                if (!preStopSuccess && _options!.PreStopLogAsError)
+                if (!preStopSuccess && _options.PreStopLogAsError)
                 {
                     _logger?.Error("Pre-stop failed. Manual intervention may be required, but continuing cleanup to avoid orphans.");
                 }
@@ -2584,7 +2584,7 @@ namespace Servy.Service
                 // 3. Main Kill Sequence (with SCM Heartbeats)
                 if (_childProcess != null)
                 {
-                    SafeKillProcess(_childProcess, ClampTimeout(_options!.StopTimeoutInSeconds));
+                    SafeKillProcess(_childProcess, ClampTimeout(_options.StopTimeoutInSeconds));
 
                     // Only cancel if redirection was active AND the stream is actually open
                     if (_childProcess.StartInfo.RedirectStandardOutput)
@@ -2716,7 +2716,7 @@ namespace Servy.Service
         /// <returns><see langword="true"/> if the process succeeded or failures are ignored; otherwise <see langword="false"/>.</returns>
         private bool StartPreStopProcess(StartOptions options)
         {
-            if (options == null || string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
+            if (string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
             {
                 _logger?.Info("No pre-stop executable configured. Skipping.");
                 return true;

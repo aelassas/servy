@@ -93,6 +93,7 @@ namespace Servy.Views
                 Logger.Error("Error killing child processes.", ex);
             }
 
+            _mainViewModel.Dispose();
             base.OnClosed(e);
         }
 

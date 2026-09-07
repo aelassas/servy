@@ -3,8 +3,6 @@ using Servy.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
-using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Services;
@@ -129,14 +127,18 @@ namespace Servy.UnitTests.ViewModels
         public async Task InstallCommand_Calls_InstallService_With_Configuration()
         {
             // Arrange
-            ServiceConfiguration? capturedConfig = null;
+            ServiceDto? capturedDto = null;
+            string? capturedConfirmPassword = null;
+            bool? capturedRunAsLocalSystem = null;
             bool wasBusyDuringExecution = false;
 
             _serviceCommandsMock
-                .Setup(s => s.InstallServiceAsync(It.IsAny<ServiceConfiguration>(), It.IsAny<CancellationToken>()))
-                .Callback<ServiceConfiguration, CancellationToken>((config, _) =>
+                .Setup(s => s.InstallServiceAsync(It.IsAny<ServiceDto>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .Callback<ServiceDto, string?, bool, CancellationToken>((dto, confirmPassword, runAsLocalSystem, _) =>
                 {
-                    capturedConfig = config;
+                    capturedDto = dto;
+                    capturedConfirmPassword = confirmPassword;
+                    capturedRunAsLocalSystem = runAsLocalSystem;
                     wasBusyDuringExecution = _viewModel.IsBusy;
                 })
                 .ReturnsAsync(true);
@@ -215,68 +217,68 @@ namespace Servy.UnitTests.ViewModels
             Assert.True(wasBusyDuringExecution, "IsBusy should be true while InstallServiceAsync is running.");
             Assert.False(_viewModel.IsBusy, "IsBusy should be reset to false after execution completes.");
 
-            Assert.NotNull(capturedConfig);
-            Assert.Equal("TestService", capturedConfig.Name);
-            Assert.Equal("TestServiceDisplayName", capturedConfig.DisplayName);
-            Assert.Equal("Desc", capturedConfig.Description);
-            Assert.Equal(@"C:\app\test.exe", capturedConfig.ExecutablePath);
-            Assert.Equal(@"C:\app", capturedConfig.StartupDirectory);
-            Assert.Equal("--flag", capturedConfig.Parameters);
-            Assert.Equal(ServiceStartType.Manual, capturedConfig.StartupType);
-            Assert.Equal(ProcessPriority.High, capturedConfig.Priority);
-            Assert.Equal("0x1", capturedConfig.CpuAffinity);
-            Assert.Equal(@"C:\logs\out.log", capturedConfig.StdoutPath);
-            Assert.Equal(@"C:\logs\err.log", capturedConfig.StderrPath);
-            Assert.True(capturedConfig.EnableSizeRotation);
-            Assert.Equal("12345", capturedConfig.RotationSize);
-            Assert.True(capturedConfig.EnableDateRotation);
-            Assert.Equal(DateRotationType.Weekly, capturedConfig.DateRotationType);
-            Assert.Equal("5", capturedConfig.MaxRotations);
-            Assert.True(capturedConfig.UseLocalTimeForRotation);
-            Assert.True(capturedConfig.EnableHealthMonitoring);
-            Assert.Equal("60", capturedConfig.HeartbeatInterval);
-            Assert.Equal("5", capturedConfig.MaxFailedChecks);
-            Assert.Equal(RecoveryAction.RestartService, capturedConfig.RecoveryAction);
-            Assert.Equal("3", capturedConfig.MaxRestartAttempts);
-            Assert.Equal("https://example.com/heartbeat", capturedConfig.HeartbeatUrl);
-            Assert.Equal("10", capturedConfig.HeartbeatUrlTimeoutSeconds);
-            Assert.True(capturedConfig.EnableHeartbeatUrlFlags);
-            Assert.Equal(@"C:\failureProgram\failureProgram.exe", capturedConfig.FailureProgramPath);
-            Assert.Equal(@"C:\failureProgramDir", capturedConfig.FailureProgramStartupDirectory);
-            Assert.Equal("--failureProgramParam1 val1", capturedConfig.FailureProgramParameters);
-            Assert.Equal("var1=val1;var2=val2", capturedConfig.EnvironmentVariables);
-            Assert.Equal("MongoDB", capturedConfig.ServiceDependencies);
-            Assert.False(capturedConfig.RunAsLocalSystem);
-            Assert.Equal(@".\username", capturedConfig.UserAccount);
-            Assert.Equal("password", capturedConfig.Password);
-            Assert.Equal("password", capturedConfig.ConfirmPassword);
-            Assert.Equal(@"C:\pre-launch\pre-launch.exe", capturedConfig.PreLaunchExecutablePath);
-            Assert.Equal(@"C:\pre-launch", capturedConfig.PreLaunchStartupDirectory);
-            Assert.Equal("--pre-param val1", capturedConfig.PreLaunchParameters);
-            Assert.Equal("pvar1=pval1;", capturedConfig.PreLaunchEnvironmentVariables);
-            Assert.Equal(@"C:\logs\pre-launch-stdout.log", capturedConfig.PreLaunchStdoutPath);
-            Assert.Equal(@"C:\logs\pre-launch-stderr.log", capturedConfig.PreLaunchStderrPath);
-            Assert.Equal("40", capturedConfig.PreLaunchTimeoutSeconds);
-            Assert.Equal("3", capturedConfig.PreLaunchRetryAttempts);
-            Assert.True(capturedConfig.PreLaunchIgnoreFailure);
-            Assert.Equal(@"C:\post-launch\post-launch.exe", capturedConfig.PostLaunchExecutablePath);
-            Assert.Equal(@"C:\post-launch", capturedConfig.PostLaunchStartupDirectory);
-            Assert.Equal("--post-param val1", capturedConfig.PostLaunchParameters);
-            Assert.Equal("11", capturedConfig.StartTimeout);
-            Assert.Equal("6", capturedConfig.StopTimeout);
-            Assert.Equal(@"C:\pre-stop\pre-stop.exe", capturedConfig.PreStopExecutablePath);
-            Assert.Equal(@"C:\pre-stop", capturedConfig.PreStopStartupDirectory);
-            Assert.Equal("--pre-stop-args", capturedConfig.PreStopParameters);
-            Assert.Equal("15", capturedConfig.PreStopTimeoutSeconds);
-            Assert.True(capturedConfig.PreStopLogAsError);
-            Assert.Equal(@"C:\post-stop\post-stop.exe", capturedConfig.PostStopExecutablePath);
-            Assert.Equal(@"C:\post-stop", capturedConfig.PostStopStartupDirectory);
-            Assert.Equal("--post-stop-args", capturedConfig.PostStopParameters);
-            Assert.True(capturedConfig.EnableConsoleUI);
-            Assert.True(capturedConfig.EnableDebugLogs);
-            Assert.True(capturedConfig.RecoveryOnCleanExit);
+            Assert.NotNull(capturedDto);
+            Assert.Equal("TestService", capturedDto.Name);
+            Assert.Equal("TestServiceDisplayName", capturedDto.DisplayName);
+            Assert.Equal("Desc", capturedDto.Description);
+            Assert.Equal(@"C:\app\test.exe", capturedDto.ExecutablePath);
+            Assert.Equal(@"C:\app", capturedDto.StartupDirectory);
+            Assert.Equal("--flag", capturedDto.Parameters);
+            Assert.Equal((int)ServiceStartType.Manual, capturedDto.StartupType);
+            Assert.Equal((int)ProcessPriority.High, capturedDto.Priority);
+            Assert.Equal("0x1", capturedDto.CpuAffinity);
+            Assert.Equal(@"C:\logs\out.log", capturedDto.StdoutPath);
+            Assert.Equal(@"C:\logs\err.log", capturedDto.StderrPath);
+            Assert.True(capturedDto.EnableSizeRotation);
+            Assert.Equal(12345, capturedDto.RotationSize);
+            Assert.True(capturedDto.EnableDateRotation);
+            Assert.Equal((int)DateRotationType.Weekly, capturedDto.DateRotationType);
+            Assert.Equal(5, capturedDto.MaxRotations);
+            Assert.True(capturedDto.UseLocalTimeForRotation);
+            Assert.True(capturedDto.EnableHealthMonitoring);
+            Assert.Equal(60, capturedDto.HeartbeatInterval);
+            Assert.Equal(5, capturedDto.MaxFailedChecks);
+            Assert.Equal((int)RecoveryAction.RestartService, capturedDto.RecoveryAction);
+            Assert.Equal(3, capturedDto.MaxRestartAttempts);
+            Assert.Equal("https://example.com/heartbeat", capturedDto.HeartbeatUrl);
+            Assert.Equal(10, capturedDto.HeartbeatUrlTimeoutSeconds);
+            Assert.True(capturedDto.EnableHeartbeatUrlFlags);
+            Assert.Equal(@"C:\failureProgram\failureProgram.exe", capturedDto.FailureProgramPath);
+            Assert.Equal(@"C:\failureProgramDir", capturedDto.FailureProgramStartupDirectory);
+            Assert.Equal("--failureProgramParam1 val1", capturedDto.FailureProgramParameters);
+            Assert.Equal("var1=val1;var2=val2", capturedDto.EnvironmentVariables);
+            Assert.Equal("MongoDB", capturedDto.ServiceDependencies);
+            Assert.False(capturedRunAsLocalSystem);
+            Assert.Equal(@".\username", capturedDto.UserAccount);
+            Assert.Equal("password", capturedDto.Password);
+            Assert.Equal("password", capturedConfirmPassword);
+            Assert.Equal(@"C:\pre-launch\pre-launch.exe", capturedDto.PreLaunchExecutablePath);
+            Assert.Equal(@"C:\pre-launch", capturedDto.PreLaunchStartupDirectory);
+            Assert.Equal("--pre-param val1", capturedDto.PreLaunchParameters);
+            Assert.Equal("pvar1=pval1;", capturedDto.PreLaunchEnvironmentVariables);
+            Assert.Equal(@"C:\logs\pre-launch-stdout.log", capturedDto.PreLaunchStdoutPath);
+            Assert.Equal(@"C:\logs\pre-launch-stderr.log", capturedDto.PreLaunchStderrPath);
+            Assert.Equal(40, capturedDto.PreLaunchTimeoutSeconds);
+            Assert.Equal(3, capturedDto.PreLaunchRetryAttempts);
+            Assert.True(capturedDto.PreLaunchIgnoreFailure);
+            Assert.Equal(@"C:\post-launch\post-launch.exe", capturedDto.PostLaunchExecutablePath);
+            Assert.Equal(@"C:\post-launch", capturedDto.PostLaunchStartupDirectory);
+            Assert.Equal("--post-param val1", capturedDto.PostLaunchParameters);
+            Assert.Equal(11, capturedDto.StartTimeout);
+            Assert.Equal(6, capturedDto.StopTimeout);
+            Assert.Equal(@"C:\pre-stop\pre-stop.exe", capturedDto.PreStopExecutablePath);
+            Assert.Equal(@"C:\pre-stop", capturedDto.PreStopStartupDirectory);
+            Assert.Equal("--pre-stop-args", capturedDto.PreStopParameters);
+            Assert.Equal(15, capturedDto.PreStopTimeoutSeconds);
+            Assert.True(capturedDto.PreStopLogAsError);
+            Assert.Equal(@"C:\post-stop\post-stop.exe", capturedDto.PostStopExecutablePath);
+            Assert.Equal(@"C:\post-stop", capturedDto.PostStopStartupDirectory);
+            Assert.Equal("--post-stop-args", capturedDto.PostStopParameters);
+            Assert.True(capturedDto.EnableConsoleUI);
+            Assert.True(capturedDto.EnableDebugLogs);
+            Assert.True(capturedDto.RecoveryOnCleanExit);
 
-            _serviceCommandsMock.Verify(s => s.InstallServiceAsync(It.IsAny<ServiceConfiguration>(), It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(s => s.InstallServiceAsync(It.IsAny<ServiceDto>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -707,6 +707,17 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Determines whether a directory is an NTFS volume mount point (\??\Volume{GUID}\).
+        /// </summary>
+        /// <param name="dir">The directory info instance to check.</param>
+        /// <returns><c>true</c> if the directory is a volume mount point; otherwise, <c>false</c>.</returns>
+        private static bool IsVolumeMountPoint(DirectoryInfo dir)
+        {
+            var target = dir.LinkTarget;
+            return target != null && target.StartsWith(@"\??\Volume{", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Recursively walks up the directory tree to determine if the specified path resides
         /// within any directory that is an NTFS reparse point (such as a junction point or symbolic link).
         /// </summary>
@@ -734,7 +745,7 @@ namespace Servy.Core.Helpers
             // directories that are about to be created.
             while (current != null)
             {
-                if (current.Exists)
+                if (current.Exists && !IsVolumeMountPoint(current))
                 {
                     if (!string.IsNullOrEmpty(current.LinkTarget) ||
                         (current.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)

@@ -90,6 +90,7 @@
   <DockPanel>
     <Menu DockPanel.Dock="Top"
           Height="28"
+          IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
           AutomationProperties.Name="{x:Static resx:Strings.Automation_MainMenu_Name}"
           AutomationProperties.AutomationId="MainMenu"
           AutomationProperties.HelpText="{x:Static resx:Strings.Automation_MainMenu_HelpText}">
@@ -168,6 +169,7 @@
 
       <TabControl Grid.Row="0"
                   VerticalAlignment="Stretch"
+                  IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
                   AutomationProperties.Name="{x:Static resx:Strings.Automation_ConfigurationTabControl_Name}"
                   AutomationProperties.AutomationId="ConfigurationTabControl"
                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConfigurationTabControl_HelpText}">

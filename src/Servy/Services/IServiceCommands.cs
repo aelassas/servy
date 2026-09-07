@@ -1,6 +1,5 @@
 using Servy.Core.DTOs;
 using Servy.Core.Services;
-using Servy.Models;
 using Servy.Validation;
 
 namespace Servy.Services
@@ -13,12 +12,14 @@ namespace Servy.Services
     public interface IServiceCommands
     {
         /// <summary>
-        /// Orchestrates the installation of a new Windows service using the provided configuration.
+        /// Orchestrates the installation of a new Windows service using the provided configuration DTO.
         /// </summary>
-        /// <param name="config">
-        /// The <see cref="ServiceConfiguration"/> containing all process paths,
+        /// <param name="dto">
+        /// The <see cref="ServiceDto"/> snapshot containing all process paths,
         /// startup parameters, and lifecycle hook settings.
         /// </param>
+        /// <param name="confirmPassword">Optional password confirmation string for user credential validation.</param>
+        /// <param name="runAsLocalSystem">Indicates whether the service runs under the LocalSystem account.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A task representing the asynchronous installation operation, returning <c>true</c> if the service was installed successfully;
@@ -30,7 +31,6 @@ namespace Servy.Services
         /// It performs several critical steps:
         /// <list type="bullet">
         /// <item><description>Locates and validates the Servy UI service wrapper executable.</description></item>
-        /// <item><description>Maps the high-level <see cref="ServiceConfiguration"/> to a data-transfer object (<see cref="ServiceDto"/>).</description></item>
         /// <item><description>Triggers comprehensive validation via the <see cref="IServiceConfigurationValidator"/>.</description></item>
         /// <item><description>Checks for existing service name collisions in the Windows SCM.</description></item>
         /// <item><description>Invokes the <see cref="IServiceManager"/> to perform the actual OS-level installation.</description></item>
@@ -38,11 +38,15 @@ namespace Servy.Services
         /// </para>
         /// <para>
         /// <b>Security:</b> User credentials (account and password) are handled according to the
-        /// <see cref="ServiceConfiguration.RunAsLocalSystem"/> flag. Credentials are encrypted
+        /// <paramref name="runAsLocalSystem"/> flag. Credentials are encrypted
         /// before being stored in the repository.
         /// </para>
         /// </remarks>
-        Task<bool> InstallServiceAsync(ServiceConfiguration config, CancellationToken cancellationToken = default);
+        Task<bool> InstallServiceAsync(
+            ServiceDto dto,
+            string? confirmPassword = null,
+            bool runAsLocalSystem = true,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uninstalls the specified Windows service.
