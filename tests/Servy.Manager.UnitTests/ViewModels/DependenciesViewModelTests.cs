@@ -639,5 +639,50 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         #endregion
+
+        #region Search Pipeline Tests
+
+        [Fact]
+        public async Task SearchCommand_PopulatesServicesWithMappedNameAndPid()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel? viewModel = null;
+                    try
+                    {
+                        // Arrange
+                        _mockUiDispatcher.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
+                        _mockServiceCommands
+                            .Setup(c => c.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                            .ReturnsAsync(new List<Service>
+                            {
+                                new Service { Name = "svc-a", Pid = 111 },
+                                new Service { Name = "svc-b", Pid = null }
+                            });
+
+                        viewModel = CreateViewModel();
+
+                        // Act
+                        await viewModel.SearchCommand.ExecuteAsync(null);
+
+                        // Assert: CreateServiceItem carries both Name and Pid across, including a null Pid
+                        var items = viewModel.Services.Cast<DependencyService>().ToList();
+                        Assert.Equal(2, items.Count);
+                        Assert.Equal("svc-a", items[0].Name);
+                        Assert.Equal(111, items[0].Pid);
+                        Assert.Equal("svc-b", items[1].Name);
+                        Assert.Null(items[1].Pid);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        #endregion
     }
 }
