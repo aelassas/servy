@@ -9,17 +9,8 @@ namespace Servy.Core.IntegrationTests.Security
     /// Integration tests for the <see cref="ProtectedKeyProvider"/>.
     /// These tests require a Windows environment due to the reliance on DPAPI (ProtectedData).
     /// </summary>
-    public class ProtectedKeyProviderIntegrationTests : IDisposable
+    public class ProtectedKeyProviderIntegrationTests : TempDirectoryTestBase
     {
-        private readonly string _testDirectory;
-
-        public ProtectedKeyProviderIntegrationTests()
-        {
-            // Create a unique temporary directory for each test run to guarantee isolation
-            _testDirectory = Path.Combine(Path.GetTempPath(), "Servy_ProtectedKeyProvider_Tests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testDirectory);
-        }
-
         #region Constructor Tests
 
         [Theory]
@@ -39,7 +30,7 @@ namespace Servy.Core.IntegrationTests.Security
         public void Constructor_IdenticalPaths_ThrowsArgumentException()
         {
             // Arrange
-            var path = Path.Combine(_testDirectory, "shared.key");
+            var path = Path.Combine(TempDirectory, "shared.key");
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => new ProtectedKeyProvider(path, path));
@@ -461,24 +452,7 @@ namespace Servy.Core.IntegrationTests.Security
 
         private string GetTempFilePath(string fileName)
         {
-            return Path.Combine(_testDirectory, fileName);
-        }
-
-        public void Dispose()
-        {
-            // Clean up the temporary test directory
-            if (Directory.Exists(_testDirectory))
-            {
-                try
-                {
-                    Directory.Delete(_testDirectory, recursive: true);
-                }
-                catch
-                {
-                    // Swallow cleanup exceptions to prevent failing the test runner
-                    // if a file lock lingers momentarily.
-                }
-            }
+            return Path.Combine(TempDirectory, fileName);
         }
 
         #endregion

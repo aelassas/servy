@@ -6,16 +6,13 @@ using System.Globalization;
 
 namespace Servy.Core.UnitTests.IO
 {
-    public class RotatingStreamWriterTests : IDisposable
+    public class RotatingStreamWriterTests : TempDirectoryTestBase
     {
-        private readonly string _testDir;
         private readonly string _logFilePath;
 
         public RotatingStreamWriterTests()
         {
-            _testDir = Path.Combine(Path.GetTempPath(), "RotatingStreamWriterTests_" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(_testDir);
-            _logFilePath = Path.Combine(_testDir, "test.log");
+            _logFilePath = Path.Combine(TempDirectory, "test.log");
         }
 
         // Helper to construct per the constructor signature
@@ -53,7 +50,7 @@ namespace Servy.Core.UnitTests.IO
         public void Constructor_CreatesDirectoryIfNotExists()
         {
             // Arrange
-            var newDir = Path.Combine(_testDir, "newfolder");
+            var newDir = Path.Combine(TempDirectory, "newfolder");
             var newFile = Path.Combine(newDir, "file.log");
 
             Assert.False(Directory.Exists(newDir));
@@ -90,7 +87,7 @@ namespace Servy.Core.UnitTests.IO
         public void LazyInitialization_Write_DoesNotCreateFileUntilCalled()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "lazy_write.txt");
+            var filePath = Path.Combine(TempDirectory, "lazy_write.txt");
 
             // Act & Assert
             using (var writer = CreateWriter(filePath, true, 10))
@@ -109,7 +106,7 @@ namespace Servy.Core.UnitTests.IO
         public void LazyInitialization_WriteLine_DoesNotCreateFileUntilCalled()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "lazy_writeline.txt");
+            var filePath = Path.Combine(TempDirectory, "lazy_writeline.txt");
 
             // Act & Assert
             using (var writer = CreateWriter(filePath, true, 10))
@@ -126,7 +123,7 @@ namespace Servy.Core.UnitTests.IO
         public void LazyInitialization_RecreatesWriterAfterRotation()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "lazy_rotate.txt");
+            var filePath = Path.Combine(TempDirectory, "lazy_rotate.txt");
 
             // Act
             using (var writer = CreateWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
@@ -176,7 +173,7 @@ namespace Servy.Core.UnitTests.IO
         public void GenerateUniqueFileName_FileDoesNotExist_ReturnsOriginalPath()
         {
             // Arrange
-            var path = Path.Combine(_testDir, "log.txt");
+            var path = Path.Combine(TempDirectory, "log.txt");
 
             // Act
             var result = InvokeGenerateUniqueFileName(path);
@@ -189,7 +186,7 @@ namespace Servy.Core.UnitTests.IO
         public void GenerateUniqueFileName_FileExists_AppendsNumber()
         {
             // Arrange
-            var path = Path.Combine(_testDir, "log.txt");
+            var path = Path.Combine(TempDirectory, "log.txt");
             File.WriteAllText(path, "dummy"); // create first file
 
             var first = InvokeGenerateUniqueFileName(path);
@@ -199,7 +196,7 @@ namespace Servy.Core.UnitTests.IO
             var second = InvokeGenerateUniqueFileName(path);
 
             // Assert
-            Assert.Equal(Path.Combine(_testDir, "log.(2).txt"), second);
+            Assert.Equal(Path.Combine(TempDirectory, "log.(2).txt"), second);
         }
 
         [Fact]
@@ -208,7 +205,7 @@ namespace Servy.Core.UnitTests.IO
         {
             // Arrange
             string fileName = "testlog.txt";
-            string basePath = Path.Combine(_testDir, fileName);
+            string basePath = Path.Combine(TempDirectory, fileName);
             string namePart = Path.GetFileNameWithoutExtension(fileName);
             string extension = Path.GetExtension(fileName);
 
@@ -220,7 +217,7 @@ namespace Servy.Core.UnitTests.IO
             int max = AppConfig.RotatingStreamWriterMaxUniqueFilenameRetries;
             for (int i = 1; i <= max; i++)
             {
-                string collisionPath = Path.Combine(_testDir, $"{namePart}.({i}){extension}");
+                string collisionPath = Path.Combine(TempDirectory, $"{namePart}.({i}){extension}");
                 File.WriteAllText(collisionPath, string.Empty);
             }
 
@@ -241,8 +238,8 @@ namespace Servy.Core.UnitTests.IO
         public void HandlesCollisions_BasedOnExtensionType(string fileName, string expectedName)
         {
             // Arrange
-            var basePath = Path.Combine(_testDir, fileName);
-            var expectedPath = Path.Combine(_testDir, expectedName);
+            var basePath = Path.Combine(TempDirectory, fileName);
+            var expectedPath = Path.Combine(TempDirectory, expectedName);
             File.WriteAllText(basePath, "dummy"); // Create the collision
 
             // Act
@@ -257,12 +254,12 @@ namespace Servy.Core.UnitTests.IO
         {
             // Arrange
             var fileName = "App.20260325_001611.log";
-            var basePath = Path.Combine(_testDir, fileName);
+            var basePath = Path.Combine(TempDirectory, fileName);
 
             File.WriteAllText(basePath, "orig");
-            File.WriteAllText(Path.Combine(_testDir, "App.20260325_001611.(1).log"), "coll1");
+            File.WriteAllText(Path.Combine(TempDirectory, "App.20260325_001611.(1).log"), "coll1");
 
-            var expectedPath = Path.Combine(_testDir, "App.20260325_001611.(2).log");
+            var expectedPath = Path.Combine(TempDirectory, "App.20260325_001611.(2).log");
 
             // Act
             var result = InvokeGenerateUniqueFileName(basePath);
@@ -275,7 +272,7 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_CreatesRotatedFileAndNewWriter()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "rotate.txt");
+            var filePath = Path.Combine(TempDirectory, "rotate.txt");
             var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
 
             // Act
@@ -287,14 +284,14 @@ namespace Servy.Core.UnitTests.IO
                 // Assert
                 Assert.True(File.Exists(filePath)); // new file recreated
 
-                var rotatedFiles = Directory.GetFiles(_testDir, "rotate.*.txt").Where(f => !f.EndsWith("rotate.txt")).ToList();
+                var rotatedFiles = Directory.GetFiles(TempDirectory, "rotate.*.txt").Where(f => !f.EndsWith("rotate.txt")).ToList();
                 Assert.NotEmpty(rotatedFiles);
 
                 // Assert precisely against the frozen time
                 Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotatedFiles[0]);
             }
 
-            var latestRotatedFile = Directory.GetFiles(_testDir, "rotate.*.txt")
+            var latestRotatedFile = Directory.GetFiles(TempDirectory, "rotate.*.txt")
                     .Select(f => new FileInfo(f))
                     .Where(f => !f.Name.Equals("rotate.txt"))
                     .OrderByDescending(f => f.LastWriteTimeUtc)
@@ -309,7 +306,7 @@ namespace Servy.Core.UnitTests.IO
         public void Flush_WhenWriterIsNotNull_CallsUnderlyingFlush()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "test.txt");
+            var filePath = Path.Combine(TempDirectory, "test.txt");
 
             // Act & Assert
             using (var writer = CreateWriter(filePath, true, 10))
@@ -336,7 +333,7 @@ namespace Servy.Core.UnitTests.IO
         public void Flush_WhenWriterIsNull_DoesNothing()
         {
             // Arrange
-            using (var writer = CreateWriter(Path.Combine(_testDir, "test.txt"), true, 10))
+            using (var writer = CreateWriter(Path.Combine(TempDirectory, "test.txt"), true, 10))
             {
                 // Act
                 // Calling Flush should not throw
@@ -379,16 +376,16 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             using (var writer = CreateWriter(_logFilePath, true, 1000))
             {
-                var basePath = Path.Combine(_testDir, "file.log");
+                var basePath = Path.Combine(TempDirectory, "file.log");
                 File.WriteAllText(basePath, "test");
-                File.WriteAllText(Path.Combine(_testDir, "file.(1).log"), "test");
-                File.WriteAllText(Path.Combine(_testDir, "file.(2).log"), "test");
+                File.WriteAllText(Path.Combine(TempDirectory, "file.(1).log"), "test");
+                File.WriteAllText(Path.Combine(TempDirectory, "file.(2).log"), "test");
 
                 // Act
                 var uniqueName = (string)TestReflection.InvokeNonPublicStatic(typeof(RotatingStreamWriter), "GenerateUniqueFileName", new object[] { basePath })!;
 
                 // Assert
-                Assert.Equal(Path.Combine(_testDir, "file.(3).log"), uniqueName);
+                Assert.Equal(Path.Combine(TempDirectory, "file.(3).log"), uniqueName);
             }
         }
 
@@ -396,7 +393,7 @@ namespace Servy.Core.UnitTests.IO
         public void WriteLine_DoesNotRotate_WhenRotationSizeZero()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "zero.txt");
+            var filePath = Path.Combine(TempDirectory, "zero.txt");
 
             // Act
             using (var writer = CreateWriter(filePath, true, 0))
@@ -406,7 +403,7 @@ namespace Servy.Core.UnitTests.IO
 
             // Assert
             Assert.True(File.Exists(filePath));
-            var rotatedFiles = Directory.GetFiles(_testDir, "zero.*.txt").Where(f => !f.EndsWith("zero.txt"));
+            var rotatedFiles = Directory.GetFiles(TempDirectory, "zero.*.txt").Where(f => !f.EndsWith("zero.txt"));
             Assert.Empty(rotatedFiles);
         }
 
@@ -414,7 +411,7 @@ namespace Servy.Core.UnitTests.IO
         public void WriteLine_DoesNotRotate_WhenFileSmallerThanRotationSize()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "small.txt");
+            var filePath = Path.Combine(TempDirectory, "small.txt");
 
             // Act
             using (var writer = CreateWriter(filePath, true, 1024))
@@ -424,7 +421,7 @@ namespace Servy.Core.UnitTests.IO
 
             // Assert
             Assert.True(File.Exists(filePath));
-            var rotatedFiles = Directory.GetFiles(_testDir, "small.*.txt").Where(f => !f.EndsWith("small.txt"));
+            var rotatedFiles = Directory.GetFiles(TempDirectory, "small.*.txt").Where(f => !f.EndsWith("small.txt"));
             Assert.Empty(rotatedFiles);
         }
 
@@ -432,7 +429,7 @@ namespace Servy.Core.UnitTests.IO
         public void WriteLine_Rotates_WhenFileExceedsRotationSize()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "rotate2.txt");
+            var filePath = Path.Combine(TempDirectory, "rotate2.txt");
 
             // Act
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
@@ -449,7 +446,7 @@ namespace Servy.Core.UnitTests.IO
 
             // 2. Firm Validation: Target the middle-timestamp layout and explicitly filter out
             // the base tracking path to verify a genuine archival stream rotation took place.
-            var rotatedFiles = Directory.GetFiles(_testDir, "rotate2.*.txt")
+            var rotatedFiles = Directory.GetFiles(TempDirectory, "rotate2.*.txt")
                                         .Where(f => !f.EndsWith("rotate2.txt", StringComparison.OrdinalIgnoreCase))
                                         .ToList();
 
@@ -464,7 +461,7 @@ namespace Servy.Core.UnitTests.IO
         public void Write_WhenWriterIsNull_DoesNothingAfterDisposal()
         {
             // Arrange
-            var writer = CreateWriter(Path.Combine(_testDir, "test.txt"), true, 10);
+            var writer = CreateWriter(Path.Combine(TempDirectory, "test.txt"), true, 10);
             writer.Dispose();
 
             // Act
@@ -478,7 +475,7 @@ namespace Servy.Core.UnitTests.IO
         public void EnforceMaxRotations_CoversAllBranches()
         {
             // Arrange
-            string baseLog = Path.Combine(_testDir, "service.log");
+            string baseLog = Path.Combine(TempDirectory, "service.log");
             File.WriteAllText(baseLog, "base");
 
             using (var writer = CreateWriter(baseLog, true, 1000))
@@ -486,9 +483,9 @@ namespace Servy.Core.UnitTests.IO
                 writer.Write(""); // force file creation
 
                 // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
-                string f1 = Path.Combine(_testDir, "service.20260325_000001.log");
-                string noise1 = Path.Combine(_testDir, "service_backup.log");
-                string noise2 = Path.Combine(_testDir, "service.20260325.txt");
+                string f1 = Path.Combine(TempDirectory, "service.20260325_000001.log");
+                string noise1 = Path.Combine(TempDirectory, "service_backup.log");
+                string noise2 = Path.Combine(TempDirectory, "service.20260325.txt");
 
                 File.WriteAllText(f1, "valid");
                 File.WriteAllText(noise1, "noise");
@@ -497,7 +494,7 @@ namespace Servy.Core.UnitTests.IO
                 // ---- BRANCH 1: _maxRotations <= 0 means unlimited, so nothing is ever deleted ----
                 // Exercised with rotated files already on disk: without the early return the
                 // "count <= maxRotations" check is false and every rotated file gets deleted.
-                string f0 = Path.Combine(_testDir, "service.20260325_000000.log");
+                string f0 = Path.Combine(TempDirectory, "service.20260325_000000.log");
                 File.WriteAllText(f0, "oldest");
                 File.SetLastWriteTimeUtc(f0, DateTime.UtcNow.AddHours(-1));
 
@@ -519,7 +516,7 @@ namespace Servy.Core.UnitTests.IO
                 Assert.True(File.Exists(noise2));
 
                 // ---- BRANCH 4: Deletion happens (rotatedFiles.Count > _maxRotations) ----
-                string f2 = Path.Combine(_testDir, "service.20260325_000002.log");
+                string f2 = Path.Combine(TempDirectory, "service.20260325_000002.log");
                 File.WriteAllText(f2, "valid2");
                 File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
                 File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
@@ -549,15 +546,15 @@ namespace Servy.Core.UnitTests.IO
         public void EnforceMaxRotations_UsesLocalTimeOrderingClock_WhenConfigured()
         {
             // Arrange
-            string baseLog = Path.Combine(_testDir, "local-time.log");
+            string baseLog = Path.Combine(TempDirectory, "local-time.log");
             File.WriteAllText(baseLog, "base");
 
             using (var writer = CreateWriter(baseLog, true, 1000, false, DateRotationType.Daily, 0, true))
             {
                 writer.Write(""); // force file creation
 
-                string older = Path.Combine(_testDir, "local-time.20260325_000001.log");
-                string newer = Path.Combine(_testDir, "local-time.20260325_000002.log");
+                string older = Path.Combine(TempDirectory, "local-time.20260325_000001.log");
+                string newer = Path.Combine(TempDirectory, "local-time.20260325_000002.log");
 
                 File.WriteAllText(older, "old");
                 File.WriteAllText(newer, "new");
@@ -579,16 +576,16 @@ namespace Servy.Core.UnitTests.IO
         public void EnforceMaxRotations_PartialDeletionFailure_IncrementsPassCounter()
         {
             // Arrange
-            string baseLog = Path.Combine(_testDir, "partial.log");
+            string baseLog = Path.Combine(TempDirectory, "partial.log");
             File.WriteAllText(baseLog, "base");
 
             using (var writer = CreateWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1))
             {
                 writer.Write(""); // Trigger lazy init
 
-                string oldRotated1 = Path.Combine(_testDir, "partial.20260325_000001.log");
-                string oldRotated2 = Path.Combine(_testDir, "partial.20260325_000002.log");
-                string newestRotated = Path.Combine(_testDir, "partial.20260325_000003.log");
+                string oldRotated1 = Path.Combine(TempDirectory, "partial.20260325_000001.log");
+                string oldRotated2 = Path.Combine(TempDirectory, "partial.20260325_000002.log");
+                string newestRotated = Path.Combine(TempDirectory, "partial.20260325_000003.log");
 
                 File.WriteAllText(oldRotated1, "old1");
                 File.WriteAllText(oldRotated2, "old2");
@@ -623,20 +620,20 @@ namespace Servy.Core.UnitTests.IO
         public void EnforceMaxRotations_NoExtension_CoversIsNullOrEmpty()
         {
             // Arrange
-            string baseLog = Path.Combine(_testDir, "plainfile");
+            string baseLog = Path.Combine(TempDirectory, "plainfile");
             File.WriteAllText(baseLog, "base");
 
             using (var writer = CreateWriter(baseLog, true, 1000))
             {
                 writer.Write(""); // Trigger lazy init
 
-                string f1 = Path.Combine(_testDir, "plainfile.20260325_000001");
+                string f1 = Path.Combine(TempDirectory, "plainfile.20260325_000001");
                 File.WriteAllText(f1, "rotated");
                 File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
 
                 TestReflection.SetField(writer, "_maxRotations", 1);
 
-                string f2 = Path.Combine(_testDir, "plainfile.20260325_000002");
+                string f2 = Path.Combine(TempDirectory, "plainfile.20260325_000002");
                 File.WriteAllText(f2, "rotated2");
                 File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
 
@@ -653,13 +650,13 @@ namespace Servy.Core.UnitTests.IO
         public void EnforceMaxRotations_DeletionFails_DoesNotThrow()
         {
             // Arrange
-            var logPath = Path.Combine(_testDir, "service.log");
+            var logPath = Path.Combine(TempDirectory, "service.log");
             File.WriteAllText(logPath, "current");
 
-            var rotated1 = Path.Combine(_testDir, "service.20260325_000001.log");
+            var rotated1 = Path.Combine(TempDirectory, "service.20260325_000001.log");
             File.WriteAllText(rotated1, "new");
 
-            var rotated2 = Path.Combine(_testDir, "service.20260325_000002.log");
+            var rotated2 = Path.Combine(TempDirectory, "service.20260325_000002.log");
             File.WriteAllText(rotated2, "old");
 
             File.SetLastWriteTime(rotated1, DateTime.Now.AddMinutes(0));
@@ -696,7 +693,7 @@ namespace Servy.Core.UnitTests.IO
         public void DateRotation_Daily_Rotates_WhenDateBoundaryCrossed()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "daily.log");
+            var filePath = Path.Combine(TempDirectory, "daily.log");
             var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
 
             // Act
@@ -709,7 +706,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            var rotated = Directory.GetFiles(_testDir, "daily.*.log").Where(f => !f.EndsWith("daily.log")).ToArray();
+            var rotated = Directory.GetFiles(TempDirectory, "daily.*.log").Where(f => !f.EndsWith("daily.log")).ToArray();
             Assert.NotEmpty(rotated);
             Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotated[0]);
         }
@@ -718,7 +715,7 @@ namespace Servy.Core.UnitTests.IO
         public void DateRotation_Weekly_Rotates_WhenYearBoundaryCrossed()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "weekly_year.log");
+            var filePath = Path.Combine(TempDirectory, "weekly_year.log");
 
             // Frozen time provider to ensure deterministic execution across both calendar and
             // ISO week boundaries regardless of execution date.
@@ -739,7 +736,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            var rotated = Directory.GetFiles(_testDir, "weekly_year.*.log").Where(f => !f.EndsWith("weekly_year.log")).ToArray();
+            var rotated = Directory.GetFiles(TempDirectory, "weekly_year.*.log").Where(f => !f.EndsWith("weekly_year.log")).ToArray();
             Assert.NotEmpty(rotated);
         }
 
@@ -747,7 +744,7 @@ namespace Servy.Core.UnitTests.IO
         public void DateRotation_Weekly_DoesNotRotate_OnSameWeek()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "weekly_same.log");
+            var filePath = Path.Combine(TempDirectory, "weekly_same.log");
 
             // To prevent flakiness near the Monday 00:00 UTC ISO-week boundary,
             // calculate the previous hour relative to the current live clock day.
@@ -774,7 +771,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            var rotated = Directory.GetFiles(_testDir, "weekly_same.*.log").Where(f => !f.EndsWith("weekly_same.log"));
+            var rotated = Directory.GetFiles(TempDirectory, "weekly_same.*.log").Where(f => !f.EndsWith("weekly_same.log"));
             Assert.Empty(rotated);
         }
 
@@ -782,7 +779,7 @@ namespace Servy.Core.UnitTests.IO
         public void DateRotation_Monthly_Rotates_WhenMonthBoundaryCrossed()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "monthly.log");
+            var filePath = Path.Combine(TempDirectory, "monthly.log");
             var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
 
             // Act
@@ -795,7 +792,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
+            var rotated = Directory.GetFiles(TempDirectory, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
             Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotated[0]);
         }
@@ -804,7 +801,7 @@ namespace Servy.Core.UnitTests.IO
         public void DateRotation_Monthly_Rotates_WhenYearBoundaryCrossed()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "monthly.log");
+            var filePath = Path.Combine(TempDirectory, "monthly.log");
             var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
 
             // Act
@@ -817,7 +814,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
+            var rotated = Directory.GetFiles(TempDirectory, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
             Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotated[0]);
         }
@@ -826,7 +823,7 @@ namespace Servy.Core.UnitTests.IO
         public void SizeAndDateRotation_SizePrecedence_WhenBothEnabled()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "sizeDate.log");
+            var filePath = Path.Combine(TempDirectory, "sizeDate.log");
             var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
             var staleDate = fixedTime.AddDays(-1);
 
@@ -845,7 +842,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Both triggers were armed, but the documented contract mandates exactly one rotation per write.
-            var rotated = Directory.GetFiles(_testDir, "sizeDate.*.log")
+            var rotated = Directory.GetFiles(TempDirectory, "sizeDate.*.log")
                                    .Where(f => !f.EndsWith("sizeDate.log"))
                                    .ToArray();
             Assert.Single(rotated);
@@ -856,7 +853,7 @@ namespace Servy.Core.UnitTests.IO
         public void SizeAndDateRotation_DateWhenSizeNotExceeded()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "dateOnlyWhenSizeNotExceeded.log");
+            var filePath = Path.Combine(TempDirectory, "dateOnlyWhenSizeNotExceeded.log");
             var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
 
             // Act
@@ -869,7 +866,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            var rotated = Directory.GetFiles(_testDir, "dateOnlyWhenSizeNotExceeded.*.log")
+            var rotated = Directory.GetFiles(TempDirectory, "dateOnlyWhenSizeNotExceeded.*.log")
                                    .Where(f => !f.EndsWith("dateOnlyWhenSizeNotExceeded.log"))
                                    .ToArray();
             Assert.Single(rotated);
@@ -897,7 +894,7 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_WhenFileIsLocked_SilentlyContinuesWithoutCrashing()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "locked_rotate.txt");
+            var filePath = Path.Combine(TempDirectory, "locked_rotate.txt");
 
             using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0, false))
             {
@@ -917,7 +914,7 @@ namespace Servy.Core.UnitTests.IO
                     Assert.Null(exception);
                 }
 
-                var rotatedFiles = Directory.GetFiles(_testDir, "locked_rotate.*.txt")
+                var rotatedFiles = Directory.GetFiles(TempDirectory, "locked_rotate.*.txt")
                                            .Where(f => !f.EndsWith("locked_rotate.txt"))
                                            .ToList();
                 Assert.Empty(rotatedFiles);
@@ -929,7 +926,7 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_WhenFileMissingOrEmpty_ReturnsEarly()
         {
             // Arrange: Set a small limit (5 bytes).
-            var filePath = Path.Combine(_testDir, "missing_rotate.txt");
+            var filePath = Path.Combine(TempDirectory, "missing_rotate.txt");
 
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
@@ -951,7 +948,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
 
                 // Assert: Ensure no rotated file was generated
-                var rotatedFiles = Directory.GetFiles(_testDir, "missing_rotate.*.txt");
+                var rotatedFiles = Directory.GetFiles(TempDirectory, "missing_rotate.*.txt");
                 Assert.Empty(rotatedFiles);
 
                 // Assert: The original file should still be 0 bytes
@@ -1126,7 +1123,7 @@ namespace Servy.Core.UnitTests.IO
         public void CheckRotation_SizeRotation_TernaryCoverage(bool useLocal)
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, $"size_ternary_{useLocal}.log");
+            var filePath = Path.Combine(TempDirectory, $"size_ternary_{useLocal}.log");
 
             // Act: Set size to 1 byte so any write triggers rotateBySize = true
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 1, useLocalTimeForRotation: useLocal))
@@ -1145,7 +1142,7 @@ namespace Servy.Core.UnitTests.IO
         public void CheckRotation_DateRotation_TernaryCoverage(bool useLocal)
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, $"date_ternary_{useLocal}.log");
+            var filePath = Path.Combine(TempDirectory, $"date_ternary_{useLocal}.log");
 
             // Act & Assert
             using (var writer = CreateWriter(filePath, enableDateRotation: true, dateRotationType: DateRotationType.Daily, useLocalTimeForRotation: useLocal))
@@ -1172,7 +1169,7 @@ namespace Servy.Core.UnitTests.IO
         public void CheckRotation_EarlyReturn_WhenDisabled()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "gatekeeper.log");
+            var filePath = Path.Combine(TempDirectory, "gatekeeper.log");
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 1000))
             {
                 writer.Write("initial_data");
@@ -1190,7 +1187,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
 
                 // 3. Assert: Filter out the base file to check ONLY for rotated ones
-                var rotatedFiles = Directory.GetFiles(_testDir, "gatekeeper.*.log")
+                var rotatedFiles = Directory.GetFiles(TempDirectory, "gatekeeper.*.log")
                                             .Where(f => !f.EndsWith("gatekeeper.log"));
                 Assert.Empty(rotatedFiles);
             }
@@ -1200,7 +1197,7 @@ namespace Servy.Core.UnitTests.IO
         public async Task Rotate_TransientIOException_SucceedsOnRetry()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "transient.log");
+            var filePath = Path.Combine(TempDirectory, "transient.log");
             File.WriteAllText(filePath, "initial_data");
 
             // Provide a frozen baseline clock so live timestamps don't introduce drifts
@@ -1275,7 +1272,7 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_PersistentIOException_ReachedLimit_SetsCooldown()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "persistent.log");
+            var filePath = Path.Combine(TempDirectory, "persistent.log");
             // Ensure the file has content so it isn't skipped by the "Length == 0" guard
             File.WriteAllText(filePath, "initial content");
 
@@ -1320,7 +1317,7 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_PermanentFailure_TripsBreaker()
         {
             // Arrange
-            var subDir = Path.Combine(_testDir, "BreakerTest");
+            var subDir = Path.Combine(TempDirectory, "BreakerTest");
             Directory.CreateDirectory(subDir);
             var filePath = Path.Combine(subDir, "breaker_test.log");
 
@@ -1376,7 +1373,7 @@ namespace Servy.Core.UnitTests.IO
         public void CheckRotation_CircuitBreaker_HealsAfterCooldownExpires()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "healing.log");
+            var filePath = Path.Combine(TempDirectory, "healing.log");
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
             {
                 writer.Write("initial");
@@ -1394,7 +1391,7 @@ namespace Servy.Core.UnitTests.IO
                 bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled");
                 Assert.False(isDisabled, "Breaker should reset automatically after the cooldown expires.");
 
-                var rotated = Directory.GetFiles(_testDir, "healing.*.log").Where(f => !f.EndsWith("healing.log"));
+                var rotated = Directory.GetFiles(TempDirectory, "healing.*.log").Where(f => !f.EndsWith("healing.log"));
                 Assert.NotEmpty(rotated); // Proves the rotation actually resumed
             }
         }
@@ -1403,7 +1400,7 @@ namespace Servy.Core.UnitTests.IO
         public void CheckRotation_WhenDisabledAndFileIsHuge_DoesNotRotateAndDoesNotThrow()
         {
             // Arrange: Set limit to 10 bytes
-            var filePath = Path.Combine(_testDir, "huge.log");
+            var filePath = Path.Combine(TempDirectory, "huge.log");
 
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
             {
@@ -1424,7 +1421,7 @@ namespace Servy.Core.UnitTests.IO
                 Assert.Null(exception); // Handled gracefully without throwing
 
                 // Verify the file was allowed to grow without generating any rotated files
-                var rotated = Directory.GetFiles(_testDir, "huge.*.log").Where(f => !f.EndsWith("huge.log"));
+                var rotated = Directory.GetFiles(TempDirectory, "huge.*.log").Where(f => !f.EndsWith("huge.log"));
                 Assert.Empty(rotated);
 
                 // Optional: Verify the base file is indeed huge
@@ -1437,7 +1434,7 @@ namespace Servy.Core.UnitTests.IO
         {
             // Arrange
             // This specifically covers Bug #1116 (ISO Calendar Year Mismatch)
-            var filePath = Path.Combine(_testDir, "weekly_iso_bug.log");
+            var filePath = Path.Combine(TempDirectory, "weekly_iso_bug.log");
 
             // Wed, Jan 1, 2025 (ISO Week 1 of 2025)
             var lastRotationDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -1461,7 +1458,7 @@ namespace Servy.Core.UnitTests.IO
         public void PerformPhysicalRotation_NonIOException_TripsCircuitBreaker()
         {
             // Arrange
-            var filePath = Path.Combine(_testDir, "non_io.log");
+            var filePath = Path.Combine(TempDirectory, "non_io.log");
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
             {
                 writer.Write("init");
@@ -1494,20 +1491,5 @@ namespace Servy.Core.UnitTests.IO
         }
 
         #endregion
-
-        public void Dispose()
-        {
-            try
-            {
-                if (Directory.Exists(_testDir))
-                {
-                    Directory.Delete(_testDir, true);
-                }
-            }
-            catch
-            {
-                // ignore cleanup errors
-            }
-        }
     }
 }

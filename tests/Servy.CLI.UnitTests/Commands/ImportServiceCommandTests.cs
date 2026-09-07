@@ -7,11 +7,12 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
+using Servy.Testing;
 
 namespace Servy.CLI.UnitTests.Commands
 {
     [Collection(ElevationTestCollection.Name)]
-    public class ImportServiceCommandTests : IDisposable
+    public class ImportServiceCommandTests : TempDirectoryTestBase
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializer;
@@ -23,7 +24,6 @@ namespace Servy.CLI.UnitTests.Commands
         private readonly ImportServiceCommand _command;
 
         // Authentic local paths within safe security boundaries
-        private readonly string _tempDirectory;
         private readonly string _legalXmlPath;
         private readonly string _legalJsonPath;
 
@@ -51,23 +51,17 @@ namespace Servy.CLI.UnitTests.Commands
                 _jsonValidatorMock.Object,
                 _processHelper.Object);
 
-            // Establish safe, legal physical file anchors in a unique sub-directory to fulfill ImportGuard invariants
-            _tempDirectory = Path.Combine(Path.GetTempPath(), $"ImportTests_{Guid.NewGuid()}");
-            Directory.CreateDirectory(_tempDirectory);
-
-            _legalXmlPath = Path.Combine(_tempDirectory, "legal_import.xml");
-            _legalJsonPath = Path.Combine(_tempDirectory, "legal_import.json");
+            // Establish safe, legal physical file anchors within the isolated temp directory to fulfill ImportGuard invariants
+            _legalXmlPath = Path.Combine(TempDirectory, "legal_import.xml");
+            _legalJsonPath = Path.Combine(TempDirectory, "legal_import.json");
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             BaseCommand.BypassElevationCheck = false;
 
             // Wipe physical artifacts and the tracking directory completely to clean up the workspace safely
-            if (Directory.Exists(_tempDirectory))
-            {
-                try { Directory.Delete(_tempDirectory, recursive: true); } catch { /* fail-safe */ }
-            }
+            base.Dispose();
         }
 
         #region Constructor Guard Clauses
@@ -110,7 +104,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_ImportGuardFails_PathViolatesSecurityExtension_ReturnsFail()
         {
             // Arrange
-            string badExtensionPath = Path.Combine(_tempDirectory, "corrupt.txt");
+            string badExtensionPath = Path.Combine(TempDirectory, "corrupt.txt");
             File.WriteAllText(badExtensionPath, "<ServiceDto/>");
 
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = badExtensionPath };

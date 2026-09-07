@@ -1,11 +1,12 @@
 using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
+using Servy.Testing;
 using System.Data.SQLite;
 
 namespace Servy.Restarter.UnitTests
 {
     [Collection(ProgramTestsCollection.Name)]
-    public class ProgramTests : IDisposable
+    public class ProgramTests : TempDirectoryTestBase
     {
         // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
         private const string ConfigFileName = "appsettings.restarter.json";
@@ -21,7 +22,6 @@ namespace Servy.Restarter.UnitTests
         private readonly string _tempConfigPath;
         private readonly string _configBackupPath;
         private readonly bool _hasConfigBackup;
-        private readonly string _tempLogDir;
         private readonly string _expectedLogFilePath;
         private readonly SQLiteConnection _dbKeepAliveConnection;
 
@@ -32,13 +32,10 @@ namespace Servy.Restarter.UnitTests
 
             // Generate isolated test-run directories for configuration and log storage
             _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
-            _tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(_tempLogDir);
-
-            _expectedLogFilePath = Path.Combine(_tempLogDir, LogFileName);
+            _expectedLogFilePath = Path.Combine(TempDirectory, LogFileName);
 
             // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
-            Logger.Initialize(LogFileName, logDirectory: _tempLogDir);
+            Logger.Initialize(LogFileName, logDirectory: TempDirectory);
 
             // Program.Main reads its configuration strictly from the app directory, so the tests must
             // clobber the build-deployed appsettings.restarter.json. Back it up so Dispose can put the
@@ -99,7 +96,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_EmptyOrWhitespaceServiceName_SetsExitCodeTo1AndExitsEarly(string invalidName)
         {
             // Arrange
-            string[] args = new string[] { invalidName, _tempLogDir }; // Triggers if (string.IsNullOrWhiteSpace(serviceName))
+            string[] args = new string[] { invalidName, TempDirectory }; // Triggers if (string.IsNullOrWhiteSpace(serviceName))
 
             // Act
             Program.Main(args);
@@ -144,7 +141,7 @@ namespace Servy.Restarter.UnitTests
             // We provide a dummy service name that doesn't exist in our initialized memory database.
             // This triggers the serviceRepository.GetByName(...) == null failure branch cleanly.
             string serviceName = "GhostUnmanagedService";
-            string[] args = new string[] { serviceName, _tempLogDir };
+            string[] args = new string[] { serviceName, TempDirectory };
 
             // Act
             Program.Main(args);
@@ -179,7 +176,7 @@ namespace Servy.Restarter.UnitTests
                 // 2. Build a structurally complete configuration payload where only the timeout option is corrupted.
                 File.WriteAllText(_tempConfigPath, BuildConfigJson("NotAnInteger"));
 
-                string[] args = new string[] { serviceName, _tempLogDir };
+                string[] args = new string[] { serviceName, TempDirectory };
 
                 // Act
                 Program.Main(args);
@@ -232,7 +229,7 @@ namespace Servy.Restarter.UnitTests
             // Pass a target service name argument. The broken DefaultConnection string makes
             // the SQLite open fail inside GetByName, after the scoped logger exists - exercising
             // the scoped-logger arm of the catch-all block.
-            string[] args = new string[] { "Invalid\\Service/Path:Characters", _tempLogDir };
+            string[] args = new string[] { "Invalid\\Service/Path:Characters", TempDirectory };
 
             // Act
             Program.Main(args);
@@ -278,7 +275,7 @@ namespace Servy.Restarter.UnitTests
 
         #endregion
 
-        public void Dispose()
+        public override void Dispose()
         {
             // Force logger teardown first to unlock active files
             Logger.Shutdown();
@@ -300,11 +297,6 @@ namespace Servy.Restarter.UnitTests
                     File.Delete(_tempConfigPath);
                 }
 
-                if (Directory.Exists(_tempLogDir))
-                {
-                    Directory.Delete(_tempLogDir, true);
-                }
-
                 if (File.Exists(KeyFileName)) File.Delete(KeyFileName);
                 if (File.Exists(IvFileName)) File.Delete(IvFileName);
             }
@@ -312,6 +304,8 @@ namespace Servy.Restarter.UnitTests
             {
                 // Suppress disposal file-locks
             }
+
+            base.Dispose();
         }
     }
 }

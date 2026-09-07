@@ -10,11 +10,10 @@ using System.Security;
 namespace Servy.CLI.UnitTests.Commands
 {
     [Collection(ElevationTestCollection.Name)]
-    public class ExportServiceCommandTests : IDisposable
+    public class ExportServiceCommandTests : TempDirectoryTestBase
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly ExportServiceCommand _command;
-        private readonly string _tempDir;
 
         public ExportServiceCommandTests()
         {
@@ -25,19 +24,13 @@ namespace Servy.CLI.UnitTests.Commands
 
             _serviceRepoMock = new Mock<IServiceRepository>();
             _command = new ExportServiceCommand(_serviceRepoMock.Object);
-
-            _tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempDir);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             BaseCommand.BypassElevationCheck = false;
 
-            if (Directory.Exists(_tempDir))
-            {
-                try { Directory.Delete(_tempDir, recursive: true); } catch { /* fail-safe */ }
-            }
+            base.Dispose();
         }
 
         #region Constructor Tests
@@ -106,7 +99,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
-            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
+            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(TempDirectory, "out.xml") };
 
             // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
@@ -120,7 +113,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldExportXml_WhenConfigTypeIsXml()
         {
             // Arrange
-            var filePath = Path.Combine(_tempDir, "out.xml");
+            var filePath = Path.Combine(TempDirectory, "out.xml");
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportXmlAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("<xml>data</xml>");
 
@@ -144,7 +137,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldExportJson_WhenConfigTypeIsJson()
         {
             // Arrange
-            var filePath = Path.Combine(_tempDir, "out.json");
+            var filePath = Path.Combine(TempDirectory, "out.json");
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportJsonAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("{\"name\":\"svc\"}");
 
@@ -165,7 +158,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("boom"));
-            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
+            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(TempDirectory, "out.xml") };
 
             // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
@@ -183,7 +176,7 @@ namespace Servy.CLI.UnitTests.Commands
         public void SaveFile_ShouldCreateDirectoryIfNotExists()
         {
             // Arrange
-            var filePath = Path.Combine(_tempDir, "subdir", "file.xml");
+            var filePath = Path.Combine(TempDirectory, "subdir", "file.xml");
             var content = "hello";
 
             // Act
@@ -200,7 +193,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             // Providing an invalid extension ("txt") routes to PathSecurityGuard's extension filter,
             // producing an error payload that does not contain "Access Denied" or "Security Alert".
-            var filePath = Path.Combine(_tempDir, "denied_extension.txt");
+            var filePath = Path.Combine(TempDirectory, "denied_extension.txt");
 
             // Act & Assert
             // TestReflection rethrows the inner exception, so the guard's ArgumentException surfaces directly
@@ -230,7 +223,7 @@ namespace Servy.CLI.UnitTests.Commands
         public void SaveFile_ShouldThrowSecurityException_WhenFileStreamWriteFailsFromExternalLock()
         {
             // Arrange
-            var filePath = Path.Combine(_tempDir, "locked_out.json");
+            var filePath = Path.Combine(TempDirectory, "locked_out.json");
             File.WriteAllText(filePath, "original contents");
 
             // Hold the file open with FileShare.None so PathSecurityGuard cannot open it for validation:
@@ -254,7 +247,7 @@ namespace Servy.CLI.UnitTests.Commands
         public void SaveFile_ShouldCreateDeepDirectoryTree_WhenPathIsValid()
         {
             // Arrange
-            var deepSubDir = Path.Combine(_tempDir, "level1", "level2", "level3");
+            var deepSubDir = Path.Combine(TempDirectory, "level1", "level2", "level3");
             var filePath = Path.Combine(deepSubDir, "service_export.json");
             var content = "{ \"Name\": \"TestServiceConfig\" }";
 
@@ -271,7 +264,7 @@ namespace Servy.CLI.UnitTests.Commands
         public void SaveFile_ValidationFailsOnInvalidExtension_RollsBackCreatedDirectoriesCleanly()
         {
             // Arrange
-            var deepSubDir = Path.Combine(_tempDir, "orphaned_tree", "nested_level");
+            var deepSubDir = Path.Combine(TempDirectory, "orphaned_tree", "nested_level");
             var filePath = Path.Combine(deepSubDir, "illegal_device_target.txt");
             var content = "[Stale Config Payload Data]";
 
@@ -283,14 +276,14 @@ namespace Servy.CLI.UnitTests.Commands
             // Directory cleanup assertions
             Assert.False(File.Exists(filePath), "The output file should not have been created.");
             Assert.False(Directory.Exists(deepSubDir), "The nested parent folder should be removed on failure.");
-            Assert.False(Directory.Exists(Path.Combine(_tempDir, "orphaned_tree")), "The entire newly created parent path root should be removed if empty.");
+            Assert.False(Directory.Exists(Path.Combine(TempDirectory, "orphaned_tree")), "The entire newly created parent path root should be removed if empty.");
         }
 
         [Fact]
         public void SaveFile_ValidationFailsOnReservedDeviceName_RollsBackCreatedDirectoriesCleanly()
         {
             // Arrange
-            var deepSubDir = Path.Combine(_tempDir, "dos_device_tree");
+            var deepSubDir = Path.Combine(TempDirectory, "dos_device_tree");
             var filePath = Path.Combine(deepSubDir, "COM1.json");
             var content = "{ }";
 
@@ -314,7 +307,7 @@ namespace Servy.CLI.UnitTests.Commands
             // in the ValidatePathOnly pre-flight BEFORE any directory is created. The property under
             // test is therefore that a rejected save adds nothing next to a pre-existing root and
             // leaves that root alone.
-            var preExistingRoot = Path.Combine(_tempDir, "stable_corporate_root");
+            var preExistingRoot = Path.Combine(TempDirectory, "stable_corporate_root");
             Directory.CreateDirectory(preExistingRoot);
 
             var generatedSubDir = Path.Combine(preExistingRoot, "dynamic_session_branch");

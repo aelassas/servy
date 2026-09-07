@@ -1,15 +1,15 @@
 using Moq;
 using Servy.Core.Helpers;
+using Servy.Testing;
 using System.Reflection;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
-    public class ResourceHelperIntegrationTests : IDisposable
+    public class ResourceHelperIntegrationTests : TempDirectoryTestBase
     {
         private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly Mock<Assembly> _mockAssembly;
-        private readonly string _tempDirectory;
         private readonly ResourceHelper _resourceHelper;
 
         public ResourceHelperIntegrationTests()
@@ -18,21 +18,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockProcessKiller = new Mock<IProcessKiller>();
             _mockAssembly = new Mock<Assembly>();
 
-            // Create an isolated temporary directory for file I/O tests
-            _tempDirectory = Path.Combine(Path.GetTempPath(), "ServyTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempDirectory);
-
             _resourceHelper = new ResourceHelper(_mockServiceHelper.Object, _mockProcessKiller.Object);
 
             // Point the helper to the test-controlled temp directory
-            _resourceHelper.BaseExtractionDirectory = _tempDirectory;
-        }
-
-        public void Dispose()
-        {
-            // Clean up temporary files after each test
-            try { if (Directory.Exists(_tempDirectory)) Directory.Delete(_tempDirectory, true); }
-            catch { /* Prevent teardown exceptions from hiding test results */ }
+            _resourceHelper.BaseExtractionDirectory = TempDirectory;
         }
 
         [Fact]
@@ -41,7 +30,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "testapp";
             string extension = "exe";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
             // Create a file and artificially push its LastWriteTime into the future to bypass the staleness threshold
             File.WriteAllText(targetPath, "old content");
@@ -103,7 +92,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "validapp";
             string extension = "dll";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
 
@@ -131,7 +120,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "serviceapp";
             string extension = "exe";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
             var testServices = new List<string> { "Servy_Service_A", "Servy_Service_B" };
 
             // Configure the process killer mock to return true for file handle clearing
@@ -214,7 +203,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "sync_up_to_date";
             string extension = "exe";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
             // Create a file and artificially push its LastWriteTime into the future to bypass the staleness threshold
             File.WriteAllText(targetPath, "up to date sync content");
@@ -269,7 +258,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "syncapp";
             string extension = "exe";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
 
@@ -344,7 +333,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // The restart failure is logged inside the finally block, never rethrown, so the copy's own
             // outcome is what the method returns.
             Assert.True(result);
-            Assert.True(File.Exists(Path.Combine(_tempDirectory, $"{fileName}.{extension}")));
+            Assert.True(File.Exists(Path.Combine(TempDirectory, $"{fileName}.{extension}")));
             _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
         }
 
