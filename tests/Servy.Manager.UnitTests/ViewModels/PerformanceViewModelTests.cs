@@ -9,7 +9,6 @@ using Servy.Manager.ViewModels;
 using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
@@ -29,7 +28,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IUiDispatcher> _mockUiDispatcher;
 
         // Track generated SUT view model instances to enforce complete memory containment cleanup
-        private readonly ConcurrentBag<PerformanceViewModel> _allocatedViewModels = new ConcurrentBag<PerformanceViewModel>();
+        private readonly TrackedViewModels _allocatedViewModels = new TrackedViewModels();
 
         public PerformanceViewModelTests()
         {
@@ -59,7 +58,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _mockProcessHelper.Object,
                 _mockUiDispatcher.Object);
 
-            _allocatedViewModels.Add(vm);
+            _allocatedViewModels.Track(vm);
             return vm;
         }
 
@@ -98,7 +97,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 using (var dtViewModel = new PerformanceViewModel())
                 {
-                    _allocatedViewModels.Add(dtViewModel);
+                    _allocatedViewModels.Track(dtViewModel);
 
                     // Assert
                     // Verify basic structural state and clean empty graph collection initialization
@@ -590,17 +589,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         /// </summary>
         public void Dispose()
         {
-            foreach (var vm in _allocatedViewModels)
-            {
-                try
-                {
-                    vm.Dispose();
-                }
-                catch
-                {
-                    // Catch-all block to guarantee adjacent cleanup executions complete safely
-                }
-            }
+            _allocatedViewModels.Dispose();
         }
 
         #endregion

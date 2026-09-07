@@ -5,7 +5,6 @@ using Servy.Manager.ViewModels;
 using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Windows.Threading;
 
@@ -18,7 +17,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
 
         // Track created view models so the fixture can dispose them all
-        private readonly ConcurrentBag<TestMonitoringViewModel> _allocatedViewModels = new ConcurrentBag<TestMonitoringViewModel>();
+        private readonly TrackedViewModels _allocatedViewModels = new TrackedViewModels();
 
         public MonitoringViewModelBaseTests()
         {
@@ -121,7 +120,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 onTick ?? (_ => Task.CompletedTask)
             );
 
-            _allocatedViewModels.Add(vm);
+            _allocatedViewModels.Track(vm);
             return vm;
         }
 
@@ -589,17 +588,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         /// </summary>
         public void Dispose()
         {
-            foreach (var vm in _allocatedViewModels)
-            {
-                try
-                {
-                    vm.Dispose();
-                }
-                catch
-                {
-                    // Catch-all block to guarantee adjacent cleanup executions complete safely
-                }
-            }
+            _allocatedViewModels.Dispose();
         }
 
         #endregion
