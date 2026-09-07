@@ -2,9 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
-using Servy.Testing;
 using System;
-using System.Linq;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Services
@@ -64,27 +62,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(actual);
 
             // Reflection-driven comprehensive comparison of all properties mapped across serialization boundaries
-            var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
-            var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
-
-            int compared = 0;
-            foreach (var prop in properties)
-            {
-                var expectedValue = prop.GetValue(expected);
-                var actualValue = prop.GetValue(actual);
-
-                // If the expected fixture value is null, it skips evaluation to prevent
-                // breaking on values hydrated to system defaults during deserialization.
-                if (expectedValue == null)
-                {
-                    continue;
-                }
-
-                Assert.Equal(expectedValue, actualValue);
-                compared++;
-            }
-
-            Assert.True(compared >= 50, $"Only {compared} of {properties.Count()} properties were compared; the fixture has gone sparse.");
+            ServiceDtoRoundTrip.AssertPropertiesSurvived(expected, actual);
 
             // UserAccount and Password (sensitive data) are dropped by [XmlIgnore], while
             // RunAsLocalSystem is reset to the configured default rather than omitted.
@@ -264,25 +242,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(xml);
             Assert.NotNull(deserialized);
 
-            var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
-            var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
-
-            int compared = 0;
-            foreach (var prop in properties)
-            {
-                var expectedValue = prop.GetValue(original);
-                var actualValue = prop.GetValue(deserialized);
-
-                if (expectedValue == null)
-                {
-                    continue;
-                }
-
-                Assert.Equal(expectedValue, actualValue);
-                compared++;
-            }
-
-            Assert.True(compared >= 50, $"Only {compared} of {properties.Count()} properties were compared; the fixture has gone sparse.");
+            ServiceDtoRoundTrip.AssertPropertiesSurvived(original, deserialized);
 
             Assert.Null(deserialized.UserAccount);
             Assert.Null(deserialized.Password);
