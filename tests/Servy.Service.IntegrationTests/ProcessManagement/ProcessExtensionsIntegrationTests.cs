@@ -15,13 +15,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     /// Integration tests for ProcessExtensions.
     /// These tests execute real OS processes and evaluate native Toolhelp32 enumerations.
     /// </summary>
-    [CollectionDefinition("ProcessExtensionsIntegrationTests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class ProcessExtensionsIntegrationTestsCollection
     {
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "ProcessExtensionsIntegrationTests";
+
         // Enforces strict sequential isolation across the execution suite
     }
 
-    [Collection("ProcessExtensionsIntegrationTests")]
+    [Collection(ProcessExtensionsIntegrationTestsCollection.Name)]
     public class ProcessExtensionsIntegrationTests : IDisposable
     {
         private readonly List<Process> _processesToCleanup = new List<Process>();

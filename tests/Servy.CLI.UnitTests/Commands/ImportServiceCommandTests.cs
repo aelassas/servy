@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    [Collection("SequentialElevationTests")]
+    [Collection(ElevationTestCollection.Name)]
     public class ImportServiceCommandTests : IDisposable
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;

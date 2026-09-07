@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace Servy.Core.IntegrationTests.Native
 {
-    [Collection("CoreOsIntegration")]
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class NativeMethodsIntegrationTests : IDisposable
     {
         private readonly ITestOutputHelper _output;

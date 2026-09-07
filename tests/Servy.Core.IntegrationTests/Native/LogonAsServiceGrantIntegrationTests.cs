@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Servy.Core.IntegrationTests.Native
 {
-    [Collection("CoreOsIntegration")]
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class LogonAsServiceGrantIntegrationTests : IDisposable
     {
         private readonly string _testAccountName;

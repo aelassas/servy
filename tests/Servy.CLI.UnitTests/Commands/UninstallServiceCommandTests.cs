@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    [Collection("SequentialElevationTests")]
+    [Collection(ElevationTestCollection.Name)]
     public class UninstallServiceCommandTests : ServiceCommandTestsBase<UninstallServiceCommand, UninstallServiceOptions>
     {
         private Mock<IServiceRepository> _mockRepository = new Mock<IServiceRepository>();

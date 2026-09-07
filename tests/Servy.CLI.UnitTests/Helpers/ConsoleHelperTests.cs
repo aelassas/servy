@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Helpers
 {
-    [Collection("SequentialConsoleTests")]
+    [Collection(ConsoleTestCollection.Name)]
     public class ConsoleHelperTests
     {
         private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";

@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
-    [Collection("SequentialDatabaseTests")]
+    [Collection(DatabaseTestCollection.Name)]
     public class DapperExecutorIntegrationTests : TempDirectoryTestBase
     {
         #region Shared Test Doubles Base Infrastructure

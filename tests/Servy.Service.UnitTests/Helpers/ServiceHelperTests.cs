@@ -21,13 +21,16 @@ using Servy.Core.Config;
 
 namespace Servy.Service.UnitTests.Helpers
 {
-    [CollectionDefinition("ServiceHelperTests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class ServiceHelperTestsCollection
     {
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "ServiceHelperTests";
+
         // Enforces strict sequential isolation across the execution suite
     }
 
-    [Collection("ServiceHelperTests")]
+    [Collection(ServiceHelperTestsCollection.Name)]
     public class ServiceHelperTests
     {
         private readonly Mock<ICommandLineProvider> _mockCommandLineProvider;

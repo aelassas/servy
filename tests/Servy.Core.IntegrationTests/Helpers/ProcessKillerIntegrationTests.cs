@@ -16,7 +16,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// Integration tests for ProcessKiller: process tree termination and file-lock release.
     /// Guard-only checks that spawn no process (input validation, the critical-process safelist) live in ProcessKillerTests.
     /// </summary>
-    [Collection("ProcessIntegrationTests")]
+    [Collection(ProcessIntegrationTestsCollection.Name)]
     public class ProcessKillerIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
         private static readonly string PowerShellPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe");

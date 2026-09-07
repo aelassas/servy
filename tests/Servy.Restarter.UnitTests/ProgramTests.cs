@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Servy.Restarter.UnitTests
 {
-    [Collection("RestarterProgramTests")]
+    [Collection(ProgramTestsCollection.Name)]
     public class ProgramTests : IDisposable
     {
         // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift

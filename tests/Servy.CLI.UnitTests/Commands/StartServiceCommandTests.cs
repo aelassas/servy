@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    [Collection("SequentialElevationTests")]
+    [Collection(ElevationTestCollection.Name)]
     public class StartServiceCommandTests : ServiceCommandTestsBase<StartServiceCommand, StartServiceOptions>
     {
         protected override StartServiceCommand CreateCommandInstance() => new StartServiceCommand(MockServiceManager.Object);

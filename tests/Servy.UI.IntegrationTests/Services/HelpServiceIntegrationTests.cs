@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    [Collection("UiSta")]
+    [Collection(UiStaCollection.Name)]
     public class HelpServiceIntegrationTests : IDisposable
     {
         private readonly Mock<IMessageBoxService> _mockMessageBox;

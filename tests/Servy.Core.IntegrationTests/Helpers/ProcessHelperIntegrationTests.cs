@@ -14,7 +14,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// Integration tests for ProcessHelper.
     /// Verifies ProcessHelper process-metric and process-tree aggregation behavior.
     /// </summary>
-    [Collection("ProcessIntegrationTests")]
+    [Collection(ProcessIntegrationTestsCollection.Name)]
     public class ProcessHelperIntegrationTests : IDisposable
     {
         private readonly ProcessHelper _sut;

@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    [Collection("SequentialElevationTests")]
+    [Collection(ElevationTestCollection.Name)]
     public class InstallServiceCommandTests : IDisposable
     {
         private readonly Mock<IServiceManager> _mockServiceManager;

@@ -8,9 +8,10 @@ namespace Servy.CLI.UnitTests.Commands
     // within the collection its members run sequentially, so no class can reset the flag
     // while another is between its constructor and the elevation check it guards.
     // Kept separate from SequentialConsoleTests because the state protected is unrelated.
-    [CollectionDefinition("SequentialElevationTests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class ElevationTestCollection
     {
-        // This class has no code; it is solely a marker decoration for the attribute.
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "SequentialElevationTests";
     }
 }
