@@ -11,8 +11,6 @@
 name: changelog
 
 on:
-  # release:
-  #   types: [published]
   workflow_run:             # auto-trigger after bump-version.yml
     workflows: ["bump-version"]    # must match the `name:` in bump-version.yml
     types:
