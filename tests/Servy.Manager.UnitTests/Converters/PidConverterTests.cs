@@ -24,7 +24,8 @@ namespace Servy.Manager.UnitTests.Converters
         [InlineData(1234, "1234")]
         [InlineData(0, "0")]
         [InlineData("999", "999")]
-        public void Convert_ValidValue_ReturnsStringRepresentation(object input, string expected)
+        [InlineData("Not a pid", "Not a pid")] // Incompatible type: echoed, never replaced by the placeholder
+        public void Convert_NonNullValue_ReturnsStringRepresentation(object input, string expected)
         {
             // Act
             var result = _converter.Convert(input, typeof(string), null, CultureInfo.InvariantCulture);
@@ -33,11 +34,13 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(expected, result);
         }
 
-        [Fact]
-        public void ConvertBack_ReturnsDoNothing()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Any UI value")]
+        public void ConvertBack_ReturnsDoNothing(object value)
         {
             // Act
-            var result = _converter.ConvertBack("1234", typeof(int), null, CultureInfo.InvariantCulture);
+            var result = _converter.ConvertBack(value, typeof(int), null, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.Equal(Binding.DoNothing, result);

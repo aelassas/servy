@@ -107,41 +107,31 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal("45.2 Unit", result);
         }
 
-        [Fact]
-        public void Convert_ValueIsNull_ReturnsUnknownMetricPlaceholder()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Malformed String Intruding into Double Path")]
+        public void Convert_NullOrIncompatibleValue_ReturnsNotAvailablePlaceholder(object input)
         {
             // Arrange
             var converter = new TestMetricConverter();
 
             // Act
-            var result = converter.Convert(null, typeof(string), null, CultureInfo.InvariantCulture);
+            var result = converter.Convert(input, typeof(string), null, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.Equal(UiConstants.NotAvailable, result);
         }
 
-        [Fact]
-        public void Convert_ValueIsIncompatibleType_ReturnsUnknownMetricPlaceholder()
-        {
-            // Arrange
-            var converter = new TestMetricConverter();
-            string illegalTypeInput = "Malformed String Intruding into Double Path";
-
-            // Act
-            var result = converter.Convert(illegalTypeInput, typeof(string), null, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.Equal(UiConstants.NotAvailable, result);
-        }
-
-        [Fact]
-        public void ConvertBack_Always_ReturnsDoNothing()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Any UI value")]
+        public void ConvertBack_ReturnsDoNothing(object value)
         {
             // Arrange
             var converter = new TestMetricConverter();
 
             // Act
-            var result = converter.ConvertBack("Any UI Value String", typeof(double), null, CultureInfo.InvariantCulture);
+            var result = converter.ConvertBack(value, typeof(double), null, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.Equal(Binding.DoNothing, result);

@@ -43,7 +43,7 @@ namespace Servy.Manager.UnitTests.Converters
         [InlineData(null)]
         [InlineData("Not a long")]
         [InlineData(10.5)] // Double, not a long
-        public void Convert_InvalidOrNullValue_ReturnsUnknownPlaceholder(object input)
+        public void Convert_NullOrIncompatibleValue_ReturnsNotAvailablePlaceholder(object input)
         {
             // Arrange
             using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessHelper.Object)))
@@ -58,8 +58,10 @@ namespace Servy.Manager.UnitTests.Converters
             }
         }
 
-        [Fact]
-        public void ConvertBack_ReturnsDoNothing()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Any UI value")]
+        public void ConvertBack_ReturnsDoNothing(object value)
         {
             // Arrange
             using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessHelper.Object)))
@@ -67,7 +69,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new RamUsageConverter();
 
                 // Act
-                var result = converter.ConvertBack(null, typeof(long), null, CultureInfo.InvariantCulture);
+                var result = converter.ConvertBack(value, typeof(long), null, CultureInfo.InvariantCulture);
 
                 // Assert
                 Assert.Equal(Binding.DoNothing, result);

@@ -64,7 +64,7 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
-        public void Convert_NullInput_ReturnsEmptyString()
+        public void Convert_NullValue_ReturnsEmptyString()
         {
             // Act
             var result = _converter.Convert(null, typeof(string), null, CultureInfo.InvariantCulture);
@@ -73,16 +73,30 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(string.Empty, result);
         }
 
+        [Fact]
+        public void Convert_IncompatibleValue_EchoesInput()
+        {
+            // Act: a string is not a ServiceStatus, so the map lookup misses and GetFallbackValue runs
+            var result = _converter.Convert("Running", typeof(string), null, CultureInfo.InvariantCulture);
+
+            // Assert: the raw value is surfaced rather than masquerading as a mapped status
+            Assert.Equal("Running", result);
+        }
+
         #endregion
 
         #region ConvertBack Tests
 
-        [Fact]
-        public void ConvertBack_ReturnsDoNothing_OneWayBindingOnly()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Any UI value")]
+        public void ConvertBack_ReturnsDoNothing(object value)
         {
-            // Act & Assert
-            Assert.Equal(Binding.DoNothing, _converter.ConvertBack("Running", typeof(ServiceStatus), null, CultureInfo.InvariantCulture));
-            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null, typeof(ServiceStatus), null, CultureInfo.InvariantCulture));
+            // Act
+            var result = _converter.ConvertBack(value, typeof(ServiceStatus), null, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal(Binding.DoNothing, result);
         }
 
         #endregion

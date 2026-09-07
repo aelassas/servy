@@ -57,23 +57,39 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
-        public void Convert_NullReturnsFetching_InvalidEchoesInput()
+        public void Convert_NullValue_ReturnsFetchingPlaceholder()
         {
-            // Act & Assert
-            Assert.Equal(Strings.Label_Fetching, _converter.Convert(null, typeof(string), null, CultureInfo.InvariantCulture));
-            Assert.Equal("Invalid", _converter.Convert("Invalid", typeof(string), null, CultureInfo.InvariantCulture));
+            // Act
+            var result = _converter.Convert(null, typeof(string), null, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal(Strings.Label_Fetching, result);
+        }
+
+        [Fact]
+        public void Convert_IncompatibleValue_EchoesInput()
+        {
+            // Act
+            var result = _converter.Convert("Invalid", typeof(string), null, CultureInfo.InvariantCulture);
+
+            // Assert: GetFallbackValue surfaces the raw value rather than masquerading as a mapped start type
+            Assert.Equal("Invalid", result);
         }
 
         #endregion
 
         #region ConvertBack Tests
 
-        [Fact]
-        public void ConvertBack_ReturnsDoNothing_OneWayBindingOnly()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Any UI value")]
+        public void ConvertBack_ReturnsDoNothing(object value)
         {
-            // Act & Assert
-            Assert.Equal(Binding.DoNothing, _converter.ConvertBack("Automatic", typeof(ServiceStartType), null, CultureInfo.InvariantCulture));
-            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null, typeof(ServiceStartType), null, CultureInfo.InvariantCulture));
+            // Act
+            var result = _converter.ConvertBack(value, typeof(ServiceStartType), null, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal(Binding.DoNothing, result);
         }
 
         #endregion

@@ -56,11 +56,13 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(expected, result);
         }
 
-        [Fact]
-        public void ConvertBack_ReturnsDoNothing()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("Any UI value")]
+        public void ConvertBack_ReturnsDoNothing(object value)
         {
             // Act
-            var result = _converter.ConvertBack("test", typeof(string), null, CultureInfo.InvariantCulture);
+            var result = _converter.ConvertBack(value, typeof(string), null, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.Equal(Binding.DoNothing, result);
