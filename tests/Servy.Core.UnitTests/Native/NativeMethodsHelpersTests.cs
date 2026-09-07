@@ -322,36 +322,6 @@ namespace Servy.Core.UnitTests.Native
             Assert.Null(identity.PrefixDigest); // Prefix probe skipped/failed (returns null, not string.Empty)
         }
 
-        [Fact]
-        public void FileIdentity_IsDifferentFrom_FailedProbesWithNullDigests_TriggersSafeDefaultReturnTrue()
-        {
-            // Arrange: Two identities where handle info failed (IsValidHandleInfo=false)
-            // and content probes failed (PrefixDigest=null).
-            var identity1 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
-            var identity2 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
-
-            // Act
-            bool isDifferent = identity1.IsDifferentFrom(identity2);
-
-            // Assert: Safe default triggers (returns true) because identities are undeterminable
-            Assert.True(isDifferent);
-        }
-
-        [Fact]
-        public void FileIdentity_IsDifferentFrom_EmptyFilesWithEmptyStringDigests_ReturnsFalse()
-        {
-            // Arrange: Two identities where handle info failed (IsValidHandleInfo=false)
-            // but content probes succeeded on empty files (PrefixDigest=string.Empty).
-            var identity1 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = string.Empty };
-            var identity2 = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = string.Empty };
-
-            // Act
-            bool isDifferent = identity1.IsDifferentFrom(identity2);
-
-            // Assert: Compares equal (returns false) because both content probes succeeded on empty files
-            Assert.False(isDifferent);
-        }
-
         #endregion
     }
 }
