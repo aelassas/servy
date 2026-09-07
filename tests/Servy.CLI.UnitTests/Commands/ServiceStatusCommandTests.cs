@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    [Collection("SequentialElevationTests")]
+    [Collection(ElevationTestCollection.Name)]
     public class ServiceStatusCommandTests : ServiceCommandTestsBase<ServiceStatusCommand, ServiceStatusOptions>
     {
         protected override ServiceStatusCommand CreateCommandInstance() => new ServiceStatusCommand(MockServiceManager.Object);

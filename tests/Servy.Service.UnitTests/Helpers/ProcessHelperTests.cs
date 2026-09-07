@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Servy.Service.UnitTests.Helpers
 {
-    [Collection("SequentialEnvTests")]
+    [Collection(SequentialEnvTestsCollection.Name)]
     public class ProcessHelperTests
     {
         private readonly Mock<IServyLogger> _mockLogger;

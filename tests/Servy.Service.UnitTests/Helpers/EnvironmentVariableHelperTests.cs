@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Servy.Service.UnitTests.Helpers
 {
-    [Collection("SequentialEnvTests")]
+    [Collection(SequentialEnvTestsCollection.Name)]
     public class EnvironmentVariableHelperTests : IDisposable
     {
         // Tracks temporarily modified OS environment variables and their exact original value to restore them precisely after each test pass
