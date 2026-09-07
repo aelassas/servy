@@ -5,7 +5,7 @@
 # ladder is ctrlc.py, which is the one that really is a child.
 #
 # The child interpreter comes from PYTHON_EXE, falling back to sys.executable; the Notepad
-# path is hardcoded to C:\Windows\System32\notepad.exe.
+# path comes from NOTEPAD_EXE, falling back to %SystemRoot%\System32\notepad.exe.
 # Logs to logs/ctrlc_child.log next to this script; set SERVY_TEST_LOG_DIR to write elsewhere.
 #
 # It deliberately does not terminate the processes it spawned: the tree is meant to be left
@@ -43,15 +43,23 @@ def main():
         logging.error("PYTHON_EXE is not set and sys.executable is unusable; cannot spawn the child tree")
         sys.exit(1)
 
+    notepad_exe = os.environ.get("NOTEPAD_EXE") or os.path.join(
+        os.environ.get("SystemRoot", r"C:\Windows"), "System32", "notepad.exe")
+
     spawned = []
     try:
         # spawn child process
         py_proc = subprocess.Popen([python_exe, os.path.join(SCRIPT_DIR, "ctrlc2.py")])
         spawned.append(py_proc)
-        notepad_proc = subprocess.Popen([r"C:\Windows\System32\notepad.exe"])
+    except OSError:
+        logging.exception("Failed to spawn the Python child (%s)", python_exe)
+        sys.exit(1)
+
+    try:
+        notepad_proc = subprocess.Popen([notepad_exe])
         spawned.append(notepad_proc)
     except OSError:
-        logging.exception("Failed to spawn the child process tree")
+        logging.exception("Failed to spawn the native grandchild (%s)", notepad_exe)
         for p in spawned:
             try:
                 p.kill()
