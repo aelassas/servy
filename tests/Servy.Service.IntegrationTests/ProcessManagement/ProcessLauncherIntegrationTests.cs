@@ -115,7 +115,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_FireAndForget_ReturnsImmediately()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.CiGenerousSeconds}\"", fireAndForget: true, timeoutMs: 0);
+            var options = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ChildSleepSeconds}\"", fireAndForget: true, timeoutMs: 0);
 
             // Act
             var stopwatch = Stopwatch.StartNew();

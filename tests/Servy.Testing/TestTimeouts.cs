@@ -7,8 +7,9 @@ namespace Servy.Testing
     /// Ensures CI-sensitive timeouts are tuned predictably in a single location.
     /// </summary>
     /// <remarks>
-    /// Members suffixed with <c>Ms</c> are expressed in milliseconds and members suffixed
-    /// with <c>Seconds</c> are expressed in seconds; all other members are <see cref="TimeSpan"/> instances.
+    /// Members suffixed with <c>Ms</c> are expressed in milliseconds, members suffixed
+    /// with <c>Seconds</c> are expressed in seconds and members suffixed with <c>Attempts</c> are
+    /// iteration counts; all other members are <see cref="TimeSpan"/> instances.
     /// </remarks>
     public static class TestTimeouts
     {
@@ -16,17 +17,24 @@ namespace Servy.Testing
         /// A generous upper bound (20 seconds) for async operations and wait conditions that must
         /// not flake when running on loaded or resource-constrained CI build agents.
         /// </summary>
-        public static readonly TimeSpan CiGenerous = TimeSpan.FromSeconds(20);
+        /// <remarks>
+        /// This is the single source of the <c>CiGenerous</c> budget: <see cref="CiGenerousMs"/> and
+        /// <see cref="CiGenerous"/> are derived from it so the three spellings cannot drift apart.
+        /// It is a wait budget only; a child process spawned purely to stay alive during a test uses
+        /// <see cref="ChildSleepSeconds"/>, which is deliberately shorter so a wait always outlives
+        /// the workload it observes.
+        /// </remarks>
+        public const int CiGenerousSeconds = 20;
 
         /// <summary>
-        /// General generous timeout budget for CI operations (in seconds).
+        /// <see cref="CiGenerousSeconds"/> expressed in milliseconds.
         /// </summary>
-        public const int CiGenerousSeconds = 5;
+        public const int CiGenerousMs = CiGenerousSeconds * 1000;
 
         /// <summary>
-        /// General generous timeout budget for CI operations (in milliseconds).
+        /// <see cref="CiGenerousSeconds"/> expressed as a <see cref="TimeSpan"/>.
         /// </summary>
-        public const int CiGenerousMs = 5000;
+        public static readonly TimeSpan CiGenerous = TimeSpan.FromSeconds(CiGenerousSeconds);
 
         /// <summary>
         /// Observation window (1 second) for negative waits - the "wait, then assert nothing was
@@ -41,11 +49,13 @@ namespace Servy.Testing
         public static readonly TimeSpan NegativeObservationWindow = TimeSpan.FromSeconds(1);
 
         /// <summary>
-        /// How long (15 seconds) a spawned PowerShell leaf process in a process tree fixture stays alive.
+        /// How long (15 seconds) a spawned PowerShell process a test keeps alive as a fixture stays
+        /// alive - a leaf of a process tree, or a lone child the test needs running while it acts.
         /// </summary>
         /// <remarks>
         /// Must remain greater than or equal to <see cref="ChildTimeoutSeconds"/> to ensure the leaf process
-        /// does not exit before process enumeration or tree stabilization checks complete.
+        /// does not exit before process enumeration or tree stabilization checks complete, and shorter than
+        /// <see cref="CiGenerousSeconds"/> so a wait budget outlives the workload it observes.
         /// </remarks>
         public const int ChildSleepSeconds = 15;
 
