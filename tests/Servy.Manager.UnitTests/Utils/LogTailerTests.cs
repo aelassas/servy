@@ -331,21 +331,21 @@ namespace Servy.Manager.UnitTests.Utils
                 // Query precise FileInfo metadata so CreationTimeUtc matches and doesn't trigger a false rotation reset to offset 0
                 var fileInfo = new FileInfo(_tempFilePath);
                 var startPos = fileInfo.Length;
-                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, startPos, fileInfo.CreationTimeUtc, cts.Token);
 
-                // Wait for the background reader loop to fully complete its initial cycle
-                // and position its internal StreamReader handle directly at the EOF boundary.
-                await WaitForLoopStartAsync(tailer, CancellationToken.None);
-                await loopCompletedTcs.Task;
+                // Pre-create content containing more lines than the batch flush threshold
+                int totalLinesToAppend = AppConfig.LogTailerBatchFlushThreshold + 5;
+                var contentToAppend = string.Join("\n", Enumerable.Range(0, totalLinesToAppend).Select(i => $"BatchLine_{i}")) + "\n";
 
-                // Pre-create and flush all lines to disk synchronously
-                var contentToAppend = string.Join("\n", Enumerable.Range(0, AppConfig.LogTailerBatchFlushThreshold + 5).Select(i => $"BatchLine_{i}")) + "\n";
-
+                // Write and flush ALL lines to disk synchronously BEFORE running or resuming the tailer pass
                 using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
                 using (var writer = new StreamWriter(fs))
                 {
-                    await writer.WriteAsync(contentToAppend);
+                    writer.Write(contentToAppend);
+                    writer.Flush();
                 }
+
+                // Act - Start tailing after the full batch payload is guaranteed to be on disk
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, startPos, fileInfo.CreationTimeUtc, cts.Token);
 
                 // Wait for background batch splitting mechanics to propagate updates
                 await Helper.WaitUntilAsync(() =>
@@ -361,6 +361,7 @@ namespace Servy.Manager.UnitTests.Utils
                 {
                     Assert.True(capturedBatches.Count >= 2, "Expected a mid-read threshold flush followed by the end-of-pass flush.");
                     Assert.Equal(AppConfig.LogTailerBatchFlushThreshold, capturedBatches[0].Count);
+                    Assert.Equal(totalLinesToAppend - AppConfig.LogTailerBatchFlushThreshold, capturedBatches[1].Count);
                 }
             }
         }
