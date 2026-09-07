@@ -265,9 +265,10 @@ namespace Servy.Service
                 // Load configuration
                 var config = ConfigurationManager.AppSettings;
 
-                var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+                var coreSettings = CoreSettingsLoader.Load(config);
+                var connectionString = coreSettings.ConnectionString;
+                var aesKeyFilePath = coreSettings.AESKeyFilePath;
+                var aesIVFilePath = coreSettings.AESIVFilePath;
 
                 if (int.TryParse(config["Timing:WaitChunkMs"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var waitChunkMs) && waitChunkMs > 0)
                 {
@@ -309,6 +310,7 @@ namespace Servy.Service
                 }
 
                 // Initialize database and helpers
+                AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
                 _dbContext = new AppDbContext(connectionString);
                 DatabaseInitializer.InitializeDatabase(_dbContext, SQLiteDbInitializer.Initialize);
 

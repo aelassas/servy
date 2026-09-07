@@ -70,9 +70,11 @@ namespace Servy.Restarter
                 // 2. Load configuration
                 var config = ConfigurationManager.AppSettings;
 
-                var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+                var coreSettings = CoreSettingsLoader.Load(config);
+                CoreSettingsLoader.Validate(coreSettings, "Servy.Restarter.Net48.exe.config");
+                var connectionString = coreSettings.ConnectionString;
+                var aesKeyFilePath = coreSettings.AESKeyFilePath;
+                var aesIVFilePath = coreSettings.AESIVFilePath;
 
                 // 3. Parse the restart timeout
                 var restartTimeout = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds",
@@ -108,6 +110,7 @@ namespace Servy.Restarter
                 }
 
                 // 7. Initialize database and helpers
+                AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
                 dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
                 protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);

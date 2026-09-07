@@ -240,10 +240,10 @@ namespace Servy.UI.Bootstrapping
         /// </summary>
         private void LoadConfiguration()
         {
-            var config = ConfigurationManager.AppSettings;
-            ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-            AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-            AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+            var settings = CoreSettingsLoader.Load(ConfigurationManager.AppSettings);
+            ConnectionString = settings.ConnectionString;
+            AESKeyFilePath = settings.AESKeyFilePath;
+            AESIVFilePath = settings.AESIVFilePath;
         }
 
         /// <summary>
@@ -347,11 +347,9 @@ namespace Servy.UI.Bootstrapping
                     // inside the measured window so the splash floor reflects real elapsed time.
                     Helper.EnsureEventSourceExists();
 
-                    if (string.IsNullOrEmpty(ConnectionString) || string.IsNullOrEmpty(AESKeyFilePath) || string.IsNullOrEmpty(AESIVFilePath))
-                    {
-                        throw new InvalidOperationException(
-                            $"Critical configuration values are missing. Ensure that the .exe.config file is present and correctly configured.");
-                    }
+                    CoreSettingsLoader.Validate(
+                        new CoreSettings(ConnectionString, AESKeyFilePath, AESIVFilePath),
+                        ".exe.config");
 
                     var stopwatch = Stopwatch.StartNew();
 
