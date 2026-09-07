@@ -20,6 +20,25 @@ namespace Servy.Core.IntegrationTests.Helpers
         private readonly List<string> _tempFiles = new List<string>();
 
         /// <summary>
+        /// Number of handle-query attempts the two detection loops make before giving up. Both loops
+        /// are meant to poll identically; sharing the constant makes that true by construction rather
+        /// than by a comment saying so.
+        /// </summary>
+        private const int HandleQueryMaxRetries = 5;
+
+        /// <summary>
+        /// Backoff window (50 ms) between two successive handle-query attempts, absorbing the few
+        /// milliseconds by which handle.exe can lag the kernel handle table.
+        /// </summary>
+        /// <seealso cref="HandleQueryMaxRetries"/>
+        private const int HandleQueryBackoffMs = 50;
+
+        /// <summary>
+        /// Pause (1,000 ms) before the single cold-start retry of the handle driver mount.
+        /// </summary>
+        private const int ColdStartRetryPauseMs = 1000;
+
+        /// <summary>
         /// Initializes the test class by inheriting from the shared tool extraction baseline.
         /// </summary>
         public HandleHelperIntegrationTests() : base()
@@ -32,7 +51,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             catch (TimeoutException)
             {
                 Debug.WriteLine("WARNING: Initial handle.exe cold-start timed out while mounting kernel objects. Executing retry pass...");
-                Thread.Sleep(1000);
+                Thread.Sleep(ColdStartRetryPauseMs);
 
                 HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
             }
@@ -113,9 +132,8 @@ namespace Servy.Core.IntegrationTests.Helpers
                     List<HandleHelper.ProcessHandleInfo> results = null;
                     bool handleDetected = false;
 
-                    // Retry up to 5 times with a small delay to handle OS propagation latency
-                    const int maxRetries = 5;
-                    for (int i = 0; i < maxRetries; i++)
+                    // Retry a bounded number of times with a small delay to handle OS propagation latency
+                    for (int i = 0; i < HandleQueryMaxRetries; i++)
                     {
                         results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
                         if (results.Any(p => p.ProcessId == currentPid))
@@ -123,7 +141,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                             handleDetected = true;
                             break;
                         }
-                        Thread.Sleep(50); // Small backoff window
+                        Thread.Sleep(HandleQueryBackoffMs); // Small backoff window
                     }
 
                     // Assert
@@ -172,14 +190,13 @@ namespace Servy.Core.IntegrationTests.Helpers
                     // handle.exe can lag the kernel handle table by a few milliseconds, so the query is retried.
                     // The Where filters out concurrent background system handles (like security indexers)
                     // that also target our file; handle.exe returns one line per handle found.
-                    const int maxRetries = 5;
                     var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
                     var selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
                     bool multiHandlesDetected = selfHandles.Count >= 2;
 
-                    for (int i = 1; i < maxRetries && !multiHandlesDetected; i++)
+                    for (int i = 1; i < HandleQueryMaxRetries && !multiHandlesDetected; i++)
                     {
-                        Thread.Sleep(50); // Small backoff window
+                        Thread.Sleep(HandleQueryBackoffMs); // Small backoff window
                         results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
                         selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
                         multiHandlesDetected = selfHandles.Count >= 2;
