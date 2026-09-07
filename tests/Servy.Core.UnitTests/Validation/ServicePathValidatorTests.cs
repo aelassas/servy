@@ -1,5 +1,6 @@
 using Servy.Core.DTOs;
 using Servy.Core.Validation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -22,7 +23,31 @@ namespace Servy.Core.UnitTests.Validation
             public string Description { get; set; }
         }
 
+        private class NonStringServicePathDto
+        {
+            // Deliberately misapplied: [ServicePath] is only meaningful on string properties, and the
+            // walker throws rather than silently misreading a non-string value (see #6387).
+            [ServicePath("misapplied path", isFile: true)]
+            public int MisappliedPath { get; set; }
+        }
+
         #region FindFirstViolation Tests
+
+        [Fact]
+        public void FindFirstViolation_WhenServicePathAppliedToNonStringProperty_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var dto = new NonStringServicePathDto { MisappliedPath = 42 };
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                ServicePathValidator.FindFirstViolation(dto, (path, isFile) => true));
+
+            // Assert
+            Assert.Contains(nameof(NonStringServicePathDto), ex.Message);
+            Assert.Contains(nameof(NonStringServicePathDto.MisappliedPath), ex.Message);
+            Assert.Contains("Int32", ex.Message);
+        }
 
         [Fact]
         public void FindFirstViolation_WhenTargetIsNull_ReturnsNull()
