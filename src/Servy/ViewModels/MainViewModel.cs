@@ -1169,14 +1169,15 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.InstallServiceAsync"/> with the current property values.
+        /// Snapshots the form data on the UI thread and invokes <see cref="IServiceCommands.InstallServiceAsync"/> on a background thread.
         /// </summary>
         private async Task InstallServiceAsync(object parameter)
         {
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.InstallServiceAsync(_config));
+                var dto = ModelToServiceDto();
+                await Task.Run(() => ServiceCommands.InstallServiceAsync(dto, ConfirmPassword, RunAsLocalSystem));
             }
             finally
             {

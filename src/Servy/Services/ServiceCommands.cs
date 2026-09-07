@@ -104,8 +104,18 @@ namespace Servy.Services
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
-        public async Task<bool> InstallServiceAsync(ServiceConfiguration config, CancellationToken cancellationToken = default)
+        public async Task<bool> InstallServiceAsync(
+            ServiceDto dto,
+            string confirmPassword = null,
+            bool runAsLocalSystem = true,
+            CancellationToken cancellationToken = default)
         {
+            if (dto == null)
+            {
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ValidationError, Caption);
+                return false;
+            }
+
             var wrapperExePath = AppConfig.GetServyUIServicePath();
 
             if (!File.Exists(wrapperExePath))
@@ -116,28 +126,21 @@ namespace Servy.Services
 
             // 1. Obtain the canonical DTO from the ViewModel
             // This removes the sentinel-vs-default divergence (e.g., -1 vs DefaultRotationSize)
-            var dto = _modelToServiceDto();
-
-            if (dto == null)
-            {
-                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ValidationError, Caption);
-                return false;
-            }
 
             // 2. Apply install-specific overrides and masking
             // Ensure Description is not null for OS service registration
             dto.Description = dto.Description ?? string.Empty;
 
             // Mask credentials if running as LocalSystem
-            if (config.RunAsLocalSystem)
+            if (runAsLocalSystem)
             {
                 dto.UserAccount = null;
                 dto.Password = null;
             }
 
             // 3. Validate the DTO
-            // We pass config.ConfirmPassword directly to the validator as it is a UI-only field
-            if (!await _serviceConfigurationValidator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword, cancellationToken: cancellationToken))
+            // We pass confirmPassword directly to the validator as it is a UI-only field
+            if (!await _serviceConfigurationValidator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: confirmPassword, cancellationToken: cancellationToken))
             {
                 return false;
             }
@@ -230,7 +233,7 @@ namespace Servy.Services
                     PostStopArgs = dto.PostStopParameters,
 
                     // Maintain the EnableDebugLogs override from the incoming config
-                    EnableDebugLogs = config.EnableDebugLogs
+                    EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs
                 };
 
                 var res = await _serviceManager.InstallServiceAsync(options, cancellationToken);

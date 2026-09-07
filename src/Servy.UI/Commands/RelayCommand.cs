@@ -25,21 +25,34 @@ namespace Servy.UI.Commands
             _canExecute = canExecute;
         }
 
+        /// <summary>
+        /// Converts the untyped command parameter to <typeparamref name="T"/>.
+        /// </summary>
+        /// <param name="parameter">The command parameter passed by the binding engine.</param>
+        /// <returns>The cast value of type <typeparamref name="T"/>, or <c>default(T)</c> if <paramref name="parameter"/> is null.</returns>
+        /// <exception cref="ArgumentException">Thrown when a non-null parameter cannot be assigned to type <typeparamref name="T"/>.</exception>
+        private static T Unbox(object parameter)
+        {
+            if (parameter is null) return default;
+            if (parameter is T typed) return typed;
+
+            throw new ArgumentException(
+                $"CommandParameter of type '{parameter.GetType().FullName}' cannot be bound to RelayCommand<{typeof(T).FullName}>.",
+                nameof(parameter));
+        }
+
         /// <inheritdoc />
         public bool CanExecute(object parameter)
         {
             if (_canExecute == null) return true;
 
-            // Safe unboxing: If parameter is null, provide default(T).
-            // This prevents InvalidCastException for value types like int or bool.
-            return _canExecute(parameter is T typed ? typed : default(T));
+            return _canExecute(Unbox(parameter));
         }
 
         /// <inheritdoc />
         public void Execute(object parameter)
         {
-            // Apply the same safe check for the execution logic.
-            _execute(parameter is T typed ? typed : default(T));
+            _execute(Unbox(parameter));
         }
 
         /// <inheritdoc />

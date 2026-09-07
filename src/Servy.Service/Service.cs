@@ -2586,7 +2586,7 @@ namespace Servy.Service
         /// <returns><see langword="true"/> if the process succeeded or failures are ignored; otherwise <see langword="false"/>.</returns>
         private bool StartPreStopProcess(StartOptions options)
         {
-            if (options == null || string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
+            if (string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
             {
                 _logger?.Info("No pre-stop executable configured. Skipping.");
                 return true;
