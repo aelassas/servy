@@ -1,4 +1,5 @@
 using Servy.Core.DTOs;
+using Servy.Core.Resources;
 using Servy.Core.Validation;
 using System;
 using System.Collections.Generic;
@@ -365,6 +366,40 @@ namespace Servy.Core.UnitTests.Validation
             Assert.False(violations[1].IsMissing);
             Assert.Equal(@"C:\invalid\dir", violations[1].Value);
             Assert.Equal("startup directory", violations[1].Attribute.Label);
+        }
+
+        #endregion
+
+        #region ResolveErrorMessage Tests
+
+        [Fact]
+        public void ResolveErrorMessage_WhenErrorResourceKeyIsNull_ReturnsGenericMessage()
+        {
+            // Arrange: errorResourceKey is optional and defaults to null, so the outer lookup is skipped
+            var property = typeof(TestDto).GetProperty(nameof(TestDto.ExecutablePath));
+            var attribute = new ServicePathAttribute("executable path", isFile: true);
+            var violation = new ServicePathViolation(property, attribute, value: null, isMissing: true);
+
+            // Act
+            var message = violation.ResolveErrorMessage();
+
+            // Assert
+            Assert.Equal(string.Format(Strings.Msg_InvalidPathInConfig, "executable path"), message);
+        }
+
+        [Fact]
+        public void ResolveErrorMessage_WhenErrorResourceKeyDoesNotResolve_ReturnsGenericMessage()
+        {
+            // Arrange: a key that names no static property on Strings - what a rename on either side leaves behind
+            var property = typeof(TestDto).GetProperty(nameof(TestDto.ExecutablePath));
+            var attribute = new ServicePathAttribute("executable path", isFile: true, errorResourceKey: "Msg_DoesNotExist_TypoedKey");
+            var violation = new ServicePathViolation(property, attribute, value: null, isMissing: true);
+
+            // Act
+            var message = violation.ResolveErrorMessage();
+
+            // Assert
+            Assert.Equal(string.Format(Strings.Msg_InvalidPathInConfig, "executable path"), message);
         }
 
         #endregion
