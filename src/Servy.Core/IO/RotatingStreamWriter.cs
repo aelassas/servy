@@ -465,8 +465,8 @@ namespace Servy.Core.IO
 
             string directory = parentDir.FullName;
             string currentFullName = _file.FullName;
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(currentFullName) ?? string.Empty;
-            string extension = Path.GetExtension(currentFullName) ?? string.Empty;
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(currentFullName);
+            string extension = Path.GetExtension(currentFullName);
 
             // Pre-calculate values outside the lambda so the analyzer doesn't
             // have to track string nullability across scopes.
@@ -505,7 +505,6 @@ namespace Servy.Core.IO
             var rotatedFiles = allPotentialFiles
                 .Where(f =>
                 {
-                    // Explicit guard against Path.GetFileName returning null
                     string name = Path.GetFileName(f);
                     if (string.IsNullOrEmpty(name))
                         return false;
