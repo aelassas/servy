@@ -114,9 +114,10 @@ namespace Servy.CLI
 #endif
                     var config = builder.Build();
 
-                    var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
-                    var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                    var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+                    var coreSettings = CoreSettingsLoader.LoadAndValidate(config, "appsettings.cli.json");
+                    var connectionString = coreSettings.ConnectionString;
+                    var aesKeyFilePath = coreSettings.AESKeyFilePath;
+                    var aesIVFilePath = coreSettings.AESIVFilePath;
 
                     LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
 

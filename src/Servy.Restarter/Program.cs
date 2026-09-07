@@ -72,9 +72,10 @@ namespace Servy.Restarter
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: false)
                     .Build();
 
-                var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
-                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+                var coreSettings = CoreSettingsLoader.LoadAndValidate(config, "appsettings.restarter.json");
+                var connectionString = coreSettings.ConnectionString;
+                var aesKeyFilePath = coreSettings.AESKeyFilePath;
+                var aesIVFilePath = coreSettings.AESIVFilePath;
 
                 // 3. Parse the restart timeout
                 var restartTimeout = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds",

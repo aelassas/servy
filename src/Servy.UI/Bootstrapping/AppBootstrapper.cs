@@ -244,9 +244,10 @@ namespace Servy.UI.Bootstrapping
 #endif
             _configuration = builder.Build();
 
-            ConnectionString = _configuration.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
-            AESKeyFilePath = _configuration["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-            AESIVFilePath = _configuration["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+            var coreSettings = CoreSettingsLoader.Load(_configuration);
+            ConnectionString = coreSettings.ConnectionString;
+            AESKeyFilePath = coreSettings.AESKeyFilePath;
+            AESIVFilePath = coreSettings.AESIVFilePath;
         }
 
         /// <summary>
@@ -349,15 +350,13 @@ namespace Servy.UI.Bootstrapping
                     // inside the measured window so the splash floor reflects real elapsed time.
                     Helper.EnsureEventSourceExists();
 
-                    if (string.IsNullOrEmpty(ConnectionString) || string.IsNullOrEmpty(AESKeyFilePath) || string.IsNullOrEmpty(AESIVFilePath))
-                    {
-                        throw new InvalidOperationException(
-                            $"Critical configuration values are missing. Ensure that the {_options.AppSettingsFileName} file is present and correctly configured.");
-                    }
+                    CoreSettingsLoader.Validate(
+                        new CoreSettingsLoader.CoreSettings(ConnectionString!, AESKeyFilePath!, AESIVFilePath!),
+                        _options.AppSettingsFileName!);
 
                     var stopwatch = Stopwatch.StartNew();
 
-                    AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
+                    AppFoldersHelper.EnsureFolders(ConnectionString!, AESKeyFilePath!, AESIVFilePath!);
 
                     var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
 
