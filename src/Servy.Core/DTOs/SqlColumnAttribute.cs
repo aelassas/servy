@@ -4,6 +4,13 @@ namespace Servy.Core.DTOs
     /// Defines the SQLite column affinity and constraints for a mapped property.
     /// Used by the database initializer to dynamically build and migrate the schema.
     /// </summary>
+    /// <remarks>
+    /// This attribute supplies the column's TYPE only; it does not add the column to the table.
+    /// Which columns exist is decided by the list in <c>Servy.Infrastructure.Data.SqlConstants</c>,
+    /// so a property decorated here but absent from that list is created by no migration and written
+    /// by no statement. The two lists are hand-maintained and kept in step by the anti-drift tests in
+    /// <c>SqlColumnContractAntiDriftTests</c>.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class SqlColumnAttribute : Attribute
     {
