@@ -79,19 +79,8 @@ namespace Servy.Testing
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
 
-            var type = obj.GetType();
-            FieldInfo? fieldInfo = null;
-
-            while (type != null && fieldInfo == null)
-            {
-                fieldInfo = type.GetField(fieldName, PrivateInstanceFlags);
-                type = type.BaseType;
-            }
-
-            if (fieldInfo == null)
-            {
-                throw new ArgumentException($"Field '{fieldName}' could not be found on type {obj.GetType().Name} or its base classes.");
-            }
+            var fieldInfo = FindInHierarchy(obj.GetType(), fieldName, "Field",
+                t => t.GetField(fieldName, PrivateInstanceFlags));
 
             return (T)fieldInfo.GetValue(obj)!;
         }
@@ -109,19 +98,8 @@ namespace Servy.Testing
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var currentType = type;
-            FieldInfo? fieldInfo = null;
-
-            while (currentType != null && fieldInfo == null)
-            {
-                fieldInfo = currentType.GetField(fieldName, PrivateStaticFlags);
-                currentType = currentType.BaseType;
-            }
-
-            if (fieldInfo == null)
-            {
-                throw new ArgumentException($"Static field '{fieldName}' could not be found on type {type.Name} or its base classes.");
-            }
+            var fieldInfo = FindInHierarchy(type, fieldName, "Static field",
+                t => t.GetField(fieldName, PrivateStaticFlags));
 
             return (T)fieldInfo.GetValue(null)!;
         }
@@ -138,19 +116,8 @@ namespace Servy.Testing
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
 
-            var type = obj.GetType();
-            FieldInfo? fieldInfo = null;
-
-            while (type != null && fieldInfo == null)
-            {
-                fieldInfo = type.GetField(fieldName, PrivateInstanceFlags);
-                type = type.BaseType;
-            }
-
-            if (fieldInfo == null)
-            {
-                throw new ArgumentException($"Field '{fieldName}' could not be found on type {obj.GetType().Name} or its base classes.");
-            }
+            var fieldInfo = FindInHierarchy(obj.GetType(), fieldName, "Field",
+                t => t.GetField(fieldName, PrivateInstanceFlags));
 
             fieldInfo.SetValue(obj, value);
         }
@@ -167,19 +134,8 @@ namespace Servy.Testing
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var currentType = type;
-            FieldInfo? fieldInfo = null;
-
-            while (currentType != null && fieldInfo == null)
-            {
-                fieldInfo = currentType.GetField(fieldName, PrivateStaticFlags);
-                currentType = currentType.BaseType;
-            }
-
-            if (fieldInfo == null)
-            {
-                throw new ArgumentException($"Static field '{fieldName}' could not be found on type {type.Name} or its base classes.");
-            }
+            var fieldInfo = FindInHierarchy(type, fieldName, "Static field",
+                t => t.GetField(fieldName, PrivateStaticFlags));
 
             fieldInfo.SetValue(null, value);
         }
@@ -197,19 +153,8 @@ namespace Servy.Testing
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
 
-            var type = obj.GetType();
-            MethodInfo? method = null;
-
-            while (type != null && method == null)
-            {
-                method = type.GetMethod(methodName, PrivateInstanceFlags);
-                type = type.BaseType;
-            }
-
-            if (method == null)
-            {
-                throw new ArgumentException($"Method '{methodName}' could not be found on type {obj.GetType().Name} or its base classes.");
-            }
+            var method = FindInHierarchy(obj.GetType(), methodName, "Method",
+                t => t.GetMethod(methodName, PrivateInstanceFlags));
 
             return InvokeUnwrapped(method, obj, args);
         }
@@ -227,19 +172,8 @@ namespace Servy.Testing
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var currentType = type;
-            MethodInfo? method = null;
-
-            while (currentType != null && method == null)
-            {
-                method = currentType.GetMethod(methodName, PrivateStaticFlags);
-                currentType = currentType.BaseType;
-            }
-
-            if (method == null)
-            {
-                throw new ArgumentException($"Static method '{methodName}' could not be found on type {type.Name} or its base classes.");
-            }
+            var method = FindInHierarchy(type, methodName, "Static method",
+                t => t.GetMethod(methodName, PrivateStaticFlags));
 
             return InvokeUnwrapped(method, null, args);
         }
@@ -257,21 +191,37 @@ namespace Servy.Testing
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var currentType = type;
-            MethodInfo? method = null;
-
-            while (currentType != null && method == null)
-            {
-                method = currentType.GetMethod(methodName, PublicStaticFlags);
-                currentType = currentType.BaseType;
-            }
-
-            if (method == null)
-            {
-                throw new ArgumentException($"Public static method '{methodName}' could not be found on type {type.Name} or its base classes.");
-            }
+            var method = FindInHierarchy(type, methodName, "Public static method",
+                t => t.GetMethod(methodName, PublicStaticFlags));
 
             return InvokeUnwrapped(method, null, args);
+        }
+
+        /// <summary>
+        /// Walks <paramref name="type"/> and its base types applying <paramref name="lookup"/>, returning the
+        /// first non-null result, or throwing <see cref="ArgumentException"/> naming <paramref name="memberKind"/>.
+        /// </summary>
+        /// <typeparam name="TMember">The kind of member being looked up.</typeparam>
+        /// <param name="type">The type to start the walk from.</param>
+        /// <param name="memberName">The name of the member, used in the not-found message.</param>
+        /// <param name="memberKind">A noun describing the member kind, used in the not-found message.</param>
+        /// <param name="lookup">The per-type lookup to apply, returning null when the type does not declare the member.</param>
+        /// <returns>The first member found on <paramref name="type"/> or one of its base types.</returns>
+        /// <exception cref="ArgumentException">Thrown when no type in the chain declares the member.</exception>
+        private static TMember FindInHierarchy<TMember>(
+            Type type, string memberName, string memberKind, Func<Type, TMember?> lookup)
+            where TMember : MemberInfo
+        {
+            for (var current = type; current != null; current = current.BaseType)
+            {
+                var found = lookup(current);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            throw new ArgumentException($"{memberKind} '{memberName}' could not be found on type {type.Name} or its base classes.");
         }
 
         /// <summary>
