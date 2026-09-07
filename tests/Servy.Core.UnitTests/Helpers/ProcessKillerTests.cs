@@ -4,7 +4,7 @@ using Servy.Testing;
 namespace Servy.Core.UnitTests.Helpers
 {
     /// <summary>
-    /// Unit tests for the ProcessKiller utility (input validation and not-found logic).
+    /// Unit tests for the ProcessKiller utility (input validation, the critical-process safelist, and not-found logic).
     /// Integration tests that spawn real processes live in ProcessKillerIntegrationTests.
     /// </summary>
     public class ProcessKillerTests
@@ -26,6 +26,63 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Act
             var result = _processKiller.KillProcessTreeAndParents(name!);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        /// <summary>
+        /// Supplies every entry of the ProcessKiller safelist, so the coverage of the guard cannot drift from the list it guards.
+        /// </summary>
+        /// <returns>One theory row per entry of the CriticalSystemProcesses safelist.</returns>
+        public static TheoryData<string> AllCriticalProcessNames()
+        {
+            // GetFieldStatic throws when the field is renamed or removed, so the theory can never
+            // degrade silently into an empty (and therefore vacuously green) data set.
+            var safelist = TestReflection.GetFieldStatic<HashSet<string>>(
+                typeof(ProcessKiller), "CriticalSystemProcesses");
+
+            var data = new TheoryData<string>();
+            foreach (var name in safelist)
+            {
+                data.Add(name);
+            }
+
+            return data;
+        }
+
+        /// <summary>
+        /// Verifies that attempting to terminate a critical Windows system process by name is actively blocked by the internal guardrails.
+        /// </summary>
+        /// <param name="protectedName">The name of the critical system process, taken from the safelist itself.</param>
+        [Theory]
+        [MemberData(nameof(AllCriticalProcessNames))]
+        public void KillProcessTreeAndParents_ProtectedProcessName_ReturnsFalse(string protectedName)
+        {
+            // Act
+            // Every entry must be refused with and without the .exe suffix the guard normalizes away,
+            // whether or not the process happens to be running on this host.
+            var result = _processKiller.KillProcessTreeAndParents(protectedName, killParents: true);
+            var resultWithExtension = _processKiller.KillProcessTreeAndParents(protectedName + ".exe", killParents: true);
+
+            // Assert
+            // Names on the CriticalSystemProcesses safelist are never killed
+            Assert.False(result);
+            Assert.False(resultWithExtension);
+        }
+
+        /// <summary>
+        /// Verifies that providing an invalid or non-positive process identifier results in a safe bypass returning false.
+        /// </summary>
+        /// <param name="invalidPid">The numerical identifier simulating an invalid process ID.</param>
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        [InlineData(-999)]
+        public void KillProcessTreeAndParents_InvalidPid_ReturnsFalse(int invalidPid)
+        {
+            // Act
+            var result = _processKiller.KillProcessTreeAndParents(invalidPid, killParents: true);
 
             // Assert
             Assert.False(result);
