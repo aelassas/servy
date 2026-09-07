@@ -182,8 +182,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.False(wrapper.UnderlyingProcess.EnableRaisingEvents);
 
                 // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -236,8 +235,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Equal(IntPtr.Zero, windowHandle); // Console window initialized with CreateNoWindow = true returns Zero
 
                 // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -257,8 +255,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.False(closed);
 
                 // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -308,8 +305,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert
                 Assert.True(isHealthy);
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -348,8 +344,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(10), cts.Token));
 
                 // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -503,22 +498,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 Assert.True(childCleanedUp, $"Descendant process with PID {childPid} survived StopDescendants.");
 
-                // Cleanup after assertions
-                try
-                {
-                    if (underlyingProcess != null && !underlyingProcess.HasExited)
-                    {
-                        underlyingProcess.Kill(entireProcessTree: true);
-                        underlyingProcess.WaitForExit(1000);
-                    }
-                    else if (!wrapper.HasExited)
-                    {
-                        wrapper.Kill(entireProcessTree: true);
-                        wrapper.WaitForExit(1000);
-                    }
-                }
-                // The process already exited or its handle is gone; nothing is left to kill
-                catch (InvalidOperationException) { }
+                // Cleanup after assertions: KillAndDispose kills the tree and disposes the
+                // Process, and the wrapper's own using block disposes the wrapper. A null
+                // reflection read is covered by the class-level teardown, which tracks the wrapper.
+                TestProcessCleanup.KillAndDispose(underlyingProcess);
             }
         }
 
@@ -535,8 +518,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert
                 Assert.Contains(_logger.Infos, m => m.Contains("No active descendants found for PID"));
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -580,8 +562,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Contains(_logger.Infos, m => m.Contains("Initiating cascaded kill..."));
 
                 // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -831,8 +812,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.False((bool)result!);
 
                 // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -889,8 +869,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Contains(_logger.Infos, m => m.Contains("Sent Ctrl+C to process"));
 
                 // Cleanup
-                wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(1000);
+                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
