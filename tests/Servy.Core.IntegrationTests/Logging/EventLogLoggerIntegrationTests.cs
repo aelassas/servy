@@ -7,7 +7,7 @@ using System.Security;
 
 namespace Servy.Core.IntegrationTests.Logging
 {
-    [Collection("CoreOsIntegration")]
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class EventLogLoggerIntegrationTests : IDisposable
     {
         private const string InsufficientPrivilegesSkipReason = "Skipping test due to insufficient privileges.";

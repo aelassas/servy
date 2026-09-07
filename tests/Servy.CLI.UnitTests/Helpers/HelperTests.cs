@@ -11,7 +11,7 @@ namespace Servy.CLI.UnitTests.Helpers
     internal class TestOptions { }
 
     // Enforce sequential execution across the entire suite run pass to stop cross-thread Console static corruption.
-    [Collection("SequentialConsoleTests")]
+    [Collection(ConsoleTestCollection.Name)]
     public class HelperTests
     {
         [Fact]

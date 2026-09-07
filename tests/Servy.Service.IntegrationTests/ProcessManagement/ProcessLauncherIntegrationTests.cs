@@ -13,15 +13,18 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 {
     #region xUnit Non-Parallel Collection Setup
 
-    [CollectionDefinition("ProcessLauncherIntegrationTests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class ProcessLauncherIntegrationTestsCollection
     {
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "ProcessLauncherIntegrationTests";
+
         // Enforces strict sequential isolation across the integration suite runs
     }
 
     #endregion
 
-    [Collection("ProcessLauncherIntegrationTests")]
+    [Collection(ProcessLauncherIntegrationTestsCollection.Name)]
     public class ProcessLauncherIntegrationTests : IDisposable
     {
         private readonly List<string> _tempFiles = new List<string>();

@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace Servy.Core.IntegrationTests.Native
 {
-    [Collection("CoreOsIntegration")]
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class NativeMethodsIntegrationTests : IDisposable
     {
         private readonly ITestOutputHelper _output;

@@ -8,9 +8,10 @@ namespace Servy.Infrastructure.IntegrationTests
     // SQLiteFunction.RegisterFunction registry for UNICODE_NOCASE.
     // (Tests within a single collection are always sequential; the flag adds the
     // cross-collection guarantee.)
-    [CollectionDefinition("SequentialDatabaseTests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class DatabaseTestCollection
     {
-        // This class has no code; it is solely a marker decoration for the attribute.
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "SequentialDatabaseTests";
     }
 }

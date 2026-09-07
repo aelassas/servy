@@ -5,9 +5,10 @@ namespace Servy.Service.UnitTests.Helpers
     /// the OS environment variables set by <see cref="EnvironmentVariableHelperTests"/>
     /// and the static <c>ProcessHelper.EnvVarRegex</c> swapped by <see cref="ProcessHelperTests"/>.
     /// </summary>
-    [CollectionDefinition("SequentialEnvTests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class SequentialEnvTestsCollection
     {
-        // Marker class, no code
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "SequentialEnvTests";
     }
 }

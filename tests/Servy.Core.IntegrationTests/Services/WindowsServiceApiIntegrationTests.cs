@@ -3,7 +3,7 @@ using Servy.Core.Services;
 namespace Servy.Core.IntegrationTests.Services
 {
     // Reuse the sequential collection to ensure OS-level SCM/LSA interactions don't conflict
-    [Collection("CoreOsIntegration")]
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class WindowsServiceApiIntegrationTests
     {
         private readonly WindowsServiceApi _api;

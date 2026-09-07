@@ -9,7 +9,7 @@ using System.Data.SQLite;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
-    [Collection("SequentialDatabaseTests")]
+    [Collection(DatabaseTestCollection.Name)]
     public class ServiceRepositoryIntegrationTests : IDisposable
     {
         #region Shared Test Doubles

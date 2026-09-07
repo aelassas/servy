@@ -4,9 +4,10 @@ namespace Servy.Core.IntegrationTests
     /// Collection definition serializing OS-level integration tests (SCM, native APIs, LSA policy, and event log)
     /// against each other and the rest of the execution suite.
     /// </summary>
-    [CollectionDefinition("CoreOsIntegration", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class CoreOsIntegrationCollection
     {
-        // Marker class, no code
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "CoreOsIntegration";
     }
 }
