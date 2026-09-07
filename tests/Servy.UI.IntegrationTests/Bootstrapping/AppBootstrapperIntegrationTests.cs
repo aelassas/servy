@@ -39,15 +39,8 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             File.WriteAllBytes(_keyFile, new byte[32]);
             File.WriteAllBytes(_ivFile, new byte[16]);
 
-            _options = new BootstrapperOptions
-            {
-                LogFileName = _logFile,
-                ResourcesNamespace = "Servy.UI.Bootstrapping.Tests",
-                SecurityWarningTitle = "Admin Check Fail",
-                SecurityWarningMessage = "Requires Administrative elevation.",
-                SqliteVersionWarningTitle = "SQLite Core Fail",
-                SqliteVersionWarningMessageFormat = "Detected: {0}, Required: {1}"
-            };
+            _options = CreateValidOptions();
+            _options.LogFileName = _logFile;
 
             Logger.Shutdown();
         }
@@ -125,7 +118,55 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
+        public void Constructor_InvalidSecurityWarningTitle_ThrowsArgumentException(string invalidSecurityWarningTitle)
+        {
+            // Arrange
+            var options = CreateValidOptions();
+            options.SecurityWarningTitle = invalidSecurityWarningTitle;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new AppBootstrapper(options, _mockProcessKiller.Object));
+            Assert.Equal("options", ex.ParamName);
+            Assert.StartsWith("BootstrapperOptions.SecurityWarningTitle is required.", ex.Message);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public void Constructor_InvalidSecurityWarningMessage_ThrowsArgumentException(string invalidSecurityWarningMessage)
+        {
+            // Arrange
+            var options = CreateValidOptions();
+            options.SecurityWarningMessage = invalidSecurityWarningMessage;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new AppBootstrapper(options, _mockProcessKiller.Object));
+            Assert.Equal("options", ex.ParamName);
+            Assert.StartsWith("BootstrapperOptions.SecurityWarningMessage is required.", ex.Message);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public void Constructor_InvalidSqliteVersionWarningTitle_ThrowsArgumentException(string invalidSqliteVersionWarningTitle)
+        {
+            // Arrange
+            var options = CreateValidOptions();
+            options.SqliteVersionWarningTitle = invalidSqliteVersionWarningTitle;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new AppBootstrapper(options, _mockProcessKiller.Object));
+            Assert.Equal("options", ex.ParamName);
+            Assert.StartsWith("BootstrapperOptions.SqliteVersionWarningTitle is required.", ex.Message);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
         public void Constructor_InvalidSqliteVersionWarningMessageFormat_ThrowsArgumentException(string invalidFormat)
         {
             // Arrange
@@ -144,6 +185,9 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             {
                 LogFileName = "test.log",
                 ResourcesNamespace = "Servy.UI.Tests",
+                SecurityWarningTitle = "Admin Check Fail",
+                SecurityWarningMessage = "Requires Administrative elevation.",
+                SqliteVersionWarningTitle = "SQLite Core Fail",
                 SqliteVersionWarningMessageFormat = "Version {0} is required, found {1}"
             };
         }
