@@ -1,5 +1,6 @@
 using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
+using Servy.Testing;
 using System;
 using System.Configuration;
 using System.Data.SQLite;
@@ -9,12 +10,11 @@ using Xunit;
 namespace Servy.Restarter.UnitTests
 {
     [Collection(ProgramTestsCollection.Name)]
-    public class ProgramTests : IDisposable
+    public class ProgramTests : TempDirectoryTestBase
     {
         // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
         private const string LogFileName = "Servy.Restarter.log";
 
-        private readonly string _tempLogDir;
         private readonly string _expectedLogFilePath;
         private readonly SQLiteConnection _dbKeepAliveConnection;
         private readonly string _defaultConnection;
@@ -28,13 +28,10 @@ namespace Servy.Restarter.UnitTests
             Environment.ExitCode = 0;
 
             // Isolate logging writes directly into a dynamic, unique temporary folder per test run
-            _tempLogDir = Path.Combine(Path.GetTempPath(), "ServyNet48TestLogs", Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(_tempLogDir);
-
-            _expectedLogFilePath = Path.Combine(_tempLogDir, LogFileName);
+            _expectedLogFilePath = Path.Combine(TempDirectory, LogFileName);
 
             // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
-            Logger.Initialize(LogFileName, logDirectory: _tempLogDir);
+            Logger.Initialize(LogFileName, logDirectory: TempDirectory);
 
             // Capture the baseline configuration states to allow perfect recovery state rollback during Dispose
             _defaultConnection = ConfigurationManager.AppSettings["DefaultConnection"];
@@ -77,7 +74,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_EmptyOrWhitespaceServiceName_SetsExitCodeTo1AndExitsEarly(string invalidName)
         {
             // Arrange
-            string[] args = new string[] { invalidName, _tempLogDir }; // Triggers: if (string.IsNullOrWhiteSpace(serviceName))
+            string[] args = new string[] { invalidName, TempDirectory }; // Triggers: if (string.IsNullOrWhiteSpace(serviceName))
 
             // Act
             Program.Main(args);
@@ -122,7 +119,7 @@ namespace Servy.Restarter.UnitTests
             // We pass an unmanaged service identifier string. Since the memory database is fresh and empty,
             // serviceRepository.GetByName(...) will return null, exercising the managed validation check.
             string serviceName = "UnmanagedNet48Service";
-            string[] args = new string[] { serviceName, _tempLogDir };
+            string[] args = new string[] { serviceName, TempDirectory };
 
             // Act
             Program.Main(args);
@@ -141,7 +138,7 @@ namespace Servy.Restarter.UnitTests
 
             string connString = ConfigurationManager.AppSettings["DefaultConnection"];
             string serviceName = "UnmanagedNet48Service";
-            string[] args = new string[] { serviceName, _tempLogDir };
+            string[] args = new string[] { serviceName, TempDirectory };
 
             using (var connection = new SQLiteConnection(connString))
             {
@@ -219,7 +216,7 @@ namespace Servy.Restarter.UnitTests
 
         #endregion
 
-        public void Dispose()
+        public override void Dispose()
         {
             // Force logger teardown first to unlock active files
             Logger.Shutdown();
@@ -234,11 +231,6 @@ namespace Servy.Restarter.UnitTests
             // Clean up temporary local workspace state file markers if generated
             try
             {
-                if (Directory.Exists(_tempLogDir))
-                {
-                    Directory.Delete(_tempLogDir, true);
-                }
-
                 if (!string.IsNullOrEmpty(_aesKeyFilePath) && File.Exists(_aesKeyFilePath)) File.Delete(_aesKeyFilePath);
                 if (!string.IsNullOrEmpty(_aesIvFilePath) && File.Exists(_aesIvFilePath)) File.Delete(_aesIvFilePath);
             }
@@ -246,6 +238,8 @@ namespace Servy.Restarter.UnitTests
             {
                 // Suppress lock warnings on ephemeral files cleanup
             }
+
+            base.Dispose();
         }
     }
 }

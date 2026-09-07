@@ -9,16 +9,11 @@ using Xunit;
 
 namespace Servy.Core.UnitTests.Security
 {
-    public class SecurityHelperTests : IDisposable
+    // Teardown deletes the tree either way: elevated runs inherit access from the mandatory
+    // Administrators ACE, non-elevated runs get the explicit current-user ACE
+    // ApplySecurityRules adds when IsAdministrator() is false.
+    public class SecurityHelperTests : TempDirectoryTestBase
     {
-        private readonly string _testBaseDir;
-
-        public SecurityHelperTests()
-        {
-            _testBaseDir = Path.Combine(Path.GetTempPath(), "SecurityHelperTests_" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(_testBaseDir);
-        }
-
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -33,7 +28,7 @@ namespace Servy.Core.UnitTests.Security
         public void CreateSecureDirectory_ExistingDirectory_UpgradesSecurity()
         {
             // Arrange
-            var path = Path.Combine(_testBaseDir, "UpgradeDir");
+            var path = Path.Combine(TempDirectory, "UpgradeDir");
             Directory.CreateDirectory(path);
 
             var initialAcl = new DirectoryInfo(path).GetAccessControl();
@@ -51,7 +46,7 @@ namespace Servy.Core.UnitTests.Security
         public void CreateSecureDirectory_PurgesExplicitUsersGroupRules()
         {
             // Arrange
-            var path = Path.Combine(_testBaseDir, "PurgeUsersDir");
+            var path = Path.Combine(TempDirectory, "PurgeUsersDir");
             Directory.CreateDirectory(path);
             var dirInfo = new DirectoryInfo(path);
 
@@ -77,7 +72,7 @@ namespace Servy.Core.UnitTests.Security
         public void CreateSecureDirectory_PreservesSpecificExplicitRulesWhilePurgingBroadGroups()
         {
             // Arrange
-            var path = Path.Combine(_testBaseDir, "PreserveExplicitDir");
+            var path = Path.Combine(TempDirectory, "PreserveExplicitDir");
             Directory.CreateDirectory(path);
             var dirInfo = new DirectoryInfo(path);
 
@@ -123,7 +118,7 @@ namespace Servy.Core.UnitTests.Security
             }
 
             // Arrange
-            var path = Path.Combine(_testBaseDir, "CurrentUserDir");
+            var path = Path.Combine(TempDirectory, "CurrentUserDir");
             SecurityIdentifier currentUserSid;
             using (var identity = WindowsIdentity.GetCurrent())
             {
@@ -146,7 +141,7 @@ namespace Servy.Core.UnitTests.Security
         public void CreateSecureDirectory_NewDirectory_SetsStandardMandatoryAcls()
         {
             // Arrange
-            var path = Path.Combine(_testBaseDir, "NewSecureDir");
+            var path = Path.Combine(TempDirectory, "NewSecureDir");
 
             // Act
             SecurityHelper.CreateSecureDirectory(path);
@@ -246,7 +241,7 @@ namespace Servy.Core.UnitTests.Security
         public void CreateSecureDirectory_WithBreakInheritanceFalse_LeavesDirectoryInheritanceEnabled()
         {
             // Arrange
-            var path = Path.Combine(_testBaseDir, "HealedInheritanceDir");
+            var path = Path.Combine(TempDirectory, "HealedInheritanceDir");
 
             // Act
             // Trigger public overload configuration with breakInheritance: false parameter assignment
@@ -288,7 +283,7 @@ namespace Servy.Core.UnitTests.Security
             }
 
             // Arrange
-            var path = Path.Combine(_testBaseDir, "ExistingRootVaultDir");
+            var path = Path.Combine(TempDirectory, "ExistingRootVaultDir");
             Directory.CreateDirectory(path);
 
             // Act & Assert
@@ -308,23 +303,5 @@ namespace Servy.Core.UnitTests.Security
         /// <param name="breakInheritance"><c>true</c> to break DACL cascading.</param>
         private void InvokeApplySecurityRules(DirectorySecurity security, IdentityReference sid, bool breakInheritance = true)
             => TestReflection.InvokePublicStatic(typeof(SecurityHelper), "ApplySecurityRules", security, sid, breakInheritance);
-
-        public void Dispose()
-        {
-            if (Directory.Exists(_testBaseDir))
-            {
-                try
-                {
-                    // Delete succeeds either way: elevated runs inherit access from the mandatory
-                    // Administrators ACE, non-elevated runs get the explicit current-user ACE
-                    // ApplySecurityRules adds when IsAdministrator() is false.
-                    Directory.Delete(_testBaseDir, true);
-                }
-                catch
-                {
-                    // Best-effort cleanup
-                }
-            }
-        }
     }
 }

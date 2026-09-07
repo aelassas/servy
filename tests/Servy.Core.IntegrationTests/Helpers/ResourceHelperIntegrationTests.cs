@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Helpers;
+using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,12 +11,11 @@ using Xunit;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
-    public class ResourceHelperIntegrationTests : IDisposable
+    public class ResourceHelperIntegrationTests : TempDirectoryTestBase
     {
         private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly FakeAssembly _fakeAssembly;
-        private readonly string _tempDirectory;
         private readonly ResourceHelper _resourceHelper;
 
         /// <summary>
@@ -37,23 +37,12 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockServiceHelper = new Mock<IServiceHelper>();
             _mockProcessKiller = new Mock<IProcessKiller>();
 
-            // Create an isolated temporary directory for safe file I/O tests
-            _tempDirectory = Path.Combine(Path.GetTempPath(), "ServyTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempDirectory);
-
             _fakeAssembly = new FakeAssembly();
 
             _resourceHelper = new ResourceHelper(_mockServiceHelper.Object, _mockProcessKiller.Object);
 
             // Point the helper to the test-controlled temp directory
-            _resourceHelper.BaseExtractionDirectory = _tempDirectory;
-        }
-
-        public void Dispose()
-        {
-            // Clean up temporary files after each test
-            try { if (Directory.Exists(_tempDirectory)) Directory.Delete(_tempDirectory, true); }
-            catch { /* Prevent teardown exceptions from hiding test results */ }
+            _resourceHelper.BaseExtractionDirectory = TempDirectory;
         }
 
         #region Single Resource Copy Tests (Async & Sync)
@@ -64,7 +53,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "testapp";
             string extension = "exe";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
             // Create a dummy file and artificially push its LastWriteTime into the future to bypass the staleness threshold
             File.WriteAllText(targetPath, "old content");
@@ -134,7 +123,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "serviceapp";
             string extension = "exe";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
             var testServices = new List<string> { "Servy_Service_A", "Servy_Service_B" };
 
             // Configure the process killer mock to return true for process tree clearing (matching .NET 4.8 method signature)
@@ -184,7 +173,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string fileName = "sync_up_to_date";
             string extension = "exe";
-            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
             // Create a dummy file and artificially push its LastWriteTime into the future to bypass the staleness threshold
             File.WriteAllText(targetPath, "up to date sync content");
@@ -250,7 +239,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             foreach (var item in items)
             {
-                var path = Path.Combine(_tempDirectory, $"{item.FileNameWithoutExtension}.{item.Extension}");
+                var path = Path.Combine(TempDirectory, $"{item.FileNameWithoutExtension}.{item.Extension}");
                 File.WriteAllText(path, "content");
                 File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddHours(1));
             }
@@ -291,8 +280,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Verify skipDll logic works (should never attempt to kill individual DLL files in batch mode)
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
 
-            Assert.True(File.Exists(Path.Combine(_tempDirectory, "main.exe")));
-            Assert.True(File.Exists(Path.Combine(_tempDirectory, "helper.dll")));
+            Assert.True(File.Exists(Path.Combine(TempDirectory, "main.exe")));
+            Assert.True(File.Exists(Path.Combine(TempDirectory, "helper.dll")));
         }
 
         [Fact]
@@ -420,7 +409,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // The restart failure is logged inside the finally block, never rethrown, so the copy's own
             // outcome is what the method returns.
             Assert.True(result);
-            Assert.True(File.Exists(Path.Combine(_tempDirectory, $"{fileName}.{extension}")));
+            Assert.True(File.Exists(Path.Combine(TempDirectory, $"{fileName}.{extension}")));
             _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
         }
 
