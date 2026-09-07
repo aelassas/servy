@@ -146,6 +146,7 @@
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="Logging\EventLogReaderTests.cs" />
     <Compile Include="Logging\LoggerTests.cs" />
+    <Compile Include="Native\FileIdentityTests.cs" />
     <Compile Include="Native\HandleTests.cs" />
     <Compile Include="Native\NativeMethodsHelpersTests.cs" />
     <Compile Include="Security\SecureDataStressTests.cs" />
