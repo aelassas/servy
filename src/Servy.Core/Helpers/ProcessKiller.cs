@@ -532,16 +532,17 @@ namespace Servy.Core.Helpers
             try
             {
                 // ROBUSTNESS: Perform temporal identity validation BEFORE walking up the ancestor tree.
-                // This isolates PID recycling exploits at the boundary and blocks the walk from leaking into unrelated trees.
+                // This validates the immediate parent-child boundary before recursion so a recycled parent PID cannot pull the walk into an unrelated tree.
                 try
                 {
-                    // Verify the handle context directly using a single live process start time
-                    // to completely eliminate the PID-recycling exploit window.
+                    // Re-read the start time from the open handle so the identity is pinned to this process, not to the
+                    // snapshot's PID. A parent that started after the child (beyond PidReuseToleranceSeconds) is a recycled
+                    // PID and aborts the walk; the tolerance leaves a deliberate slack window.
                     DateTime exactStartTime = parentProcess.StartTime;
 
-                    // If temporal attributes are inaccessible (exactStartTime or childStartTime is MinValue),
-                    // abort the upward walk immediately. This eliminates the "kill blindly" fallback loop.
-                    if (childStartTime == DateTime.MinValue || exactStartTime == DateTime.MinValue)
+                    // childStartTime arrives as SafeStartTime's MinValue sentinel when the caller could not read it.
+                    // An unreadable parent start time surfaces as an exception, handled by the Win32Exception catch below.
+                    if (childStartTime == DateTime.MinValue)
                     {
                         Logger.Warn($"KillParentProcesses: Aborting upward tree walk at parent PID {parentId}. Incomplete temporal identity metrics.");
                         return;
