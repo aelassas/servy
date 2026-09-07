@@ -169,31 +169,53 @@ namespace Servy.Testing
                     {
                         if (Application.Current == null)
                         {
-                            var initSignal = new ManualResetEventSlim(false);
-
-                            _persistentAppThread = new Thread(() =>
+                            using (var initSignal = new ManualResetEventSlim(false))
                             {
-                                // Explicitly force OnExplicitShutdown process-wide lifecycle behavior
-                                // to prevent transient test window closures from tearing down the shared test host.
-                                _ = new Application
+                                ExceptionDispatchInfo initFailure = null;
+
+                                _persistentAppThread = new Thread(() =>
                                 {
-                                    ShutdownMode = ShutdownMode.OnExplicitShutdown
+                                    try
+                                    {
+                                        // Explicitly force OnExplicitShutdown process-wide lifecycle behavior
+                                        // to prevent transient test window closures from tearing down the shared test host.
+                                        _ = new Application
+                                        {
+                                            ShutdownMode = ShutdownMode.OnExplicitShutdown
+                                        };
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        // Unhandled here would terminate the whole test host with no attribution
+                                        // to the caller; hand it back instead.
+                                        initFailure = ExceptionDispatchInfo.Capture(ex);
+                                        initSignal.Set();
+                                        return;
+                                    }
+
+                                    initSignal.Set();
+
+                                    // Keep the persistent STA message pump pumping indefinitely for the AppDomain
+                                    Dispatcher.Run();
+                                })
+                                {
+                                    IsBackground = true
                                 };
 
-                                initSignal.Set();
+                                _persistentAppThread.SetApartmentState(ApartmentState.STA);
+                                _persistentAppThread.Start();
 
-                                // Keep the persistent STA message pump pumping indefinitely for the AppDomain
-                                Dispatcher.Run();
-                            })
-                            {
-                                IsBackground = true
-                            };
+                                // Wait for the Application object to initialize on the persistent STA thread.
+                                // Bounded, so a path that reaches neither Set nor a captured failure fails the
+                                // calling test instead of blocking it forever.
+                                if (!initSignal.Wait(TestTimeouts.CiGenerous))
+                                {
+                                    throw new TimeoutException(
+                                        $"The persistent STA Application thread did not signal initialization within {TestTimeouts.CiGenerous.TotalSeconds}s.");
+                                }
 
-                            _persistentAppThread.SetApartmentState(ApartmentState.STA);
-                            _persistentAppThread.Start();
-
-                            // Wait for the Application object to initialize on the persistent STA thread
-                            initSignal.Wait();
+                                initFailure?.Throw();
+                            }
                         }
 
                         _applicationCreated = true;
@@ -277,11 +299,11 @@ namespace Servy.Testing
                                 EnsureApplication();
 
                             await action();
-                            tcs.SetResult(true);
+                            tcs.TrySetResult(true);
                         }
                         catch (Exception ex)
                         {
-                            tcs.SetException(ex);
+                            tcs.TrySetException(ex);
                         }
                         finally
                         {
@@ -297,7 +319,19 @@ namespace Servy.Testing
                 {
                     tcs.TrySetException(ex);
                 }
-            });
+                finally
+                {
+                    // The pump has exited; release any caller still waiting on a path that set no result.
+                    tcs.TrySetResult(true);
+                }
+            })
+            {
+                // The caller is released by the TaskCompletionSource before the queued dispatcher
+                // shutdown lands, so this thread is never joined. It must therefore not be a
+                // foreground thread, or a shutdown that never completes keeps the test host alive
+                // after a green run.
+                IsBackground = true
+            };
 
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
