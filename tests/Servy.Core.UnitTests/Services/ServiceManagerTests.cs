@@ -305,6 +305,273 @@ namespace Servy.Core.UnitTests.Services
             };
         }
 
+        /// <summary>
+        /// Builds an <see cref="InstallServiceOptions"/> where every property mapped onto <see cref="ServiceDto"/>
+        /// holds a distinct, recognisable value. Distinct values are what make the mapping assertions catch a
+        /// crossed pair: identical placeholders would pass even if two adjacent assignments were swapped.
+        /// Booleans alternate for the same reason.
+        /// </summary>
+        private static InstallServiceOptions CreateFullyPopulatedInstallOptions(string serviceName)
+        {
+            return new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                DisplayName = "display-name-value",
+                Description = "description-value",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real-exe-path.exe",
+                StartupDirectory = "startup-directory-value",
+                RealArgs = "real-args-value",
+                StartType = ServiceStartType.Manual,
+                ProcessPriority = ProcessPriority.BelowNormal,
+                CpuAffinity = "0,1",
+                EnableConsoleUI = true,
+                StdoutPath = "stdout-path.log",
+                StderrPath = "stderr-path.log",
+                EnableSizeRotation = false,
+                RotationSizeInBytes = 7 * AppConfig.BytesInMegabyte,
+                EnableDateRotation = true,
+                DateRotationType = DateRotationType.Weekly,
+                MaxRotations = 11,
+                UseLocalTimeForRotation = false,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 12,
+                MaxFailedChecks = 13,
+                RecoveryAction = RecoveryAction.RestartProcess,
+                RecoveryOnCleanExit = false,
+                MaxRestartAttempts = 14,
+                HeartbeatUrl = "https://example.test/heartbeat",
+                HeartbeatUrlTimeoutSeconds = 15,
+                EnableHeartbeatUrlFlags = true,
+                FailureProgramPath = "failure-program-path.exe",
+                FailureProgramStartupDirectory = "failure-program-startup-directory",
+                FailureProgramExecutableArgs = "failure-program-args-value",
+                EnvironmentVariables = "envVar1=envVal1;envVar2=envVal2;",
+                ServiceDependencies = "DependencyA;DependencyB",
+                Username = @".\username-value",
+                Password = "password-value",
+                PreLaunchExePath = "pre-launch-exe-path.exe",
+                PreLaunchStartupDirectory = "pre-launch-startup-directory",
+                PreLaunchArgs = "pre-launch-args-value",
+                PreLaunchEnvironmentVariables = "preVar1=preVal1;",
+                PreLaunchStdoutPath = "pre-launch-stdout-path.log",
+                PreLaunchStderrPath = "pre-launch-stderr-path.log",
+                PreLaunchTimeout = 16,
+                PreLaunchRetryAttempts = 17,
+                PreLaunchIgnoreFailure = false,
+                PostLaunchExePath = "post-launch-exe-path.exe",
+                PostLaunchStartupDirectory = "post-launch-startup-directory",
+                PostLaunchArgs = "post-launch-args-value",
+                EnableDebugLogs = true,
+                StartTimeout = 18,
+                StopTimeout = 19,
+                PreStopExePath = "pre-stop-exe-path.exe",
+                PreStopStartupDirectory = "pre-stop-startup-directory",
+                PreStopArgs = "pre-stop-args-value",
+                PreStopTimeout = 20,
+                PreStopLogAsError = false,
+                PostStopExePath = "post-stop-exe-path.exe",
+                PostStopStartupDirectory = "post-stop-startup-directory",
+                PostStopArgs = "post-stop-args-value",
+            };
+        }
+
+        /// <summary>
+        /// Arranges the native and repository mocks for a successful installation of a service that does not yet
+        /// exist, and captures the <see cref="ServiceDto"/> handed to <see cref="IServiceRepository.UpsertAsync"/>.
+        /// </summary>
+        private Func<ServiceDto?> ArrangeSuccessfulInstallAndCaptureDto()
+        {
+            var scmHandle = CreateScmHandle(123);
+            var serviceHandle = CreateServiceHandle(456);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto?)null);
+
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                It.IsAny<SafeScmHandle>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IntPtr>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                It.IsAny<SafeServiceHandle>(),
+                It.IsAny<uint>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                It.IsAny<SafeServiceHandle>(),
+                It.IsAny<uint>(),
+                It.IsAny<IntPtr>()))
+                .Returns(true);
+
+            ServiceDto? captured = null;
+            _mockServiceRepository.Setup(x => x.UpsertAsync(
+                    It.IsAny<ServiceDto>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback<ServiceDto, bool, bool, CancellationToken>((dto, _, _, _) => captured = dto)
+                .ReturnsAsync(1);
+
+            return () => captured;
+        }
+
+        [Fact]
+        public async Task InstallService_PersistsEveryMappedOption_OntoTheServiceDto()
+        {
+            // Arrange
+            var serviceName = "MappingService";
+            var capturedDto = ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions(serviceName);
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert - the install itself has to have reached the persistence hop, or the field assertions below
+            // would be comparing a DTO that was never built.
+            Assert.True(result.IsSuccess);
+            var dto = capturedDto();
+            Assert.NotNull(dto);
+
+            // Assert - one row per assignment in ServiceManager.InstallServiceAsync's ServiceDto initialiser.
+            // The *ExePath / *ExecutablePath, *Args / *Parameters and *Timeout / *TimeoutSeconds families are the
+            // ones the compiler cannot check, so each member is pinned to its own value.
+            Assert.Equal(serviceName, dto!.Name);
+            Assert.Equal("display-name-value", dto.DisplayName);
+            Assert.Equal("description-value", dto.Description);
+            Assert.Equal("real-exe-path.exe", dto.ExecutablePath);
+            Assert.Equal("startup-directory-value", dto.StartupDirectory);
+            Assert.Equal("real-args-value", dto.Parameters);
+            Assert.Equal((int)ServiceStartType.Manual, dto.StartupType);
+            Assert.Equal((int)ProcessPriority.BelowNormal, dto.Priority);
+            Assert.Equal("0,1", dto.CpuAffinity);
+            Assert.True(dto.EnableConsoleUI);
+            Assert.Equal("stdout-path.log", dto.StdoutPath);
+            Assert.Equal("stderr-path.log", dto.StderrPath);
+            Assert.False(dto.EnableSizeRotation);
+            Assert.Equal(7, dto.RotationSize);
+            Assert.True(dto.EnableDateRotation);
+            Assert.Equal((int)DateRotationType.Weekly, dto.DateRotationType);
+            Assert.Equal(11, dto.MaxRotations);
+            Assert.False(dto.UseLocalTimeForRotation);
+            Assert.True(dto.EnableHealthMonitoring);
+            Assert.Equal(12, dto.HeartbeatInterval);
+            Assert.Equal(13, dto.MaxFailedChecks);
+            Assert.Equal((int)RecoveryAction.RestartProcess, dto.RecoveryAction);
+            Assert.False(dto.RecoveryOnCleanExit);
+            Assert.Equal(14, dto.MaxRestartAttempts);
+            Assert.Equal("https://example.test/heartbeat", dto.HeartbeatUrl);
+            Assert.Equal(15, dto.HeartbeatUrlTimeoutSeconds);
+            Assert.True(dto.EnableHeartbeatUrlFlags);
+            Assert.Equal("failure-program-path.exe", dto.FailureProgramPath);
+            Assert.Equal("failure-program-startup-directory", dto.FailureProgramStartupDirectory);
+            Assert.Equal("failure-program-args-value", dto.FailureProgramParameters);
+            Assert.Equal("envVar1=envVal1;envVar2=envVal2;", dto.EnvironmentVariables);
+            Assert.Equal("DependencyA;DependencyB", dto.ServiceDependencies);
+            Assert.False(dto.RunAsLocalSystem);
+            Assert.Equal(@".\username-value", dto.UserAccount);
+            Assert.Equal("password-value", dto.Password);
+            Assert.Equal("pre-launch-exe-path.exe", dto.PreLaunchExecutablePath);
+            Assert.Equal("pre-launch-startup-directory", dto.PreLaunchStartupDirectory);
+            Assert.Equal("pre-launch-args-value", dto.PreLaunchParameters);
+            Assert.Equal("preVar1=preVal1;", dto.PreLaunchEnvironmentVariables);
+            Assert.Equal("pre-launch-stdout-path.log", dto.PreLaunchStdoutPath);
+            Assert.Equal("pre-launch-stderr-path.log", dto.PreLaunchStderrPath);
+            Assert.Equal(16, dto.PreLaunchTimeoutSeconds);
+            Assert.Equal(17, dto.PreLaunchRetryAttempts);
+            Assert.False(dto.PreLaunchIgnoreFailure);
+            Assert.Equal("post-launch-exe-path.exe", dto.PostLaunchExecutablePath);
+            Assert.Equal("post-launch-startup-directory", dto.PostLaunchStartupDirectory);
+            Assert.Equal("post-launch-args-value", dto.PostLaunchParameters);
+            Assert.True(dto.EnableDebugLogs);
+            Assert.Equal(18, dto.StartTimeout);
+            Assert.Equal(19, dto.StopTimeout);
+            Assert.Equal("pre-stop-exe-path.exe", dto.PreStopExecutablePath);
+            Assert.Equal("pre-stop-startup-directory", dto.PreStopStartupDirectory);
+            Assert.Equal("pre-stop-args-value", dto.PreStopParameters);
+            Assert.Equal(20, dto.PreStopTimeoutSeconds);
+            Assert.False(dto.PreStopLogAsError);
+            Assert.Equal("post-stop-exe-path.exe", dto.PostStopExecutablePath);
+            Assert.Equal("post-stop-startup-directory", dto.PostStopStartupDirectory);
+            Assert.Equal("post-stop-args-value", dto.PostStopParameters);
+        }
+
+        [Theory]
+        [InlineData(0L, 0)]                        // Nothing configured rounds to zero megabytes
+        [InlineData(1_048_575L, 0)]                // One byte short of a megabyte truncates to zero, it does not round up
+        [InlineData(3_145_728L, 3)]                // Exactly three megabytes
+        [InlineData(3_670_016L, 3)]                // Three and a half megabytes truncates towards zero
+        public async Task InstallService_ConvertsRotationSizeToWholeTruncatedMegabytes(long rotationSizeInBytes, int expectedRotationSize)
+        {
+            // Arrange
+            var capturedDto = ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions("RotationService");
+            options.RotationSizeInBytes = rotationSizeInBytes;
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert - the persisted column is megabytes, so the byte-valued option crosses a unit boundary here
+            Assert.True(result.IsSuccess);
+            Assert.Equal(expectedRotationSize, capturedDto()!.RotationSize);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task InstallService_BlankUsername_PersistsRunAsLocalSystem(string? username)
+        {
+            // Arrange - one source property feeds two DTO fields, and only one of them is a copy
+            var capturedDto = ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions("LocalSystemService");
+            options.Username = username;
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            var dto = capturedDto();
+            Assert.NotNull(dto);
+            Assert.True(dto!.RunAsLocalSystem);
+            Assert.Equal(username, dto.UserAccount);
+        }
+
+        [Fact]
+        public async Task InstallService_NonBlankUsername_PersistsTheAccountAndClearsRunAsLocalSystem()
+        {
+            // Arrange - the falsifying half of the pair above
+            var capturedDto = ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions("AccountService");
+            options.Username = @".\svc-account";
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            var dto = capturedDto();
+            Assert.NotNull(dto);
+            Assert.False(dto!.RunAsLocalSystem);
+            Assert.Equal(@".\svc-account", dto.UserAccount);
+        }
+
         [Fact]
         public async Task InstallService_CreatesService_AndSetsDescription_WhenServiceDoesNotExist()
         {
