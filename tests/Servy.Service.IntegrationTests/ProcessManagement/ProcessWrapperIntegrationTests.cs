@@ -801,7 +801,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void SendCtrlC_LiveWindowlessChild_ReturnsFalseToFallbackChain()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.CiGenerousSeconds}\""))
+            using (var wrapper = CreateWrapper("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ChildSleepSeconds}\""))
             {
                 wrapper.Start();
 
