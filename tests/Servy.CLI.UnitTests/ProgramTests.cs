@@ -2,7 +2,7 @@ using Servy.Testing;
 
 namespace Servy.CLI.UnitTests
 {
-    [Collection("SequentialConsoleTests")]
+    [Collection(ConsoleTestCollection.Name)]
     public class ProgramTests : IDisposable
     {
         private const string AppSettingsFileName = "appsettings.cli.json";

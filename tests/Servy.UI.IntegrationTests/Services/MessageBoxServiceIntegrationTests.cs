@@ -3,7 +3,7 @@ using Servy.UI.Services;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    [Collection("UiSta")]
+    [Collection(UiStaCollection.Name)]
     public class MessageBoxServiceIntegrationTests
     {
         private readonly MessageBoxService _service;
@@ -16,7 +16,7 @@ namespace Servy.UI.IntegrationTests.Services
 
         #region Branch: Headless Short-Circuit
 
-        // UiHeadlessFixture, reached through [Collection("UiSta")], sets UiHeadless.IsEnabled for the
+        // UiHeadlessFixture, reached through [Collection(UiStaCollection.Name)], sets UiHeadless.IsEnabled for the
         // whole collection, and ShowCoreAsync returns on exactly that condition before it touches the
         // dispatcher. These two tests therefore pin the headless contract - the console line and the
         // auto-confirm - rather than any dispatch, which is what their names used to claim.

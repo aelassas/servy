@@ -13,7 +13,7 @@ using Helper = Servy.Testing.Helper;
 
 namespace Servy.UI.IntegrationTests.Bootstrapping
 {
-    [Collection("UiSta")]
+    [Collection(UiStaCollection.Name)]
     public class AppBootstrapperIntegrationTests : TempDirectoryTestBase
     {
         private readonly string _appSettingsFile;

@@ -6,13 +6,16 @@ using System.Runtime.InteropServices;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
-    [CollectionDefinition("ProcessWrapperIntegrationTests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class ProcessWrapperIntegrationTestsCollection
     {
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "ProcessWrapperIntegrationTests";
+
         // Enforces sequential, isolated integration suite runs to protect the native Win32 console state lock mutations.
     }
 
-    [Collection("ProcessWrapperIntegrationTests")]
+    [Collection(ProcessWrapperIntegrationTestsCollection.Name)]
     public class ProcessWrapperIntegrationTests : IDisposable
     {
         // Best-effort second pass: wrappers already disposed by their test's using block are skipped (HasExited throws ObjectDisposedException, which KillAndDispose swallows)

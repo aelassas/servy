@@ -8,9 +8,12 @@ using System.Text.RegularExpressions;
 
 namespace Servy.Core.UnitTests.Logging
 {
-    [CollectionDefinition("LoggerSequential", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class LoggerCollection
     {
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "LoggerSequential";
+
         // Enforces strict sequential isolation across the execution suite
     }
 
@@ -18,7 +21,7 @@ namespace Servy.Core.UnitTests.Logging
     /// Comprehensive unit tests for the Logger class, executed sequentially
     /// due to the static nature of the target class to avoid file lock contention.
     /// </summary>
-    [Collection("LoggerSequential")] // Ensures tests don't run in parallel and fight over the static _writer
+    [Collection(LoggerCollection.Name)] // Ensures tests don't run in parallel and fight over the static _writer
     public class LoggerTests : IDisposable
     {
         private readonly string _testFileName;

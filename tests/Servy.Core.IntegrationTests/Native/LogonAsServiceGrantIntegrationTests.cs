@@ -7,7 +7,7 @@ using System.Security.Principal;
 
 namespace Servy.Core.IntegrationTests.Native
 {
-    [Collection("CoreOsIntegration")]
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class LogonAsServiceGrantIntegrationTests : IDisposable
     {
         private const string NoLsaAccessSkipReason =

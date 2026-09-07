@@ -4,7 +4,7 @@ using System.ServiceProcess;
 
 namespace Servy.Core.IntegrationTests.Services
 {
-    [Collection("CoreOsIntegration")]
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class ServiceControllerWrapperIntegrationTests
     {
         private const string StandardTestService = "LanmanServer";

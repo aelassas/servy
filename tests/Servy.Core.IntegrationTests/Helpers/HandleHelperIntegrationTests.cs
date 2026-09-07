@@ -8,7 +8,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// Integration tests for the HandleHelper class.
     /// These tests require handle64.exe/handle64a.exe to be present and the runner to be elevated.
     /// </summary>
-    [Collection("ProcessIntegrationTests")]
+    [Collection(ProcessIntegrationTestsCollection.Name)]
     public class HandleHelperIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
         private readonly List<string> _tempFiles = new List<string>();

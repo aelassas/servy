@@ -6,7 +6,7 @@ using System.Windows.Threading;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    [Collection("UiSta")]
+    [Collection(UiStaCollection.Name)]
     public class CursorServiceIntegrationTests : IDisposable
     {
         private readonly CursorService _service;
