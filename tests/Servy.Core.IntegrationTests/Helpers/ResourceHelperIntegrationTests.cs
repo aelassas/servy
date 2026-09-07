@@ -391,6 +391,66 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(result <= DateTime.UtcNow.AddMinutes(1));
         }
 
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenStartServicesAsyncThrows_LogsAndStillReturnsCopyResult()
+        {
+            // Arrange
+            string fileName = "restartfailapp";
+            string extension = "exe";
+            var testServices = new List<string> { "Servy_Service_A" };
+
+            // exe routes to KillProcessTreeAndParents on this branch
+            _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+            _fakeAssembly.OnGetManifestResourceStream = name => new MemoryStream(new byte[] { 0x01 });
+            _mockServiceHelper.Setup(s => s.GetRunningServyServices()).Returns(testServices);
+            _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>()))
+                              .ThrowsAsync(new InvalidOperationException("restart boom"));
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                _fakeAssembly,
+                "Servy.Resources",
+                fileName,
+                extension,
+                stopServices: true,
+                cancellationToken: CancellationToken.None);
+
+            // Assert
+            // The restart failure is logged inside the finally block, never rethrown, so the copy's own
+            // outcome is what the method returns.
+            Assert.True(result);
+            Assert.True(File.Exists(Path.Combine(_tempDirectory, $"{fileName}.{extension}")));
+            _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenCancelledBeforeTermination_ReturnsFalse()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                _fakeAssembly.OnGetManifestResourceStream = name => new MemoryStream(new byte[] { 0x01 });
+
+                // Act
+                // The cancellation check before the process-termination step is not gated on stopServices,
+                // so a pre-cancelled token reaches it even with stopServices: false.
+                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                    _fakeAssembly,
+                    "Servy.Resources",
+                    "cancelapp",
+                    "exe",
+                    stopServices: false,
+                    cancellationToken: cts.Token);
+
+                // Assert: the OperationCanceledException arm of the outer catch, not the general one
+                Assert.False(result);
+                _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+            }
+        }
+
         #endregion
     }
 }
