@@ -97,6 +97,9 @@ namespace Servy.UI.Bootstrapping
             if (string.IsNullOrWhiteSpace(options.LogFileName)) throw new ArgumentException("BootstrapperOptions.LogFileName is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.AppSettingsFileName)) throw new ArgumentException("BootstrapperOptions.AppSettingsFileName is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.ResourcesNamespace)) throw new ArgumentException("BootstrapperOptions.ResourcesNamespace is required.", nameof(options));
+            if (string.IsNullOrWhiteSpace(options.SecurityWarningTitle)) throw new ArgumentException("BootstrapperOptions.SecurityWarningTitle is required.", nameof(options));
+            if (string.IsNullOrWhiteSpace(options.SecurityWarningMessage)) throw new ArgumentException("BootstrapperOptions.SecurityWarningMessage is required.", nameof(options));
+            if (string.IsNullOrWhiteSpace(options.SqliteVersionWarningTitle)) throw new ArgumentException("BootstrapperOptions.SqliteVersionWarningTitle is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.SqliteVersionWarningMessageFormat)) throw new ArgumentException("BootstrapperOptions.SqliteVersionWarningMessageFormat is required.", nameof(options));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
@@ -160,10 +163,14 @@ namespace Servy.UI.Bootstrapping
                 lock (_errorDialogLock)
                 {
                     var now = DateTime.UtcNow;
-                    // Combine exception type and message to differentiate between unique concurrent faults
-                    var currentExceptionSignature = args.Exception?.GetType().FullName + ":" + args.Exception?.Message;
 
-                    // Allow the dialog if it is a new exception type/message, or if the debounce window has elapsed
+                    // Key on the fault SITE, not the fault instance message: exception messages embed PIDs,
+                    // file paths, and timestamps, which causes a varying message to defeat the rate limit entirely.
+                    var ex = args.Exception;
+                    var site = ex?.TargetSite is MethodBase m ? $"{m.DeclaringType?.FullName}.{m.Name}" : "?";
+                    var currentExceptionSignature = ex?.GetType().FullName + "@" + site;
+
+                    // Allow the dialog if it is a new exception signature, or if the debounce window has elapsed
                     shouldShowDialog = currentExceptionSignature != _lastErrorDialogMessage
                                        || (now - _lastErrorDialogShown) > TimeSpan.FromSeconds(AppConfig.UnexpectedErrorDialogDebounceSeconds);
 
