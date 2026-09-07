@@ -41,11 +41,6 @@ for (const [key, val] of Object.entries(process.env)) {
 }
 fs.appendFileSync(filePath, '\n', "utf8")
 
-// simulate some work
-await new Promise((res) => setTimeout(res, 2 * 1000))
-process.stdout.write('stdout boo!\n')
-process.stderr.write('stderr boo!\n')
-
 // Handle Ctrl+C (SIGINT) and other termination signals
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
   process.once(signal, () => {
@@ -56,6 +51,11 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
     process.exit(0)
   })
 }
+
+// simulate some work
+await new Promise((res) => setTimeout(res, 2 * 1000))
+process.stdout.write('stdout boo!\n')
+process.stderr.write('stderr boo!\n')
 
 // keep Node alive until key press (interactive) or until signalled (service)
 if (process.stdin.isTTY) {
