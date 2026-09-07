@@ -764,7 +764,7 @@ namespace Servy.Service
         /// <param name="attempts">The restart attempts count to persist.</param>
         /// <param name="ct">A cancellation token to observe while waiting for the semaphore or I/O.</param>
         /// <returns>A task representing the asynchronous save operation.</returns>
-        private async Task SaveRestartAttemptsAsync(int attempts, CancellationToken ct = default)
+        private async Task SaveRestartAttemptsAsync(int attempts, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return;
 
@@ -1937,13 +1937,13 @@ namespace Servy.Service
                         if (currentAttempts >= _maxRestartAttempts)
                         {
                             _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
-                            await SaveRestartAttemptsAsync(0);  // Reset for next manual start
+                            await SaveRestartAttemptsAsync(0, ct);  // Reset for next manual start
                             shouldStop = true;
                         }
                         else
                         {
                             currentAttempts++;
-                            await SaveRestartAttemptsAsync(currentAttempts);
+                            await SaveRestartAttemptsAsync(currentAttempts, ct);
                         }
                     }
 
