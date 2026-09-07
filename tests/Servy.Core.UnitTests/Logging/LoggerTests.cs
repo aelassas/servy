@@ -61,6 +61,30 @@ namespace Servy.Core.UnitTests.Logging
             TestReflection.SetFieldStatic(typeof(Logger), "_logFallbackWriteCount", 0);
         }
 
+        /// <summary>
+        /// Isolates the formatted exception block that follows <paramref name="logMessage"/>
+        /// in the log file, failing with a clear message if the entry is absent.
+        /// </summary>
+        private static string IsolateExceptionSegment(string content, string logMessage)
+        {
+            int index = content.IndexOf(logMessage, StringComparison.Ordinal);
+
+            Assert.True(index >= 0, $"Log entry '{logMessage}' was not found in the log file.");
+
+            return content.Substring(index).TrimEnd();
+        }
+
+        /// <summary>
+        /// Counts only the structural closing brackets that terminate the segment,
+        /// ignoring any ']' embedded in exception messages or stack traces.
+        /// </summary>
+        private static int CountStructuralClosingBrackets(string exceptionSegment)
+        {
+            var matches = Regex.Matches(exceptionSegment, @"\]+$");
+
+            return matches.Count > 0 ? matches[0].Value.Length : 0;
+        }
+
         #region Initialization & Core Logic Tests
 
         [Fact]
@@ -274,9 +298,7 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains(" [Inner -> InvalidOperationException: Inner fail", content);
 
             // 2. Isolate the exact formatted exception segment text block
-            Assert.Contains("Exception test", content);
-            int exceptionMessageIndex = content.IndexOf("Exception test", StringComparison.Ordinal);
-            string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+            string exceptionSegment = IsolateExceptionSegment(content, "Exception test");
 
             // Verify bracket matching directly on the isolated exception block.
             // Since there is one level of inner exceptions nested here, the segment must end
@@ -404,9 +426,7 @@ namespace Servy.Core.UnitTests.Logging
 
             // 3. Structural validation - Verify bracket balancing on the isolated exception block.
             // Isolate the formatted exception text block after our log message
-            Assert.Contains("Reflection execution pass", content);
-            int exceptionMessageIndex = content.IndexOf("Reflection execution pass", StringComparison.Ordinal);
-            string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+            string exceptionSegment = IsolateExceptionSegment(content, "Reflection execution pass");
 
             // Since there is exactly one level of nested loader exceptions, the segment must
             // end with a single closed bracket matching the "[Inner -> " opening context block.
@@ -464,14 +484,11 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("[Inner -> TimeoutException: Third inner level fault", content);
 
             // Isolate the exception text block to run structural calculations
-            Assert.Contains("Nested chain execution pass", content);
-            int msgIndex = content.IndexOf("Nested chain execution pass", StringComparison.Ordinal);
-            string exceptionSegment = content.Substring(msgIndex).TrimEnd();
+            string exceptionSegment = IsolateExceptionSegment(content, "Nested chain execution pass");
 
             // Calculate bracket balance via structural closing brackets at the tail end
             var openTokensCount = Regex.Matches(exceptionSegment, Regex.Escape("[Inner -> ")).Count;
-            var structuralCloseMatches = Regex.Matches(exceptionSegment, @"\]+$");
-            var closeBracketsCount = structuralCloseMatches.Count > 0 ? structuralCloseMatches[0].Value.Length : 0;
+            var closeBracketsCount = CountStructuralClosingBrackets(exceptionSegment);
 
             // ASSERTIONS:
             // 1. There must be exactly 3 "[Inner -> " opened tokens.
@@ -520,15 +537,11 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("[Inner -> ... depth limit reached]", content);
 
             // 4. Isolate the exact formatted exception text segment to avoid picking up layout brackets
-            Assert.Contains("Deeply nested exception test", content);
-            int exceptionMessageIndex = content.IndexOf("Deeply nested exception test", StringComparison.Ordinal);
-            string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+            string exceptionSegment = IsolateExceptionSegment(content, "Deeply nested exception test");
 
             // 5. Calculate depth by counting structural depth tracking brackets inside the exception block
             int innerBracketCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
-            // STRUCTURAL BRACKET COUNT: Target only the structural closing brackets that terminate the inner exception blocks at the tail end.
-            var structuralCloseMatches = Regex.Matches(exceptionSegment, @"\]+$");
-            int closingBracketCount = structuralCloseMatches.Count > 0 ? structuralCloseMatches[0].Value.Length : 0;
+            int closingBracketCount = CountStructuralClosingBrackets(exceptionSegment);
 
             // The formatted string should never unroll more blocks than the max depth allowed
             Assert.True(innerBracketCount <= AppConfig.LoggerMaxInnerExceptionDepth,
