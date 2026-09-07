@@ -1,4 +1,5 @@
 using Servy.Core.Native;
+using Servy.Testing;
 using System;
 using System.Diagnostics;
 using Xunit;
@@ -35,8 +36,8 @@ namespace Servy.Core.UnitTests.Native
         public void OpenProcess_ShouldReturnInvalidHandle_WhenProcessDoesNotExist()
         {
             // Arrange
-            // A high, unused PID (999999) is very unlikely to map to a running process, so kernel32 returns NULL and the handle is invalid.
-            int nonExistentPid = 999999;
+            // A PID no process can hold (see TestProcessIds.NeverValid), so kernel32 returns NULL and the handle is invalid.
+            int nonExistentPid = TestProcessIds.NeverValid;
 
             // Act
             using (SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, nonExistentPid))

@@ -90,8 +90,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
             else
             {
-                // Use an out-of-bounds PID that is fundamentally guaranteed not to exist on standard Windows nodes
-                targetPid = 999999;
+                // Use a PID no process can hold (see TestProcessIds.NeverValid)
+                targetPid = TestProcessIds.NeverValid;
             }
 
             // Act

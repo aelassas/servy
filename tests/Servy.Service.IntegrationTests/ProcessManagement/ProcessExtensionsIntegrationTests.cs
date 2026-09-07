@@ -283,8 +283,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void TryResolveValidChild_ArgumentExceptionThrown_ReturnsNullSafely()
         {
-            // Arrange - Use an absolute out-of-bounds PID that can never belong to an active windows process allocation
-            int nonExistentPid = 999999;
+            // Arrange - Use a PID no process can hold (see TestProcessIds.NeverValid)
+            int nonExistentPid = TestProcessIds.NeverValid;
 
             // Act
             var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", nonExistentPid, DateTime.Now, DateTime.UtcNow);
