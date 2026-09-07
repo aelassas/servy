@@ -14,7 +14,6 @@ using Servy.Testing;
 using Servy.UI;
 using Servy.UI.Services;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -50,7 +49,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<LogsViewModel> _logsViewModelMock;
 
         // Track generated SUT view model instances to enforce complete memory containment cleanup
-        private readonly ConcurrentBag<MainViewModel> _allocatedViewModels = new ConcurrentBag<MainViewModel>();
+        private readonly TrackedViewModels _allocatedViewModels = new TrackedViewModels();
 
         public MainViewModelTests()
         {
@@ -129,7 +128,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 dispatcher ?? Dispatcher.CurrentDispatcher
             );
 
-            _allocatedViewModels.Add(vm);
+            _allocatedViewModels.Track(vm);
             return vm;
         }
 
@@ -224,7 +223,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = new MainViewModel();
-                _allocatedViewModels.Add(vm);
+                _allocatedViewModels.Track(vm);
                 Assert.NotNull(vm);
             }, createApp: true);
         }
@@ -1685,7 +1684,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Dispatcher.CurrentDispatcher
                 );
 
-                _allocatedViewModels.Add(vm);
+                _allocatedViewModels.Track(vm);
 
                 // Seed one row so the drain loop's per-row Dispose is reached
                 var rowVm = new ServiceRowViewModel(new Service(), _serviceCommandsMock.Object, _cursorServiceMock.Object);
@@ -1759,17 +1758,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         /// </summary>
         public void Dispose()
         {
-            foreach (var vm in _allocatedViewModels)
-            {
-                try
-                {
-                    vm.Dispose();
-                }
-                catch
-                {
-                    // Catch-all block to guarantee adjacent cleanup executions complete safely
-                }
-            }
+            _allocatedViewModels.Dispose();
         }
 
         #endregion
