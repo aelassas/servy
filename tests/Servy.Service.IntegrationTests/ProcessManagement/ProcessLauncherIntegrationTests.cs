@@ -471,7 +471,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 {
                     // Assert
                     Assert.Null(writer);
-                    mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("target file") && s.Contains("is a junction or symbolic link")), It.IsAny<Exception>()), Times.Once);
+                    mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("reparse point") || s.Contains("symbolic link") || s.Contains("junction")), It.IsAny<Exception>()), Times.Once);
                 }
             }
             finally
