@@ -430,6 +430,7 @@ namespace Servy.Core.Helpers
                 throw new PathTooLongException($"The calculated atomic staging path length ({tmp.Length}) exceeds the Windows MAX_PATH limit for target destination '{path}'. Ensure the installation path or service name fits within bounds.");
             }
 
+            bool clearedReadOnly = false;
             try
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -448,10 +449,11 @@ namespace Servy.Core.Helpers
                     try
                     {
                         // Remove attributes that would prevent the move operation from succeeding.
-                        PrepareDestinationForMove(path);
+                        clearedReadOnly |= PrepareDestinationForMove(path);
 
                         // On NTFS, moving within the same volume is an atomic metadata operation.
                         File.Move(tmp, path, overwrite: true);
+                        clearedReadOnly = false; // destination replaced; nothing left to restore
                         break;
                     }
                     catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
@@ -468,6 +470,11 @@ namespace Servy.Core.Helpers
             }
             finally
             {
+                if (clearedReadOnly)
+                {
+                    RestoreReadOnly(path);
+                }
+
                 // Ensure the temporary file is removed if the move failed or an exception occurred during writing.
                 CleanupTempFile(tmp);
             }
@@ -499,6 +506,7 @@ namespace Servy.Core.Helpers
                 throw new PathTooLongException($"The calculated atomic staging path length ({tmp.Length}) exceeds the Windows MAX_PATH limit for target destination '{path}'. Ensure the installation path or service name fits within bounds.");
             }
 
+            bool clearedReadOnly = false;
             try
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -516,10 +524,11 @@ namespace Servy.Core.Helpers
                     try
                     {
                         // Ensure the existing file isn't Read-Only, which causes Error 5
-                        PrepareDestinationForMove(path);
+                        clearedReadOnly |= PrepareDestinationForMove(path);
 
                         // On NTFS, moving within the same volume is an atomic metadata operation.
                         File.Move(tmp, path, overwrite: true);
+                        clearedReadOnly = false; // destination replaced; nothing left to restore
                         break;
                     }
                     catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
@@ -533,6 +542,11 @@ namespace Servy.Core.Helpers
             }
             finally
             {
+                if (clearedReadOnly)
+                {
+                    RestoreReadOnly(path);
+                }
+
                 CleanupTempFile(tmp);
             }
         }
@@ -560,7 +574,8 @@ namespace Servy.Core.Helpers
         /// Prepares the destination file for an overwrite operation by removing restrictive attributes.
         /// </summary>
         /// <param name="path">The path to the destination file.</param>
-        private static void PrepareDestinationForMove(string path)
+        /// <returns><c>true</c> when the ReadOnly attribute was cleared and must be restored if the move fails.</returns>
+        private static bool PrepareDestinationForMove(string path)
         {
             // Overwriting a file with the Read-Only attribute set results in a Win32 Error 5 (Access Denied).
             if (File.Exists(path))
@@ -569,7 +584,29 @@ namespace Servy.Core.Helpers
                 if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
                 {
                     File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+                    return true;
                 }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Restores the ReadOnly attribute on the specified destination file if the move operation failed.
+        /// </summary>
+        /// <param name="path">The path to the destination file.</param>
+        private static void RestoreReadOnly(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.ReadOnly);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Best effort: never mask the original write failure.
+                Logger.Debug($"Failed to restore ReadOnly on '{path}': {ex.Message}");
             }
         }
 
