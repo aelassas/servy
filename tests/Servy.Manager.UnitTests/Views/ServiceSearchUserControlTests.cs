@@ -51,6 +51,14 @@ namespace Servy.Manager.UnitTests.Views
             }
 
             /// <summary>
+            /// Test seam allowing unit tests to directly set the <see cref="SearchableViewModelBase.HasSearched"/> state.
+            /// </summary>
+            public void SetHasSearched(bool value)
+            {
+                HasSearched = value;
+            }
+
+            /// <summary>
             /// Simple mock implementation of the required abstract base map routine.
             /// </summary>
             protected override ServiceItemBase CreateServiceItem(Service service)
@@ -106,12 +114,19 @@ namespace Servy.Manager.UnitTests.Views
                 var control = new TestServiceSearchUserControl();
                 var viewModel = CreateIsolatedViewModel();
 
-                // Add a dummy entry directly to the read-only bulk collection properties block
+                // Add a dummy entry and mark HasSearched = true to represent an already-populated, searched view model
                 viewModel.Services.Add(new DependencyService { Name = "ExistingService" });
+                viewModel.SetHasSearched(true); // Or viewModel.HasSearched = true if setter is accessible
+
                 control.DataContext = viewModel;
 
                 // Act
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+
+                if (control.LastLoadedTask != null)
+                {
+                    await control.LastLoadedTask;
+                }
 
                 // Assert
                 Assert.False(viewModel.ExecuteAsyncWasCalled);

@@ -37,6 +37,13 @@ namespace Servy.Manager.ViewModels
         #region Properties
 
         /// <summary>
+        /// Whether a search has completed at least once for this view model, regardless of
+        /// how many results it returned. Used to decide whether a newly loaded view needs
+        /// its initial population.
+        /// </summary>
+        public bool HasSearched { get; protected set; }
+
+        /// <summary>
         /// Indicates whether a background operation is running.
         /// </summary>
         public bool IsBusy
@@ -152,6 +159,8 @@ namespace Servy.Manager.ViewModels
                 {
                     return;
                 }
+
+                HasSearched = true;
 
                 stopwatch.Stop();
 

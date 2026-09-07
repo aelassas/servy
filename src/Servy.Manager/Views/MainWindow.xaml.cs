@@ -321,7 +321,7 @@ namespace Servy.Manager.Views
             // Stop background workers on all other interfaces, bypassing the Main refresh timer
             DeactivateAllExcept(vm, TabScope.Main);
 
-            if (vm.ServicesView.IsEmpty)
+            if (!vm.HasSearched)
                 await vm.SearchCommand.ExecuteAsync(null);
 
             vm.CreateAndStartTimer();
@@ -358,7 +358,7 @@ namespace Servy.Manager.Views
         {
             DeactivateAllExcept(vm, TabScope.Logs);
 
-            if (logsVm?.LogsView?.IsEmpty ?? false)
+            if (logsVm != null && !logsVm.HasSearched)
             {
                 logsVm.ResetDateWindowToNow();
                 await logsVm.SearchCommand.ExecuteAsync(null);
