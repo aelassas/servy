@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.ServiceProcess;
@@ -25,6 +26,43 @@ namespace Servy.Restarter
             _logger = logger;
         }
 
+        #region Helper Methods
+
+        /// <summary>
+        /// Extracts the native Win32 error code from an exception if available.
+        /// </summary>
+        /// <param name="ex">The exception to inspect.</param>
+        /// <returns>The native error code if found; otherwise, <c>null</c>.</returns>
+        private static int? ScmErrorCode(Exception ex)
+            => (ex as Win32Exception ?? ex.InnerException as Win32Exception)?.NativeErrorCode;
+
+        /// <summary>
+        /// Determines whether an exception represents a transient or transitional state SCM error where retrying may succeed.
+        /// </summary>
+        /// <param name="ex">The exception to evaluate.</param>
+        /// <returns><c>true</c> if the error is transitional; otherwise, <c>false</c>.</returns>
+        private static bool IsTransitional(Exception ex)
+        {
+            var code = ScmErrorCode(ex);
+            return ex is System.ServiceProcess.TimeoutException
+                || code == Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL
+                || code == Errors.ERROR_SERVICE_ALREADY_RUNNING
+                || code == Errors.ERROR_SERVICE_NOT_ACTIVE;
+        }
+
+        /// <summary>
+        /// Determines whether an exception represents a permanent condition indicating that the service does not exist or is marked for deletion.
+        /// </summary>
+        /// <param name="ex">The exception to evaluate.</param>
+        /// <returns><c>true</c> if the service is missing or marked for deletion; otherwise, <c>false</c>.</returns>
+        private static bool IsGone(Exception ex)
+        {
+            var code = ScmErrorCode(ex);
+            return code == Errors.ERROR_SERVICE_DOES_NOT_EXIST || code == Errors.ERROR_SERVICE_MARKED_FOR_DELETE;
+        }
+
+        #endregion
+
         /// <inheritdoc />
         public RestartResult RestartService(string serviceName, TimeSpan timeout)
         {
@@ -45,9 +83,13 @@ namespace Servy.Restarter
                     }
                     catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
-                        // ROBUSTNESS: Service was uninstalled, marked for deletion, or native SCM handle was dropped.
-                        _logger?.Warn($"Settle-phase status read failed for '{serviceName}'; treating as uninstalled.", ex);
-                        return RestartResult.ServiceNotFound;
+                        if (IsGone(ex))
+                        {
+                            // ROBUSTNESS: Service was uninstalled, marked for deletion, or native SCM handle was dropped.
+                            _logger?.Warn($"Settle-phase status read failed for '{serviceName}'; treating as uninstalled.", ex);
+                            return RestartResult.ServiceNotFound;
+                        }
+                        throw;
                     }
 
                     var remaining = timeout - stopwatch.Elapsed;
@@ -66,9 +108,13 @@ namespace Servy.Restarter
                     }
                     catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
-                        // ROBUSTNESS: Handle disappearance or native SCM teardown during the refresh cycle.
-                        _logger?.Warn($"Settle-phase controller refresh failed for '{serviceName}'; treating as uninstalled.", ex);
-                        return RestartResult.ServiceNotFound;
+                        if (IsGone(ex))
+                        {
+                            // ROBUSTNESS: Handle disappearance or native SCM teardown during the refresh cycle.
+                            _logger?.Warn($"Settle-phase controller refresh failed for '{serviceName}'; treating as uninstalled.", ex);
+                            return RestartResult.ServiceNotFound;
+                        }
+                        throw;
                     }
                 }
 
@@ -82,9 +128,13 @@ namespace Servy.Restarter
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
-                    // Clean exit if the service vanished or SCM handle dropped between the settle phase and this query
-                    _logger?.Warn($"Stop-phase entry status check failed for '{serviceName}'; treating as uninstalled.", ex);
-                    return RestartResult.ServiceNotFound;
+                    if (IsGone(ex))
+                    {
+                        // Clean exit if the service vanished or SCM handle dropped between the settle phase and this query
+                        _logger?.Warn($"Stop-phase entry status check failed for '{serviceName}'; treating as uninstalled.", ex);
+                        return RestartResult.ServiceNotFound;
+                    }
+                    throw;
                 }
 
                 if (stopEntryStatus != ServiceControllerStatus.Stopped)
@@ -116,6 +166,9 @@ namespace Servy.Restarter
                     }
                     catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
+                        if (IsGone(ex)) return RestartResult.ServiceNotFound;
+                        if (!IsTransitional(ex)) throw;
+
                         // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
                         _logger?.Warn($"Direct Stop operation failed for '{serviceName}'; entering transitional error recovery.", ex);
                         var transitionalResult = HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Stopped, timeout - stopwatch.Elapsed);
@@ -139,8 +192,12 @@ namespace Servy.Restarter
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
-                    _logger?.Warn($"Start-phase initial status check failed for '{serviceName}'; treating as uninstalled.", ex);
-                    return RestartResult.ServiceNotFound;
+                    if (IsGone(ex))
+                    {
+                        _logger?.Warn($"Start-phase initial status check failed for '{serviceName}'; treating as uninstalled.", ex);
+                        return RestartResult.ServiceNotFound;
+                    }
+                    throw;
                 }
 
                 try
@@ -172,6 +229,9 @@ namespace Servy.Restarter
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
+                    if (IsGone(ex)) return RestartResult.ServiceNotFound;
+                    if (!IsTransitional(ex)) throw;
+
                     // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
                     _logger?.Warn($"Direct Start operation failed for '{serviceName}'; entering transitional error recovery.", ex);
                     var transitionalResult = HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
@@ -225,6 +285,8 @@ namespace Servy.Restarter
             var stopwatch = Stopwatch.StartNew();
             _logger?.Debug($"Entering transitional recovery loop for service '{serviceName}' targeting state '{targetStatus}'.");
 
+            Exception? last = null;
+
             while (stopwatch.Elapsed < timeout)
             {
                 try
@@ -262,7 +324,7 @@ namespace Servy.Restarter
                     if (remaining <= TimeSpan.Zero)
                     {
                         _logger?.Error($"Timeout expired while waiting for service '{serviceName}' to reach '{targetStatus}'.");
-                        throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.");
+                        throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.", last);
                     }
 
                     controller.WaitForStatus(targetStatus, remaining);
@@ -271,6 +333,10 @@ namespace Servy.Restarter
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception || ex is System.ServiceProcess.TimeoutException)
                 {
+                    if (IsGone(ex)) return RestartResult.ServiceNotFound;
+                    if (!IsTransitional(ex)) throw;
+
+                    last = ex;
                     _logger?.Warn($"Transitional error poll encountered exception while targeting '{targetStatus}' for '{serviceName}'.", ex);
 
                     // ROBUSTNESS: Re-probe status to detect mid-flight uninstalls or dropped SCM handles
@@ -281,8 +347,11 @@ namespace Servy.Restarter
                     }
                     catch (Exception probeEx) when (probeEx is InvalidOperationException || probeEx is Win32Exception)
                     {
-                        _logger?.Warn($"Post-exception status probe failed for service '{serviceName}'; treating as uninstalled.", probeEx);
-                        return RestartResult.ServiceNotFound;
+                        if (IsGone(probeEx))
+                        {
+                            _logger?.Warn($"Post-exception status probe failed for service '{serviceName}'; treating as uninstalled.", probeEx);
+                            return RestartResult.ServiceNotFound;
+                        }
                     }
 
                     // Still transitional or experiencing transient SCM access blocks; wait before the next poll
@@ -293,7 +362,7 @@ namespace Servy.Restarter
             }
 
             _logger?.Error($"Transitional recovery loop exhausted full timeout waiting for service '{serviceName}' to reach '{targetStatus}'.");
-            throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.");
+            throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.", last);
         }
     }
 }

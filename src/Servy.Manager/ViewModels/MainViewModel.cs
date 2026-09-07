@@ -388,6 +388,7 @@ namespace Servy.Manager.ViewModels
         {
             if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
             {
+                Logger.Debug("Timer tick skipped; a service refresh is already in flight.");
                 return;
             }
 
@@ -476,15 +477,29 @@ namespace Servy.Manager.ViewModels
                         OnPropertyChanged(nameof(HasSelectedServices));
                     }, DispatcherPriority.Background);
 
-                    // fetchAndApplyAsync 4 of 4: refresh all service statuses and details in the background
+                    // fetchAndApplyAsync 4 of 4: refresh all service statuses and details in the background.
+                    // Cancel any in-flight timer refresh targeting old row ViewModels and assign a fresh token source.
+                    var oldCts = Interlocked.Exchange(ref _cts, new CancellationTokenSource());
+                    if (oldCts != null)
+                    {
+                        Helpers.Helper.CancelAndDisposeSafely(oldCts);
+                    }
+
+                    var freshCts = _cts;
+                    var refreshToken = freshCts?.Token ?? token;
+
                     _ = Task.Run(async () =>
                     {
-                        if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
-                            return;
+                        // Wait out any canceling tick that is currently releasing _isRefreshingFlag
+                        while (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
+                        {
+                            if (refreshToken.IsCancellationRequested) return;
+                            await Task.Delay(10, refreshToken).ConfigureAwait(false);
+                        }
 
                         try
                         {
-                            await RefreshAllServicesAsync(token);
+                            await RefreshAllServicesAsync(refreshToken);
                         }
                         catch (OperationCanceledException)
                         {
@@ -495,7 +510,7 @@ namespace Servy.Manager.ViewModels
                             Logger.Error($"RefreshAllServicesAsync failed.", ex);
                         }
                         finally { Interlocked.Exchange(ref _isRefreshingFlag, 0); }
-                    }, token);
+                    }, refreshToken);
 
                     return vms.Count;
                 },
