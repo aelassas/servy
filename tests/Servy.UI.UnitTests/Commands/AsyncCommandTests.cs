@@ -1,6 +1,8 @@
+using Servy.Core.Logging;
 using Servy.UI.Commands;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -146,6 +148,54 @@ namespace Servy.UI.UnitTests.Commands
             finally
             {
                 SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+        }
+
+        [Fact]
+        public async Task Execute_InnerTaskFailsOnNamedCommand_LogsTheCommandName()
+        {
+            // Branch: the catch arm's _name ?? "<unnamed>" interpolation. Every other test in this
+            // file builds the command with one or two arguments, so _name is always null and the
+            // name the thirty production call sites pass is never observed.
+            const string commandName = "StartSelectedCommand";
+            var logFileName = $"AsyncCommandTests_{Guid.NewGuid():N}.log";
+            var logPath = Path.Combine(Logger.LogsPath, logFileName);
+
+            var previousContext = SynchronizationContext.Current;
+            var testContext = new TestSynchronizationContext();
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(testContext);
+
+                // The logger is static, so take it over for this test only and hand it back below.
+                Logger.Shutdown();
+                Logger.Initialize(logFileName);
+
+                var command = new AsyncCommand(
+                    _ => throw new InvalidOperationException("Command Failure"),
+                    name: commandName);
+
+                command.Execute(null);
+
+                // Bound the wait: a change that leaves an operation pending must fail the run
+                // rather than hang it.
+                var completion = testContext.WaitForCompletionAsync();
+                var finished = await Task.WhenAny(completion, Task.Delay(CompletionTimeout));
+                Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
+
+                // Flush the writer before reading the file back.
+                Logger.Shutdown();
+
+                Assert.True(File.Exists(logPath), $"The logger wrote no file at '{logPath}'.");
+
+                var content = File.ReadAllText(logPath);
+                Assert.Contains($"AsyncCommand '{commandName}' execution failed.", content);
+            }
+            finally
+            {
+                Logger.Shutdown();
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+                try { if (File.Exists(logPath)) File.Delete(logPath); } catch { /* teardown must not hide the result */ }
             }
         }
 
