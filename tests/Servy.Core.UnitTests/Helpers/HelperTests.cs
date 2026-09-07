@@ -541,8 +541,6 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(string.Empty, error);
         }
 
-
-
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -729,6 +727,48 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public void WriteFileAtomic_FailedMove_RestoresReadOnlyAttributeOnDestination()
+        {
+            // Arrange
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+
+            try
+            {
+                File.WriteAllText(targetPath, "initial-content");
+                File.SetAttributes(targetPath, FileAttributes.ReadOnly);
+
+                // Lock with FileAccess.Read so opening the handle succeeds on a ReadOnly file,
+                // but FileShare.None blocks AtomicSecureMove from overwriting/moving onto targetPath.
+                using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    Assert.ThrowsAny<Exception>(() =>
+                    {
+                        Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                        {
+                            using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                            {
+                                writer.Write("unreachable-content");
+                            }
+                        }, CancellationToken.None);
+                    });
+                }
+
+                // Assert: The existing target file remains unchanged and has its ReadOnly attribute restored
+                Assert.True(File.Exists(targetPath));
+                Assert.Equal("initial-content", File.ReadAllText(targetPath));
+
+                FileAttributes attributes = File.GetAttributes(targetPath);
+                Assert.True((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly, "ReadOnly attribute should have been restored after write failure.");
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+            }
+        }
+
         #endregion
 
         #region WriteFileAtomicAsync Tests
@@ -831,6 +871,46 @@ namespace Servy.Core.UnitTests.Helpers
 
                 FileAttributes attributes = File.GetAttributes(targetPath);
                 Assert.False((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly);
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+            }
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicAsync_FailedMove_RestoresReadOnlyAttributeOnDestination()
+        {
+            // Arrange
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+
+            try
+            {
+                File.WriteAllText(targetPath, "initial-content");
+                File.SetAttributes(targetPath, FileAttributes.ReadOnly);
+
+                // Lock with FileAccess.Read so opening the handle succeeds on a ReadOnly file,
+                // but FileShare.None blocks AtomicSecureMove from overwriting/moving onto targetPath.
+                using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    await Assert.ThrowsAnyAsync<Exception>(async () =>
+                    {
+                        await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                        {
+                            byte[] data = Encoding.UTF8.GetBytes("unreachable-content");
+                            await stream.WriteAsync(data, 0, data.Length, cancellationToken);
+                        }, CancellationToken.None);
+                    });
+                }
+
+                // Assert: The existing target file remains unchanged and has its ReadOnly attribute restored
+                Assert.True(File.Exists(targetPath));
+                Assert.Equal("initial-content", File.ReadAllText(targetPath));
+
+                FileAttributes attributes = File.GetAttributes(targetPath);
+                Assert.True((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly, "ReadOnly attribute should have been restored after async write failure.");
             }
             finally
             {
