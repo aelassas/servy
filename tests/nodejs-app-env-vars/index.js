@@ -9,48 +9,13 @@
  */
 
 import process from "node:process"
-import fs from "node:fs"
-import path from "node:path"
-import { fileURLToPath } from "node:url"
-import { baselineEnvKeys } from "./baselineEnvKeys.js"
+import { filePath, writeEnvDump, registerShutdownHandlers, keepAliveOnTty } from "./envDumpFixture.js"
 
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+// Reset output.txt and dump the non-baseline environment variables into it
+writeEnvDump(filePath)
 
-const filePath = path.resolve(__dirname, "output.txt")
-
-// Clear the file first (overwrite with empty string)
-fs.writeFileSync(filePath, '', "utf8")
-
-// Append the current timestamp
-fs.appendFileSync(filePath, (new Date()).toISOString() + '\n', "utf8")
-
-const [, , ...args] = process.argv
-fs.appendFileSync(filePath, args.join(' ') + '\n', "utf8")
-
-process.stderr.write('[stderr] abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍\n')
-process.stdout.write('[stdout] abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍\n')
-
-for (const [key, val] of Object.entries(process.env)) {
-  if (!baselineEnvKeys.has(key)) {
-    const line = `${key}=${val}\n`
-    // Append each line to the file
-    fs.appendFileSync(filePath, line, "utf8")
-  }
-}
-fs.appendFileSync(filePath, '\n', "utf8")
-
-// Handle Ctrl+C (SIGINT) and other termination signals
-for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
-  process.once(signal, () => {
-    const msg = `Received ${signal} - shutting down gracefully...\n`
-    process.stdout.write(msg)
-    fs.appendFileSync(filePath, msg, "utf8")
-    // Perform cleanup here (e.g., close DB connections, stop servers, etc.)
-    process.exit(0)
-  })
-}
+// Handle Ctrl+C (SIGINT) and other termination signals, before the first await
+registerShutdownHandlers(filePath)
 
 // simulate some work
 await new Promise((res) => setTimeout(res, 2 * 1000))
@@ -58,13 +23,6 @@ process.stdout.write('stdout boo!\n')
 process.stderr.write('stderr boo!\n')
 
 // keep Node alive until key press (interactive) or until signalled (service)
-if (process.stdin.isTTY) {
-  process.stdin.setRawMode(true)
-  process.stdin.resume()
-  process.stdin.on('data', () => {
-    process.stdout.write('Exiting...\n')
-    process.exit(0)
-  })
-} else {
+if (!keepAliveOnTty()) {
   setInterval(() => {}, 1 << 30)   // stay alive; SIGINT/SIGTERM handlers above do the shutdown
 }
