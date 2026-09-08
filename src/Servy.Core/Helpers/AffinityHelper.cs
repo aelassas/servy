@@ -22,7 +22,13 @@ namespace Servy.Core.Helpers
         /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown when core indices or hexadecimal masks exceed allowed processor bounds (0 to Math.Min(Environment.ProcessorCount, 64) - 1).
         /// </exception>
-        public static IntPtr ParseAffinity(string? affinityInput)
+        public static IntPtr ParseAffinity(string? affinityInput) =>
+            ParseAffinity(affinityInput, Math.Min(Environment.ProcessorCount, 64));
+
+        /// <summary>
+        /// Internal overload allowing test injection of explicit processor bounds.
+        /// </summary>
+        internal static IntPtr ParseAffinity(string? affinityInput, int maxAllowedCores)
         {
             if (string.IsNullOrWhiteSpace(affinityInput))
                 return IntPtr.Zero;
@@ -30,7 +36,6 @@ namespace Servy.Core.Helpers
             long mask = 0;
             string cleaned = affinityInput.Trim();
 
-            int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64); // Windows IntPtr limit per group is 64
             long allowedMask = maxAllowedCores == 64 ? -1L : (1L << maxAllowedCores) - 1;
 
             // 1. Hexadecimal format (e.g., "0xFF00" or "0XFF00")
@@ -130,7 +135,13 @@ namespace Servy.Core.Helpers
         /// When this method returns <c>false</c>, contains the error description detailing why validation failed; otherwise, <c>null</c>.
         /// </param>
         /// <returns><c>true</c> if the affinity input is null/empty or valid; otherwise, <c>false</c>.</returns>
-        public static bool ValidateAffinity(string? affinityInput, out string? errorMessage)
+        public static bool ValidateAffinity(string? affinityInput, out string? errorMessage) =>
+            ValidateAffinity(affinityInput, Math.Min(Environment.ProcessorCount, 64), out errorMessage);
+
+        /// <summary>
+        /// Internal overload allowing test injection of explicit processor bounds.
+        /// </summary>
+        internal static bool ValidateAffinity(string? affinityInput, int maxAllowedCores, out string? errorMessage)
         {
             errorMessage = null;
 
@@ -139,7 +150,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                ParseAffinity(affinityInput);
+                ParseAffinity(affinityInput, maxAllowedCores);
                 return true;
             }
             catch (ArgumentException ex)
