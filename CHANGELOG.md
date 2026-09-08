@@ -1,5 +1,192 @@
 # Changelog
 
+## [Servy 10.0](https://github.com/aelassas/servy/releases/tag/v10.0)
+
+**Date:** 2026-09-08 | **Tag:** [`v10.0`](https://github.com/aelassas/servy/tree/v10.0)
+
+This major release includes new backup and restore features, a hardened PowerShell module, bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
+
+### Full Changelog
+<details>
+  <summary>Click to expand release notes!</summary>
+
+* feat: add [Servy-Dump.ps1 and Servy-Restore.ps1](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) PowerShell backup and recovery scripts
+* fix(security): break inheritance and enforce read-only ACLs on configuration files
+* fix(security): Set-ServyExePermissions.ps1 - Grant Delete permission strictly to restarter executable
+* fix(security): Set-ServyExePermissions.ps1 - binaries absent at run time are skipped in grey text, reported as "complete", and inherit Modify when Servy creates them later (#6201)
+* fix(security): Set-ServyExePermissions.ps1 - a present-but-FAILED binary lands in the same skipped bucket as a missing one, and a wholly missing directory exits 0 (residual of #6201) (#6397)
+* fix(security): Set-ServyExePermissions.ps1 - explicit ACEs of third-party principals survive hardening and ResourceHelper re-applies them on every re-extract (sibling of fixed #1291) (#6398)
+* fix(security): Set-ServyExePermissions.ps1 - explicit Deny ACEs for the target survive the purge the comment claims, and the audit prints them under [Target Granted] (#6412)
+* fix(security): Set-ServyExePermissions.ps1 - the step-5 audit translates ACEs to NTAccount in bulk, so one orphaned SID reports a successfully hardened binary as FAILED (#6411)
+* fix(security): Set-ServyExePermissions.ps1 - -TargetAccount SYSTEM or Administrators makes step 4 replace the FullControl step 3 just granted (#6438)
+* fix(security): Set-ServyExePermissions.ps1 - the unconditional owner rewrite is absent from both the header and the step-5 audit (#6439)
+* fix(security): Set-ServyExePermissions.ps1 - the [Target Granted] if-guard wraps an already empty-safe foreach, unlike its two header-gating siblings (sibling of #6421) (#6440)
+* fix(security): Set-ServyExePermissions.ps1 - the [Owner] replaced audit line prints before Set-Acl commits, so a failed hardening still logs an owner replacement that never happened (#6465)
+* fix(security): Set-ServyExePermissions.ps1 - the SID-to-name translate-with-fallback expression is maintained twice, once per audit fix (#6467)
+* fix(security): Set-ServyExePermissions.ps1 - -TargetAccount Everyone, Users or Authenticated Users makes step 4 re-grant the broad group step 2 just purged (sibling of #6438) (#6468)
+* fix(security): Set-ServyExePermissions.ps1 - the ARM64 probe reads process-architecture env vars, so an emulated x64 shell on ARM64 hardens the wrong handle binary and exits 2 forever (#6472)
+* fix(security): Set-ServyExePermissions.ps1 - an unresolvable -TargetAccount leaves through throw and exits 1, the code the header reserves for 'Privilege Error' (sibling of #6466) (#6536)
+* fix(security): Set-ServyExePermissions.ps1 - a target account that is a MEMBER of Administrators keeps FullControl through the group, and the audit reports the ReadAndExecute ACE as if it were the effective access (#6680)
+* fix(security): Set-ServyExePermissions.ps1 - Test-ServyAdminGroupMember's ADSI fallback returns $false for a nested-group admin, so the #6680 warning never fires (#6697)
+* fix(core): clarify CPU affinity error messages
+* fix(core): AppConfig.cs - ServyServiceCLIFileName and AppFolderName are still static readonly after #3181 converted every other plain literal to const (#5501)
+* fix(core): AffinityHelper.cs - ValidateAffinity returns the raw exception message, so every CPU affinity validation error shows "(Parameter 'affinityInput')" to the user (#5502)
+* fix(core): Helper.cs - IsValidPath and ParseVersion null-check their argument but declare it non-nullable, unlike the seven siblings in the same file that do the same guard (#5510)
+* fix(core): ProcessHelper.cs - Math.Max(totalCpu, 0.0) in GetProcessTreeMetrics is provably a no-op; every GetProcessMetrics path returns a non-negative CpuUsage (#5513)
+* fix(core): ProcessKiller.cs - KillProcessTreeAndParents(int) catches only ArgumentException from GetProcessById where its string sibling also catches InvalidOperationException, turning an exited target into a logged failure (#5514)
+* fix(core): ResourceHelper.cs - a failed host-exe timestamp probe always trips the #4803 downgrade warning, so the log reports a version downgrade that did not happen (#5516)
+* fix(core): ResourceHelper.cs / Service.cs (Core) / LogTailer.cs - the last seven unsuffixed async methods in src/; CopyEmbeddedResource is bare while its sync sibling is named ForceSync (#5517)
+* fix(core): Helper.cs / ServiceDependenciesValidator.cs - a service name Servy will install can be un-referenceable as a dependency; the charset rules diverge (residual of #5038) (#5518)
+* fix(core): EventLogLogger.cs - the constructor prefix bypasses SanitizePrefixSegment, so a top-level prefix can still forge bracket nesting (residual of #2166) (#5521)
+* fix(core): EventLogReader.cs - SafeToOffset guards the near-MinValue overflow but not its near-MaxValue mirror, so west-of-UTC hosts can still abort the whole enumeration (residual of #2170) (#5522)
+* fix(core): Logger.cs - FormatException's depth cap prunes the exception tree silently while its length cap marks the cut, so a truncated chain reads as complete (residual of #1260) (#5524)
+* fix(core): RotatingStreamWriter.cs - Dispose and Flush skip the _rotationInProgress gate WriteInternal waits on, so Shutdown returns mid-rotation and Flush silently no-ops (residual of #1357) (#5526)
+* fix(core): NativeMethods.cs - the #3224 fix removed CreateFile and the std-handle imports but left their five constants, LOGON32_LOGON_INTERACTIVE and the single-part 'partial' modifier behind (#5536)
+* fix(core): NativeMethods.cs - PROCESSENTRY32 is still CharSet.Auto after #3223 pinned its two functions to the W exports, the two QueryServiceConfig2 overloads bind one export with two CharSets, and CloseHandle carries one it cannot use (#5537)
+* fix(core): Strings.resx (Servy.Core) - the #5163 fix lowercased three sentence openers and added its terminal periods only to the four entries it quoted (#5538)
+* fix(core): Strings.resx (Servy.Core) - the #5370 fix removed the only consumer of Msg_ImportReadFailure but left the string and its generated accessor shipped (#5539)
+* fix(core): Strings.resx (Servy.Core) - the 18 Msg_Security* values announce one outcome with five different prefixes (#5540)
+* fix(core): IEventLogService.cs / LogsViewModel.cs - the tailored 'run as Administrator' and 'Event Log service not running' messages never reach the user; the interface documents no exceptions and the handler shows Msg_UnexpectedError (#5548)
+* fix(core): AppConfig.cs / Servy.Core.csproj - the missing-BuiltWithFramework error tells the developer to add an <AssemblyMetadata> item, but the project declares it as an <AssemblyAttribute> with _Parameter1/_Parameter2 (#5551)
+* fix(core): ServiceManager.cs - OpenSCManager/CreateService results carry an unreachable null term at five sites while the five OpenService results, same non-nullable SafeHandle contract, carry none (#5553)
+* fix(core): ServiceManager.cs - the uninstall ChangeServiceConfig passes eleven positional arguments, six of them null, where its install sibling and CreateService name every one (#5555)
+* fix(core): ImportServiceCommand.cs / ServiceValidationRules.cs - the CLI import ignores [ServicePath].ErrorResourceKey that all 12 ServiceDto properties declare, so 11 of 12 path failures get a generic, half-localized message (#5569)
+* fix(core): AppFoldersHelper.cs - a relative Data Source or AES path override is anchored to the current working directory, so the CLI and the service silently use different vaults (#5912)
+* fix(core): Helper.cs - a failed WriteFileAtomic leaves the destination with its ReadOnly attribute stripped; PrepareDestinationForMove clears it and nothing restores it (#5916)
+* fix(core): ProcessKiller.cs - a third dead term #5515 missed: exactStartTime == DateTime.MinValue cannot fire because line 533 reads StartTime directly, not through SafeStartTime (residue of #3205) (#5920)
+* fix(core): SecurityHelper.cs - ApplySecurityRules takes IdentityReference but compares against SecurityIdentifier-typed rules, so an NTAccount argument silently disables the anti-squatting purge while the grant still lands (#5959)
+* fix(core): IServiceControllerProvider.cs - GetServices hands the caller several hundred IDisposable wrappers holding live SCM handles, and neither the returns nor the remarks says the caller owns them (#5969)
+* fix(core): ServiceManager.cs - QueryServiceConfigString's 'return null' is unreachable: a size probe that sets ERROR_INSUFFICIENT_BUFFER always reports a positive bytesNeeded, so the outer guard and the inner test cannot both hold (#5971)
+* fix(core): AppFoldersHelper.cs - rootVaultPath is the one path parameter EnsureFolders does not guard, so a blank value reaches SecurityHelper and fails with ParamName 'path' (#6103)
+* fix(core): NativeMethodsHelpers.cs - ForbiddenGroupIdentities pairs every name with an NT AUTHORITY\ form but carries no BUILTIN\ form, so BUILTIN\Administrators reaches LogonUser and is reported as a wrong password (#6122)
+* fix(core): ProcessKiller.cs - WalkAndKillChildren logs a benign exited-child race as a kill failure, unlike the string overload's handle-open path (sibling of #5514) (#6344)
+* fix(core): RotatingStreamWriter.cs - EnforceMaxRotations null-coalesces two NotNullIfNotNull Path APIs and comments a GetFileName null that cannot occur (#6349)
+* fix(core): NativeMethods.cs - SERVICE_QUERY_STATUS and SERVICE_QUERY_CONFIG sit in the SCM Access Rights region their prefix and usage contradict (residual of #3227) (#6363)
+* fix(core): Strings.resx (Servy.Core) - three pre-launch/pre-stop validation messages start lowercase against every capitalized sibling (#6365)
+* fix(core): Strings.resx (Servy.Core) - Msg_ImportXmlFailed carries a trailing period its JSON twin and the ': {0}' template family do not (#6366)
+* fix(core): ServiceManager.cs / ServiceCommands.cs - the #4235 orphan-row repair lives only in the CLI, so the Manager lists a DB-only service it can never uninstall (#6374)
+* fix(core): ServiceManager.cs - uninstalling an already-stopped service logs a spurious Win32-error warning on every run (residual of #1607) (#6377)
+* fix(core): ServicePathValidator.cs - the unchecked 'as string' turns a misapplied [ServicePath] on a non-string property into a silent no-op or a false 'missing' (#6387)
+* fix(core): PathSecurityGuard.cs - IsDirectoryAclHardened tests rights against Write|Modify|FullControl, a mask equal to FullControl, so the default Users:ReadAndExecute ACE under Program Files is reported as Write/Modify on every startup (residual of #6602) (#6628)
+* fix(core): PathSecurityGuard.cs - IsSafelyContainedWithinAppDirectory documents rejecting reparse points but walks ancestors only, the one of the three #6602/#6525 guards without the file-level symlink check (#6629)
+* fix(core): ProcessLauncher.cs / Helper.cs - HasAncestorReparsePoint cannot tell a volume mount point from a junction, so since #6525 a service logging below a mounted volume has its output discarded after one Error line naming a junction nobody created (#6635)
+* fix(infra): SQLiteDbInitializer.cs - the LatestSchemaVersion sync check can only fire when the database is NEWER than the build, yet its warning tells the reader to wire a missing migration block (#5570)
+* fix(infra): SQLiteDbInitializer.cs - a database newer than LatestSchemaVersion is reconciled and ALTERed instead of refused, and the single warning names the wrong cause (#5991)
+* fix(service): Service.cs / ProcessLaunchOptions.cs - the 5 AuditContext values restored by #5234 use 4 different conventions, so Pre-Launch and post-launch bracket differently in the same log (#5624)
+* fix(service): ProcessLauncher.cs - Start never cancels the async read pumps or unsubscribes its handlers before the finally disposes the writers they hold, the #262 race in the 1 of 3 Begin sites that only got the #1485 drain (#5628)
+* fix(service): Service.cs - OnStart re-derives the cancellation token from the field at two sites after capturing capturedToken for exactly that reason (residual of #2222) (#5632)
+* fix(service): Service.cs - SafeKillProcess abandons the timed-out stop task with no orphan-observing continuation, unlike FlushAndShutdownLogger in the same file (#5635)
+* fix(service): ServiceHelper.cs - the startup dump records 40 of the 41 StartOptions properties; the one it omits is EnableDebugLogs, the flag that decides whether its own second half is written (#6038)
+* fix(service): ServiceHelper.cs - the Pre-Stop and Post-Stop banners in the startup dump are 29 and 30 characters where the other twelve are all 31, so the last two sections step out of the ruler (#6039)
+* fix(service): Service.cs - the #5250 fix added the ct local to InitiateRecoveryAsync but passed it to one of the three calls it named; both SaveRestartAttemptsAsync sites are still tokenless (#6046)
+* fix(service): Service.cs - EmitHeartbeatPing's second enableFlags test is provably always true: the line-1402 guard already pinned it, and line 1418 writes the same predicate without it (#6049)
+* fix(service): ProcessHelper.cs (Service) - ExpandAndAudit runs the unexpanded-placeholder audit over the whole inherited environment, so a machine-wide Path with a literal %VAR% is reported as the service's own misconfigured variable on every launch (#6506)
+* fix(service): ServiceHelper.cs / ServySecurity.ps1 - a sensitive keyword followed by a letter is never masked, so AZURE_CREDENTIALS, SECRETS, TOKENS and PASSWORDS leak in full (suffix mirror of #5877) (#6511)
+* fix(service): ProcessExtensions.cs / ProcessWrapper.cs - GetChildren returns the same empty list for "did not look" and "no children", so a failed lineage capture logs "No active descendants found for PID 0" (sibling of #4639) (#6512)
+* fix(service): ServiceHelper.cs / ServySecurity.ps1 - the #6511 plural S? is accepted only after the last underscore segment, so SECRETS_FILE, TOKENS_PATH and DB_PASSWORDS_ENC leak in full while SECRET_FILE is masked (residual of #6511) (#6627)
+* fix(service): Service.cs - SharedPingClient has an infinite PooledConnectionLifetime, so a heartbeat host that changes address is never re-resolved while pings keep the connection warm (#6545)
+* fix(service): Service.cs - the three _fileSemaphore.Release() calls are still unguarded against teardown disposal, the pattern #4424 fixed for _healthCheckSemaphore (#6546)
+* fix(service): Service.cs - StartPreStopProcess null-tests a non-nullable parameter its only caller guarded fourteen lines earlier (class of #5791 / #6516) (#6547)
+* fix(service): Service.cs - EnsureRestartAttemptsFileAsync returns 0 for 'could not read', so an unreadable attempts file (a 229+ character service name, or a denied ACL) silently makes MaxRestartAttempts unlimited (#6550)
+* fix(service): ProcessLauncher.cs - the #6525 handle-path verification is skipped silently when the fixed 1024-char resolver fails, the fail-open shape #3523 fixed in PathSecurityGuard, beside a second copy of its prefix stripping (#6630)
+* fix(service): Service.cs - the restart counter is written with InvariantCulture and read with culture-sensitive int.TryParse, and line 1420 is the only EndsWith in src/ without a StringComparison; InvariantGlobalization in the csproj is what keeps them correct (#6551)
+* fix(service): Service.cs - OnProcessExited declares a non-nullable sender against EventHandler's object?, so all three subscription sites carry a null-forgiving ! on the method group; CheckHealth in the same file already uses object? (#6556)
+* fix(restarter): ServiceRestarter.cs - the class doing the entire restart has no logger, so 8 swallowed SCM exceptions and every retry are invisible between Program.cs's two log lines (#5619)
+* fix(restarter): ServiceRestarter.cs - a permanent SCM refusal (disabled service, logon failure, access denied) is retried as a pending transition for the full timeout and surfaces as a TimeoutException with no inner cause (sibling of #5116) (#6505)
+* fix(ui): BulkObservableCollection.cs - AddRange and TrimToSize bypass CheckReentrancy(), so a mutation during a Reset notification corrupts silently instead of throwing (#5639)
+* fix(ui): AppBootstrapper.cs - the last three production CancellationToken.None sites opt a 25.8 MB extraction and a service-stop loop out of shutdown cancellation (family of #4434/#5250) (#5640)
+* fix(ui): AppBootstrapper.cs - EnsureEventSourceExists runs on the UI thread and outside the splash stopwatch, so the splash freezes and the minimum-display floor is measured from the wrong origin (residual of #6053) (#6205)
+* fix(ui): AppBootstrapper.cs - the error-dialog debounce keys on the exception message, so a varying PID or path in the text reopens the modal spam #1762 closed (#6206)
+* fix(ui): AppBootstrapper.cs - the admin and SQLite failure dialogs are the one option set left outside the #5248 validation, so a missing text shows a blank refusal modal (#6243)
+* fix(ui): HelpService.cs - a 200 response with no tag_name is reported as 'No updates currently available' with nothing logged, the misleading outcome #2128 removed for an unparseable tag (#6566)
+* fix(ui): RelayCommand.cs - a non-null parameter of the wrong type is coerced to default(T) exactly like null, the comment describes only the null case, and all 19 instantiations are RelayCommand<object> so the value-type guard has no caller (#6641)
+* fix(ui): HelpService.cs - OpenExternalUrl disposes the launched Process through an empty using block, eight lines and two nesting levels for what process.Dispose() says directly (#6644)
+* fix(ui): HelpService.cs - the update-check error message's tagName ?? "<missing>" fallback only fires for a null tag, not the empty-string case IsNullOrEmpty(tagName) also guards (#6741)
+* fix(desktop): App.xaml.cs (Servy) - MessageBoxService still gets a new WpfUiDispatcher(), the line #2696 fixed in the Manager twin, and IUiDispatcher is never registered here at all (#5648)
+* fix(desktop): MainViewModel.cs / ServiceConfigurationValidator.cs (Servy) - the four import/export handlers are the only ones not wrapped in Task.Run, and they are the ones whose validation makes a domain logon on the UI thread (#5657)
+* fix(desktop): StringHelper.cs / MainViewModel.cs - FormatEnvironmentVariables propagates FormatException into BindServiceDtoToModel, which has no catch, so a legacy row leaves the form half-bound; the ?? that hides it is dead since #1842 (#5923)
+* fix(desktop): MainViewModel.cs / MainWindow.xaml (Servy) - IsBusy disables the commands and nothing else, so the form stays editable while Install runs from a snapshot taken on a thread-pool thread, and nothing on screen shows it is busy (#6591)
+* fix(desktop): MainWindow.xaml.cs (Servy) - MainViewModel.Dispose() is not called from OnClosed or anywhere else, so the unsubscribe #3851 was closed for is unreachable again (the Manager twin disposes at OnClosed) (#6597)
+* fix(desktop): appsettings.desktop.json / App.xaml.cs / ServiceCommands.cs (Servy) - the elevated desktop app launches whatever ManagerAppPublishPath names after a File.Exists check, so the install directory's ACL is the only control (#6602)
+* fix(desktop): ServiceCommands.cs (Servy) - OpenSecurityHardeningGuideAsync keeps the empty-using disposal shape #6644 names in HelpService.cs, while OpenManagerAsync twelve lines above and both Manager launch sites use the inline form (#6648)
+* fix(manager): ServiceCommands.cs (Manager) - ImportConfigAsync is the one cancellation catch of eight that logs nothing, so a cancelled import leaves no trace at all (#5586)
+* fix(manager): MainViewModel.cs - HandleSearchExceptionAsync still shows a Warning dialog, the sibling #4355 fixed in LogsViewModel; and that sibling now double-logs (#5598)
+* fix(manager): HistoryResult.cs / LogTailer.cs - the rotation timestamp must be UTC and is compared Kind-blind, but none of its four API surfaces says so (#5602)
+* fix(manager): PerformanceViewModel.cs - AddPoint's two Math clamp terms on line 356 are provably dead, and the headroom remark describes the clamp that cannot fire (residual of #4373) (#5603)
+* fix(manager): LogLine.cs - the ctor's 'normalized to UTC' promise shifts a Kind.Unspecified timestamp by the local offset, the one Kind a log-line parser produces (#5998)
+* fix(manager): ConsoleViewModel.cs / DependenciesViewModel.cs / PerformanceViewModel.cs - only 1 of the 3 CreateServiceItem overrides keeps the Pid it is handed, so 2 tabs show N/A and disable Copy PID for a full refresh interval (#6002)
+* fix(manager): LogsView.xaml - the Message column is the only header-bearing column in the Manager with no SortMemberPath, so its header is clickable and inert (#6023)
+* fix(manager): ServiceSearchUserControl.cs / MainWindow.xaml.cs - the three 'search if empty' guards treat an empty result as 'never searched', so a search that matches nothing re-runs on every tab switch (#6029)
+* fix(manager): DependenciesView.xaml / MainWindow.xaml - the dependency TreeView is the only items control with no local IsVirtualizing, so it inherits False from DependenciesTab and builds every node eagerly (#6034)
+* fix(manager): App.xaml.cs (Manager) - the bootstrapper's parsed service-name argument is accepted by the factory and silently dropped, unlike the Servy twin that loads it (#6396)
+* fix(manager): LogTailer.cs - the threshold-flush torn-line guard still trusts the buffered fs.Position, so a complete line mid-buffer is held back and merged with its successor (residual of #5200/#3475) (#6471)
+* fix(manager): MainViewModel.cs (Manager) - RemoveService matches the row name with a case-sensitive == while every other name lookup in the file is OrdinalIgnoreCase (#6481)
+* fix(manager): ConsoleView.xaml.cs / ServiceCommands.cs (Manager) - the #1320 fix added catch (ExternalException) beside catch (COMException) instead of replacing it; COMException derives from ExternalException, so both sites carry a subsumed arm with an identical body (#6489)
+* fix(manager): MainViewModel.cs (Manager) - the post-search refresh is dropped, not deferred, when a timer refresh is in flight, and nothing cancels that tick, so new rows wait a full interval (#6491)
+* fix(manager): MainViewModel.cs (Manager) - RefreshAllServicesAsync enumerates the SCM and decrypts every DB row before checking whether the snapshot is empty (#6492)
+* fix(manager): MainViewModel.cs (Manager) - SearchText and IsConfiguratorEnabled hand-roll the compare-and-raise idiom while every sibling property in the hierarchy uses ViewModelBase.Set (#6494)
+* fix(manager): ServiceCommands.cs (Servy + Manager) - a domain-validation rejection on import is a Warn line in the desktop twin and silent in the Manager twin, the one exit of five in that method the Manager log cannot show (#6676)
+* fix(manager): ConsoleView.xaml.cs - Clipboard copy failure after exhausted retries is silent, no user feedback (#6714)
+* fix(cli): Servy.CLI.csproj - DebuggerSupport is false here but true in the two sibling trimmed executables, and those are the only three files that set it (#5491)
+* fix(cli): InstallServiceOptions.cs - four HelpTexts state their default but heartbeatUrlTimeoutSeconds, priority and startupType omit theirs (sibling of #4709) (#6320)
+* fix(cli): Program.cs (Servy.CLI) - the unknown-command guard null-checks firstArg on the branch that proves it non-null (#6321)
+* fix(cli): Strings.resx (Servy.CLI) - the two '{0}: ' log templates disagree on capitalization after the shared prefix (#6322)
+* fix(cli): UninstallServiceCommand.cs / BaseCommand.cs - the shared IsServiceInstalled pre-flight blocks the #6374 orphan-row repair on the CLI path, reintroducing #4235 (#6405)
+* fix(cli): InstallServiceOptions.cs - the --user help text's hardening-guide URL is split mid-token by the console wrapper (#6702)
+* fix(psm1): Servy.psd1 / Directory.Build.props - the module manifest ships "(c)" with no year while every assembly ships "Copyright © 2026" (#6203)
+* fix(psm1): Servy.psm1 - the -Deps ValidatePattern rejects the '+' load-order prefix the CLI accepts (residual of #5547; third instance after #1694/#2312) (#6323)
+* fix(psm1): Servy.psm1 - Invoke-ServyCli's EndOfStream drain blocks on a silent pipe, so a quietly hung CLI still defeats ServyTimeoutSeconds (residual of #987) (#6324)
+* fix(psm1): Servy.psm1 - Get-ServyServiceStatus help omits Unknown from the possible status results (residual of #4256) (#6325)
+* fix(psm1): Servy.psm1 - the rewritten Invoke-ServyCli drain still blocks on a silent or stderr-heavy CLI, and its timeout break lands in an unbounded ReadToEnd (residual of #6324) (#6372)
+* fix(psm1): Servy.psm1 - the new per-chunk UTF8.GetString decode corrupts multibyte sequences split across reads, and the #1715 StandardOutputEncoding fix is now inert (residual of #6372) (#6401)
+* fix(psm1): Servy.psm1 - the final drain reads at most one chunk per stream and polls IsCompleted once, so a timeout that lands in the exit window returns truncated output as success (residual of #6372) (#6402)
+* fix(psm1): Servy.psm1 - the catch block's partial-output report reads stdoutLines, which the #6372 rewrite now fills only on the success path, so a timeout error carries no captured output (#6403)
+* fix(psm1): Servy.psm1 - the timeout kill path invokes taskkill.exe by bare name from an elevated session, resolving through PATH (sibling of fixed #6380) (#6404)
+* fix(psm1): Servy.psm1 - the #6402 final drain resets its timeout per chunk, so a trickling inherited pipe holds Invoke-ServyCli open unboundedly (residual of #6324/#6372) (#6419)
+* fix(psm1): Servy.psm1 - the #6401 stateful decoders are never flushed at end of stream, silently dropping a final split multibyte character (residual of #6401) (#6420)
+* fix(psm1): Servy.psm1 - both #6402 drain loops are wrapped in an if on the identical condition the while re-tests (sibling of #6313/#6317/#6339) (#6421)
+* fix(psm1): Servy.psd1 / bump-version.ps1 - the #6203 fix puts a raw © into a BOM-less manifest, which Windows PowerShell decodes as ANSI, so the Copyright field reads 'Copyright Â© 2026' (#6474)
+* fix(psm1): Servy.psm1 - the #6419 drain deadline gates the loop but not the WaitOne, so the 5s final drain can hold for ~20s (residual of #6419) (#6446)
+* fix(psm1): Servy.psm1 - Set-ServyHardenedFileAcl never sets the owner, so a pre-existing file owned by a non-admin keeps implicit WRITE_DAC and can undo the Admin-only hardening (#6692)
+* fix(setup): publish-common.ps1 - Copy-CommonArtifacts step 1 copies Set-ServyExePermissions.ps1 with no existence guard, while step 3's comment advertises the guards it got from #550 (#5469)
+* fix(setup): servy.iss - GetUninstallString and GetInstalledVersion are the same 20-line cross-arch AppId sweep with one literal changed, and have already drifted on Result initialisation (residual of #4990) (#5471)
+* fix(setup): servy.iss - ShouldAddCurrentUser drops the C# rule's administrator condition, so every elevated install leaves a permanent personal Full Control ACE on the Servy data vault (#6207)
+* fix(setup): servy.iss - ShouldAddCurrentUser is always False under PrivilegesRequired=admin, so the grant-current-user step and its Win32 plumbing are unreachable (residual of #6207) (#6370)
+* fix(setup): servy.iss - the #6207 fix is forward-only: upgrades never remove the personal Full Control ACE earlier installers already planted on the data vault (#6371)
+* fix(setup): servy.iss - icacls.exe and taskkill are invoked by bare filename from an elevated process, resolving through the CreateProcess search path (#6380)
+* fix(setup): servy.iss - the icacls hardening steps ignore exit codes, so a failed DACL reset leaves the data vault on its default permissive ACL with no signal (#6381)
+* fix(setup): servy.iss - the PATH-entry match predicate lives in both PathContainsFolder and RemoveFromPath, the exact drift class #5467 already paid for (#6382)
+* fix(setup): servy.iss - trailing spaces and a spaces-only line introduced by the #6371 fix block (#6383)
+* fix(setup): servy.iss - InitializeSetup deletes the remembered Setup Type / Components values even when the user cancels, and before Inno ever reads them (#6399)
+* fix(setup): servy.iss - AddToPath shows an unguarded modal MsgBox on failure, blocking silent installs, while PrepareToInstall checks WizardSilent (#6400)
+* fix(setup): servy.iss - SetupMutex is per-arch while everything else treats both arches as one product, so x64 and arm64 setups can run concurrently on ARM64 (residual of #4990) (#6443)
+* fix(setup): servy.iss - the ACL-hardening failure dialog is mbInformation while the PATH failure dialog is mbError, ranking the failures backwards (#6444)
+* fix(notifications): Servy-Watermark.psm1 - the only '-ne $null' in the repo; 35 other sites put $null on the left (PSPossibleIncorrectComparisonWithNull) (#5481)
+* fix(notifications): Write-ServyLog.ps1 - the taskschd file logger diverges from Logger.cs / RotatingStreamWriter.cs on clock base, timezone marker, line format, rotated-filename stamp and default rotation size (#5880)
+* fix(notifications): ServyFailureEmail.ps1 - Port is range-checked but TimeoutMs is not, so a negative TimeoutMs makes every queued alert fail with a generic ArgumentOutOfRangeException and advance the watermark (#5881)
+* fix(notifications): ServyFailureEmail.xml / ServyFailureNotification.xml - the task action names wscript.exe without a path while its argument is absolute; resolution is left to the search order at trigger time (#6613)
+* fix(notifications): ServyFailureEmail.vbs / ServyFailureNotification.vbs - the #6613 fix pins wscript.exe in the task action, but the script it runs still launches powershell.exe by bare name, so resolution is left to the search order one hop later (residual of #6613) (#6634)
+* ci(choco.yml): servy.nuspec - packageSourceUrl is the one Chocolatey metadata field left unset, so nothing on chocolatey.org points at setup/choco/servy (#5866)
+* ci(changelog.yml): CHANGELOG.md - 460 KiB and about 5 releases away from GitHub's 512 KiB markdown-render cutoff (#6218)
+* ci(changelog.yml): CHANGELOG-v1.0-v5.2.md - the archive links nowhere: the #6218 split's pointer is one-directional (#6425)
+* ci(changelog.yml): changelog.yml - the auto-split path lacks the reset path's cleanup, so the next re-chunk (due: main is already 412 KB) strands CHANGELOG-v1.0-v5.2.md orphaned and duplicated (#6435)
+
+</details>
+
+### Downloads
+* [servy-10.0-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-arm64-installer.exe) - 71.42 MB
+* [servy-10.0-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-arm64-portable.7z) - 71.98 MB
+* [servy-10.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-net48-sbom.xml) - 0.03 MB
+* [servy-10.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-net48-x64-installer.exe) - 4.38 MB
+* [servy-10.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-net48-x64-portable.7z) - 2.11 MB
+* [servy-10.0-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-sbom.xml) - 0.04 MB
+* [servy-10.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-x64-installer.exe) - 77.65 MB
+* [servy-10.0-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-x64-portable.7z) - 75.04 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.0.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.0.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v9.9...v10.0
+
 ## [Servy 9.9](https://github.com/aelassas/servy/releases/tag/v9.9)
 
 **Date:** 2026-08-28 | **Tag:** [`v9.9`](https://github.com/aelassas/servy/tree/v9.9)
@@ -3021,468 +3208,6 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.3...v7.4
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.2...v7.3
 
-## [Servy 7.2](https://github.com/aelassas/servy/releases/tag/v7.2)
-
-**Date:** 2026-03-26 | **Tag:** [`v7.2`](https://github.com/aelassas/servy/tree/v7.2)
-
-* feat(core): change log rotation naming to insert timestamp before extension (#47)
-* feat(core): use local time instead of UTC for log rotation (#47)
-* feat(core): update log cleanup logic (#47)
-
-### Downloads
-* [servy-7.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-net48-sbom.xml) - 0.02 MB
-* [servy-7.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-net48-x64-installer.exe) - 3.97 MB
-* [servy-7.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-net48-x64-portable.7z) - 1.71 MB
-* [servy-7.2-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-sbom.xml) - 0.03 MB
-* [servy-7.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-x64-installer.exe) - 81.87 MB
-* [servy-7.2-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.2/servy-7.2-x64-portable.7z) - 79.76 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.2.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.2.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v7.1...v7.2
-
-## [Servy 7.1](https://github.com/aelassas/servy/releases/tag/v7.1)
-
-**Date:** 2026-03-25 | **Tag:** [`v7.1`](https://github.com/aelassas/servy/tree/v7.1)
-
-* fix(cli): typo in import validation message (#45)
-* fix(cli): install after import not registered with `Servy.Service.CLI.exe` (#46)
-* ci(publish): wrong Inno Setup download URL
-* ci(publish): upgrade artifact upload to actions/upload-artifact@v6
-* ci(publish): fix SBOM schema version
-* ci(publish): fix VirusTotal 502 timeouts
-* chore(deps): update dependencies
-
-### Downloads
-* [servy-7.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-net48-sbom.xml) - 0.02 MB
-* [servy-7.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-net48-x64-installer.exe) - 3.97 MB
-* [servy-7.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-net48-x64-portable.7z) - 1.71 MB
-* [servy-7.1-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-sbom.xml) - 0.03 MB
-* [servy-7.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-x64-installer.exe) - 81.85 MB
-* [servy-7.1-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.1/servy-7.1-x64-portable.7z) - 79.74 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.1.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.1.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v7.0...v7.1
-
-## [Servy 7.0](https://github.com/aelassas/servy/releases/tag/v7.0)
-
-**Date:** 2026-03-14 | **Tag:** [`v7.0`](https://github.com/aelassas/servy/tree/v7.0)
-
-* fix(desktop,manager): add `--force-sr` flag to resolve blank UI issues on MeshCentral (#44)
-* fix(desktop): fix manager app detection when launched from CLI
-* fix(manager): fix desktop app detection when launched from CLI
-
-### Downloads
-* [servy-7.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-net48-sbom.xml) - 0.02 MB
-* [servy-7.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-net48-x64-installer.exe) - 3.97 MB
-* [servy-7.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-net48-x64-portable.7z) - 1.71 MB
-* [servy-7.0-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-sbom.xml) - 0.03 MB
-* [servy-7.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-x64-installer.exe) - 81.86 MB
-* [servy-7.0-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.0/servy-7.0-x64-portable.7z) - 79.74 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.0.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.0.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.9...v7.0
-
-## [Servy 6.9](https://github.com/aelassas/servy/releases/tag/v6.9)
-
-**Date:** 2026-03-13 | **Tag:** [`v6.9`](https://github.com/aelassas/servy/tree/v6.9)
-
-* fix(desktop,manager): blank UI on some machines (#44)
-* fix(desktop,manager): add logger with software-rendering diagnostics (#44)
-* fix(desktop): pre-stop and post-stop file dialogs not working
-* fix(installer): remove Servy Manager launcher from post-install window
-* chore(deps): update dependencies
-
-### Downloads
-* [servy-6.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-net48-sbom.xml) - 0.02 MB
-* [servy-6.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-net48-x64-portable.7z) - 1.71 MB
-* [servy-6.9-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-sbom.xml) - 0.03 MB
-* [servy-6.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-x64-installer.exe) - 81.79 MB
-* [servy-6.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.9/servy-6.9-x64-portable.7z) - 79.74 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.9.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.9.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.8...v6.9
-
-## [Servy 6.8](https://github.com/aelassas/servy/releases/tag/v6.8)
-
-**Date:** 2026-02-26 | **Tag:** [`v6.8`](https://github.com/aelassas/servy/tree/v6.8)
-
-* perf(core): optimize encryption with modern high-performance crypto APIs
-* perf(manager): optimize Services tab performance
-* perf(manager): move console log sorting off the UI thread
-* fix(desktop): improve layout sizing on small displays
-* fix(desktop): update pre-launch help text and clarify pre-launch and pre-stop timeouts
-* fix(manager): set minimum width for Select All column
-* fix(dev): correct wrapper service path resolution in Debug mode
-* chore(deps): update dependencies
-* docs(wiki): add Kopia service sample to [Examples & Recipes docs](https://github.com/aelassas/servy/wiki/Examples-&-Recipes#run-kopia-as-a-service) (#41)
-
-### Downloads
-* [servy-6.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-sbom.xml) - 0.02 MB
-* [servy-6.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-x64-installer.exe) - 3.95 MB
-* [servy-6.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.8-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-sbom.xml) - 0.03 MB
-* [servy-6.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-x64-installer.exe) - 81.85 MB
-* [servy-6.8-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.8/servy-6.8-x64-portable.7z) - 79.72 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.8.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.8.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.7...v6.8
-
-## [Servy 6.7](https://github.com/aelassas/servy/releases/tag/v6.7)
-
-**Date:** 2026-02-15 | **Tag:** [`v6.7`](https://github.com/aelassas/servy/tree/v6.7)
-
-* fix(manager): restore decryption on refresh to fix field values
-* fix(ci): resolve coverlet runtime issue on `net48` branch
-
-### Downloads
-* [servy-6.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-sbom.xml) - 0.02 MB
-* [servy-6.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.7-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-sbom.xml) - 0.03 MB
-* [servy-6.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-x64-installer.exe) - 81.84 MB
-* [servy-6.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.7/servy-6.7-x64-portable.7z) - 79.73 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.7.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.7.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.6...v6.7
-
-## [Servy 6.6](https://github.com/aelassas/servy/releases/tag/v6.6)
-
-**Date:** 2026-02-14 | **Tag:** [`v6.6`](https://github.com/aelassas/servy/tree/v6.6)
-
-> [!IMPORTANT]
-> This version contains a critical bug in Servy Manager.
-> It is not recommended for production use. Please use a different version instead.
-> For maximum stability and security, always use the latest available version of Servy.
-
-* feat(manager): optimize background timer performance
-* fix(manager): remove unnecessary decryptions across all tabs
-* fix(manager): correct wrapper service path in Debug mode
-* fix(apps): ensure full application shutdown on main window close
-* docs(wiki): update CLI and PowerShell docs
-
-### Downloads
-* [servy-6.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-sbom.xml) - 0.02 MB
-* [servy-6.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.6-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-sbom.xml) - 0.03 MB
-* [servy-6.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-x64-installer.exe) - 81.85 MB
-* [servy-6.6-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.6/servy-6.6-x64-portable.7z) - 79.73 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.6.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.6.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.5...v6.6
-
-## [Servy 6.5](https://github.com/aelassas/servy/releases/tag/v6.5)
-
-**Date:** 2026-02-13 | **Tag:** [`v6.5`](https://github.com/aelassas/servy/tree/v6.5)
-
-* feat(security): implement authenticated encryption using AES-CBC with HMAC-SHA256
-* perf(core): improve performance and overall stability
-* fix(service): remove duplicate recovery flag reset
-* fix(net48): ensure SQLite assemblies are deployed at runtime
-* chore(deps): update dependencies
-* docs(wiki): update documentation
-
-### Downloads
-* [servy-6.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-sbom.xml) - 0.02 MB
-* [servy-6.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.5-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-sbom.xml) - 0.03 MB
-* [servy-6.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-x64-installer.exe) - 81.85 MB
-* [servy-6.5-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.5/servy-6.5-x64-portable.7z) - 79.73 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.5.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.5.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.4...v6.5
-
-## [Servy 6.4](https://github.com/aelassas/servy/releases/tag/v6.4)
-
-**Date:** 2026-02-09 | **Tag:** [`v6.4`](https://github.com/aelassas/servy/tree/v6.4)
-
-* fix(cli): auto-disable spinner when no console is attached (#39)
-* chore(setup): normalize the publish scripts and CI workflow
-* docs(wiki): update and enhance the [documentation](https://github.com/aelassas/servy/wiki)
-
-### Downloads
-* [servy-6.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-sbom.xml) - 0.01 MB
-* [servy-6.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-x64-installer.exe) - 3.94 MB
-* [servy-6.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-sbom.xml) - 0.03 MB
-* [servy-6.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-x64-installer.exe) - 81.85 MB
-* [servy-6.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.4/servy-6.4-x64-portable.7z) - 79.72 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.4.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.4.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.3...v6.4
-
-## [Servy 6.3](https://github.com/aelassas/servy/releases/tag/v6.3)
-
-**Date:** 2026-02-06 | **Tag:** [`v6.3`](https://github.com/aelassas/servy/tree/v6.3)
-
-* fix(service): register `PRESHUTDOWN` support in `OnStart` (#37)
-* fix(service): ignore `PRESHUTDOWN` signal during computer restart recovery action
-* fix(service): prevent infinite crash loops with stability-based counter reset
-* fix(service): implement proportional stability threshold for monitoring
-* fix(service): prevent restart counter reset during computer restart recovery action
-* fix(service): decouple health detection from recovery execution
-* fix(service): improve performance and stability of [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery#reboot-detection-example)
-* fix(service): resolve race conditions in process health checks
-* fix(service): ignore recovery when teardown starts
-* fix(service): synchronize health monitor with teardown state
-* fix(service): implement thread-safe access to restart attempts file
-* feat(setup): add "Launch Servy Manager" option after setup completes
-
-### Downloads
-* [servy-6.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-sbom.xml) - 0.01 MB
-* [servy-6.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.3-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-sbom.xml) - 0.03 MB
-* [servy-6.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-x64-installer.exe) - 81.81 MB
-* [servy-6.3-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.3/servy-6.3-x64-portable.7z) - 79.69 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.3.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.3.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.2...v6.3
-
-## [Servy 6.2](https://github.com/aelassas/servy/releases/tag/v6.2)
-
-**Date:** 2026-02-04 | **Tag:** [`v6.2`](https://github.com/aelassas/servy/tree/v6.2)
-
-* fix(service): explicitly handle OS shutdown with SCM wait pulses (#37)
-* fix(core): ensure service start respects configured pre-launch timeout
-* fix(core): ensure service stop and restart respect configured pre-stop timeout
-* feat(manager): add visual detection of circular dependencies in service tree
-* feat(manager): add dynamic tooltips for service status and cycle warnings
-* feat(manager): sort service tree nodes alphabetically by display name
-
-### Downloads
-* [servy-6.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-sbom.xml) - 0.01 MB
-* [servy-6.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.2-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-sbom.xml) - 0.03 MB
-* [servy-6.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-x64-installer.exe) - 81.83 MB
-* [servy-6.2-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.2/servy-6.2-x64-portable.7z) - 79.71 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.2.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.2.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.1...v6.2
-
-## [Servy 6.1](https://github.com/aelassas/servy/releases/tag/v6.1)
-
-**Date:** 2026-02-03 | **Tag:** [`v6.1`](https://github.com/aelassas/servy/tree/v6.1)
-
-* feat(manager): add [Dependencies tab](https://github.com/aelassas/servy/wiki/Servy-Manager#dependencies) to show service dependency tree with status indicators
-* refactor(manager): extract service list into a reusable control
-* refactor(manager): move UI constants to Servy.UI for reuse
-* chore(psm1): replace backticks with splatting in PowerShell samples
-
-### Downloads
-* [servy-6.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-sbom.xml) - 0.01 MB
-* [servy-6.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-x64-installer.exe) - 3.96 MB
-* [servy-6.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-net48-x64-portable.7z) - 1.70 MB
-* [servy-6.1-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-sbom.xml) - 0.03 MB
-* [servy-6.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-x64-installer.exe) - 81.85 MB
-* [servy-6.1-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.1/servy-6.1-x64-portable.7z) - 79.73 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.1.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.1.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v6.0...v6.1
-
-## [Servy 6.0](https://github.com/aelassas/servy/releases/tag/v6.0)
-
-**Date:** 2026-02-01 | **Tag:** [`v6.0`](https://github.com/aelassas/servy/tree/v6.0)
-
-* feat(core): support fire-and-forget pre-launch hooks when timeout is set to 0
-* fix(service): clean up orphaned pre-launch and post-launch hook processes on service stop
-* fix(service): remove post-launch, pre-stop, and post-stop arguments from logs for security
-* fix(desktop): reduce window height on small resolutions
-* fix(cli): typo in `--preStopTimeout` option documentation for `install` command
-* chore(ci): add LoC badges for prod, tests, and total code
-* docs(wiki): add Pre-Stop & Post-Stop Actions docs
-
-### Downloads
-* [servy-6.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-net48-sbom.xml) - 0.01 MB
-* [servy-6.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-net48-x64-installer.exe) - 3.95 MB
-* [servy-6.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-net48-x64-portable.7z) - 1.69 MB
-* [servy-6.0-sbom.xml](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-sbom.xml) - 0.03 MB
-* [servy-6.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-x64-installer.exe) - 81.83 MB
-* [servy-6.0-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v6.0/servy-6.0-x64-portable.7z) - 79.72 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v6.0.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v6.0.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.9...v6.0
-
-## [Servy 5.9](https://github.com/aelassas/servy/releases/tag/v5.9)
-
-**Date:** 2026-01-30 | **Tag:** [`v5.9`](https://github.com/aelassas/servy/tree/v5.9)
-
-* feat(manager): add [Console tab](https://github.com/aelassas/servy/wiki/Overview#console) to display real-time service stdout and stderr output
-* feat(core): add pre-stop and post-stop hooks (#36)
-* fix(service): request SCM additional time in pulses while pre-launch hook is running
-* test: correct test script issues
-* test: upgrade to xUnit v3
-* test: remove deprecated xUnit packages
-
-### Downloads
-* [servy-5.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-net48-sbom.xml) - 0.01 MB
-* [servy-5.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-net48-x64-installer.exe) - 3.95 MB
-* [servy-5.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-net48-x64-portable.7z) - 1.69 MB
-* [servy-5.9-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-sbom.xml) - 0.03 MB
-* [servy-5.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-x64-installer.exe) - 81.86 MB
-* [servy-5.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.9/servy-5.9-x64-portable.7z) - 79.73 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v5.9.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v5.9.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.8...v5.9
-
-## [Servy 5.8](https://github.com/aelassas/servy/releases/tag/v5.8)
-
-**Date:** 2026-01-25 | **Tag:** [`v5.8`](https://github.com/aelassas/servy/tree/v5.8)
-
-* fix(service): implement resilient recursive process tree termination
-* fix(service): prevent orphaned child processes when parent is force-killed
-
-### Downloads
-* [servy-5.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-net48-sbom.xml) - 0.01 MB
-* [servy-5.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-net48-x64-installer.exe) - 3.93 MB
-* [servy-5.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-net48-x64-portable.7z) - 1.68 MB
-* [servy-5.8-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-sbom.xml) - 0.03 MB
-* [servy-5.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-x64-installer.exe) - 81.76 MB
-* [servy-5.8-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.8/servy-5.8-x64-portable.7z) - 79.67 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v5.8.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v5.8.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.7...v5.8
-
-## [Servy 5.7](https://github.com/aelassas/servy/releases/tag/v5.7)
-
-**Date:** 2026-01-24 | **Tag:** [`v5.7`](https://github.com/aelassas/servy/tree/v5.7)
-
-* fix(service): ensure cleanup of descendant processes on shutdown
-* fix(service): propagate `Ctrl+C` signal to descendant processes during stop
-* fix(service): use pulsed shutdown to allow full process tree cleanup
-* fix(service): keep SCM responsive during long-running process termination
-* fix(service): improve process stop logic for complex process trees
-* fix(service): align restart recovery with configured stop timeout
-
-### Downloads
-* [servy-5.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-net48-sbom.xml) - 0.01 MB
-* [servy-5.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-net48-x64-installer.exe) - 3.93 MB
-* [servy-5.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-net48-x64-portable.7z) - 1.68 MB
-* [servy-5.7-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-sbom.xml) - 0.03 MB
-* [servy-5.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-x64-installer.exe) - 81.77 MB
-* [servy-5.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.7/servy-5.7-x64-portable.7z) - 79.69 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v5.7.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v5.7.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.6...v5.7
-
-## [Servy 5.6](https://github.com/aelassas/servy/releases/tag/v5.6)
-
-**Date:** 2026-01-22 | **Tag:** [`v5.6`](https://github.com/aelassas/servy/tree/v5.6)
-
-* feat(core): allow environment variable expansion in process paths (#35)
-* feat(core): allow environment variable expansion in startup directories
-* fix(service): keep SCM responsive by requesting additional time in short pulses during stop
-* fix(service): improve startup options validation for process paths and startup directories
-
-### Downloads
-* [servy-5.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-net48-sbom.xml) - 0.01 MB
-* [servy-5.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-net48-x64-installer.exe) - 3.93 MB
-* [servy-5.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-net48-x64-portable.7z) - 1.68 MB
-* [servy-5.6-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-sbom.xml) - 0.03 MB
-* [servy-5.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-x64-installer.exe) - 81.77 MB
-* [servy-5.6-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.6/servy-5.6-x64-portable.7z) - 79.69 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v5.6.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v5.6.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.5...v5.6
-
-## [Servy 5.5](https://github.com/aelassas/servy/releases/tag/v5.5)
-
-**Date:** 2026-01-21 | **Tag:** [`v5.5`](https://github.com/aelassas/servy/tree/v5.5)
-
-* fix(core): request additional SCM start and stop time when configured timeout approaches limit
-* fix(core): ensure service is in database before performing start, stop and restart actions
-* fix(core): align start and stop timeouts with service timeouts from SCM and database while restarting services
-* fix(core): use previous stop timeout while calculating total stop time during restart
-* docs(wiki): update CLI commands and examples in multiple wiki pages
-* docs(wiki): expand FAQ with more questions and answers
-
-### Downloads
-* [servy-5.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-net48-sbom.xml) - 0.01 MB
-* [servy-5.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-net48-x64-installer.exe) - 3.93 MB
-* [servy-5.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-net48-x64-portable.7z) - 1.68 MB
-* [servy-5.5-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-sbom.xml) - 0.03 MB
-* [servy-5.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-x64-installer.exe) - 81.98 MB
-* [servy-5.5-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.5/servy-5.5-x64-portable.7z) - 79.87 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v5.5.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v5.5.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.4...v5.5
-
-## [Servy 5.4](https://github.com/aelassas/servy/releases/tag/v5.4)
-
-**Date:** 2026-01-20 | **Tag:** [`v5.4`](https://github.com/aelassas/servy/tree/v5.4)
-
-* feat(psm1): improve CLI discovery for installed and portable setups
-* fix(manager): handle long user session values with proper width and trimming
-* test: eliminate race condition from fire-and-forget async work in ServiceCommands
-* chore(psm1): update PowerShell module samples
-* chore(deps): update dependencies
-* docs(psm1): update PowerShell module docs
-* docs(wiki): expand FAQ with more questions and answers
-
-### Downloads
-* [servy-5.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-net48-sbom.xml) - 0.01 MB
-* [servy-5.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-net48-x64-installer.exe) - 3.92 MB
-* [servy-5.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-net48-x64-portable.7z) - 1.67 MB
-* [servy-5.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-sbom.xml) - 0.03 MB
-* [servy-5.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-x64-installer.exe) - 81.93 MB
-* [servy-5.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.4/servy-5.4-x64-portable.7z) - 79.82 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v5.4.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v5.4.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.3...v5.4
-
-## [Servy 5.3](https://github.com/aelassas/servy/releases/tag/v5.3)
-
-**Date:** 2026-01-14 | **Tag:** [`v5.3`](https://github.com/aelassas/servy/tree/v5.3)
-
-* feat(psm1): make Servy PowerShell module fully compatible with PowerShell 2.0+
-* feat(psm1): ensure Servy PowerShell module compatibility with Windows 7+ and Windows Server 2008+
-* fix(psm1): resolve `servy-cli.exe` path relative to module for portable and SCCM (#31)
-* fix(psm1): correct validation for `-StartupType` and `-DateRotationType` parameters for `Install-ServyService` function
-* fix(psm1): replace exit statements with throw for proper PowerShell error handling
-* fix(psm1): throw error when cli exits with non-zero exit code
-* fix(psm1): add validation to `help` command
-* fix(cli): return exit code 0 for `help` and `version` commands instead of 1
-* fix(manager): increase performance graph grid thickness for pixel-perfect visibility
-* refactor(psm1): dry up code and improve error handling
-* chore(deps): update dependencies
-* chore(core): remove unused dependency `System.Diagnostics.PerformanceCounter`
-* docs(psm1): clarify module usage for installed and portable Servy versions (#31)
-* docs(wiki): update Export/Import and PowerShell docs
-
-### Downloads
-* [servy-5.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-net48-sbom.xml) - 0.01 MB
-* [servy-5.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-net48-x64-installer.exe) - 3.93 MB
-* [servy-5.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-net48-x64-portable.7z) - 1.67 MB
-* [servy-5.3-sbom.xml](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-sbom.xml) - 0.03 MB
-* [servy-5.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-x64-installer.exe) - 81.93 MB
-* [servy-5.3-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v5.3/servy-5.3-x64-portable.7z) - 79.82 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v5.3.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v5.3.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v5.2...v5.3
-
 ---
 
-Looking for older releases? See: [CHANGELOG-v1.0-v5.2.md](./CHANGELOG-v1.0-v5.2.md)
+Looking for older releases? See: [CHANGELOG-v1.0-v7.2.md](./CHANGELOG-v1.0-v7.2.md)
