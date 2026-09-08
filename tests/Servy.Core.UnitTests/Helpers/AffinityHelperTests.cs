@@ -14,45 +14,53 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_NullOrWhiteSpace_ReturnsIntPtrZero(string input)
         {
             // Act
-            IntPtr result = AffinityHelper.ParseAffinity(input);
+            IntPtr result = AffinityHelper.ParseAffinity(input, 64);
 
             // Assert
             Assert.Equal(IntPtr.Zero, result);
         }
 
-        [Theory]
-        [InlineData("0x1", 0x1L, 1)]
-        [InlineData("0X2", 0x2L, 2)]
-        [InlineData("0xFF", 0xFFL, 8)]
-        [InlineData(" 0x10 ", 0x10L, 5)]
-        public void ParseAffinity_ValidHex_ReturnsExpectedBitmask(string input, long expectedMask, int requiredCores)
+        [Fact]
+        public void ParseAffinity_PublicOverload_UsesHostProcessorCountBoundedAt64()
         {
             // Arrange
-            int maxCores = Math.Min(Environment.ProcessorCount, 64);
-            if (maxCores < requiredCores) return; // Skip if host has fewer cores than required
+            int expectedMaxCores = Math.Min(Environment.ProcessorCount, 64);
 
+            // Act & Assert: Valid input within host bounds succeeds
+            IntPtr validResult = AffinityHelper.ParseAffinity("0");
+            Assert.Equal(new IntPtr(1L), validResult);
+
+            // Act & Assert: Input exceeding host bounds throws
+            string outOfBoundsInput = expectedMaxCores.ToString();
+            Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(outOfBoundsInput));
+        }
+
+        [Theory]
+        [InlineData("0x1", 0x1L, 16)]
+        [InlineData("0X2", 0x2L, 16)]
+        [InlineData("0xFF", 0xFFL, 16)]
+        [InlineData(" 0x10 ", 0x10L, 16)]
+        [InlineData("0xFFFFFFFFFFFFFFFF", -1L, 64)] // Tests 64-core max allowed ternary branch (-1L mask)
+        public void ParseAffinity_ValidHex_ReturnsExpectedBitmask(string input, long expectedMask, int maxAllowedCores)
+        {
             // Act
-            IntPtr result = AffinityHelper.ParseAffinity(input);
+            IntPtr result = AffinityHelper.ParseAffinity(input, maxAllowedCores);
 
             // Assert
             Assert.Equal(new IntPtr(expectedMask), result);
         }
 
         [Theory]
-        [InlineData("0, 1", 3L, 2)]        // 1 + 2 = 3
-        [InlineData("0-1", 3L, 2)]         // 1 + 2 = 3
-        [InlineData("0,2,4", 21L, 5)]      // 1 + 4 + 16 = 21
-        [InlineData("0-3,8", 271L, 9)]     // 15 + 256 = 271
-        [InlineData("0-1, 2-3", 15L, 4)]   // 1 + 2 + 4 + 8 = 15
-        [InlineData(" 0-2 , 4 ", 23L, 5)]  // 7 + 16 = 23
-        public void ParseAffinity_Valid(string input, long expectedMask, int requiredCores)
+        [InlineData("0, 1", 3L, 8)]         // 1 + 2 = 3
+        [InlineData("0-1", 3L, 8)]          // 1 + 2 = 3
+        [InlineData("0,2,4", 21L, 8)]       // 1 + 4 + 16 = 21
+        [InlineData("0-3,8", 271L, 16)]      // 15 + 256 = 271
+        [InlineData("0-1, 2-3", 15L, 8)]    // 1 + 2 + 4 + 8 = 15
+        [InlineData(" 0-2 , 4 ", 23L, 8)]   // 7 + 16 = 23
+        public void ParseAffinity_Valid(string input, long expectedMask, int maxAllowedCores)
         {
-            // Arrange
-            int maxCores = Math.Min(Environment.ProcessorCount, 64);
-            if (maxCores < requiredCores) return; // Skip if host has fewer cores than required
-
             // Act
-            IntPtr result = AffinityHelper.ParseAffinity(input);
+            IntPtr result = AffinityHelper.ParseAffinity(input, maxAllowedCores);
 
             // Assert
             Assert.Equal(new IntPtr(expectedMask), result);
@@ -68,7 +76,7 @@ namespace Servy.Core.UnitTests.Helpers
             string expectedPrefix = Strings.Msg_InvalidHexAffinityFormat.Split('{')[0];
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity(input));
+            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity(input, 64));
 
             // Extract the static format prefix from the localized template
             Assert.Contains(expectedPrefix, ex.Message);
@@ -78,13 +86,10 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_ZeroHex_ThrowsArgumentException()
         {
             // Arrange
-            // Msg_EmptyAffinityMask and Msg_HexMaskOutOfBounds share the head that Split('{')
-            // extracts ("Affinity mask '"), so the formatted message is asserted instead:
-            // swapping the two branches of ParseAffinity must not leave this test green.
             string expected = string.Format(Strings.Msg_EmptyAffinityMask, "0x0");
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity("0x0"));
+            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity("0x0", 64));
 
             Assert.Contains(expected, ex.Message);
         }
@@ -93,16 +98,12 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_HexOutOfBounds_ThrowsArgumentOutOfRangeException()
         {
             // Arrange
-            int maxCores = Math.Min(Environment.ProcessorCount, 64);
-            string input = "0xFFFFFFFFFFFFFFFF";
-            if (maxCores >= 64) return; // Skip if host has full 64 cores and input is all bits set
-
-            // The static head Split('{') extracts is shared with Msg_EmptyAffinityMask, so the
-            // formatted message is asserted instead - see ParseAffinity_ZeroHex.
-            string expected = string.Format(Strings.Msg_HexMaskOutOfBounds, input, maxCores - 1);
+            int maxAllowedCores = 8;
+            string input = "0xFFFFFFFFFFFFFFFF"; // Requires 64 cores
+            string expected = string.Format(Strings.Msg_HexMaskOutOfBounds, input, maxAllowedCores - 1);
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input, maxAllowedCores));
 
             Assert.Contains(expected, ex.Message);
         }
@@ -111,19 +112,13 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_HexExceedingHostCores_ThrowsArgumentOutOfRangeException()
         {
             // Arrange
-            int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64);
-            if (maxAllowedCores >= 64) return; // Skip if host has full 64 cores
-
-            // Mask that sets a bit beyond host max cores
+            int maxAllowedCores = 8;
             long outOfBoundsMask = 1L << maxAllowedCores;
             string input = $"0x{outOfBoundsMask:X}";
-
-            // The static head Split('{') extracts is shared with Msg_EmptyAffinityMask, so the
-            // formatted message is asserted instead - see ParseAffinity_ZeroHex.
             string expected = string.Format(Strings.Msg_HexMaskOutOfBounds, input, maxAllowedCores - 1);
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input));
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input, maxAllowedCores));
 
             Assert.Contains(expected, ex.Message);
         }
@@ -145,7 +140,7 @@ namespace Servy.Core.UnitTests.Helpers
             string expectedPrefix = Strings.Msg_InvalidCoreSpecification.Split('{')[0];
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity(input));
+            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity(input, 64));
 
             Assert.Contains(expectedPrefix, ex.Message);
         }
@@ -157,7 +152,7 @@ namespace Servy.Core.UnitTests.Helpers
             string expectedPrefix = Strings.Msg_InvertedCoreRange.Split('{')[0];
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity("1-0"));
+            var ex = Assert.Throws<ArgumentException>(() => AffinityHelper.ParseAffinity("1-0", 64));
 
             Assert.Contains(expectedPrefix, ex.Message);
         }
@@ -166,39 +161,33 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_CoreIndexOutOfRange_ThrowsArgumentOutOfRangeException()
         {
             // Arrange
-            int maxAllowedCores = Math.Min(Environment.ProcessorCount, 64);
+            int maxAllowedCores = 8;
 
             // Act & Assert - Single core out of bounds
             string singleOutOfBounds = maxAllowedCores.ToString();
-            var ex1 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(singleOutOfBounds));
+            var ex1 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(singleOutOfBounds, maxAllowedCores));
             string singleExpectedPrefix = Strings.Msg_CoreIndexOutOfBounds.Split('{')[0];
             Assert.Contains(singleExpectedPrefix, ex1.Message);
 
             // Act & Assert - Range start/end out of bounds
             string rangeOutOfBounds = $"{maxAllowedCores}-{maxAllowedCores + 1}";
-            var ex2 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(rangeOutOfBounds));
+            var ex2 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(rangeOutOfBounds, maxAllowedCores));
             string rangeExpectedPrefix = Strings.Msg_CoreIndexRangeOutOfBounds.Split('{')[0];
             Assert.Contains(rangeExpectedPrefix, ex2.Message);
         }
 
         [Theory]
-        [InlineData(null, 0)]
-        [InlineData("", 0)]
-        [InlineData("    ", 0)]
-        [InlineData("0", 1)]
-        [InlineData("0x1", 1)]
-        [InlineData("0,2,4", 5)]
-        [InlineData("0-3,8", 9)]
-        public void ValidateAffinity_ValidInput_ReturnsTrueAndNullErrorMessage(string input, int requiredCores)
+        [InlineData(null, 8)]
+        [InlineData("", 8)]
+        [InlineData("    ", 8)]
+        [InlineData("0", 8)]
+        [InlineData("0x1", 8)]
+        [InlineData("0,2,4", 8)]
+        [InlineData("0-3,8", 16)]
+        public void ValidateAffinity_ValidInput_ReturnsTrueAndNullErrorMessage(string input, int maxAllowedCores)
         {
-            // Arrange
-            int maxCores = Math.Min(Environment.ProcessorCount, 64);
-
-            // Skip test cases if the current system lacks enough cores to evaluate the input
-            if (requiredCores > 0 && maxCores < requiredCores) return; // Skip if host has fewer cores than required
-
             // Act
-            bool isValid = AffinityHelper.ValidateAffinity(input, out string errorMessage);
+            bool isValid = AffinityHelper.ValidateAffinity(input, maxAllowedCores, out string errorMessage);
 
             // Assert
             Assert.True(isValid);
@@ -206,25 +195,22 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("0xINVALID", nameof(Strings.Msg_InvalidHexAffinityFormat), "0xINVALID")]
-        [InlineData("0x0", nameof(Strings.Msg_EmptyAffinityMask), "0x0")]
-        [InlineData("abc", nameof(Strings.Msg_InvalidCoreSpecification), "abc")]
-        [InlineData("9999", nameof(Strings.Msg_CoreIndexOutOfBounds), "9999")]
-        [InlineData(",", nameof(Strings.Msg_InvalidCoreSpecification), ",")]
-        [InlineData(",,", nameof(Strings.Msg_InvalidCoreSpecification), ",,")]
-        [InlineData(" , ", nameof(Strings.Msg_InvalidCoreSpecification), ",")] // ParseAffinity trims before formatting
-        [InlineData("1-0", nameof(Strings.Msg_InvertedCoreRange), "1-0")]
-        public void ValidateAffinity_InvalidInput_ReturnsFalseAndPopulatesErrorMessage(string input, string expectedResourceKey, string expectedToken)
+        [InlineData("0xINVALID", nameof(Strings.Msg_InvalidHexAffinityFormat), "0xINVALID", 64)]
+        [InlineData("0x0", nameof(Strings.Msg_EmptyAffinityMask), "0x0", 64)]
+        [InlineData("abc", nameof(Strings.Msg_InvalidCoreSpecification), "abc", 64)]
+        [InlineData("9999", nameof(Strings.Msg_CoreIndexOutOfBounds), "9999", 64)]
+        [InlineData(",", nameof(Strings.Msg_InvalidCoreSpecification), ",", 64)]
+        [InlineData(",,", nameof(Strings.Msg_InvalidCoreSpecification), ",,", 64)]
+        [InlineData(" , ", nameof(Strings.Msg_InvalidCoreSpecification), ",", 64)] // ParseAffinity trims before formatting
+        [InlineData("1-0", nameof(Strings.Msg_InvertedCoreRange), "1-0", 64)]
+        public void ValidateAffinity_InvalidInput_ReturnsFalseAndPopulatesErrorMessage(string input, string expectedResourceKey, string expectedToken, int maxAllowedCores)
         {
             // Arrange
-            // Name the exact resource each row is expected to surface: the eight rows reach five
-            // different throw sites, and asserting only that the message is non-empty cannot tell
-            // them apart, so a wrong-resource regression of the #5911 kind would pass.
             string template = (string)typeof(Strings).GetProperty(expectedResourceKey).GetValue(null);
-            string expected = string.Format(template, expectedToken, Math.Min(Environment.ProcessorCount, 64) - 1);
+            string expected = string.Format(template, expectedToken, maxAllowedCores - 1);
 
             // Act
-            bool isValid = AffinityHelper.ValidateAffinity(input, out string errorMessage);
+            bool isValid = AffinityHelper.ValidateAffinity(input, maxAllowedCores, out string errorMessage);
 
             // Assert
             Assert.False(isValid);
