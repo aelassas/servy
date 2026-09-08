@@ -615,7 +615,7 @@ jobs:
           Copy-Item "src/Servy.CLI/Servy-Restore.ps1" $pkg -Force
 
           # Scripts
-          Copy-Item "setup\Set-ServyExePermissions.ps1" $pkg -Force
+          Copy-Item "setup/Set-ServyExePermissions.ps1" $pkg -Force
 
           # Task Scheduler setup - Hardened Recursive Copy
           $destPath = Join-Path $pkg "taskschd"
