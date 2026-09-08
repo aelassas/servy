@@ -1567,7 +1567,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task InstallService_UnicodeCasingVariance_UnexpectedUninstallException_ReturnsFailure()
+        public async Task InstallService_UnicodeCasingVariance_UninstallReturnsFailure_PropagatesUnregisterError()
         {
             // Arrange
             var options = new InstallServiceOptions
