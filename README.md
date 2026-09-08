@@ -23,7 +23,6 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [Overview](https://github.com/aelassas/servy/wiki/Overview)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
-* [Backup/Restore & VM Cloning](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning)
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
 ## Features
