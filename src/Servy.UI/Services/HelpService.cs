@@ -85,7 +85,7 @@ namespace Servy.UI.Services
                     {
                         Logger.Warn("Update check response carried no tag_name; the payload was not a release object.");
                         await _messageBoxService.ShowErrorAsync(
-                            string.Format(Strings.Msg_UpdateCheckInvalidTag, tagName ?? "<missing>"), caption);
+                            string.Format(Strings.Msg_UpdateCheckInvalidTag, string.IsNullOrEmpty(tagName) ? "<missing>" : tagName), caption);
                         return;
                     }
 

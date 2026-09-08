@@ -12,9 +12,10 @@
 
     This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
     executable files, DLL assemblies, and configuration files (*.exe.config), restricting the target runner account to strict 'Read & Execute'
-    rights for executables/DLLs and 'Read' rights for configuration files.
-    This ensures the service runner can execute required binaries and read settings without being able to overwrite, replace,
-    or DLL-hijack them, protecting against unprivileged binary replacement and local privilege escalation vectors. Full Control is
+    rights for executables/DLLs (with explicit 'Delete' rights granted strictly to Servy.Restarter.Net48.exe to permit atomic update extraction)
+    and 'Read' rights for configuration files.
+    This ensures the service runner can execute required binaries and read settings without being able to overwrite or
+    DLL-hijack them, protecting against unprivileged binary replacement and local privilege escalation vectors. Full Control is
     explicitly preserved for SYSTEM and Administrators using language-agnostic Well-Known SIDs. The owner of each hardened
     file is set to Builtin Administrators. Manually added explicit ACEs for third-party principals (both users and groups) are audited and preserved.
 
@@ -288,11 +289,17 @@ try {
         Where-Object { -not $_.PSIsContainer } |
         Select-Object -ExpandProperty Name
 
-    # Build unified target map with respective permissions
+    # Build unified target map with respective permissions.
+    # Exclusively grant ReadAndExecute, Delete to Servy.Restarter.Net48.exe so atomic updates can remove/replace
+    # that specific helper binary without granting Write/Modify access or adding Delete permissions to other binaries/DLLs.
     $targetFiles = @()
 
     foreach ($exe in $staticExeNames) {
-        $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
+        if ($exe -eq 'Servy.Restarter.Net48.exe') {
+            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute, Delete" }
+        } else {
+            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
+        }
     }
 
     foreach ($dll in $dllFiles) {
@@ -370,7 +377,7 @@ try {
             $acl.SetAccessRule($adminRule)
             $acl.SetAccessRule($systemRule)
 
-            # 4. Grant explicit ReadAndExecute or Read access to target account
+            # 4. Grant explicit rights (ReadAndExecute, Delete for Restarter; ReadAndExecute for other binaries; Read for configs) to target account
             if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
                 Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
             } else {
