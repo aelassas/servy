@@ -1,13 +1,13 @@
-# ==============================================================================
+# ==========================================================================================
 # GitHub Actions Workflow - Changelog Automation
-# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Automatically fetches release metadata from GitHub, constructs a formatted
 # CHANGELOG.md file, and commits the updates to the repository.
 #
 # Triggers:
 # - Automatically after successful completion of 'bump-version' workflow.
 # - Manually via workflow_dispatch for full rebuilds.
-# ==============================================================================
+# ==========================================================================================
 name: changelog
 
 on:

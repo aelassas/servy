@@ -1,6 +1,6 @@
-# ===========================================
+# ==========================================================================================
 # GitHub Actions Workflow - Scoop
-# -------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Automates the update of Servy's Scoop manifest.
 # When a new release is published (or triggered
 # manually), this workflow:
@@ -9,7 +9,7 @@
 #    - Updates the manifest in `aelassas/scoop-bucket`
 #    - Optionally creates a PR to update the manifest
 #      in `ScoopInstaller/Extras`
-# ===========================================
+# ==========================================================================================
 
 name: scoop
 

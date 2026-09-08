@@ -1,6 +1,6 @@
-# ===============================================
+# ==========================================================================================
 # GitHub Actions Workflow - Wiki Maintenance
-# -----------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Runs on wiki edits (gollum) and on-demand.
 # - validate-filenames: ensures no wiki filenames
 #   contain non-ASCII characters, which could lead
@@ -12,7 +12,7 @@
 #   next unrelated push to the code repository.
 #   Runs against both main (net10.0, dotnet test)
 #   and net48 (.NET Framework 4.8, vstest.console.exe).
-# ===============================================
+# ==========================================================================================
 
 name: wiki
 

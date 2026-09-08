@@ -1,9 +1,9 @@
-# ==============================================================================
+# ==========================================================================================
 # GitHub Composite Action - Setup Custom .NET
-# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Security: Enforces strict Authenticode signature validation and cryptographic
 # organizational attribute matching to prevent supply-chain vulnerabilities.
-# ==============================================================================
+# ==========================================================================================
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
 

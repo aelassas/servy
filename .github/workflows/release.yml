@@ -1,6 +1,6 @@
-# ==============================================================
+# ==========================================================================================
 #  GitHub Actions Workflow - Release
-# --------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 #  Purpose:
 #    This workflow provides a unified "release" badge
 #    that reflects the combined status of the following workflows:
@@ -23,7 +23,7 @@
 #    Green  -> All release workflows succeeded
 #    Yellow -> One or more still in progress.
 #    Red    -> One or more failed, skipped, or missing
-# ==============================================================
+# ==========================================================================================
 name: release
 
 env:

@@ -1,3 +1,10 @@
+# ==========================================================================================
+# Composite Action - Setup Git Helpers
+# ------------------------------------------------------------------------------------------
+# Writes the shared git helper functions (Invoke-Git, Invoke-PushWithRetry) to a script in
+# RUNNER_TEMP so later steps in the same job can dot-source them instead of redefining them.
+# ==========================================================================================
+
 name: 'Setup Git Helpers'
 description: 'Writes shared git helper functions (Invoke-Git, Invoke-PushWithRetry) to a script in RUNNER_TEMP for later steps to dot-source.'
 

@@ -1,12 +1,12 @@
-# ===========================================
+# ==========================================================================================
 # GitHub Actions Workflow - Bump Version
-# -------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Automatically bumps the Servy version number
 # after a completed "choco" workflow.
 # It determines the next version (decimal-point scheme), 
 # updates version files on both main and net48 branches,
 # and commits the changes back to the repository.
-# ===========================================
+# ==========================================================================================
 name: bump-version
 on:
   workflow_run:             # auto-trigger after choco.yml

@@ -1,10 +1,10 @@
-# =========================================================================
+# ==========================================================================================
 # GitHub Actions Composite Action - Resolve Version
-# -------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Deduplicates and centralizes the tag-resolution and semantic version
 # parsing logic across all automated release distribution paths.
 # Outputs standardized TAG and VERSION variables via GITHUB_ENV.
-# =========================================================================
+# ==========================================================================================
 
 name: 'Resolve Version'
 description: 'Centralizes tag lookup and extracts semantic version data'
