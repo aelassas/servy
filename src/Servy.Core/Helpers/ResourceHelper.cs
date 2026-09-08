@@ -3,7 +3,6 @@ using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.AccessControl;
-using System.Security.Principal;
 
 namespace Servy.Core.Helpers
 {

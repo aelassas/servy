@@ -114,7 +114,7 @@ namespace Servy.UI.IntegrationTests.Services
             // Assert
             _mockMessageBox.Verify(
                 m => m.ShowErrorAsync(
-                    It.Is<string>(s => s == string.Format(Strings.Msg_UpdateCheckInvalidTag, string.Empty)),
+                    It.Is<string>(s => s == string.Format(Strings.Msg_UpdateCheckInvalidTag, "<missing>")),
                     Caption),
                 Times.Once);
         }

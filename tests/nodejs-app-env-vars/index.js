@@ -23,6 +23,6 @@ process.stdout.write('stdout boo!\n')
 process.stderr.write('stderr boo!\n')
 
 // keep Node alive until key press (interactive) or until signalled (service)
-if (!keepAliveOnTty()) {
-  setInterval(() => {}, 1 << 30)   // stay alive; SIGINT/SIGTERM handlers above do the shutdown
-}
+// if (!keepAliveOnTty()) {
+//   setInterval(() => {}, 1 << 30)   // stay alive; SIGINT/SIGTERM handlers above do the shutdown
+// }

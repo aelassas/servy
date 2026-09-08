@@ -11,7 +11,8 @@
     process or unprivileged runner account to tamper with, replace, or hijack core executables or application settings.
 
     This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
-    executable and configuration files and restricting the target runner account to strict 'Read & Execute' (for executables)
+    executable and configuration files and restricting the target runner account to strict 'Read & Execute' (for executables,
+    with explicit 'Delete' rights granted strictly to Servy.Restarter.exe to permit atomic update extraction)
     or 'Read' (for configuration files) rights. This ensures the service runner can execute required binaries and read
     configuration settings without being able to overwrite or replace them, protecting against unprivileged binary/config
     replacement and local privilege escalation vectors. Full Control is explicitly preserved for SYSTEM and Administrators
@@ -292,7 +293,11 @@ try {
     $targetFiles = @()
 
     foreach ($exe in $exeNames) {
-        $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
+        if ($exe -eq 'Servy.Restarter.exe') {
+            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute, Delete" }
+        } else {
+            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
+        }
     }
 
     foreach ($cfg in $configNames) {
@@ -358,7 +363,7 @@ try {
             $acl.SetAccessRule($adminRule)
             $acl.SetAccessRule($systemRule)
 
-            # 4. Grant explicit ReadAndExecute or Read access to target account
+            # 4. Grant explicit ReadAndExecute/Delete (for Restarter), ReadAndExecute (for other exes), or Read (for configs) access to target account
             if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
                 Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
             } else {
