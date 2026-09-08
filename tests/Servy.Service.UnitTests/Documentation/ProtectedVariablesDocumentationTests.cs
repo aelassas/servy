@@ -28,7 +28,7 @@ namespace Servy.Service.UnitTests.Documentation
                 !string.IsNullOrWhiteSpace(WikiPath),
                 "SERVY_WIKI_PATH not set; this parity check runs from the wiki workflow's validate-protected-variables job.");
 
-            string markdownContent = File.ReadAllText(Path.Combine(WikiPath!, WikiPageFileName));
+            string markdownContent = File.ReadAllText(Path.Combine(WikiPath, WikiPageFileName));
 
             // 1. Strictly bound the scope to the 'Protected Variables' section up to the next heading
             var sectionMatch = Regex.Match(
