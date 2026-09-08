@@ -84,6 +84,10 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("JustAUser")]
         [InlineData("DOMAIN\\")]
         [InlineData(".\\")]
+        // The two rows below pass the format regex and are rejected by the later
+        // whitespace-after-trim guard: the account half is blank once the trailing '$' is stripped.
+        [InlineData("DOMAIN\\ $")]
+        [InlineData(".\\   $")]
         public void ValidateCredentials_InvalidFormat_ThrowsArgumentException(string badFormat)
         {
             var ex = Assert.Throws<ArgumentException>(() => NativeMethodsHelpers.ValidateCredentials(badFormat, null));
