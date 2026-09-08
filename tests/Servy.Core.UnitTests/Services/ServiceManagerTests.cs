@@ -759,6 +759,55 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_DisabledStartType_MapsToScmDisabled_Succeeds()
+        {
+            // Arrange
+            ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions("DisabledStartTypeService");
+            options.StartType = ServiceStartType.Disabled;
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert - Disabled is the one mapped start type with no other test behind it, and it must
+            // reach the SCM unchanged rather than being coerced to Automatic like AutomaticDelayedStart is.
+            Assert.True(result.IsSuccess);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(
+                It.IsAny<SafeScmHandle>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                (uint)ServiceStartType.Disabled,
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IntPtr>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(ServiceStartType.Unknown, "could not be determined")]
+        [InlineData((ServiceStartType)99, "Undefined service start type value: 99")]
+        public async Task InstallService_UnmappableStartType_ReturnsFailure(ServiceStartType startType, string expectedMessageFragment)
+        {
+            // Arrange
+            ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions("UnmappableStartTypeService");
+            options.StartType = startType;
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert - ToScmStartType throws inside InstallServiceAsync's own try, so an unmappable
+            // start type surfaces as a failed OperationResult rather than an escaping exception.
+            Assert.False(result.IsSuccess);
+            Assert.Contains(expectedMessageFragment, result.ErrorMessage);
+        }
+
+        [Fact]
         public async Task InstallService_CallsUpdateServiceConfig2_WhenServiceExistsError()
         {
             // Arrange
