@@ -11,6 +11,7 @@
     - Inno Setup files (*.iss)
     - .csproj project files
     - .github/workflows/publish.yml
+    - tests/Directory.Build.props
     - global.json
 
     Note: AppConfig.cs is intentionally not targeted because it derives the TFM
@@ -102,7 +103,11 @@ Update-FilesContent -Files $bulkFiles -Pattern $currentVersionRegex -Replacement
 $workflowFiles = @($(Join-Path $baseDir ".github\workflows\publish.yml"))
 Update-FilesContent -Files $workflowFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun -ExpectMatch
 
-# 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
+# 3. Explicitly-targeted file that must contain the version pattern (tests/Directory.Build.props TargetFramework)
+$testsDirectoryBuildPropsFile = Join-Path $baseDir "tests\Directory.Build.props"
+Update-FilesContent -Files @($testsDirectoryBuildPropsFile) -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun -ExpectMatch
+
+# 4. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
 $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
 $globalJsonReplacement = "`${1}$Version.$SdkPatch"
