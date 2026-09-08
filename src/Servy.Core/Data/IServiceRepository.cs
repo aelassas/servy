@@ -50,7 +50,7 @@ namespace Servy.Core.Data
         /// Preserves runtime state and credentials for each incoming DTO.
         /// </summary>
         /// <param name="services">The collection of <see cref="ServiceDto"/> objects to be persisted.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A task representing the asynchronous operation, containing the total number of rows affected.
         /// </returns>
@@ -117,7 +117,7 @@ namespace Servy.Core.Data
         /// Used by high-frequency UI timers to check running state without allocating full DTOs.
         /// </summary>
         /// <param name="name">The unique name of the service to query.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The PID of the running service, or <c>null</c> if not found or not running.</returns>
         Task<int?> GetServicePidAsync(string? name, CancellationToken cancellationToken = default);
 
@@ -125,7 +125,7 @@ namespace Servy.Core.Data
         /// Asynchronously retrieves a lightweight projection of a service's running state.
         /// </summary>
         /// <param name="name">The unique name of the service to query.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A <see cref="ServiceConsoleStateDto"/> containing the PID and active log paths;
         /// or <see langword="null"/> if the service is not found.
