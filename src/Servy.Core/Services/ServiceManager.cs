@@ -333,6 +333,9 @@ namespace Servy.Core.Services
                     }
                     catch (Exception ex)
                     {
+                        // Defense-in-depth: UninstallServiceAsync converts every non-OperationCanceledException
+                        // into a Failure result before it can propagate, so nothing currently reaches this arm.
+                        // It guards against a future change to that exception contract.
                         string criticalError = $"Unexpected error occurred while trying to drop legacy service casing layout '{existingDbService.Name}'.";
                         Logger.Error(criticalError, ex);
                         return OperationResult.Failure($"{criticalError} Details: {ex.Message}");
