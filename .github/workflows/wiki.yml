@@ -1,10 +1,17 @@
 # ===============================================
 # GitHub Actions Workflow - Wiki Maintenance
 # -----------------------------------------------
-# Enforces file naming standards in the GitHub Wiki.
-# Specifically, it ensures no filenames contain
-# non-ASCII characters, which could lead to
-# cross-platform issues.
+# Runs on wiki edits (gollum) and on-demand.
+# - validate-filenames: ensures no wiki filenames
+#   contain non-ASCII characters, which could lead
+#   to cross-platform issues.
+# - validate-protected-variables: keeps the code's
+#   protected environment variable list and the
+#   wiki's documented table in parity, checked at
+#   the moment the wiki changes rather than on the
+#   next unrelated push to the code repository.
+#   Runs against both main (net10.0, dotnet test)
+#   and net48 (.NET Framework 4.8, vstest.console.exe).
 # ===============================================
 
 name: wiki
@@ -48,3 +55,83 @@ jobs:
           else
             echo "All wiki filenames are ASCII compliant."
           fi
+
+  validate-protected-variables:
+    name: Validate Protected Variables Table (${{ matrix.branch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [main, net48]
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Code (${{ matrix.branch }})
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+        with:
+          ref: ${{ matrix.branch }}
+
+      - name: Checkout Wiki
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: .wiki
+
+      # main: net10.0, MTP-based test runner
+      - name: Setup .NET
+        if: matrix.branch == 'main'
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Run parity check (dotnet test)
+        if: matrix.branch == 'main'
+        env:
+          SERVY_WIKI_PATH: ${{ github.workspace }}/.wiki
+        run: dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~ProtectedVariablesDocumentationTests"
+
+      # net48: legacy .NET Framework 4.8 csproj, built with MSBuild and run with vstest.console.exe
+      - name: Setup MSBuild
+        if: matrix.branch == 'net48'
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 #v3
+
+      - name: Setup NuGet
+        if: matrix.branch == 'net48'
+        uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 #v4.0
+
+      - name: Restore NuGet packages
+        if: matrix.branch == 'net48'
+        run: nuget restore Servy.sln
+
+      - name: Build test project
+        if: matrix.branch == 'net48'
+        run: |
+          msbuild tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj `
+            /p:Configuration=Debug `
+            /p:Platform=x64 `
+            /p:AllowUnsafeBlocks=true `
+            /nodeReuse:false `
+            /m
+
+      - name: Run parity check (vstest)
+        if: matrix.branch == 'net48'
+        shell: pwsh
+        env:
+          SERVY_WIKI_PATH: ${{ github.workspace }}/.wiki
+        run: |
+          $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          if (-not $vsInstallPath) {
+            Write-Error "::error::Visual Studio installation not found using vswhere."
+            exit 1
+          }
+
+          $vsTest = Join-Path $vsInstallPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+          if (-not (Test-Path $vsTest)) {
+            Write-Error "::error::Could not locate vstest.console.exe at expected path: $vsTest"
+            exit 1
+          }
+
+          & $vsTest "tests\Servy.Service.UnitTests\bin\x64\Debug\Servy.Service.UnitTests.dll" `
+            /TestCaseFilter:"FullyQualifiedName~ProtectedVariablesDocumentationTests"
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "::error::Parity check failed on net48."
+            exit 1
+          }
