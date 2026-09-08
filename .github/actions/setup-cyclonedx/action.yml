@@ -1,10 +1,10 @@
-# ==============================================================================
+# ==========================================================================================
 # Composite Action - Setup and Verify CycloneDX Tools
-# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Purpose:
 #    Downloads, hash-verifies, and securely isolates both the CycloneDX CLI
 #    and the CycloneDX .NET tool within single-pass workflow runners.
-# ==============================================================================
+# ==========================================================================================
 
 name: 'Setup CycloneDX'
 description: 'Install and cryptographically verify CycloneDX CLI and .NET Tool'
