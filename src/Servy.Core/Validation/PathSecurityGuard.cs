@@ -101,7 +101,10 @@ namespace Servy.Core.Validation
             int firstDotIndex = fileName.IndexOf('.');
             string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
 
-            // Strip trailing spaces, periods, and tabs to match Win32's internal behavior
+            // Display only. The trailing space/period/tab stripping Win32 performs before resolving a
+            // device name is applied by ReservedNames.IsReservedDeviceName, which decides the block
+            // below from the raw segment; this copy exists so the message names the device the kernel
+            // would resolve to ("CON", not "CON ").
             string normalizedSegment = firstSegment.TrimEnd(' ', '.', '\t');
 
             if (ReservedNames.IsReservedDeviceName(firstSegment))
