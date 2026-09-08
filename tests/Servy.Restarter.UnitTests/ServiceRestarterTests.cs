@@ -518,6 +518,32 @@ namespace Servy.Restarter.UnitTests
         [Theory]
         [InlineData(true)]  // Test InvalidOperationException path
         [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StatusThrowsNonGoneInSettleLoop_PropagatesException(bool throwInvalidOperation)
+        {
+            // Arrange
+            // ERROR_SERVICE_CANNOT_ACCEPT_CTRL is transitional, not "gone", so the settle-phase
+            // status catch must rethrow instead of reporting the service as uninstalled.
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service busy", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+
+            _mockController.Setup(c => c.Status).Throws(exceptionToThrow);
+
+            // Act
+            var thrown = Record.Exception(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            // The original instance must surface unwrapped, which is what the bare rethrow guarantees.
+            Assert.Same(exceptionToThrow, thrown);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
         public void RestartService_RefreshThrowsInSettleLoop_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
         {
             // Arrange
@@ -542,6 +568,31 @@ namespace Servy.Restarter.UnitTests
         [Theory]
         [InlineData(true)]  // Test InvalidOperationException path
         [InlineData(false)] // Test Win32Exception path
+        public void RestartService_RefreshThrowsNonGoneInSettleLoop_PropagatesException(bool throwInvalidOperation)
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StopPending);
+
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service busy", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+
+            _mockController.Setup(c => c.Refresh()).Throws(exceptionToThrow);
+
+            // Act
+            var thrown = Record.Exception(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Same(exceptionToThrow, thrown);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
         public void RestartService_StatusThrowsAtStopEntry_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
         {
             // Arrange
@@ -558,6 +609,31 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StatusThrowsNonGoneAtStopEntry_PropagatesException(bool throwInvalidOperation)
+        {
+            // Arrange
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service busy", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running) // Settle loop check (not pending)
+                .Throws(exceptionToThrow); // Stop-entry status check
+
+            // Act
+            var thrown = Record.Exception(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Same(exceptionToThrow, thrown);
             _mockController.Verify(c => c.Stop(), Times.Never);
             _mockController.Verify(c => c.Start(), Times.Never);
             _mockController.Verify(c => c.Dispose(), Times.Once);
@@ -592,6 +668,33 @@ namespace Servy.Restarter.UnitTests
         [Theory]
         [InlineData(true)]  // Test InvalidOperationException path
         [InlineData(false)] // Test Win32Exception path
+        public void RestartService_RefreshThrowsNonGoneInStartPhase_PropagatesException(bool throwInvalidOperation)
+        {
+            // Arrange
+            // We bypass the Settle loop by returning Stopped instantly, which also skips the Stop phase.
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)  // Settle loop entry
+                .Returns(ServiceControllerStatus.Stopped); // Stop phase skip-check
+
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service busy", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+
+            _mockController.Setup(c => c.Refresh()).Throws(exceptionToThrow);
+
+            // Act
+            var thrown = Record.Exception(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Same(exceptionToThrow, thrown);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
         public void RestartService_HandleTransitionalErrorReProbeThrows_ReturnsServiceNotFoundImmediately(bool throwInvalidOperation)
         {
             // Arrange
@@ -614,6 +717,43 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_HandleTransitionalErrorReProbeThrowsNonGone_ContinuesLoopAndRestarts(bool throwInvalidOperation)
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)  // Settle loop check
+                .Returns(ServiceControllerStatus.Running)  // Stop-entry check, so the Stop command is issued
+                .Returns(ServiceControllerStatus.Stopped)  // Recovery poll 2: target state reached
+                .Returns(ServiceControllerStatus.Stopped); // Start-phase check: not Running yet
+
+            _mockController.Setup(c => c.Stop()).Throws(
+                new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)));
+
+            var probeException = throwInvalidOperation
+                ? new InvalidOperationException("Service busy", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+
+            _mockController.SetupSequence(c => c.Refresh())
+                .Throws(probeException) // Recovery poll 1: drives the transitional catch
+                .Throws(probeException) // Re-probe inside that catch: not gone, so the loop must go on
+                .Pass()                 // Recovery poll 2
+                .Pass();                // Start-phase refresh
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            // Falling through the re-probe catch, instead of returning ServiceNotFound, is what lets the
+            // recovery loop sleep, poll again, observe the target state and complete the restart.
+            Assert.Equal(RestartResult.Restarted, result);
+            _mockController.Verify(c => c.Refresh(), Times.Exactly(4));
+            _mockController.Verify(c => c.Start(), Times.Once);
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
