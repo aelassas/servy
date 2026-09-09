@@ -35,6 +35,7 @@ jobs:
           repository: ${{ github.repository }}.wiki
 
       - name: Check for non-ASCII bytes in filenames
+        shell: bash
         run: |
           # 1. Safety check: Ensure the wiki checkout contains at least one markdown page
           if [ -z "$(find . -path ./.git -prune -o -type f -name '*.md' -print -quit)" ]; then
@@ -76,13 +77,14 @@ jobs:
           repository: ${{ github.repository }}.wiki
           path: .wiki
 
-      # main: net10.0, MTP-based test runner
+      # main: net10.0+, MTP-based test runner
       - name: Setup .NET
         if: matrix.branch == 'main'
         uses: ./.github/actions/setup-dotnet
 
       - name: Run parity check (dotnet test)
         if: matrix.branch == 'main'
+        shell: pwsh
         env:
           SERVY_WIKI_PATH: ${{ github.workspace }}/.wiki
         run: dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~ProtectedVariablesDocumentationTests"
@@ -98,10 +100,12 @@ jobs:
 
       - name: Restore NuGet packages
         if: matrix.branch == 'net48'
+        shell: pwsh
         run: nuget restore Servy.sln
 
       - name: Build test project
         if: matrix.branch == 'net48'
+        shell: pwsh
         run: |
           msbuild tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj `
             /p:Configuration=Debug `
@@ -109,6 +113,7 @@ jobs:
             /p:AllowUnsafeBlocks=true `
             /nodeReuse:false `
             /m
+          if ($LASTEXITCODE -ne 0) { throw "msbuild failed (exit $LASTEXITCODE)" }
 
       - name: Run parity check (vstest)
         if: matrix.branch == 'net48'
@@ -118,13 +123,13 @@ jobs:
         run: |
           $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
           if (-not $vsInstallPath) {
-            Write-Error "::error::Visual Studio installation not found using vswhere."
+            Write-Host "::error::Visual Studio installation not found using vswhere."
             exit 1
           }
 
           $vsTest = Join-Path $vsInstallPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
           if (-not (Test-Path $vsTest)) {
-            Write-Error "::error::Could not locate vstest.console.exe at expected path: $vsTest"
+            Write-Host "::error::Could not locate vstest.console.exe at expected path: $vsTest"
             exit 1
           }
 
@@ -132,6 +137,6 @@ jobs:
             /TestCaseFilter:"FullyQualifiedName~ProtectedVariablesDocumentationTests"
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Error "::error::Parity check failed on net48."
+            Write-Host "::error::Parity check failed on net48."
             exit 1
           }
