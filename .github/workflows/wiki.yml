@@ -87,7 +87,12 @@ jobs:
         shell: pwsh
         env:
           SERVY_WIKI_PATH: ${{ github.workspace }}/.wiki
-        run: dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~ProtectedVariablesDocumentationTests"
+        run: |
+          dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~ProtectedVariablesDocumentationTests"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Parity check failed on main (exit $LASTEXITCODE)."
+            exit 1
+          }
 
       # net48: legacy .NET Framework 4.8 csproj, built with MSBuild and run with vstest.console.exe
       - name: Setup MSBuild
@@ -101,7 +106,12 @@ jobs:
       - name: Restore NuGet packages
         if: matrix.branch == 'net48'
         shell: pwsh
-        run: nuget restore Servy.sln
+        run: |
+          nuget restore Servy.sln
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::nuget restore failed (exit $LASTEXITCODE)."
+            exit 1
+          }
 
       - name: Build test project
         if: matrix.branch == 'net48'
