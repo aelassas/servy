@@ -2404,6 +2404,63 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task UninstallService_ReturnsFailureAndSkipsDelete_WhenServiceDoesNotStopWithinTimeout()
+        {
+            // Arrange
+            var serviceName = "ServiceName";
+            var scmHandle = CreateScmHandle(123);
+            var serviceHandle = CreateServiceHandle(456);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+                .Returns(true);
+
+            // The service never reaches Stopped, so the wait loop runs to the end of its budget.
+            // With no database row the budget is CalculateStopTimeout(null, null, 0), i.e. the
+            // 5s floor plus the 15s SCM buffer, polled every 500 ms: this test really waits ~20s
+            // rather than mocking time, the same tradeoff its polling sibling accepts at ~1s.
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.Setup(c => c.Refresh());
+            mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            _serviceManager = new ServiceManager(
+                name => mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+            );
+
+            // Act
+            var result = await _serviceManager.UninstallServiceAsync(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("did not reach 'Stopped'", result.ErrorMessage);
+
+            // The abort-before-delete guarantee this branch exists for: the SCM start type must
+            // stay untouched and the service must not be deleted while it is still stopping.
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(
+                It.IsAny<SafeServiceHandle>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IntPtr>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Never);
+            _mockWindowsServiceApi.Verify(x => x.DeleteService(It.IsAny<SafeServiceHandle>()), Times.Never);
+        }
+
+        [Fact]
         public async Task StartService_ShouldReturnTrue_WhenAlreadyRunning()
         {
             // Arrange
