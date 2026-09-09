@@ -53,6 +53,7 @@ jobs:
             /p:AllowUnsafeBlocks=true `
             /nodeReuse:false `
             /m
+          if ($LASTEXITCODE -ne 0) { throw "Debug build failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Setup .NET SDK 6
         uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 #v5.2.0
@@ -164,6 +165,7 @@ jobs:
             /p:AllowUnsafeBlocks=true `
             /nodeReuse:false `
             /m
+          if ($LASTEXITCODE -ne 0) { throw "Release build failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Run all tests (Release)
         shell: pwsh

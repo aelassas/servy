@@ -37,7 +37,9 @@ jobs:
 
       - name: Restore NuGet packages
         shell: pwsh
-        run: nuget restore Servy.sln
+        run: |
+          nuget restore Servy.sln
+          if ($LASTEXITCODE -ne 0) { throw "Restore failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Build Solution (Debug)
         shell: pwsh
@@ -48,6 +50,7 @@ jobs:
             /p:AllowUnsafeBlocks=true `
             /nodeReuse:false `
             /m
+          if ($LASTEXITCODE -ne 0) { throw "Debug build failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Build Solution (Release)
         shell: pwsh
@@ -58,3 +61,4 @@ jobs:
             /p:AllowUnsafeBlocks=true `
             /nodeReuse:false `
             /m
+          if ($LASTEXITCODE -ne 0) { throw "Release build failed for Servy.sln (exit $LASTEXITCODE)" }
