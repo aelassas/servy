@@ -49,6 +49,76 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.Dispose();
         }
 
+        #region Constructor Null-Guard Tests
+
+        [Fact]
+        public void Constructor_NullDialogService_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new MainViewModel(null!, _serviceCommandsMock.Object, _messageBoxService.Object, _serviceRepository.Object, _helpService.Object, _appConfigMock.Object));
+
+            // Assert
+            Assert.Equal("dialogService", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullServiceCommands_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new MainViewModel(_dialogServiceMock.Object, null!, _messageBoxService.Object, _serviceRepository.Object, _helpService.Object, _appConfigMock.Object));
+
+            // Assert
+            Assert.Equal("serviceCommands", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullMessageBoxService_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new MainViewModel(_dialogServiceMock.Object, _serviceCommandsMock.Object, null!, _serviceRepository.Object, _helpService.Object, _appConfigMock.Object));
+
+            // Assert
+            Assert.Equal("messageBoxService", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullServiceRepository_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new MainViewModel(_dialogServiceMock.Object, _serviceCommandsMock.Object, _messageBoxService.Object, null!, _helpService.Object, _appConfigMock.Object));
+
+            // Assert
+            Assert.Equal("serviceRepository", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullHelpService_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new MainViewModel(_dialogServiceMock.Object, _serviceCommandsMock.Object, _messageBoxService.Object, _serviceRepository.Object, null!, _appConfigMock.Object));
+
+            // Assert
+            Assert.Equal("helpService", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullAppConfig_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new MainViewModel(_dialogServiceMock.Object, _serviceCommandsMock.Object, _messageBoxService.Object, _serviceRepository.Object, _helpService.Object, null!));
+
+            // Assert
+            Assert.Equal("appConfig", ex.ParamName);
+        }
+
+        #endregion
+
         #region Core Property Tests
 
         [Fact]
@@ -839,6 +909,30 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal($"ServiceA{Environment.NewLine}ServiceB", _viewModel.ServiceDependencies);
             Assert.Equal($"X=9{Environment.NewLine}Y=10", _viewModel.PreLaunchEnvironmentVariables);
             Assert.Equal(dto.RunAsLocalSystem, _viewModel.RunAsLocalSystem);
+        }
+
+        [Fact]
+        public void BindServiceDtoToModel_EnvironmentVariablesDoNotParse_FallsBackToRawValueAndCompletesBinding()
+        {
+            // Arrange - "novalue" carries no unescaped '=', the record shape
+            // EnvironmentVariableParser.Parse rejects with a FormatException per its own <exception>
+            // doc, so this is the stored value shape #5923 reported reaching BindServiceDtoToModel
+            // uncaught.
+            var dto = new ServiceDto
+            {
+                Name = "LegacyService",
+                ExecutablePath = "C:\\proc.exe",
+                EnvironmentVariables = "novalue",
+                UserAccount = "Admin"
+            };
+
+            // Act
+            _viewModel.BindServiceDtoToModel(dto);
+
+            // Assert - the raw text is shown so an operator can correct it, and binding continues
+            // past the failing field instead of leaving the form half-populated.
+            Assert.Equal("novalue", _viewModel.EnvironmentVariables);
+            Assert.Equal("Admin", _viewModel.UserAccount);
         }
 
         [Fact]
