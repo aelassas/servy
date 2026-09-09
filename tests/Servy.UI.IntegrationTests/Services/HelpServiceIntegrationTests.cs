@@ -184,6 +184,29 @@ namespace Servy.UI.IntegrationTests.Services
         }
 
         [Fact]
+        public async Task CheckUpdates_NewerVersionAvailable_UserDeclines_DoesNothingFurther()
+        {
+            // Arrange
+            // Branch: if (normalizedLatest > normalizedCurrent) { var res = ...; if (res) } with res == false.
+            // Same newer-version fixture as the UserConfirms test above; only the answer differs.
+            SetupHandlerResponse("{ \"tag_name\": \"v9999.0\", \"html_url\": \"https://github.com/aelassas/servy/releases/tag/v9999.0\" }");
+
+            // Mock user clicking "No" on the update prompt
+            _mockMessageBox
+                .Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption))
+                .ReturnsAsync(false);
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            // Declining ends the method: the prompt was shown once and nothing else was reported.
+            _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption), Times.Once);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task CheckUpdates_UnparseableTag_ShowsInvalidTagError()
         {
             // Arrange
