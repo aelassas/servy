@@ -1,5 +1,4 @@
 using Dapper;
-using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
@@ -555,6 +554,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Seed row 3 with NULL UserAccount value
                 InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithNullAccount'" }, { "UserAccount", "NULL" } });
 
+                // Seed row 4 with tab-padded UserAccount value
+                InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithTabPaddedAccount'" }, { "UserAccount", "'\tdomain\\tab_svc\t'" } });
+
                 // Act: Run initialization to trigger V8 -> V9 migration
                 SQLiteDbInitializer.Initialize(conn);
 
@@ -563,16 +565,19 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
 
                 var rows = conn.Query($"SELECT Id, Name, UserAccount FROM {SqlConstants.ServicesTableName} ORDER BY Id;").ToList();
-                Assert.Equal(3, rows.Count);
+                Assert.Equal(4, rows.Count);
 
-                // Row 1: Whitespace-padded UserAccount should be normalized/trimmed
-                Assert.Equal("domain\\svc_account", (string)rows[0].UserAccount);
+                // Row 1: Space-padded UserAccount should be normalized/trimmed
+                Assert.Equal(@"domain\svc_account", (string)rows[0].UserAccount);
 
                 // Row 2: Clean UserAccount remains unchanged
-                Assert.Equal("domain\\clean_svc", (string)rows[1].UserAccount);
+                Assert.Equal(@"domain\clean_svc", (string)rows[1].UserAccount);
 
                 // Row 3: NULL UserAccount remains NULL
                 Assert.Null(rows[2].UserAccount);
+
+                // Row 4: Tab-padded UserAccount should be normalized/trimmed
+                Assert.Equal(@"domain\tab_svc", (string)rows[3].UserAccount);
             }
         }
 
@@ -626,6 +631,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     // because ' zombielog ' and 'zombielog' differ outside of casing.
                     conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('zombielog', 'C:\\path\\exe');");
                     conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES (' zombielog ', 'C:\\path\\exe');");
+                    conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('\tzombietablog\t', 'C:\\path\\exe');");
+                    conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('zombietablog', 'C:\\path\\exe');");
 
                     try
                     {
@@ -650,6 +657,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("CRITICAL DATA LIFECYCLE ANOMALY", logContent);
                 Assert.Contains("service record ' zombielog '", logContent);
                 Assert.Contains("clean twin 'zombielog'", logContent);
+                Assert.Contains("service record '\tzombietablog\t'", logContent);
+                Assert.Contains("clean twin 'zombietablog'", logContent);
             }
             finally
             {

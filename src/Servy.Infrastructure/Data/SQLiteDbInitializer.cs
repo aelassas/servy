@@ -62,11 +62,12 @@ namespace Servy.Infrastructure.Data
             // of the read path, which causes the verbatim secondary check to never fire-leaving the padded legacy variant masked and unreachable.
             try
             {
+                string trimChars = " \t";
                 var legacyCollisions = connection.Query($@"
                     SELECT a.Id AS ZombieId, a.Name AS ZombieName, b.Id AS TwinId, b.Name AS TwinName
                     FROM {SqlConstants.ServicesTableName} a
-                    JOIN {SqlConstants.ServicesTableName} b ON TRIM(a.Name) = b.Name COLLATE UNICODE_NOCASE
-                    WHERE a.Name <> TRIM(a.Name);").ToList();
+                    JOIN {SqlConstants.ServicesTableName} b ON TRIM(a.Name, '{trimChars}') = b.Name COLLATE UNICODE_NOCASE
+                    WHERE a.Name <> TRIM(a.Name, '{trimChars}');").ToList();
 
                 foreach (var collision in legacyCollisions)
                 {
@@ -692,10 +693,11 @@ namespace Servy.Infrastructure.Data
                 return;
             }
 
+            string trimChars = " \t";
             int affectedRows = connection.Execute($@"
                 UPDATE {SqlConstants.ServicesTableName}
-                SET UserAccount = TRIM(UserAccount)
-                WHERE UserAccount IS NOT NULL AND UserAccount <> TRIM(UserAccount);",
+                SET UserAccount = TRIM(UserAccount, '{trimChars}')
+                WHERE UserAccount IS NOT NULL AND UserAccount <> TRIM(UserAccount, '{trimChars}');",
                 transaction: transaction);
 
             if (affectedRows > 0)

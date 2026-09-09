@@ -59,11 +59,13 @@ jobs:
             Select-Object -First 1
 
           if (-not $projectFile) {
-              Write-Error "Could not locate project file matching '$inputName' inside ./tests/."
+              Write-Host "::error::Could not locate project file matching '$inputName' inside ./tests/."
+              exit 1
           }
 
           $projPath = $projectFile.FullName
           $projName = $projectFile.BaseName
+          $hadFailure = $false
 
           # 1. Run Debug configuration
           Write-Host "Running tests for $projName (Debug)..." -ForegroundColor Green
@@ -71,7 +73,7 @@ jobs:
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Debug tests failed for project: $projName"
-              Write-Error "Debug test run failed for $projName."
+              $hadFailure = $true
           }
 
           # 2. Run Release configuration
@@ -80,7 +82,11 @@ jobs:
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Release tests failed for project: $projName"
-              Write-Error "Release test run failed for $projName."
+              $hadFailure = $true
+          }
+
+          if ($hadFailure) {
+              exit 1
           }
 
       - name: Upload Test Diagnostics & Crash Dumps on Failure
