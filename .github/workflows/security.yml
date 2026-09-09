@@ -55,6 +55,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
+        shell: pwsh
         run: dotnet restore Servy.sln
 
       - name: Scan for vulnerable packages
@@ -133,9 +134,11 @@ jobs:
           max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Check .NET version
+        shell: pwsh
         run: dotnet --version
 
       - name: Build for Analysis
+        shell: pwsh
         run: dotnet build Servy.sln --configuration Debug
 
       - name: Perform CodeQL Analysis

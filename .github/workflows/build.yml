@@ -49,9 +49,11 @@ jobs:
           max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Restore dependencies
+        shell: pwsh
         run: dotnet restore Servy.sln
 
       - name: Build solution (Debug)
+        shell: pwsh
         run: dotnet build Servy.sln --configuration Debug --no-restore
 
       - name: Build Servy projects (Release ${{ matrix.arch }})

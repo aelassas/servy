@@ -58,9 +58,11 @@ jobs:
           max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Restore dependencies
+        shell: pwsh
         run: dotnet restore Servy.sln
 
       - name: Build solution (Debug)
+        shell: pwsh
         run: dotnet build Servy.sln --configuration Debug --no-restore
 
       - name: Run all tests with coverage (Debug)
@@ -105,6 +107,7 @@ jobs:
           }
 
       - name: Build solution (Release)
+        shell: pwsh
         run: dotnet build Servy.sln --configuration Release --no-restore
 
       - name: Run all tests (Release)
