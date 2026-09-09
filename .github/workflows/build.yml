@@ -36,9 +36,11 @@ jobs:
         uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 #v4.0
 
       - name: Restore NuGet packages
+        shell: pwsh
         run: nuget restore Servy.sln
 
       - name: Build Solution (Debug)
+        shell: pwsh
         run: |
           msbuild Servy.sln `
             /p:Configuration=Debug `
@@ -48,6 +50,7 @@ jobs:
             /m
 
       - name: Build Solution (Release)
+        shell: pwsh
         run: |
           msbuild Servy.sln `
             /p:Configuration=Release `

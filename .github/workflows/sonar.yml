@@ -84,7 +84,8 @@ jobs:
 
       # 8. Restore NuGet Packages (Mandatory for MSBuild)
       - name: Restore NuGet packages
-        run: nuget restore
+        shell: pwsh
+        run: nuget restore Servy.sln
 
       # 9. Build and Analyze
       - name: Build and analyze

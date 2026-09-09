@@ -41,9 +41,11 @@ jobs:
         uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 #v4.0
 
       - name: Restore NuGet packages
+        shell: pwsh
         run: nuget restore Servy.sln
 
       - name: Build Solution (Debug)
+        shell: pwsh
         run: |
           msbuild Servy.sln `
             /p:Configuration=Debug `
@@ -58,11 +60,12 @@ jobs:
           dotnet-version: '6.0.x'
 
       - name: Install Coverlet global tool
+        shell: pwsh
         run: dotnet tool install --global coverlet.console --version 3.2.0
 
       - name: Add dotnet tools to PATH
-        run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"
         shell: pwsh
+        run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"
 
       - name: Run all tests with coverage (Debug)
         shell: pwsh
@@ -153,6 +156,7 @@ jobs:
           }
 
       - name: Build Solution (Release)
+        shell: pwsh
         run: |
           msbuild Servy.sln `
             /p:Configuration=Release `
