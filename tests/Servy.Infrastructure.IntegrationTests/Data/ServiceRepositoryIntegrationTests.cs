@@ -642,7 +642,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var sql = $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\z.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
             await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Act: Purge routing requested using trimmed input signature string
+            // Act: Purge routing requested using the raw untrimmed legacy name to exercise the untrimmed fallback path
             int affectedRows = await _repository.DeleteAsync(paddedName, TestContext.Current.CancellationToken);
 
             // Assert
