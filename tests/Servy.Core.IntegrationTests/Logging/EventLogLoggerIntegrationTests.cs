@@ -348,6 +348,26 @@ namespace Servy.Core.IntegrationTests.Logging
         }
 
         [Fact]
+        public void ScopedLogger_NestedEmptyOrWhitespacePrefix_ReturnsSameScopeInstance()
+        {
+            string source = GenerateSourceName();
+            using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false, "Root"))
+            {
+                var level1Scope = rootLogger.CreateScoped("L1");
+
+                // Act - the early return under test is ScopedEventLogLogger's own, reachable
+                // only from an already-scoped logger, not the root logger's twin above.
+                var level2Scope = level1Scope.CreateScoped("   ");
+                var level2ScopeNull = level1Scope.CreateScoped(null);
+
+                // Assert
+                Assert.Same(level1Scope, level2Scope);
+                Assert.Same(level1Scope, level2ScopeNull);
+                Assert.Equal("[Root] [L1]", level2Scope.Prefix);
+            }
+        }
+
+        [Fact]
         public void ScopedLogger_SetIsEventLogEnabled_PropagatesToParent()
         {
             if (!_isElevated) return;
