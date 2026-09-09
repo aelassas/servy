@@ -1031,6 +1031,23 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public void HasAncestorReparsePoint_WhenPathIsDriveRoot_ReturnsFalse()
+        {
+            // Arrange: a drive-root path has no parent directory, so Path.GetDirectoryName
+            // returns null. GetPathRoot keeps this portable across whatever drive the temp
+            // directory sits on instead of hardcoding a drive letter.
+            string driveRoot = Path.GetPathRoot(_testRoot);
+
+            // Act
+            bool result = Helper.HasAncestorReparsePoint(driveRoot);
+
+            // Assert
+            // Branch Covered: the early-exit guard returns false immediately, without
+            // constructing a DirectoryInfo from the null parent or walking any ancestor.
+            Assert.False(result);
+        }
+
         #endregion
 
         #region Reparse Points Management Helpers
