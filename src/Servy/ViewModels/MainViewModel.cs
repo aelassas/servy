@@ -1537,19 +1537,19 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Safely formats environment variables for display, falling back to the raw unparsed string 
+        /// Safely formats environment variables for display, falling back to the raw unparsed string
         /// if a <see cref="FormatException"/> is encountered.
         /// </summary>
         /// <param name="raw">The raw environment variables string retrieved from the database.</param>
         /// <param name="field">The property or field name being bound, used for diagnostic logging.</param>
         /// <param name="serviceName">The name of the service associated with the environment variables, used for diagnostic logging.</param>
         /// <returns>
-        /// A newline-delimited, escaped string of environment variables if parsing succeeds; 
+        /// A newline-delimited, escaped string of environment variables if parsing succeeds;
         /// otherwise, the raw unparsed string (or <see cref="string.Empty"/> if <paramref name="raw"/> is <see langword="null"/>).
         /// </returns>
         /// <remarks>
-        /// This guard ensures that legacy or malformed environment variable records written prior to parser validation 
-        /// tightening do not throw an unhandled exception during DTO binding, allowing the user interface to populate 
+        /// This guard ensures that legacy or malformed environment variable records written prior to parser validation
+        /// tightening do not throw an unhandled exception during DTO binding, allowing the user interface to populate
         /// completely so an operator can inspect and correct the record.
         /// </remarks>
         private static string SafeFormatEnvironmentVariables(string raw, string field, string serviceName)
