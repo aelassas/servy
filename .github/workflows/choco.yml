@@ -149,8 +149,9 @@ jobs:
           if (-not [regex]::IsMatch($content, $checksumArm64Pattern)) { throw "Pattern '$checksumArm64Pattern' not found in $file - aborting to avoid publishing a stale checksumArm64." }
           $content = [regex]::Replace($content, $checksumArm64Pattern, $checksumArm64Replacement)
 
-          # Write content back without extra newline
-          [System.IO.File]::WriteAllText($file, $content)
+          # Write content back explicitly encoded as UTF-8 with BOM
+          $utf8WithBom = New-Object System.Text.UTF8Encoding($true)
+          [System.IO.File]::WriteAllText($file, $content, $utf8WithBom)
 
       - name: Commit and Push (with Retry)
         shell: pwsh
