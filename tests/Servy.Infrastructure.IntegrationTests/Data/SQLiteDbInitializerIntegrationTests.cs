@@ -1,5 +1,4 @@
 using Dapper;
-using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
@@ -539,6 +538,56 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
+        #region V9 UserAccount Normalization Migration Branches
+
+        [Fact]
+        public void ApplyVersion9_UpgradesFromVersion8_TrimsPaddedUserAccountsAndLeavesCleanValuesIntact()
+        {
+            // Arrange: Establish schema explicitly at Version 8 configuration checkpoint
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 8);
+
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT COLLATE UNICODE_NOCASE NOT NULL", "UserAccount TEXT" };
+                var seedData = new Dictionary<string, string> { { "Name", "'AppWithPaddedAccount'" }, { "UserAccount", "'  domain\\svc_account  '" } };
+
+                var context = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "UserAccount");
+
+                // Seed row 2 with clean UserAccount value
+                InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithCleanAccount'" }, { "UserAccount", "'domain\\clean_svc'" } });
+
+                // Seed row 3 with NULL UserAccount value
+                InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithNullAccount'" }, { "UserAccount", "NULL" } });
+
+                // Seed row 4 with tab-padded UserAccount value
+                InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithTabPaddedAccount'" }, { "UserAccount", "'\tdomain\\tab_svc\t'" } });
+
+                // Act: Run initialization to trigger V8 -> V9 migration
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
+
+                var rows = conn.Query($"SELECT Id, Name, UserAccount FROM {SqlConstants.ServicesTableName} ORDER BY Id;").ToList();
+                Assert.Equal(4, rows.Count);
+
+                // Row 1: Space-padded UserAccount should be normalized/trimmed
+                Assert.Equal("domain\\svc_account", (string)rows[0].UserAccount);
+
+                // Row 2: Clean UserAccount remains unchanged
+                Assert.Equal("domain\\clean_svc", (string)rows[1].UserAccount);
+
+                // Row 3: NULL UserAccount remains NULL
+                Assert.Null(rows[2].UserAccount);
+
+                // Row 4: Tab-padded UserAccount should be normalized/trimmed
+                Assert.Equal("domain\\tab_svc", (string)rows[3].UserAccount);
+            }
+        }
+
+        #endregion
+
         #region Legacy Whitespace Zombie Detection
 
         [Fact]
@@ -587,6 +636,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     // because ' zombielog ' and 'zombielog' differ outside of casing.
                     conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('zombielog', 'C:\\path\\exe');");
                     conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES (' zombielog ', 'C:\\path\\exe');");
+                    conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('\tzombietablog\t', 'C:\\path\\exe');");
+                    conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('zombietablog', 'C:\\path\\exe');");
 
                     try
                     {
@@ -611,6 +662,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("CRITICAL DATA LIFECYCLE ANOMALY", logContent);
                 Assert.Contains("service record ' zombielog '", logContent);
                 Assert.Contains("clean twin 'zombielog'", logContent);
+                Assert.Contains("service record '\tzombietablog\t'", logContent);
+                Assert.Contains("clean twin 'zombietablog'", logContent);
             }
             finally
             {

@@ -44,13 +44,13 @@ jobs:
         run: |
           $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
           if (-not $vsInstallPath) {
-              Write-Error "Visual Studio installation not found using vswhere."
+              Write-Host "::error::Visual Studio installation not found using vswhere."
               exit 1
           }
 
           $vsTest = Join-Path $vsInstallPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
           if (-not (Test-Path $vsTest)) {
-              Write-Error "Could not locate vstest.console.exe at: $vsTest"
+              Write-Host "::error::Could not locate vstest.console.exe at: $vsTest"
               exit 1
           }
 
@@ -70,12 +70,13 @@ jobs:
             Select-Object -First 1
 
           if (-not $projectFile) {
-              Write-Error "Could not locate project file matching '$inputName' inside ./tests/."
+              Write-Host "::error::Could not locate project file matching '$inputName' inside ./tests/."
               exit 1
           }
 
           $projName = $projectFile.BaseName
           $vsTest = "${{ steps.locate-vstest.outputs.vstest_path }}"
+          $hadFailure = $false
 
           # -----------------------------------------------------
           # 1. Debug Configuration
@@ -83,13 +84,13 @@ jobs:
           Write-Host "`nBuilding solution for Debug (x64)..." -ForegroundColor Cyan
           & msbuild Servy.sln /p:Configuration=Debug /p:Platform=x64 /p:AllowUnsafeBlocks=true /nodeReuse:false /m
           if ($LASTEXITCODE -ne 0) {
-              Write-Error "MSBuild failed for Debug configuration."
+              Write-Host "::error::MSBuild failed for Debug configuration."
               exit 1
           }
 
           $debugDll = "tests\$projName\bin\x64\Debug\$projName.dll"
           if (-Not (Test-Path $debugDll)) {
-              Write-Error "Debug test assembly not found: $debugDll"
+              Write-Host "::error::Debug test assembly not found: $debugDll"
               exit 1
           }
 
@@ -98,7 +99,7 @@ jobs:
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Debug tests failed for project: $projName"
-              Write-Error "Debug test run failed for $projName."
+              $hadFailure = $true
           }
 
           # -----------------------------------------------------
@@ -107,13 +108,13 @@ jobs:
           Write-Host "`nBuilding solution for Release (x64)..." -ForegroundColor Cyan
           & msbuild Servy.sln /p:Configuration=Release /p:Platform=x64 /p:AllowUnsafeBlocks=true /nodeReuse:false /m
           if ($LASTEXITCODE -ne 0) {
-              Write-Error "MSBuild failed for Release configuration."
+              Write-Host "::error::MSBuild failed for Release configuration."
               exit 1
           }
 
           $releaseDll = "tests\$projName\bin\x64\Release\$projName.dll"
           if (-Not (Test-Path $releaseDll)) {
-              Write-Error "Release test assembly not found: $releaseDll"
+              Write-Host "::error::Release test assembly not found: $releaseDll"
               exit 1
           }
 
@@ -122,7 +123,11 @@ jobs:
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Release tests failed for project: $projName"
-              Write-Error "Release test run failed for $projName."
+              $hadFailure = $true
+          }
+
+          if ($hadFailure) {
+              exit 1
           }
 
       - name: Upload Test Diagnostics & Crash Dumps on Failure
