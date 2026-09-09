@@ -132,6 +132,7 @@
     <Compile Include="DTOs\ServiceConsoleStateDtoTests.cs" />
     <Compile Include="DTOs\ServiceDtoTests.cs" />
     <Compile Include="DTOs\ServicePathAttributeAntiDriftTests.cs" />
+    <Compile Include="DTOs\SqlColumnAttributeTests.cs" />
     <Compile Include="EnvironmentVariables\EscapedTokenizerTests.cs" />
     <Compile Include="Helpers\AffinityHelperTests.cs" />
     <Compile Include="Helpers\AppFoldersHelperTests.cs" />
