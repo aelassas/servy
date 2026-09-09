@@ -120,5 +120,35 @@ namespace Servy.Core.UnitTests.Config
             Assert.True(File.Exists(_fullLogPath));
             Assert.Contains("EnableEventLog: n/a (no event-log sink in this process)", File.ReadAllText(_fullLogPath));
         }
+
+        [Fact]
+        public void ConfigureFromAppSettings_WithRotationSettings_ForwardsEveryParsedValueToTheLogFile()
+        {
+            // Arrange
+            // Every value differs from its AppConfig default, and the two booleans differ from each
+            // other as do the two integers, so neither a dropped wiring nor a swapped pair could
+            // satisfy every assertion below.
+            var config = BuildConfig(new Dictionary<string, string?>
+            {
+                { "LogLevel", "Debug" },
+                { "LogRollingInterval", "Daily" },
+                { "EnableSizeRotation", "false" },
+                { "LogRotationSizeMB", "42" },
+                { "MaxBackupLogFiles", "7" },
+                { "UseLocalTimeForRotation", "true" },
+            });
+
+            // Act
+            LoggerConfigurator.ConfigureFromAppSettings(config, logFileName: _testFileName);
+            Logger.Shutdown();
+
+            // Assert
+            var logText = File.ReadAllText(_fullLogPath);
+            Assert.Contains("EnableSizeRotation: False", logText);
+            Assert.Contains("LogRotationSizeMB: 42", logText);
+            Assert.Contains("LogRollingInterval: 0 (Daily)", logText);
+            Assert.Contains("MaxBackupLogFiles: 7", logText);
+            Assert.Contains("UseLocalTimeForRotation: True", logText);
+        }
     }
 }
