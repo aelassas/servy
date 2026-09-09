@@ -50,11 +50,15 @@ jobs:
 
       - name: Restore dependencies
         shell: pwsh
-        run: dotnet restore Servy.sln
+        run: |
+          dotnet restore Servy.sln
+          if ($LASTEXITCODE -ne 0) { throw "Restore failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Build solution (Debug)
         shell: pwsh
-        run: dotnet build Servy.sln --configuration Debug --no-restore
+        run: |
+          dotnet build Servy.sln --configuration Debug --no-restore
+          if ($LASTEXITCODE -ne 0) { throw "Debug build failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Build Servy projects (Release ${{ matrix.arch }})
         shell: pwsh

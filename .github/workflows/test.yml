@@ -59,11 +59,15 @@ jobs:
 
       - name: Restore dependencies
         shell: pwsh
-        run: dotnet restore Servy.sln
+        run: |
+          dotnet restore Servy.sln
+          if ($LASTEXITCODE -ne 0) { throw "Restore failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Build solution (Debug)
         shell: pwsh
-        run: dotnet build Servy.sln --configuration Debug --no-restore
+        run: |
+          dotnet build Servy.sln --configuration Debug --no-restore
+          if ($LASTEXITCODE -ne 0) { throw "Debug build failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Run all tests with coverage (Debug)
         shell: pwsh
@@ -108,7 +112,9 @@ jobs:
 
       - name: Build solution (Release)
         shell: pwsh
-        run: dotnet build Servy.sln --configuration Release --no-restore
+        run: |
+          dotnet build Servy.sln --configuration Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw "Release build failed for Servy.sln (exit $LASTEXITCODE)" }
 
       - name: Run all tests (Release)
         shell: pwsh
