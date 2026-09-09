@@ -127,6 +127,7 @@
     <Compile Include="Common\OperationResultTests.cs" />
     <Compile Include="Config\AppConfigTests.cs" />
     <Compile Include="Config\CoreSettingsLoaderTests.cs" />
+    <Compile Include="Config\LoggerConfiguratorTests.cs" />
     <Compile Include="Config\ServiceAccountsTests.cs" />
     <Compile Include="DTOs\ServiceConsoleStateDtoTests.cs" />
     <Compile Include="DTOs\ServiceDtoTests.cs" />
