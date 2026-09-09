@@ -6,6 +6,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Native;
+using Servy.Core.Resources;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Testing;
@@ -3022,6 +3023,41 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             // Verify it hit the catch block and fell back to Unknown (as per the implementation logic)
             Assert.Equal(ServiceStartType.Unknown, result[0].StartupType);
+        }
+
+        [Fact]
+        public void GetAllServices_ShouldSetAccessDeniedSentinel_WhenNativeOpenServiceFails()
+        {
+            // Arrange
+            var mockSvc = new Mock<IServiceControllerWrapper>();
+            mockSvc.Setup(s => s.ServiceName).Returns("TestSvc");
+            mockSvc.Setup(s => s.Status).Returns(ServiceControllerStatus.Running);
+            mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Manual);
+
+            _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(() => CreateScmHandle(1));
+
+            // The native OpenService call inside PopulateNativeDetails fails: invalid handle.
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()))
+                .Returns(() => CreateServiceHandle(0));
+
+            // ERROR_ACCESS_DENIED, the code the branch reads for its diagnostic log line.
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var result = _serviceManager.GetAllServices(CancellationToken.None);
+
+            // Assert
+            // The service still lands in the list, but carries the sentinel instead of a blank
+            // description, and none of the details the closed handle could not supply.
+            Assert.Equal(Strings.Msg_DetailsUnavailableAccessDenied, result[0].Description);
+            Assert.Empty(result[0].LogOnAs);
+            Assert.Equal(ServiceStartType.Manual, result[0].StartupType);
+            _mockWin32ErrorProvider.Verify(x => x.GetLastWin32Error(), Times.Once);
         }
 
         [Fact]
