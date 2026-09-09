@@ -529,7 +529,23 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public async Task GetByIdAsync_PoisonDataEncountered_QuarantinesRecordAndPadsTelemetry()
         {
             // Arrange
-            var service = new ServiceDto { Name = "PoisonRecord", ExecutablePath = "poison.exe", Description = "Original description" };
+            // Every sensitive field carries a distinct value, so the quarantine scrub of each one
+            // is falsifiable: a field left unscrubbed comes back holding its own content.
+            var service = new ServiceDto
+            {
+                Name = "PoisonRecord",
+                ExecutablePath = "poison.exe",
+                Description = "Original description",
+                Parameters = "SentinelParameters",
+                FailureProgramParameters = "SentinelFailureProgramParameters",
+                PreLaunchParameters = "SentinelPreLaunchParameters",
+                PostLaunchParameters = "SentinelPostLaunchParameters",
+                Password = "SentinelPassword",
+                EnvironmentVariables = "SentinelEnvironmentVariables",
+                PreLaunchEnvironmentVariables = "SentinelPreLaunchEnvironmentVariables",
+                PreStopParameters = "SentinelPreStopParameters",
+                PostStopParameters = "SentinelPostStopParameters",
+            };
             int id = await _repository.AddAsync(service, TestContext.Current.CancellationToken);
 
             // Manually corrupt data payload in database directly via executor bypass
@@ -544,7 +560,17 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Assert
             Assert.NotNull(result);
             Assert.Contains("[DECRYPTION FAILED: CryptographicException]", result.Description);
-            Assert.Null(result.Parameters); // Verifies individual record fields scrubbed safely
+
+            // One corrupt field quarantines the whole record: all nine sensitive fields are scrubbed.
+            Assert.Null(result.Parameters);
+            Assert.Null(result.FailureProgramParameters);
+            Assert.Null(result.PreLaunchParameters);
+            Assert.Null(result.PostLaunchParameters);
+            Assert.Null(result.Password);
+            Assert.Null(result.EnvironmentVariables);
+            Assert.Null(result.PreLaunchEnvironmentVariables);
+            Assert.Null(result.PreStopParameters);
+            Assert.Null(result.PostStopParameters);
         }
 
         [Fact]
