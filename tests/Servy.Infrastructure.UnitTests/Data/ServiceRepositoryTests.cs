@@ -1508,6 +1508,31 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(string.Format(Strings.Msg_ImportJsonFailed, "Syntax error"), result.ErrorMessage);
         }
 
+        [Fact]
+        public async Task ImportXmlAsync_CanceledToken_PropagatesOperationCanceledException()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            _mockXmlServiceSerializer
+                .Setup(s => s.Deserialize(It.IsAny<string>()))
+                .Returns(new ServiceDto { Name = "AnyService" });
+
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act & Assert
+                // Cancellation must reach the caller instead of being folded into a failure
+                // result by the generic catch that follows the OperationCanceledException arm.
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                    repo.ImportXmlAsync("<xml/>", cts.Token));
+            }
+
+            _mockDapper.Verify(
+                e => e.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
         #endregion
 
         #region Private Helper Branch Coverage Tests
@@ -1705,6 +1730,25 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Contains("Encryption failed for field", wrapperEx.Message);
             Assert.NotNull(wrapperEx.InnerException);
             Assert.IsType<CryptographicException>(wrapperEx.InnerException);
+        }
+
+        [Fact]
+        public async Task AddAsync_NullService_ThrowsArgumentNullExceptionFromCreateEncryptedClone()
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act & Assert
+            // AddAsync has no null check of its own; the guard under test is the one
+            // CreateEncryptedClone applies to every mutator that clones before writing.
+            var ex = await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                repo.AddAsync(null, CancellationToken.None));
+
+            Assert.Equal("source", ex.ParamName);
+
+            _mockDapper.Verify(
+                e => e.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
