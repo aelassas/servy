@@ -108,6 +108,27 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
+        [Fact]
+        public void Initialize_DatabaseNewerThanLatestSchemaVersion_RefusesAndThrows()
+        {
+            // Arrange: a database written by a newer Servy than this build supports.
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, SQLiteDbInitializer.LatestSchemaVersion + 1);
+
+                // Act & Assert
+                // Reconciliation must be refused outright: it would ADD COLUMN for anything the
+                // newer version renamed.
+                var ex = Assert.Throws<InvalidOperationException>(() => SQLiteDbInitializer.Initialize(conn));
+                Assert.Contains($"schema version {SQLiteDbInitializer.LatestSchemaVersion + 1}", ex.Message);
+                Assert.Contains("newer version of Servy", ex.Message);
+
+                // The refusal leaves the database exactly as it was found.
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion + 1, version);
+            }
+        }
+
         #endregion
 
         #region Legacy Upgrades & Deduplication (Version 0)
