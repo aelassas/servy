@@ -209,7 +209,9 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
 
-            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+            var options = ServiceTestContext.CreateDefaultStartOptions();
+            options.FailureProgramPath = @"C:\App\alert.exe";
+            TestReflection.SetField(service, "_options", options);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
@@ -220,6 +222,15 @@ namespace Servy.Service.UnitTests
 
             // Assert
             _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
+
+            // An unreadable exit code falls through as -1, so the recovery-disabled error carries that fallback value
+            _ctx.Logger.Verify(l => l.Error(
+                    "[OnProcessExited] Process exited with code -1 (0xFFFFFFFF) and recovery is disabled.",
+                    It.IsAny<Exception>()), Times.Once);
+
+            // Verify the same -1 drives the stop sequence, which launches the configured failure program
+            _ctx.ProcessFactory.Verify(f => f.Create(
+                It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Once);
         }
 
         public void Dispose() => _ctx.Dispose();
