@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA
 		.gitleaks.toml = .gitleaks.toml
 		bump-runtime.ps1 = bump-runtime.ps1
 		bump-version.ps1 = bump-version.ps1
+		CHANGELOG-v1.0-v7.2.md = CHANGELOG-v1.0-v7.2.md
 		CHANGELOG.md = CHANGELOG.md
 		codecov.yml = codecov.yml
 		Directory.Build.props = Directory.Build.props
