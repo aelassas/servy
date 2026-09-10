@@ -10,7 +10,8 @@
     imports each configuration into Servy using the official Servy PowerShell module (Import-ServyServiceConfig).
 
     If the -Install switch parameter is supplied, the script also installs each imported service into the Windows
-    Service Control Manager (SCM).
+    Service Control Manager (SCM). Prompts for confirmation via ShouldProcess before service replacement/installation in SCM
+    unless -Confirm:$false is specified.
 
     Per-service import errors are caught gracefully; every file in the archive is processed regardless of earlier
     failures. If at least one service imports successfully and one or more fail, an exit code of 7 is returned to
@@ -40,7 +41,8 @@
 
 .PARAMETER Install
     Optional switch parameter. When present, each imported service configuration is automatically installed
-    into the Windows Service Control Manager.
+    into the Windows Service Control Manager (SCM). Prompts for confirmation via ShouldProcess before installation
+    unless -Confirm:$false is specified.
 
 .PARAMETER SkipIntegrityCheck
     Optional switch parameter. Skips SHA-256 sidecar verification entirely: the archive is restored
@@ -70,13 +72,13 @@
     - Servy Core Components: Servy CLI and Servy PowerShell module (Servy.psm1) must be installed in %ProgramFiles%\Servy or portable root.
     - Execution Privileges: Administrator privileges are required to interact with Servy configurations and manage Windows services.
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
     [Parameter(Mandatory = $true, HelpMessage = 'Specify path to the Servy dump zip archive (e.g., "C:\Backups\Servy_Dump.zip").')]
     [ValidateNotNullOrEmpty()]
     [string]$DumpArchivePath,
 
-    [Parameter(Mandatory = $false, HelpMessage = 'Optionally install each service into Windows SCM after import.')]
+    [Parameter(Mandatory = $false, HelpMessage = 'Optionally install each service into Windows SCM after import. Prompts for confirmation via ShouldProcess before installation unless -Confirm:$false is specified.')]
     [switch]$Install,
 
     [Parameter(Mandatory = $false, HelpMessage = 'Skip SHA-256 sidecar verification entirely, whether the sidecar is absent, stale, or mismatching.')]
@@ -243,6 +245,15 @@ else {
 $tempExtractDir = $null
 
 try {
+    # Prompt for confirmation if -Install switch is provided
+    if ($Install.IsPresent) {
+        $confirmMessage = "Windows services will be replaced in the Windows Service Control Manager (SCM). Are you sure you want to continue?"
+        if (-not $PSCmdlet.ShouldProcess("Windows Service Control Manager (SCM)", $confirmMessage)) {
+            Write-Host "Operation cancelled by user." -ForegroundColor Yellow
+            exit 0
+        }
+    }
+
     # Ensure the script is executing with Administrator privileges
     $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
