@@ -765,11 +765,20 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(5678, activePid.Value);
         }
 
-        [Fact]
-        public async Task GetServicePidAsync_NullOrMissingService_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public async Task GetServicePidAsync_NullOrEmptyInput_ReturnsNull(string input)
         {
             // Arrange & Act & Assert
-            Assert.Null(await _repository.GetServicePidAsync(null, CancellationToken.None));
+            Assert.Null(await _repository.GetServicePidAsync(input, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_MissingService_ReturnsNull()
+        {
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetServicePidAsync("NonExistentService", CancellationToken.None));
         }
 
@@ -797,11 +806,20 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal("C:\\err.log", state.ActiveStderrPath);
         }
 
-        [Fact]
-        public async Task GetServiceConsoleStateAsync_NullOrMissingService_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public async Task GetServiceConsoleStateAsync_NullOrEmptyInput_ReturnsNull(string input)
         {
             // Arrange & Act & Assert
-            Assert.Null(await _repository.GetServiceConsoleStateAsync(null, CancellationToken.None));
+            Assert.Null(await _repository.GetServiceConsoleStateAsync(input, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetServiceConsoleStateAsync_MissingService_ReturnsNull()
+        {
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetServiceConsoleStateAsync("MissingConsoleService", CancellationToken.None));
         }
 
