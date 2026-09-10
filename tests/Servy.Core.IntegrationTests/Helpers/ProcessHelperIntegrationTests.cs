@@ -99,6 +99,67 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.Equal(0, metrics.RamUsage);
         }
 
+        #endregion
+
+        #region Cache Maintenance Integration Tests
+
+        [Fact]
+        public void MaintainCache_ForExitedProcess_EvictsTheStaleSample()
+        {
+            // Arrange: seed a delta sample while the process is alive, then let it exit.
+            var transientProcess = Process.Start(new ProcessStartInfo("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 30\"")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                WorkingDirectory = Path.GetTempPath(),
+            });
+
+            Assert.NotNull(transientProcess);
+            _spawnedProcesses.Add(transientProcess);
+
+            int targetPid = transientProcess.Id;
+            _sut.GetProcessMetrics(targetPid);
+
+            var prevCpuTimes = TestReflection.GetField<ConcurrentDictionary<int, CpuSample>>(_sut, "_prevCpuTimes");
+            Assert.True(prevCpuTimes.ContainsKey(targetPid), "Precondition failed: the delta sample must exist before the prune runs.");
+
+            transientProcess.Kill(entireProcessTree: true);
+            transientProcess.WaitForExit(TestTimeouts.CiGenerousMs);
+            Assert.True(transientProcess.HasExited, "Transient test process failed to exit within the allowed timeout window.");
+
+            // Act
+            _sut.MaintainCache();
+
+            // Assert
+            Assert.False(prevCpuTimes.ContainsKey(targetPid), "MaintainCache must evict the sample of a process that has exited.");
+        }
+
+        [Fact]
+        public void MaintainCache_ForLiveProcess_RetainsTheSample()
+        {
+            using (var self = Process.GetCurrentProcess())
+            {
+                // Arrange
+                int currentPid = self.Id;
+                _sut.GetProcessMetrics(currentPid);
+
+                var prevCpuTimes = TestReflection.GetField<ConcurrentDictionary<int, CpuSample>>(_sut, "_prevCpuTimes");
+                Assert.True(prevCpuTimes.ContainsKey(currentPid), "Precondition failed: the delta sample must exist before the prune runs.");
+
+                // Act
+                _sut.MaintainCache();
+
+                // Assert
+                // The test host is still running, so its baseline must survive the prune;
+                // evicting it would restart the CPU delta calculation on every maintenance pass.
+                Assert.True(prevCpuTimes.ContainsKey(currentPid), "MaintainCache must retain the sample of a process that is still running.");
+            }
+        }
+
+        #endregion
+
+        #region Process Tree Integration Tests
+
         [Fact]
         public void GetProcessTreeMetrics_WithChildProcess_AggregatesRamSuccessfully()
         {
