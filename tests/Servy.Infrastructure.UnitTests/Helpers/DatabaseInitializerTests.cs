@@ -3,6 +3,7 @@ using Moq.Protected;
 using Servy.Core.Data;
 using Servy.Infrastructure.Helpers;
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using Xunit;
 
@@ -10,6 +11,41 @@ namespace Servy.Infrastructure.UnitTests.Helpers
 {
     public class DatabaseInitializerTests
     {
+        [Fact]
+        public void InitializeDatabase_RegistersCollation_BeforeOpeningTheConnection()
+        {
+            // Arrange
+            var calls = new List<string>();
+            var originalRegistrar = DatabaseInitializer.CollationRegistrar;
+
+            DatabaseInitializer.CollationRegistrar = type => calls.Add($"register:{type.Name}");
+
+            try
+            {
+                var mockConnection = new Mock<DbConnection>();
+                mockConnection.Setup(c => c.Open()).Callback(() => calls.Add("open"));
+
+                var mockDbContext = new Mock<IAppDbContext>();
+                mockDbContext.Setup(c => c.CreateConnection())
+                             .Callback(() => calls.Add("create"))
+                             .Returns(mockConnection.Object);
+
+                // Act
+                DatabaseInitializer.InitializeDatabase(
+                    mockDbContext.Object,
+                    _ => calls.Add("initialize"));
+
+                // Assert - validates the load-bearing execution sequence
+                Assert.Equal(
+                    new[] { "register:UnicodeNoCaseCollation", "create", "open", "initialize" },
+                    calls);
+            }
+            finally
+            {
+                DatabaseInitializer.CollationRegistrar = originalRegistrar;
+            }
+        }
+
         [Fact]
         public void InitializeDatabase_Throws_WhenDbContextIsNull()
         {

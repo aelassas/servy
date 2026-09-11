@@ -1,5 +1,6 @@
 using Fody;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // This attribute tells ConfigureAwait.Fody to apply .ConfigureAwait(false)
@@ -35,3 +36,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyVersion("10.1.0.0")]
 [assembly: AssemblyFileVersion("10.1.0.0")]
+
+[assembly: InternalsVisibleTo("Servy.Infrastructure.UnitTests")]
+[assembly: InternalsVisibleTo("Servy.Infrastructure.IntegrationTests")]
