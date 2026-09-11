@@ -9,6 +9,12 @@ namespace Servy.Infrastructure.Helpers
     public static class DatabaseValidator
     {
         /// <summary>
+        /// Seam for unit testing to supply synthetic SQLite engine version strings.
+        /// Production code defaults to reading <see cref="System.Data.SQLite.SQLiteConnection.SQLiteVersion"/>.
+        /// </summary>
+        internal static Func<string> GetSqliteVersion = () => System.Data.SQLite.SQLiteConnection.SQLiteVersion;
+
+        /// <summary>
         /// Validates the version of the SQLite engine currently loaded in the application environment.
         /// </summary>
         /// <param name="currentVersion">When this method returns, contains the version string of the loaded SQLite engine.</param>
@@ -22,7 +28,7 @@ namespace Servy.Infrastructure.Helpers
         /// </remarks>
         public static bool IsSqliteVersionSafe(out string currentVersion)
         {
-            currentVersion = System.Data.SQLite.SQLiteConnection.SQLiteVersion;
+            currentVersion = GetSqliteVersion();
             return ValidateVersion(currentVersion);
         }
 
