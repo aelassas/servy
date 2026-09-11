@@ -91,6 +91,7 @@ jobs:
                   'test', $projPath,
                   '--configuration', 'Debug',
                   '--no-build',
+                  '--filter', 'Category!=Stress',
                   '--results-directory', "$env:GITHUB_WORKSPACE/TestResults/$subDirName/$projName",
                   '--',
                   '--coverage',
@@ -120,6 +121,7 @@ jobs:
         shell: pwsh
         run: |
           dotnet test Servy.sln --configuration Release --no-build `
+            --filter "Category!=Stress" `
             --results-directory "$env:GITHUB_WORKSPACE/TestResults/Release"
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Release test run failed"

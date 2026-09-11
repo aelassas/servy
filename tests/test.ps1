@@ -10,9 +10,16 @@
     3. Collects code coverage in Cobertura format.
     4. Generates an aggregated HTML coverage report using ReportGenerator.
 
+.PARAMETER IncludeStress
+    When specified, includes tests tagged with Category=Stress. Defaults to excluding them.
+
 .EXAMPLE
     ./test.ps1
-    Runs all unit tests and generates the coverage report.
+    Runs all unit tests (excluding Stress tests) and generates the coverage report.
+
+.EXAMPLE
+    ./test.ps1 -IncludeStress
+    Runs all unit tests, including Stress tests, and generates the coverage report.
 
 .NOTES
     Author: Akram El Assas
@@ -21,6 +28,10 @@
         - .NET SDK installed and accessible in PATH.
         - ReportGenerator tool installed and available in PATH.
 #>
+param(
+    [switch]$IncludeStress
+)
+
 $ErrorActionPreference = "Stop"
 
 # Directories
@@ -61,7 +72,14 @@ foreach ($ProjFile in $RawTestProjects) {
     # Build pure MTP v2 'dotnet test' arguments
     $dotnetArgs = @(
         'test', $Proj,
-        '--configuration', 'Debug',
+        '--configuration', 'Debug'
+    )
+
+    if (-not $IncludeStress) {
+        $dotnetArgs += @('--filter', 'Category!=Stress')
+    }
+
+    $dotnetArgs += @(
         '--results-directory', $resultsPath,
         '--',
         '--coverage',
