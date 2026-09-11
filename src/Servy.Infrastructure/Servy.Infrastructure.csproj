@@ -23,4 +23,9 @@
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Servy.Infrastructure.UnitTests" />
+    <InternalsVisibleTo Include="Servy.Infrastructure.IntegrationTests" />
+  </ItemGroup>
+  
 </Project>

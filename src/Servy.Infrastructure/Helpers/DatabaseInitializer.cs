@@ -10,6 +10,11 @@ namespace Servy.Infrastructure.Helpers
     public static class DatabaseInitializer
     {
         /// <summary>
+        /// Seam for unit testing. Production code defaults to <see cref="SQLiteFunction.RegisterFunction(Type)"/>.
+        /// </summary>
+        internal static Action<Type> CollationRegistrar = SQLiteFunction.RegisterFunction;
+
+        /// <summary>
         /// Ensures that the database exists and is initialized.
         /// </summary>
         /// <param name="dbContext">The database context. Cannot be null.</param>
@@ -22,7 +27,7 @@ namespace Servy.Infrastructure.Helpers
 
             // CRITICAL: Register custom collations process-wide BEFORE opening any connection.
             // System.Data.SQLite inspects _registeredFunctions during connection.Open() to bind C-handles.
-            SQLiteFunction.RegisterFunction(typeof(Data.UnicodeNoCaseCollation));
+            CollationRegistrar(typeof(Data.UnicodeNoCaseCollation));
 
             using (var connection = dbContext.CreateConnection())
             {
