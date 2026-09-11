@@ -28,6 +28,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Load shared coverage configuration filters
+$CoverageFilters = . (Join-Path $PSScriptRoot "coverage-filters.ps1")
+
 # Verify dotnet-coverage global tool is installed
 if (-not (Get-Command "dotnet-coverage" -ErrorAction SilentlyContinue)) {
     Write-Host "Installing dotnet-coverage global tool..." -ForegroundColor Cyan
@@ -163,8 +166,8 @@ if ($xmlCoverageFiles) {
         "-reports:$joinedReports" `
         "-targetdir:$CoverageReportDir" `
         "-reporttypes:Html" `
-        "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48;-Dapper;-Moq;-xunit*;-Castle*;-CommandLine;-System*;-Microsoft*" `
-        "-filefilters:-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
+        "-assemblyfilters:$($CoverageFilters.Assemblies)" `
+        "-filefilters:$($CoverageFilters.Files)"
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "reportgenerator failed" -ForegroundColor Red

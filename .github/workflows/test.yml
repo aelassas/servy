@@ -27,9 +27,6 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 30
 
-    env:
-      REPORTGENERATOR_VERSION: "5.5.10"
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
@@ -267,28 +264,30 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         shell: pwsh
         run: |
-          dotnet tool install --global dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
+          $workspace = $env:GITHUB_WORKSPACE
+          $filters = . (Join-Path $workspace "tests/coverage-filters.ps1")
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version $filters.Version
           if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator install failed (exit $LASTEXITCODE)" }
 
       - name: Merge coverage reports
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.upload_coverage }}
         shell: pwsh
         run: |
+          $workspace = $env:GITHUB_WORKSPACE
+          $filters = . (Join-Path $workspace "tests/coverage-filters.ps1")
+
           # Find all newly generated cobertura files dynamically
-          # Updated the filter to match the new unique filenames
           $reports = Get-ChildItem -Path . -Recurse -Filter "*coverage.cobertura.xml" | Where-Object { $_.FullName -notmatch "CoverageMerged" }
           if ($reports.Count -eq 0) { Write-Error "No coverage files found!" }
 
           $reportPaths = $reports.FullName -join ";"
 
-          # Add wildcard assembly filters to physically strip test assemblies from the merged XML,
-          # and include file-level exclusions to eliminate any residual XAML markup layout records.
           reportgenerator `
               "-reports:$reportPaths" `
               "-targetdir:CoverageMerged" `
               "-reporttypes:Cobertura" `
-              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
-              -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
+              "-assemblyfilters:$($filters.Assemblies)" `
+              "-filefilters:$($filters.Files)"
           if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed (exit $LASTEXITCODE)" }
 
       - name: Normalize coverage paths (PowerShell)
