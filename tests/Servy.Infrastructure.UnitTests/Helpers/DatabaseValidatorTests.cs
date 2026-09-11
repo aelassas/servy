@@ -36,6 +36,51 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         }
 
         [Fact]
+        public void IsSqliteVersionSafe_ReturnsFalse_WhenVersionIsBelowMinRequiredFloor()
+        {
+            // Arrange - Override seam with an unsafe SQLite version string below the CVE floor
+            var originalSeam = DatabaseValidator.GetSqliteVersion;
+            DatabaseValidator.GetSqliteVersion = () => "3.1.0";
+
+            try
+            {
+                // Act
+                bool isSafe = DatabaseValidator.IsSqliteVersionSafe(out string? currentVersion);
+
+                // Assert - Catches constant-true mutation: must return false for unsafe versions
+                Assert.False(isSafe);
+                Assert.Equal("3.1.0", currentVersion);
+            }
+            finally
+            {
+                DatabaseValidator.GetSqliteVersion = originalSeam;
+            }
+        }
+
+        [Fact]
+        public void IsSqliteVersionSafe_ReturnsTrue_WhenVersionMeetsMinRequiredFloor()
+        {
+            // Arrange - Override seam with a safe SQLite version string
+            var originalSeam = DatabaseValidator.GetSqliteVersion;
+            var safeVersion = AppConfig.MinRequiredSqliteVersion.ToString();
+            DatabaseValidator.GetSqliteVersion = () => safeVersion;
+
+            try
+            {
+                // Act
+                bool isSafe = DatabaseValidator.IsSqliteVersionSafe(out string? currentVersion);
+
+                // Assert
+                Assert.True(isSafe);
+                Assert.Equal(safeVersion, currentVersion);
+            }
+            finally
+            {
+                DatabaseValidator.GetSqliteVersion = originalSeam;
+            }
+        }
+
+        [Fact]
         public void ShippedSqliteEngine_ClearsTheCveFloor()
         {
             // Act
