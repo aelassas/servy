@@ -15,6 +15,11 @@ on:
         required: true
         type: string
         default: 'Servy.Core.UnitTests.csproj'
+      include_stress:
+        description: 'Include Stress tests (Category=Stress)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,6 +67,7 @@ jobs:
         shell: pwsh
         run: |
           $inputName = "${{ inputs.project_name }}".Trim()
+          $includeStress = [bool]::Parse("${{ inputs.include_stress }}")
 
           Write-Host "Searching for project matching: '$inputName' under ./tests..." -ForegroundColor Cyan
 
@@ -96,7 +102,11 @@ jobs:
           }
 
           Write-Host "Running Debug tests for $projName..." -ForegroundColor Green
-          & $vsTest $debugDll /Framework:.NETFramework,Version=v4.8 /logger:trx "/Blame:CollectDump;CrashDumpType=full"
+          $debugArgs = @($debugDll, "/Framework:.NETFramework,Version=v4.8", "/logger:trx", "/Blame")
+          if (-not $includeStress) {
+              $debugArgs += "/TestCaseFilter:Category!=Stress"
+          }
+          & $vsTest @debugArgs
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Debug tests failed for project: $projName"
@@ -120,7 +130,11 @@ jobs:
           }
 
           Write-Host "Running Release tests for $projName..." -ForegroundColor Green
-          & $vsTest $releaseDll /Framework:.NETFramework,Version=v4.8 /logger:trx "/Blame:CollectDump;CrashDumpType=full"
+          $releaseArgs = @($releaseDll, "/Framework:.NETFramework,Version=v4.8", "/logger:trx", "/Blame")
+          if (-not $includeStress) {
+              $releaseArgs += "/TestCaseFilter:Category!=Stress"
+          }
+          & $vsTest @releaseArgs
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "::error::Release tests failed for project: $projName"

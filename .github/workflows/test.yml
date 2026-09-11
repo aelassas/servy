@@ -91,8 +91,8 @@ jobs:
                   continue
               }
 
-              # Build target arguments for vstest.console.exe
-              $targetArgs = "`"$dllPath`" /Blame:`"CollectDump;CrashDumpType=full`""
+              # Build target arguments for vstest.console.exe with Category!=Stress filter
+              $targetArgs = "`"$dllPath`" /TestCaseFilter:`"Category!=Stress`" /Blame:`"CollectDump;CrashDumpType=full`""
 
               # Include the project name in the file so integration tests don't overwrite unit tests
               $outPath = "$subDirName\$projName.coverage.cobertura.xml"
@@ -203,7 +203,7 @@ jobs:
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
 
-              $vsTestArgs = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx", "/Blame:CollectDump;CrashDumpType=full")
+              $vsTestArgs = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/TestCaseFilter:Category!=Stress", "/logger:trx", "/Blame:CollectDump;CrashDumpType=full")
 
               & $vsTest @vsTestArgs
 
