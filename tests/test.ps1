@@ -34,6 +34,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Load shared coverage configuration filters
+$CoverageFilters = . (Join-Path $PSScriptRoot "coverage-filters.ps1")
+
 # Directories
 $ScriptDir = $PSScriptRoot
 $TestResultsDir = Join-Path -Path $ScriptDir -ChildPath "TestResults"
@@ -101,8 +104,8 @@ reportgenerator `
     -reports:$CoverageFiles `
     -targetdir:$CoverageReportDir `
     -reporttypes:Html `
-    -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing" `
-    -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
+    -assemblyfilters:$CoverageFilters.Assemblies `
+    -filefilters:$CoverageFilters.Files
 
 if ($LASTEXITCODE -ne 0) { Write-Host "reportgenerator failed"; exit $LASTEXITCODE }
 

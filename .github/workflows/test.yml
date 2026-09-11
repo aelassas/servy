@@ -42,10 +42,6 @@ jobs:
     timeout-minutes: 30
 
     env:
-      REPORTGENERATOR_VERSION: "5.5.10"
-      # Centralized source of truth for coverage exclusions
-      REPORTGENERATOR_ASSEMBLIES: "-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
-      REPORTGENERATOR_FILES: "-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
       MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
 
     steps:
@@ -180,6 +176,8 @@ jobs:
         if: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) }}
         run: |
           $workspace = $env:GITHUB_WORKSPACE
+          $filters = . (Join-Path $workspace "tests/coverage-filters.ps1")
+
           $fixedDir = Join-Path $workspace "TestResults\fixed"
           if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
 
@@ -192,7 +190,7 @@ jobs:
           & dotnet new tool-manifest --force --output $localTools
 
           Push-Location $localTools
-          & dotnet tool install dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
+          & dotnet tool install dotnet-reportgenerator-globaltool --version $filters.Version
           if ($LASTEXITCODE -ne 0) { Write-Error "dotnet tool install failed (exit $LASTEXITCODE)" }
 
           $joinedReports = $coverageFiles.FullName -join ';'
@@ -200,8 +198,8 @@ jobs:
               "-reports:$joinedReports" `
               "-targetdir:$fixedDir" `
               "-reporttypes:Cobertura" `
-              "-assemblyfilters:$($env:REPORTGENERATOR_ASSEMBLIES)" `
-              "-filefilters:$($env:REPORTGENERATOR_FILES)"
+              "-assemblyfilters:$($filters.Assemblies)" `
+              "-filefilters:$($filters.Files)"
           if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Error "reportgenerator failed (exit $LASTEXITCODE)" }
           Pop-Location
 
