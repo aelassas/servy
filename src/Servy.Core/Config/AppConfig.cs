@@ -26,6 +26,11 @@ namespace Servy.Core.Config
         public const string EventLogName = "Application";
 
         /// <summary>
+        /// Suffix appended to an event-log message that was cut at <see cref="EventLogMessageMaxChars"/>.
+        /// </summary>
+        public const string EventLogTruncationSuffix = "...[truncated]";
+
+        /// <summary>
         /// The name of the Windows service and the associated Event Log source.
         /// Used for service registration and writing logs to the Windows Event Viewer.
         /// </summary>
@@ -890,7 +895,7 @@ namespace Servy.Core.Config
         /// </para>
         /// <para>
         /// When a log message exceeds this limit, the <c>SafeWriteToEventLog</c> method in <see cref="EventLogLogger"/> will truncate the string
-        /// and append a "[truncated]" suffix to maintain forensic visibility while ensuring the write operation succeeds.
+        /// and append a <see cref="EventLogTruncationSuffix"/> suffix to maintain forensic visibility while ensuring the write operation succeeds.
         /// </para>
         /// </remarks>
         public const int EventLogMessageMaxChars = 31_000;

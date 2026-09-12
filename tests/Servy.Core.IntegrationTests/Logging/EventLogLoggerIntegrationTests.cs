@@ -220,8 +220,7 @@ namespace Servy.Core.IntegrationTests.Logging
             {
                 using (var logger = new EventLogLogger(source, LogLevel.Info, true))
                 {
-                    const string truncationSuffix = "...[truncated]";
-                    int expectedMaxLength = AppConfig.EventLogMessageMaxChars + truncationSuffix.Length;
+                    int expectedMaxLength = AppConfig.EventLogMessageMaxChars + AppConfig.EventLogTruncationSuffix.Length;
 
                     // Create a massive string guaranteed to exceed the configured truncation threshold
                     string massiveString = new string('A', AppConfig.EventLogMessageMaxChars + 9_000);
@@ -272,7 +271,7 @@ namespace Servy.Core.IntegrationTests.Logging
                                 Assert.True(foundEntry.Message.Length <= expectedMaxLength,
                                     $"Persisted message length ({foundEntry.Message.Length}) exceeds the configured ceiling of {expectedMaxLength}.");
 
-                                Assert.EndsWith(truncationSuffix, foundEntry.Message);
+                                Assert.EndsWith(AppConfig.EventLogTruncationSuffix, foundEntry.Message);
                             }
                             else
                             {
