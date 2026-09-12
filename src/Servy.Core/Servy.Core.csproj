@@ -149,6 +149,10 @@
     <Compile Include="Native\SafeServiceHandle.cs" />
     <Compile Include="Native\SafeWinProcessHandle.cs" />
     <Compile Include="Native\Toolhelp32Snapshot.cs" />
+    <Compile Include="ProcessManagement\ISystemProcess.cs" />
+    <Compile Include="ProcessManagement\ISystemProcessAccessor.cs" />
+    <Compile Include="ProcessManagement\SystemProcessAccessor.cs" />
+    <Compile Include="ProcessManagement\SystemProcessWrapper.cs" />
     <Compile Include="RegexWrapper\IRegexWrapper.cs" />
     <Compile Include="RegexWrapper\RegexWrapper.cs" />
     <Compile Include="Resources\Strings.Designer.cs">

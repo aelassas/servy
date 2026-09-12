@@ -1,10 +1,10 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.Native;
+using Servy.Core.ProcessManagement;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 
 namespace Servy.Core.Helpers
@@ -17,6 +17,24 @@ namespace Servy.Core.Helpers
     /// </remarks>
     public class ProcessKiller : IProcessKiller
     {
+        private readonly ISystemProcessAccessor _processAccessor;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProcessKiller"/> class using standard production process accessors.
+        /// </summary>
+        public ProcessKiller() : this(new SystemProcessAccessor())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProcessKiller"/> class using the specified process accessor.
+        /// </summary>
+        /// <param name="processAccessor">The system process accessor to use for process querying and snapshots.</param>
+        internal ProcessKiller(ISystemProcessAccessor processAccessor)
+        {
+            _processAccessor = processAccessor ?? throw new ArgumentNullException(nameof(processAccessor));
+        }
+
         #region Safety Guardrails
 
         /// <summary>
@@ -89,7 +107,7 @@ namespace Servy.Core.Helpers
             DateTime parentStartTime = DateTime.MinValue;
             try
             {
-                using (var parent = Process.GetProcessById(parentPid))
+                using (var parent = _processAccessor.GetProcessById(parentPid))
                 {
                     parentStartTime = parent.StartTime;
                 }
@@ -97,7 +115,7 @@ namespace Servy.Core.Helpers
             catch { /* parent already exited; first-level identity check is best-effort */ }
 
             // Step 1: Create a handle-less view of the entire system process table in a single pass
-            var (snapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
+            var (snapshot, byParent) = _processAccessor.BuildSnapshotAndChildMap();
 
             // SECURITY: Get ancestor PIDs to prevent killing the Servy process chain if it happens
             // to be a descendant (e.g. through PID reuse or complex supervisor patterns)
@@ -139,7 +157,7 @@ namespace Servy.Core.Helpers
 
                 try
                 {
-                    using (var child = Process.GetProcessById(childPid))
+                    using (var child = _processAccessor.GetProcessById(childPid))
                     {
                         // SECURITY: Use centralized IsProtected as the single source of truth
                         // to guard against killing ancestors or system critical processes.
@@ -203,7 +221,7 @@ namespace Servy.Core.Helpers
 
                 int selfPid = GetCurrentPid();
 
-                var (completeSnapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
+                var (completeSnapshot, byParent) = _processAccessor.BuildSnapshotAndChildMap();
                 var protectedPids = GetAncestorPids(completeSnapshot);
 
                 // Find target PIDs directly from the snapshot.
@@ -228,14 +246,14 @@ namespace Servy.Core.Helpers
                 if (targetPids.Count == 0) return !anyProtected; // true only when genuinely nothing matched
 
                 // Open handles ONLY for the small subset we plan to act on.
-                var targets = new List<Process>();
+                var targets = new List<ISystemProcess>();
                 try
                 {
                     foreach (var pid in targetPids)
                     {
                         try
                         {
-                            targets.Add(Process.GetProcessById(pid));
+                            targets.Add(_processAccessor.GetProcessById(pid));
                         }
                         catch (ArgumentException)
                         {
@@ -289,12 +307,12 @@ namespace Servy.Core.Helpers
             try
             {
                 // Single Toolhelp32 walk populates both maps
-                var (completeSnapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
+                var (completeSnapshot, byParent) = _processAccessor.BuildSnapshotAndChildMap();
                 var protectedPids = GetAncestorPids(completeSnapshot);
 
                 // SECURITY: Resolve process handle and apply full safety check
-                Process target;
-                try { target = Process.GetProcessById(pid); }
+                ISystemProcess target;
+                try { target = _processAccessor.GetProcessById(pid); }
                 catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
                 {
                     return true; // Process exited before the handle could be opened
@@ -335,11 +353,11 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Safely retrieves the start time of a process without throwing an exception if the process has already exited or access is denied.
         /// </summary>
-        /// <param name="p">The <see cref="Process"/> instance to query.</param>
+        /// <param name="p">The <see cref="ISystemProcess"/> instance to query.</param>
         /// <returns>
         /// The <see cref="DateTime"/> when the process started, or <see cref="DateTime.MinValue"/> if the start time could not be retrieved.
         /// </returns>
-        private static DateTime SafeStartTime(Process p)
+        private static DateTime SafeStartTime(ISystemProcess p)
         {
             try
             {
@@ -358,7 +376,7 @@ namespace Servy.Core.Helpers
         /// <param name="selfPid">The numerical identifier of the current executing process to avoid suicide operations.</param>
         /// <param name="protectedPids">A set of numerical identifiers corresponding to protected ancestor paths.</param>
         /// <param name="byParent">A pre-computed native map establishing hierarchical relationships across the system.</param>
-        private void KillProcessTree(Process process, int selfPid, HashSet<int> protectedPids, Dictionary<int, List<int>> byParent)
+        private void KillProcessTree(ISystemProcess process, int selfPid, HashSet<int> protectedPids, Dictionary<int, List<int>> byParent)
         {
             try
             {
@@ -461,9 +479,9 @@ namespace Servy.Core.Helpers
         /// Retrieves the process ID of the currently executing process safely within a managed handle context.
         /// </summary>
         /// <returns>The unique process identifier of the current process.</returns>
-        private static int GetCurrentPid()
+        private int GetCurrentPid()
         {
-            using (var current = Process.GetCurrentProcess()) return current.Id;
+            using (var current = _processAccessor.GetCurrentProcess()) return current.Id;
         }
 
         /// <summary>
@@ -516,12 +534,12 @@ namespace Servy.Core.Helpers
             }
 
             DateTime parentStartTime = DateTime.MinValue;
-            Process parentProcess = null;
+            ISystemProcess parentProcess = null;
 
             try
             {
                 // Open the process handle exactly once to establish an unchangeable identity context
-                parentProcess = Process.GetProcessById(parentId);
+                parentProcess = _processAccessor.GetProcessById(parentId);
             }
             catch (ArgumentException)
             {
