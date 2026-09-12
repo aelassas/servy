@@ -70,7 +70,7 @@ foreach ($ProjFile in $RawTestProjects) {
 
     Write-Host "Running tests for $($Proj)..." -ForegroundColor Cyan
 
-    $resultsPath = Join-Path $TestResultsDir $ProjName
+    $resultsPath = Join-Path -Path $TestResultsDir -ChildPath $ProjName
 
     # Build pure MTP v2 'dotnet test' arguments
     $dotnetArgs = @(
@@ -107,6 +107,9 @@ reportgenerator `
     -assemblyfilters:$CoverageFilters.Assemblies `
     -filefilters:$CoverageFilters.Files
 
-if ($LASTEXITCODE -ne 0) { Write-Host "reportgenerator failed"; exit $LASTEXITCODE }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "reportgenerator failed (exit $LASTEXITCODE)" -ForegroundColor Red
+    exit $LASTEXITCODE
+}
 
 Write-Host "Coverage report generated at $CoverageReportDir"
