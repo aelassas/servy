@@ -129,8 +129,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             finally
             {
                 // Clean up processes safely if assertions fail to prevent runner zombie leaks
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
@@ -160,8 +160,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
             finally
             {
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
@@ -196,8 +196,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             finally
             {
                 // Cleanup guard to prevent zombie leaks in the runner space if assertions fail
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
@@ -230,8 +230,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             finally
             {
                 // Cleanup guard to prevent zombie leaks in the runner space if assertions fail
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
@@ -258,12 +258,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void KillProcessesUsingFile_FileLocked_TerminatesLockingProcess()
         {
             // Arrange
-            if (!File.Exists(_handleExePath))
-            {
-                // Cannot reliably test handle integration if the tool is missing from the environment
-                return;
-            }
-
             string testFile = Path.Combine(Path.GetTempPath(), $"lock_test_{Guid.NewGuid()}.tmp");
             File.WriteAllText(testFile, "Lock Data");
             _tempFiles.Add(testFile);
