@@ -510,7 +510,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Cleanup after assertions: KillAndDispose kills the tree and disposes the
                 // Process, and the wrapper's own using block disposes the wrapper. A null
                 // reflection read is covered by the class-level teardown, which tracks the wrapper.
-                TestProcessCleanup.KillAndDispose(underlyingProcess);
+                Testing.TestProcessCleanup.KillAndDispose(underlyingProcess);
             }
         }
 
