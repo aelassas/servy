@@ -1,10 +1,13 @@
 using Servy.Core.Helpers;
+using Servy.Core.Native;
+using Servy.Core.ProcessManagement;
 using Servy.Testing;
+using System.ComponentModel;
 
 namespace Servy.Core.UnitTests.Helpers
 {
     /// <summary>
-    /// Unit tests for the ProcessKiller utility (input validation, the critical-process safelist, and not-found logic).
+    /// Unit tests for the ProcessKiller utility (input validation, the critical-process safelist, and mocked process tree operations).
     /// Integration tests that spawn real processes live in ProcessKillerIntegrationTests.
     /// </summary>
     public class ProcessKillerTests
@@ -21,7 +24,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void KillProcessTreeAndParents_InvalidInput_ReturnsFalse(string? name)
         {
             // Act
@@ -117,7 +120,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void KillProcessesUsingFile_InvalidInput_ReturnsTrue(string? path)
             => Assert.True(_processKiller.KillProcessesUsingFile(path!));
 
@@ -137,5 +140,136 @@ namespace Servy.Core.UnitTests.Helpers
 
         #endregion
 
+        #region Mock Process Accessor Tests
+
+        private sealed class FakeSystemProcess : ISystemProcess
+        {
+            private DateTime _startTime = DateTime.UtcNow;
+
+            public int Id { get; set; }
+            public string ProcessName { get; set; } = string.Empty;
+            public DateTime StartTime
+            {
+                get => StartTimeThunk != null ? StartTimeThunk() : _startTime;
+                set => _startTime = value;
+            }
+            public bool HasExited { get; set; }
+            public Func<DateTime>? StartTimeThunk { get; set; }
+            public bool Killed { get; private set; }
+
+            public void Kill() => Killed = true;
+            public bool WaitForExit(int milliseconds) => true;
+            public void Dispose() { }
+        }
+
+        private sealed class FakeSystemProcessAccessor : ISystemProcessAccessor
+        {
+            public Dictionary<int, FakeSystemProcess> Processes { get; } = new Dictionary<int, FakeSystemProcess>();
+            public Dictionary<int, ProcessInfoNode> Snapshot { get; set; } = new Dictionary<int, ProcessInfoNode>();
+            public Dictionary<int, List<int>> ByParent { get; set; } = new Dictionary<int, List<int>>();
+            public int CurrentPid { get; set; } = 9999;
+
+            public ISystemProcess GetProcessById(int pid)
+            {
+                if (Processes.TryGetValue(pid, out var proc)) return proc;
+                throw new ArgumentException($"Process {pid} not found.");
+            }
+
+            public ISystemProcess GetCurrentProcess()
+            {
+                return new FakeSystemProcess { Id = CurrentPid, ProcessName = "TestSelf" };
+            }
+
+            public (Dictionary<int, ProcessInfoNode> Snapshot, Dictionary<int, List<int>> ByParent) BuildSnapshotAndChildMap()
+            {
+                return (Snapshot, ByParent);
+            }
+        }
+
+        [Fact]
+        public void KillParentProcesses_Win32ExceptionOnStartTime_FailsClosedAndAbortsWalk()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess { Id = 100, ProcessName = "child", StartTime = now };
+            var parent = new FakeSystemProcess
+            {
+                Id = 200,
+                ProcessName = "parent",
+                StartTimeThunk = () => throw new Win32Exception(5, "Access Denied")
+            };
+
+            accessor.Processes[100] = child;
+            accessor.Processes[200] = parent;
+
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 1, Name = "parent" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(parent.Killed, "Parent should not be killed when StartTime raises Win32Exception (fail closed).");
+        }
+
+        [Fact]
+        public void KillParentProcesses_PidReusedChildStartedBeforeParent_AbortsParentWalk()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess { Id = 100, ProcessName = "child", StartTime = now.AddMinutes(-5) };
+            // Parent started after child (recycled PID)
+            var parent = new FakeSystemProcess { Id = 200, ProcessName = "parent", StartTime = now };
+
+            accessor.Processes[100] = child;
+            accessor.Processes[200] = parent;
+
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 1, Name = "parent" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(parent.Killed, "Recycled parent PID should abort walk without killing parent.");
+        }
+
+        [Fact]
+        public void WalkAndKillChildren_CycleInSnapshot_SkipsCycleAndPreventsInfiniteRecursion()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "parent", StartTime = now.AddMinutes(-10) };
+            var child = new FakeSystemProcess { Id = 200, ProcessName = "child", StartTime = now.AddMinutes(-5) };
+
+            accessor.Processes[100] = parent;
+            accessor.Processes[200] = child;
+
+            // Cyclic map: 100 -> [200], 200 -> [100]
+            accessor.ByParent[100] = new List<int> { 200 };
+            accessor.ByParent[200] = new List<int> { 100 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act & Assert
+            // Must complete cleanly without StackOverflowException
+            var exception = Record.Exception(() => killer.KillChildren(100));
+            Assert.Null(exception);
+            Assert.True(child.Killed, "Child process should be killed before cycle is detected.");
+        }
+
+        #endregion
     }
 }
