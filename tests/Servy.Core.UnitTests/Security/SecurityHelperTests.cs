@@ -279,16 +279,31 @@ namespace Servy.Core.UnitTests.Security
             // Skip on elevated runs
             if (SecurityHelper.IsAdministrator())
             {
-                return; // Elevated run: SetAccessControl succeeds, so the non-admin fallback branch is never reached.
+                return; // Elevated run: SeTakeOwnershipPrivilege / SeBackupPrivilege bypass the OWNER RIGHTS restriction.
             }
 
             // Arrange
             var path = Path.Combine(TempDirectory, "ExistingRootVaultDir");
             Directory.CreateDirectory(path);
 
+            var dirInfo = new DirectoryInfo(path);
+            var acl = dirInfo.GetAccessControl(AccessControlSections.Access);
+
+            // OWNER RIGHTS (S-1-3-4) replaces the owner's implicit READ_CONTROL + WRITE_DAC with
+            // exactly what this ACE grants. Withholding ChangePermissions is what makes
+            // SetAccessControl fail; everything else is kept so Dispose can still clean up.
+            acl.SetAccessRuleProtection(isProtected: true, preserveInheritance: true);
+            acl.AddAccessRule(new FileSystemAccessRule(
+                new SecurityIdentifier("S-1-3-4"),
+                FileSystemRights.FullControl & ~FileSystemRights.ChangePermissions,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+            dirInfo.SetAccessControl(acl);
+
             // Act & Assert
-            // When executing on existing directories, CreateSecureDirectory handles ACL re-hardening gracefully
-            // for non-admin contexts if access is denied on SetAccessControl.
+            // The hardening pass must hit UnauthorizedAccessException on SetAccessControl and be
+            // swallowed by the non-admin fallback rather than surfacing to the caller.
             var exception = Record.Exception(() => SecurityHelper.CreateSecureDirectory(path, breakInheritance: true));
             Assert.Null(exception);
         }
