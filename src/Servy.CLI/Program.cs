@@ -47,7 +47,6 @@ namespace Servy.CLI
     /// Responsible for parsing command-line arguments and executing
     /// corresponding service management commands.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class Program
     {
         /// <summary>
@@ -322,6 +321,7 @@ namespace Servy.CLI
         /// <returns>
         /// A handle to the window used by the console, or <see cref="IntPtr.Zero"/> if there is no such associated window.
         /// </returns>
+        [ExcludeFromCodeCoverage]
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetConsoleWindow();
 
