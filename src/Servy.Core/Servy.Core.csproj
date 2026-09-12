@@ -29,6 +29,7 @@
     <InternalsVisibleTo Include="Servy.Core.UnitTests" />
     <InternalsVisibleTo Include="Servy.Core.IntegrationTests" />
     <InternalsVisibleTo Include="Servy.CLI.UnitTests" />
+    <InternalsVisibleTo Include="Servy.UI.IntegrationTests" />
   </ItemGroup>
 
   <ItemGroup>
