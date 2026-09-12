@@ -587,6 +587,74 @@ namespace Servy.Service.UnitTests.Helpers
 
         private class DummyService : ServiceBase { }
 
+        /// <summary>
+        /// Replaces the SCM call of <see cref="ServiceHelper.RequestAdditionalTimeCore"/>, which only
+        /// succeeds for a service actually running under the SCM, so the success path and the
+        /// last-resort catch become reachable from a unit test.
+        /// </summary>
+        private class SeamServiceHelper : ServiceHelper
+        {
+            private readonly Exception? _throwOnCore;
+
+            public SeamServiceHelper(ICommandLineProvider commandLineProvider, IProcessHelper processHelper, Exception? throwOnCore = null)
+                : base(commandLineProvider, processHelper)
+            {
+                _throwOnCore = throwOnCore;
+            }
+
+            public int? RequestedMilliseconds { get; private set; }
+
+            protected override void RequestAdditionalTimeCore(ServiceBase service, int milliseconds)
+            {
+                RequestedMilliseconds = milliseconds;
+                if (_throwOnCore != null) throw _throwOnCore;
+            }
+        }
+
+        [Fact]
+        public void RequestAdditionalTime_CoreSucceeds_LogsRequestedMilliseconds()
+        {
+            // Arrange
+            var helper = new SeamServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object);
+
+            using (var service = new DummyService())
+            {
+                var mockLog = new Mock<IServyLogger>();
+
+                // Act
+                helper.RequestAdditionalTime(service, 5000, mockLog.Object);
+
+                // Assert
+                Assert.Equal(5000, helper.RequestedMilliseconds);
+                mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("Requested additional 5000 ms")), It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public void RequestAdditionalTime_CoreThrowsNonInvalidOperation_LogsErrorAndDoesNotPropagate()
+        {
+            // Arrange - the last-resort catch, which exists so SCM signalling never crashes the service.
+            // The type must not derive from InvalidOperationException or the arm above swallows it
+            // silently, which rules out ObjectDisposedException; a Win32Exception is what a failing
+            // SCM call actually surfaces.
+            var thrown = new System.ComponentModel.Win32Exception(5, "Access is denied");
+            var helper = new SeamServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object, thrown);
+
+            using (var service = new DummyService())
+            {
+                var mockLog = new Mock<IServyLogger>();
+
+                // Act
+                var exception = Record.Exception(() => helper.RequestAdditionalTime(service, 5000, mockLog.Object));
+
+                // Assert
+                Assert.Null(exception);
+                mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("RequestAdditionalTime failed")), thrown), Times.Once);
+                mockLog.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
         [Fact]
         public void RequestAdditionalTime_UnstartedService_SwallowsInvalidOperationException()
         {
