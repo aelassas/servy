@@ -50,6 +50,15 @@ namespace Servy.UI.Services
             return ShowOnDispatcherAsync(message, caption, image, buttons);
         }
 
+        /// <summary>
+        /// Marshals and displays an interactive WPF message box on the UI thread.
+        /// Excluded from automatic code coverage as it requires an active desktop session.
+        /// </summary>
+        /// <param name="message">The body text to display.</param>
+        /// <param name="caption">The title header for the dialog.</param>
+        /// <param name="image">The dialog icon classification.</param>
+        /// <param name="buttons">The button set presented on the dialog.</param>
+        /// <returns>A task returning <c>true</c> if the user clicked Yes / OK; otherwise, <c>false</c>.</returns>
         [ExcludeFromCodeCoverage]
         private Task<bool> ShowOnDispatcherAsync(
             string? message,
