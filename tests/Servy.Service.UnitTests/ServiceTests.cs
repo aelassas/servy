@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
@@ -13,6 +14,7 @@ using Servy.Service.UnitTests.Helpers;
 using Servy.Service.Validation;
 using Servy.Testing;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -1355,6 +1357,146 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
             _mockProcess.Verify(p => p.StopDescendants(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<int>()), Times.Once);
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("had already exited")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void OnCustomCommand_PreShutdownWhileRebooting_SignalsStoppedWithoutTeardown()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            using (var service = BuildStatusRecordingService())
+            {
+                service.StartForTest();
+
+                // A non-zero handle keeps the null-handle fallback (which ends in Environment.Exit)
+                // out of reach, so the reboot bypass is the only branch this command can take.
+                TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+                TestReflection.SetField(service, "_isRebooting", true);
+
+                // Act
+                TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN);
+
+                // Assert
+                scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Pre-Shutdown bypassed")), It.IsAny<Exception>()), Times.Once);
+
+                // SERVICE_STOPPED is signalled immediately, with no STOP_PENDING window in front of it
+                Assert.Equal(new[] { NativeMethods.SERVICE_STOPPED }, service.StatusStates.ToArray());
+
+                // and the teardown sequence never runs
+                _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public void OnCustomCommand_PreShutdownWithServiceHandle_SignalsStopPendingThenStopped()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            using (var service = BuildStatusRecordingService())
+            {
+                service.StartForTest();
+                TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+
+                // Act
+                TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN);
+
+                // Assert
+                // 1. SCM is moved to STOP_PENDING with the pre-shutdown wait hint before the teardown
+                //    starts, and to STOPPED once it has completed
+                Assert.Equal(
+                    new[] { NativeMethods.SERVICE_STOP_PENDING, NativeMethods.SERVICE_STOPPED },
+                    service.StatusStates.ToArray());
+                Assert.Equal(AppConfig.PreShutdownWaitHintMs, service.StatusWaitHints[0]);
+                Assert.Equal(0, service.StatusWaitHints[service.StatusWaitHints.Count - 1]);
+
+                // 2. The teardown itself ran
+                _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+
+                // 3. A successful teardown reports success and leaves the exit code untouched
+                scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Pre-Shutdown handling complete")), It.IsAny<Exception>()), Times.Once);
+                Assert.Equal(0, service.ExitCode);
+            }
+        }
+
+        [Fact]
+        public void OnCustomCommand_UnrelatedCommand_IsIgnored()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            using (var service = BuildStatusRecordingService())
+            {
+                service.StartForTest();
+                TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+
+                // Act
+                // Any control code other than SERVICE_CONTROL_PRESHUTDOWN falls through to the base implementation
+                TestReflection.InvokeNonPublic(service, "OnCustomCommand", UnrelatedControlCode);
+
+                // Assert
+                Assert.Empty(service.StatusStates);
+                _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+                scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Pre-Shutdown")), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        /// <summary>
+        /// A user-defined SCM control code (128-255) that the service does not handle.
+        /// </summary>
+        private const int UnrelatedControlCode = 200;
+
+        /// <summary>
+        /// Builds a service wired to this fixture's mocks whose SCM status updates are recorded
+        /// instead of being pushed through the SetServiceStatus P/Invoke.
+        /// </summary>
+        private StatusRecordingService BuildStatusRecordingService() =>
+            new StatusRecordingService(
+                _ctx.Helper.Object,
+                _ctx.Logger.Object,
+                _ctx.StreamWriterFactory.Object,
+                _ctx.TimerFactory.Object,
+                _ctx.ProcessFactory.Object,
+                _ctx.PathValidator.Object,
+                _ctx.ServiceRepository.Object,
+                _ctx.ProcessKiller.Object);
+
+        /// <summary>
+        /// Records the SCM status transitions the service requests. The real UpdateServiceStatus
+        /// needs a live service handle, so the pre-shutdown orchestration is otherwise only
+        /// observable from inside a hosted service.
+        /// </summary>
+        private sealed class StatusRecordingService : Service
+        {
+            public StatusRecordingService(
+                IServiceHelper serviceHelper,
+                IServyLogger logger,
+                IStreamWriterFactory streamWriterFactory,
+                ITimerFactory timerFactory,
+                IProcessFactory processFactory,
+                IPathValidator pathValidator,
+                IServiceRepository serviceRepository,
+                IProcessKiller processKiller)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, processKiller)
+            {
+            }
+
+            /// <summary>Gets the states passed to UpdateServiceStatus, in call order.</summary>
+            public List<int> StatusStates { get; } = new List<int>();
+
+            /// <summary>Gets the wait hints passed to UpdateServiceStatus, in call order.</summary>
+            public List<int> StatusWaitHints { get; } = new List<int>();
+
+            protected override void UpdateServiceStatus(int state, int waitHint)
+            {
+                StatusStates.Add(state);
+                StatusWaitHints.Add(waitHint);
+            }
         }
 
         #endregion
