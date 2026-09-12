@@ -20,6 +20,7 @@ namespace Servy.Manager.Converters
             [ServiceStatus.ContinuePending] = () => Strings.Status_ContinuePending,
             [ServiceStatus.PausePending] = () => Strings.Status_PausePending,
             [ServiceStatus.Paused] = () => Strings.Status_Paused,
+            [ServiceStatus.Unknown] = () => Strings.Status_Unknown,
         };
 
         /// <summary>

@@ -1,6 +1,7 @@
 using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
+using Servy.Testing;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -101,7 +102,25 @@ namespace Servy.Manager.UnitTests.Converters
         #region Completeness Guard Tests
 
         [Fact]
-        public void ServiceStatusEnum_AllValuesAreMappedAndAccountedFor()
+        public void StatusMap_CoversEveryDeclaredServiceStatus()
+        {
+            // Arrange: Extract the private static StatusMap directly from StatusConverter
+            var map = TestReflection.GetFieldStatic<Dictionary<ServiceStatus, Func<string>>>(typeof(StatusConverter), "StatusMap");
+
+            // Act
+            var declared = Enum.GetValues(typeof(ServiceStatus)).Cast<ServiceStatus>().ToHashSet();
+            var mapKeys = map.Keys.ToHashSet();
+
+            // Assert: Ensure bidirectional completeness between StatusMap keys and ServiceStatus enum values
+            var unmappedValues = declared.Except(mapKeys).ToList();
+            var extraValues = mapKeys.Except(declared).ToList();
+
+            Assert.Empty(unmappedValues);
+            Assert.Empty(extraValues);
+        }
+
+        [Fact]
+        public void StatusMappings_CoverEveryDeclaredServiceStatus()
         {
             // Arrange & Act: Extract the distinct mapped enum values directly from the theory data source using Param1
             var covered = StatusMappings.Select(row => (ServiceStatus)((ITheoryDataRow)row).GetData()[0]!).ToHashSet();
