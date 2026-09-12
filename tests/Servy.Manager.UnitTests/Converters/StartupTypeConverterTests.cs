@@ -1,7 +1,9 @@
 using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
+using Servy.Testing;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
@@ -95,6 +97,24 @@ namespace Servy.Manager.UnitTests.Converters
         #endregion
 
         #region Completeness Guard Tests
+
+        [Fact]
+        public void StartupMap_CoversEveryDeclaredServiceStartType()
+        {
+            // Arrange: Extract the private static StartupMap directly from StartupTypeConverter
+            var map = TestReflection.GetFieldStatic<Dictionary<ServiceStartType, Func<string>>>(typeof(StartupTypeConverter), "StartupMap");
+
+            // Act
+            var declared = Enum.GetValues(typeof(ServiceStartType)).Cast<ServiceStartType>().ToHashSet();
+            var mapKeys = map.Keys.ToHashSet();
+
+            // Assert: Ensure bidirectional completeness between StartupMap keys and ServiceStartType enum values
+            var unmappedValues = declared.Except(mapKeys).ToList();
+            var extraValues = mapKeys.Except(declared).ToList();
+
+            Assert.Empty(unmappedValues);
+            Assert.Empty(extraValues);
+        }
 
         [Fact]
         public void ServiceStartTypeEnum_AllValuesAreMappedAndAccountedFor()
