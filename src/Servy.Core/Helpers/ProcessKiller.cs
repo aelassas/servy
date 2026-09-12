@@ -65,16 +65,78 @@ namespace Servy.Core.Helpers
         };
 
         /// <summary>
+        /// Evaluates if an executable image path is located inside a recognized Windows system directory.
+        /// </summary>
+        /// <param name="executablePath">The full path of the executable image on disk.</param>
+        /// <returns><see langword="true"/> if the path resides in a Windows system folder; otherwise, <see langword="false"/>.</returns>
+        private static bool IsSystemDirectoryPath(string executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath)) return false;
+
+            string systemRoot = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            if (string.IsNullOrEmpty(systemRoot))
+            {
+                systemRoot = @"C:\Windows";
+            }
+
+            string fullPath = Path.GetFullPath(executablePath);
+
+            // Valid system roots where legitimate Windows critical processes reside
+            string system32 = Path.Combine(systemRoot, "System32");
+            string sysWow64 = Path.Combine(systemRoot, "SysWOW64");
+            string systemApps = Path.Combine(systemRoot, "SystemApps");
+            string winSxS = Path.Combine(systemRoot, "WinSxS");
+
+            return fullPath.StartsWith(system32 + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                   fullPath.StartsWith(sysWow64 + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                   fullPath.StartsWith(systemApps + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                   fullPath.StartsWith(winSxS + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(fullPath, Path.Combine(systemRoot, "explorer.exe"), StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Centralized helper to evaluate if a process name belongs to the critical system safelist.
         /// Handles normalization of '.exe' suffixes to ensure consistent lookup regardless of the data source.
+        /// When executable path context is available, validates executable provenance to prevent name spoofing.
         /// </summary>
-        private bool IsCriticalProcess(string? processName)
+        /// <param name="processName">The process name to evaluate.</param>
+        /// <param name="pid">The process identifier for diagnostic logging.</param>
+        /// <param name="executablePath">Optional fully qualified path to the process executable image.</param>
+        /// <returns><see langword="true"/> if the process is a legitimate critical system process; otherwise, <see langword="false"/>.</returns>
+        private bool IsCriticalProcess(string? processName, int pid = 0, string? executablePath = null)
         {
             if (string.IsNullOrEmpty(processName)) return false;
 
             string cleanName = StripExe(processName);
 
-            return CriticalSystemProcesses.Contains(cleanName);
+            if (!CriticalSystemProcesses.Contains(cleanName))
+            {
+                return false;
+            }
+
+            // Pseudo-kernel processes carry no image path on disk
+            if (string.Equals(cleanName, "system", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanName, "idle", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanName, "registry", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanName, "memcompression", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanName, "secure system", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanName, "vmmem", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cleanName, "vmmemwsl", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // If path context is available, verify executable provenance against legitimate Windows system roots
+            if (!string.IsNullOrEmpty(executablePath))
+            {
+                if (!IsSystemDirectoryPath(executablePath))
+                {
+                    Logger.Warn($"SECURITY ALERT: Process PID {pid} ('{processName}') matched critical system process name but executes from non-system location '{executablePath}'. Rejecting safelist protection.");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -83,13 +145,14 @@ namespace Servy.Core.Helpers
         /// <param name="pid">The process ID to evaluate.</param>
         /// <param name="processName">The name of the process.</param>
         /// <param name="protectedPids">A set of PIDs belonging to the current process or its parents.</param>
+        /// <param name="executablePath">Optional path to the process image file on disk.</param>
         /// <returns>A boolean indicating true if the process is protected, otherwise false.</returns>
-        private bool IsProtected(int pid, string processName, HashSet<int> protectedPids)
+        private bool IsProtected(int pid, string processName, HashSet<int> protectedPids, string? executablePath = null)
         {
             // Protection for system-level PIDs and the Servy process chain
             if (pid <= AppConfig.MaxReservedSystemPid || protectedPids.Contains(pid)) return true;
 
-            return IsCriticalProcess(processName);
+            return IsCriticalProcess(processName, pid, executablePath);
         }
 
         #endregion
@@ -158,7 +221,7 @@ namespace Servy.Core.Helpers
                     {
                         // SECURITY: Use centralized IsProtected as the single source of truth
                         // to guard against killing ancestors or system critical processes.
-                        if (IsProtected(childPid, child.ProcessName, protectedPids)) continue;
+                        if (IsProtected(childPid, child.ProcessName, protectedPids, child.ExecutablePath)) continue;
 
                         DateTime childStart = SafeStartTime(child);
 
@@ -317,7 +380,7 @@ namespace Servy.Core.Helpers
 
                 try
                 {
-                    if (IsProtected(target.Id, target.ProcessName, protectedPids))
+                    if (IsProtected(target.Id, target.ProcessName, protectedPids, target.ExecutablePath))
                     {
                         Logger.Warn($"Execution blocked: Attempted to kill protected process {target.ProcessName} (PID {pid}).");
                         return false;
@@ -378,7 +441,7 @@ namespace Servy.Core.Helpers
             try
             {
                 // SECURITY: Use IsProtected instead of a simple PID check to ensure system-critical names are never targeted.
-                if (IsProtected(process.Id, process.ProcessName, protectedPids)) return;
+                if (IsProtected(process.Id, process.ProcessName, protectedPids, process.ExecutablePath)) return;
 
                 var visited = new HashSet<int>();
 
@@ -439,8 +502,18 @@ namespace Servy.Core.Helpers
                 {
                     if (procInfo.ProcessId <= 0) continue;
 
+                    string? executablePath = null;
+                    try
+                    {
+                        using (var p = _processAccessor.GetProcessById(procInfo.ProcessId))
+                        {
+                            executablePath = p.ExecutablePath;
+                        }
+                    }
+                    catch { /* process might have exited */ }
+
                     // Using IsCriticalProcess ensures handle.exe output (with .exe) is correctly validated against the safelist
-                    if (IsCriticalProcess(procInfo.ProcessName))
+                    if (IsCriticalProcess(procInfo.ProcessName, procInfo.ProcessId, executablePath))
                     {
                         Logger.Warn($"Skipping kill request for critical system process: {procInfo.ProcessName} (PID {procInfo.ProcessId})");
                         success = false;
@@ -523,20 +596,14 @@ namespace Servy.Core.Helpers
 
             if (!snapshot.TryGetValue(parentId, out var parentNode)) return;
 
-            // SECURITY: Use the name from the snapshot to check protection, avoiding access denied exceptions.
-            if (IsProtected(parentId, parentNode.Name, protectedPids))
-            {
-                Logger.Debug($"Aborting parent kill walk: {parentNode.Name} (PID {parentId}) is protected.");
-                return;
-            }
-
-            DateTime parentStartTime = DateTime.MinValue;
+            string? parentPath = null;
             ISystemProcess? parentProcess = null;
 
             try
             {
                 // Open the process handle exactly once to establish an unchangeable identity context
                 parentProcess = _processAccessor.GetProcessById(parentId);
+                parentPath = parentProcess.ExecutablePath;
             }
             catch (ArgumentException)
             {
@@ -546,10 +613,19 @@ namespace Servy.Core.Helpers
 
             try
             {
-                // ROBUSTNESS: Perform temporal identity validation BEFORE walking up the ancestor tree.
-                // This validates the immediate parent-child boundary before recursion so a recycled parent PID cannot pull the walk into an unrelated tree.
+                // SECURITY: Use the name from the snapshot to check protection, avoiding access denied exceptions.
+                if (IsProtected(parentId, parentNode.Name, protectedPids, parentPath))
+                {
+                    Logger.Debug($"Aborting parent kill walk: {parentNode.Name} (PID {parentId}) is protected.");
+                    return;
+                }
+
+                DateTime parentStartTime = DateTime.MinValue;
+
                 try
                 {
+                    // ROBUSTNESS: Perform temporal identity validation BEFORE walking up the ancestor tree.
+                    // This validates the immediate parent-child boundary before recursion so a recycled parent PID cannot pull the walk into an unrelated tree.
                     // Re-read the start time from the open handle so the identity is pinned to this process, not to the
                     // snapshot's PID. A parent that started after the child (beyond PidReuseToleranceSeconds) is a recycled
                     // PID and aborts the walk; the tolerance leaves a deliberate slack window.
