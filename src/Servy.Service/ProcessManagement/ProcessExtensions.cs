@@ -97,8 +97,6 @@ namespace Servy.Service.ProcessManagement
         /// </exception>
         public static List<Process> GetAllDescendants(int parentPid, DateTime parentStartTime)
         {
-            var allDescendants = new List<Process>();
-
             if (parentPid <= 0)
                 throw new ArgumentOutOfRangeException(nameof(parentPid), parentPid, "A positive PID is required to enumerate descendants.");
             if (parentStartTime == DateTime.MinValue)
@@ -106,6 +104,29 @@ namespace Servy.Service.ProcessManagement
 
             // 1. ONE snapshot, build parent->children map
             var (_, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
+
+            return GetAllDescendants(parentPid, parentStartTime, byParent, TryResolveValidChild);
+        }
+
+        /// <summary>
+        /// The BFS half of <see cref="GetAllDescendants(int, DateTime)"/>, with the snapshot map and the
+        /// per-node resolver supplied by the caller so the walk can be driven over a synthetic tree.
+        /// </summary>
+        /// <param name="parentPid">The Process ID of the parent to start the walk from.</param>
+        /// <param name="parentStartTime">The start time of the parent for PID reuse validation.</param>
+        /// <param name="byParent">The parent PID to child PIDs map to walk.</param>
+        /// <param name="resolveChild">
+        /// Resolver invoked as <c>(childPid, parentStartTime, snapshotTime)</c>; returns the validated
+        /// <see cref="Process"/> or <c>null</c> when the node cannot be resolved.
+        /// </param>
+        /// <returns>
+        /// A flattened <see cref="List{Process}"/> containing the entire descendant tree.
+        /// <br/><strong>Note:</strong> The caller assumes full ownership of ALL returned objects and
+        /// must call <c>Dispose()</c> on each to prevent native handle leaks.
+        /// </returns>
+        internal static List<Process> GetAllDescendants(int parentPid, DateTime parentStartTime, Dictionary<int, List<int>> byParent, Func<int, DateTime, DateTime, Process> resolveChild)
+        {
+            var allDescendants = new List<Process>();
 
             // Anchor for PID-reuse detection. Any legitimate child MUST exist before this timestamp.
             var snapshotTime = DateTime.UtcNow;
@@ -130,7 +151,7 @@ namespace Servy.Service.ProcessManagement
                 {
                     if (!visited.Add(childPid)) continue; // already seen -> cycle guard
 
-                    Process validChild = TryResolveValidChild(childPid, current.StartTime, snapshotTime);
+                    Process validChild = resolveChild(childPid, current.StartTime, snapshotTime);
                     if (validChild != null)
                     {
                         allDescendants.Add(validChild);
