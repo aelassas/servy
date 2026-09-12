@@ -19,9 +19,9 @@ namespace Servy.Manager.UnitTests.Config
 
             // Assert - Refresh Intervals
             Assert.Equal(AppConfig.DefaultRefreshIntervalInSeconds, config.RefreshIntervalInSeconds);
-            Assert.Equal(AppConfig.DefaultPerformanceRefreshIntervalInMs, config.PerformanceRefreshIntervalInMs);
-            Assert.Equal(AppConfig.DefaultConsoleRefreshIntervalInMs, config.ConsoleRefreshIntervalInMs);
-            Assert.Equal(AppConfig.DefaultDependenciesRefreshIntervalInMs, config.DependenciesRefreshIntervalInMs);
+            Assert.Equal(AppConfig.DefaultMonitoringRefreshIntervalInMs, config.PerformanceRefreshIntervalInMs);
+            Assert.Equal(AppConfig.DefaultMonitoringRefreshIntervalInMs, config.ConsoleRefreshIntervalInMs);
+            Assert.Equal(AppConfig.DefaultMonitoringRefreshIntervalInMs, config.DependenciesRefreshIntervalInMs);
 
             // Assert - Limits and Thresholds
             Assert.Equal(AppConfig.DefaultConsoleMaxLines, config.ConsoleMaxLines);

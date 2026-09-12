@@ -262,12 +262,12 @@ namespace Servy.Manager
                         AppConfig.MaxRefreshIntervalInSeconds);
 
                     PerformanceRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "PerformanceRefreshIntervalInMs",
-                        AppConfig.DefaultPerformanceRefreshIntervalInMs,
+                        AppConfig.DefaultMonitoringRefreshIntervalInMs,
                         AppConfig.MinPerformanceRefreshIntervalInMs,
                         AppConfig.MaxPerformanceRefreshIntervalInMs);
 
                     ConsoleRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "ConsoleRefreshIntervalInMs",
-                        AppConfig.DefaultConsoleRefreshIntervalInMs,
+                        AppConfig.DefaultMonitoringRefreshIntervalInMs,
                         AppConfig.MinConsoleRefreshIntervalInMs,
                         AppConfig.MaxConsoleRefreshIntervalInMs);
 
@@ -277,7 +277,7 @@ namespace Servy.Manager
                         AppConfig.MaxConsoleMaxLines);
 
                     DependenciesRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "DependenciesRefreshIntervalInMs",
-                        AppConfig.DefaultDependenciesRefreshIntervalInMs,
+                        AppConfig.DefaultMonitoringRefreshIntervalInMs,
                         AppConfig.MinDependenciesRefreshIntervalInMs,
                         AppConfig.MaxDependenciesRefreshIntervalInMs);
 
