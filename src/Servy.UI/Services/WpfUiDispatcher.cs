@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -10,7 +9,6 @@ namespace Servy.UI.Services
     /// Provides a WPF-specific implementation of <see cref="IUiDispatcher"/>
     /// using the <see cref="Dispatcher"/> to manage thread synchronization and yielding.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class WpfUiDispatcher : IUiDispatcher
     {
         private readonly Dispatcher _dispatcher;

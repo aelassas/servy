@@ -9,7 +9,6 @@ namespace Servy.UI.Services
     /// Concrete implementation of <see cref="IMessageBoxService"/> using InvokeAsync
     /// to ensure callers wait for user dismissal.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class MessageBoxService : IMessageBoxService
     {
         private readonly IUiDispatcher _dispatcher;
@@ -50,6 +49,25 @@ namespace Servy.UI.Services
             }
 
             // Use InvokeAsync to ensure the task doesn't complete until the dialog is closed.
+            return ShowOnDispatcherAsync(message, caption, image, buttons);
+        }
+
+        /// <summary>
+        /// Marshals and displays an interactive WPF message box on the UI thread.
+        /// Excluded from automatic code coverage as it requires an active desktop session.
+        /// </summary>
+        /// <param name="message">The body text to display.</param>
+        /// <param name="caption">The title header for the dialog.</param>
+        /// <param name="image">The dialog icon classification.</param>
+        /// <param name="buttons">The button set presented on the dialog.</param>
+        /// <returns>A task returning <c>true</c> if the user clicked Yes / OK; otherwise, <c>false</c>.</returns>
+        [ExcludeFromCodeCoverage]
+        private Task<bool> ShowOnDispatcherAsync(
+            string message,
+            string caption,
+            MessageBoxImage image,
+            MessageBoxButton buttons)
+        {
             return _dispatcher.InvokeAsync(() =>
             {
                 var result = MessageBox.Show(message, caption, buttons, image);
