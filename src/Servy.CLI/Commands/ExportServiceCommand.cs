@@ -19,6 +19,44 @@ namespace Servy.CLI.Commands
         private readonly IServiceRepository _serviceRepository;
 
         /// <summary>
+        /// Test seam delegate for validating file path and creating file streams during export.
+        /// Defaults to <see cref="PathSecurityGuard.ValidatePath"/>.
+        /// </summary>
+        internal Func<string, FileMode, FileAccess, FileShare, PathSecurityResultWithStream> PathValidator { get; set; }
+            = (userPath, mode, access, share) =>
+            {
+                var result = PathSecurityGuard.ValidatePath(userPath, mode, access, share, out var stream);
+                return new PathSecurityResultWithStream(result, stream);
+            };
+
+        /// <summary>
+        /// Container holding the result of a path security check along with the opened file stream.
+        /// </summary>
+        internal readonly struct PathSecurityResultWithStream
+        {
+            /// <summary>
+            /// Gets the result of the path security validation pipeline.
+            /// </summary>
+            public PathSecurityResult Result { get; }
+
+            /// <summary>
+            /// Gets the opened file stream associated with the path validation, or <c>null</c> if validation failed or no stream was created.
+            /// </summary>
+            public FileStream? Stream { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="PathSecurityResultWithStream"/> struct.
+            /// </summary>
+            /// <param name="result">The validation result outcome.</param>
+            /// <param name="stream">The optional opened file stream handle.</param>
+            public PathSecurityResultWithStream(PathSecurityResult result, FileStream? stream)
+            {
+                Result = result;
+                Stream = stream;
+            }
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ExportServiceCommand"/> class.
         /// </summary>
         /// <param name="serviceRepository">Service repository.</param>
@@ -159,12 +197,14 @@ namespace Servy.CLI.Commands
             bool existedBefore = File.Exists(fullPath);
             bool createdByUs = !existedBefore;
 
-            var validationResult = PathSecurityGuard.ValidatePath(
+            var valWithStream = PathValidator(
                 userPath,
                 FileMode.OpenOrCreate,
                 FileAccess.ReadWrite,
-                FileShare.None,
-                out var fileStream);
+                FileShare.None);
+
+            var validationResult = valWithStream.Result;
+            var fileStream = valWithStream.Stream;
 
             if (!validationResult.IsValid || fileStream == null)
             {

@@ -4,6 +4,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Validation;
 using Servy.Testing;
 using System.Security;
 
@@ -322,6 +323,30 @@ namespace Servy.CLI.UnitTests.Commands
 
             Assert.False(Directory.Exists(generatedSubDir), "No directory should be left behind next to the pre-existing root when the save is rejected.");
             Assert.True(Directory.Exists(preExistingRoot), "The pre-existing folder root must remain untouched by a rejected save.");
+        }
+
+        [Fact]
+        public void SaveFile_PostDirectoryCreationValidationFailure_RollsBackCreatedDirectories()
+        {
+            // Arrange
+            var deepSubDir = Path.Combine(TempDirectory, "rollback_test_tree", "nested");
+            var filePath = Path.Combine(deepSubDir, "valid_file.json");
+
+            // Use test seam to allow pre-flight, create directory chain, and then fail handle validation
+            _command.PathValidator = (userPath, mode, access, share) =>
+            {
+                var failureResult = PathSecurityResult.Fail(
+                    PathSecurityFailureKind.InvalidArgument,
+                    "Simulated handle-level validation error");
+                return new ExportServiceCommand.PathSecurityResultWithStream(failureResult, null);
+            };
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "data"));
+            Assert.Contains("Simulated handle-level validation error", ex.Message);
+
+            Assert.False(Directory.Exists(deepSubDir), "The directory chain created prior to handle validation failure should be rolled back.");
+            Assert.False(Directory.Exists(Path.Combine(TempDirectory, "rollback_test_tree")), "The entire orphaned root folder created during execution should be deleted.");
         }
 
         #endregion
