@@ -27,6 +27,16 @@ namespace Servy.Restarter
         /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies custom log directory.</param>
         public static void Main(string[] args)
         {
+            Main(args, restarter: null);
+        }
+
+        /// <summary>
+        /// Internal overload for <see cref="Main(string[])"/> supporting test seam injection.
+        /// </summary>
+        /// <param name="args">Command line arguments.</param>
+        /// <param name="restarter">Optional restarter instance for dependency injection testing.</param>
+        internal static void Main(string[] args, IServiceRestarter restarter)
+        {
             string customLogDir = args.Length > 1 ? args[1] : null;
             Logger.Initialize("Servy.Restarter.log", logDirectory: customLogDir);
 
@@ -87,7 +97,7 @@ namespace Servy.Restarter
                 scopedLogger = rootLogger.CreateScoped(serviceName);
 
                 // 5. Create the service restarter
-                IServiceRestarter restarter = new ServiceRestarter(logger: scopedLogger);
+                restarter = restarter ?? new ServiceRestarter(logger: scopedLogger);
 
                 // 6. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
@@ -165,7 +175,6 @@ namespace Servy.Restarter
                 try { rootLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose root EventLogLogger.", ex); }
                 try { Logger.Shutdown(); } catch { /* nothing left to log with */ }
             }
-
         }
     }
 }

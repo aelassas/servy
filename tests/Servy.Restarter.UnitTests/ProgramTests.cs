@@ -1,3 +1,4 @@
+using Moq;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -192,6 +193,70 @@ namespace Servy.Restarter.UnitTests
             {
                 // Clean up the seeded service entry from the shared database context to prevent
                 // side-effects or collision state leaks on subsequent unit test runs.
+                using (var dbContext = new AppDbContext(connString))
+                using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
+                using (var secureData = new SecureData(protectedKeyProvider))
+                {
+                    var dapperExecutor = new DapperExecutor(dbContext);
+                    var xmlSerializer = new XmlServiceSerializer();
+                    var jsonSerializer = new JsonServiceSerializer();
+                    var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+
+                    var existing = repository.GetByName(serviceName, decrypt: false);
+                    if (existing != null && existing.Id.HasValue)
+                    {
+                        await repository.DeleteAsync(existing.Id.Value, CancellationToken.None);
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Main_ServiceRestarted_SetsExitCodeTo0AndLogsSuccess()
+        {
+            // Arrange
+            string connString = ConfigurationManager.AppSettings["DefaultConnection"];
+            string keyPath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
+            string ivPath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
+
+            string serviceName = "ManagedNet48ServiceForSuccessfulRestart";
+            string[] args = new string[] { serviceName, TempDirectory };
+
+            AppFoldersHelper.EnsureFolders(connString, keyPath, ivPath);
+
+            using (var dbContext = new AppDbContext(connString))
+            using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            using (var secureData = new SecureData(protectedKeyProvider))
+            {
+                var dapperExecutor = new DapperExecutor(dbContext);
+                var xmlSerializer = new XmlServiceSerializer();
+                var jsonSerializer = new JsonServiceSerializer();
+                var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+
+                var service = new ServiceDto
+                {
+                    Name = serviceName,
+                    ExecutablePath = @"C:\MockPath\Service.exe"
+                };
+                await repository.AddAsync(service, CancellationToken.None);
+            }
+
+            var mockRestarter = new Mock<IServiceRestarter>();
+            mockRestarter
+                .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
+                .Returns(RestartResult.Restarted);
+
+            try
+            {
+                // Act
+                Program.Main(args, mockRestarter.Object);
+
+                // Assert
+                Assert.Equal(0, Environment.ExitCode);
+                AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
+            }
+            finally
+            {
                 using (var dbContext = new AppDbContext(connString))
                 using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
                 using (var secureData = new SecureData(protectedKeyProvider))
