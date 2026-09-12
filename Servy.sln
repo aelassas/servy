@@ -43,6 +43,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "service", "service", "{66EE
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{50795869-2933-430F-98BD-956C414ABBE4}"
 	ProjectSection(SolutionItems) = preProject
+		tests\coverage-filters.ps1 = tests\coverage-filters.ps1
 		tests\test.ps1 = tests\test.ps1
 	EndProjectSection
 EndProject

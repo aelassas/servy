@@ -21,9 +21,24 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Retrieves all Windows services from the local machine and wraps them in testable abstractions.
+        /// Initializes a new instance of the <see cref="ServiceControllerProvider"/> class using standard production wrappers.
         /// </summary>
-        /// <returns>An array of <see cref="IServiceControllerWrapper"/> instances.</returns>
+        public ServiceControllerProvider()
+            : this(serviceName => new ServiceControllerWrapper(serviceName))
+        {
+        }
+
+        /// <inheritdoc />
+        public IServiceControllerWrapper GetService(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentNullException(nameof(serviceName));
+
+            return _factory(serviceName);
+        }
+
+
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public IServiceControllerWrapper[] GetServices()
         {

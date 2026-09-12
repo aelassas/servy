@@ -43,6 +43,11 @@ namespace Servy.Core.Services
         void Stop();
 
         /// <summary>
+        /// Continues the service if it is currently paused.
+        /// </summary>
+        void Continue();
+
+        /// <summary>
         /// Discards the cached <see cref="Status"/>, <see cref="DisplayName"/> and
         /// <see cref="StartType"/> values so the next read queries the Service Control Manager again.
         /// </summary>
