@@ -29,7 +29,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Load shared coverage configuration filters
-$CoverageFilters = . (Join-Path $PSScriptRoot "coverage-filters.ps1")
+$CoverageFilters = . (Join-Path -Path $PSScriptRoot -ChildPath "coverage-filters.ps1")
 
 # Verify dotnet-coverage global tool is installed
 if (-not (Get-Command "dotnet-coverage" -ErrorAction SilentlyContinue)) {
@@ -40,7 +40,7 @@ if (-not (Get-Command "dotnet-coverage" -ErrorAction SilentlyContinue)) {
 # Dynamically locate MSBuild via vswhere or fallback
 $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
 if ($vsInstallPath) {
-    $MsbuildPath = Join-Path $vsInstallPath "MSBuild\Current\Bin\MSBuild.exe"
+    $MsbuildPath = Join-Path -Path $vsInstallPath -ChildPath "MSBuild\Current\Bin\MSBuild.exe"
 } else {
     $MsbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
 }
@@ -51,7 +51,7 @@ if (-not (Test-Path $MsbuildPath)) {
 }
 
 # Dynamically locate vstest.console.exe
-$vsTest = Join-Path $vsInstallPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+$vsTest = Join-Path -Path $vsInstallPath -ChildPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
 if (-not (Test-Path $vsTest)) {
     $vsTest = "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
 }
@@ -113,9 +113,9 @@ foreach ($ProjFile in $RawTestProjects) {
         exit $LASTEXITCODE
     }
 
-    $DllPath = Join-Path $ProjDir "bin\${Platform}\Debug\${ProjName}.dll"
+    $DllPath = Join-Path -Path $ProjDir -ChildPath "bin\${Platform}\Debug\${ProjName}.dll"
     if (-not (Test-Path $DllPath)) {
-        $DllPath = Join-Path $ProjDir "bin\Debug\${ProjName}.dll"
+        $DllPath = Join-Path -Path $ProjDir -ChildPath "bin\Debug\${ProjName}.dll"
     }
 
     if (-not (Test-Path $DllPath)) {
@@ -125,7 +125,7 @@ foreach ($ProjFile in $RawTestProjects) {
 
     Write-Host "Running tests for ${ProjName} via dotnet-coverage and vstest.console.exe..." -ForegroundColor Green
 
-    $coverageOutputFile = Join-Path $TestResultsDir "${ProjName}.cobertura.xml"
+    $coverageOutputFile = Join-Path -Path $TestResultsDir -ChildPath "${ProjName}.cobertura.xml"
 
     # Construct discrete dotnet-coverage collect CLI argument list
     $coverageCollectArgs = @(
@@ -170,7 +170,7 @@ if ($xmlCoverageFiles) {
         "-filefilters:$($CoverageFilters.Files)"
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "reportgenerator failed" -ForegroundColor Red
+        Write-Host "reportgenerator failed (exit $LASTEXITCODE)" -ForegroundColor Red
         exit $LASTEXITCODE
     }
 
