@@ -231,14 +231,9 @@ namespace Servy.Core.Config
         public const int DefaultRefreshIntervalInSeconds = 4;
 
         /// <summary>
-        /// Default performance (CPU/RAM graphs) refresh interval when not set in appsettings. Default is 800 ms.
+        /// Default monitoring refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
-        public const int DefaultPerformanceRefreshIntervalInMs = 800;
-
-        /// <summary>
-        /// Default console refresh interval when not set in appsettings. Default is 800 ms.
-        /// </summary>
-        public const int DefaultConsoleRefreshIntervalInMs = 800;
+        public const int DefaultMonitoringRefreshIntervalInMs = 800;
 
         /// <summary>
         /// The default maximum number of log lines to retain in the console tab.
@@ -259,11 +254,6 @@ namespace Servy.Core.Config
         /// unresponsiveness in the WPF rendering thread.
         /// </remarks>
         public const int MaxConsoleMaxLines = 2 * DefaultConsoleMaxLines;
-
-        /// <summary>
-        /// Default dependencies tab refresh interval when not set in appsettings. Default is 800 ms.
-        /// </summary>
-        public const int DefaultDependenciesRefreshIntervalInMs = 800;
 
         /// <summary>
         /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
