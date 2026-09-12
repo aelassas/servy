@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -26,6 +27,23 @@ namespace Servy.Core.ProcessManagement
 
         /// <inheritdoc />
         public string ProcessName => _process.ProcessName;
+
+        /// <inheritdoc />
+        public string ExecutablePath
+        {
+            get
+            {
+                try
+                {
+                    return _process.MainModule?.FileName;
+                }
+                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
+                {
+                    // Handle access denied (E.g. elevated 64-bit process read from 32-bit caller) or exited process.
+                    return null;
+                }
+            }
+        }
 
         /// <inheritdoc />
         public DateTime StartTime => _process.StartTime;

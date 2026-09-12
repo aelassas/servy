@@ -152,6 +152,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             public int Id { get; set; }
             public string ProcessName { get; set; } = string.Empty;
+            public string ExecutablePath { get; set; }
             public DateTime StartTime
             {
                 get => StartTimeThunk != null ? StartTimeThunk() : _startTime;
@@ -272,6 +273,68 @@ namespace Servy.Core.UnitTests.Helpers
             var exception = Record.Exception(() => killer.KillChildren(100));
             Assert.Null(exception);
             Assert.True(child.Killed, "Child process should be killed before cycle is detected.");
+        }
+
+        [Fact]
+        public void WalkAndKillChildren_SpoofedCriticalProcessNameInNonSystemDirectory_KillsSpoofedDescendant()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "wrapped_service", StartTime = now.AddMinutes(-10) };
+            // Descendant spoofing critical system process name from non-system location
+            var spoofedChild = new FakeSystemProcess
+            {
+                Id = 200,
+                ProcessName = "svchost.exe",
+                ExecutablePath = @"C:\Users\Public\svchost.exe",
+                StartTime = now.AddMinutes(-5)
+            };
+
+            accessor.Processes[100] = parent;
+            accessor.Processes[200] = spoofedChild;
+
+            accessor.ByParent[100] = new List<int> { 200 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillChildren(100);
+
+            // Assert
+            Assert.True(spoofedChild.Killed, "A process spoofing a critical system name from a non-system path must be killed.");
+        }
+
+        [Fact]
+        public void WalkAndKillChildren_LegitimateCriticalProcessInSystem32_ProtectsLegitimateSystemProcess()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "wrapped_service", StartTime = now.AddMinutes(-10) };
+            // Legitimate system process executing from System32
+            var systemChild = new FakeSystemProcess
+            {
+                Id = 200,
+                ProcessName = "svchost.exe",
+                ExecutablePath = @"C:\Windows\System32\svchost.exe",
+                StartTime = now.AddMinutes(-5)
+            };
+
+            accessor.Processes[100] = parent;
+            accessor.Processes[200] = systemChild;
+
+            accessor.ByParent[100] = new List<int> { 200 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillChildren(100);
+
+            // Assert
+            Assert.False(systemChild.Killed, "A legitimate critical system process executing from System32 must be protected.");
         }
 
         #endregion

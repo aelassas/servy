@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 
 namespace Servy.Core.ProcessManagement
 {
@@ -16,6 +17,12 @@ namespace Servy.Core.ProcessManagement
         /// Gets the name of the process.
         /// </summary>
         string ProcessName { get; }
+
+        /// <summary>
+        /// Gets the fully qualified file path of the executable image for the process,
+        /// or <c>null</c> if access is denied or the process has exited.
+        /// </summary>
+        string ExecutablePath { get; }
 
         /// <summary>
         /// Gets the time that the associated process was started.
