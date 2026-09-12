@@ -243,6 +243,19 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
+        /// Seam for unit testing to supply a synthetic elevation state.
+        /// Production code defaults to the current Windows principal's administrator role.
+        /// </summary>
+        internal static Func<bool> IsAdministratorCore = () =>
+        {
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                var principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        };
+
+        /// <summary>
         /// Determines whether the current process is running with administrative privileges.
         /// </summary>
         /// <returns>
@@ -250,14 +263,7 @@ namespace Servy.Core.Security
         /// otherwise, <see langword="false"/>.
         /// </returns>
         [ExcludeFromCodeCoverage]
-        public static bool IsAdministrator()
-        {
-            using (var identity = WindowsIdentity.GetCurrent())
-            {
-                var principal = new WindowsPrincipal(identity);
-                return principal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
-        }
+        public static bool IsAdministrator() => IsAdministratorCore();
 
         /// <summary>
         /// Validates that the current process is running as an administrator.

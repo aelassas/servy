@@ -142,6 +142,10 @@
       <Project>{4b7e8659-0b61-4eeb-94df-0458bc3e571d}</Project>
       <Name>Servy.UI</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj">
+      <Project>{4bc9a435-c352-4953-82b8-b419b13e8f56}</Project>
+      <Name>Servy.Testing</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\packages\xunit.analyzers.2.0.0\analyzers\dotnet\cs\xunit.analyzers.dll" />

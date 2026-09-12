@@ -39,3 +39,4 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Servy.Infrastructure.UnitTests")]
 [assembly: InternalsVisibleTo("Servy.Infrastructure.IntegrationTests")]
+[assembly: InternalsVisibleTo("Servy.UI.IntegrationTests")]
