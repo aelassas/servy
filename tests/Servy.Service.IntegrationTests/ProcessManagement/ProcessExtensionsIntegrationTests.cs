@@ -275,6 +275,51 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void GetAllDescendants_UnresolvableIntermediateWithMappedSubtree_StillReturnsGrandchild()
+        {
+            // Arrange - synthetic tree root -> intermediate -> grandchild, where the intermediate
+            // cannot be resolved (exit race, access denied, or PID-reuse rejection) but the snapshot
+            // still maps its subtree. This is the #4406 re-queue branch.
+            const int rootPid = 1000;
+            const int intermediatePid = 2000;
+            const int grandchildPid = 3000;
+            var rootStartTime = DateTime.Now.AddMinutes(-5);
+
+            var byParent = new Dictionary<int, List<int>>
+            {
+                [rootPid] = new List<int> { intermediatePid },
+                [intermediatePid] = new List<int> { grandchildPid },
+            };
+
+            var resolvedWith = new Dictionary<int, DateTime>();
+            var grandchild = Process.GetCurrentProcess();
+
+            try
+            {
+                // Act
+                var descendants = ProcessExtensions.GetAllDescendants(rootPid, rootStartTime, byParent,
+                    (childPid, parentStartTime, snapshotTime) =>
+                    {
+                        resolvedWith[childPid] = parentStartTime;
+                        return childPid == grandchildPid ? grandchild : null;
+                    });
+
+                // Assert - the grandchild survives the unresolvable intermediate
+                Assert.Single(descendants);
+                Assert.Same(grandchild, descendants[0]);
+
+                // Assert - and it was validated against the GRANDPARENT's start time, the other half
+                // of the #4406 contract: the re-queue carries the parent's start time forward
+                Assert.Equal(rootStartTime, resolvedWith[intermediatePid]);
+                Assert.Equal(rootStartTime, resolvedWith[grandchildPid]);
+            }
+            finally
+            {
+                grandchild.Dispose();
+            }
+        }
+
         #endregion
 
         #region TryResolveValidChild Private Method Reflection Tests
