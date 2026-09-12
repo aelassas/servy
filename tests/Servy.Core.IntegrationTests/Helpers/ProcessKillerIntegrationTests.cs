@@ -123,8 +123,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             finally
             {
                 // Clean up processes safely if assertions fail to prevent runner zombie leaks
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
@@ -154,8 +154,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
             finally
             {
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
@@ -190,8 +190,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             finally
             {
                 // Cleanup guard to prevent zombie leaks in the runner space if assertions fail
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
@@ -224,8 +224,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             finally
             {
                 // Cleanup guard to prevent zombie leaks in the runner space if assertions fail
-                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
-                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+                TestProcessCleanup.KillAndDispose(parent);
+                TestProcessCleanup.KillAndDispose(child);
             }
         }
 
