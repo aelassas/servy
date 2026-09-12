@@ -2393,7 +2393,11 @@ namespace Servy.Service
         /// </summary>
         /// <param name="state">The current state of the service (e.g., <c>SERVICE_STOP_PENDING</c> or <c>SERVICE_STOPPED</c>).</param>
         /// <param name="waitHint">The estimated time for the pending operation in milliseconds.</param>
-        private void UpdateServiceStatus(int state, int waitHint)
+        /// <remarks>
+        /// Overridable so the pre-shutdown orchestration in <see cref="OnCustomCommand(int)"/> can be
+        /// observed without a real service handle driving the SetServiceStatus P/Invoke.
+        /// </remarks>
+        protected virtual void UpdateServiceStatus(int state, int waitHint)
         {
             try
             {
