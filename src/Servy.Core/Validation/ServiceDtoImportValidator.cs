@@ -27,6 +27,12 @@ namespace Servy.Core.Validation
         }
 
         /// <summary>
+        /// Gets the maximum allowed payload size in bytes for configuration import documents.
+        /// Defaults to <see cref="AppConfig.MaxConfigFileSizeBytes"/> and can be overridden for testing.
+        /// </summary>
+        protected virtual long MaxPayloadBytes => AppConfig.MaxConfigFileSizeBytes;
+
+        /// <summary>
         /// Gets the name of the format being validated (e.g., "XML", "JSON").
         /// Used for consistent logging and error messages.
         /// </summary>
@@ -59,7 +65,7 @@ namespace Servy.Core.Validation
             // Prevent Memory Exhaustion / DoS
             // Convert to byte count for accurate protection against multibyte UTF-8 payloads
             long byteLength = Encoding.UTF8.GetByteCount(content);
-            if (byteLength > AppConfig.MaxConfigFileSizeBytes)
+            if (byteLength > MaxPayloadBytes)
             {
                 errorMessage = string.Format(Strings.Msg_ImportPayloadTooLarge, FormatName, AppConfig.MaxConfigFileSizeMB);
                 Logger.Error(errorMessage);
@@ -89,7 +95,6 @@ namespace Servy.Core.Validation
                 Logger.Error($"{FormatName} import failed with an unexpected parser exception ({ex.GetType().Name})", ex);
                 return false;
             }
-
 
             if (dto == null)
             {
