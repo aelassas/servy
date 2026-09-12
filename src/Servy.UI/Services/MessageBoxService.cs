@@ -7,7 +7,6 @@ namespace Servy.UI.Services
     /// Concrete implementation of <see cref="IMessageBoxService"/> using InvokeAsync
     /// to ensure callers wait for user dismissal.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class MessageBoxService : IMessageBoxService
     {
         private readonly IUiDispatcher _dispatcher;
@@ -48,6 +47,16 @@ namespace Servy.UI.Services
             }
 
             // Use InvokeAsync to ensure the task doesn't complete until the dialog is closed.
+            return ShowOnDispatcherAsync(message, caption, image, buttons);
+        }
+
+        [ExcludeFromCodeCoverage]
+        private Task<bool> ShowOnDispatcherAsync(
+            string? message,
+            string caption,
+            MessageBoxImage image,
+            MessageBoxButton buttons)
+        {
             return _dispatcher.InvokeAsync(() =>
             {
                 var result = MessageBox.Show(message, caption, buttons, image);
