@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj" />
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
 
 </Project>
