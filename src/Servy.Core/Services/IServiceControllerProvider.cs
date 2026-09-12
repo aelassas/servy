@@ -6,6 +6,13 @@ namespace Servy.Core.Services
     public interface IServiceControllerProvider
     {
         /// <summary>
+        /// Retrieves a specific Windows service controller wrapper by service name.
+        /// </summary>
+        /// <param name="serviceName">The name that identifies the service to the system.</param>
+        /// <returns>An <see cref="IServiceControllerWrapper"/> instance for the target service.</returns>
+        IServiceControllerWrapper GetService(string serviceName);
+
+        /// <summary>
         /// Retrieves all Windows services currently registered on the local computer.
         /// </summary>
         /// <returns>

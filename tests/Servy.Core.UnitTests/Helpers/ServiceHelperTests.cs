@@ -1,7 +1,13 @@
+using Moq;
 using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Services;
 using System;
+using System.ServiceProcess;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -13,6 +19,386 @@ namespace Servy.Core.UnitTests.Helpers
     {
         private readonly int _floor = AppConfig.DefaultServiceStartTimeoutSeconds;
         private readonly int _buffer = AppConfig.ScmTimeoutBufferSeconds;
+
+        #region StartServicesAsync Tests
+
+        [Fact]
+        public async Task StartServicesAsync_NullServices_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => serviceHelper.StartServicesAsync(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_ServiceAlreadyRunning_SkipsStartAndSucceeds()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Running);
+            controllerProviderMock.Setup(x => x.GetService("RunningService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StartServicesAsync(new[] { "RunningService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Start(), Times.Never);
+            scMock.Verify(x => x.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_ServiceNotFoundInRepository_ThrowsAggregateExceptionWithNotFoundError()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Stopped);
+            controllerProviderMock.Setup(x => x.GetService("MissingService")).Returns(scMock.Object);
+            serviceRepoMock.Setup(x => x.GetByNameAsync("MissingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync((ServiceDto)null);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StartServicesAsync(new[] { "MissingService" }, CancellationToken.None));
+
+            Assert.Single(aggEx.InnerExceptions);
+            var outerEx = aggEx.InnerExceptions[0];
+            Assert.NotNull(outerEx.InnerException);
+            Assert.Contains("not found in database", outerEx.InnerException.Message);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_StoppedService_StartsAndWaitsForRunningState()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Stopped;
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Start()).Callback(() => currentStatus = ServiceControllerStatus.Running);
+
+            var serviceDto = new ServiceDto
+            {
+                Name = "TestService",
+                StartTimeout = 30
+            };
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync("TestService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("TestService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StartServicesAsync(new[] { "TestService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Start(), Times.Once);
+            scMock.Verify(x => x.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_TransitionalStateSettlesToRunning_BypassesStartCommand()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            int refreshCount = 0;
+            scMock.Setup(x => x.Status).Returns(() => refreshCount == 0 ? ServiceControllerStatus.StartPending : ServiceControllerStatus.Running);
+            scMock.Setup(x => x.Refresh()).Callback(() => refreshCount++);
+
+            var serviceDto = new ServiceDto { Name = "PendingService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PendingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PendingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StartServicesAsync(new[] { "PendingService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Start(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_PausedService_IssuesContinueCommand()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Paused;
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Continue()).Callback(() => currentStatus = ServiceControllerStatus.Running);
+
+            var serviceDto = new ServiceDto { Name = "PausedService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PausedService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PausedService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StartServicesAsync(new[] { "PausedService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Continue(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_StartThrowsInvalidOperationException_RethrowsIfStillStopped()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Stopped);
+            scMock.Setup(x => x.Start()).Throws(new InvalidOperationException("Access denied."));
+
+            var serviceDto = new ServiceDto { Name = "FailedService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("FailedService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("FailedService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StartServicesAsync(new[] { "FailedService" }, CancellationToken.None));
+            Assert.Single(aggEx.InnerExceptions);
+            Assert.Contains("FailedService", aggEx.InnerExceptions[0].Message);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_MultipleServicesWithFailures_AggregatesExceptions()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+
+            var scMock1 = new Mock<IServiceControllerWrapper>();
+            scMock1.Setup(x => x.Status).Returns(ServiceControllerStatus.Stopped);
+            scMock1.Setup(x => x.Start()).Throws(new InvalidOperationException("Error 1"));
+
+            var scMock2 = new Mock<IServiceControllerWrapper>();
+            scMock2.Setup(x => x.Status).Returns(ServiceControllerStatus.Stopped);
+            scMock2.Setup(x => x.Start()).Throws(new InvalidOperationException("Error 2"));
+
+            controllerProviderMock.Setup(x => x.GetService("Service1")).Returns(scMock1.Object);
+            controllerProviderMock.Setup(x => x.GetService("Service2")).Returns(scMock2.Object);
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(new ServiceDto { StartTimeout = 30 });
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StartServicesAsync(new[] { "Service1", "Service2" }, CancellationToken.None));
+            Assert.Equal(2, aggEx.InnerExceptions.Count);
+        }
+
+        #endregion
+
+        #region StopServicesAsync Tests
+
+        [Fact]
+        public async Task StopServicesAsync_NullServices_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => serviceHelper.StopServicesAsync(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_ServiceAlreadyStopped_SkipsStopAndSucceeds()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Stopped);
+            controllerProviderMock.Setup(x => x.GetService("StoppedService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StopServicesAsync(new[] { "StoppedService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Stop(), Times.Never);
+            scMock.Verify(x => x.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_ServiceNotFoundInRepository_ThrowsAggregateExceptionWithNotFoundError()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Running);
+            controllerProviderMock.Setup(x => x.GetService("MissingService")).Returns(scMock.Object);
+            serviceRepoMock.Setup(x => x.GetByNameAsync("MissingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync((ServiceDto)null);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StopServicesAsync(new[] { "MissingService" }, CancellationToken.None));
+            Assert.Single(aggEx.InnerExceptions);
+            var outerEx = aggEx.InnerExceptions[0];
+            Assert.NotNull(outerEx.InnerException);
+            Assert.Contains("not found in database", outerEx.InnerException.Message);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_RunningService_IssuesStopAndWaitsForStoppedState()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // Start in Running state, transition to Stopped strictly when Stop() is called
+            var currentStatus = ServiceControllerStatus.Running;
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Stop()).Callback(() => currentStatus = ServiceControllerStatus.Stopped);
+
+            var serviceDto = new ServiceDto { Name = "TestService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("TestService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("TestService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StopServicesAsync(new[] { "TestService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Stop(), Times.Once);
+            scMock.Verify(x => x.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_ServiceInStopPending_DoesNotCallStopAgain()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            int refreshCount = 0;
+            scMock.Setup(x => x.Status).Returns(() => refreshCount == 0 ? ServiceControllerStatus.StopPending : ServiceControllerStatus.Stopped);
+            scMock.Setup(x => x.Refresh()).Callback(() => refreshCount++);
+
+            var serviceDto = new ServiceDto { Name = "StoppingService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("StoppingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("StoppingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StopServicesAsync(new[] { "StoppingService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Stop(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_StopThrowsInvalidOperationException_SwallowsIfServiceIsStoppedOrStopPending()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Running;
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+
+            // When Stop() is called, throw InvalidOperationException (e.g. SCM reports service already stopping/stopped)
+            // and update currentStatus to StopPending so the catch block validates it as a non-fatal state.
+            scMock.Setup(x => x.Stop()).Callback(() =>
+            {
+                currentStatus = ServiceControllerStatus.StopPending;
+            }).Throws(new InvalidOperationException("Service is already stopping."));
+
+            // Subsequent Refresh() call in the wait loop transitions status to Stopped
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (currentStatus == ServiceControllerStatus.StopPending)
+                {
+                    currentStatus = ServiceControllerStatus.Stopped;
+                }
+            });
+
+            var serviceDto = new ServiceDto { Name = "TestService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("TestService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("TestService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act (Should complete without throwing AggregateException)
+            await serviceHelper.StopServicesAsync(new[] { "TestService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Stop(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_MultipleServicesWithErrors_AggregatesExceptions()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+
+            var scMock1 = new Mock<IServiceControllerWrapper>();
+            scMock1.Setup(x => x.Status).Returns(ServiceControllerStatus.Running);
+            scMock1.Setup(x => x.Stop()).Throws(new InvalidOperationException("Error 1"));
+
+            var scMock2 = new Mock<IServiceControllerWrapper>();
+            scMock2.Setup(x => x.Status).Returns(ServiceControllerStatus.Running);
+            scMock2.Setup(x => x.Stop()).Throws(new InvalidOperationException("Error 2"));
+
+            controllerProviderMock.Setup(x => x.GetService("Service1")).Returns(scMock1.Object);
+            controllerProviderMock.Setup(x => x.GetService("Service2")).Returns(scMock2.Object);
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(new ServiceDto { StopTimeout = 30 });
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StopServicesAsync(new[] { "Service1", "Service2" }, CancellationToken.None));
+            Assert.Equal(2, aggEx.InnerExceptions.Count);
+        }
+
+        #endregion
 
         /// <summary>
         /// Verifies that when the configured timeout is null and no pre-launch hook is specified,

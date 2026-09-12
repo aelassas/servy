@@ -4,6 +4,7 @@ using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Native;
+using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -25,6 +26,7 @@ namespace Servy.Core.Helpers
     public class ServiceHelper : IServiceHelper
     {
         private readonly IServiceRepository _serviceRepository;
+        private readonly IServiceControllerProvider _serviceControllerProvider;
 
         /// <summary>
         /// Initializes a new instance of the ServiceHelper class using the specified service repository.
@@ -32,8 +34,19 @@ namespace Servy.Core.Helpers
         /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
         [ExcludeFromCodeCoverage]
         public ServiceHelper(IServiceRepository serviceRepository)
+            : this(serviceRepository, new ServiceControllerProvider())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the ServiceHelper class using the specified service repository and service controller provider.
+        /// </summary>
+        /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
+        /// <param name="serviceControllerProvider">The provider used to resolve service controller instances. Cannot be null.</param>
+        public ServiceHelper(IServiceRepository serviceRepository, IServiceControllerProvider serviceControllerProvider)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceControllerProvider = serviceControllerProvider ?? throw new ArgumentNullException(nameof(serviceControllerProvider));
         }
 
         #region Public Methods
@@ -73,9 +86,11 @@ namespace Servy.Core.Helpers
         }
 
         /// <inheritdoc />
-        [ExcludeFromCodeCoverage]
         public async Task StartServicesAsync(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
+            if (services == null)
+                throw new ArgumentNullException(nameof(services));
+
             // Create a bucket to collect any errors that occur
             var exceptions = new List<Exception>();
 
@@ -86,7 +101,7 @@ namespace Servy.Core.Helpers
 
                 try
                 {
-                    using (var sc = new ServiceController(serviceName))
+                    using (var sc = _serviceControllerProvider.GetService(serviceName))
                     {
                         sc.Refresh();
 
@@ -212,9 +227,11 @@ namespace Servy.Core.Helpers
         }
 
         /// <inheritdoc />
-        [ExcludeFromCodeCoverage]
         public async Task StopServicesAsync(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
+            if (services == null)
+                throw new ArgumentNullException(nameof(services));
+
             // Create a bucket to collect any errors that occur during the batch operation
             var exceptions = new List<Exception>();
 
@@ -225,7 +242,7 @@ namespace Servy.Core.Helpers
 
                 try
                 {
-                    using (var sc = new ServiceController(serviceName))
+                    using (var sc = _serviceControllerProvider.GetService(serviceName))
                     {
                         // IMPORTANT: Always refresh to get the latest status from SCM
                         sc.Refresh();

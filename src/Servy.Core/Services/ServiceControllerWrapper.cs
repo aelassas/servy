@@ -89,6 +89,14 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
+        public void Continue()
+        {
+            ThrowIfDisposed();
+            _controller.Continue();
+        }
+
+        /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
         public void Refresh()
         {
             ThrowIfDisposed();
