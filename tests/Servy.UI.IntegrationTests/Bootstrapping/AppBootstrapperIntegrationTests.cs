@@ -206,10 +206,20 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
                 var app = Helper.EnsureApplication();
                 var bootstrapper = new AppBootstrapper(_options, _mockProcessKiller.Object);
 
-                // Use TrySetStaticField to safely intercept environmental checks only if the assemblies contain mock seams.
-                // Otherwise, it safely proceeds, relying on local machine administrative states during execution.
-                bool hasAdminMock = TrySetStaticField(typeof(SecurityHelper), "_isAdministratorMockValue", true);
-                bool hasSqliteMock = TrySetStaticField(typeof(DatabaseValidator), "_isSqliteVersionSafeMockValue", true);
+                // Both environment gates OnStartup runs before the assertion are steered through their
+                // production seams, so "ValidEnvironment" is an arrangement of this test rather than a
+                // property of the host it happens to run on. The counters are what make that visible:
+                // production code that stops reading a seam fails here instead of silently passing
+                // because the runner is elevated and ships a recent SQLite. They are asserted as
+                // "consulted at all" rather than as an exact count because IsAdministrator is also
+                // read by the ACL hardening OnStartup performs on the key and database files.
+                var originalAdminSeam = SecurityHelper.IsAdministratorCore;
+                var originalSqliteSeam = DatabaseValidator.GetSqliteVersion;
+
+                int adminChecks = 0;
+                int sqliteChecks = 0;
+                SecurityHelper.IsAdministratorCore = () => { adminChecks++; return true; };
+                DatabaseValidator.GetSqliteVersion = () => { sqliteChecks++; return AppConfig.MinRequiredSqliteVersion.ToString(); };
 
                 try
                 {
@@ -219,13 +229,15 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
                     bool proceed = bootstrapper.OnStartup(app, startupArgs);
 
                     // Assert
+                    Assert.True(adminChecks > 0, "The elevation check never read SecurityHelper.IsAdministratorCore, so this test measured the host instead of its arrangement.");
+                    Assert.True(sqliteChecks > 0, "The SQLite version check never read DatabaseValidator.GetSqliteVersion, so this test measured the host instead of its arrangement.");
                     Assert.True(proceed);
                     Assert.True(bootstrapper.ForceSoftwareRendering);
                 }
                 finally
                 {
-                    if (hasAdminMock) TestReflection.SetFieldStatic(typeof(SecurityHelper), "_isAdministratorMockValue", false);
-                    if (hasSqliteMock) TestReflection.SetFieldStatic(typeof(DatabaseValidator), "_isSqliteVersionSafeMockValue", false);
+                    SecurityHelper.IsAdministratorCore = originalAdminSeam;
+                    DatabaseValidator.GetSqliteVersion = originalSqliteSeam;
                 }
 
                 await Task.CompletedTask;
@@ -258,23 +270,6 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             }
 
             return startupEventArgs;
-        }
-
-        /// <summary>
-        /// Attempts to configure a static boolean field, returning false instead of crashing if the target field is missing.
-        /// Useful for optional environment-dependent integration test configurations.
-        /// </summary>
-        private bool TrySetStaticField(Type targetType, string fieldName, bool value)
-        {
-            try
-            {
-                TestReflection.SetFieldStatic(targetType, fieldName, value);
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
         }
 
         #endregion
