@@ -1,11 +1,13 @@
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using Servy.Testing;
 using Servy.UI.Design;
 using System;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Xunit;
 
@@ -141,40 +143,47 @@ namespace Servy.UI.UnitTests.Design
         }
 
         [Fact]
-        public void DesignTimeCursorService_ResetCursor_DoesNotThrow()
+        public void DesignTimeCursorService_DoesNotTouchGlobalCursor()
         {
-            // Arrange
-            var service = new DesignTimeCursorService();
+            // The contract worth pinning is not "the no-op did not crash" - an empty body has no
+            // statement that could throw, so that assertion has no failing input - but that the
+            // stub leaves WPF's global cursor exactly as it found it. That is observable on an
+            // STA thread, and it fails the moment either stub is given a real body.
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var service = new DesignTimeCursorService();
+                Mouse.OverrideCursor = Cursors.Hand;
 
-            // Act & Assert
-            // Branch: Simple no-op method body
-            var exception = Record.Exception(() => service.ResetCursor());
-            Assert.Null(exception);
+                try
+                {
+                    // Act & Assert
+                    service.SetWaitCursor();
+                    Assert.Same(Cursors.Hand, Mouse.OverrideCursor);   // not Cursors.Wait
+
+                    service.ResetCursor();
+                    Assert.Same(Cursors.Hand, Mouse.OverrideCursor);   // not null
+                }
+                finally
+                {
+                    Mouse.OverrideCursor = null;
+                }
+            });
         }
 
         [Fact]
-        public void DesignTimeCursorService_SetWaitCursor_DoesNotThrow()
-        {
-            // Arrange
-            var service = new DesignTimeCursorService();
-
-            // Act
-            var exception = Record.Exception(() => service.SetWaitCursor());
-
-            // Assert
-            Assert.Null(exception);
-        }
-
-        [Fact]
-        public async Task DesignTimeHelpService_Methods_Complete()
+        public void DesignTimeHelpService_Methods_ReturnAlreadyCompletedTasks()
         {
             // Arrange
             var service = new DesignTimeHelpService();
 
             // Act & Assert
-            await service.OpenDocumentationAsync("caption");
-            await service.CheckUpdatesAsync("caption");
-            await service.OpenAboutDialogAsync("about", "caption");
+            // Capture the tasks instead of awaiting them: awaiting an already-completed task
+            // asserts nothing, while synchronous completion is the property the designer depends
+            // on - a stub that started yielding would leave it awaiting something that never resumes.
+            Assert.Equal(TaskStatus.RanToCompletion, service.OpenDocumentationAsync("caption").Status);
+            Assert.Equal(TaskStatus.RanToCompletion, service.CheckUpdatesAsync("caption").Status);
+            Assert.Equal(TaskStatus.RanToCompletion, service.OpenAboutDialogAsync("about", "caption").Status);
         }
 
         [Fact]
