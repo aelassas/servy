@@ -26,7 +26,7 @@ namespace Servy.Core.ProcessManagement
         /// <summary>
         /// Gets the time that the associated process was started.
         /// </summary>
-        /// <exception cref="Win32Exception">Thrown when process information cannot be read due to permission limits.</exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">Thrown when process information cannot be read due to permission limits.</exception>
         DateTime StartTime { get; }
 
         /// <summary>
