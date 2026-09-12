@@ -5,9 +5,7 @@ using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
-using System.Timers;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
@@ -395,13 +393,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         #region TryOpenAppendWriter Tests
 
-        private static StreamWriter? InvokeTryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger)
-        {
-            var method = typeof(ProcessLauncher).GetMethod("TryOpenAppendWriter", BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.NotNull(method);
-            return (StreamWriter?)method.Invoke(null, new object[] { path, encoding, exePath, scope, logger });
-        }
-
         [Fact]
         public void TryOpenAppendWriter_ValidPath_SuccessfullyOpensWriter()
         {
@@ -413,11 +404,14 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             try
             {
                 // Act
-                using (var writer = InvokeTryOpenAppendWriter(logPath, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
+                using (var writer = ProcessLauncher.TryOpenAppendWriter(logPath, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
                 {
                     // Assert
                     Assert.NotNull(writer);
                     Assert.True(File.Exists(logPath));
+
+                    // A clean open must not have gone through any of the three refusal checks first
+                    mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
                 }
             }
             finally
@@ -429,14 +423,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
-        [Fact]
-        public void TryOpenAppendWriter_EmptyOrNullPath_ReturnsNullAndLogsError()
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData(null)]
+        public void TryOpenAppendWriter_EmptyOrNullPath_ReturnsNullAndLogsError(string? path)
         {
             // Arrange
             var mockLogger = new Mock<IServyLogger>();
 
             // Act
-            using (var writer = InvokeTryOpenAppendWriter("", Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
+            using (var writer = ProcessLauncher.TryOpenAppendWriter(path!, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
             {
                 // Assert
                 Assert.Null(writer);
@@ -470,7 +467,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 }
 
                 // Act
-                using (var writer = InvokeTryOpenAppendWriter(linkFile, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
+                using (var writer = ProcessLauncher.TryOpenAppendWriter(linkFile, Encoding.UTF8, "test.exe", "stdout", mockLogger.Object))
                 {
                     // Assert
                     Assert.Null(writer);
