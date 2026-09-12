@@ -1,3 +1,4 @@
+using Moq;
 using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
@@ -192,6 +193,55 @@ namespace Servy.Restarter.UnitTests
             {
                 // Clean up the seeded service entry from the shared database context to prevent
                 // side-effects or collision state leaks on subsequent unit test runs.
+                using (var connection = new SQLiteConnection(SharedInMemoryConnectionString))
+                {
+                    connection.Open();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "DELETE FROM Services WHERE Name = @name;";
+                        command.Parameters.AddWithValue("@name", serviceName);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void Main_ServiceRestarted_SetsExitCodeTo0AndLogsSuccess()
+        {
+            // Arrange
+            string serviceName = "ManagedServiceForSuccessfulRestart";
+
+            using (var connection = new SQLiteConnection(SharedInMemoryConnectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "INSERT OR IGNORE INTO Services (Name, ExecutablePath) VALUES (@name, @path);";
+                    command.Parameters.AddWithValue("@name", serviceName);
+                    command.Parameters.AddWithValue("@path", "C:\\MockPath\\Service.exe");
+                    command.ExecuteNonQuery();
+                }
+            }
+
+            var mockRestarter = new Mock<IServiceRestarter>();
+            mockRestarter
+                .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
+                .Returns(RestartResult.Restarted);
+
+            try
+            {
+                string[] args = new string[] { serviceName, TempDirectory };
+
+                // Act
+                Program.Main(args, mockRestarter.Object);
+
+                // Assert
+                Assert.Equal(0, Environment.ExitCode);
+                AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
+            }
+            finally
+            {
                 using (var connection = new SQLiteConnection(SharedInMemoryConnectionString))
                 {
                     connection.Open();
