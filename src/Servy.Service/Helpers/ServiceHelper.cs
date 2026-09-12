@@ -518,7 +518,7 @@ namespace Servy.Service.Helpers
 
             try
             {
-                service.RequestAdditionalTime(milliseconds);
+                RequestAdditionalTimeCore(service, milliseconds);
                 logger?.Info($"Requested additional {milliseconds} ms for service operation.");
             }
             catch (InvalidOperationException)
@@ -530,6 +530,21 @@ namespace Servy.Service.Helpers
                 // Last-resort safety: never let SCM signaling crash the service
                 logger?.Error($"RequestAdditionalTime failed.", ex);
             }
+        }
+
+        /// <summary>
+        /// Forwards the wait hint to <see cref="ServiceBase.RequestAdditionalTime(int)"/>.
+        /// </summary>
+        /// <remarks>
+        /// Seam only. <see cref="ServiceBase.RequestAdditionalTime(int)"/> succeeds solely for a
+        /// service actually running under the SCM, so a test subclass overrides this to reach the
+        /// success path and the last-resort catch of <see cref="RequestAdditionalTime"/>.
+        /// </remarks>
+        /// <param name="service">The service hosting the operation that needs more time.</param>
+        /// <param name="milliseconds">The additional time to request, in milliseconds.</param>
+        protected virtual void RequestAdditionalTimeCore(ServiceBase service, int milliseconds)
+        {
+            service.RequestAdditionalTime(milliseconds);
         }
 
         #endregion
