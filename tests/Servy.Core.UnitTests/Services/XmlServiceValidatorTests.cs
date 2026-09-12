@@ -11,15 +11,29 @@ namespace Servy.Core.UnitTests.Services
     public class XmlServiceValidatorTests
     {
         private readonly XmlServiceValidator _validator;
+        private readonly TestableXmlServiceValidator _testableValidator;
         private readonly Mock<IProcessHelper> _processHelperMock;
 
         // The product serializer, so every fixture below is shaped like a real export file
         private readonly XmlServiceSerializer _serializer = new XmlServiceSerializer();
 
+        private sealed class TestableXmlServiceValidator : XmlServiceValidator
+        {
+            public TestableXmlServiceValidator(IServiceValidationRules rules, long maxPayloadBytes)
+                : base(rules)
+            {
+                MaxPayloadBytes = maxPayloadBytes;
+            }
+
+            protected override long MaxPayloadBytes { get; }
+        }
+
         public XmlServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
-            _validator = new XmlServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
+            var rules = new ServiceValidationRules(_processHelperMock.Object);
+            _validator = new XmlServiceValidator(rules);
+            _testableValidator = new TestableXmlServiceValidator(rules, 32);
         }
 
         #region Constructor Tests
@@ -37,7 +51,7 @@ namespace Servy.Core.UnitTests.Services
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void TryValidate_NullOrWhitespaceXml_ReturnsFalse(string? xml)
         {
             // Arrange
@@ -218,11 +232,11 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_PayloadExceedsMaxConfigFileSize_ReturnsFalse()
         {
-            // Arrange
-            var oversized = new string('x', (int)AppConfig.MaxConfigFileSizeBytes + 1);
+            // Arrange: 33 ASCII bytes > 32 byte limit
+            var oversized = new string('x', 33);
 
             // Act
-            var result = _validator.TryValidate(oversized, out var error);
+            var result = _testableValidator.TryValidate(oversized, out var error);
 
             // Assert
             Assert.False(result);
@@ -232,12 +246,11 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_MultibytePayloadOverByteLimitButUnderCharLimit_ReturnsFalse()
         {
-            // Arrange
-            // 'é' is 2 bytes in UTF-8: half the char count, same byte count - must still be rejected
-            var oversized = new string('é', ((int)AppConfig.MaxConfigFileSizeBytes / 2) + 1);
+            // Arrange: 17 'é' characters = 34 UTF-8 bytes > 32 byte limit (under 32 char limit)
+            var oversized = new string('é', 17);
 
             // Act
-            var result = _validator.TryValidate(oversized, out var error);
+            var result = _testableValidator.TryValidate(oversized, out var error);
 
             // Assert
             Assert.False(result);

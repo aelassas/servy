@@ -13,12 +13,26 @@ namespace Servy.Core.UnitTests.Services
     public class JsonServiceValidatorTests
     {
         private readonly JsonServiceValidator _validator;
+        private readonly TestableJsonServiceValidator _testableValidator;
         private readonly Mock<IProcessHelper> _processHelperMock;
+
+        private sealed class TestableJsonServiceValidator : JsonServiceValidator
+        {
+            public TestableJsonServiceValidator(IServiceValidationRules rules, long maxPayloadBytes)
+                : base(rules)
+            {
+                MaxPayloadBytes = maxPayloadBytes;
+            }
+
+            protected override long MaxPayloadBytes { get; }
+        }
 
         public JsonServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
-            _validator = new JsonServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
+            var rules = new ServiceValidationRules(_processHelperMock.Object);
+            _validator = new JsonServiceValidator(rules);
+            _testableValidator = new TestableJsonServiceValidator(rules, 32);
         }
 
         #region Constructor Tests
@@ -225,11 +239,11 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_PayloadExceedsMaxConfigFileSize_ReturnsFalse()
         {
-            // Arrange
-            var oversized = new string('x', (int)AppConfig.MaxConfigFileSizeBytes + 1);
+            // Arrange: 33 ASCII bytes > 32 byte limit
+            var oversized = new string('x', 33);
 
             // Act
-            var result = _validator.TryValidate(oversized, out var error);
+            var result = _testableValidator.TryValidate(oversized, out var error);
 
             // Assert
             Assert.False(result);
@@ -239,12 +253,11 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_MultibytePayloadOverByteLimitButUnderCharLimit_ReturnsFalse()
         {
-            // Arrange
-            // 'é' is 2 bytes in UTF-8: half the char count, same byte count - must still be rejected
-            var oversized = new string('é', ((int)AppConfig.MaxConfigFileSizeBytes / 2) + 1);
+            // Arrange: 17 'é' characters = 34 UTF-8 bytes > 32 byte limit (under 32 char limit)
+            var oversized = new string('é', 17);
 
             // Act
-            var result = _validator.TryValidate(oversized, out var error);
+            var result = _testableValidator.TryValidate(oversized, out var error);
 
             // Assert
             Assert.False(result);
