@@ -80,6 +80,45 @@ function Test-EnvVarPattern {
     }
 }
 
+function Test-ExclusiveFullControlAcl {
+    param (
+        [System.Security.AccessControl.ObjectSecurity]$AclObject,
+        [System.Security.Principal.SecurityIdentifier]$AdminSid,
+        [System.Security.Principal.SecurityIdentifier]$SystemSid
+    )
+
+    $rules = $AclObject.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
+    
+    if ($rules.Count -ne 2) {
+        return $false
+    }
+
+    $hasAdminFc = $false
+    $hasSystemFc = $false
+
+    foreach ($rule in $rules) {
+        if ($rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) {
+            return $false
+        }
+
+        # Validate FullControl rights (FileSystemRights bitmask or string equality check)
+        $isFullControl = ($rule.FileSystemRights -eq [System.Security.AccessControl.FileSystemRights]::FullControl)
+
+        if (-not $isFullControl) {
+            return $false
+        }
+
+        if ($rule.IdentityReference.Equals($AdminSid)) {
+            $hasAdminFc = $true
+        }
+        elseif ($rule.IdentityReference.Equals($SystemSid)) {
+            $hasSystemFc = $true
+        }
+    }
+
+    return ($hasAdminFc -and $hasSystemFc)
+}
+
 # ----------------------------------------------------------------
 # Test Suites
 # ----------------------------------------------------------------
@@ -163,7 +202,8 @@ Write-Host " Running Set-ServyHardenedFileAcl Tests             " -ForegroundCol
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+$adminSid  = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+$systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
 
 $tempTestFile   = [System.IO.Path]::GetTempFileName()
 $tempTestDir    = Join-Path ([System.IO.Path]::GetTempPath()) ("ServyAclTest_" + [System.IO.Path]::GetRandomFileName())
@@ -179,13 +219,14 @@ try {
         $fileAcl = if ($PSVersionTable.PSVersion.Major -ge 3) { Get-Acl -LiteralPath $tempTestFile } else { Get-Acl -Path ([Management.Automation.WildcardPattern]::Escape($tempTestFile)) }
 
         $ownerSid = $fileAcl.GetOwner([System.Security.Principal.SecurityIdentifier])
+        $hasExclusiveAccess = Test-ExclusiveFullControlAcl -AclObject $fileAcl -AdminSid $adminSid -SystemSid $systemSid
 
-        if ($fileAcl.AreAccessRulesProtected -and $ownerSid.Equals($adminSid)) {
+        if ($fileAcl.AreAccessRulesProtected -and $ownerSid.Equals($adminSid) -and $hasExclusiveAccess) {
             $script:PassedTests++
-            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks inheritance and sets Builtin Administrators owner on files" -ForegroundColor Green
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks inheritance, sets owner, and enforces exclusive Administrators/SYSTEM FullControl access on files" -ForegroundColor Green
         } else {
             $script:FailedTests++
-            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed inheritance or owner assertion on files (Owner: $ownerSid)" -ForegroundColor Red
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed inheritance, owner, or exclusive access rules on files (Owner: $ownerSid, Exclusive: $hasExclusiveAccess)" -ForegroundColor Red
         }
     }
     catch {
@@ -200,13 +241,14 @@ try {
         $dirAcl = if ($PSVersionTable.PSVersion.Major -ge 3) { Get-Acl -LiteralPath $tempTestDir } else { Get-Acl -Path ([Management.Automation.WildcardPattern]::Escape($tempTestDir)) }
 
         $ownerSid = $dirAcl.GetOwner([System.Security.Principal.SecurityIdentifier])
+        $hasExclusiveAccess = Test-ExclusiveFullControlAcl -AclObject $dirAcl -AdminSid $adminSid -SystemSid $systemSid
 
-        if ($dirAcl.AreAccessRulesProtected -and $ownerSid.Equals($adminSid)) {
+        if ($dirAcl.AreAccessRulesProtected -and $ownerSid.Equals($adminSid) -and $hasExclusiveAccess) {
             $script:PassedTests++
-            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks inheritance and sets Builtin Administrators owner on directories" -ForegroundColor Green
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl breaks inheritance, sets owner, and enforces exclusive Administrators/SYSTEM FullControl access on directories" -ForegroundColor Green
         } else {
             $script:FailedTests++
-            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed inheritance or owner assertion on directories (Owner: $ownerSid)" -ForegroundColor Red
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed inheritance, owner, or exclusive access rules on directories (Owner: $ownerSid, Exclusive: $hasExclusiveAccess)" -ForegroundColor Red
         }
     }
     catch {
@@ -214,7 +256,7 @@ try {
         Write-Host "  [FAIL] Set-ServyHardenedFileAcl threw exception on directory: $_" -ForegroundColor Red
     }
 
-	# Test Bracketed / Literal Path ACL Hardening
+    # Test Bracketed / Literal Path ACL Hardening
     $script:TotalTests++
     try {
         [void][System.IO.Directory]::CreateDirectory($bracketTestDir)
@@ -226,12 +268,15 @@ try {
             [System.IO.Directory]::GetAccessControl($bracketTestDir)
         }
 
-        if ($bracketAcl.AreAccessRulesProtected) {
+        $ownerSid = $bracketAcl.GetOwner([System.Security.Principal.SecurityIdentifier])
+        $hasExclusiveAccess = Test-ExclusiveFullControlAcl -AclObject $bracketAcl -AdminSid $adminSid -SystemSid $systemSid
+
+        if ($bracketAcl.AreAccessRulesProtected -and $ownerSid.Equals($adminSid) -and $hasExclusiveAccess) {
             $script:PassedTests++
-            Write-Host "  [PASS] Set-ServyHardenedFileAcl safely hardens paths containing wildcard bracket characters" -ForegroundColor Green
+            Write-Host "  [PASS] Set-ServyHardenedFileAcl safely hardens paths containing wildcard bracket characters with exclusive access rules" -ForegroundColor Green
         } else {
             $script:FailedTests++
-            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed to harden bracketed path" -ForegroundColor Red
+            Write-Host "  [FAIL] Set-ServyHardenedFileAcl failed to harden bracketed path (Owner: $ownerSid, Exclusive: $hasExclusiveAccess)" -ForegroundColor Red
         }
     }
     catch {
