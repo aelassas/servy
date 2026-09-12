@@ -514,7 +514,7 @@ namespace Servy.Service.ProcessManagement
         /// <param name="scope">A label (e.g. 'stdout' or 'stderr') used in failure log messages.</param>
         /// <param name="logger">The operational logging instance to output tracing to.</param>
         /// <returns>An active autoflushing <see cref="StreamWriter"/> instance if initialization succeeds; otherwise, <c>null</c>.</returns>
-        private static StreamWriter TryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger)
+        internal static StreamWriter TryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger)
         {
             FileStream fs = null;
             try
