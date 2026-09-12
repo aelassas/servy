@@ -488,7 +488,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         private void CleanupRoot(Process? root)
         {
-            TestProcessCleanup.KillAndDispose(root);
+            Testing.TestProcessCleanup.KillAndDispose(root);
         }
 
         public void Dispose()
