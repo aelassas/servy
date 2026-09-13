@@ -510,15 +510,6 @@ namespace Servy.Core.Native
             uint processInformationLength,
             out uint returnLength);
 
-        /// <summary>Internal overload for NtQueryInformationProcess.</summary>
-        [DllImport("ntdll.dll")]
-        public static extern int NtQueryInformationProcess(
-            IntPtr processHandle,
-            ProcessInfoClass processInformationClass,
-            out PROCESS_BASIC_INFORMATION processInformation,
-            uint processInformationLength,
-            IntPtr returnLength = default);
-
         /// <summary>
         /// Parses a Unicode command-line string and returns an array of pointers to the command-line arguments,
         /// along with a count of such arguments, in a manner similar to standard C run-time argv/argc values.

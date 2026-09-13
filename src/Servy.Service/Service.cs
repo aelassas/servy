@@ -1971,10 +1971,6 @@ namespace Servy.Service
                     catch (ObjectDisposedException) { /* Ignored during teardown */ }
                 }
 
-                // Safely parse heartbeat metadata without NullReferenceException exposures
-                string? heartbeatUrl = _options?.HeartbeatUrl;
-                int timeout = _options?.HeartbeatUrlTimeoutInSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
-
                 if (shouldStop)
                 {
                     RunFailureProgram();

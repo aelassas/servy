@@ -63,10 +63,7 @@ namespace Servy.Core.EnvironmentVariables
 
                         case EnvVarValidationResultKind.GeneralFailure:
                         default:
-                            // Fallback safely surfaces the validator's native message context if an unmapped rule fails
-                            throw new FormatException(!string.IsNullOrWhiteSpace(errorMessage)
-                                ? errorMessage
-                                : $"Environment variable record {recordPosition} failed validation tracking.");
+                            throw new FormatException(errorMessage);
                     }
                 }
 
