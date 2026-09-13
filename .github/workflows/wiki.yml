@@ -65,6 +65,8 @@ jobs:
         branch: [main, net48]
     runs-on: windows-latest
     timeout-minutes: 15
+    env:
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads    
     steps:
       - name: Checkout Code (${{ matrix.branch }})
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
@@ -81,6 +83,8 @@ jobs:
       - name: Setup .NET
         if: matrix.branch == 'main'
         uses: ./.github/actions/setup-dotnet
+        with:
+          max_retries: ${{ env.MAX_RETRIES }}        
 
       - name: Run parity check (dotnet test)
         if: matrix.branch == 'main'

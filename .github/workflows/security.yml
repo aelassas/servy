@@ -135,10 +135,6 @@ jobs:
         with:
           max_retries: ${{ env.MAX_RETRIES }}
 
-      - name: Check .NET version
-        shell: pwsh
-        run: dotnet --version
-
       - name: Build for Analysis
         shell: pwsh
         run: |

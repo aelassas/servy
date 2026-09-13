@@ -11,7 +11,7 @@ inputs:
   max_retries:
     description: 'Number of retries after the initial attempt'
     required: false
-    default: '4'
+    default: '5'
 
 runs:
   using: "composite"
