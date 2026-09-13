@@ -1872,10 +1872,6 @@ namespace Servy.Service
                     }
                 }
 
-                // Safely parse heartbeat metadata without NullReferenceException exposures
-                string heartbeatUrl = _options?.HeartbeatUrl;
-                int timeout = _options?.HeartbeatUrlTimeoutInSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
-
                 if (shouldStop)
                 {
                     RunFailureProgram();

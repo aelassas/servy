@@ -511,15 +511,6 @@ namespace Servy.Core.Native
             uint processInformationLength,
             out uint returnLength);
 
-        /// <summary>Internal overload for NtQueryInformationProcess.</summary>
-        [DllImport("ntdll.dll")]
-        public static extern int NtQueryInformationProcess(
-            IntPtr processHandle,
-            ProcessInfoClass processInformationClass,
-            out PROCESS_BASIC_INFORMATION processInformation,
-            uint processInformationLength,
-            IntPtr returnLength = default);
-
         /// <summary>Retrieves the number of milliseconds since the system was started.</summary>
         [DllImport("kernel32.dll")]
         public static extern ulong GetTickCount64();
