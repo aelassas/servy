@@ -183,8 +183,7 @@ namespace Servy.Core.Validation
                 return pathOnlyResult;
             }
 
-            string fullPath = pathOnlyResult.ValidPath!.ResolvedPath;
-            var fileLinkInfo = new FileInfo(fullPath);
+            string fullPath = pathOnlyResult.ValidPath.ResolvedPath;
 
             // Protected directory matcher local function for resolved path check below
             string[] protectedFolders =
@@ -203,8 +202,7 @@ namespace Servy.Core.Validation
                         StringComparison.OrdinalIgnoreCase));
 
             // Handle Resolution (Final Target Verification)
-            bool existedBefore = File.Exists(fullPath);
-            bool createdByUs = !existedBefore;
+            bool createdByUs = !File.Exists(fullPath);
             FileStream? fileStream = null;
             bool success = false;
 
