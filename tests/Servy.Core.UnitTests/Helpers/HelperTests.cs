@@ -114,55 +114,6 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
-        // Tests for CreateParentDirectory
-        [Fact]
-        public void CreateParentDirectory_NullOrWhitespace_ReturnsFalse()
-        {
-            Assert.False(Helper.CreateParentDirectory(null));
-            Assert.False(Helper.CreateParentDirectory(""));
-            Assert.False(Helper.CreateParentDirectory("    "));
-        }
-
-        [Fact]
-        public void CreateParentDirectory_PathHasNoParentDirectory_ReturnsFalse()
-        {
-            Assert.False(Helper.CreateParentDirectory("C:\\"));
-        }
-
-        [Theory]
-        [InlineData("file.txt")]
-        [InlineData("folder\\file.txt")]
-        [InlineData("folder/file.txt")]
-        [InlineData("deeply\\nested\\subfolder\\file.txt")]
-        public void CreateParentDirectory_DirectoryExistsOrCreated_ReturnsTrue(string filePath)
-        {
-            // Arrange
-            var tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDir);
-
-            // Rows must stay relative so every path resolves inside tempDir (never the real drive).
-            var testFilePath = Path.Combine(tempDir, filePath);
-
-            // Act
-            var result = Helper.CreateParentDirectory(testFilePath);
-
-            // Assert
-            Assert.True(result);
-
-            var parentDir = Path.GetDirectoryName(testFilePath);
-            Assert.NotNull(parentDir);
-            Assert.True(Directory.Exists(parentDir), $"The expected parent directory container '{parentDir}' was not physically instantiated on disk.");
-        }
-
-        [Fact]
-        public void CreateParentDirectory_InvalidPath_ReturnsFalse()
-        {
-            // Give an invalid path that will throw
-            var invalidPath = "?:\\invalid\\path\\file.txt";
-            var result = Helper.CreateParentDirectory(invalidPath);
-            Assert.False(result);
-        }
-
         #region EnsureDirectoryExists Tests
 
         [Theory]

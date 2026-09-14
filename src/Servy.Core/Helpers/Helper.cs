@@ -140,39 +140,6 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Ensures the parent directory of the given file path exists, creating it if necessary.
-        /// </summary>
-        /// <param name="path">The full file path.</param>
-        /// <returns>True if the directory exists or was created successfully; false otherwise.</returns>
-        /// <remarks>
-        /// This method acts as a non-throwing variant of <see cref="EnsureDirectoryExists(string?)"/>, catching and
-        /// logging any filesystem access or authorization violations gracefully.
-        /// </remarks>
-        public static bool CreateParentDirectory(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return false;
-            }
-
-            try
-            {
-                var directory = Path.GetDirectoryName(path);
-                if (string.IsNullOrWhiteSpace(directory))
-                {
-                    return false;
-                }
-                EnsureDirectoryExists(path);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Debug($"CreateParentDirectory: rejected '{path}': {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
         /// Quotes and escapes a string for safe use as a Windows process argument.
         /// </summary>
         /// <param name="input">The string to quote. Can be <c>null</c> or empty.</param>
