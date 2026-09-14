@@ -655,15 +655,6 @@ namespace Servy.Core.Config
         public const int SplashMinDisplayThresholdMs = 1_000;
 
         /// <summary>
-        /// Specifies the minimum splash screen display delay (in milliseconds) enforced when initialization completes quickly.
-        /// </summary>
-        /// <remarks>
-        /// When application startup completes faster than this threshold, a brief pause is added to ensure
-        /// the splash screen displays long enough to prevent a jarring visual flicker before transitioning to the main UI.
-        /// </remarks>
-        public const int SplashMinDisplayPaddingMs = 500;
-
-        /// <summary>
         /// The positional launch argument string passed to indicate whether the splash screen should be bypassed on application startup.
         /// </summary>
         /// <remarks>

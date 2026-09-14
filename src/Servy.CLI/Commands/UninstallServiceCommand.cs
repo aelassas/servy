@@ -2,7 +2,6 @@ using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
-using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
