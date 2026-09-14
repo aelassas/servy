@@ -16,10 +16,6 @@ namespace Servy.UI.Design
     /// </summary>
     public class DesignTimeProcessHelper : ProcessHelper
     {
-        public DesignTimeProcessHelper()
-        {
-            // Empty constructor to allow instantiation by the XAML designer.
-        }
     }
 
     /// <summary>

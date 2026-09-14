@@ -151,7 +151,6 @@ namespace Servy.Manager.Utils
                         using (fs)
                         {
                             var currentIdentity = NativeMethodsHelpers.GetFileIdentity(fs);
-                            info.Refresh();
 
                             // 1. Initial attach or Post-Rotation setup
                             if (knownIdentity == null)
