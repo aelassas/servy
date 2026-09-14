@@ -30,7 +30,6 @@
     <managerConverters:CpuUsageConverter x:Key="CpuUsageConverter" />
     <managerConverters:RamUsageConverter x:Key="RamUsageConverter" />
     <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-    <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
   </Window.Resources>
 
   <DockPanel>

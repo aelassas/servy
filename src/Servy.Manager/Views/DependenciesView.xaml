@@ -14,7 +14,7 @@
                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesViewRoot_HelpText}">
 
   <views:ServiceSearchUserControl.Resources>
-    <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
   </views:ServiceSearchUserControl.Resources>
 
   <Grid>
@@ -63,7 +63,7 @@
                     VerticalAlignment="Center">
           <Button Style="{StaticResource ToolbarPillButtonStyle}"
                   Command="{Binding RefreshCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibilityConverter}}"
                   ToolTip="{x:Static resx:Strings.Tooltip_Refresh}"
                   AutomationProperties.Name="{x:Static resx:Strings.Button_Refresh}"
                   AutomationProperties.AutomationId="RefreshButton"
@@ -88,7 +88,7 @@
                     VerticalAlignment="Center">
           <Button Style="{StaticResource ToolbarPillButtonStyle}"
                   Command="{Binding ExpandAllCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibilityConverter}}"
                   ToolTip="{x:Static resx:Strings.Tooltip_ExpandAll}"
                   AutomationProperties.Name="{x:Static resx:Strings.Button_ExpandAll}"
                   AutomationProperties.AutomationId="ExpandAllButton"
@@ -104,7 +104,7 @@
                     VerticalAlignment="Center">
           <Button Style="{StaticResource ToolbarPillButtonStyle}"
                   Command="{Binding CollapseAllCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibilityConverter}}"
                   ToolTip="{x:Static resx:Strings.Tooltip_CollapseAll}"
                   AutomationProperties.Name="{x:Static resx:Strings.Button_CollapseAll}"
                   AutomationProperties.AutomationId="CollapseAllButton"

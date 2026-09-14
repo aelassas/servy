@@ -97,32 +97,12 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc />
-        public IntPtr Handle
-        {
-            get
-            {
-                ThrowIfDisposed();
-                return _process.Handle;
-            }
-        }
-
-        /// <inheritdoc />
         public int ExitCode
         {
             get
             {
                 ThrowIfDisposed();
                 return _process.ExitCode;
-            }
-        }
-
-        /// <inheritdoc />
-        public IntPtr MainWindowHandle
-        {
-            get
-            {
-                ThrowIfDisposed();
-                return _process.MainWindowHandle;
             }
         }
 
@@ -178,26 +158,6 @@ namespace Servy.Service.ProcessManagement
             {
                 ThrowIfDisposed();
                 _process.ProcessorAffinity = value;
-            }
-        }
-
-        /// <inheritdoc />
-        public StreamReader StandardOutput
-        {
-            get
-            {
-                ThrowIfDisposed();
-                return _process.StandardOutput;
-            }
-        }
-
-        /// <inheritdoc />
-        public StreamReader StandardError
-        {
-            get
-            {
-                ThrowIfDisposed();
-                return _process.StandardError;
             }
         }
 
@@ -510,13 +470,6 @@ namespace Servy.Service.ProcessManagement
         {
             ThrowIfDisposed();
             _process.WaitForExit();
-        }
-
-        /// <inheritdoc />
-        public bool CloseMainWindow()
-        {
-            ThrowIfDisposed();
-            return _process.CloseMainWindow();
         }
 
         /// <inheritdoc />

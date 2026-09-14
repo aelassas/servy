@@ -34,11 +34,6 @@ namespace Servy.Service.ProcessManagement
         bool HasExited { get; }
 
         /// <summary>
-        /// Gets the native handle for the associated process.
-        /// </summary>
-        IntPtr Handle { get; }
-
-        /// <summary>
         /// Gets the exit code of the associated process.
         /// </summary>
         int ExitCode { get; }
@@ -52,21 +47,6 @@ namespace Servy.Service.ProcessManagement
         /// Gets the process start time.
         /// </summary>
         DateTime StartTime { get; }
-
-        /// <summary>
-        /// Gets the standard output stream of the associated process.
-        /// </summary>
-        StreamReader StandardOutput { get; }
-
-        /// <summary>
-        /// Gets the standard error stream of the associated process.
-        /// </summary>
-        StreamReader StandardError { get; }
-
-        /// <summary>
-        /// Gets the window handle of the main window for the associated process.
-        /// </summary>
-        IntPtr MainWindowHandle { get; }
 
         /// <summary>
         /// Gets or sets the overall priority category for the associated process.
@@ -166,12 +146,6 @@ namespace Servy.Service.ProcessManagement
         /// responsive: if the child process never exits (hang or infinite loop), the calling thread is blocked forever.
         /// </remarks>
         void WaitForExit();
-
-        /// <summary>
-        /// Closes the main window of the associated process.
-        /// </summary>
-        /// <returns><c>true</c> if the main window has been successfully closed; otherwise, <c>false</c>.</returns>
-        bool CloseMainWindow();
 
         /// <summary>
         /// Begins asynchronous read operations on the redirected standard output stream of the application.
