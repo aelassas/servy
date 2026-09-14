@@ -277,7 +277,6 @@ jobs:
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
-          Invoke-Git config core.autocrlf false
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
 

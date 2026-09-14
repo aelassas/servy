@@ -9,7 +9,7 @@
     node_modules) and file types/names (e.g., .exe, .7z, .coverage.xml, coverage.cobertura.xml).
     Normalizes line endings to Windows CRLF (`r`n) and re-writes file content using
     [System.IO.File]::WriteAllText only when changes are detected. PowerShell files (.ps1, .psm1, .psd1),
-    XML files (.xml), and configuration files (.config) are saved as UTF-8 with BOM for compatibility,
+    XML files (.xml), and configuration files (.config; kept for future App.config/Web.config support) are saved as UTF-8 with BOM for compatibility,
     while all other text files are saved as UTF-8 (no BOM).
 
 .PARAMETER DryRun
@@ -72,7 +72,7 @@ if (Test-Path $gitAttributesPath) {
     }
 }
 
-# Default list of BOM-required extensions if Update-FileHelpers.ps1 is unavailable
+# Default list of BOM-required extensions if Update-FileHelpers.ps1 is unavailable (.config kept for future App.config/Web.config support)
 $bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
 
 # Dot-source Update-FileHelpers.ps1 for shared exclusion definitions and BOM policy if available
@@ -87,11 +87,9 @@ if (Test-Path $helperPath) {
     }
 }
 
-# Construct UTF-8 encoding objects (With BOM for .ps1/.psm1/.psd1/.xml/.config, No BOM for other files)
+# Construct UTF-8 encoding objects (With BOM for .ps1/.psm1/.psd1/.xml/.config [kept for future App.config/Web.config support], No BOM for other files)
 $utf8WithBom = New-Object System.Text.UTF8Encoding($true)
 $utf8NoBom   = New-Object System.Text.UTF8Encoding($false)
-
-$scriptPath = $MyInvocation.MyCommand.Path
 
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing UTF-8 & CRLF conversions in: $baseDir" -ForegroundColor Yellow
@@ -186,7 +184,7 @@ foreach ($file in $files) {
         # Normalize all line returns (CRLF, LF, CR) to Windows CRLF (`r`n)
         $crlfContent = $content.Replace("`r`n", "`n").Replace("`r", "`n").Replace("`n", "`r`n")
 
-        # Select UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, and .config files; UTF-8 without BOM for all other files
+        # Select UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, and .config files (.config kept for future App.config/Web.config support); UTF-8 without BOM for all other files
         $requiresBom = $file.Extension -in $bomRequiredExtensions
         $targetEncoding = if ($requiresBom) { $utf8WithBom } else { $utf8NoBom }
 

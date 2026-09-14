@@ -79,8 +79,9 @@ namespace Servy.Manager.Mappers
         /// </returns>
         /// <remarks>
         /// This method facilitates the mapping between UI/DTO service items and the WPF Service UI model.
-        /// It includes polymorphic handling: if the input is a <see cref="ConsoleService"/>, the
-        /// <c>StdoutPath</c> and <c>StderrPath</c> properties are also preserved in the resulting model.
+        /// It provides a full model projection from <see cref="ServiceItemBase"/>: if the input is a
+        /// <see cref="ConsoleService"/>, the <c>StdoutPath</c> and <c>StderrPath</c> properties are preserved
+        /// on the resulting model for UI completeness.
         /// </remarks>
         public static Service? ToModel(ServiceItemBase? item)
         {

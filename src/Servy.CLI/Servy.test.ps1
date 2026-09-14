@@ -88,7 +88,7 @@ function Test-ExclusiveFullControlAcl {
     )
 
     $rules = $AclObject.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier])
-    
+
     if ($rules.Count -ne 2) {
         return $false
     }

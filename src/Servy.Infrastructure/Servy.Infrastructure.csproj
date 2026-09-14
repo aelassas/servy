@@ -28,5 +28,5 @@
     <InternalsVisibleTo Include="Servy.Infrastructure.IntegrationTests" />
     <InternalsVisibleTo Include="Servy.UI.IntegrationTests" />
   </ItemGroup>
-  
+
 </Project>
