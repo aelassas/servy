@@ -156,10 +156,8 @@ function Send-NotificationEmail {
     $portRef = 0
     $smtpPort = if ([int]::TryParse($rawPort, [ref]$portRef)) { $portRef } else { 0 }
 
-    # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
-    # Casts to string and trims whitespace to prevent parsing errors.
-    # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
-    $useSsl = if ($rawUseSsl -match '^(?i)(false|0)$') { $false } else { $true }
+    # 3. UseSsl defaults to true; only an explicit false/0 (any case, -match is case-insensitive) disables it.
+    $useSsl = if ($rawUseSsl -match '^(false|0)$') { $false } else { $true }
 
     # 4. Safe Timeout Resolution (Defaults to 30000ms / 30s)
     $timeoutRef = 0
