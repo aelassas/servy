@@ -390,7 +390,7 @@ namespace Servy.Service
             try
             {
                 _ = FreeConsole();
-                _ = SetConsoleCtrlHandler(null, true);
+                _ = SetConsoleCtrlHandler(IntPtr.Zero, true);
 
                 // Check if we are running in a test context to bypass environment-specific hooks
                 bool isTestMode = args.Length > 0 &&
@@ -1276,7 +1276,7 @@ namespace Servy.Service
             CancellationToken token = default)
         {
             _ = AllocConsole(); // inherited
-            _ = SetConsoleCtrlHandler(null, false); // inherited
+            _ = SetConsoleCtrlHandler(IntPtr.Zero, false); // inherited
             _ = SetConsoleOutputCP(CP_UTF8);
 
             var enableConsoleUI = _options?.EnableConsoleUI == true;
@@ -1334,7 +1334,7 @@ namespace Servy.Service
             }
             finally
             {
-                _ = SetConsoleCtrlHandler(null, true);
+                _ = SetConsoleCtrlHandler(IntPtr.Zero, true);
             }
 
             // --- The code below this point ONLY executes if Start() was successful ---

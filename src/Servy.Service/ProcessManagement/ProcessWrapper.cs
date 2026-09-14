@@ -629,7 +629,7 @@ namespace Servy.Service.ProcessManagement
                 // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
                 // Passing 'null' as the handler and 'true' as the add flag tells the OS
                 // to ignore CTRL_C_EVENT for this specific process.
-                if (!SetConsoleCtrlHandler(null, true))
+                if (!SetConsoleCtrlHandler(IntPtr.Zero, true))
                 {
                     int error = Marshal.GetLastWin32Error();
                     _logger?.Error($"Failed to suppress console control handlers in the service (Win32 Error: {error}). Aborting signal to prevent service self-termination.");
@@ -670,7 +670,7 @@ namespace Servy.Service.ProcessManagement
 
                     // Re-assert the service's own ignore flag (set in OnStart) - the service must not be
                     // killable by a console control event outside of child-process creation.
-                    if (!SetConsoleCtrlHandler(null, true))
+                    if (!SetConsoleCtrlHandler(IntPtr.Zero, true))
                     {
                         int error = Marshal.GetLastWin32Error();
                         _logger?.Error($"Failed to re-assert the service's console control handler (Win32 Error: {error}).");
