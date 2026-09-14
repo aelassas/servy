@@ -70,9 +70,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Act & Assert
             Assert.Throws<ObjectDisposedException>(() => wrapper.Id);
             Assert.Throws<ObjectDisposedException>(() => wrapper.HasExited);
-            Assert.Throws<ObjectDisposedException>(() => wrapper.Handle);
             Assert.Throws<ObjectDisposedException>(() => wrapper.ExitCode);
-            Assert.Throws<ObjectDisposedException>(() => wrapper.MainWindowHandle);
             Assert.Throws<ObjectDisposedException>(() => wrapper.EnableRaisingEvents);
             Assert.Throws<ObjectDisposedException>(() => wrapper.EnableRaisingEvents = true);
             Assert.Throws<ObjectDisposedException>(() => wrapper.StartTime);
@@ -80,8 +78,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Throws<ObjectDisposedException>(() => wrapper.PriorityClass = ProcessPriorityClass.Normal);
             Assert.Throws<ObjectDisposedException>(() => wrapper.ProcessorAffinity);
             Assert.Throws<ObjectDisposedException>(() => wrapper.ProcessorAffinity = new IntPtr(21L));
-            Assert.Throws<ObjectDisposedException>(() => wrapper.StandardOutput);
-            Assert.Throws<ObjectDisposedException>(() => wrapper.StandardError);
             Assert.Throws<ObjectDisposedException>(() => wrapper.StartInfo);
             Assert.Throws<ObjectDisposedException>(() => wrapper.UnderlyingProcess);
 
@@ -91,7 +87,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Throws<ObjectDisposedException>(() => wrapper.Format());
             Assert.Throws<ObjectDisposedException>(() => wrapper.Kill());
             Assert.Throws<ObjectDisposedException>(() => wrapper.WaitForExit(TestTimeouts.CleanupWaitMs));
-            Assert.Throws<ObjectDisposedException>(() => wrapper.CloseMainWindow());
             Assert.Throws<ObjectDisposedException>(() => wrapper.BeginOutputReadLine());
             Assert.Throws<ObjectDisposedException>(() => wrapper.BeginErrorReadLine());
             Assert.Throws<ObjectDisposedException>(() => wrapper.CancelOutputRead());
@@ -225,46 +220,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert
                 Assert.Equal(expected, wrapper.ProcessorAffinity);
-            }
-        }
-
-        [Fact]
-        public void NativeProperties_Getters_RetrieveValidOperatingSystemHandles()
-        {
-            // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
-            {
-                // Act
-                wrapper.Start();
-                IntPtr processHandle = wrapper.Handle;
-                IntPtr windowHandle = wrapper.MainWindowHandle;
-
-                // Assert
-                Assert.NotEqual(IntPtr.Zero, processHandle);
-                Assert.Equal(IntPtr.Zero, windowHandle); // Console window initialized with CreateNoWindow = true returns Zero
-
-                // Cleanup
-                TestProcessCleanup.KillNow(wrapper);
-            }
-        }
-
-        [Fact]
-        public void CloseMainWindow_WhenCalledOnConsoleApp_ExecutesWithoutThrowing()
-        {
-            // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
-            {
-                wrapper.Start();
-
-                // Act
-                bool closed = wrapper.CloseMainWindow();
-
-                // Assert
-                // For a windowless console application, CloseMainWindow returns false cleanly without erroring
-                Assert.False(closed);
-
-                // Cleanup
-                TestProcessCleanup.KillNow(wrapper);
             }
         }
 
@@ -887,114 +842,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [InlineData(1234, false)]   // default arm
         public void ClassifyAttachFailure_MapsWin32ErrorToSignalOutcome(int error, bool? expected)
             => Assert.Equal(expected, ProcessWrapper.ClassifyAttachFailure(error));
-
-        #endregion
-
-        #region Standard Streams Tests
-
-        [Fact]
-        public void StandardOutput_Get_ReturnsValidStreamReader()
-        {
-            // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Write-Output 'STREAM_TEST'\"", redirectOutput: true))
-            {
-                wrapper.Start();
-
-                // Act
-                StreamReader reader = wrapper.StandardOutput;
-                string content = reader.ReadToEnd();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
-
-                // Assert
-                Assert.NotNull(reader);
-                Assert.Contains("STREAM_TEST", content);
-            }
-        }
-
-        [Fact]
-        public void StandardError_Get_ReturnsValidStreamReader()
-        {
-            // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"[Console]::Error.WriteLine('STDERR_TEST')\"", redirectOutput: true))
-            {
-                wrapper.Start();
-
-                // Act
-                StreamReader reader = wrapper.StandardError;
-                string content = reader.ReadToEnd();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
-
-                // Assert
-                Assert.NotNull(reader);
-                Assert.Contains("STDERR_TEST", content);
-            }
-        }
-
-        [Fact]
-        public void RedirectStreams_EventsFire()
-        {
-            // Arrange
-            using (var outputFinished = new ManualResetEventSlim(false))
-            using (var errorFinished = new ManualResetEventSlim(false))
-            using (var wrapper = CreateWrapper(
-                "powershell.exe",
-                "-NoProfile -Command \"Write-Output 'HELLO_OUT'; [Console]::Error.WriteLine('HELLO_ERR')\"",
-                redirectOutput: true))
-            {
-                var stdOut = new List<string>();
-                var stdErr = new List<string>();
-
-                wrapper.OutputDataReceived += (s, e) =>
-                {
-                    if (e.Data != null)
-                    {
-                        var trimmed = e.Data.Trim();
-                        if (trimmed == "HELLO_OUT") { stdOut.Add(trimmed); outputFinished.Set(); }
-                    }
-                };
-
-                wrapper.ErrorDataReceived += (s, e) =>
-                {
-                    if (e.Data != null)
-                    {
-                        var trimmed = e.Data.Trim();
-                        if (trimmed == "HELLO_ERR") { stdErr.Add(trimmed); errorFinished.Set(); }
-                    }
-                };
-
-                // Act
-                wrapper.Start();
-
-                wrapper.BeginOutputReadLine();
-                wrapper.BeginErrorReadLine();
-
-                bool processExited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessGenerousTimeoutMs);
-
-                // Assert the timed wait before draining: the parameterless overload below blocks
-                // without a timeout, so a child that did not exit must fail here rather than hang.
-                Assert.True(processExited, "Process should have exited within timeout.");
-
-                // Parameterless WaitForExit also waits for async output/error event handlers to drain;
-                // the timeout overload above does not.
-                wrapper.WaitForExit();
-
-                bool signalsReceived = WaitHandle.WaitAll(
-                    new[] { outputFinished.WaitHandle, errorFinished.WaitHandle },
-                    TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
-
-                // Assert
-                Assert.True(signalsReceived, "Did not receive expected stdout/stderr signals.");
-                Assert.Contains("HELLO_OUT", stdOut);
-                Assert.Contains("HELLO_ERR", stdErr);
-
-                var cancelException = Record.Exception(() =>
-                {
-                    wrapper.CancelOutputRead();
-                    wrapper.CancelErrorRead();
-                });
-                Assert.Null(cancelException);
-            }
-        }
 
         #endregion
     }

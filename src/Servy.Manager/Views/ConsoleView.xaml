@@ -14,7 +14,7 @@
                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleViewRoot_HelpText}">
 
   <views:ServiceSearchUserControl.Resources>
-    <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
   </views:ServiceSearchUserControl.Resources>
 
   <Grid>
@@ -66,7 +66,7 @@
                     Orientation="Horizontal"
                     VerticalAlignment="Center">
           <Button Command="{Binding ClearSelectionCommand}"
-                  Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
+                  Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibilityConverter}}"
                   Style="{StaticResource ToolbarPillButtonStyle}"
                   Content="{x:Static resx:Strings.Button_Resume}"
                   ToolTip="{x:Static resx:Strings.Tooltip_Resume}"
