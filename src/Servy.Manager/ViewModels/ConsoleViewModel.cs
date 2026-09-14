@@ -296,10 +296,7 @@ namespace Servy.Manager.ViewModels
             // Thread-safe CTS swap for debouncing
             var newCts = new CancellationTokenSource();
             var oldCts = Interlocked.Exchange(ref _logFilterCts, newCts);
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
+            Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
             var token = newCts.Token;
 
@@ -389,10 +386,8 @@ namespace Servy.Manager.ViewModels
 
                 var newCts = new CancellationTokenSource();
                 var oldCts = Interlocked.Exchange(ref _tailingCts, newCts);
-                if (oldCts != null)
-                {
-                    Helpers.Helper.CancelAndDisposeSafely(oldCts);
-                }
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
+
                 var token = newCts.Token;
 
                 // Explicitly stop and dispose old tailers to sever event handler closures

@@ -556,8 +556,8 @@ namespace Servy.Service.ProcessManagement
         /// <param name="error">The Win32 error code returned by <see cref="Marshal.GetLastWin32Error"/>.</param>
         /// <returns>
         /// <see langword="true"/> if the process shares a console (e.g., <see cref="Errors.ERROR_PIPE_NOT_CONNECTED"/>);
-        /// <see langword="false"/> if the attach failed due to handle issues or unexpected error conditions;
-        /// <see langword="null"/> if the attach failed because the target process has already exited (<see cref="Errors.ERROR_INVALID_PARAMETER"/>).
+        /// <see langword="false"/> if the attach failed due to handle issues (<see cref="Errors.ERROR_INVALID_HANDLE"/>, <see cref="Errors.ERROR_GEN_FAILURE"/>) or unexpected error conditions;
+        /// <see langword="null"/> if the target process has already exited (<see cref="Errors.ERROR_INVALID_PARAMETER"/>).
         /// </returns>
         internal static bool? ClassifyAttachFailure(int error)
         {
@@ -574,6 +574,7 @@ namespace Servy.Service.ProcessManagement
                     return null;
 
                 default:
+                    Logger.Warn($"AttachConsole failed with unclassified Win32 error: {error}");
                     return false;
             }
         }

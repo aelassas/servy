@@ -485,10 +485,7 @@ namespace Servy.Manager.ViewModels
                     // fetchAndApplyAsync 4 of 4: refresh all service statuses and details in the background.
                     // Cancel any in-flight timer refresh targeting old row ViewModels and assign a fresh token source.
                     var oldCts = Interlocked.Exchange(ref _cts, new CancellationTokenSource());
-                    if (oldCts != null)
-                    {
-                        Helpers.Helper.CancelAndDisposeSafely(oldCts);
-                    }
+                    Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
                     var freshCts = _cts;
                     var refreshToken = freshCts?.Token ?? token;
@@ -646,10 +643,7 @@ namespace Servy.Manager.ViewModels
         {
             // Thread-safe disposal pattern
             var oldCts = Interlocked.Exchange(ref _cts, null);
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
+            Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
             if (_refreshTimer != null)
             {

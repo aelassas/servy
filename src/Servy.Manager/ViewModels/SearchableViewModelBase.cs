@@ -113,11 +113,7 @@ namespace Servy.Manager.ViewModels
             var stopwatch = Stopwatch.StartNew();
             var newCts = new CancellationTokenSource();
             var oldCts = Interlocked.Exchange(ref _searchCts, newCts);
-
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
+            Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
             CancellationToken token;
             try

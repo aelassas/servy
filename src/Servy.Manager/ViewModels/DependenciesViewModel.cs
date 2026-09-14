@@ -234,11 +234,7 @@ namespace Servy.Manager.ViewModels
             var newCts = new CancellationTokenSource();
             var token = newCts.Token;
             var oldCts = Interlocked.Exchange(ref _loadTreeCts, newCts);
-
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
+            Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
             string serviceName = null;
             try

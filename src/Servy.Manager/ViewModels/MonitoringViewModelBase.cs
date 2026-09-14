@@ -214,10 +214,7 @@ namespace Servy.Manager.ViewModels
         {
             var newCts = new CancellationTokenSource();
             var oldCts = Interlocked.Exchange(ref _monitoringCts, newCts);
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
+            Helpers.Helper.CancelAndDisposeSafely(oldCts);
         }
 
         /// <summary>
