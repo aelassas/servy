@@ -25,7 +25,7 @@ namespace Servy.ViewModels
     /// Implements properties, commands, and logic for configuring and managing Windows services
     /// such as install, uninstall, start, stop, and restart.
     /// </summary>
-    public partial class MainViewModel : INotifyPropertyChanged, IDisposable
+    public class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         #region Private Fields
 

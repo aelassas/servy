@@ -800,7 +800,7 @@ namespace Servy.Manager.ViewModels
                 token.ThrowIfCancellationRequested();
 
                 // 1. Take snapshot of services safely
-                var snapshot = new List<Service>();
+                List<Service> snapshot;
                 lock (_servicesLock)
                 {
                     snapshot = _services.Select(r => r.Service).ToList();
