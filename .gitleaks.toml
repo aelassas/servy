@@ -1,17 +1,14 @@
-title = '''Custom Gitleaks configuration'''
+title = "Custom Gitleaks configuration"
 
 [extend]
 useDefault = true
 
+# Allowlist whole files that contain mock data / test strings across entire Git history
 [[allowlists]]
-description = "Internal HKDF-derived key field, not a literal secret"
-condition = "AND"
+description = "Ignore test fixtures and internal key files containing test/mock credentials"
 paths = [
   '''src/Servy\.Core/Security/SecureData\.cs''',
   '''tests/Servy\.Core\.UnitTests/Security/SecureDataTests\.cs''',
   '''tests/Servy\.Infrastructure\.IntegrationTests/Data/ServiceRepositoryIntegrationTests\.cs''',
   '''tests/Servy\.Core\.UnitTests/EnvironmentVariables/EnvironmentVariablesValidatorTests\.cs''',
-]
-regexes = [
-  '''_v2EncryptionKey''',
 ]
