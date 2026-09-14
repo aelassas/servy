@@ -1,5 +1,3 @@
-#pragma warning disable SA1310 // Field names should not contain underscore
-
 namespace Servy.Core.Native
 {
     /// <summary>

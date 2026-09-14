@@ -586,26 +586,10 @@ namespace Servy.Core.Helpers
             {
                 var attributes = File.GetAttributes(path);
 
-                // 1. Clear ReadOnly flag if set
+                // Clear ReadOnly flag if set
                 if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
                 {
                     File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
-                }
-
-                // 2. Try removing target file before move if direct overwrite fails
-                try
-                {
-                    // If File.Move overwrite fails due to missing Delete rights on target,
-                    // attempting explicit deletion under existing ACL/Owner rules handles
-                    // staging transitions on NTFS volumes.
-                    if (File.Exists(path))
-                    {
-                        // Soft check - allow File.Move to handle standard replacement
-                    }
-                }
-                catch
-                {
-                    // Best effort
                 }
 
                 return (attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly;

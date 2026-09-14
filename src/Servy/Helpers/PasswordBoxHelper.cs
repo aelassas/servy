@@ -114,10 +114,6 @@ namespace Servy.Helpers
                 try
                 {
                     SetBoundPassword(passwordBox, passwordBox.Password);
-
-                    // Force the binding source to update immediately
-                    BindingExpression be = BindingOperations.GetBindingExpression(passwordBox, BoundPasswordProperty);
-                    be?.UpdateSource();
                 }
                 finally
                 {
