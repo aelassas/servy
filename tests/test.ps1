@@ -159,7 +159,7 @@ $xmlCoverageFiles = Get-ChildItem -Path $TestResultsDir -Filter "*.cobertura.xml
 
 if ($xmlCoverageFiles) {
     Write-Host "Generating global HTML coverage report..."
-    
+
     $joinedReports = ($xmlCoverageFiles.FullName) -join ";"
 
     reportgenerator `

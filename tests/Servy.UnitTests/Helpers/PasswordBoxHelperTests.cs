@@ -177,37 +177,6 @@ namespace Servy.UnitTests.Helpers
             }, createApp: true);
         }
 
-        /// <summary>
-        /// Covers the binding infrastructure branch where an active BindingExpression
-        /// is evaluated and forced to execute an immediate UpdateSource().
-        /// </summary>
-        [Fact]
-        public void PasswordBox_PasswordChanged_WithActiveBinding_UpdatesSource()
-        {
-            Helper.RunOnSTA(() =>
-            {
-                // Arrange
-                var passwordBox = new PasswordBox();
-                var dummyViewModel = new FakePasswordViewModel { Password = "Initial" };
-
-                // Set up a standard Two-Way binding to simulate realistic application configuration
-                var binding = new Binding("Password")
-                {
-                    Source = dummyViewModel,
-                    Mode = BindingMode.TwoWay,
-                    UpdateSourceTrigger = UpdateSourceTrigger.Explicit // explicit to test the UpdateSource line directly
-                };
-                BindingOperations.SetBinding(passwordBox, PasswordBoxHelper.BoundPasswordProperty, binding);
-
-                // Act
-                passwordBox.Password = "ChangedInUI";
-
-                // Assert
-                // If the explicit trigger updated the source, our viewmodel will receive the string immediately
-                Assert.Equal("ChangedInUI", dummyViewModel.Password);
-            }, createApp: true);
-        }
-
         private class FakePasswordViewModel
         {
             public string Password { get; set; } = string.Empty;

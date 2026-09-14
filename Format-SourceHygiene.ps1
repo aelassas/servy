@@ -68,7 +68,7 @@ $trimmedOnlyCount = 0
 $newlineOnlyCount = 0
 $bomOnlyCount = 0
 
-# File extensions requiring UTF-8 BOM encoding
+# File extensions requiring UTF-8 BOM encoding (.config kept for future App.config/Web.config support)
 $bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
 
 # Extensions governed by .editorconfig whitespace and charset rules (mirroring [*] scope).
