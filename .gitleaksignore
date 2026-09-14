@@ -1,0 +1,13 @@
+542c22bf799ba81f73008c57342a8d92453406bf:tests/Servy.Infrastructure.IntegrationTests/Data/ServiceRepositoryIntegrationTests.cs:generic-api-key:214
+542c22bf799ba81f73008c57342a8d92453406bf:tests/Servy.Infrastructure.IntegrationTests/Data/ServiceRepositoryIntegrationTests.cs:generic-api-key:237
+18c2d36814a114d4722a8366451b32c0811aa213:tests/Servy.Infrastructure.IntegrationTests/Data/ServiceRepositoryIntegrationTests.cs:generic-api-key:208
+18c2d36814a114d4722a8366451b32c0811aa213:tests/Servy.Infrastructure.IntegrationTests/Data/ServiceRepositoryIntegrationTests.cs:generic-api-key:231
+ca1fa50825c262dfb763f19615a1dc0f1d47eeb2:src/Servy.Core/Security/SecureData.cs:generic-api-key:104
+9676f92b3587235c0f4b4cd80f2376c800961e25:src/Servy.Core/Security/SecureData.cs:generic-api-key:118
+632fd2210cebe0690f0c6e64734ee062a61a44ed:tests/Servy.Core.UnitTests/EnvironmentVariables/EnvironmentVariablesValidatorTests.cs:generic-api-key:267
+a5e8a139006801c309d00361af3d56d039fdd6d8:tests/Servy.Core.UnitTests/EnvironmentVariables/EnvironmentVariablesValidatorTests.cs:generic-api-key:269
+05c0a9d64b6fb886d7a05c0e1754b60bcd6bbf66:src/Servy.Core/Security/SecureData.cs:generic-api-key:90
+ea0fbce72988b1df2979a417f3dbd7ba234011bf:src/Servy.Core/Security/SecureData.cs:generic-api-key:79
+ea0fbce72988b1df2979a417f3dbd7ba234011bf:src/Servy.Core/Security/SecureData.cs:generic-api-key:205
+93edb24cab836d5365e00eb4b23dfd7977168b9f:src/Servy.Core/Security/SecureData.cs:generic-api-key:77
+93edb24cab836d5365e00eb4b23dfd7977168b9f:src/Servy.Core/Security/SecureData.cs:generic-api-key:203
