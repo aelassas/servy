@@ -290,18 +290,10 @@ namespace Servy.Service
                 {
                     _waitChunkMs = waitChunkMs;
                 }
-                else
-                {
-                    _waitChunkMs = AppConfig.DefaultWaitChunkMs;
-                }
 
                 if (int.TryParse(config["Timing:ScmAdditionalTimeMs"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var scmAdditionalTimeMs) && scmAdditionalTimeMs > 0)
                 {
                     _scmAdditionalTimeMs = scmAdditionalTimeMs;
-                }
-                else
-                {
-                    _scmAdditionalTimeMs = AppConfig.DefaultScmAdditionalTimeMs;
                 }
 
                 // Centralized logging bootstrapper
