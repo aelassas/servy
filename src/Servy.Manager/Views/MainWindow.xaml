@@ -174,7 +174,7 @@
               <Style TargetType="DataGridRow">
                 <Setter Property="Height" Value="32" />
                 <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" />
-                <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                <Setter Property="IsSelected" Value="{Binding IsSelected}" />
 
                 <EventSetter Event="MouseDoubleClick" Handler="DataGridRow_MouseDoubleClick" />
 
@@ -208,7 +208,7 @@
                 <DataGridTemplateColumn.Header>
                   <CheckBox IsThreeState="True"
                             Margin="3,0,0,0"
-                            IsChecked="{Binding DataContext.SelectAll, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                            IsChecked="{Binding DataContext.SelectAll, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                             AutomationProperties.Name="{x:Static resx:Strings.Automation_SelectAllServicesCheckBox_Name}"
                             AutomationProperties.AutomationId="SelectAllServicesCheckBox"
                             AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SelectAllServicesCheckBox_HelpText}" />
@@ -216,7 +216,7 @@
 
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
-                    <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    <CheckBox IsChecked="{Binding IsChecked}"
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center"
                               AutomationProperties.Name="{x:Static resx:Strings.Automation_SelectServiceCheckBox_Name}"

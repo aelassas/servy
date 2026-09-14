@@ -150,11 +150,9 @@ namespace Servy.Core.Native
             {
                 policy = OpenPolicyOrThrow(POLICY_ACCESS.POLICY_LOOKUP_NAMES);
 
-                uint rightsCount = 0;
-
                 sidPtr = AllocAndCopySid(sid);
 
-                int status = LsaEnumerateAccountRights(policy, sidPtr, out rightsPtr, out rightsCount);
+                int status = LsaEnumerateAccountRights(policy, sidPtr, out rightsPtr, out uint rightsCount);
 
                 // STATUS_OBJECT_NAME_NOT_FOUND -> the account has *no* rights at all
                 if (status == STATUS_OBJECT_NAME_NOT_FOUND)
