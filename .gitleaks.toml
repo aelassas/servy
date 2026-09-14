@@ -1,3 +1,5 @@
+title = '''Custom Gitleaks configuration'''
+
 [extend]
 useDefault = true
 
@@ -7,6 +9,8 @@ condition = "AND"
 paths = [
   '''src/Servy\.Core/Security/SecureData\.cs''',
   '''tests/Servy\.Core\.UnitTests/Security/SecureDataTests\.cs''',
+  '''tests/Servy\.Infrastructure\.IntegrationTests/Data/ServiceRepositoryIntegrationTests\.cs''',
+  '''tests/Servy\.Core\.UnitTests/EnvironmentVariables/EnvironmentVariablesValidatorTests\.cs''',
 ]
 regexes = [
   '''_v2EncryptionKey''',
