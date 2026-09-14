@@ -245,9 +245,6 @@ namespace Servy.Core.Native
         {
             CTRL_C_EVENT = 0,
             CTRL_BREAK_EVENT = 1,
-            CTRL_CLOSE_EVENT = 2,
-            CTRL_LOGOFF_EVENT = 5,
-            CTRL_SHUTDOWN_EVENT = 6,
         }
 
         /// <summary>Represents the number of 100-nanosecond intervals since January 1, 1601 (UTC).</summary>
@@ -548,9 +545,6 @@ namespace Servy.Core.Native
 
         #region Console Functions
 
-        /// <summary>Delegate for processing console control signals.</summary>
-        public delegate bool ConsoleCtrlHandlerRoutine(CtrlEvents ctrlType);
-
         /// <summary>Attaches the calling process to the console of a specified process.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool AttachConsole(int processId);
@@ -565,7 +559,7 @@ namespace Servy.Core.Native
 
         /// <summary>Adds or removes an application-defined console signal handler.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetConsoleCtrlHandler(ConsoleCtrlHandlerRoutine handlerRoutine, bool add);
+        public static extern bool SetConsoleCtrlHandler(IntPtr handlerRoutine, bool add);
 
         /// <summary>Sends a specified signal to a console process group.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]

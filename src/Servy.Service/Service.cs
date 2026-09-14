@@ -374,7 +374,7 @@ namespace Servy.Service
             try
             {
                 _ = FreeConsole();
-                _ = SetConsoleCtrlHandler(null, true);
+                _ = SetConsoleCtrlHandler(IntPtr.Zero, true);
 
                 // Prevent thread pool starvation under high concurrent HTTP ping loads
                 if (ServicePointManager.DefaultConnectionLimit < AppConfig.DefaultHttpConnectionLimit)
@@ -1224,7 +1224,7 @@ namespace Servy.Service
             CancellationToken token = default)
         {
             _ = AllocConsole(); // inherited
-            _ = SetConsoleCtrlHandler(null, false); // inherited
+            _ = SetConsoleCtrlHandler(IntPtr.Zero, false); // inherited
             _ = SetConsoleOutputCP(CP_UTF8);
 
             var enableConsoleUI = _options?.EnableConsoleUI == true;
@@ -1283,7 +1283,7 @@ namespace Servy.Service
             }
             finally
             {
-                _ = SetConsoleCtrlHandler(null, true);
+                _ = SetConsoleCtrlHandler(IntPtr.Zero, true);
             }
 
             // --- The code below this point ONLY executes if Start() was successful ---

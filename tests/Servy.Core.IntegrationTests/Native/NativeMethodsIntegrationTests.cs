@@ -357,14 +357,14 @@ namespace Servy.Core.IntegrationTests.Native
         public void SetConsoleCtrlHandler_NullCallbackReference_SucceedsValidly()
         {
             // Passing null removes or sets default configuration components depending on the trailing boolean flag state parameters.
-            bool success = NativeMethods.SetConsoleCtrlHandler(null, true);
+            bool success = NativeMethods.SetConsoleCtrlHandler(IntPtr.Zero, true);
             try
             {
                 Assert.True(success, "Registering the default Ctrl handler (null callback, add=true) should succeed.");
             }
             finally
             {
-                NativeMethods.SetConsoleCtrlHandler(null, false); // restore process-global state regardless
+                NativeMethods.SetConsoleCtrlHandler(IntPtr.Zero, false); // restore process-global state regardless
             }
         }
 

@@ -458,7 +458,6 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                       <Button ToolTip="{x:Static resx:Strings.Button_Start}"
                               Command="{Binding StartCommand}"
-                              CommandParameter="{Binding}"
                               Content="▶"
                               Width="24"
                               Height="24"
@@ -471,7 +470,6 @@
 
                       <Button ToolTip="{x:Static resx:Strings.Button_Stop}"
                               Command="{Binding StopCommand}"
-                              CommandParameter="{Binding}"
                               Content="■"
                               Width="24"
                               Height="24"
@@ -484,7 +482,6 @@
 
                       <Button ToolTip="{x:Static resx:Strings.Button_Restart}"
                               Command="{Binding RestartCommand}"
-                              CommandParameter="{Binding}"
                               Content="⟳"
                               Width="24"
                               Height="24"
@@ -508,53 +505,46 @@
                           <ContextMenu>
                             <MenuItem Header="{x:Static resx:Strings.Button_Install}"
                                       Command="{Binding InstallCommand}"
-                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                       AutomationProperties.Name="{x:Static resx:Strings.Automation_RowInstallMenuItem_Name}"
                                       AutomationProperties.AutomationId="RowInstallMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowInstallMenuItem_HelpText}" />
 
                             <MenuItem Header="{x:Static resx:Strings.Button_Uninstall}"
                                       Command="{Binding UninstallCommand}"
-                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      IsEnabled="{Binding IsInstalled}"
                                       AutomationProperties.Name="{x:Static resx:Strings.Automation_RowUninstallMenuItem_Name}"
                                       AutomationProperties.AutomationId="RowUninstallMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowUninstallMenuItem_HelpText}" />
 
                             <MenuItem Header="{x:Static resx:Strings.Button_Remove}"
                                       Command="{Binding RemoveCommand}"
-                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBooleanConverter}}"
+                                      IsEnabled="{Binding IsInstalled, Converter={StaticResource InverseBooleanConverter}}"
                                       AutomationProperties.Name="{x:Static resx:Strings.Automation_RowRemoveMenuItem_Name}"
                                       AutomationProperties.AutomationId="RowRemoveMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowRemoveMenuItem_HelpText}" />
 
                             <MenuItem Header="{x:Static resx:Strings.Button_Config}"
                                       Command="{Binding ConfigureCommand}"
-                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      IsEnabled="{Binding PlacementTarget.DataContext.IsDesktopAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      IsEnabled="{Binding IsDesktopAppAvailable}"
                                       AutomationProperties.Name="{x:Static resx:Strings.Automation_RowConfigMenuItem_Name}"
                                       AutomationProperties.AutomationId="RowConfigMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowConfigMenuItem_HelpText}" />
 
                             <MenuItem Header="{x:Static resx:Strings.Button_ExportXML}"
                                       Command="{Binding ExportXmlCommand}"
-                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                       AutomationProperties.Name="{x:Static resx:Strings.Button_ExportXML}"
                                       AutomationProperties.AutomationId="RowExportXmlMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowExportXmlMenuItem_HelpText}" />
 
                             <MenuItem Header="{x:Static resx:Strings.Button_ExportJSON}"
                                       Command="{Binding ExportJsonCommand}"
-                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                       AutomationProperties.Name="{x:Static resx:Strings.Button_ExportJSON}"
                                       AutomationProperties.AutomationId="RowExportJsonMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowExportJsonMenuItem_HelpText}" />
 
                             <MenuItem Header="{x:Static resx:Strings.Button_CopyPid}"
                                       Command="{Binding CopyPidCommand}"
-                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      IsEnabled="{Binding PlacementTarget.DataContext.IsPidEnabled, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      IsEnabled="{Binding IsPidEnabled}"
                                       AutomationProperties.Name="{x:Static resx:Strings.Button_CopyPid}"
                                       AutomationProperties.AutomationId="RowCopyPidMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowCopyPidMenuItem_HelpText}" />
