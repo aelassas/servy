@@ -232,11 +232,6 @@ namespace Servy.Service.Helpers
             }
             while (changed && pass < AppConfig.MaxEnvVarExpansionPasses);
 
-            if (pass >= AppConfig.MaxEnvVarExpansionPasses && changed)
-            {
-                Logger.Warn("Environment variable expansion reached maximum pass limit. Indirect circular reference detected (e.g., A=%B%, B=%A%).");
-            }
-
             // 4. Final layer: Apply System-level expansion for any remaining unmapped system placeholders
             foreach (var key in customSnapshot.Keys)
             {
@@ -322,6 +317,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
+        /// <param name="systemEnv">A dictionary of active system environment variables used to verify whether a percentage token represents a recognized OS variable.</param>
         /// <param name="currentKey">The specific variable key currently being expanded, if any.</param>
         /// <param name="protectInjectedValues">If true, encodes '%' in the substituted values to prevent later OS expansion.</param>
         /// <returns>The expanded string.</returns>
