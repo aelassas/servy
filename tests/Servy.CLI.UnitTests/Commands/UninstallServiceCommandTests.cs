@@ -100,13 +100,10 @@ namespace Servy.CLI.UnitTests.Commands
             var options = CreateValidOptions(serviceName);
 
             // Arrange the orphan state the test name describes: absent from the SCM, still present in
-            // the repository. Uninstall passes skipInstalledCheck: true, so the command must reach
-            // UninstallServiceAsync regardless, which succeeds via ServiceManager's internal orphan
-            // cleanup (#6374). Without the skip the pre-flight would short-circuit on
-            // Msg_ServiceNotFound, which is the #6405 regression this test pins.
-            MockServiceManager
-                .Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
-                .Returns(false);
+            // the repository. Since #6405 uninstall passes skipInstalledCheck: true, so the pre-flight
+            // check is never consulted and no IsServiceInstalled stub can express the absent half any
+            // more - that tolerance lives in ServiceManager.UninstallServiceAsync itself (#6374). The
+            // still-present-in-the-repository half is the DeleteAsync callback verified below.
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
@@ -116,6 +113,13 @@ namespace Servy.CLI.UnitTests.Commands
             // Verify that the command reports success
             Assert.True(result.IsSuccess);
             Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
+
+            // Verify the #6405 routing this test exists for: the SCM pre-flight is skipped, so the
+            // command never asks whether the service is installed. Without this the test is
+            // behaviourally identical to Execute_ValidOptions_ReturnsSuccess.
+            MockServiceManager.Verify(
+                sm => sm.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Never);
 
             // Verify that the CLI delegated directly to ServiceManager.UninstallServiceAsync
             MockServiceManager.Verify(
