@@ -67,7 +67,7 @@
                       IsSynchronizedWithCurrentItem="False"
                       ItemsSource="{Binding Services, RelativeSource={RelativeSource AncestorType=UserControl}, IsAsync=True}"
                       ScrollViewer.CanContentScroll="True"
-                      SelectedItem="{Binding SelectedService, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedItem="{Binding SelectedService, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
                       SelectionMode="Single"
                       SelectionUnit="FullRow"
                       VirtualizingPanel.IsVirtualizingWhenGrouping="True"
