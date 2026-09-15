@@ -102,11 +102,6 @@
                 </ControlTemplate>
               </Setter.Value>
             </Setter>
-            <Style.Triggers>
-              <Trigger Property="IsSelected" Value="True">
-                <Setter Property="BorderThickness" Value="0" />
-              </Trigger>
-            </Style.Triggers>
           </Style>
         </DataGrid.Resources>
 
