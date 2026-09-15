@@ -6,6 +6,7 @@ using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -58,6 +59,20 @@ namespace Servy.CLI.UnitTests.Commands
             mockManager
                     .Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(OperationResult.Failure(Core.Resources.Strings.Msg_ServiceNotFound));
+        }
+
+        /// <summary>
+        /// Validates that the constructor throws an <see cref="ArgumentNullException"/> when the required
+        /// <see cref="IServiceRepository"/> dependency is missing. The inherited
+        /// <c>Constructor_NullServiceManager_ThrowsArgumentNullException</c> always passes a real repository
+        /// mock, so the second guard needs its own direct constructor call.
+        /// </summary>
+        [Fact]
+        public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>("serviceRepository",
+                () => new UninstallServiceCommand(MockServiceManager.Object, null));
         }
 
         [Fact]
