@@ -1459,6 +1459,24 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallServiceAsync_UnexpectedException_ShowsUnexpectedErrorAndReturnsFalse()
+        {
+            // Arrange - same seam as the cancellation test above, so the pair tells the two arms apart
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CrashingInstallService" };
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(false);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("DB unavailable"));
+
+            // Act
+            var result = await sut.InstallServiceAsync(service, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
         public async Task UninstallServiceAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
         {
             // Arrange
@@ -1476,6 +1494,24 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
+        public async Task UninstallServiceAsync_UnexpectedException_ShowsUnexpectedErrorAndReturnsFalse()
+        {
+            // Arrange - same seam as the cancellation test above, so the pair tells the two arms apart
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CrashingUninstallService" };
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("DB unavailable"));
+
+            // Act
+            var result = await sut.UninstallServiceAsync(service, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
         public async Task RemoveServiceAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
         {
             // Arrange
@@ -1490,6 +1526,24 @@ namespace Servy.Manager.UnitTests.Services
                 () => sut.RemoveServiceAsync(service, TestContext.Current.CancellationToken));
 
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
+        public async Task RemoveServiceAsync_UnexpectedException_ShowsUnexpectedErrorAndReturnsFalse()
+        {
+            // Arrange - same seam as the cancellation test above, so the pair tells the two arms apart
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CrashingRemoveService" };
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("DB unavailable"));
+
+            // Act
+            var result = await sut.RemoveServiceAsync(service, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1525,6 +1579,24 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
+        public async Task ExecuteServiceCommandAsync_UnexpectedException_ShowsUnexpectedErrorAndReturnsFalse()
+        {
+            // Arrange - same seam as the cancellation test above, so the pair tells the two arms apart.
+            // Start/Stop/Restart all funnel through ExecuteServiceCommandAsync, so one case covers the arm.
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CrashingLifecycleService" };
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("DB unavailable"));
+
+            // Act
+            var result = await sut.StartServiceAsync(service, showMessageBox: true, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
         public async Task ExportServiceConfigAsync_OperationCancelled_PropagatesInsteadOfShowingUnexpectedError()
         {
             // Arrange
@@ -1557,6 +1629,34 @@ namespace Servy.Manager.UnitTests.Services
 
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             _fileDialogServiceMock.Verify(d => d.OpenJson(It.IsAny<string?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ImportConfigAsync_UnexpectedException_ShowsUnexpectedErrorAndDoesNotPropagate()
+        {
+            // Arrange - drive the pipeline as far as the pre-upsert existence check, then throw from it
+            var sut = CreateServiceCommands();
+            var dto = new ServiceDto { Name = "CrashingImportService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+            var json = JsonConvert.SerializeObject(dto);
+
+            // A .json path the SUT's path-security guard accepts; nothing lands on disk until it is written
+            using (var tempFile = new TempFile(".json").Write(json))
+            {
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(tempFile.Path);
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny)).Returns(true);
+                _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>())).Returns(dto);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new InvalidOperationException("DB unavailable"));
+
+                // Act - the generic catch swallows it, so no exception leaves the call
+                await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
+            }
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.False(_refreshCalled);
         }
 
         #endregion
