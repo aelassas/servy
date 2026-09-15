@@ -254,7 +254,7 @@ namespace Servy.Manager.Services
                 var psi = new ProcessStartInfo
                 {
                     FileName = desktopPath,
-                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
+                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass argument to skip splash screen
                     UseShellExecute = true,
                     WorkingDirectory = baseDir
                 };
@@ -284,7 +284,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                // Pass false to skip splash screen
+                // Pass argument to skip splash screen
                 psi.Arguments = $"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)}{forceFlag}";
 
                 using (var process = StartProcess(psi))
