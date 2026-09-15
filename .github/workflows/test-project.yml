@@ -53,9 +53,12 @@ jobs:
 
       - name: Run test project (Debug & Release)
         shell: pwsh
+        env:
+          PROJECT_NAME_INPUT: ${{ inputs.project_name }}
+          INCLUDE_STRESS_INPUT: ${{ inputs.include_stress }}
         run: |
-          $inputName = "${{ inputs.project_name }}".Trim()
-          $includeStress = [bool]::Parse("${{ inputs.include_stress }}")
+          $inputName = $env:PROJECT_NAME_INPUT.Trim()
+          $includeStress = [bool]::Parse($env:INCLUDE_STRESS_INPUT)
 
           Write-Host "Searching for project matching: '$inputName' under ./tests..." -ForegroundColor Cyan
 
