@@ -26,7 +26,6 @@
 
 .NOTES
     Target Runtime: PowerShell 5.0+
-    Excludes the running script itself from conversion.
 
 .EXAMPLE
     .\Format-SourceFiles.ps1
