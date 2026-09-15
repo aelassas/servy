@@ -892,7 +892,7 @@ namespace Servy.Manager.ViewModels
         /// blank names are skipped and case-insensitive duplicates keep the first occurrence (a warning is logged for the rest).
         /// </returns>
         private static Dictionary<string, T> BuildUniqueNameDictionary<T>(
-            IEnumerable<T> sourceList,
+            IEnumerable<T>? sourceList,
             Func<T, string?> nameExtractor) where T : class
         {
             var dictionary = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
@@ -927,7 +927,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private (ServiceUpdateInfo? UpdateInfo, ServiceDto? UpdatedDto) GetServiceUpdateInfo(
             Service service,
-            Dictionary<string, ServiceInfo>? allServices,
+            Dictionary<string, ServiceInfo> allServices,
             ServiceDto? serviceDto,
             CancellationToken token)
         {
@@ -938,7 +938,7 @@ namespace Servy.Manager.ViewModels
                 var update = new ServiceUpdateInfo(service);
 
                 // 1. Evaluate OS Status First
-                if (allServices != null && !string.IsNullOrWhiteSpace(service.Name) && allServices.TryGetValue(service.Name, out var info) && info != null)
+                if (!string.IsNullOrWhiteSpace(service.Name) && allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
                     update.IsInstalled = true;
                     update.Status = info.Status;
@@ -1179,10 +1179,10 @@ namespace Servy.Manager.ViewModels
 
                 // Dispose child VMs so their timers/CTS/tailers stop before we tear down
                 // the shared ServiceCommands instance they still reference.
-                (PerformanceVM as IDisposable)?.Dispose();
-                (ConsoleVM as IDisposable)?.Dispose();
-                (DependenciesVM as IDisposable)?.Dispose();
-                (LogsVM as IDisposable)?.Dispose();
+                PerformanceVM.Dispose();
+                ConsoleVM.Dispose();
+                DependenciesVM.Dispose();
+                LogsVM.Dispose();
 
                 // Drain the row VM list - unhook MainViewModel's handler and
                 // dispose each row so its own Service.PropertyChanged unsubscription runs.
@@ -1197,7 +1197,7 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // Now safe to dispose the shared command engine.
-                ServiceCommands?.Dispose();
+                ServiceCommands.Dispose();
             }
 
             base.Dispose(disposing);

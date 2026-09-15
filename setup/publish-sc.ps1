@@ -106,20 +106,12 @@ foreach ($project in $projects) {
     Write-Host "--- Publishing $projectName ---" -ForegroundColor Cyan
 
     $publishScript = Join-Path $project "publish.ps1"
+    if (-not (Test-Path $publishScript)) {
+        throw "Publish script not found for ${projectName}: $publishScript"
+    }
 
-    if (Test-Path $publishScript) {
-        & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm -Runtime $Runtime
-        Assert-LastExitCode "$publishScript failed"
-    }
-    else {
-        Write-Warning "Publish script not found for $projectName. Using generic dotnet publish."
-        & dotnet restore $project
-        Assert-LastExitCode "dotnet restore failed"
-        & dotnet clean $project -c $BuildConfiguration
-        Assert-LastExitCode "Project clean failed"
-        & dotnet publish $project -c $BuildConfiguration -f $Tfm -r $Runtime --self-contained true
-        Assert-LastExitCode "dotnet publish failed"
-    }
+    & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm -Runtime $Runtime
+    Assert-LastExitCode "$publishScript failed"
 }
 
 # ========================
