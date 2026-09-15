@@ -191,6 +191,58 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public async Task StartServicesAsync_StartThrowsInvalidOperationException_SwallowsIfStatusMovedOn()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Stopped;
+            var startAttempted = false;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Start())
+                  .Callback(() => startAttempted = true)
+                  .Throws(new InvalidOperationException("An instance of the service is already running."));
+
+            // Only once our Start() has been rejected does the mock model another actor's command
+            // taking effect, so the method's opening Refresh() still observes a plain Stopped service.
+            // The catch's own Refresh() then sees StartPending - neither Stopped nor Paused, so the
+            // benign-race arm swallows instead of rethrowing - and the wait loop's next Refresh()
+            // settles the service on Running.
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (!startAttempted)
+                {
+                    return;
+                }
+
+                if (currentStatus == ServiceControllerStatus.Stopped)
+                {
+                    currentStatus = ServiceControllerStatus.StartPending;
+                }
+                else if (currentStatus == ServiceControllerStatus.StartPending)
+                {
+                    currentStatus = ServiceControllerStatus.Running;
+                }
+            });
+
+            var serviceDto = new ServiceDto { Name = "RacingService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("RacingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("RacingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act (Should complete without throwing AggregateException - the swallow arm, not the rethrow arm)
+            await serviceHelper.StartServicesAsync(new[] { "RacingService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Start(), Times.Once);
+        }
+
+        [Fact]
         public async Task StartServicesAsync_MultipleServicesWithFailures_AggregatesExceptions()
         {
             // Arrange
@@ -371,6 +423,57 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Act (Should complete without throwing AggregateException)
             await serviceHelper.StopServicesAsync(new[] { "TestService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Stop(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_StopThrowsInvalidOperationException_SwallowsIfStopPendingAtCatchTime()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Running;
+            var stopAttempted = false;
+            var refreshesAfterStop = 0;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Stop()).Callback(() =>
+            {
+                stopAttempted = true;
+                currentStatus = ServiceControllerStatus.StopPending;
+            }).Throws(new InvalidOperationException("Service is already stopping."));
+
+            // The sibling test above lets the catch's own Refresh() land on Stopped, so it covers
+            // the Stopped half of the catch's condition. Here the first Refresh() after Stop() threw
+            // - which is the catch's own - must still report StopPending: the stop was accepted but
+            // has not completed. That is the StopPending half, and only the wait loop's later
+            // Refresh() calls settle the service on Stopped.
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (!stopAttempted)
+                {
+                    return;
+                }
+
+                if (++refreshesAfterStop > 1)
+                {
+                    currentStatus = ServiceControllerStatus.Stopped;
+                }
+            });
+
+            var serviceDto = new ServiceDto { Name = "StoppingService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("StoppingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("StoppingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act (Should complete without throwing AggregateException)
+            await serviceHelper.StopServicesAsync(new[] { "StoppingService" }, CancellationToken.None);
 
             // Assert
             scMock.Verify(x => x.Stop(), Times.Once);
