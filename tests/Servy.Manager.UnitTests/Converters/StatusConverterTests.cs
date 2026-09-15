@@ -81,6 +81,16 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal("Running", result);
         }
 
+        [Fact]
+        public void Convert_NonEnumInput_EchoesInput()
+        {
+            // Act
+            var result = _converter.Convert("Invalid", typeof(string), null!, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal("Invalid", result);
+        }
+
         #endregion
 
         #region ConvertBack Tests

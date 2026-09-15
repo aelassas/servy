@@ -35,7 +35,7 @@ namespace Servy.Manager.Converters
         /// </summary>
         /// <param name="value">The unmapped source value.</param>
         /// <returns>The value's string representation, or an empty string when null.</returns>
-        protected override string GetFallbackValue(object value)
+        protected override string GetFallbackValue(object? value)
         {
             // Return the raw value or empty string to surface binding errors
             // rather than masquerading as 'Not Installed'.
