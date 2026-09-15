@@ -373,6 +373,9 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Column_Level" xml:space="preserve">
     <value>Level</value>
   </data>
+  <data name="Column_EventId" xml:space="preserve">
+    <value>Event ID</value>
+  </data>
   <data name="Column_Message" xml:space="preserve">
     <value>Message</value>
   </data>
@@ -954,6 +957,10 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Log Level Icon</value>
   </data>
 
+  <data name="Automation_LogsEventIdColumnHeader_Name" xml:space="preserve">
+    <value>Event ID Column</value>
+  </data>
+
   <data name="Automation_LogsMessageColumnHeader_Name" xml:space="preserve">
     <value>Message Column</value>
   </data>
@@ -983,12 +990,6 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Indicates that pressing F5 refreshes logs.</value>
   </data>
 
-  <data name="Automation_ServiceListControl_Name" xml:space="preserve">
-    <value>Service List Control</value>
-  </data>
-  <data name="Automation_ServiceListControl_HelpText" xml:space="preserve">
-    <value>Displays a searchable list of managed services. Use the search field to filter by service name.</value>
-  </data>
   <data name="Automation_SidebarSearchTextBox_Name" xml:space="preserve">
     <value>Search Services</value>
   </data>

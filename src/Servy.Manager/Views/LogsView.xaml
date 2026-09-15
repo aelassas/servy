@@ -183,6 +183,27 @@
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>
 
+        <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_EventId}"
+                        Width="90"
+                        MinWidth="90"
+                        CanUserReorder="False"
+                        CanUserResize="False"
+                        SortMemberPath="EventId">
+          <DataGridTemplateColumn.HeaderStyle>
+            <Style TargetType="DataGridColumnHeader">
+              <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_LogsEventIdColumnHeader_Name}" />
+            </Style>
+          </DataGridTemplateColumn.HeaderStyle>
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding EventId}"
+                 VerticalAlignment="Center"
+                 Margin="5,0,0,0"
+                 AutomationProperties.Name="{Binding EventId}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
         <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}"
                                         Width="*"
                                         MinWidth="300"
