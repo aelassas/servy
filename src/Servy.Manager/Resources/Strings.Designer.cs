@@ -556,6 +556,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The Windows Event ID of the log entry..
+        /// </summary>
+        public static string Automation_LogsEventIdColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsEventIdColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Event ID Column.
         /// </summary>
         public static string Automation_LogsEventIdColumnHeader_Name {
@@ -628,6 +637,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The severity level of the log entry..
+        /// </summary>
+        public static string Automation_LogsLevelColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsLevelColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Level Column.
         /// </summary>
         public static string Automation_LogsLevelColumnHeader_Name {
@@ -660,6 +678,15 @@ namespace Servy.Manager.Resources {
         public static string Automation_LogsLevelIcon_Name {
             get {
                 return ResourceManager.GetString("Automation_LogsLevelIcon_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The message text of the log entry..
+        /// </summary>
+        public static string Automation_LogsMessageColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsMessageColumnCell_HelpText", resourceCulture);
             }
         }
         
@@ -714,6 +741,15 @@ namespace Servy.Manager.Resources {
         public static string Automation_LogsTab_Name {
             get {
                 return ResourceManager.GetString("Automation_LogsTab_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The timestamp of the log entry..
+        /// </summary>
+        public static string Automation_LogsTimeColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LogsTimeColumnCell_HelpText", resourceCulture);
             }
         }
         
