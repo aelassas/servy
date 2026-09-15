@@ -129,7 +129,8 @@ namespace Servy.Service.ProcessManagement
         /// Immediately stops the associated process and optionally its child/descendant processes.
         /// </summary>
         /// <param name="entireProcessTree">Kill entire process tree.</param>
-        void Kill(bool entireProcessTree = false);
+        /// <returns><c>true</c> if the process was successfully killed; otherwise, <c>false</c>.</returns>
+        bool Kill(bool entireProcessTree = false);
 
         /// <summary>
         /// Instructs the process to wait for exit for a specified time.
