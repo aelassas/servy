@@ -76,9 +76,7 @@ namespace Servy.Manager
 
         #region Internal Properties
 
-        internal AppDbContext? DbContext => _bootstrapper.DbContext;
         internal IServiceRepository? ServiceRepository => _bootstrapper.ServiceRepository;
-        internal ISecureData? SecureData => _bootstrapper.SecureData;
 
         #endregion
 
@@ -377,7 +375,7 @@ namespace Servy.Manager
         /// </summary>
         /// <param name="e">An <see cref="ExitEventArgs"/> that contains the event data.</param>
         /// <remarks>
-        /// This override ensures that <see cref="SecureData"/> (which may hold sensitive cryptographic
+        /// This override ensures that the bootstrapper's secure data (which may hold sensitive cryptographic
         /// material or file handles for AES keys) is explicitly disposed of, following the
         /// deterministic disposal pattern before the process exits.
         /// </remarks>

@@ -106,7 +106,6 @@ function Invoke-StandardPublish {
             -r $Runtime `
             --self-contained true `
             --no-restore `
-            --force `
             /p:DeleteExistingFiles=true
     }
 
