@@ -354,6 +354,28 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.False(Directory.Exists(Path.Combine(TempDirectory, "rollback_test_tree")), "The entire orphaned root folder created during execution should be deleted.");
         }
 
+        [Fact]
+        public void SaveFile_DirectoryCreationFails_WrapsTheFailureInIOException()
+        {
+            // Arrange
+            // Block the directory chain by pre-creating a FILE at the exact path the chain has to
+            // create as a directory, so Directory.CreateDirectory itself throws. The sibling rollback
+            // tests all let the chain succeed and fail a later PathSecurityGuard/PathValidator check,
+            // so none of them reaches the catch around the creation call.
+            var blockerPath = Path.Combine(TempDirectory, "blocker");
+            File.WriteAllText(blockerPath, "not a directory");
+            var filePath = Path.Combine(blockerPath, "nested", "file.xml");
+
+            // Act & Assert
+            var ex = Assert.Throws<IOException>(() => InvokeSaveFile(filePath, "data"));
+
+            Assert.Contains("Failed to create directory structure chain", ex.Message);
+            Assert.Contains(Path.GetFullPath(blockerPath), ex.Message);
+
+            // The catch's whole job is to wrap, so the original filesystem failure must survive.
+            Assert.NotNull(ex.InnerException);
+        }
+
         #endregion
 
         #region Reflection Helper Definition
