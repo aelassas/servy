@@ -376,6 +376,33 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.NotNull(ex.InnerException);
         }
 
+        [Fact]
+        public void SaveFile_WriteFails_RollsBackDirectoriesCreatedDuringThisCall()
+        {
+            // Arrange
+            var deepSubDir = Path.Combine(TempDirectory, "write_fail_tree", "nested");
+            var filePath = Path.Combine(deepSubDir, "file.json");
+
+            // Let the directory chain be created and the handle validation SUCCEED, but hand back a
+            // read-only stream, so the StreamWriter construction throws and "committed" stays false.
+            // That reaches the outer finally's rollback - the second RollbackCreatedDirectories call
+            // site, which the sibling post-validation-failure test does not exercise.
+            _command.PathValidator = (userPath, mode, access, share) =>
+            {
+                var resolvedPath = Path.GetFullPath(userPath);
+                var readOnlyStream = new FileStream(resolvedPath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
+                return new ExportServiceCommand.PathSecurityResultWithStream(PathSecurityResult.Success(resolvedPath), readOnlyStream);
+            };
+
+            // Act & Assert
+            // StreamWriter rejects a non-writable stream with ArgumentException, which the write catch
+            // filter (IOException / UnauthorizedAccessException) deliberately does not swallow.
+            Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "data"));
+
+            Assert.False(Directory.Exists(deepSubDir), "The directory chain created before the write failure should be rolled back.");
+            Assert.False(Directory.Exists(Path.Combine(TempDirectory, "write_fail_tree")), "The orphaned root created during execution should be removed too.");
+        }
+
         #endregion
 
         #region Reflection Helper Definition
