@@ -38,6 +38,7 @@ function Protect-SensitiveString {
         [string]$Text,
 
         [Parameter(Mandatory=$false)]
+        # Parity: AppConfig.InputRegexTimeoutMs (src/Servy.Core/Config/AppConfig.cs). Keep equal.
         [int]$TimeoutMs = 2000
     )
 
@@ -47,6 +48,7 @@ function Protect-SensitiveString {
     #
     # WARNING: keep in sync with the parity twin in:
     #    src/Servy.Service/Helpers/ServiceHelper.cs (LooseKeyWords / StrictKeyWords) - same keyword-pattern masker.
+    #    The ReDoS budget is hand-synced across the pair as well: $TimeoutMs above, AppConfig.InputRegexTimeoutMs there.
     #
     # NOTE: src/Servy.CLI/Servy.psm1 (Format-SecureLogMessage) is a SEPARATE mechanism that
     # masks CLI option values (--password=…) and is kept in sync with the [Sensitive]
