@@ -295,7 +295,7 @@ namespace Servy.Manager.ViewModels
             if (SelectedServiceItem?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedServiceItem);
-                await ServiceCommands.CopyPidAsync(service);
+                await ServiceCommands.CopyPidAsync(service, cancellationToken: GetCurrentMonitoringToken());
             }
         }
 
