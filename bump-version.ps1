@@ -43,6 +43,9 @@ $fullVersion = "$Version.0"
 $fileVersion = "$Version.0.0"
 $currentYear = (Get-Date).Year
 
+# Hoist shared copyright holder pattern string
+$copyrightHolderPattern = 'Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.'
+
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing Servy version update to $Version..." -ForegroundColor Yellow
 } else {
@@ -122,7 +125,7 @@ function Update-FileContent {
 
 # -------------------------------------------------------------
 # 1. Update setup\publish.ps1
-# -------------------------------------------------------------
+# -----------------------------
 Update-FileContent `
     -Path (Join-Path $baseDir "setup\publish.ps1") `
     -Pattern '(\$version\s*=\s*")[^"]*(")' `
@@ -130,7 +133,7 @@ Update-FileContent `
 
 # -------------------------------------------------------------
 # 2. Update all AssemblyInfo.cs files (Recursive)
-# -------------------------------------------------------------
+# -----------------------------
 Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction SilentlyContinue | ForEach-Object {
     $path = $_.FullName
 
@@ -159,7 +162,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
 
             # Case-insensitive pattern for [assembly: AssemblyTag("...")]
             if ($tag -eq "AssemblyCopyright") {
-                $pattern = "(\[assembly:\s*AssemblyCopyright\(\""Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+)\d{4}(\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.\""\)\])"
+                $pattern = "(\[assembly:\s*AssemblyCopyright\(\""Copyright\s+[^\d]+?\s+)\d{4}(\s+$copyrightHolderPattern\""\)\])"
                 $regexMatches = [regex]::Matches($content, $pattern, "IgnoreCase")
 
                 if ($regexMatches.Count -gt 0) {
@@ -203,7 +206,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
 
 # -------------------------------------------------------------
 # 3. Update src\Servy.CLI\Servy.psd1
-# -------------------------------------------------------------
+# -----------------------------
 $psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
 
 Update-FileContent `
@@ -213,7 +216,7 @@ Update-FileContent `
 
 Update-FileContent `
     -Path $psd1Path `
-    -Pattern "(Copyright\s*=\s*'Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+)\d{4}(\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.')" `
+    -Pattern "(Copyright\s*=\s*'Copyright\s+[^\d]+?\s+)\d{4}(\s+$copyrightHolderPattern')" `
     -Replacement $currentYear
 
 if ($script:HadFailure) {
