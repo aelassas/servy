@@ -1062,6 +1062,31 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RemoveService_NameNotFound_LeavesCollectionUnchanged()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+
+                collection.Add(new ServiceRowViewModel(new Service { Name = "Present" }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                // Act - the locked lookup matches nothing, so the method logs a warning and returns
+                // without unsubscribing, removing or disposing anything.
+                vm.RemoveService("DoesNotExist");
+
+                // Assert - the collection still holds the one unrelated row, untouched
+                Assert.Single(collection);
+                Assert.Equal("Present", collection[0].Service?.Name);
+
+                await Task.CompletedTask;
+
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task ConfigureCommand_ShouldDelegateToConfigureServiceAsync()
         {
             await Helper.RunOnSTA(async () =>
