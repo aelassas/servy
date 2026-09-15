@@ -255,11 +255,8 @@ namespace Servy.UI.Bootstrapping
         /// </summary>
         private void ApplyLoggerSettings()
         {
-            if (_configuration == null) return;
-
-            LoggerConfigurator.ConfigureFromAppSettings(_configuration);
-
-            _options.CustomConfigAction?.Invoke(_configuration);
+            LoggerConfigurator.ConfigureFromAppSettings(_configuration!);
+            _options.CustomConfigAction?.Invoke(_configuration!);
         }
 
         /// <summary>
@@ -360,11 +357,11 @@ namespace Servy.UI.Bootstrapping
 
                     var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
 
-                    DbContext = new AppDbContext(ConnectionString);
+                    DbContext = new AppDbContext(ConnectionString!);
                     DatabaseInitializer.InitializeDatabase(DbContext, SQLiteDbInitializer.Initialize);
 
                     var dapperExecutor = new DapperExecutor(DbContext);
-                    _protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
+                    _protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath!, AESIVFilePath!);
                     SecureData = new SecureData(_protectedKeyProvider);
 
                     var xmlSerializer = new XmlServiceSerializer();
@@ -414,7 +411,7 @@ namespace Servy.UI.Bootstrapping
                     stopwatch.Stop();
 
                     // Prevent "splash screen flicker" by ensuring it stays visible for a minimum duration
-                    if (showSplash)
+                    if (splash != null)
                     {
                         var remainingMs = AppConfig.SplashMinDisplayThresholdMs - (int)stopwatch.ElapsedMilliseconds;
                         if (remainingMs > 0)
@@ -442,7 +439,7 @@ namespace Servy.UI.Bootstrapping
             }
             finally
             {
-                if (showSplash && splash?.IsVisible == true)
+                if (splash?.IsVisible == true)
                 {
                     splash.Close();
                 }
