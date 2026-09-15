@@ -57,6 +57,20 @@ namespace Servy.CLI.UnitTests.Commands
                     .ReturnsAsync(OperationResult.Failure(Core.Resources.Strings.Msg_ServiceNotFound));
         }
 
+        /// <summary>
+        /// Validates that the constructor throws an <see cref="ArgumentNullException"/> when the required
+        /// <see cref="IServiceRepository"/> dependency is missing. The inherited
+        /// <c>Constructor_NullServiceManager_ThrowsArgumentNullException</c> always passes a real repository
+        /// mock, so the second guard needs its own direct constructor call.
+        /// </summary>
+        [Fact]
+        public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>("serviceRepository",
+                () => new UninstallServiceCommand(MockServiceManager.Object, null!));
+        }
+
         [Fact]
         public override async Task Execute_ValidOptions_ReturnsSuccess()
         {
