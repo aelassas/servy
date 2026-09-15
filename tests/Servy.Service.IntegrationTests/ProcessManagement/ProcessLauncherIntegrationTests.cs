@@ -575,7 +575,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             public abstract bool Start();
             public abstract bool HasExited { get; }
-            public virtual void Kill(bool entireProcessTree) { }
+            public virtual bool Kill(bool entireProcessTree) => true;
 
             public virtual void Dispose()
             {

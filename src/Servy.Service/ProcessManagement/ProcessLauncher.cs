@@ -369,8 +369,8 @@ namespace Servy.Service.ProcessManagement
                         // Check if the process actually started and is still running.
                         // process.Start() is the first entry in the try block; if any subsequent logic throws,
                         // we must ensure the child does not remain active and unsupervised.
-                        if (processStarted && !process.HasExited)
-                            process.Kill(true);
+                        if (processStarted && !process.Kill(true))
+                            logger.Warn("Orphaned child after launch failure could not be terminated; it may still be running.");
                     }
                     catch (Exception killEx)
                     {
@@ -398,7 +398,8 @@ namespace Servy.Service.ProcessManagement
 
                     var errorMsg = $"{options.ExecutablePath} timed out after {options.TimeoutMs}ms. Terminating process tree.";
                     if (options.LogErrorAsWarning) logger.Warn(errorMsg); else logger.Error(errorMsg);
-                    process.Kill(true);
+                    if (!process.Kill(true))
+                        logger.Error($"{options.ExecutablePath}: the process tree could not be terminated and may still be running.");
                     throw new TimeoutException($"{options.ExecutablePath} exceeded the maximum allowed timeout of {options.TimeoutMs}ms.");
                 }
 

@@ -718,21 +718,68 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Kill_CatchBranch_AccessViolationOrInvalidTargetState_LogsWarningSafely()
         {
+            // Arrange & Act
+            // Test exception handling when _process.Kill() throws by exercising the catch block directly
+            // or by attempting to kill a process instance state where _process.HasExited is false but Kill() fails.
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            {
+                wrapper.Start();
+
+                // Close underlying process handles to induce an exception when Kill executes while HasExited is false
+                wrapper.UnderlyingProcess.Close();
+
+                var exception = Record.Exception(() => wrapper.Kill());
+
+                // Assert
+                Assert.Null(exception); // Exception should be caught internally by the Try/Catch block
+                Assert.Contains(_logger.Warnings, m => m.Contains("Kill failed for"));
+            }
+        }
+
+        [Fact]
+        public void Kill_WhenProcessHasExited_ReturnsTrueWithoutAttemptingKill()
+        {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
-                // Force disposal of underlying process resources to trigger an internal exception layout cascade when Kill handles execute
-                wrapper.UnderlyingProcess.Close();
-
                 // Act
-                var exception = Record.Exception(() => wrapper.Kill());
+                bool result = wrapper.Kill();
 
                 // Assert
-                Assert.Null(exception); // Exception should be caught internally by the Try/Catch block
-                Assert.Contains(_logger.Warnings, m => m.Contains("Kill failed:"));
+                Assert.True(result);
+                Assert.Empty(_logger.Warnings);
+            }
+        }
+
+        [Fact]
+        public void Kill_WhenDisposed_ThrowsObjectDisposedException()
+        {
+            // Arrange
+            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"");
+            wrapper.Dispose();
+
+            // Act & Assert
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Kill());
+        }
+
+        [Fact]
+        public void Kill_ActiveProcess_SuccessfullyKillsAndReturnsTrue()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 30\""))
+            {
+                wrapper.Start();
+                Assert.False(wrapper.UnderlyingProcess.HasExited);
+
+                // Act
+                bool result = wrapper.Kill(entireProcessTree: true);
+
+                // Assert
+                Assert.True(result);
+                Assert.True(wrapper.UnderlyingProcess.HasExited);
             }
         }
 

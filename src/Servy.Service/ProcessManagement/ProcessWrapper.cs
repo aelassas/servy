@@ -449,26 +449,27 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc />
-        public void Kill(bool entireProcessTree = false)
+        public bool Kill(bool entireProcessTree = false)
         {
             ThrowIfDisposed();
             try
             {
-                if (_process.HasExited) return;
-
-                if (entireProcessTree)
-                {
-                    ProcessHelper.KillProcessTree(_process);
-                }
-                else
-                {
-                    _process.Kill();
-                }
+                if (_process.HasExited) return true;
+                ProcessHelper.KillProcessTree(_process);
             }
             catch (Exception ex)
             {
-                _logger?.Warn($"Kill failed: {ex.Message}");
+                _logger?.Warn($"Kill failed for '{_process.Format()}': {ex.Message}");
+                return false;
             }
+
+            if (!_process.WaitForExit(AppConfig.DefaultDescendantPostKillWaitMs))
+            {
+                _logger?.Warn($"Process '{_process.Format()}' killed, but did not exit within {AppConfig.DefaultDescendantPostKillWaitMs / (double)AppConfig.MillisecondsPerSecond}s.");
+                return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
