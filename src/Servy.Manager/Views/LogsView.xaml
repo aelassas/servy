@@ -37,7 +37,7 @@
                        AutomationProperties.Name="{x:Static resx:Strings.Label_Level}" />
 
       <ComboBox Width="120"
-                      SelectedItem="{Binding SelectedLevel, Mode=TwoWay}"
+                      SelectedItem="{Binding SelectedLevel}"
                       ItemsSource="{Binding LogLevels}"
                       Margin="0,0,10,0"
                       AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelComboBox_Name}"
@@ -49,7 +49,7 @@
                        Margin="0,0,5,0"
                        AutomationProperties.Name="{x:Static resx:Strings.Label_From}" />
 
-      <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}"
+      <DatePicker SelectedDate="{Binding FromDate}"
                         DisplayDateEnd="{Binding FromDateMaxDate}"
                         Width="150"
                         Margin="0,0,10,0"
@@ -62,7 +62,7 @@
                        Margin="0,0,5,0"
                        AutomationProperties.Name="{x:Static resx:Strings.Label_To}" />
 
-      <DatePicker SelectedDate="{Binding ToDate, Mode=TwoWay}"
+      <DatePicker SelectedDate="{Binding ToDate}"
                         DisplayDateStart="{Binding ToDateMinDate}"
                         Width="150"
                         Margin="0,0,10,0"
@@ -75,7 +75,7 @@
                        Margin="0,0,5,0"
                        AutomationProperties.Name="{x:Static resx:Strings.Label_Keyword}" />
 
-      <TextBox Text="{Binding Keyword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+      <TextBox Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged}"
                      Width="200"
                      Margin="0,0,10,0"
                      VerticalContentAlignment="Center"
@@ -102,7 +102,7 @@
     <DataGrid x:Name="LogsDataGrid"
                   Grid.Row="1"
                   ItemsSource="{Binding LogsView, IsAsync=True}"
-                  SelectedItem="{Binding SelectedLog, Mode=TwoWay}"
+                  SelectedItem="{Binding SelectedLog}"
                   SelectionMode="Single"
                   Margin="0,0,0,10"
                   AutoGenerateColumns="False"

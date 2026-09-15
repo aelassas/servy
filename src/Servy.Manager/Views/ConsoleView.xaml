@@ -41,10 +41,6 @@
       </Grid.RowDefinitions>
 
       <Grid Grid.Row="0">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="10" />
@@ -53,16 +49,14 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0"
-                    Grid.Column="0"
+        <StackPanel Grid.Column="0"
                     Orientation="Horizontal"
                     Margin="0,0,0,6"
                     VerticalAlignment="Center">
           <controls:PidBadgeControl />
         </StackPanel>
 
-        <StackPanel Grid.Row="0"
-                    Grid.Column="2"
+        <StackPanel Grid.Column="2"
                     Orientation="Horizontal"
                     VerticalAlignment="Center">
           <Button Command="{Binding ClearSelectionCommand}"
@@ -75,8 +69,7 @@
                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ResumeScrollButton_HelpText}" />
         </StackPanel>
 
-        <TextBlock Grid.Row="0"
-                   Grid.Column="4"
+        <TextBlock Grid.Column="4"
                    Text="{x:Static resx:Strings.Console_Info}"
                    FontSize="11"
                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
