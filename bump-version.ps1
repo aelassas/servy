@@ -7,7 +7,7 @@
 .DESCRIPTION
     This script updates the version of Servy in multiple locations:
     - setup\build-config.ps1    (Version hashtable key)
-    - Directory.Build.props      (<Version>, <FileVersion>, <AssemblyVersion>, <Copyright>)
+    - Directory.Build.props     (<Version>, <FileVersion>, <AssemblyVersion>, <Copyright>)
     - src\Servy.CLI\Servy.psd1  (ModuleVersion, Copyright)
 
 .PARAMETER Version
@@ -71,6 +71,9 @@ $fullVersion = "$Version.0"
 $fileVersion = "$Version.0.0"
 $currentYear = (Get-Date).Year
 
+# Hoist shared copyright holder pattern string
+$copyrightHolderPattern = 'Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.'
+
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing Servy version update to $Version..." -ForegroundColor Yellow
 } else {
@@ -98,7 +101,7 @@ $propsEdits = @(
     @{ Pattern = '(<Version(?:\s+[^>]*)?>)[^<]*(</Version>)';         Replacement = { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }; ExpectedCount = 1 },
     @{ Pattern = '(<FileVersion(?:\s+[^>]*)?>)[^<]*(</FileVersion>)';     Replacement = { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }; ExpectedCount = 1 },
     @{ Pattern = '(<AssemblyVersion(?:\s+[^>]*)?>)[^<]*(</AssemblyVersion>)'; Replacement = { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }; ExpectedCount = 1 },
-    @{ Pattern = '(<Copyright(?:\s+[^>]*)?>Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+)\d{4}(\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.</Copyright>)'; Replacement = { param($m) "$($m.Groups[1].Value)$currentYear$($m.Groups[2].Value)" }; ExpectedCount = 1 }
+    @{ Pattern = "(<Copyright(?:\s+[^>]*)?>Copyright\s+[^\d]+?\s+)\d{4}(\s+$copyrightHolderPattern</Copyright>)"; Replacement = { param($m) "$($m.Groups[1].Value)$currentYear$($m.Groups[2].Value)" }; ExpectedCount = 1 }
 )
 
 Update-FilesContent `
@@ -114,7 +117,7 @@ $psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
 
 $psd1Edits = @(
     @{ Pattern = "(?<![A-Za-z0-9])(ModuleVersion\s*=\s*')[^']*(')"; Replacement = { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }; ExpectedCount = 1 },
-    @{ Pattern = "(Copyright\s*=\s*'Copyright\s+[\u00A9\xc2\xa9\w\W]*?\s+)\d{4}(\s+Akram\s+El\s+Assas\.\s+All\s+rights\s+reserved\.')"; Replacement = { param($m) "$($m.Groups[1].Value)$currentYear$($m.Groups[2].Value)" }; ExpectedCount = 1 }
+    @{ Pattern = "(Copyright\s*=\s*'Copyright\s+[^\d]+?\s+)\d{4}(\s+$copyrightHolderPattern')"; Replacement = { param($m) "$($m.Groups[1].Value)$currentYear$($m.Groups[2].Value)" }; ExpectedCount = 1 }
 )
 
 Update-FilesContent `
@@ -134,9 +137,9 @@ if ($DryRun) {
     Write-Host "Files that would be modified:    $script:filesModified"
     Write-Host "Replacements that would be made: $script:totalReplacements"
 } else {
-    Write-Host "Files scanned:                   $script:totalFilesScanned"
-    Write-Host "Files modified:                  $script:filesModified"
-    Write-Host "Total replacements:              $script:totalReplacements"
+    Write-Host "Files scanned:                    $script:totalFilesScanned"
+    Write-Host "Files modified:                   $script:filesModified"
+    Write-Host "Total replacements:               $script:totalReplacements"
 }
 
 if ($script:HadFailure) {
