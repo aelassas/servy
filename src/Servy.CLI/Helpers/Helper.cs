@@ -43,8 +43,11 @@ namespace Servy.CLI.Helpers
                 .Select(attr => attr!.Name.ToLowerInvariant())
                 .ToList();
 
+            // "version" has no [Verb] class: CommandLineParser handles it internally and
+            // Program.cs reports it through errs.IsVersion(). Without this entry the
+            // unknown-command guard in Program.cs would reject it. The "--version" spelling
+            // needs no entry, since that guard already lets every dash-prefixed argument through.
             verbs.Add("version");
-            verbs.Add("--version");
 
             return verbs.ToArray();
         }

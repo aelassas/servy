@@ -16,6 +16,7 @@ namespace Servy.Core.Services
         /// <summary>
         /// Gets or sets the display name of the Windows service.
         /// This is the human-readable name shown in the Services MMC.
+        /// Populated for completeness by <see cref="IWindowsServiceApi.GetServices"/>; no caller reads it today.
         /// </summary>
         public string DisplayName { get; set; } = string.Empty;
     }
