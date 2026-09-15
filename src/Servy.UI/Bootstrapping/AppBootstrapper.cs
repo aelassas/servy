@@ -252,14 +252,10 @@ namespace Servy.UI.Bootstrapping
         private void ApplyLoggerSettings()
         {
             var config = ConfigurationManager.AppSettings;
-
-            if (config == null) return;
-
             LoggerConfigurator.ConfigureFromAppSettings(config);
-
-            // Invoke project-specific configuration logic
             _options.CustomConfigAction?.Invoke(config);
         }
+
         /// <summary>
         /// Asynchronously initializes the application and handles any critical faults
         /// that occur before the UI is ready.
@@ -433,7 +429,7 @@ namespace Servy.UI.Bootstrapping
                     stopwatch.Stop();
 
                     // Prevent "splash screen flicker" by ensuring it stays visible for a minimum duration
-                    if (showSplash)
+                    if (splash != null)
                     {
                         var remainingMs = AppConfig.SplashMinDisplayThresholdMs - (int)stopwatch.ElapsedMilliseconds;
                         if (remainingMs > 0)
@@ -462,7 +458,7 @@ namespace Servy.UI.Bootstrapping
             finally
             {
                 // Ensure splash is cleaned up even if startup fails
-                if (showSplash && splash?.IsVisible == true)
+                if (splash?.IsVisible == true)
                 {
                     splash.Close();
                 }
