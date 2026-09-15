@@ -120,7 +120,10 @@ namespace Servy.Core.UnitTests.Helpers
             var scMock = new Mock<IServiceControllerWrapper>();
 
             int refreshCount = 0;
-            scMock.Setup(x => x.Status).Returns(() => refreshCount == 0 ? ServiceControllerStatus.StartPending : ServiceControllerStatus.Running);
+            // StartServicesAsync refreshes once unconditionally on entry, before its first Running
+            // check. Stay pending until the SECOND refresh - the one inside the settle loop - so the
+            // loop this test is named for is actually entered instead of being bypassed at entry.
+            scMock.Setup(x => x.Status).Returns(() => refreshCount < 2 ? ServiceControllerStatus.StartPending : ServiceControllerStatus.Running);
             scMock.Setup(x => x.Refresh()).Callback(() => refreshCount++);
 
             var serviceDto = new ServiceDto { Name = "PendingService", StartTimeout = 30 };
@@ -312,7 +315,10 @@ namespace Servy.Core.UnitTests.Helpers
             var scMock = new Mock<IServiceControllerWrapper>();
 
             int refreshCount = 0;
-            scMock.Setup(x => x.Status).Returns(() => refreshCount == 0 ? ServiceControllerStatus.StopPending : ServiceControllerStatus.Stopped);
+            // StopServicesAsync refreshes once unconditionally on entry, before its first Stopped
+            // check. Stay pending until the SECOND refresh so the service is still StopPending when
+            // the Stop() re-entry guard is evaluated - the guard this test is named for.
+            scMock.Setup(x => x.Status).Returns(() => refreshCount < 2 ? ServiceControllerStatus.StopPending : ServiceControllerStatus.Stopped);
             scMock.Setup(x => x.Refresh()).Callback(() => refreshCount++);
 
             var serviceDto = new ServiceDto { Name = "StoppingService", StopTimeout = 30 };
