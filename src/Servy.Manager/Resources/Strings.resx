@@ -965,6 +965,19 @@ If the service is disabled and marked for deletion, installation will fail until
     <value>Message Column</value>
   </data>
 
+  <data name="Automation_LogsTimeColumnCell_HelpText" xml:space="preserve">
+    <value>The timestamp of the log entry.</value>
+  </data>
+  <data name="Automation_LogsLevelColumnCell_HelpText" xml:space="preserve">
+    <value>The severity level of the log entry.</value>
+  </data>
+  <data name="Automation_LogsEventIdColumnCell_HelpText" xml:space="preserve">
+    <value>The Windows Event ID of the log entry.</value>
+  </data>
+  <data name="Automation_LogsMessageColumnCell_HelpText" xml:space="preserve">
+    <value>The message text of the log entry.</value>
+  </data>
+
   <data name="Automation_LogsGridSplitter_Name" xml:space="preserve">
     <value>Log Details Resizer</value>
   </data>

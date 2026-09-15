@@ -26,101 +26,101 @@
     </Grid.RowDefinitions>
 
     <StackPanel Grid.Row="0"
-                    Orientation="Horizontal"
-                    Margin="0,0,0,10"
-                    Focusable="True"
-                    FocusVisualStyle="{x:Null}">
+                Orientation="Horizontal"
+                Margin="0,0,0,10"
+                Focusable="True"
+                FocusVisualStyle="{x:Null}">
 
       <TextBlock Text="{x:Static resx:Strings.Label_Level}"
-                       VerticalAlignment="Center"
-                       Margin="0,0,5,0"
-                       AutomationProperties.Name="{x:Static resx:Strings.Label_Level}" />
+                 VerticalAlignment="Center"
+                 Margin="0,0,5,0"
+                 AutomationProperties.Name="{x:Static resx:Strings.Label_Level}" />
 
       <ComboBox Width="120"
-                      SelectedItem="{Binding SelectedLevel}"
-                      ItemsSource="{Binding LogLevels}"
-                      Margin="0,0,10,0"
-                      AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelComboBox_Name}"
-                      AutomationProperties.AutomationId="LogsLevelComboBox"
-                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsLevelComboBox_HelpText}" />
+                SelectedItem="{Binding SelectedLevel}"
+                ItemsSource="{Binding LogLevels}"
+                Margin="0,0,10,0"
+                AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelComboBox_Name}"
+                AutomationProperties.AutomationId="LogsLevelComboBox"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsLevelComboBox_HelpText}" />
 
       <TextBlock Text="{x:Static resx:Strings.Label_From}"
-                       VerticalAlignment="Center"
-                       Margin="0,0,5,0"
-                       AutomationProperties.Name="{x:Static resx:Strings.Label_From}" />
+                 VerticalAlignment="Center"
+                 Margin="0,0,5,0"
+                 AutomationProperties.Name="{x:Static resx:Strings.Label_From}" />
 
       <DatePicker SelectedDate="{Binding FromDate}"
-                        DisplayDateEnd="{Binding FromDateMaxDate}"
-                        Width="150"
-                        Margin="0,0,10,0"
-                        AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsFromDatePicker_Name}"
-                        AutomationProperties.AutomationId="LogsFromDatePicker"
-                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsFromDatePicker_HelpText}" />
+                  DisplayDateEnd="{Binding FromDateMaxDate}"
+                  Width="150"
+                  Margin="0,0,10,0"
+                  AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsFromDatePicker_Name}"
+                  AutomationProperties.AutomationId="LogsFromDatePicker"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsFromDatePicker_HelpText}" />
 
       <TextBlock Text="{x:Static resx:Strings.Label_To}"
-                       VerticalAlignment="Center"
-                       Margin="0,0,5,0"
-                       AutomationProperties.Name="{x:Static resx:Strings.Label_To}" />
+                 VerticalAlignment="Center"
+                 Margin="0,0,5,0"
+                 AutomationProperties.Name="{x:Static resx:Strings.Label_To}" />
 
       <DatePicker SelectedDate="{Binding ToDate}"
-                        DisplayDateStart="{Binding ToDateMinDate}"
-                        Width="150"
-                        Margin="0,0,10,0"
-                        AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsToDatePicker_Name}"
-                        AutomationProperties.AutomationId="LogsToDatePicker"
-                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsToDatePicker_HelpText}" />
+                  DisplayDateStart="{Binding ToDateMinDate}"
+                  Width="150"
+                  Margin="0,0,10,0"
+                  AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsToDatePicker_Name}"
+                  AutomationProperties.AutomationId="LogsToDatePicker"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsToDatePicker_HelpText}" />
 
       <TextBlock Text="{x:Static resx:Strings.Label_Keyword}"
-                       VerticalAlignment="Center"
-                       Margin="0,0,5,0"
-                       AutomationProperties.Name="{x:Static resx:Strings.Label_Keyword}" />
+                 VerticalAlignment="Center"
+                 Margin="0,0,5,0"
+                 AutomationProperties.Name="{x:Static resx:Strings.Label_Keyword}" />
 
       <TextBox Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged}"
-                     Width="200"
-                     Margin="0,0,10,0"
-                     VerticalContentAlignment="Center"
-                     SnapsToDevicePixels="False"
-                     UseLayoutRounding="False"
-                     TextOptions.TextFormattingMode="Display"
-                     TextOptions.TextRenderingMode="ClearType"
-                     AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsKeywordTextBox_Name}"
-                     AutomationProperties.AutomationId="LogsKeywordTextBox"
-                     AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsKeywordTextBox_HelpText}">
+               Width="200"
+               Margin="0,0,10,0"
+               VerticalContentAlignment="Center"
+               SnapsToDevicePixels="False"
+               UseLayoutRounding="False"
+               TextOptions.TextFormattingMode="Display"
+               TextOptions.TextRenderingMode="ClearType"
+               AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsKeywordTextBox_Name}"
+               AutomationProperties.AutomationId="LogsKeywordTextBox"
+               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsKeywordTextBox_HelpText}">
         <TextBox.InputBindings>
           <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
         </TextBox.InputBindings>
       </TextBox>
 
       <Button Content="{Binding SearchButtonText}"
-                    Command="{Binding SearchCommand}"
-                    Width="80"
-                    AutomationProperties.Name="{Binding SearchButtonText}"
-                    AutomationProperties.AutomationId="LogsSearchButton"
-                    AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsSearchButton_HelpText}" />
+              Command="{Binding SearchCommand}"
+              Width="80"
+              AutomationProperties.Name="{Binding SearchButtonText}"
+              AutomationProperties.AutomationId="LogsSearchButton"
+              AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsSearchButton_HelpText}" />
     </StackPanel>
 
     <DataGrid x:Name="LogsDataGrid"
-                  Grid.Row="1"
-                  ItemsSource="{Binding LogsView, IsAsync=True}"
-                  SelectedItem="{Binding SelectedLog}"
-                  SelectionMode="Single"
-                  Margin="0,0,0,10"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  CanUserResizeRows="False"
-                  IsReadOnly="True"
-                  EnableRowVirtualization="True"
-                  EnableColumnVirtualization="True"
-                  VirtualizingStackPanel.IsVirtualizing="True"
-                  VirtualizingStackPanel.VirtualizationMode="Recycling"
-                  VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                  ScrollViewer.CanContentScroll="True"
-                  VirtualizingStackPanel.ScrollUnit="Pixel"
-                  AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsDataGrid_Name}"
-                  AutomationProperties.AutomationId="LogsDataGrid"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsDataGrid_HelpText}"
-                  Style="{StaticResource DataGridSelectionColorsStyle}">
+              Grid.Row="1"
+              ItemsSource="{Binding LogsView, IsAsync=True}"
+              SelectedItem="{Binding SelectedLog}"
+              SelectionMode="Single"
+              Margin="0,0,0,10"
+              AutoGenerateColumns="False"
+              CanUserAddRows="False"
+              CanUserDeleteRows="False"
+              CanUserResizeRows="False"
+              IsReadOnly="True"
+              EnableRowVirtualization="True"
+              EnableColumnVirtualization="True"
+              VirtualizingStackPanel.IsVirtualizing="True"
+              VirtualizingStackPanel.VirtualizationMode="Recycling"
+              VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+              ScrollViewer.CanContentScroll="True"
+              VirtualizingStackPanel.ScrollUnit="Pixel"
+              AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsDataGrid_Name}"
+              AutomationProperties.AutomationId="LogsDataGrid"
+              AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsDataGrid_HelpText}"
+              Style="{StaticResource DataGridSelectionColorsStyle}">
       <DataGrid.RowStyle>
         <Style TargetType="DataGridRow">
           <Setter Property="Height" Value="26" />
@@ -134,11 +134,11 @@
 
       <DataGrid.Columns>
         <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Time}"
-                                        Width="180"
-                                        MinWidth="180"
-                                        CanUserReorder="False"
-                                        CanUserResize="False"
-                                        SortMemberPath="Time">
+                                Width="180"
+                                MinWidth="180"
+                                CanUserReorder="False"
+                                CanUserResize="False"
+                                SortMemberPath="Time">
           <DataGridTemplateColumn.HeaderStyle>
             <Style TargetType="DataGridColumnHeader">
               <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_LogsTimeColumnHeader_Name}" />
@@ -148,19 +148,20 @@
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding Time}"
-                                       VerticalAlignment="Center"
-                                       Margin="5,0,0,0"
-                                       AutomationProperties.Name="{Binding Time}" />
+                         VerticalAlignment="Center"
+                         Margin="5,0,0,0"
+                         AutomationProperties.Name="{Binding Time}"
+                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsTimeColumnCell_HelpText}" />
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>
 
         <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Level}"
-                                        Width="120"
-                                        MinWidth="120"
-                                        CanUserReorder="False"
-                                        CanUserResize="False"
-                                        SortMemberPath="Level">
+                                Width="120"
+                                MinWidth="120"
+                                CanUserReorder="False"
+                                CanUserResize="False"
+                                SortMemberPath="Level">
           <DataGridTemplateColumn.HeaderStyle>
             <Style TargetType="DataGridColumnHeader">
               <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_LogsLevelColumnHeader_Name}" />
@@ -169,26 +170,28 @@
 
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate>
-              <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
+              <StackPanel Orientation="Horizontal"
+                          Margin="5,0,5,0"
+                          AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsLevelColumnCell_HelpText}">
                 <Image Source="{Binding LevelIcon}"
-                                       Width="16"
-                                       Height="16"
-                                       Margin="0,0,5,0"
-                                       AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelIcon_Name}" />
+                       Width="16"
+                       Height="16"
+                       Margin="0,0,5,0"
+                       AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelIcon_Name}" />
                 <TextBlock Text="{Binding Level}"
-                                           VerticalAlignment="Center"
-                                           AutomationProperties.Name="{Binding Level}" />
+                           VerticalAlignment="Center"
+                           AutomationProperties.Name="{Binding Level}" />
               </StackPanel>
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>
 
         <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_EventId}"
-                        Width="90"
-                        MinWidth="90"
-                        CanUserReorder="False"
-                        CanUserResize="False"
-                        SortMemberPath="EventId">
+                                Width="90"
+                                MinWidth="90"
+                                CanUserReorder="False"
+                                CanUserResize="False"
+                                SortMemberPath="EventId">
           <DataGridTemplateColumn.HeaderStyle>
             <Style TargetType="DataGridColumnHeader">
               <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_LogsEventIdColumnHeader_Name}" />
@@ -197,19 +200,20 @@
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding EventId}"
-                 VerticalAlignment="Center"
-                 Margin="5,0,0,0"
-                 AutomationProperties.Name="{Binding EventId}" />
+                         VerticalAlignment="Center"
+                         Margin="5,0,0,0"
+                         AutomationProperties.Name="{Binding EventId}"
+                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsEventIdColumnCell_HelpText}" />
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>
 
         <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}"
-                                        Width="*"
-                                        MinWidth="300"
-                                        CanUserReorder="False"
-                                        CanUserResize="False"
-                                        SortMemberPath="Message">
+                                Width="*"
+                                MinWidth="300"
+                                CanUserReorder="False"
+                                CanUserResize="False"
+                                SortMemberPath="Message">
           <DataGridTemplateColumn.HeaderStyle>
             <Style TargetType="DataGridColumnHeader">
               <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_LogsMessageColumnHeader_Name}" />
@@ -219,11 +223,12 @@
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding Message, Converter={StaticResource MessageConverter}}"
-                                       VerticalAlignment="Center"
-                                       Margin="5,0,0,0"
-                                       TextWrapping="NoWrap"
-                                       TextTrimming="CharacterEllipsis"
-                                       AutomationProperties.Name="{Binding Message}" />
+                         VerticalAlignment="Center"
+                         Margin="5,0,0,0"
+                         TextWrapping="NoWrap"
+                         TextTrimming="CharacterEllipsis"
+                         AutomationProperties.Name="{Binding Message}"
+                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsMessageColumnCell_HelpText}" />
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>
@@ -231,25 +236,25 @@
     </DataGrid>
 
     <GridSplitter Grid.Row="2"
-                      Height="5"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Center"
-                      Background="Gray"
-                      ShowsPreview="True"
-                      ResizeBehavior="PreviousAndNext"
-                      AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsGridSplitter_Name}"
-                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsGridSplitter_HelpText}" />
+                  Height="5"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Center"
+                  Background="Gray"
+                  ShowsPreview="True"
+                  ResizeBehavior="PreviousAndNext"
+                  AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsGridSplitter_Name}"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsGridSplitter_HelpText}" />
 
     <TextBox Grid.Row="3"
-                 Text="{Binding SelectedLogMessage}"
-                 Margin="0,5"
-                 IsReadOnly="True"
-                 TextWrapping="Wrap"
-                 VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto"
-                 AutomationProperties.Name="{x:Static resx:Strings.Automation_LogDetailsTextBox_Name}"
-                 AutomationProperties.AutomationId="LogDetailsTextBox"
-                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogDetailsTextBox_HelpText}" />
+             Text="{Binding SelectedLogMessage}"
+             Margin="0,5"
+             IsReadOnly="True"
+             TextWrapping="Wrap"
+             VerticalScrollBarVisibility="Auto"
+             HorizontalScrollBarVisibility="Auto"
+             AutomationProperties.Name="{x:Static resx:Strings.Automation_LogDetailsTextBox_Name}"
+             AutomationProperties.AutomationId="LogDetailsTextBox"
+             AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogDetailsTextBox_HelpText}" />
 
     <Grid Grid.Row="4">
       <Grid.ColumnDefinitions>
