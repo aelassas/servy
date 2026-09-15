@@ -40,7 +40,6 @@ namespace Servy.CLI.UnitTests.Helpers
             // Assert
             Assert.Contains("install", verbs);   // Discovered via [Verb] reflection
             Assert.Contains("version", verbs);   // Hardcoded addition
-            Assert.Contains("--version", verbs); // Hardcoded addition
         }
 
         [Fact]

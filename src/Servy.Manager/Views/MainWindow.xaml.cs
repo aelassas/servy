@@ -484,14 +484,8 @@ namespace Servy.Manager.Views
             {
                 if (DataContext is MainViewModel vm)
                 {
-                    vm.StopRefreshTimer();
                     vm.Dispose();
                 }
-
-                GetPerformanceVm()?.Dispose();
-                GetConsoleVm()?.Dispose();
-                GetDependenciesVm()?.Dispose();
-                GetLogsVm()?.Dispose();
             }
             catch (Exception ex)
             {
@@ -514,6 +508,8 @@ namespace Servy.Manager.Views
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
+
+            // No handler currently sets e.Cancel, so the guard is a placeholder for a future "confirm before closing" feature rather than an active check today.
             if (!e.Cancel)
             {
                 Application.Current.Shutdown();

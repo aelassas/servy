@@ -225,8 +225,7 @@
                   </Path>
 
                   <!-- Node Main Text -->
-                  <TextBlock x:Name="NodeText"
-                             Text="{Binding DisplayName}"
+                  <TextBlock Text="{Binding DisplayName}"
                              VerticalAlignment="Center">
                     <TextBlock.Style>
                       <Style TargetType="TextBlock">

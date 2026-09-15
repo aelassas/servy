@@ -83,8 +83,7 @@
       </MenuItem>
     </Menu>
 
-    <TabControl x:Name="MainTabControl"
-                SelectionChanged="MainTabControl_SelectionChanged"
+    <TabControl SelectionChanged="MainTabControl_SelectionChanged"
                 AutomationProperties.Name="{x:Static resx:Strings.Automation_MainTabControl_Name}"
                 AutomationProperties.AutomationId="MainTabControl"
                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_MainTabControl_HelpText}">
@@ -113,8 +112,7 @@
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBox x:Name="SearchTextBox"
-                     Grid.Column="0"
+            <TextBox Grid.Column="0"
                      Width="200"
                      Height="24"
                      Margin="0,0,5,0"
