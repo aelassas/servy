@@ -71,24 +71,16 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(string.Empty, result);
         }
 
-        [Fact]
-        public void Convert_IncompatibleValue_EchoesInput()
+        [Theory]
+        [InlineData("Running")]
+        [InlineData("Invalid")]
+        public void Convert_IncompatibleValue_EchoesInput(string value)
         {
             // Act: a string is not a ServiceStatus, so the map lookup misses and GetFallbackValue runs
-            var result = _converter.Convert("Running", typeof(string), null!, CultureInfo.InvariantCulture);
+            var result = _converter.Convert(value, typeof(string), null!, CultureInfo.InvariantCulture);
 
             // Assert: the raw value is surfaced rather than masquerading as a mapped status
-            Assert.Equal("Running", result);
-        }
-
-        [Fact]
-        public void Convert_NonEnumInput_EchoesInput()
-        {
-            // Act
-            var result = _converter.Convert("Invalid", typeof(string), null!, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.Equal("Invalid", result);
+            Assert.Equal(value, result);
         }
 
         #endregion
