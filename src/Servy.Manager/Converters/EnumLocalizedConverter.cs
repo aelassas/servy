@@ -59,6 +59,9 @@ namespace Servy.Manager.Converters
         /// </summary>
         /// <param name="value">The raw input value passing through the conversion route.</param>
         /// <returns>The fallback string representation.</returns>
+        /// <remarks>
+        /// Null rendering is the derived class's choice and must be justified in a comment.
+        /// </remarks>
         protected abstract string GetFallbackValue(object value);
     }
 }
