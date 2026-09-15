@@ -360,7 +360,7 @@ namespace Servy.Service.ProcessManagement
                     catch (Exception ex) { logger.Warn($"Failed to dispose stderr writer: {ex.Message}"); }
                 }
 
-                if (!returnedOwnership && process != null)
+                if (!returnedOwnership)
                 {
                     // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.
                     // We must kill the process tree before disposing the wrapper to avoid leaking child processes.

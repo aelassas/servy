@@ -943,7 +943,7 @@ namespace Servy.Manager.ViewModels
                 var update = new ServiceUpdateInfo(service);
 
                 // 1. Evaluate OS Status First
-                if (allServices != null && !string.IsNullOrWhiteSpace(service.Name) && allServices.TryGetValue(service.Name, out var info) && info != null)
+                if (!string.IsNullOrWhiteSpace(service.Name) && allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
                     update.IsInstalled = true;
                     update.Status = info.Status;
@@ -1184,10 +1184,10 @@ namespace Servy.Manager.ViewModels
 
                 // Dispose child VMs so their timers/CTS/tailers stop before we tear down
                 // the shared ServiceCommands instance they still reference.
-                (PerformanceVM as IDisposable)?.Dispose();
-                (ConsoleVM as IDisposable)?.Dispose();
-                (DependenciesVM as IDisposable)?.Dispose();
-                (LogsVM as IDisposable)?.Dispose();
+                PerformanceVM.Dispose();
+                ConsoleVM.Dispose();
+                DependenciesVM.Dispose();
+                LogsVM.Dispose();
 
                 // Drain the row VM list - unhook MainViewModel's handler and
                 // dispose each row so its own Service.PropertyChanged unsubscription runs.
@@ -1202,7 +1202,7 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // Now safe to dispose the shared command engine.
-                ServiceCommands?.Dispose();
+                ServiceCommands.Dispose();
             }
 
             base.Dispose(disposing);
