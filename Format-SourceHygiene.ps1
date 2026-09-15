@@ -64,9 +64,10 @@ if ($DryRun) {
 $scannedCount = 0
 $modifiedCount = 0
 $failedCount = 0
-$trimmedOnlyCount = 0
-$newlineOnlyCount = 0
-$bomOnlyCount = 0
+$trailingWhitespaceCount = 0
+$missingNewlineCount = 0
+$lfEndingCount = 0
+$bomCount = 0
 
 # File extensions requiring UTF-8 BOM encoding (.config kept for future App.config/Web.config support)
 $bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
@@ -153,18 +154,19 @@ foreach ($file in $filesToScan) {
             # Build precise issue categorization reasons for reporting
             $reasons = @()
             if ($hasTrailingWhitespace) {
-                $trimmedOnlyCount++
+                $trailingWhitespaceCount++
                 $reasons += "trailing whitespace"
             }
             if ($lacksFinalNewline) {
-                $newlineOnlyCount++
+                $missingNewlineCount++
                 $reasons += "missing final newline"
             }
             if ($hasLfEndings) {
+                $lfEndingCount++
                 $reasons += "LF line endings"
             }
             if ($bomWrong) {
-                $bomOnlyCount++
+                $bomCount++
                 if (-not $isUtf8) {
                     $reasons += "not UTF-8 ($($sourceEncoding.EncodingName))"
                 } else {
@@ -212,6 +214,10 @@ if ($DryRun) {
     Write-Host "`nDRY-RUN: Scan Complete! (No files modified)" -ForegroundColor Yellow
     Write-Host "Files Scanned        : $scannedCount"
     Write-Host "Files Needing Format : $modifiedCount" -ForegroundColor Yellow
+    Write-Host "  trailing whitespace: $trailingWhitespaceCount"
+    Write-Host "  missing newline    : $missingNewlineCount"
+    Write-Host "  LF line endings    : $lfEndingCount"
+    Write-Host "  UTF-8 BOM / Charset: $bomCount"
     if ($failedCount -gt 0) {
         Write-Host "Files Skipped/Failed : $failedCount" -ForegroundColor Red
     }
@@ -219,6 +225,10 @@ if ($DryRun) {
     Write-Host "`nFormat Complete!" -ForegroundColor Green
     Write-Host "Files Scanned  : $scannedCount"
     Write-Host "Files Modified : $modifiedCount" -ForegroundColor Green
+    Write-Host "  trailing whitespace: $trailingWhitespaceCount"
+    Write-Host "  missing newline    : $missingNewlineCount"
+    Write-Host "  LF line endings    : $lfEndingCount"
+    Write-Host "  UTF-8 BOM / Charset: $bomCount"
     if ($failedCount -gt 0) {
         Write-Host "Files Skipped/Failed : $failedCount" -ForegroundColor Red
     }

@@ -162,8 +162,10 @@ function Update-Watermark {
 
                 if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
                     try {
+                        # Non-empty content ensures ConvertFrom-WatermarkString returns a
+                        # DateTime or throws into the catch block below - never $null.
                         $fileTimestamp = ConvertFrom-WatermarkString -Value $currentFileContent
-                        if ($null -ne $fileTimestamp -and $newestTimestamp -le $fileTimestamp) {
+                        if ($newestTimestamp -le $fileTimestamp) {
                             $shouldWrite = $false
                         }
                     } catch {
