@@ -556,6 +556,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Event ID Column.
+        /// </summary>
+        public static string Automation_LogsEventIdColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_LogsEventIdColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Shows total count and query execution duration for current logs filter..
         /// </summary>
         public static string Automation_LogsFooterText_HelpText {
@@ -1231,24 +1240,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays a searchable list of managed services. Use the search field to filter by service name..
-        /// </summary>
-        public static string Automation_ServiceListControl_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_ServiceListControl_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Service List Control.
-        /// </summary>
-        public static string Automation_ServiceListControl_Name {
-            get {
-                return ResourceManager.GetString("Automation_ServiceListControl_Name", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Service Name Header.
         /// </summary>
         public static string Automation_ServiceNameHeader_Name {
@@ -1587,6 +1578,15 @@ namespace Servy.Manager.Resources {
         public static string Column_Description {
             get {
                 return ResourceManager.GetString("Column_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Event ID.
+        /// </summary>
+        public static string Column_EventId {
+            get {
+                return ResourceManager.GetString("Column_EventId", resourceCulture);
             }
         }
         

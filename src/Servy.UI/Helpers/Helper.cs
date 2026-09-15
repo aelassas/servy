@@ -35,15 +35,11 @@ namespace Servy.UI.Helpers
         /// </summary>
         /// <param name="duration">The duration to format.</param>
         /// <returns>
-        /// A formatted string such as <c>1h 5s</c>, <c>15s</c>, <c>-3m 10s</c>, or <c>0ms</c> if the duration is zero.
+        /// A formatted string such as <c>1h 5s</c>, <c>15s</c>, <c>-3m 10s</c>, or <c>0ms</c> when the
+        /// duration is zero or shorter than one millisecond in either direction.
         /// </returns>
         public static string FormatDuration(TimeSpan duration)
         {
-            if (duration == TimeSpan.Zero)
-            {
-                return "0ms";
-            }
-
             bool isNegative = duration < TimeSpan.Zero;
             TimeSpan absDuration = duration.Duration(); // Gets absolute value
 
