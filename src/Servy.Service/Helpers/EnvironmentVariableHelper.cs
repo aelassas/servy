@@ -413,6 +413,8 @@ namespace Servy.Service.Helpers
         /// <paramref name="maxLength"/> characters that does not end inside an escape token.</returns>
         private static string TrimToSafeBoundary(string value, int maxLength)
         {
+            // Defensive: guards intentionally kept in case a future caller invokes this without
+            // pre-checking length/emptiness. Both are unreachable from the current two call sites.
             if (string.IsNullOrEmpty(value)) return string.Empty;
             if (value.Length <= maxLength) return value;
 
