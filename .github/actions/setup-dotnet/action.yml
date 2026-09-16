@@ -71,6 +71,9 @@ runs:
           New-Item -ItemType Directory -Force -Path $installDir | Out-Null
         }
 
+        # Ensure $LASTEXITCODE is clean before invoking the script in-process
+        $global:LASTEXITCODE = 0
+        
         # Execute the verified script from the temp path
         & $installerPath `
           -Version "$env:DOTNET_VERSION" `
