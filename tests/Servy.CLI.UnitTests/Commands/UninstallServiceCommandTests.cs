@@ -131,5 +131,39 @@ namespace Servy.CLI.UnitTests.Commands
                 repo => repo.DeleteAsync(serviceName, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
+
+        /// <summary>
+        /// Covers the post-success sync catch in <see cref="BaseCommand"/> that closed #3165: when the SCM
+        /// uninstall succeeds but the repository cleanup throws, the command still reports success instead
+        /// of failing the whole uninstall and stranding a repository row the user can no longer remove.
+        /// No other command supplies an <c>onSuccess</c> callback, so this is the only place that arm of
+        /// <c>ExecuteServiceOperationAsync</c> can be reached.
+        /// </summary>
+        [Fact]
+        public async Task Execute_RepositoryDeleteAsyncThrows_StillReturnsSuccess()
+        {
+            // Arrange
+            const string serviceName = "TestService";
+            var options = CreateValidOptions(serviceName);
+            SetupServiceManagerSuccess(MockServiceManager, serviceName);
+            _mockRepository
+                .Setup(repo => repo.DeleteAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("db locked"));
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            // The SCM uninstall succeeded, so the command reports success even though the post-success
+            // repository cleanup threw and was swallowed by the catch under test.
+            Assert.True(result.IsSuccess);
+            Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
+
+            // Verify the throwing callback really was invoked - without this the test would also pass if
+            // the command stopped calling DeleteAsync at all.
+            _mockRepository.Verify(
+                repo => repo.DeleteAsync(serviceName, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
     }
 }
