@@ -38,8 +38,14 @@ namespace Servy.Core.UnitTests.Services
             Assert.Throws<ObjectDisposedException>(() => wrapper.ServiceName);
             Assert.Throws<ObjectDisposedException>(() => wrapper.DisplayName);
             Assert.Throws<ObjectDisposedException>(() => wrapper.Status);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.StartType);
             Assert.Throws<ObjectDisposedException>(() => wrapper.GetDependencyNames());
             Assert.Throws<ObjectDisposedException>(() => wrapper.GetDependencies(cancellationToken: TestContext.Current.CancellationToken));
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Start());
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Stop());
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Continue());
+            Assert.Throws<ObjectDisposedException>(() => wrapper.Refresh());
+            Assert.Throws<ObjectDisposedException>(() => wrapper.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(1)));
         }
 
         #endregion
