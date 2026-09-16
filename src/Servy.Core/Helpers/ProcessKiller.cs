@@ -450,14 +450,10 @@ namespace Servy.Core.Helpers
 
                 // HARDENING: Resolve start time safely to prevent Win32Exception/InvalidOperationException from aborting the pipeline.
                 // If query access is denied or the process is short-lived, it falls back to MinValue to ensure the tree kill continues.
-                DateTime rootStartTime = DateTime.MinValue;
-                try
+                DateTime rootStartTime = SafeStartTime(process);
+                if (rootStartTime == DateTime.MinValue)
                 {
-                    rootStartTime = process.StartTime;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Debug($"Unable to query StartTime for process {process.Id}. Proceeding with best-effort validation. Details: {ex.Message}");
+                    Logger.Debug($"Unable to query StartTime for process {process.Id}. Proceeding with best-effort validation.");
                 }
 
                 // Thread protectedPids into the walk using the securely isolated timestamp

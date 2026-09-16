@@ -72,7 +72,7 @@ runs:
         }
 
         # Execute the verified script from the temp path
-        powershell -ExecutionPolicy Bypass -File $installerPath `
+        & $installerPath `
           -Version "$env:DOTNET_VERSION" `
           -InstallDir $installDir
 
