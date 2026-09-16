@@ -56,6 +56,24 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal(input, result);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void ExpandWithDictionary_NullOrEmptyValue_ReturnsAsIs(string? value)
+        {
+            // Arrange
+            var dict = new Dictionary<string, string?>
+            {
+                { "VAR", "Val" }
+            };
+
+            // Act
+            var result = EnvironmentVariableHelper.ExpandWithDictionary(value!, dict);
+
+            // Assert
+            Assert.Equal(value, result);
+        }
+
         [Fact]
         public void ExpandEnvironmentVariables_EmptyOrWhitespaceCustomNames_AreIgnored()
         {

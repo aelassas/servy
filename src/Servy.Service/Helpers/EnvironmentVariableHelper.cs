@@ -74,24 +74,24 @@ namespace Servy.Service.Helpers
             "DOTNET_BUNDLE_EXTRACT_BASE_DIR", "DOTNET_ADDITIONAL_DEPS", "DOTNET_SHARED_STORE",
 
             // Modern Diagnostic Attach Surfaces
-            "DOTNET_DiagnosticPorts",          "COMPlus_DiagnosticPorts",
-            "DOTNET_EnableDiagnostics",        "COMPlus_EnableDiagnostics",
-            "DOTNET_EnableDiagnostics_IPC",    "COMPlus_EnableDiagnostics_IPC",
+            "DOTNET_DiagnosticPorts",           "COMPlus_DiagnosticPorts",
+            "DOTNET_EnableDiagnostics",         "COMPlus_EnableDiagnostics",
+            "DOTNET_EnableDiagnostics_IPC",     "COMPlus_EnableDiagnostics_IPC",
             "DOTNET_EnableDiagnostics_Profiler","COMPlus_EnableDiagnostics_Profiler",
-            "DOTNET_EnableEventPipe",          "COMPlus_EnableEventPipe",
+            "DOTNET_EnableEventPipe",           "COMPlus_EnableEventPipe",
 
             // Runtime Custom Component Loading & Assembly Layout Adjustments
-            "DOTNET_GCName",                   "COMPlus_GCName",
-            "DOTNET_GCPath",                   "COMPlus_GCPath",
+            "DOTNET_GCName",                    "COMPlus_GCName",
+            "DOTNET_GCPath",                    "COMPlus_GCPath",
             "DOTNET_LegacyHostPolicy",          "COMPlus_LegacyHostPolicy",
-            "DOTNET_LegacyTransform",          "COMPlus_LegacyTransform",
+            "DOTNET_LegacyTransform",           "COMPlus_LegacyTransform",
             "DOTNET_PerfMapEnabled",            "COMPlus_PerfMapEnabled",
             "DOTNET_ZapDisable",                "COMPlus_ZapDisable",
 
             // MiniDump Storage Layout Targets (Prevents sensitive memory leakage redirection)
-            "DOTNET_DbgEnableMiniDump",        "COMPlus_DbgEnableMiniDump",
-            "DOTNET_DbgMiniDumpName",          "COMPlus_DbgMiniDumpName",
-            "DOTNET_DbgMiniDumpType",          "COMPlus_DbgMiniDumpType",
+            "DOTNET_DbgEnableMiniDump",         "COMPlus_DbgEnableMiniDump",
+            "DOTNET_DbgMiniDumpName",           "COMPlus_DbgMiniDumpName",
+            "DOTNET_DbgMiniDumpType",           "COMPlus_DbgMiniDumpType",
 
             // Java Injection - Covers direct java.exe (TOOL_OPTIONS, JDK_JAVA_OPTIONS) and common shell-wrapper launchers (OPTS)
             "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JDK_JAVA_OPTIONS", "JAVA_OPTS", "JAVA_OPTIONS",
@@ -320,7 +320,7 @@ namespace Servy.Service.Helpers
         /// <param name="currentKey">The specific variable key currently being expanded, if any.</param>
         /// <param name="protectInjectedValues">If true, encodes '%' in the substituted values to prevent later OS expansion.</param>
         /// <returns>The expanded string.</returns>
-        private static string ExpandWithDictionary(
+        internal static string ExpandWithDictionary(
             string value,
             IDictionary<string, string?> variables,
             IDictionary<string, string?>? systemEnv = null,
