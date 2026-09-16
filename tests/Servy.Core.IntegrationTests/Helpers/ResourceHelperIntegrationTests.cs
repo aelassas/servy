@@ -71,6 +71,32 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
         }
 
+        [Fact]
+        public void IsFileLocked_WhenFileIsReadOnly_ReturnsTrue()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "readonly_file.tmp");
+            File.WriteAllText(filePath, "test content");
+            File.SetAttributes(filePath, FileAttributes.ReadOnly);
+
+            try
+            {
+                // Act
+                bool isLocked = ResourceHelper.IsFileLocked(filePath);
+
+                // Assert
+                // Requesting FileAccess.ReadWrite on a read-only file is denied by Windows regardless of
+                // the caller's privilege level, which is the UnauthorizedAccessException arm this exercises
+                // - a different arm from the IOException one the exclusive-lock test above covers.
+                Assert.True(isLocked);
+            }
+            finally
+            {
+                // The base class's temp-directory teardown needs write access to delete the file
+                File.SetAttributes(filePath, FileAttributes.Normal);
+            }
+        }
+
         #endregion
 
         #region TerminateBlockingProcesses Direct Unit Tests
@@ -578,6 +604,32 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Assert: the OperationCanceledException arm of the outer catch, not the general one
             Assert.False(result);
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenBaseExtractionDirectoryIsEmpty_ReturnsFalse()
+        {
+            // Arrange
+            // Path.Combine("", "emptydirapp.exe") is the bare file name, whose Path.GetDirectoryName is
+            // an empty string - the only input that reaches TryPrepareExtraction's parent-directory guard.
+            _resourceHelper.BaseExtractionDirectory = string.Empty;
+
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(new byte[] { 0x01 }));
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                _mockAssembly.Object,
+                "Servy.Resources",
+                "emptydirapp",
+                "exe",
+                stopServices: false,
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            // The guard's IOException is caught by the method's own outer catch, so the observable
+            // effect is a false result rather than a propagated exception.
+            Assert.False(result);
         }
 
         #endregion
