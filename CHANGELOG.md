@@ -95,7 +95,7 @@ This major release includes new backup and restore features, a hardened PowerShe
 * fix(core): Strings.resx (Servy.Core) - the #5370 fix removed the only consumer of Msg_ImportReadFailure but left the string and its generated accessor shipped (#5539)
 * fix(core): Strings.resx (Servy.Core) - the 18 Msg_Security* values announce one outcome with five different prefixes (#5540)
 * fix(core): IEventLogService.cs / LogsViewModel.cs - the tailored 'run as Administrator' and 'Event Log service not running' messages never reach the user; the interface documents no exceptions and the handler shows Msg_UnexpectedError (#5548)
-* fix(core): AppConfig.cs / Servy.Core.csproj - the missing-BuiltWithFramework error tells the developer to add an <AssemblyMetadata> item, but the project declares it as an <AssemblyAttribute> with _Parameter1/_Parameter2 (#5551)
+* fix(core): AppConfig.cs / Servy.Core.csproj - the missing-BuiltWithFramework error tells the developer to add an \<AssemblyMetadata\> item, but the project declares it as an \<AssemblyAttribute\> with _Parameter1/_Parameter2 (#5551)
 * fix(core): ServiceManager.cs - OpenSCManager/CreateService results carry an unreachable null term at five sites while the five OpenService results, same non-nullable SafeHandle contract, carry none (#5553)
 * fix(core): ServiceManager.cs - the uninstall ChangeServiceConfig passes eleven positional arguments, six of them null, where its install sibling and CreateService name every one (#5555)
 * fix(core): ImportServiceCommand.cs / ServiceValidationRules.cs - the CLI import ignores [ServicePath].ErrorResourceKey that all 12 ServiceDto properties declare, so 11 of 12 path failures get a generic, half-localized message (#5569)
