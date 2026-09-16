@@ -24,6 +24,202 @@ namespace Servy.Core.IntegrationTests.Helpers
             _resourceHelper.BaseExtractionDirectory = TempDirectory;
         }
 
+        #region IsFileLocked Tests
+
+        [Fact]
+        public void IsFileLocked_WhenFileDoesNotExist_ReturnsFalse()
+        {
+            // Arrange
+            string nonExistentPath = Path.Combine(TempDirectory, "non_existent_file.tmp");
+
+            // Act
+            bool isLocked = ResourceHelper.IsFileLocked(nonExistentPath);
+
+            // Assert
+            Assert.False(isLocked);
+        }
+
+        [Fact]
+        public void IsFileLocked_WhenFileExistsAndIsUnlocked_ReturnsFalse()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "unlocked_file.tmp");
+            File.WriteAllText(filePath, "test content");
+
+            // Act
+            bool isLocked = ResourceHelper.IsFileLocked(filePath);
+
+            // Assert
+            Assert.False(isLocked);
+        }
+
+        [Fact]
+        public void IsFileLocked_WhenFileIsLockedExclusively_ReturnsTrue()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "locked_file.tmp");
+            File.WriteAllText(filePath, "test content");
+
+            // Open an exclusive lock on the file during the probe
+            using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool isLocked = ResourceHelper.IsFileLocked(filePath);
+
+                // Assert
+                Assert.True(isLocked);
+            }
+        }
+
+        #endregion
+
+        #region TerminateBlockingProcesses Direct Unit Tests
+
+        [Fact]
+        public void TerminateBlockingProcesses_WhenFileDoesNotExist_ReturnsTrueAndSkipsProcessKiller()
+        {
+            // Arrange
+            string nonExistentPath = Path.Combine(TempDirectory, "non_existent.exe");
+
+            // Act
+            bool result = _resourceHelper.TerminateBlockingProcesses(nonExistentPath);
+
+            // Assert
+            Assert.True(result);
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void TerminateBlockingProcesses_WhenFileIsUnlocked_ReturnsTrueAndSkipsProcessKiller()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "unlocked_direct.exe");
+            File.WriteAllText(filePath, "unlocked text");
+
+            // Act
+            bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
+
+            // Assert
+            Assert.True(result);
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void TerminateBlockingProcesses_WhenFileIsLockedAndKillerSucceeds_ReturnsTrue()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "locked_direct_success.exe");
+            File.WriteAllText(filePath, "locked content");
+
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(filePath)).Returns(true);
+
+            using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
+
+                // Assert
+                Assert.True(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(filePath), Times.Once);
+            }
+        }
+
+        [Fact]
+        public void TerminateBlockingProcesses_WhenFileIsLockedAndKillerFails_ReturnsFalse()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "locked_direct_fail.exe");
+            File.WriteAllText(filePath, "locked content");
+
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(filePath)).Returns(false);
+
+            using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
+
+                // Assert
+                Assert.False(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(filePath), Times.Once);
+            }
+        }
+
+        #endregion
+
+        #region CopyEmbeddedResource Integration Tests
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenFileIsUnlocked_BypassesProcessKiller()
+        {
+            // Arrange
+            string fileName = "unlockedapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            // Create an existing unlocked target file on disk
+            File.WriteAllText(targetPath, "unlocked target");
+
+            // Ensure the manifest resource stream is provided
+            var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(dummyResourceBytes));
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            // Lock probe should return false (unlocked), so ProcessKiller is never invoked
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenFileIsLocked_InvokesProcessKiller()
+        {
+            // Arrange
+            string fileName = "lockedapp_probe";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            // Create target file on disk and push timestamp back relative to hostExeTime to force extraction
+            File.WriteAllText(targetPath, "pre-existing locked content");
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddDays(-1));
+
+            // Configure process killer to release the stream lock when called
+            FileStream? lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+            _mockProcessKiller
+                .Setup(p => p.KillProcessesUsingFile(targetPath))
+                .Returns(() =>
+                {
+                    // Simulate process termination by disposing the test lock handle
+                    lockStream?.Dispose();
+                    lockStream = null;
+                    return true;
+                });
+
+            var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(dummyResourceBytes));
+
+            try
+            {
+                // Act
+                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.True(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(targetPath), Times.Once);
+            }
+            finally
+            {
+                lockStream?.Dispose();
+            }
+        }
+
         [Fact]
         public async Task CopyEmbeddedResource_WhenResourceIsUpToDate_ReturnsTrueAndSkipsCopy()
         {
@@ -49,26 +245,36 @@ namespace Servy.Core.IntegrationTests.Helpers
         public async Task CopyEmbeddedResource_WhenProcessTerminationFails_ReturnsFalse()
         {
             // Arrange
-            // Simulate a locked file status within the process termination subsystem engine boundary
+            string fileName = "lockedapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            // Create target file AND force timestamp into the past relative to hostExeTime to trigger re-extraction
+            File.WriteAllText(targetPath, "existing target");
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddDays(-1));
+
+            // Simulate process termination failure
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(false);
 
-            // Configure the assembly manifest setup mock parameters to provide a valid, populated
-            // MemoryStream. This satisfies the upfront validation guard condition and allows execution
-            // to genuinely reach the TerminateBlockingProcesses execution branch code.
             var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
                          .Returns(() => new MemoryStream(dummyResourceBytes));
 
-            // Act
-            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object, "Servy.Resources", "lockedapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+            // Lock the file exclusively so IsFileLocked returns true and routes to KillProcessesUsingFile
+            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.False(result);
+                // Assert
+                Assert.False(result);
 
-            // VERIFICATION GUARD: Lock in proof that the underlying mock process killer was explicitly evaluated
-            // before the helper marked the copy pass execution as a failure state.
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Once);
+                // VERIFICATION GUARD: Lock in proof that the underlying mock process killer was explicitly evaluated
+                // before the helper marked the copy pass execution as a failure state.
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Once);
+            }
         }
 
         [Fact]
@@ -222,19 +428,30 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void CopyEmbeddedResourceForceSync_WhenProcessTerminationFails_ReturnsFalse()
         {
             // Arrange
+            string fileName = "sync_lockedapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            File.WriteAllText(targetPath, "existing target");
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddDays(-1));
+
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(false);
 
             var dummyResourceBytes = new byte[] { 0x05, 0x06, 0x07 };
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
                          .Returns(() => new MemoryStream(dummyResourceBytes));
 
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _mockAssembly.Object, "Servy.Resources", "sync_lockedapp", "exe");
+            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
+                    _mockAssembly.Object, "Servy.Resources", fileName, extension);
 
-            // Assert
-            Assert.False(result);
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Once);
+                // Assert
+                Assert.False(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Once);
+            }
         }
 
         [Fact]
@@ -362,5 +579,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.False(result);
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
         }
+
+        #endregion
     }
 }

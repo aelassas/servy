@@ -23,7 +23,7 @@ namespace Servy.Core.Helpers
 #if DEBUG
             AppDomain.CurrentDomain.BaseDirectory;
 #else
-                AppConfig.ProgramDataPath;
+            AppConfig.ProgramDataPath;
 #endif
 
         /// <summary>
@@ -416,13 +416,55 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Probes whether a file is currently locked by another process by attempting an exclusive write open.
+        /// </summary>
+        /// <param name="filePath">The full path of the file to test.</param>
+        /// <returns>True if the file exists and is locked by another process; false otherwise.</returns>
+        internal static bool IsFileLocked(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return false;
+
+            try
+            {
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    return false; // Successfully acquired exclusive handle; file is not locked
+                }
+            }
+            catch (IOException)
+            {
+                return true; // File handle collision or lock detected
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return true; // File locked or permission restricted
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"Unexpected exception while testing file lock for '{filePath}': {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Safely terminates any processes holding locks on the target file by identifying them by path.
         /// This prevents collateral damage to other service instances using the same utility names.
         /// </summary>
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
         /// <returns>True if the file was successfully cleared of blocking processes; false if termination failed.</returns>
-        private bool TerminateBlockingProcesses(string targetPath)
+        internal bool TerminateBlockingProcesses(string targetPath)
         {
+            // FAST PROBE: Check if the target file is actually locked before shelling out to handle64.exe.
+            // This prevents launching handle64.exe on every routine service start/update pass when no locks exist,
+            // eliminating unnecessary process executions and avoiding false-positive EDR/AV heuristic alerts.
+            if (!IsFileLocked(targetPath))
+            {
+                return true;
+            }
+
+            Logger.Info($"File lock detected on '{targetPath}'. Identifying and terminating blocking processes...");
+
             // Identify lock holders by path (not by executable name) so we surgically terminate
             // only the trees locking THIS specific file, leaving unrelated services that run
             // their own copy of the same executable (e.g., Servy.Restarter.exe) untouched.
