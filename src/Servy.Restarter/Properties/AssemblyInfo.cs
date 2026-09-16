@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 //      Numéro de build
 //      Révision
 //
-[assembly: AssemblyVersion("10.1.0.0")]
-[assembly: AssemblyFileVersion("10.1.0.0")]
+[assembly: AssemblyVersion("10.2.0.0")]
+[assembly: AssemblyFileVersion("10.2.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.Restarter.UnitTests")]
