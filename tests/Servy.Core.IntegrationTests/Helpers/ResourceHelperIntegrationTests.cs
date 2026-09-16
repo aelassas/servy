@@ -45,6 +45,131 @@ namespace Servy.Core.IntegrationTests.Helpers
             _resourceHelper.BaseExtractionDirectory = TempDirectory;
         }
 
+        #region IsFileLocked Tests
+
+        [Fact]
+        public void IsFileLocked_WhenFileDoesNotExist_ReturnsFalse()
+        {
+            // Arrange
+            string nonExistentPath = Path.Combine(TempDirectory, "non_existent_file.tmp");
+
+            // Act
+            bool isLocked = ResourceHelper.IsFileLocked(nonExistentPath);
+
+            // Assert
+            Assert.False(isLocked);
+        }
+
+        [Fact]
+        public void IsFileLocked_WhenFileExistsAndIsUnlocked_ReturnsFalse()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "unlocked_file.tmp");
+            File.WriteAllText(filePath, "test content");
+
+            // Act
+            bool isLocked = ResourceHelper.IsFileLocked(filePath);
+
+            // Assert
+            Assert.False(isLocked);
+        }
+
+        [Fact]
+        public void IsFileLocked_WhenFileIsLockedExclusively_ReturnsTrue()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "locked_file.tmp");
+            File.WriteAllText(filePath, "test content");
+
+            // Open an exclusive lock on the file during the probe
+            using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool isLocked = ResourceHelper.IsFileLocked(filePath);
+
+                // Assert
+                Assert.True(isLocked);
+            }
+        }
+
+        #endregion
+
+        #region TerminateBlockingProcesses Unit Tests
+
+        [Fact]
+        public void TerminateBlockingProcesses_ExeExtension_InvokesKillProcessTreeAndParents()
+        {
+            // Arrange
+            string fileName = "app.exe";
+            string filePath = Path.Combine(TempDirectory, fileName);
+            _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(fileName, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            bool result = _resourceHelper.TerminateBlockingProcesses("exe", fileName, filePath);
+
+            // Assert
+            Assert.True(result);
+            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(fileName, It.IsAny<bool>()), Times.Once);
+        }
+
+        [Fact]
+        public void TerminateBlockingProcesses_DllExtension_WhenUnlocked_SkipsProcessKiller()
+        {
+            // Arrange
+            string fileName = "library.dll";
+            string filePath = Path.Combine(TempDirectory, fileName);
+            File.WriteAllText(filePath, "unlocked dll");
+
+            // Act
+            bool result = _resourceHelper.TerminateBlockingProcesses("dll", fileName, filePath);
+
+            // Assert
+            Assert.True(result);
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void TerminateBlockingProcesses_DllExtension_WhenLocked_InvokesKillProcessesUsingFile()
+        {
+            // Arrange
+            string fileName = "locked_library.dll";
+            string filePath = Path.Combine(TempDirectory, fileName);
+            File.WriteAllText(filePath, "locked dll");
+
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(filePath)).Returns(true);
+
+            using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool result = _resourceHelper.TerminateBlockingProcesses("dll", fileName, filePath);
+
+                // Assert
+                Assert.True(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(filePath), Times.Once);
+            }
+        }
+
+        [Fact]
+        public void TerminateBlockingProcesses_DllExtension_WhenSkipDllIsTrue_SkipsProcessKillerEvenIfLocked()
+        {
+            // Arrange
+            string fileName = "skipped_library.dll";
+            string filePath = Path.Combine(TempDirectory, fileName);
+            File.WriteAllText(filePath, "locked dll");
+
+            using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool result = _resourceHelper.TerminateBlockingProcesses("dll", fileName, filePath, skipDll: true);
+
+                // Assert
+                Assert.True(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        #endregion
+
         #region Single Resource Copy Tests (Async & Sync)
 
         [Fact]
@@ -55,9 +180,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
-            // Create a dummy file and artificially push its LastWriteTime into the future to bypass the staleness threshold
+            // Create a file and anchor timestamp to hostExeTime + 5 minutes so it is within up-to-date window without triggering downgrade warning
             File.WriteAllText(targetPath, "old content");
-            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddMinutes(5));
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
@@ -105,16 +231,29 @@ namespace Servy.Core.IntegrationTests.Helpers
         public async Task CopyEmbeddedResource_WhenProcessTerminationFails_ReturnsFalse()
         {
             // Arrange (exe routes to KillProcessTreeAndParents)
+            string fileName = "lockedapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            File.WriteAllText(targetPath, "existing file");
+
+            // Retrieve host executable time and set the existing target file to be older than hostExeWriteTime - 20 minutes
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddDays(-1));
+
             _mockProcessKiller
-                .Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()))
+                .Setup(p => p.KillProcessTreeAndParents($"{fileName}.{extension}", It.IsAny<bool>()))
                 .Returns(false);
+
+            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(new byte[] { 0x01 });
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _fakeAssembly, "Servy.Core.Resources", "lockedapp", "exe", stopServices: false);
+                _fakeAssembly, "Servy.Core.Resources", fileName, extension, stopServices: false);
 
             // Assert
             Assert.False(result);
+            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents($"{fileName}.{extension}", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
@@ -175,9 +314,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
-            // Create a dummy file and artificially push its LastWriteTime into the future to bypass the staleness threshold
+            // Create a file and anchor timestamp to hostExeTime + 5 minutes so it is within up-to-date window without triggering downgrade warning
             File.WriteAllText(targetPath, "up to date sync content");
-            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddMinutes(5));
 
             // Act
             bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
@@ -192,8 +332,18 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void CopyEmbeddedResourceForceSync_WhenProcessTerminationFails_ReturnsFalse()
         {
             // Arrange
+            string fileName = "sync_lockedapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            File.WriteAllText(targetPath, "existing target");
+
+            // Anchor timestamp to hostExeTime so TryPrepareExtraction evaluates the file as stale
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddDays(-1));
+
             _mockProcessKiller
-                .Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()))
+                .Setup(p => p.KillProcessTreeAndParents($"{fileName}.exe", It.IsAny<bool>()))
                 .Returns(false);
 
             var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03 };
@@ -201,11 +351,11 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _fakeAssembly, "Servy.Core.Resources", "sync_lockedapp", "exe");
+                _fakeAssembly, "Servy.Core.Resources", fileName, "exe");
 
             // Assert
             Assert.False(result);
-            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents("sync_lockedapp.exe", It.IsAny<bool>()), Times.Once);
+            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents($"{fileName}.exe", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
@@ -237,11 +387,13 @@ namespace Servy.Core.IntegrationTests.Helpers
                 new ResourceItem { FileNameWithoutExtension = "lib1", Extension = "dll" }
             };
 
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+
             foreach (var item in items)
             {
                 var path = Path.Combine(TempDirectory, $"{item.FileNameWithoutExtension}.{item.Extension}");
                 File.WriteAllText(path, "content");
-                File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddHours(1));
+                File.SetLastWriteTimeUtc(path, hostExeTime.AddMinutes(5));
             }
 
             // Act

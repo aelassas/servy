@@ -595,6 +595,38 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Probes whether a file is currently locked by another process by attempting an exclusive write open.
+        /// </summary>
+        /// <param name="filePath">The full path of the file to test.</param>
+        /// <returns>True if the file exists and is locked by another process; false otherwise.</returns>
+        internal static bool IsFileLocked(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return false;
+
+            try
+            {
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    return false; // Successfully acquired exclusive handle; file is not locked
+                }
+            }
+            catch (IOException)
+            {
+                return true; // File handle collision or lock detected
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return true; // File locked or permission restricted
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"Unexpected exception while testing file lock for '{filePath}': {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Evaluates the file extension type and attempts to safely terminate any processes holding locks on the target file.
         /// </summary>
         /// <param name="extension">The file extension used to determine the termination strategy(e.g., "exe", "dll").</param>
@@ -602,7 +634,7 @@ namespace Servy.Core.Helpers
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
         /// <param name="skipDll">If true, skips termination of processes using the file if it's a DLL. This is used when multiple resources are being copied to avoid redundant process termination attempts.</param>
         /// <returns>True if all blocking processes were terminated or none were found; false if termination failed.</returns>
-        private bool TerminateBlockingProcesses(string extension, string targetFileName, string targetPath, bool skipDll = false)
+        internal bool TerminateBlockingProcesses(string extension, string targetFileName, string targetPath, bool skipDll = false)
         {
             var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
             var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
@@ -610,7 +642,7 @@ namespace Servy.Core.Helpers
             if (isExe && !_processKiller.KillProcessTreeAndParents(targetFileName))
                 return false;
 
-            if (isDll && !skipDll && !_processKiller.KillProcessesUsingFile(targetPath))
+            if (isDll && !skipDll && IsFileLocked(targetPath) && !_processKiller.KillProcessesUsingFile(targetPath))
                 return false;
 
             return true;
