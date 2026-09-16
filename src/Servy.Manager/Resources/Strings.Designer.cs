@@ -340,7 +340,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service Selection List.
+        ///   Looks up a localized string similar to Service Selector.
         /// </summary>
         public static string Automation_DependenciesServiceList_Name {
             get {
