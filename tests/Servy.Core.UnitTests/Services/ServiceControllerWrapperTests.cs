@@ -226,6 +226,45 @@ namespace Servy.Core.UnitTests.Services
             }
         }
 
+        [Fact]
+        public void GetDependencies_TokenCancelledAfterChildEnumeration_StopsBeforeSortedAdd()
+        {
+            // Arrange: Root has two leaf children; cancellation is raised only once the LAST child has
+            // been handed back by the factory, so both children finish building before the token is
+            // observed again. The per-child enumeration checkpoint can no longer see it, leaving the
+            // post-sort checkpoint that guards Dependencies.Add as the only one able to catch it.
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            using (var cts = new CancellationTokenSource())
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ChildA", "ChildB" });
+                var mockChildA = CreateMockWrapper("ChildA", "Child A", ServiceControllerStatus.Running, Array.Empty<string>());
+                var mockChildB = CreateMockWrapper("ChildB", "Child B", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                int childrenBuilt = 0;
+
+                Func<string, IServiceControllerWrapper> factory = name =>
+                {
+                    if (string.Equals(name, "Root", StringComparison.OrdinalIgnoreCase)) return mockRoot.Object;
+
+                    childrenBuilt++;
+
+                    if (string.Equals(name, "ChildA", StringComparison.OrdinalIgnoreCase)) return mockChildA.Object;
+
+                    // ChildB is the last dependency resolved; cancelling as it is handed back lets both
+                    // children complete their own (childless) walk before the token is read again.
+                    cts.Cancel();
+                    return mockChildB.Object;
+                };
+
+                // Act & Assert
+                Assert.Throws<OperationCanceledException>(() =>
+                    wrapper.GetDependenciesInternal(factory, cts.Token));
+
+                // Both children were built, so the abort happened after the enumeration loop, not inside it.
+                Assert.Equal(2, childrenBuilt);
+            }
+        }
+
         #endregion
 
         #region Win32Exception & Edge Case Resolution Tests
