@@ -323,7 +323,7 @@ namespace Servy.Service.Helpers
         /// <param name="currentKey">The specific variable key currently being expanded, if any.</param>
         /// <param name="protectInjectedValues">If true, encodes '%' in the substituted values to prevent later OS expansion.</param>
         /// <returns>The expanded string.</returns>
-        private static string ExpandWithDictionary(
+        internal static string ExpandWithDictionary(
             string value,
             IDictionary<string, string> variables,
             IDictionary<string, string> systemEnv = null,
