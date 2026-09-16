@@ -88,18 +88,24 @@ namespace Servy.CLI.UnitTests.Commands
             _mockRepository.Verify(r => r.DeleteAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        /// <summary>
+        /// Pins the routing #6405 introduced: <c>UninstallServiceCommand</c> passes
+        /// <c>skipInstalledCheck: true</c>, so the SCM pre-flight is never consulted, and the
+        /// repository row is still deleted by the post-success callback. The DB-orphan tolerance
+        /// #6374 added lives inside <c>ServiceManager.UninstallServiceAsync</c> and cannot be
+        /// expressed here, where <c>IServiceManager</c> is a mock that returns success either way.
+        /// </summary>
         [Fact]
-        public async Task Execute_ServiceNotInstalledInScmButExistsInRepository_DeletesDbRecordAndReturnsSuccess()
+        public async Task Execute_SkipsScmPreFlightCheck_DeletesDbRecordAndReturnsSuccess()
         {
             // Arrange
-            const string serviceName = "OrphanedDbService";
+            const string serviceName = "UninstalledService";
             var options = CreateValidOptions(serviceName);
 
-            // Arrange the orphan state the test name describes: absent from the SCM, still present in
-            // the repository. Since #6405 uninstall passes skipInstalledCheck: true, so the pre-flight
-            // check is never consulted and no IsServiceInstalled stub can express the absent half any
-            // more - that tolerance lives in ServiceManager.UninstallServiceAsync itself (#6374). The
-            // still-present-in-the-repository half is the DeleteAsync callback verified below.
+            // The default arrangement is all this test needs: no IsServiceInstalled stub can change
+            // what the command does, because the command never asks. SetupServiceManagerSuccess
+            // stubs UninstallServiceAsync only, and the pre-flight assertion below is what makes
+            // this test behaviourally different from Execute_ValidOptions_ReturnsSuccess.
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
