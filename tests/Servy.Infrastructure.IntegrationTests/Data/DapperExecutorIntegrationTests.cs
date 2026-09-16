@@ -530,8 +530,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // ==========================================================================================
             // Branch 3: Concrete Provider Check
             // ------------------------------------------------------------------------------------------
-            // Uses the real SQLite connection object to test the high-performance operational layout
-            // natively against a physical ADO.NET database engine driver configuration.
+            // Points CreateConnection() at a real SQLiteConnection instead of a stub.
             // ==========================================================================================
             // Arrange
             _mockDbContext.Setup(db => db.CreateConnection()).Returns(() => new SQLiteConnection(_connectionString));
