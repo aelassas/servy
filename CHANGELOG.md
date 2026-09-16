@@ -1,5 +1,53 @@
 # Changelog
 
+## [Servy 10.1](https://github.com/aelassas/servy/releases/tag/v10.1)
+
+**Date:** 2026-09-16 | **Tag:** [`v10.1`](https://github.com/aelassas/servy/tree/v10.1)
+
+This release includes bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
+
+### Full Changelog
+<details>
+  <summary>Click to expand release notes!</summary>
+
+* feat(manager): LogsView.xaml / LogEntryModel.cs - EventId is read off every Event Log entry, stored in an observable property and unit-tested, but no column, filter or detail pane ever reads it (#6022)
+* feat(scripts): add ShouldProcess confirmation prompt for SCM service installation in Servy-Restore.ps1
+* fix(core): ProcessKiller.cs / ISystemProcess.cs - the CriticalSystemProcesses safelist trusts a process's self-reported name with no path or SID check, so a renamed executable becomes immune to Servy's kill sweep (#6782)
+* fix(core): handle64.exe invocation flagged as malicious by Cortex XDR (shellcode/injection detection) (#6808)
+* fix(infra): SQLiteDbInitializer.cs - the whitespace zombie detector and the Version 9 UserAccount migration use SQLite TRIM(), which strips ASCII space only, so tab-padded legacy values are neither detected nor normalized (#6759)
+* fix(service): ProcessWrapper.cs - Kill(bool) neither verifies the process died nor reports failure, unlike its own sibling twelve lines above, so ProcessLauncher's orphan-cleanup catch can never fire (#6043)
+* fix(service): EnvironmentVariableHelper.cs - the indirect-circular-reference warning is unreachable because protectInjectedValues masks every substituted token before the pass that would need to see it again (#6739)
+* fix(service): EnvironmentVariableHelper.cs - ProtectedVariables blocks CA-bundle overrides but not the proxy variables that give the same interception capability (#6797)
+* fix(service): EnvironmentVariableHelper.cs - ExpandWithDictionary's own IsNullOrEmpty(value) early return can never fire; every call site already guarantees a non-empty value (#6811)
+* fix(manager): StatusConverter.cs / StartupTypeConverter.cs - GetFallbackValue is the only unshared code left after #2986 and the two overrides disagree on null, so adjacent DataGrid columns render the same unloaded state as blank and as 'Fetching...' (#5771)
+* fix(manager): EnumLocalizedConverter.cs - GetFallbackValue declares a non-nullable object parameter, but null is precisely the input it exists to handle and both overrides null-check it (#5993)
+* fix(manager): PidBadgeControl.xaml - binds Pid and CopyPidCommand off an undeclared inherited DataContext, while its folder-sibling ServiceListControl exposes six dependency properties (residual of #4832) (#6018)
+* fix(manager): LogsView.xaml - unlike every Services grid column, none of the four Logs columns give their cells an AutomationProperties.HelpText, only a header Name (#6793)
+* ci: build.yml / security.yml / test.yml / loc.yml / wiki.yml - 13 run steps still omit the explicit 'shell:' line that #4665 established for publish.yml; the other 14 CI files are 100% explicit (#5836)
+* ci(test.yml); Restore dependencies and both Build solution steps run dotnet as bare native calls with no exit-code check, so a broken restore or build can report green (#6773)
+* ci(test-project.yml): Write-Error alone does not stop the script or fail the step, so a Debug test failure can be silently overwritten by a passing Release run (#6761)
+* ci(security.yml): Restore dependencies and Build for Analysis steps run dotnet as bare native calls with no exit-code check, letting CodeQL silently scan a build that never compiled (#6772)
+* ci(bump-version.yml): bump-version.ps1 - the new copyright patterns' [©\xc2\xa9\w\W] class is just [\w\W]: the three escapes are inert, and \xc2\xa9 is a UTF-8 byte pair, not a character (#6476)
+* ci(wiki.yml): Build test project step (net48) never checks msbuild's exit code, so a compile failure surfaces as a vstest file-not-found error instead of the real build failure (#6764)
+* ci(wiki.yml): Run parity check (dotnet test) step (main) never checks dotnet test's exit code, so a broken protected-variables parity check reports green (#6774)
+* ci(wiki.yml): Restore NuGet packages step (net48) runs nuget restore as a bare native call with no exit-code check (#6775)
+* chore(deps): update dependencies
+</details>
+
+### Downloads
+* [servy-10.1-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-arm64-installer.exe) - 71.46 MB
+* [servy-10.1-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-arm64-portable.7z) - 72.36 MB
+* [servy-10.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-net48-sbom.xml) - 0.03 MB
+* [servy-10.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-net48-x64-installer.exe) - 4.36 MB
+* [servy-10.1-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-net48-x64-portable.7z) - 2.11 MB
+* [servy-10.1-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-sbom.xml) - 0.04 MB
+* [servy-10.1-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-x64-installer.exe) - 77.61 MB
+* [servy-10.1-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-x64-portable.7z) - 75.05 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.1.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.1.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.0...v10.1
+
 ## [Servy 10.0](https://github.com/aelassas/servy/releases/tag/v10.0)
 
 **Date:** 2026-09-08 | **Tag:** [`v10.0`](https://github.com/aelassas/servy/tree/v10.0)
@@ -3129,85 +3177,6 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.6...v7.7
 
 Compare changes: https://github.com/aelassas/servy/compare/v7.5...v7.6
 
-## [Servy 7.5](https://github.com/aelassas/servy/releases/tag/v7.5)
-
-**Date:** 2026-03-31 | **Tag:** [`v7.5`](https://github.com/aelassas/servy/tree/v7.5)
-
-* feat(logger): expand observability across Desktop, CLI, Manager, Service, and Restarter [logs](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation#internal-servy-logs)
-* feat(logger): add `DEBUG` level for more verbose output during troubleshooting
-* feat(logger): add [LogLevel](https://github.com/aelassas/servy/wiki/Advanced-Configuration) setting to dynamically adjust log verbosity at runtime
-* fix(logger): prevent null entries in logs after abrupt termination
-* fix(core): improve embedded resource extraction and refresh reliability after installation
-* fix(core): prevent redundant resource refreshes using 20-minute timestamp delta
-* fix(core): ensure reliable resource extraction on the first run after installation
-* fix(cli): ensure logger is initialized before use in CLI
-
-### Downloads
-* [servy-7.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-sbom.xml) - 0.02 MB
-* [servy-7.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-x64-installer.exe) - 3.97 MB
-* [servy-7.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-x64-portable.7z) - 1.71 MB
-* [servy-7.5-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-sbom.xml) - 0.03 MB
-* [servy-7.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-x64-installer.exe) - 81.89 MB
-* [servy-7.5-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-x64-portable.7z) - 79.77 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.5.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.5.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v7.4...v7.5
-
-## [Servy 7.4](https://github.com/aelassas/servy/releases/tag/v7.4)
-
-**Date:** 2026-03-30 | **Tag:** [`v7.4`](https://github.com/aelassas/servy/tree/v7.4)
-
-* feat(logger): expand observability across Desktop, CLI, and Manager apps
-* fix(logger): ensure recovery logic coverage and prevent zombie handles
-* fix(logger): restore correct encoding after log rotation to prevent garbled text
-* fix(logger): enable 10MB default size rotation for Desktop, CLI and Manager logs
-* fix(logger): include year boundary check in weekly log rotation
-* fix(core): verify process StartTime before termination to prevent PID reuse kills
-* fix(core): prevent recursive process termination of the current process tree
-* fix(core): await Dapper tasks to prevent premature connection disposal
-* fix(db): resolve TOCTOU race condition via atomic upsert in ServiceRepository
-* fix(db): migrate service name index to UNIQUE to support ON CONFLICT logic
-* fix(service): respect Windows service model forcing sync OnStart/OnStop
-* fix(service): allow direct timeout checks for fire-and-forget pre-launch tasks
-* fix(service): release managed handles for detached processes
-* fix(service): add null-checks and error logging for Process.Start robustness
-* fix(manager): implement high-performance log tailing via batch trimming
-* fix(manager): allow root dependency node to expand and collapse
-* fix(manager): move performance metrics off the UI thread
-* ci(publish): migrate 7zip download to GitHub releases and fix install path
-
-### Downloads
-* [servy-7.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-sbom.xml) - 0.02 MB
-* [servy-7.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-x64-installer.exe) - 3.97 MB
-* [servy-7.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-x64-portable.7z) - 1.71 MB
-* [servy-7.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-sbom.xml) - 0.03 MB
-* [servy-7.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-x64-installer.exe) - 81.88 MB
-* [servy-7.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-x64-portable.7z) - 79.78 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.4.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.4.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v7.3...v7.4
-
-## [Servy 7.3](https://github.com/aelassas/servy/releases/tag/v7.3)
-
-**Date:** 2026-03-26 | **Tag:** [`v7.3`](https://github.com/aelassas/servy/tree/v7.3)
-
-* fix(core): use local time instead of UTC for log rotation (#47)
-* fix(core): correct log cleanup logic (#47)
-
-### Downloads
-* [servy-7.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-sbom.xml) - 0.02 MB
-* [servy-7.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-x64-installer.exe) - 3.97 MB
-* [servy-7.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-x64-portable.7z) - 1.71 MB
-* [servy-7.3-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-sbom.xml) - 0.03 MB
-* [servy-7.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-x64-installer.exe) - 81.87 MB
-* [servy-7.3-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-x64-portable.7z) - 79.76 MB
-* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.3.zip)
-* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.3.tar.gz)
-
-Compare changes: https://github.com/aelassas/servy/compare/v7.2...v7.3
-
 ---
 
-Looking for older releases? See: [CHANGELOG-v1.0-v7.2.md](./CHANGELOG-v1.0-v7.2.md)
+Looking for older releases? See: [CHANGELOG-v1.0-v7.5.md](./CHANGELOG-v1.0-v7.5.md)

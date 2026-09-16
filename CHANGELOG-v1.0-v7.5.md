@@ -1,6 +1,85 @@
-# Changelog (v1.0 - v7.2)
+# Changelog (v1.0 - v7.5)
 
 This is the archived release history. For newer releases, see [CHANGELOG.md](./CHANGELOG.md).
+
+## [Servy 7.5](https://github.com/aelassas/servy/releases/tag/v7.5)
+
+**Date:** 2026-03-31 | **Tag:** [`v7.5`](https://github.com/aelassas/servy/tree/v7.5)
+
+* feat(logger): expand observability across Desktop, CLI, Manager, Service, and Restarter [logs](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation#internal-servy-logs)
+* feat(logger): add `DEBUG` level for more verbose output during troubleshooting
+* feat(logger): add [LogLevel](https://github.com/aelassas/servy/wiki/Advanced-Configuration) setting to dynamically adjust log verbosity at runtime
+* fix(logger): prevent null entries in logs after abrupt termination
+* fix(core): improve embedded resource extraction and refresh reliability after installation
+* fix(core): prevent redundant resource refreshes using 20-minute timestamp delta
+* fix(core): ensure reliable resource extraction on the first run after installation
+* fix(cli): ensure logger is initialized before use in CLI
+
+### Downloads
+* [servy-7.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-sbom.xml) - 0.02 MB
+* [servy-7.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-x64-installer.exe) - 3.97 MB
+* [servy-7.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-x64-portable.7z) - 1.71 MB
+* [servy-7.5-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-sbom.xml) - 0.03 MB
+* [servy-7.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-x64-installer.exe) - 81.89 MB
+* [servy-7.5-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-x64-portable.7z) - 79.77 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.5.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.5.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v7.4...v7.5
+
+## [Servy 7.4](https://github.com/aelassas/servy/releases/tag/v7.4)
+
+**Date:** 2026-03-30 | **Tag:** [`v7.4`](https://github.com/aelassas/servy/tree/v7.4)
+
+* feat(logger): expand observability across Desktop, CLI, and Manager apps
+* fix(logger): ensure recovery logic coverage and prevent zombie handles
+* fix(logger): restore correct encoding after log rotation to prevent garbled text
+* fix(logger): enable 10MB default size rotation for Desktop, CLI and Manager logs
+* fix(logger): include year boundary check in weekly log rotation
+* fix(core): verify process StartTime before termination to prevent PID reuse kills
+* fix(core): prevent recursive process termination of the current process tree
+* fix(core): await Dapper tasks to prevent premature connection disposal
+* fix(db): resolve TOCTOU race condition via atomic upsert in ServiceRepository
+* fix(db): migrate service name index to UNIQUE to support ON CONFLICT logic
+* fix(service): respect Windows service model forcing sync OnStart/OnStop
+* fix(service): allow direct timeout checks for fire-and-forget pre-launch tasks
+* fix(service): release managed handles for detached processes
+* fix(service): add null-checks and error logging for Process.Start robustness
+* fix(manager): implement high-performance log tailing via batch trimming
+* fix(manager): allow root dependency node to expand and collapse
+* fix(manager): move performance metrics off the UI thread
+* ci(publish): migrate 7zip download to GitHub releases and fix install path
+
+### Downloads
+* [servy-7.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-sbom.xml) - 0.02 MB
+* [servy-7.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-x64-installer.exe) - 3.97 MB
+* [servy-7.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-net48-x64-portable.7z) - 1.71 MB
+* [servy-7.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-sbom.xml) - 0.03 MB
+* [servy-7.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-x64-installer.exe) - 81.88 MB
+* [servy-7.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.4/servy-7.4-x64-portable.7z) - 79.78 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.4.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.4.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v7.3...v7.4
+
+## [Servy 7.3](https://github.com/aelassas/servy/releases/tag/v7.3)
+
+**Date:** 2026-03-26 | **Tag:** [`v7.3`](https://github.com/aelassas/servy/tree/v7.3)
+
+* fix(core): use local time instead of UTC for log rotation (#47)
+* fix(core): correct log cleanup logic (#47)
+
+### Downloads
+* [servy-7.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-sbom.xml) - 0.02 MB
+* [servy-7.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-x64-installer.exe) - 3.97 MB
+* [servy-7.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-net48-x64-portable.7z) - 1.71 MB
+* [servy-7.3-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-sbom.xml) - 0.03 MB
+* [servy-7.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-x64-installer.exe) - 81.87 MB
+* [servy-7.3-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-x64-portable.7z) - 79.76 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v7.3.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v7.3.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v7.2...v7.3
 
 ## [Servy 7.2](https://github.com/aelassas/servy/releases/tag/v7.2)
 
