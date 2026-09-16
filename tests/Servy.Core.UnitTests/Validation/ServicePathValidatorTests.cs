@@ -398,6 +398,22 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Equal(string.Format(Strings.Msg_InvalidPathInConfig, "executable path"), message);
         }
 
+        [Fact]
+        public void ResolveErrorMessage_WhenErrorResourceKeyResolves_ReturnsResolvedMessage()
+        {
+            // Arrange: a real key, as declared by every one of ServiceDto's twelve [ServicePath] properties
+            var property = typeof(TestDto).GetProperty(nameof(TestDto.ExecutablePath))!;
+            var attribute = new ServicePathAttribute("executable path", isFile: true, errorResourceKey: nameof(Strings.Msg_InvalidPath));
+            var violation = new ServicePathViolation(property, attribute, value: null, isMissing: true);
+
+            // Act
+            var message = violation.ResolveErrorMessage();
+
+            // Assert
+            Assert.Equal(Strings.Msg_InvalidPath, message);
+            Assert.NotEqual(string.Format(Strings.Msg_InvalidPathInConfig, "executable path"), message);
+        }
+
         #endregion
     }
 }
