@@ -270,6 +270,40 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(2, aggEx.InnerExceptions.Count);
         }
 
+        [Fact]
+        public async Task StartServicesAsync_ServiceCrashesImmediatelyAfterStart_ThrowsFastFailInvalidOperationException()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // The status never leaves Stopped: Start() is issued but the supervised process never
+            // comes up. The start-wait loop's fast-fail branch is exempted on its first Refresh() by
+            // the grace period (elapsed <= ScmPollIntervalMs), so it can only fire on the second one,
+            // once a single real poll interval has elapsed.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Stopped);
+
+            var serviceDto = new ServiceDto { Name = "CrashingService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("CrashingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("CrashingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StartServicesAsync(new[] { "CrashingService" }, CancellationToken.None));
+
+            // The fast fail happens after the Start command, not instead of it, and it is reported as
+            // the inner exception of the per-service "failed." wrapper the generic catch arm adds.
+            scMock.Verify(x => x.Start(), Times.Once);
+            Assert.Single(aggEx.InnerExceptions);
+            var inner = aggEx.InnerExceptions[0].InnerException;
+            Assert.NotNull(inner);
+            Assert.IsType<InvalidOperationException>(inner);
+            Assert.Contains("entered Stopped state during start", inner.Message);
+        }
+
         #endregion
 
         #region StopServicesAsync Tests
