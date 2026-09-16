@@ -2322,6 +2322,70 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task UninstallService_Succeeds_WhenServiceIsAlreadyStopped()
+        {
+            // Arrange
+            var serviceName = "ServiceName";
+            var scmHandle = CreateScmHandle(123);
+            var serviceHandle = CreateServiceHandle(456);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                null,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                null))
+                .Returns(true);
+
+            // The service is already stopped, so the stop command fails with ERROR_SERVICE_NOT_ACTIVE.
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+                .Returns(false);
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
+                .Returns(Errors.ERROR_SERVICE_NOT_ACTIVE);
+
+            _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
+                .Returns(true);
+
+            // Already 'Stopped', so the wait loop resolves on the pre-loop Refresh
+            var mockController = new Mock<IServiceControllerWrapper>();
+
+            mockController.Setup(c => c.Refresh());
+
+            mockController.Setup(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped);
+
+            // Setup the factory to return this mock controller
+            _serviceManager = new ServiceManager(
+                svcName => mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+                );
+
+            // Act
+            var result = await _serviceManager.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
+
+            // Assert
+            // The already-stopped case is the expected one: the failed stop command must not abort the uninstall.
+            Assert.True(result.IsSuccess);
+            _mockWindowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Once);
+        }
+
+        [Fact]
         public async Task UninstallService_StopsAndDeletesServiceSuccessfully_WithPolling()
         {
             // Arrange
