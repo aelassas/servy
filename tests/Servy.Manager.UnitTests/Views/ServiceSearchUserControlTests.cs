@@ -139,7 +139,7 @@ namespace Servy.Manager.UnitTests.Views
                 var control = new TestServiceSearchUserControl();
                 var viewModel = CreateIsolatedViewModel();
 
-                viewModel.Services.Clear(); // Collection state evaluates to !Any()
+                viewModel.Services.Clear(); // No-op (already empty); the real gate is HasSearched, which this view model leaves at its default false
                 control.DataContext = viewModel;
 
                 // Act
