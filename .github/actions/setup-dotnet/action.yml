@@ -65,6 +65,9 @@ runs:
         # Ensure the installation directory exists
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
+        # Ensure $LASTEXITCODE is clean before invoking the script in-process
+        $global:LASTEXITCODE = 0
+
         # Executing the installer from its isolated path in $env:RUNNER_TEMP
         # Using -JsonFile (global.json) instead of -Channel to ensure reproducibility
         # Instructs the script to parse global.json and install whatever is in there
