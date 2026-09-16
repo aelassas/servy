@@ -27,7 +27,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="service">The service model for this row.</param>
         /// <param name="serviceCommands">Service commands for row operations.</param>
         /// <param name="cursorService">Cursor service.</param>
-        public ServiceRowViewModel(Service? service, IServiceCommands? serviceCommands, ICursorService? cursorService)
+        public ServiceRowViewModel(Service service, IServiceCommands serviceCommands, ICursorService cursorService)
         {
             Service = service ?? throw new ArgumentNullException(nameof(service));
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));

@@ -2175,7 +2175,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains($"Service '{serviceName}' does not exist.", result.ErrorMessage);
+            Assert.Equal(string.Format(Strings.Msg_ServiceNotFoundDetailed, serviceName), result.ErrorMessage);
             _mockServiceRepository.Verify(r => r.DeleteAsync(serviceName, It.IsAny<CancellationToken>()), Times.Never);
         }
 

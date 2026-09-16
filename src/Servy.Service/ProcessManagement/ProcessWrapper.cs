@@ -569,7 +569,6 @@ namespace Servy.Service.ProcessManagement
                     return null;
 
                 default:
-                    Logger.Warn($"AttachConsole failed with unclassified Win32 error: {error}");
                     return false;
             }
         }

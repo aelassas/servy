@@ -745,7 +745,7 @@ namespace Servy.Core.Services
                                 Logger.Info($"Service '{serviceName}' was not found in SCM, but orphan database record was successfully cleaned up.");
                                 return OperationResult.Success();
                             }
-                            return OperationResult.Failure($"Service '{serviceName}' does not exist.");
+                            return OperationResult.Failure(string.Format(Strings.Msg_ServiceNotFoundDetailed, serviceName));
                         }
 
                         return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. Win32 Error: {openErr}.");

@@ -852,7 +852,7 @@ If the service is disabled and marked for deletion, installation will fail until
   </data>
 
   <data name="Automation_DependenciesServiceList_Name" xml:space="preserve">
-    <value>Service Selection List</value>
+    <value>Service Selector</value>
   </data>
   <data name="Automation_DependenciesServiceList_HelpText" xml:space="preserve">
     <value>Search and select a service to view its dependencies.</value>
