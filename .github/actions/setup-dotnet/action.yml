@@ -68,7 +68,7 @@ runs:
         # Executing the installer from its isolated path in $env:RUNNER_TEMP
         # Using -JsonFile (global.json) instead of -Channel to ensure reproducibility
         # Instructs the script to parse global.json and install whatever is in there
-        powershell -ExecutionPolicy Bypass -File $installerPath `
+        & $installerPath `
           -JsonFile "$env:GITHUB_WORKSPACE\global.json" `
           -InstallDir $installDir
 
