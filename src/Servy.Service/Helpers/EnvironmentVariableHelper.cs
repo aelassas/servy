@@ -109,10 +109,12 @@ namespace Servy.Service.Helpers
             "NODE_OPTIONS", "NODE_PATH", "NODE_EXTRA_CA_CERTS",
             "NPM_CONFIG_PREFIX", "NPM_CONFIG_USERCONFIG", "NPM_CONFIG_GLOBALCONFIG",
 
-            // TLS Trust Store & OpenSSL Configuration - Rogue CA injection and provider/engine module loading
+            // TLS Trust Store & OpenSSL Configuration - Rogue CA injection, provider/engine module loading,
+            // and outbound traffic redirection via a proxy of the attacker's choosing
             "OPENSSL_CONF", "OPENSSL_MODULES",
             "SSL_CERT_FILE", "SSL_CERT_DIR",
             "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
+            "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
 
             // Python Injection - Covers interpreters and package manager wrappers
             "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",
