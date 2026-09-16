@@ -89,7 +89,7 @@ namespace Servy.Manager.ViewModels
 
                 CopyPidCommand.RaiseCanExecuteChanged();
 
-                ResetGraphs();
+                ResetGraphsAndResynchronizePid();
 
                 StopMonitoring();
                 StartMonitoring();
@@ -229,7 +229,7 @@ namespace Servy.Manager.ViewModels
         /// <inheritdoc />
         protected override void ResetMonitoringState()
         {
-            ResetGraphs();
+            ResetGraphsAndResynchronizePid();
         }
 
         /// <inheritdoc />
@@ -246,7 +246,7 @@ namespace Servy.Manager.ViewModels
                 if (currentSelection.Pid != null)      // only act on the running -> stopped transition
                 {
                     currentSelection.Pid = null;
-                    ResetGraphs();
+                    ResetGraphsAndResynchronizePid();
                     CopyPidCommand.RaiseCanExecuteChanged();
                 }
                 return;
@@ -255,7 +255,7 @@ namespace Servy.Manager.ViewModels
             if (currentSelection.Pid != currentPid)
             {
                 currentSelection.Pid = currentPid;
-                ResetGraphs();
+                ResetGraphsAndResynchronizePid();
                 CopyPidCommand.RaiseCanExecuteChanged();
             }
 
@@ -284,11 +284,12 @@ namespace Servy.Manager.ViewModels
         #region Private Methods - Logic & Calculation
 
         /// <summary>
-        /// Resets all graph-related display values and data collections to their initial state.
+        /// Resets the graph display values and data collections to their initial state,
+        /// and re-synchronises the PID label with the current selection.
         /// </summary>
         /// <remarks>Call this method to clear existing CPU and RAM usage data and prepare the graphs for
         /// fresh input. This is typically used when reinitializing the display or after a data source change.</remarks>
-        private void ResetGraphs()
+        private void ResetGraphsAndResynchronizePid()
         {
             // 1. Reset display values
             CpuUsage = UiConstants.NotAvailable;
