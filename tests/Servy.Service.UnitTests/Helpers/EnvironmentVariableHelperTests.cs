@@ -79,6 +79,24 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void ExpandWithDictionary_DictionaryContainsEmptyKeyEntry_EntryIsSkippedAndOtherEntriesStillExpand()
+        {
+            // Arrange - a dictionary accepts an empty string as a key (only null throws), so the
+            // internal method has to defend its own contract against a caller that skips the name filter.
+            var dict = new Dictionary<string, string>
+            {
+                { "", "should-be-skipped" },
+                { "FOO", "bar" }
+            };
+
+            // Act - the "%%" in the input is exactly what the empty key's token would match if it were not skipped
+            var result = EnvironmentVariableHelper.ExpandWithDictionary("%%-%FOO%-x", dict);
+
+            // Assert - the empty-key entry substitutes nothing and the remaining entries still expand
+            Assert.Equal("%%-bar-x", result);
+        }
+
+        [Fact]
         public void ExpandEnvironmentVariables_EmptyOrWhitespaceCustomNames_AreIgnored()
         {
             // Arrange
