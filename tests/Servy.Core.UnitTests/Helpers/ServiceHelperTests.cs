@@ -304,6 +304,40 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Contains("entered Stopped state during start", inner.Message);
         }
 
+        [Fact]
+        public async Task StartServicesAsync_CancelledInsideSettleLoop_RethrowsOperationCanceledException()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // The status never settles, so the method stays inside the settle loop's
+            // Task.Delay(ScmPollIntervalMs, cancellationToken) until the token is cancelled.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.StartPending);
+
+            var serviceDto = new ServiceDto { Name = "PendingService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PendingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PendingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.CancelAfter(50);
+
+                // Act & Assert - a single service name is load-bearing: the per-service loop's own
+                // ThrowIfCancellationRequested sits outside the try, so with a second name the
+                // cancellation would escape without ever reaching the catch arms this test pins.
+                // The dedicated catch (OperationCanceledException) rethrow is what lets cooperative
+                // cancellation surface unchanged; the generic catch arm below it would instead have
+                // collected it into the batch's AggregateException.
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                    () => serviceHelper.StartServicesAsync(new[] { "PendingService" }, cts.Token));
+            }
+        }
+
         #endregion
 
         #region StopServicesAsync Tests
@@ -568,6 +602,40 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.NotNull(inner);
             Assert.IsType<InvalidOperationException>(inner);
             Assert.Contains("re-entered Running state during stop", inner.Message);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_CancelledInsideSettleLoop_RethrowsOperationCanceledException()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // StartPending both enters the settle loop and never leaves it, so the method stays
+            // inside Task.Delay(ScmPollIntervalMs, cancellationToken) until the token is cancelled.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.StartPending);
+
+            var serviceDto = new ServiceDto { Name = "PendingService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PendingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PendingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.CancelAfter(50);
+
+                // Act & Assert - a single service name is load-bearing: the per-service loop's own
+                // ThrowIfCancellationRequested sits outside the try, so with a second name the
+                // cancellation would escape without ever reaching the catch arms this test pins.
+                // The dedicated catch (OperationCanceledException) rethrow is what lets cooperative
+                // cancellation surface unchanged; the generic catch arm below it would instead have
+                // collected it into the batch's AggregateException.
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                    () => serviceHelper.StopServicesAsync(new[] { "PendingService" }, cts.Token));
+            }
         }
 
         #endregion
