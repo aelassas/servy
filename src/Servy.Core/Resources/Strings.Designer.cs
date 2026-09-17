@@ -835,15 +835,6 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Security Alert: Path validation failed in the kernel probe (path serialization)..
-        /// </summary>
-        public static string Msg_SecurityHandleSerializationFailed {
-            get {
-                return ResourceManager.GetString("Msg_SecurityHandleSerializationFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Security Alert: Path validation failed in the kernel probe (size allocation)..
         /// </summary>
         public static string Msg_SecurityHandleSizeProbeFailed {
