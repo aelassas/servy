@@ -129,14 +129,25 @@ namespace Servy.Core.Helpers
                 return true;
             }
 
-            // If path context is available, verify executable provenance against legitimate Windows system roots
-            if (!string.IsNullOrEmpty(executablePath))
+            // 1. Up-front name-only check (executablePath parameter was omitted by caller):
+            // Protect critical names from bulk name-based kill requests up-front.
+            if (executablePath == null)
             {
-                if (!IsSystemDirectoryPath(executablePath))
-                {
-                    Logger.Warn($"SECURITY ALERT: Process PID {pid} ('{processName}') matched critical system process name but executes from non-system location '{executablePath}'. Rejecting safelist protection.");
-                    return false;
-                }
+                return true;
+            }
+
+            // 2. Specific PID handle inspection (executablePath was provided, but is empty/unreadable or outside System32):
+            // Fail closed: reject safelist protection if the path is unreadable or outside valid system roots.
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                Logger.Warn($"SECURITY ALERT: Process PID {pid} ('{processName}') matched critical system process name but its executable path could not be read. Rejecting safelist protection.");
+                return false;
+            }
+
+            if (!IsSystemDirectoryPath(executablePath))
+            {
+                Logger.Warn($"SECURITY ALERT: Process PID {pid} ('{processName}') matched critical system process name but executes from non-system location '{executablePath}'. Rejecting safelist protection.");
+                return false;
             }
 
             return true;
