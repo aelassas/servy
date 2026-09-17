@@ -192,6 +192,21 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void KillProcessTreeAndParents_ByPid_ProcessNotFound_ReturnsTrue()
+        {
+            // Arrange
+            // No process is registered, so the accessor throws ArgumentException for any PID.
+            var accessor = new FakeSystemProcessAccessor();
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(12345, killParents: true);
+
+            // Assert
+            Assert.True(result, "A PID absent from the process table reports success (nothing left to kill), matching the by-name overload's contract for a missing target.");
+        }
+
+        [Fact]
         public void KillProcessTreeAndParents_ByName_TargetFoundInSnapshot_KillsMatchedProcess()
         {
             // Arrange
