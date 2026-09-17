@@ -255,26 +255,51 @@ namespace Servy.Manager.UnitTests.Utils
             {
                 File.WriteAllText(_tempFilePath, "Initial content\n");
 
-                bool linesEmitted = false;
+                var capturedLines = new List<LogLine>();
                 int successfulLoopIterations = 0;
 
-                tailer.OnNewLines += (lines) => linesEmitted = true;
+                tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
                 tailer.OnLoopCompleted += () => Interlocked.Increment(ref successfulLoopIterations);
 
+                Task tailTask;
+
+                // Act
+                // The lock is taken BEFORE the loop starts, so the first open cannot win a race with it
+                // and the IOException arm is the only path the loop can take while this block runs.
                 using (var exclusiveLock = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
-                    // Act
-                    var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                    tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                     await Task.Delay(TestTimeouts.LogTailerLoopPassDelayMs, CancellationToken.None);
-                    cts.Cancel();
 
-                    try { await tailTask; } catch (OperationCanceledException) { }
+                    // Assert (still locked): the catch block absorbed the open failure.
+                    lock (capturedLines)
+                    {
+                        Assert.Empty(capturedLines);
+                    }
+
+                    Assert.Equal(0, successfulLoopIterations);
                 }
 
-                // Assert
-                Assert.False(linesEmitted, "LogTailer incorrectly surfaced lines from an exclusively locked file descriptor stream.");
-                Assert.Equal(0, successfulLoopIterations);
+                // Assert (lock released): the catch block resumed the loop instead of abandoning it.
+                // This is the half the locked observations cannot supply - a loop that caught the
+                // IOException once and stopped emits nothing and completes no pass either, so holding
+                // the lock for the whole test leaves the "AndRetries" half of the name unverified.
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedLines) return capturedLines.Count > 0;
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: CancellationToken.None);
+
+                cts.Cancel();
+
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                lock (capturedLines)
+                {
+                    Assert.Contains(capturedLines, l => l.Text.Contains("Initial content"));
+                }
+
+                Assert.True(successfulLoopIterations > 0, "A retry after the lock was released must complete at least one loop pass.");
             }
         }
 
