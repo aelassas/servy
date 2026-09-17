@@ -34,6 +34,28 @@ namespace Servy.Manager.UnitTests.Converters
         #region Constructor Dependency Injection & Fallback Tests
 
         [Fact]
+        public void Constructor_DesignMode_FallsBackToDesignTimeHelper()
+        {
+            // Arrange
+            var originalCheck = ProcessMetricConverter<double>.IsInDesignModeCheck;
+            ProcessMetricConverter<double>.IsInDesignModeCheck = () => true;
+
+            try
+            {
+                // Act
+                var converter = new TestMetricConverter();
+
+                // Assert
+                Assert.NotNull(converter.ExposedProcessHelper);
+                Assert.IsType<DesignTimeProcessHelper>(converter.ExposedProcessHelper);
+            }
+            finally
+            {
+                ProcessMetricConverter<double>.IsInDesignModeCheck = originalCheck;
+            }
+        }
+
+        [Fact]
         public void Constructor_ServicesAndHelperAvailable_ResolvesProcessHelperFromDI()
         {
             // Arrange

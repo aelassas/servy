@@ -18,6 +18,11 @@ namespace Servy.Manager.Converters
     public abstract class ProcessMetricConverter<TValue> : IValueConverter where TValue : struct
     {
         /// <summary>
+        /// Seam for unit testing. Production code defaults to the real WPF designer-mode check.
+        /// </summary>
+        internal static Func<bool> IsInDesignModeCheck = () => DesignerProperties.GetIsInDesignMode(new DependencyObject());
+
+        /// <summary>
         /// The process formatting helper dependency.
         /// </summary>
         protected readonly IProcessHelper ProcessHelper;
@@ -34,7 +39,7 @@ namespace Servy.Manager.Converters
         protected ProcessMetricConverter()
         {
             // Check for design mode before accessing App.Services
-            if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+            if (IsInDesignModeCheck())
             {
                 ProcessHelper = new DesignTimeProcessHelper();
                 return;
