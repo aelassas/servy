@@ -708,9 +708,12 @@ namespace Servy.Restarter.UnitTests
                 ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
                 : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
-            // First Refresh call in HandleTransitionalError throws, triggering catch block;
-            // re-probe Refresh call inside catch block throws to signal ServiceNotFound.
-            _mockController.Setup(c => c.Refresh()).Throws(exceptionToThrow);
+            // Recovery poll 1's Refresh throws a transitional error, so the catch block falls past
+            // the outer IsGone check and reaches the re-probe; the re-probe's own Refresh then
+            // throws the "gone" error, which is the branch this test exists to pin.
+            _mockController.SetupSequence(c => c.Refresh())
+                .Throws(new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)))
+                .Throws(exceptionToThrow);
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
