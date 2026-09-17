@@ -188,6 +188,76 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void KillProcessTreeAndParents_ByName_TargetFoundInSnapshot_KillsMatchedProcess()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var target = new FakeSystemProcess
+            {
+                Id = 300,
+                ProcessName = "myworker",
+                ExecutablePath = @"C:\Apps\myworker.exe",
+                StartTime = now
+            };
+
+            accessor.Processes[300] = target;
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 1, Name = "myworker.exe" };
+            accessor.ByParent[300] = new List<int>();
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            // The snapshot name carries the .exe suffix the request does not, which is what StripExe normalizes away.
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(target.Killed, "A live process matching the requested name in the snapshot must be found and killed.");
+        }
+
+        [Fact]
+        public void KillProcessTreeAndParents_ByName_KillParents_KillsMatchedProcessAndItsParent()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var target = new FakeSystemProcess
+            {
+                Id = 300,
+                ProcessName = "myworker",
+                ExecutablePath = @"C:\Apps\myworker.exe",
+                StartTime = now
+            };
+            // Started before the target, so the PID-reuse guard accepts it as the genuine parent.
+            var supervisor = new FakeSystemProcess
+            {
+                Id = 400,
+                ProcessName = "supervisor",
+                ExecutablePath = @"C:\Apps\supervisor.exe",
+                StartTime = now.AddMinutes(-5)
+            };
+
+            accessor.Processes[300] = target;
+            accessor.Processes[400] = supervisor;
+
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 400, Name = "myworker.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 1, Name = "supervisor.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(target.Killed, "The matched target must be killed by the tree walk.");
+            Assert.True(supervisor.Killed, "With killParents requested, the matched target's parent must be walked and killed too.");
+        }
+
+        [Fact]
         public void KillParentProcesses_Win32ExceptionOnStartTime_FailsClosedAndAbortsWalk()
         {
             // Arrange
