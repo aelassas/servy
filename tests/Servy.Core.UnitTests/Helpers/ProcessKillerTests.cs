@@ -188,6 +188,91 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void KillProcessTreeAndParents_ByPid_ProcessNotFound_ReturnsTrue()
+        {
+            // Arrange
+            // No process is registered, so the accessor throws ArgumentException for any PID.
+            var accessor = new FakeSystemProcessAccessor();
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(12345, killParents: true);
+
+            // Assert
+            Assert.True(result, "A PID absent from the process table reports success (nothing left to kill), matching the by-name overload's contract for a missing target.");
+        }
+
+        [Fact]
+        public void KillProcessTreeAndParents_ByName_TargetFoundInSnapshot_KillsMatchedProcess()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var target = new FakeSystemProcess
+            {
+                Id = 300,
+                ProcessName = "myworker",
+                ExecutablePath = @"C:\Apps\myworker.exe",
+                StartTime = now
+            };
+
+            accessor.Processes[300] = target;
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 1, Name = "myworker.exe" };
+            accessor.ByParent[300] = new List<int>();
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            // The snapshot name carries the .exe suffix the request does not, which is what StripExe normalizes away.
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(target.Killed, "A live process matching the requested name in the snapshot must be found and killed.");
+        }
+
+        [Fact]
+        public void KillProcessTreeAndParents_ByName_KillParents_KillsMatchedProcessAndItsParent()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var target = new FakeSystemProcess
+            {
+                Id = 300,
+                ProcessName = "myworker",
+                ExecutablePath = @"C:\Apps\myworker.exe",
+                StartTime = now
+            };
+            // Started before the target, so the PID-reuse guard accepts it as the genuine parent.
+            var supervisor = new FakeSystemProcess
+            {
+                Id = 400,
+                ProcessName = "supervisor",
+                ExecutablePath = @"C:\Apps\supervisor.exe",
+                StartTime = now.AddMinutes(-5)
+            };
+
+            accessor.Processes[300] = target;
+            accessor.Processes[400] = supervisor;
+
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 400, Name = "myworker.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 1, Name = "supervisor.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(target.Killed, "The matched target must be killed by the tree walk.");
+            Assert.True(supervisor.Killed, "With killParents requested, the matched target's parent must be walked and killed too.");
+        }
+
+        [Fact]
         public void KillParentProcesses_Win32ExceptionOnStartTime_FailsClosedAndAbortsWalk()
         {
             // Arrange
@@ -252,8 +337,11 @@ namespace Servy.Core.UnitTests.Helpers
             var accessor = new FakeSystemProcessAccessor();
             var now = DateTime.UtcNow;
 
-            var parent = new FakeSystemProcess { Id = 100, ProcessName = "parent", StartTime = now.AddMinutes(-10) };
-            var child = new FakeSystemProcess { Id = 200, ProcessName = "child", StartTime = now.AddMinutes(-5) };
+            // Both processes share a start time so the PID-reuse tolerance window is satisfied in
+            // BOTH directions of the cycle. With asymmetric start times the temporal guard halts the
+            // walk on the way back up and the visited-set cycle guard is never reached.
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "parent", StartTime = now };
+            var child = new FakeSystemProcess { Id = 200, ProcessName = "child", StartTime = now };
 
             accessor.Processes[100] = parent;
             accessor.Processes[200] = child;
@@ -268,7 +356,11 @@ namespace Servy.Core.UnitTests.Helpers
             // Must complete cleanly without StackOverflowException
             var exception = Record.Exception(() => killer.KillChildren(100));
             Assert.Null(exception);
-            Assert.True(child.Killed, "Child process should be killed before cycle is detected.");
+            Assert.True(child.Killed, "Child process should be killed while walking down the cycle.");
+            // The walk re-enters PID 100 as a child of PID 200 and kills it there; the recursion is
+            // then stopped by the visited-set guard on the second encounter with PID 200. Without
+            // that guard this arrangement recurses forever.
+            Assert.True(parent.Killed, "Walk should re-enter the cycle and kill PID 100 as a child of PID 200.");
         }
 
         [Fact]
