@@ -43,7 +43,10 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Value returned by the SelectedServiceItem override
             public ServiceItemBase MockedSelectedService { get; set; }
 
-            public bool IsResetMonitoringStateCalled { get; private set; }
+            // A counter, not a one-way flag: only a count can tell one reset from several,
+            // which is what the _hadSelectedService latch in OnTickAsync exists to guarantee.
+            public int ResetMonitoringStateCallCount { get; private set; }
+            public bool IsResetMonitoringStateCalled => ResetMonitoringStateCallCount > 0;
             public ServiceItemBase LastAppliedSelection { get; private set; }
 
             public TestMonitoringViewModel(
@@ -86,7 +89,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             protected override void ResetMonitoringState()
             {
-                IsResetMonitoringStateCalled = true;
+                ResetMonitoringStateCallCount++;
             }
 
             protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
@@ -381,8 +384,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.MockedSelectedService = null;
             vm.ExposeOnTick();
 
-            // Assert
-            Assert.True(vm.IsResetMonitoringStateCalled);
+            // Assert - exactly one reset, not merely "at least one"
+            Assert.Equal(1, vm.ResetMonitoringStateCallCount);
+
+            // Act - a further tick while the selection is still lost
+            vm.ExposeOnTick();
+
+            // Assert - the _hadSelectedService latch suppresses any further reset
+            Assert.Equal(1, vm.ResetMonitoringStateCallCount);
         }
 
         [Fact]
