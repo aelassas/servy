@@ -97,6 +97,60 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failure Program Parameters.
+        /// </summary>
+        public static string Label_FailureProgramParameters {
+            get {
+                return ResourceManager.GetString("Label_FailureProgramParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameters.
+        /// </summary>
+        public static string Label_Parameters {
+            get {
+                return ResourceManager.GetString("Label_Parameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Launch Parameters.
+        /// </summary>
+        public static string Label_PostLaunchParameters {
+            get {
+                return ResourceManager.GetString("Label_PostLaunchParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Stop Parameters.
+        /// </summary>
+        public static string Label_PostStopParameters {
+            get {
+                return ResourceManager.GetString("Label_PostStopParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Parameters.
+        /// </summary>
+        public static string Label_PreLaunchParameters {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Stop Parameters.
+        /// </summary>
+        public static string Label_PreStopParameters {
+            get {
+                return ResourceManager.GetString("Label_PreStopParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Administrator privileges are required..
         /// </summary>
         public static string Msg_AdminRightsRequired {

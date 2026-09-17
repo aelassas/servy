@@ -37,8 +37,7 @@ namespace Servy.Manager.ViewModels
 
             Service.PropertyChanged += Service_PropertyChanged;
 
-            StartCommand = new AsyncCommand(
-                StartServiceAsync,
+            StartCommand = new AsyncCommand(StartServiceAsync,
                 _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Stopped,
                 name: nameof(StartCommand));
             StopCommand = new AsyncCommand(StopServiceAsync,
@@ -63,7 +62,8 @@ namespace Servy.Manager.ViewModels
                 CanExecuteServiceCommand,
                 name: nameof(ExportXmlCommand));
             ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync,
-                CanExecuteServiceCommand, name: nameof(ExportJsonCommand));
+                CanExecuteServiceCommand,
+                name: nameof(ExportJsonCommand));
 
             CopyPidCommand = new AsyncCommand(CopyPidAsync,
                 _ => CanExecuteServiceCommand(_) && Service.Pid != null,

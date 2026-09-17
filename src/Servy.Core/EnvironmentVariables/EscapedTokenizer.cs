@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,8 +25,13 @@ namespace Servy.Core.EnvironmentVariables
         /// <param name="input">The input string to split.</param>
         /// <param name="delimiters">An array of delimiter characters to split on.</param>
         /// <returns>An array of string segments resulting from splitting the input by unescaped delimiters.</returns>
-        public static string[] SplitByUnescapedDelimiters(string input, char[] delimiters)
+        internal static string[] SplitByUnescapedDelimiters(string input, char[] delimiters)
         {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (delimiters == null)
+                throw new ArgumentNullException(nameof(delimiters));
+
             var segments = new List<string>();
             var sb = new StringBuilder();
             int backslashRun = 0;
@@ -37,7 +43,6 @@ namespace Servy.Core.EnvironmentVariables
 
                 if (delimiters.Contains(c))
                 {
-                    // If not escaped, split here
                     if (!isEscaped)
                     {
                         segments.Add(sb.ToString());
@@ -58,21 +63,23 @@ namespace Servy.Core.EnvironmentVariables
         /// <summary>
         /// Finds the index of the first unescaped occurrence of a character in a string.
         /// </summary>
-        /// <param name="str">The input string to search.</param>
+        /// <param name="input">The input string to search.</param>
         /// <param name="ch">The character to find.</param>
         /// <returns>The zero-based index of the first unescaped occurrence of the specified character, or negative one if not found.</returns>
-        public static int IndexOfUnescapedChar(string str, char ch)
+        internal static int IndexOfUnescapedChar(string input, char ch)
         {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
             int backslashRun = 0;
 
-            for (int i = 0; i < str.Length; i++)
+            for (int i = 0; i < input.Length; i++)
             {
-                char c = str[i];
+                char c = input[i];
                 bool isEscaped = (backslashRun & 1) == 1;
 
                 if (c == ch)
                 {
-                    // If not escaped, return the index
                     if (!isEscaped)
                     {
                         return i;
@@ -90,7 +97,7 @@ namespace Servy.Core.EnvironmentVariables
         /// </summary>
         /// <param name="input">The input string to unescape.</param>
         /// <returns>The fully unescaped string.</returns>
-        public static string Unescape(string input)
+        internal static string Unescape(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return string.Empty;
@@ -133,13 +140,16 @@ namespace Servy.Core.EnvironmentVariables
         /// <summary>
         /// Determines if the character at the specified index is escaped by an odd number of preceding backslashes.
         /// </summary>
-        /// <param name="s">The string to examine.</param>
+        /// <param name="input">The string to examine.</param>
         /// <param name="index">The position of the character to check.</param>
         /// <returns>true if the character is escaped; otherwise, false.</returns>
-        internal static bool IsEscapedAt(string s, int index)
+        internal static bool IsEscapedAt(string input, int index)
         {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
             int backslashCount = 0;
-            for (int j = index - 1; j >= 0 && s[j] == '\\'; j--)
+            for (int j = index - 1; j >= 0 && j < input.Length && input[j] == '\\'; j--)
             {
                 backslashCount++;
             }

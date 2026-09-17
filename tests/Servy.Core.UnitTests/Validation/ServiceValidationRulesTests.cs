@@ -5,6 +5,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.UnitTests.Helpers;
 using Servy.Core.Validation;
+using Servy.Testing;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Validation
@@ -78,7 +79,7 @@ namespace Servy.Core.UnitTests.Validation
             // Also set other invalid fields to ensure validation stops early
             dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);
 
-            var (_, expectedErrorMsg) = Helper.IsServiceNameValid(dto.Name);
+            var (_, expectedErrorMsg) = Core.Helpers.Helper.IsServiceNameValid(dto.Name);
 
             // Act
             var result = _sut.Validate(dto);
@@ -136,28 +137,36 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
-        [InlineData(nameof(ServiceDto.Parameters))]
-        [InlineData(nameof(ServiceDto.PreLaunchParameters))]
-        [InlineData(nameof(ServiceDto.PostLaunchParameters))]
-        [InlineData(nameof(ServiceDto.PreStopParameters))]
-        [InlineData(nameof(ServiceDto.PostStopParameters))]
-        [InlineData(nameof(ServiceDto.FailureProgramParameters))]
-        public void Validate_ExceedingParametersLength_ReturnsErrorForField(string fieldName)
+        [InlineData(nameof(ServiceDto.Parameters), nameof(Strings.Label_Parameters))]
+        [InlineData(nameof(ServiceDto.PreLaunchParameters), nameof(Strings.Label_PreLaunchParameters))]
+        [InlineData(nameof(ServiceDto.PostLaunchParameters), nameof(Strings.Label_PostLaunchParameters))]
+        [InlineData(nameof(ServiceDto.PreStopParameters), nameof(Strings.Label_PreStopParameters))]
+        [InlineData(nameof(ServiceDto.PostStopParameters), nameof(Strings.Label_PostStopParameters))]
+        [InlineData(nameof(ServiceDto.FailureProgramParameters), nameof(Strings.Label_FailureProgramParameters))]
+        public void Validate_ExceedingParametersLength_ReturnsErrorForField(string propertyName, string resourceLabelKey)
         {
             // Arrange
             var dto = ServiceDtoFactory.CreateValidValidationBase();
             var oversizedValue = new string('C', AppConfig.MaxArgumentLength + 1);
 
+            // Set value via property reflection
             typeof(ServiceDto)
-                .GetProperty(fieldName)
+                .GetProperty(propertyName)
                 ?.SetValue(dto, oversizedValue);
+
+            // Get static property value from resource class
+            var expectedLabel = typeof(Strings)
+                .GetProperty(resourceLabelKey, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                ?.GetValue(null) as string;
+
+            Assert.NotNull(expectedLabel);
 
             // Act
             var result = _sut.Validate(dto);
 
             // Assert
             Assert.Single(result.Errors);
-            Assert.Contains(string.Format(Strings.Msg_ArgumentsLengthReachedForField, fieldName, AppConfig.MaxArgumentLength), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_ArgumentsLengthReachedForField, expectedLabel, AppConfig.MaxArgumentLength), result.Errors);
         }
 
         [Fact]

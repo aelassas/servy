@@ -7,7 +7,6 @@ using Servy.Core.Native;
 using Servy.Core.Resources;
 using Servy.Core.ServiceDependencies;
 using System;
-using System.Reflection;
 
 namespace Servy.Core.Validation
 {
@@ -66,19 +65,19 @@ namespace Servy.Core.Validation
             if (dto.Description?.Length > AppConfig.MaxDescriptionLength)
                 result.Errors.Add(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength));
 
-            var paramFieldsNamed = new (string Name, string Value)[]
+            var paramFieldsNamed = new (string Label, string Value)[]
             {
-                (nameof(dto.Parameters),               dto.Parameters),
-                (nameof(dto.PreLaunchParameters),      dto.PreLaunchParameters),
-                (nameof(dto.PostLaunchParameters),     dto.PostLaunchParameters),
-                (nameof(dto.PreStopParameters),        dto.PreStopParameters),
-                (nameof(dto.PostStopParameters),       dto.PostStopParameters),
-                (nameof(dto.FailureProgramParameters), dto.FailureProgramParameters),
+                (Strings.Label_Parameters,               dto.Parameters),
+                (Strings.Label_PreLaunchParameters,      dto.PreLaunchParameters),
+                (Strings.Label_PostLaunchParameters,     dto.PostLaunchParameters),
+                (Strings.Label_PreStopParameters,        dto.PreStopParameters),
+                (Strings.Label_PostStopParameters,       dto.PostStopParameters),
+                (Strings.Label_FailureProgramParameters, dto.FailureProgramParameters),
             };
-            foreach (var (name, value) in paramFieldsNamed)
+            foreach (var (label, value) in paramFieldsNamed)
             {
                 if (value?.Length > AppConfig.MaxArgumentLength)
-                    result.Errors.Add(string.Format(Strings.Msg_ArgumentsLengthReachedForField, name, AppConfig.MaxArgumentLength));
+                    result.Errors.Add(string.Format(Strings.Msg_ArgumentsLengthReachedForField, label, AppConfig.MaxArgumentLength));
             }
 
             // CpuAffinity
