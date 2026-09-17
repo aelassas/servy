@@ -351,7 +351,7 @@ namespace Servy.Manager.Utils
         {
             if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
             long pos = 0;
-            DateTime created = DateTime.MinValue;
+            DateTime created = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
             var lines = await Task.Run(() => LoadHistory(path, type, maxLines, out pos, out created, cancellationToken), cancellationToken);
             return new HistoryResult(lines, pos, created);
         }
@@ -374,7 +374,7 @@ namespace Servy.Manager.Utils
         private List<LogLine> LoadHistory(string? path, LogType type, int maxLines, out long finalPos, out DateTime creationTimeUtc, CancellationToken cancellationToken = default)
         {
             finalPos = 0;
-            creationTimeUtc = DateTime.MinValue;
+            creationTimeUtc = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
             List<LogLine> lines = new List<LogLine>();
 
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
