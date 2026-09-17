@@ -29,7 +29,8 @@ namespace Servy.Manager.UnitTests
         }
 
         /// <summary>
-        /// Explicit test fixture teardown sequence to purge in-flight background CTS contexts safely.
+        /// Disposes every tracked view model, best-effort: one view model's <see cref="IDisposable.Dispose"/>
+        /// throwing does not prevent the others from being disposed.
         /// </summary>
         public void Dispose()
         {
