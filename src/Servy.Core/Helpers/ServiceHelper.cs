@@ -299,11 +299,25 @@ namespace Servy.Core.Helpers
                             // else: service is already stopped or stopping - no-op
                         }
 
+                        // Instantiate a dedicated stop-wait stopwatch to decouple the fast-fail interval validation
+                        // from the preceding transitional state settle loop timespan.
+                        var stopWaitTimer = Stopwatch.StartNew();
+
                         // This blocks until the service is Stopped or the waitTime expires
                         while (sc.Status != ServiceControllerStatus.Stopped)
                         {
                             if (stopwatch.Elapsed > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
+
+                            // FAST FAIL: A service that accepted the stop request would not re-enter Running.
+                            // Seeing Running here means something else restarted it while the stop was in flight.
+                            // First-iteration grace avoids false-positives before SCM applies StopPending status.
+                            if (sc.Status == ServiceControllerStatus.Running && stopWaitTimer.ElapsedMilliseconds > AppConfig.ScmPollIntervalMs)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Service '{serviceName}' re-entered Running state during stop. " +
+                                    "Something else may have restarted it (a configured Recovery action, another caller, or health monitoring).");
+                            }
 
                             cancellationToken.ThrowIfCancellationRequested();
                             await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);

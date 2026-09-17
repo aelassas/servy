@@ -541,6 +541,35 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(2, aggEx.InnerExceptions.Count);
         }
 
+        [Fact]
+        public async Task StopServicesAsync_ServiceReEntersRunningStateDuringStop_ThrowsFastFailInvalidOperationException()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // The service re-enters Running during the stop wait loop
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Running);
+
+            var serviceDto = new ServiceDto { Name = "RestartingService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("RestartingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("RestartingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act & Assert
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StopServicesAsync(new[] { "RestartingService" }, CancellationToken.None));
+
+            scMock.Verify(x => x.Stop(), Times.Once);
+            Assert.Single(aggEx.InnerExceptions);
+            var inner = aggEx.InnerExceptions[0].InnerException;
+            Assert.NotNull(inner);
+            Assert.IsType<InvalidOperationException>(inner);
+            Assert.Contains("re-entered Running state during stop", inner.Message);
+        }
+
         #endregion
 
         /// <summary>
