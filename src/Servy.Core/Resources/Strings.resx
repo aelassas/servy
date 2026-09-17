@@ -385,4 +385,23 @@
   <data name="Msg_EventLogAccessDenied" xml:space="preserve">
     <value>Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).</value>
   </data>
+
+  <data name="Label_Parameters" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="Label_PreLaunchParameters" xml:space="preserve">
+    <value>Pre-Launch Parameters</value>
+  </data>
+  <data name="Label_PostLaunchParameters" xml:space="preserve">
+    <value>Post-Launch Parameters</value>
+  </data>
+  <data name="Label_PreStopParameters" xml:space="preserve">
+    <value>Pre-Stop Parameters</value>
+  </data>
+  <data name="Label_PostStopParameters" xml:space="preserve">
+    <value>Post-Stop Parameters</value>
+  </data>
+  <data name="Label_FailureProgramParameters" xml:space="preserve">
+    <value>Failure Program Parameters</value>
+  </data>
 </root>

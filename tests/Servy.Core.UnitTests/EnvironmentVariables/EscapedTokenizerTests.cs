@@ -11,6 +11,18 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         #region SplitByUnescapedDelimiters Tests
 
         /// <summary>
+        /// Verifies that <see cref="EscapedTokenizer.SplitByUnescapedDelimiters"/> throws <see cref="ArgumentNullException"/>
+        /// when passed null arguments.
+        /// </summary>
+        [Fact]
+        public void SplitByUnescapedDelimiters_NullArguments_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => EscapedTokenizer.SplitByUnescapedDelimiters(null!, new[] { ';' }));
+            Assert.Throws<ArgumentNullException>(() => EscapedTokenizer.SplitByUnescapedDelimiters("input", null!));
+        }
+
+        /// <summary>
         /// Verifies that <see cref="EscapedTokenizer.SplitByUnescapedDelimiters"/> correctly splits
         /// when delimiters are not escaped.
         /// </summary>
@@ -126,6 +138,17 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         #region IndexOfUnescapedChar Tests
 
         /// <summary>
+        /// Verifies that <see cref="EscapedTokenizer.IndexOfUnescapedChar"/> throws <see cref="ArgumentNullException"/>
+        /// when input is null.
+        /// </summary>
+        [Fact]
+        public void IndexOfUnescapedChar_NullInput_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => EscapedTokenizer.IndexOfUnescapedChar(null!, '='));
+        }
+
+        /// <summary>
         /// Verifies that <see cref="EscapedTokenizer.IndexOfUnescapedChar"/> finds the correct index
         /// only when the character is not escaped.
         /// </summary>
@@ -164,6 +187,17 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         #endregion
 
         #region IsEscapedAt Tests
+
+        /// <summary>
+        /// Verifies that <see cref="EscapedTokenizer.IsEscapedAt"/> throws <see cref="ArgumentNullException"/>
+        /// when input is null.
+        /// </summary>
+        [Fact]
+        public void IsEscapedAt_NullInput_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => EscapedTokenizer.IsEscapedAt(null!, 0));
+        }
 
         /// <summary>
         /// Verifies that <see cref="EscapedTokenizer.IsEscapedAt"/> evaluates backslash run length parity correctly
