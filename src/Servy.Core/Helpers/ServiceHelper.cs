@@ -49,6 +49,25 @@ namespace Servy.Core.Helpers
             _serviceControllerProvider = serviceControllerProvider ?? throw new ArgumentNullException(nameof(serviceControllerProvider));
         }
 
+        /// <summary>
+        /// Creates the elapsed-time source that the SCM wait loops evaluate their deadline against.
+        /// Each call returns a fresh source, started at the moment of the call, exactly as the
+        /// <see cref="Stopwatch"/> it replaces was started where the loop begins.
+        /// </summary>
+        /// <remarks>
+        /// The deadline a wait loop compares against is floored at
+        /// <see cref="AppConfig.DefaultServiceStartTimeoutSeconds"/> + <see cref="AppConfig.ScmTimeoutBufferSeconds"/>
+        /// for a start and <see cref="AppConfig.DefaultStopTimeout"/> + <see cref="AppConfig.ScmTimeoutBufferSeconds"/>
+        /// for a stop, and the check is the first statement of each loop body, before any poll delay is
+        /// awaited. Substituting the poll delay therefore cannot bring the deadline closer - only the
+        /// elapsed-time source can - which is why this is the seam the timeout tests drive.
+        /// </remarks>
+        internal Func<Func<TimeSpan>> ElapsedSourceFactory { get; set; } = () =>
+        {
+            var stopwatch = Stopwatch.StartNew();
+            return () => stopwatch.Elapsed;
+        };
+
         #region Public Methods
 
         /// <inheritdoc />
@@ -125,13 +144,13 @@ namespace Servy.Core.Helpers
                         // --- ROBUSTNESS: Settle In-Flight Transitional Pending States ---
                         // If a service is transitioning (e.g., StopPending from a prior failure/command),
                         // wait for it to land on a terminal state before deciding whether to issue Start or Continue.
-                        var stopwatch = Stopwatch.StartNew();
+                        var elapsed = ElapsedSourceFactory();
                         while (sc.Status == ServiceControllerStatus.StopPending ||
                                sc.Status == ServiceControllerStatus.PausePending ||
                                sc.Status == ServiceControllerStatus.StartPending ||
                                sc.Status == ServiceControllerStatus.ContinuePending)
                         {
-                            if (stopwatch.Elapsed > waitTime)
+                            if (elapsed() > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 
                             cancellationToken.ThrowIfCancellationRequested();
@@ -179,7 +198,7 @@ namespace Servy.Core.Helpers
                             if (sc.Status == ServiceControllerStatus.Running)
                                 break;
 
-                            if (stopwatch.Elapsed > waitTime)
+                            if (elapsed() > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 
                             // FAST FAIL: A service that successfully started would never re-enter Stopped.
@@ -264,12 +283,12 @@ namespace Servy.Core.Helpers
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // --- ROBUSTNESS: Settle In-Flight Transitional Pending States ---
-                        var stopwatch = Stopwatch.StartNew();
+                        var elapsed = ElapsedSourceFactory();
                         while (sc.Status == ServiceControllerStatus.StartPending ||
                                sc.Status == ServiceControllerStatus.PausePending ||
                                sc.Status == ServiceControllerStatus.ContinuePending)
                         {
-                            if (stopwatch.Elapsed > waitTime)
+                            if (elapsed() > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 
                             cancellationToken.ThrowIfCancellationRequested();
@@ -306,7 +325,7 @@ namespace Servy.Core.Helpers
                         // This blocks until the service is Stopped or the waitTime expires
                         while (sc.Status != ServiceControllerStatus.Stopped)
                         {
-                            if (stopwatch.Elapsed > waitTime)
+                            if (elapsed() > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 
                             // FAST FAIL: A service that accepted the stop request would not re-enter Running.
