@@ -334,6 +334,80 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public async Task StartServicesAsync_SettleLoopDeadlineExpires_AggregatesTimeoutWithoutIssuingStart()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // StartPending enters the settle loop and never leaves it, so the deadline is the only way out.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.StartPending);
+
+            var serviceDto = new ServiceDto { Name = "PendingService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PendingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PendingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                // The deadline is floored at DefaultServiceStartTimeoutSeconds + ScmTimeoutBufferSeconds (45s)
+                // and the check is the first statement of the loop body, before any poll delay is awaited -
+                // so the elapsed-time source is the only seam that can bring the deadline forward.
+                ElapsedSourceFactory = () => () => TimeSpan.FromDays(1)
+            };
+
+            // Act
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(
+                () => serviceHelper.StartServicesAsync(new[] { "PendingService" }, TestContext.Current.CancellationToken));
+
+            // Assert - the settle loop gives up before any control command is issued, and the SCM timeout is
+            // converted into the batch's own InvalidOperationException rather than being rethrown.
+            scMock.Verify(x => x.Start(), Times.Never);
+            scMock.Verify(x => x.Continue(), Times.Never);
+            var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions));
+            Assert.Equal("Timed out waiting for service 'PendingService' to start.", inner.Message);
+
+            // A null InnerException is what separates the TimeoutException arm from the generic catch arm
+            // below it, which would have wrapped the cause as "Service 'PendingService' failed."
+            Assert.Null(inner.InnerException);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_StartWaitDeadlineExpires_AggregatesTimeoutAfterIssuingStart()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // Stopped skips the settle loop entirely, so Start() is issued and the method then waits in the
+            // start-wait loop for a Running it never sees - that loop has its own deadline check.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Stopped);
+
+            var serviceDto = new ServiceDto { Name = "StuckService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("StuckService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("StuckService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                ElapsedSourceFactory = () => () => TimeSpan.FromDays(1)
+            };
+
+            // Act
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(
+                () => serviceHelper.StartServicesAsync(new[] { "StuckService" }, TestContext.Current.CancellationToken));
+
+            // Assert - Start() was issued, and the deadline is evaluated ahead of the Stopped fast-fail that
+            // sits below it, so the batch reports a timeout and not "entered Stopped state during start".
+            scMock.Verify(x => x.Start(), Times.Once);
+            var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions));
+            Assert.Equal("Timed out waiting for service 'StuckService' to start.", inner.Message);
+            Assert.Null(inner.InnerException);
+        }
+
         #endregion
 
         #region StopServicesAsync Tests
@@ -632,6 +706,77 @@ namespace Servy.Core.UnitTests.Helpers
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(
                     () => serviceHelper.StopServicesAsync(new[] { "PendingService" }, cts.Token));
             }
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_SettleLoopDeadlineExpires_AggregatesTimeoutWithoutIssuingStop()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // StartPending enters the settle loop and never leaves it, so the deadline is the only way out.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.StartPending);
+
+            var serviceDto = new ServiceDto { Name = "PendingService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PendingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PendingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                // The stop deadline is floored at DefaultStopTimeout + ScmTimeoutBufferSeconds (20s) and is
+                // checked before the poll delay is awaited, so only the elapsed-time source can reach it.
+                ElapsedSourceFactory = () => () => TimeSpan.FromDays(1)
+            };
+
+            // Act
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(
+                () => serviceHelper.StopServicesAsync(new[] { "PendingService" }, TestContext.Current.CancellationToken));
+
+            // Assert - the settle loop gives up before the stop command is issued.
+            scMock.Verify(x => x.Stop(), Times.Never);
+            var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions));
+            Assert.Equal("Timed out waiting for service 'PendingService' to stop.", inner.Message);
+
+            // A null InnerException is what separates the TimeoutException arm from the generic catch arm
+            // below it, which would have wrapped the cause as "An error occurred while stopping service".
+            Assert.Null(inner.InnerException);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_StopWaitDeadlineExpires_AggregatesTimeoutAfterIssuingStop()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // Running skips the settle loop, so Stop() is issued and the method then waits in the stop-wait
+            // loop for a Stopped it never sees - that loop has its own deadline check.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Running);
+
+            var serviceDto = new ServiceDto { Name = "StuckService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("StuckService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("StuckService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                ElapsedSourceFactory = () => () => TimeSpan.FromDays(1)
+            };
+
+            // Act
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(
+                () => serviceHelper.StopServicesAsync(new[] { "StuckService" }, TestContext.Current.CancellationToken));
+
+            // Assert - Stop() was issued, and the deadline is evaluated ahead of the Running fast-fail that
+            // sits below it, so the batch reports a timeout and not "re-entered Running state during stop".
+            scMock.Verify(x => x.Stop(), Times.Once);
+            var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions));
+            Assert.Equal("Timed out waiting for service 'StuckService' to stop.", inner.Message);
+            Assert.Null(inner.InnerException);
         }
 
         #endregion
