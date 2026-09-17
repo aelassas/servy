@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Servy.Core.DTOs;
 using Servy.Testing;
 using Xunit;
@@ -45,6 +46,8 @@ namespace Servy.Core.UnitTests.Services
         /// </param>
         public static void AssertPropertiesSurvived(ServiceDto expected, ServiceDto actual, double minComparedRatio = 0.9)
         {
+            AssertExclusionListIsCurrent();
+
             var properties = TestReflection.GetMappedProperties<ServiceDto>(NonRoundTrippedProperties).ToList();
 
             var compared = 0;
@@ -66,6 +69,29 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.True(compared >= minCompared,
                 $"Only {compared} of {properties.Count} properties were compared, at least {minCompared} expected; the fixture has gone sparse.");
+        }
+
+        /// <summary>
+        /// Asserts that every entry of <see cref="NonRoundTrippedProperties"/> still names a property
+        /// <see cref="ServiceDto"/> actually has. The exclusion is matched by string in
+        /// <c>TestReflection.GetMappedProperties</c>, so a renamed or removed property turns its entry into a
+        /// silent no-op: the property rejoins the "must survive the round trip" set with no diagnostic of any
+        /// kind, leaving either a confusing failure attributed to the wrong cause or a green assertion that
+        /// checks a field it was deliberately meant to skip.
+        /// </summary>
+        private static void AssertExclusionListIsCurrent()
+        {
+            var liveNames = typeof(ServiceDto)
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(p => p.Name)
+                .ToList();
+
+            var stale = NonRoundTrippedProperties.Where(name => !liveNames.Contains(name)).ToList();
+
+            Assert.True(stale.Count == 0,
+                $"NonRoundTrippedProperties names {stale.Count} entr{(stale.Count == 1 ? "y" : "ies")} ServiceDto no longer has "
+                + $"(renamed or removed?): {string.Join(", ", stale)}. The exclusion is matched by name, so a stale "
+                + "entry stops excluding anything instead of failing.");
         }
     }
 }
