@@ -41,8 +41,9 @@ namespace Servy.Manager.Utils
         /// <param name="creationTimeUtc">The UTC creation timestamp of the source file.</param>
         public HistoryResult(List<LogLine>? lines, long position, DateTime creationTimeUtc)
         {
-            if (creationTimeUtc.Kind == DateTimeKind.Local)
+            if (creationTimeUtc.Kind != DateTimeKind.Utc)
                 throw new ArgumentException("Creation time must be UTC.", nameof(creationTimeUtc));
+
             // We still accept List<T> in the constructor for convenience,
             // but it is stored and exposed as a defensively copied IReadOnlyList.
             Lines = lines != null ? new List<LogLine>(lines) : new List<LogLine>();
