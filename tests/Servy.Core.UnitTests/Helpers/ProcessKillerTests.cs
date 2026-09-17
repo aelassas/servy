@@ -337,8 +337,11 @@ namespace Servy.Core.UnitTests.Helpers
             var accessor = new FakeSystemProcessAccessor();
             var now = DateTime.UtcNow;
 
-            var parent = new FakeSystemProcess { Id = 100, ProcessName = "parent", StartTime = now.AddMinutes(-10) };
-            var child = new FakeSystemProcess { Id = 200, ProcessName = "child", StartTime = now.AddMinutes(-5) };
+            // Both processes share a start time so the PID-reuse tolerance window is satisfied in
+            // BOTH directions of the cycle. With asymmetric start times the temporal guard halts the
+            // walk on the way back up and the visited-set cycle guard is never reached.
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "parent", StartTime = now };
+            var child = new FakeSystemProcess { Id = 200, ProcessName = "child", StartTime = now };
 
             accessor.Processes[100] = parent;
             accessor.Processes[200] = child;
@@ -353,7 +356,11 @@ namespace Servy.Core.UnitTests.Helpers
             // Must complete cleanly without StackOverflowException
             var exception = Record.Exception(() => killer.KillChildren(100));
             Assert.Null(exception);
-            Assert.True(child.Killed, "Child process should be killed before cycle is detected.");
+            Assert.True(child.Killed, "Child process should be killed while walking down the cycle.");
+            // The walk re-enters PID 100 as a child of PID 200 and kills it there; the recursion is
+            // then stopped by the visited-set guard on the second encounter with PID 200. Without
+            // that guard this arrangement recurses forever.
+            Assert.True(parent.Killed, "Walk should re-enter the cycle and kill PID 100 as a child of PID 200.");
         }
 
         [Fact]
