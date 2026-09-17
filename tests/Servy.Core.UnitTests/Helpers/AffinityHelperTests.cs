@@ -174,6 +174,24 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Contains(rangeExpectedPrefix, ex2.Message);
         }
 
+        [Fact]
+        public void ValidateAffinity_PublicOverload_UsesHostProcessorCountBoundedAt64()
+        {
+            // Arrange
+            int expectedMaxCores = Math.Min(Environment.ProcessorCount, 64);
+
+            // Act & Assert: Valid input within host bounds succeeds
+            bool validResult = AffinityHelper.ValidateAffinity("0", out string? noError);
+            Assert.True(validResult);
+            Assert.Null(noError);
+
+            // Act & Assert: Input exceeding host bounds fails validation instead of throwing
+            string outOfBoundsInput = expectedMaxCores.ToString();
+            bool isValid = AffinityHelper.ValidateAffinity(outOfBoundsInput, out string? errorMessage);
+            Assert.False(isValid);
+            Assert.NotNull(errorMessage);
+        }
+
         [Theory]
         [InlineData(null, 8)]
         [InlineData("", 8)]
