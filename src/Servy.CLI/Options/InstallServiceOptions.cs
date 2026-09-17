@@ -207,14 +207,14 @@ namespace Servy.CLI.Options
         /// Gets or sets the heartbeat interval in seconds for health monitoring.
         /// Must be between <see cref="AppConfig.MinHeartbeatInterval"/> and <see cref="AppConfig.MaxHeartbeatInterval"/> seconds if health monitoring is enabled.
         /// </summary>
-        [Option("heartbeatInterval", HelpText = "Heartbeat interval in seconds. Must be between 5 and 86400 seconds.")]
+        [Option("heartbeatInterval", HelpText = "Heartbeat interval in seconds. Must be between 5 and 86400 seconds. Only used when health monitoring is enabled.")]
         public string? HeartbeatInterval { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of failed health checks before recovery action.
         /// Must be between <see cref="AppConfig.MinMaxFailedChecks"/> and <see cref="AppConfig.MaxMaxFailedChecks"/> if health monitoring is enabled.
         /// </summary>
-        [Option("maxFailedChecks", HelpText = "Maximum allowed failed health checks. Must be between 1 and 100000.")]
+        [Option("maxFailedChecks", HelpText = "Maximum allowed failed health checks. Must be between 1 and 100000. Only used when health monitoring is enabled.")]
         public string? MaxFailedChecks { get; set; }
 
         /// <summary>
@@ -233,7 +233,7 @@ namespace Servy.CLI.Options
         /// <summary>
         /// Gets or sets a value indicating whether to run recovery action even if the process exits successfully.
         /// </summary>
-        [Option("recoveryOnCleanExit", HelpText = "Enable running recovery action even if the process exits successfully. Default is false.")]
+        [Option("recoveryOnCleanExit", HelpText = "Enable running recovery action even if the process exits successfully. Default is false. Only used when health monitoring is enabled.")]
         public bool RecoveryOnCleanExit { get; set; }
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace Servy.CLI.Options
         /// Must be between <see cref="AppConfig.MinMaxRestartAttempts"/> and <see cref="AppConfig.MaxMaxRestartAttempts"/> if health monitoring is enabled.
         /// Set to 0 for unlimited restart attempts.
         /// </summary>
-        [Option("maxRestartAttempts", HelpText = "Maximum restart attempts on failure. Must be between 0 and 100000. Set to 0 for unlimited restart attempts.")]
+        [Option("maxRestartAttempts", HelpText = "Maximum restart attempts on failure. Must be between 0 and 100000. Set to 0 for unlimited restart attempts. Only used when health monitoring is enabled.")]
         public string? MaxRestartAttempts { get; set; }
 
         /// <summary>
@@ -256,14 +256,14 @@ namespace Servy.CLI.Options
         /// Value must be between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
-        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Timeout in seconds for external heartbeat URL requests. Must be between 2 and 30 seconds. Defaults to 10 seconds.")]
+        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Timeout in seconds for external heartbeat URL requests. Must be between 2 and 30 seconds. Defaults to 10 seconds. Only used when health monitoring is enabled.")]
         public string? HeartbeatUrlTimeoutSeconds { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether extended flags (/start, /fail) are appended to the heartbeat URL during service startup and failure events.
         /// Default is <see cref="AppConfig.DefaultEnableHeartbeatUrlFlags"/>.
         /// </summary>
-        [Option("enableHeartbeatUrlFlags", HelpText = "Append /start and /fail to the heartbeat URL on service start and failure.")]
+        [Option("enableHeartbeatUrlFlags", HelpText = "Append /start and /fail to the heartbeat URL on service start and failure. Only used when health monitoring is enabled.")]
         public bool EnableHeartbeatUrlFlags { get; set; }
 
         /// <summary>
