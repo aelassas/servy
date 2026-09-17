@@ -303,6 +303,37 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void WalkAndKillChildren_SpoofedCriticalProcessNameWithNullExecutablePath_KillsSpoofedDescendant()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "wrapped_service", StartTime = now.AddMinutes(-10) };
+            // Descendant spoofing critical system process name whose executable path cannot be read
+            var spoofedChild = new FakeSystemProcess
+            {
+                Id = 200,
+                ProcessName = "svchost.exe",
+                ExecutablePath = string.Empty, // Simulates MainModule returning null on access denied
+                StartTime = now.AddMinutes(-5)
+            };
+
+            accessor.Processes[100] = parent;
+            accessor.Processes[200] = spoofedChild;
+
+            accessor.ByParent[100] = new List<int> { 200 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillChildren(100);
+
+            // Assert
+            Assert.True(spoofedChild.Killed, "A process with a critical system name but unreadable executable path must fail closed and be killed.");
+        }
+
+        [Fact]
         public void WalkAndKillChildren_LegitimateCriticalProcessInSystem32_ProtectsLegitimateSystemProcess()
         {
             // Arrange
