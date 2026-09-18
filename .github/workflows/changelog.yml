@@ -88,14 +88,19 @@ jobs:
 
           Function Protect-MarkdownTags {
               param([string]$Text)
-              if ([string]::IsNullOrEmpty($Text)) { return $Text }
-              $parts = [regex]::Split($Text, '(``.*?``|`[^`\n]*?`)')
-              for ($i = 0; $i -lt $parts.Count; $i++) {
-                  if ($parts[$i] -notmatch '^`') {
-                      $parts[$i] = $parts[$i] -replace '<(/?[A-Za-z][A-Za-z0-9_]*)>', '\<$1\>'
+              if ([string]::IsNullOrEmpty($Text)) { return$Text }
+              $fenceParts = [regex]::Split($Text, '(?s)(`{3,}.*?`{3,})')
+              for ($f = 0; $f -lt $fenceParts.Count; $f++) {
+                  if ($fenceParts[$f] -match '^`{3,}') { continue }
+                  $parts = [regex]::Split($fenceParts[$f], '(``.*?``|`[^`\n]*?`)')
+                  for ($i = 0; $i -lt $parts.Count; $i++) {
+                      if ($parts[$i] -notmatch '^`') {
+                          $parts[$i] = $parts[$i] -replace '<(/?(?!(?:details|summary|br|hr|p|div|span|b|i|strong|em|a|img|code|pre|blockquote|ul|ol|li|table|tr|td|th|thead|tbody)\b)[A-Za-z][A-Za-z0-9_]*)>', '\<$1\>'
+                      }                   
                   }
+                  $fenceParts[$f] = ($parts -join '')
               }
-              return ($parts -join '')
+              return ($fenceParts -join '')
           }
 
           Function Get-ReleaseEntry {
@@ -128,7 +133,7 @@ jobs:
                   (($normalized -split "`n") | ForEach-Object { $_.TrimEnd() }) -join "`n"
               }
               # Protect-MarkdownTags on $body breaks HTML tags
-              $body = $rawBody.Trim() -replace $dashPattern, '-'
+              $body = Protect-MarkdownTags ($rawBody.Trim() -replace $dashPattern, '-')
 
               $bt = [char]96
 
