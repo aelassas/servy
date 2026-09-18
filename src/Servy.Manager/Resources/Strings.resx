@@ -296,16 +296,16 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Failed to load JSON service configuration.</value>
   </data>
   <data name="ImportXml_Success" xml:space="preserve">
-    <value>XML Configuration imported successfully.</value>
+    <value>XML configuration imported successfully.</value>
   </data>
   <data name="ImportJson_Success" xml:space="preserve">
-    <value>JSON Configuration imported successfully.</value>
+    <value>JSON configuration imported successfully.</value>
   </data>
   <data name="ImportXml_Error" xml:space="preserve">
-    <value>Failed to import XML Configuration.</value>
+    <value>Failed to import XML configuration.</value>
   </data>
   <data name="ImportJson_Error" xml:space="preserve">
-    <value>Failed to import JSON Configuration.</value>
+    <value>Failed to import JSON configuration.</value>
   </data>
 
   <!-- XML/JSON export -->
@@ -316,10 +316,10 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Export JSON configuration</value>
   </data>
   <data name="ExportXml_Success" xml:space="preserve">
-    <value>XML Configuration exported successfully.</value>
+    <value>XML configuration exported successfully.</value>
   </data>
   <data name="ExportJson_Success" xml:space="preserve">
-    <value>JSON Configuration exported successfully.</value>
+    <value>JSON configuration exported successfully.</value>
   </data>
 
   <!-- Messages -->
