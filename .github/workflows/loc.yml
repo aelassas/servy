@@ -115,6 +115,9 @@ jobs:
       # Deploy badges (Native Git)
       # ----------------------------
       - name: Deploy to loc branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         shell: bash
         run: |
           cd ./output
@@ -124,4 +127,4 @@ jobs:
           git checkout -b loc
           git add -A
           git commit -m "update loc badges"
-          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" loc --force
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" loc --force
