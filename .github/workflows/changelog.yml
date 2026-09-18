@@ -86,6 +86,18 @@ jobs:
               exit 0
           }
 
+          Function Protect-MarkdownTags {
+              param([string]$Text)
+              if ([string]::IsNullOrEmpty($Text)) { return $Text }
+              $parts = [regex]::Split($Text, '(``.*?``|`[^`\n]*?`)')
+              for ($i = 0; $i -lt $parts.Count; $i++) {
+                  if ($parts[$i] -notmatch '^`') {
+                      $parts[$i] = $parts[$i] -replace '<(/?[A-Za-z][A-Za-z0-9_]*)>', '\<$1\>'
+                  }
+              }
+              return ($parts -join '')
+          }
+
           Function Get-ReleaseEntry {
               param($Release, $PrevRelease)
 
@@ -95,7 +107,7 @@ jobs:
               $dashPattern = '[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\p{Pd}]'
 
               $rawTitle = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
-              $title = $rawTitle -replace $dashPattern, '-'
+              $title = Protect-MarkdownTags ($rawTitle -replace $dashPattern, '-')
 
               $url = $Release.html_url
 
@@ -115,7 +127,7 @@ jobs:
                   $normalized = $Release.body -replace "`r`n", "`n"
                   (($normalized -split "`n") | ForEach-Object { $_.TrimEnd() }) -join "`n"
               }
-              $body = $rawBody.Trim() -replace $dashPattern, '-'
+              $body = Protect-MarkdownTags ($rawBody.Trim() -replace $dashPattern, '-')
 
               $bt = [char]96
 
@@ -125,7 +137,7 @@ jobs:
               $md += "### Downloads`n"
 
               foreach ($asset in $Release.assets) {
-                  $aName = $asset.name -replace $dashPattern, '-'
+                  $aName = Protect-MarkdownTags ($asset.name -replace $dashPattern, '-')
                   $aUrl = $asset.browser_download_url
                   $size = ([math]::Round($asset.size / 1MB, 2)).ToString("F2", [Globalization.CultureInfo]::InvariantCulture)
                   $md += "* [$aName]($aUrl) - ${size} MB`n"
