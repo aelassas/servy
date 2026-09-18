@@ -2079,7 +2079,6 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 * fix(desktop,manager): Nullable IServiceRepository? parameters contradict ArgumentNullException guards (#1185)
 * fix(desktop,manager): AppBootstrapper.cs - ProtectedKeyProvider created and never disposed; cached AES key material lingers in heap until GC (#1208)
 * fix(desktop,manager): AppBootstrapper.cs - StartAvailabilityMonitor outer catch kills watcher permanently after single transient error (#1218)
-* fix(desktop,manager): AppBootstrapper.cs - StartAvailabilityMonitor outer catch kills watcher permanently after single transient error (#1219)
 * fix(desktop,manager): AppBootstrapper.cs - OnExit disposes _appLifetimeCts while async-void StartAvailabilityMonitor still observes its Token; ObjectDisposedException promoted to AppDomain.UnhandledException (#1221)
 * fix(desktop,manager): AppBootstrapper.cs - SplashWindowFactory always invoked even when showSplash=false; resulting Window leaks until GC (#1238)
 * fix(desktop,manager): AppBootstrapper.cs - OnExit double-disposes _availabilityWatcher (CleanupAvailabilityWatcher already nulls it out) (#1239)
