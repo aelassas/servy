@@ -193,6 +193,50 @@ namespace Servy.UI.UnitTests.Commands
             }
         }
 
+        [Fact]
+        public async Task Execute_SuccessfulInnerTask_CompletesWithoutException()
+        {
+            // Branch: the success path of the try block in Execute(object parameter). Both existing
+            // Execute-level tests deliberately throw or cancel, so the ordinary "the command ran
+            // fine" path through the async void entry point was never exercised.
+            var previousContext = SynchronizationContext.Current;
+            var testContext = new TestSynchronizationContext();
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(testContext);
+
+                bool wasExecuted = false;
+                var command = new AsyncCommand(_ =>
+                {
+                    wasExecuted = true;
+                    return Task.CompletedTask;
+                });
+
+                command.Execute(null);
+
+                // Bound the wait: a change that leaves an operation pending must fail the run
+                // rather than hang it.
+                var completion = testContext.WaitForCompletionAsync();
+                var finished = await Task.WhenAny(completion, Task.Delay(CompletionTimeout));
+                Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
+
+                Assert.True(wasExecuted);
+
+                // Read under the same lock Post writes the list with.
+                lock (testContext.UnhandledExceptions)
+                {
+                    Assert.Empty(testContext.UnhandledExceptions);
+                }
+
+                // The success path must also leave the re-entrancy latch released.
+                Assert.True(command.CanExecute(null));
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+        }
+
         #endregion
 
         [Fact]
