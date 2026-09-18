@@ -14,7 +14,6 @@ This is the archived release history. For newer releases, see [CHANGELOG.md](./C
 * fix(core): prevent redundant resource refreshes using 20-minute timestamp delta
 * fix(core): ensure reliable resource extraction on the first run after installation
 * fix(cli): ensure logger is initialized before use in CLI
-* test
 
 ### Downloads
 * [servy-7.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.5/servy-7.5-net48-sbom.xml) - 0.02 MB
