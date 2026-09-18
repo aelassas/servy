@@ -401,10 +401,10 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Export JSON configuration</value>
   </data>
   <data name="ExportXml_Success" xml:space="preserve">
-    <value>XML Configuration exported successfully.</value>
+    <value>XML configuration exported successfully.</value>
   </data>
   <data name="ExportJson_Success" xml:space="preserve">
-    <value>JSON Configuration exported successfully.</value>
+    <value>JSON configuration exported successfully.</value>
   </data>
 
   <!-- Clear Action -->
@@ -459,7 +459,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <data name="Msg_ManagerAppNotFound" xml:space="preserve">
-    <value>Servy Manager App not found.</value>
+    <value>Servy Manager was not found.</value>
   </data>
 
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
@@ -537,7 +537,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Service wrapper executable not found.</value>
   </data>
   <data name="Msg_ManagerAppLaunchFailed" xml:space="preserve">
-    <value>Failed to launch the Manager application.</value>
+    <value>Failed to launch Servy Manager.</value>
   </data>
 
   <!-- Automation Properties -->

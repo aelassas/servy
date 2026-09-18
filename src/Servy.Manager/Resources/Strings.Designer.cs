@@ -1762,7 +1762,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to JSON Configuration exported successfully..
+        ///   Looks up a localized string similar to JSON configuration exported successfully..
         /// </summary>
         public static string ExportJson_Success {
             get {
@@ -1771,7 +1771,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to XML Configuration exported successfully..
+        ///   Looks up a localized string similar to XML configuration exported successfully..
         /// </summary>
         public static string ExportXml_Success {
             get {
@@ -1834,7 +1834,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to import JSON Configuration..
+        ///   Looks up a localized string similar to Failed to import JSON configuration..
         /// </summary>
         public static string ImportJson_Error {
             get {
@@ -1843,7 +1843,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to JSON Configuration imported successfully..
+        ///   Looks up a localized string similar to JSON configuration imported successfully..
         /// </summary>
         public static string ImportJson_Success {
             get {
@@ -1852,7 +1852,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to import XML Configuration..
+        ///   Looks up a localized string similar to Failed to import XML configuration..
         /// </summary>
         public static string ImportXml_Error {
             get {
@@ -1861,7 +1861,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to XML Configuration imported successfully..
+        ///   Looks up a localized string similar to XML configuration imported successfully..
         /// </summary>
         public static string ImportXml_Success {
             get {

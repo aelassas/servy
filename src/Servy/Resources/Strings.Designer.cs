@@ -1690,7 +1690,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to JSON Configuration exported successfully..
+        ///   Looks up a localized string similar to JSON configuration exported successfully..
         /// </summary>
         public static string ExportJson_Success {
             get {
@@ -1699,7 +1699,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to XML Configuration exported successfully..
+        ///   Looks up a localized string similar to XML configuration exported successfully..
         /// </summary>
         public static string ExportXml_Success {
             get {
@@ -2617,7 +2617,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to launch the Manager application..
+        ///   Looks up a localized string similar to Failed to launch Servy Manager..
         /// </summary>
         public static string Msg_ManagerAppLaunchFailed {
             get {
@@ -2626,7 +2626,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Servy Manager App not found..
+        ///   Looks up a localized string similar to Servy Manager was not found..
         /// </summary>
         public static string Msg_ManagerAppNotFound {
             get {
