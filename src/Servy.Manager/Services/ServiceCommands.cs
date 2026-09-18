@@ -849,10 +849,7 @@ namespace Servy.Manager.Services
                 var guardResult = ImportGuard.ValidatePathSecurityAndSize(path, out string content);
                 if (!guardResult.IsValid || content == null)
                 {
-                    var msg = !string.IsNullOrWhiteSpace(guardResult.ErrorMessage)
-                        ? guardResult.ErrorMessage
-                        : Strings.Msg_UnexpectedError;
-                    await _messageBoxService.ShowErrorAsync(msg, UiAppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, UiAppConfig.Caption);
                     return;
                 }
 
