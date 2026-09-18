@@ -162,8 +162,10 @@ jobs:
           Function Save-ChangelogFiles {
               param($Releases)
 
-              # Clean up any existing archive files to prevent orphaned/duplicate archives when chunk boundaries shift
-              Get-ChildItem -Path . -Filter "CHANGELOG-*.md" | Remove-Item -Force
+              # Clean up any existing archive files from disk and stage their removal for git tracking
+              Get-ChildItem -Path . -Filter "CHANGELOG-*.md" | ForEach-Object {
+                  Remove-Item $_.FullName -Force
+              }
 
               # Chunk release history into blocks of ~400 KB
               $chunks = [System.Collections.Generic.List[System.Collections.Generic.List[object]]]::new()
