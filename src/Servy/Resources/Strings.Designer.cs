@@ -61,24 +61,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Browse to select the failure program startup directory..
-        /// </summary>
-        public static string Automation_ButtonBrowseFailureProgramDir_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramDir_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Browse Failure Program Startup Directory.
-        /// </summary>
-        public static string Automation_ButtonBrowseFailureProgramDir_Name {
-            get {
-                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramDir_Name", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Browse to select the failure program executable..
         /// </summary>
         public static string Automation_ButtonBrowseFailureProgramPath_HelpText {
@@ -93,6 +75,24 @@ namespace Servy.Resources {
         public static string Automation_ButtonBrowseFailureProgramPath_Name {
             get {
                 return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramPath_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the failure program startup directory..
+        /// </summary>
+        public static string Automation_ButtonBrowseFailureProgramStartupDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramStartupDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Failure Program Startup Directory.
+        /// </summary>
+        public static string Automation_ButtonBrowseFailureProgramStartupDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowseFailureProgramStartupDir_Name", resourceCulture);
             }
         }
         
@@ -169,38 +169,38 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Browse to select the pre-launch executable..
-        /// </summary>
-        public static string Automation_ButtonBrowsePreLaunchProcessPath_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchProcessPath_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Browse Pre-Launch Process Path.
-        /// </summary>
-        public static string Automation_ButtonBrowsePreLaunchProcessPath_Name {
-            get {
-                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchProcessPath_Name", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Browse to select the pre-launch startup directory..
         /// </summary>
-        public static string Automation_ButtonBrowsePreLaunchStartupDir_HelpText {
+        public static string Automation_ButtonBrowsePreLaunchDir_HelpText {
             get {
-                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStartupDir_HelpText", resourceCulture);
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchDir_HelpText", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Browse Pre-Launch Startup Directory.
         /// </summary>
-        public static string Automation_ButtonBrowsePreLaunchStartupDir_Name {
+        public static string Automation_ButtonBrowsePreLaunchDir_Name {
             get {
-                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchStartupDir_Name", resourceCulture);
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse to select the pre-launch executable..
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchPath_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchPath_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Browse Pre-Launch Process Path.
+        /// </summary>
+        public static string Automation_ButtonBrowsePreLaunchPath_Name {
+            get {
+                return ResourceManager.GetString("Automation_ButtonBrowsePreLaunchPath_Name", resourceCulture);
             }
         }
         
@@ -315,36 +315,36 @@ namespace Servy.Resources {
         /// <summary>
         ///   Looks up a localized string similar to Browse to select the standard error log file..
         /// </summary>
-        public static string Automation_ButtonBrowseStderr_HelpText {
+        public static string Automation_ButtonBrowseStderrPath_HelpText {
             get {
-                return ResourceManager.GetString("Automation_ButtonBrowseStderr_HelpText", resourceCulture);
+                return ResourceManager.GetString("Automation_ButtonBrowseStderrPath_HelpText", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Browse Standard Error Path.
         /// </summary>
-        public static string Automation_ButtonBrowseStderr_Name {
+        public static string Automation_ButtonBrowseStderrPath_Name {
             get {
-                return ResourceManager.GetString("Automation_ButtonBrowseStderr_Name", resourceCulture);
+                return ResourceManager.GetString("Automation_ButtonBrowseStderrPath_Name", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Browse to select the standard output log file..
         /// </summary>
-        public static string Automation_ButtonBrowseStdout_HelpText {
+        public static string Automation_ButtonBrowseStdoutPath_HelpText {
             get {
-                return ResourceManager.GetString("Automation_ButtonBrowseStdout_HelpText", resourceCulture);
+                return ResourceManager.GetString("Automation_ButtonBrowseStdoutPath_HelpText", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Browse Standard Output Path.
         /// </summary>
-        public static string Automation_ButtonBrowseStdout_Name {
+        public static string Automation_ButtonBrowseStdoutPath_Name {
             get {
-                return ResourceManager.GetString("Automation_ButtonBrowseStdout_Name", resourceCulture);
+                return ResourceManager.GetString("Automation_ButtonBrowseStdoutPath_Name", resourceCulture);
             }
         }
         
@@ -1123,6 +1123,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enter the startup directory for the pre-launch process..
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchDir_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchDir_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch Startup Directory.
+        /// </summary>
+        public static string Automation_TextBoxPreLaunchDir_Name {
+            get {
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchDir_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enter environment variables for the pre-launch process..
         /// </summary>
         public static string Automation_TextBoxPreLaunchEnvVars_HelpText {
@@ -1161,18 +1179,18 @@ namespace Servy.Resources {
         /// <summary>
         ///   Looks up a localized string similar to Enter the pre-launch executable path..
         /// </summary>
-        public static string Automation_TextBoxPreLaunchProcessPath_HelpText {
+        public static string Automation_TextBoxPreLaunchPath_HelpText {
             get {
-                return ResourceManager.GetString("Automation_TextBoxPreLaunchProcessPath_HelpText", resourceCulture);
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchPath_HelpText", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Pre-Launch Process Path.
         /// </summary>
-        public static string Automation_TextBoxPreLaunchProcessPath_Name {
+        public static string Automation_TextBoxPreLaunchPath_Name {
             get {
-                return ResourceManager.GetString("Automation_TextBoxPreLaunchProcessPath_Name", resourceCulture);
+                return ResourceManager.GetString("Automation_TextBoxPreLaunchPath_Name", resourceCulture);
             }
         }
         
@@ -1191,24 +1209,6 @@ namespace Servy.Resources {
         public static string Automation_TextBoxPreLaunchRetries_Name {
             get {
                 return ResourceManager.GetString("Automation_TextBoxPreLaunchRetries_Name", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enter the startup directory for the pre-launch process..
-        /// </summary>
-        public static string Automation_TextBoxPreLaunchStartupDir_HelpText {
-            get {
-                return ResourceManager.GetString("Automation_TextBoxPreLaunchStartupDir_HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Pre-Launch Startup Directory.
-        /// </summary>
-        public static string Automation_TextBoxPreLaunchStartupDir_Name {
-            get {
-                return ResourceManager.GetString("Automation_TextBoxPreLaunchStartupDir_Name", resourceCulture);
             }
         }
         

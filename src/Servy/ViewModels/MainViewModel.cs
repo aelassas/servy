@@ -112,7 +112,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the path to the executable process to be run by the service.
         /// </summary>
-        public string? ProcessPath
+        public string? ExecutablePath
         {
             get => _config.ExecutablePath;
             set => Set(() => _config.ExecutablePath, v => _config.ExecutablePath = v, value);
@@ -130,7 +130,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets additional command line parameters for the process.
         /// </summary>
-        public string? ProcessParameters
+        public string? Parameters
         {
             get => _config.Parameters;
             set => Set(() => _config.Parameters, v => _config.Parameters = v, value);
@@ -416,7 +416,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the path to the program run when the service fails.
         /// </summary>
-        public string? FailureProgramPath
+        public string? FailureProgramExecutablePath
         {
             get => _config.FailureProgramPath;
             set => Set(() => _config.FailureProgramPath, v => _config.FailureProgramPath = v, value);
@@ -690,7 +690,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to browse and select the executable process path.
         /// </summary>
-        public ICommand BrowseProcessPathCommand { get; }
+        public ICommand BrowseExecutablePathCommand { get; }
 
         /// <summary>
         /// Command to browse and select the startup directory.
@@ -735,7 +735,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to browse and select the failure program path.
         /// </summary>
-        public ICommand BrowseFailureProgramPathCommand { get; }
+        public ICommand BrowseFailureProgramExecutablePathCommand { get; }
 
         /// <summary>
         /// Command to browse and select the failure program startup directory.
@@ -745,7 +745,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to browse and select the pre-launch executable process path.
         /// </summary>
-        public ICommand BrowsePreLaunchProcessPathCommand { get; }
+        public ICommand BrowsePreLaunchExecutablePathCommand { get; }
 
         /// <summary>
         /// Command to browse and select the pre-launch startup directory.
@@ -815,7 +815,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to browse and select the post-launch executable process path.
         /// </summary>
-        public ICommand BrowsePostLaunchProcessPathCommand { get; }
+        public ICommand BrowsePostLaunchExecutablePathCommand { get; }
 
         /// <summary>
         /// Command to browse and select the post-launch startup directory.
@@ -825,7 +825,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to browse and select the pre-stop executable process path.
         /// </summary>
-        public ICommand BrowsePreStopProcessPathCommand { get; }
+        public ICommand BrowsePreStopExecutablePathCommand { get; }
 
         /// <summary>
         /// Command to browse and select the pre-stop startup directory.
@@ -835,7 +835,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to browse and select the post-stop executable process path.
         /// </summary>
-        public ICommand BrowsePostStopProcessPathCommand { get; }
+        public ICommand BrowsePostStopExecutablePathCommand { get; }
 
         /// <summary>
         /// Command to browse and select the post-stop startup directory.
@@ -880,7 +880,7 @@ namespace Servy.ViewModels
             ResetToDefaults();
 
             // Commands
-            BrowseProcessPathCommand = new RelayCommand<object>(_ => BrowseProcessPath());
+            BrowseExecutablePathCommand = new RelayCommand<object>(_ => BrowseExecutablePath());
             BrowseStartupDirectoryCommand = new RelayCommand<object>(_ => BrowseStartupDirectory());
             BrowseStdoutPathCommand = new RelayCommand<object>(_ => BrowseStdoutPath());
             BrowseStderrPathCommand = new RelayCommand<object>(_ => BrowseStderrPath());
@@ -898,21 +898,21 @@ namespace Servy.ViewModels
             ImportXmlCommand = new AsyncCommand(ImportXmlConfigAsync, _ => !IsBusy, name: nameof(ImportXmlCommand));
             ImportJsonCommand = new AsyncCommand(ImportJsonConfigAsync, _ => !IsBusy, name: nameof(ImportJsonCommand));
 
-            BrowseFailureProgramPathCommand = new RelayCommand<object>(_ => BrowseFailureProgramPath());
+            BrowseFailureProgramExecutablePathCommand = new RelayCommand<object>(_ => BrowseFailureProgramExecutablePath());
             BrowseFailureProgramStartupDirectoryCommand = new RelayCommand<object>(_ => BrowseFailureProgramStartupDirectory());
 
-            BrowsePreLaunchProcessPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchProcessPath());
+            BrowsePreLaunchExecutablePathCommand = new RelayCommand<object>(_ => BrowsePreLaunchExecutablePath());
             BrowsePreLaunchStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePreLaunchStartupDirectory());
             BrowsePreLaunchStdoutPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchStdoutPath());
             BrowsePreLaunchStderrPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchStderrPath());
 
-            BrowsePostLaunchProcessPathCommand = new RelayCommand<object>(_ => BrowsePostLaunchProcessPath());
+            BrowsePostLaunchExecutablePathCommand = new RelayCommand<object>(_ => BrowsePostLaunchExecutablePath());
             BrowsePostLaunchStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostLaunchStartupDirectory());
 
-            BrowsePreStopProcessPathCommand = new RelayCommand<object>(_ => BrowsePreStopProcessPath());
+            BrowsePreStopExecutablePathCommand = new RelayCommand<object>(_ => BrowsePreStopExecutablePath());
             BrowsePreStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePreStopStartupDirectory());
 
-            BrowsePostStopProcessPathCommand = new RelayCommand<object>(_ => BrowsePostStopProcessPath());
+            BrowsePostStopExecutablePathCommand = new RelayCommand<object>(_ => BrowsePostStopExecutablePath());
             BrowsePostStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostStopStartupDirectory());
 
             OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
@@ -966,9 +966,9 @@ namespace Servy.ViewModels
             ServiceName = string.Empty;
             ServiceDisplayName = string.Empty;
             ServiceDescription = string.Empty;
-            ProcessPath = string.Empty;
+            ExecutablePath = string.Empty;
             StartupDirectory = string.Empty;
-            ProcessParameters = string.Empty;
+            Parameters = string.Empty;
             SelectedStartupType = DefaultStartupType;
             SelectedProcessPriority = DefaultProcessPriority;
             CpuAffinity = string.Empty;
@@ -990,7 +990,7 @@ namespace Servy.ViewModels
             HeartbeatUrl = string.Empty;
             HeartbeatUrlTimeoutSeconds = DefaultHeartbeatUrlTimeoutSeconds.ToString();
             EnableHeartbeatUrlFlags = DefaultEnableHeartbeatUrlFlags;
-            FailureProgramPath = string.Empty;
+            FailureProgramExecutablePath = string.Empty;
             FailureProgramStartupDirectory = string.Empty;
             FailureProgramParameters = string.Empty;
 
@@ -1074,9 +1074,9 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Opens a dialog to browse for an executable file and sets <see cref="ProcessPath"/>.
+        /// Opens a dialog to browse for an executable file and sets <see cref="ExecutablePath"/>.
         /// </summary>
-        private void BrowseProcessPath() => BrowseAndAssign(_dialogService.OpenExecutable, v => ProcessPath = v);
+        private void BrowseExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => ExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="StartupDirectory"/>.
@@ -1094,9 +1094,9 @@ namespace Servy.ViewModels
         private void BrowseStderrPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => StderrPath = v);
 
         /// <summary>
-        /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramPath"/>.
+        /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramExecutablePath"/>.
         /// </summary>
-        private void BrowseFailureProgramPath() => BrowseAndAssign(_dialogService.OpenExecutable, v => FailureProgramPath = v);
+        private void BrowseFailureProgramExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => FailureProgramExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="FailureProgramStartupDirectory"/>.
@@ -1106,7 +1106,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for a pre-launch executable file and sets <see cref="PreLaunchExecutablePath"/>.
         /// </summary>
-        private void BrowsePreLaunchProcessPath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PreLaunchExecutablePath = v);
+        private void BrowsePreLaunchExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PreLaunchExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="PreLaunchStartupDirectory"/>.
@@ -1126,7 +1126,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for a post-launch executable file and sets <see cref="PostLaunchExecutablePath"/>.
         /// </summary>
-        private void BrowsePostLaunchProcessPath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PostLaunchExecutablePath = v);
+        private void BrowsePostLaunchExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PostLaunchExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="PostLaunchStartupDirectory"/>.
@@ -1136,7 +1136,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for a pre-stop executable file and sets <see cref="PreStopExecutablePath"/>.
         /// </summary>
-        private void BrowsePreStopProcessPath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PreStopExecutablePath = v);
+        private void BrowsePreStopExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PreStopExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a pre-stop folder and sets <see cref="PreStopStartupDirectory"/>.
@@ -1146,7 +1146,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for a post-stop executable file and sets <see cref="PostStopExecutablePath"/>.
         /// </summary>
-        private void BrowsePostStopProcessPath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PostStopExecutablePath = v);
+        private void BrowsePostStopExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PostStopExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a post-stop folder and sets <see cref="PostStopStartupDirectory"/>.
@@ -1455,9 +1455,9 @@ namespace Servy.ViewModels
             ServiceName = dto.Name ?? string.Empty;
             ServiceDisplayName = dto.DisplayName ?? string.Empty;
             ServiceDescription = dto.Description ?? string.Empty;
-            ProcessPath = dto.ExecutablePath ?? string.Empty;
+            ExecutablePath = dto.ExecutablePath ?? string.Empty;
             StartupDirectory = dto.StartupDirectory ?? string.Empty;
-            ProcessParameters = dto.Parameters ?? string.Empty;
+            Parameters = dto.Parameters ?? string.Empty;
 
             SelectedStartupType = dto.StartupType is int st && st != (int)ServiceStartType.Unknown && Enum.IsDefined(typeof(ServiceStartType), (ServiceStartType)st)
                 ? (ServiceStartType)st
@@ -1494,7 +1494,7 @@ namespace Servy.ViewModels
             HeartbeatUrl = dto.HeartbeatUrl ?? string.Empty;
             HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds == null ? DefaultHeartbeatUrlTimeoutSeconds.ToString() : dto.HeartbeatUrlTimeoutSeconds.Value.ToString();
             EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? DefaultEnableHeartbeatUrlFlags;
-            FailureProgramPath = dto.FailureProgramPath ?? string.Empty;
+            FailureProgramExecutablePath = dto.FailureProgramPath ?? string.Empty;
             FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory ?? string.Empty;
             FailureProgramParameters = dto.FailureProgramParameters ?? string.Empty;
             EnvironmentVariables = SafeFormatEnvironmentVariables(dto.EnvironmentVariables, nameof(dto.EnvironmentVariables), dto.Name);
@@ -1580,9 +1580,9 @@ namespace Servy.ViewModels
                 Name = ServiceName!,
                 DisplayName = ServiceDisplayName,
                 Description = ServiceDescription,
-                ExecutablePath = ProcessPath!,
+                ExecutablePath = ExecutablePath!,
                 StartupDirectory = StartupDirectory,
-                Parameters = ProcessParameters,
+                Parameters = Parameters,
                 StartupType = (int)SelectedStartupType,
                 Priority = (int)SelectedProcessPriority,
                 CpuAffinity = CpuAffinity,
@@ -1612,7 +1612,7 @@ namespace Servy.ViewModels
                 EnableHeartbeatUrlFlags = EnableHeartbeatUrlFlags,
 
                 // Failure Actions
-                FailureProgramPath = FailureProgramPath,
+                FailureProgramPath = FailureProgramExecutablePath,
                 FailureProgramStartupDirectory = FailureProgramStartupDirectory,
                 FailureProgramParameters = FailureProgramParameters,
 

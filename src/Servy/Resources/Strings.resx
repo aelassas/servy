@@ -698,10 +698,10 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Enter the path for the standard output log file.</value>
   </data>
 
-  <data name="Automation_ButtonBrowseStdout_Name" xml:space="preserve">
+  <data name="Automation_ButtonBrowseStdoutPath_Name" xml:space="preserve">
     <value>Browse Standard Output Path</value>
   </data>
-  <data name="Automation_ButtonBrowseStdout_HelpText" xml:space="preserve">
+  <data name="Automation_ButtonBrowseStdoutPath_HelpText" xml:space="preserve">
     <value>Browse to select the standard output log file.</value>
   </data>
 
@@ -712,10 +712,10 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Enter the path for the standard error log file.</value>
   </data>
 
-  <data name="Automation_ButtonBrowseStderr_Name" xml:space="preserve">
+  <data name="Automation_ButtonBrowseStderrPath_Name" xml:space="preserve">
     <value>Browse Standard Error Path</value>
   </data>
-  <data name="Automation_ButtonBrowseStderr_HelpText" xml:space="preserve">
+  <data name="Automation_ButtonBrowseStderrPath_HelpText" xml:space="preserve">
     <value>Browse to select the standard error log file.</value>
   </data>
 
@@ -819,10 +819,10 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Enter the startup directory for the failure program.</value>
   </data>
 
-  <data name="Automation_ButtonBrowseFailureProgramDir_Name" xml:space="preserve">
+  <data name="Automation_ButtonBrowseFailureProgramStartupDir_Name" xml:space="preserve">
     <value>Browse Failure Program Startup Directory</value>
   </data>
-  <data name="Automation_ButtonBrowseFailureProgramDir_HelpText" xml:space="preserve">
+  <data name="Automation_ButtonBrowseFailureProgramStartupDir_HelpText" xml:space="preserve">
     <value>Browse to select the failure program startup directory.</value>
   </data>
 
@@ -877,31 +877,31 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Configure a script or process to run before the service starts.</value>
   </data>
 
-  <data name="Automation_TextBoxPreLaunchProcessPath_Name" xml:space="preserve">
+  <data name="Automation_TextBoxPreLaunchPath_Name" xml:space="preserve">
     <value>Pre-Launch Process Path</value>
   </data>
-  <data name="Automation_TextBoxPreLaunchProcessPath_HelpText" xml:space="preserve">
+  <data name="Automation_TextBoxPreLaunchPath_HelpText" xml:space="preserve">
     <value>Enter the pre-launch executable path.</value>
   </data>
 
-  <data name="Automation_ButtonBrowsePreLaunchProcessPath_Name" xml:space="preserve">
+  <data name="Automation_ButtonBrowsePreLaunchPath_Name" xml:space="preserve">
     <value>Browse Pre-Launch Process Path</value>
   </data>
-  <data name="Automation_ButtonBrowsePreLaunchProcessPath_HelpText" xml:space="preserve">
+  <data name="Automation_ButtonBrowsePreLaunchPath_HelpText" xml:space="preserve">
     <value>Browse to select the pre-launch executable.</value>
   </data>
 
-  <data name="Automation_TextBoxPreLaunchStartupDir_Name" xml:space="preserve">
+  <data name="Automation_TextBoxPreLaunchDir_Name" xml:space="preserve">
     <value>Pre-Launch Startup Directory</value>
   </data>
-  <data name="Automation_TextBoxPreLaunchStartupDir_HelpText" xml:space="preserve">
+  <data name="Automation_TextBoxPreLaunchDir_HelpText" xml:space="preserve">
     <value>Enter the startup directory for the pre-launch process.</value>
   </data>
 
-  <data name="Automation_ButtonBrowsePreLaunchStartupDir_Name" xml:space="preserve">
+  <data name="Automation_ButtonBrowsePreLaunchDir_Name" xml:space="preserve">
     <value>Browse Pre-Launch Startup Directory</value>
   </data>
-  <data name="Automation_ButtonBrowsePreLaunchStartupDir_HelpText" xml:space="preserve">
+  <data name="Automation_ButtonBrowsePreLaunchDir_HelpText" xml:space="preserve">
     <value>Browse to select the pre-launch startup directory.</value>
   </data>
 
