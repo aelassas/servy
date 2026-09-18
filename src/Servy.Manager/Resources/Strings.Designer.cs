@@ -529,7 +529,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to User Session Column.
+        ///   Looks up a localized string similar to Log On As Column.
         /// </summary>
         public static string Automation_LogOnAsColumnHeader_Name {
             get {
@@ -2050,7 +2050,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Check for updates....
+        ///   Looks up a localized string similar to Check for updates.
         /// </summary>
         public static string Menu_CheckUpdates {
             get {
@@ -2095,7 +2095,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import JSON configuration.
+        ///   Looks up a localized string similar to Import JSON configuration....
         /// </summary>
         public static string Menu_ImportJson {
             get {
@@ -2104,7 +2104,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import XML configuration.
+        ///   Looks up a localized string similar to Import XML configuration....
         /// </summary>
         public static string Menu_ImportXml {
             get {
@@ -2179,7 +2179,7 @@ namespace Servy.Manager.Resources {
         ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
         ///
         ///You need to click Install after importing and restart the service for changes to take effect.
-        ///If the service is disabled and marked for deletion, the installation will fail until you restart your PC..
+        ///If the service is disabled and marked for deletion, the installation will fail until you restart the computer..
         /// </summary>
         public static string Msg_ImportServiceConfirmation {
             get {
@@ -2280,7 +2280,7 @@ namespace Servy.Manager.Resources {
         /// <summary>
         ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
         ///
-        ///If the service is disabled and marked for deletion, the installation will fail until you restart your PC..
+        ///If the service is disabled and marked for deletion, the installation will fail until you restart the computer..
         /// </summary>
         public static string Msg_ServiceAlreadyExists {
             get {

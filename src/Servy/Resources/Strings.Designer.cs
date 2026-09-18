@@ -1744,7 +1744,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configure a script or executable to run when the process fails. If health monitoring is disabled, the program runs when the process exits with a non-zero code. If health monitoring is enabled, the program only runs after all configured recovery action retries have failed. It does not run when the process fails to start..
+        ///   Looks up a localized string similar to Configure an optional script or executable to run when the process fails. If health monitoring is disabled, the program runs when the process exits with a non-zero code. If health monitoring is enabled, the program only runs after all configured recovery action retries have failed. It does not run when the process fails to start..
         /// </summary>
         public static string Info_FailureProgram {
             get {
@@ -1816,7 +1816,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Optional script to run before service start. If it fails, the service won&apos;t start unless Ignore Failure is enabled..
+        ///   Looks up a localized string similar to Configure an optional script or executable to run before the service starts. If it fails, the service won&apos;t start unless Ignore Failure is enabled..
         /// </summary>
         public static string Info_PreLaunch {
             get {
@@ -1942,7 +1942,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supports environment variable expansion. Example: %PROGRAMDATA%\MyApp.
+        ///   Looks up a localized string similar to Supports environment variable expansion. Example: %ProgramData%\MyApp.
         /// </summary>
         public static string Info_StartupDirectory {
             get {
@@ -2050,7 +2050,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Heartbeat URL Flags (/start, /fail).
+        ///   Looks up a localized string similar to Enable Heartbeat URL Flags (/start, /fail).
         /// </summary>
         public static string Label_EnableHeartbeatUrlFlags {
             get {
@@ -2482,7 +2482,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Check for updates....
+        ///   Looks up a localized string similar to Check for updates.
         /// </summary>
         public static string Menu_CheckUpdates {
             get {
@@ -2491,7 +2491,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Clear All.
+        ///   Looks up a localized string similar to Clear All....
         /// </summary>
         public static string Menu_ClearAll {
             get {
@@ -2518,7 +2518,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Export JSON configuration.
+        ///   Looks up a localized string similar to Export JSON configuration....
         /// </summary>
         public static string Menu_ExportJson {
             get {
@@ -2527,7 +2527,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Export XML configuration.
+        ///   Looks up a localized string similar to Export XML configuration....
         /// </summary>
         public static string Menu_ExportXml {
             get {
@@ -2554,7 +2554,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import JSON configuration.
+        ///   Looks up a localized string similar to Import JSON configuration....
         /// </summary>
         public static string Menu_ImportJson {
             get {
@@ -2563,7 +2563,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import XML configuration.
+        ///   Looks up a localized string similar to Import XML configuration....
         /// </summary>
         public static string Menu_ImportXml {
             get {
@@ -2655,7 +2655,7 @@ namespace Servy.Resources {
         /// <summary>
         ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
         ///
-        ///If the service is disabled and marked for deletion, the installation will fail until you restart your PC..
+        ///If the service is disabled and marked for deletion, the installation will fail until you restart the computer..
         /// </summary>
         public static string Msg_ServiceAlreadyExists {
             get {

@@ -37,10 +37,10 @@
     <value>Import</value>
   </data>
   <data name="Menu_ImportXml" xml:space="preserve">
-    <value>Import XML configuration</value>
+    <value>Import XML configuration...</value>
   </data>
   <data name="Menu_ImportJson" xml:space="preserve">
-    <value>Import JSON configuration</value>
+    <value>Import JSON configuration...</value>
   </data>
 
   <data name="Menu_Config" xml:space="preserve">
@@ -54,7 +54,7 @@
     <value>Help / Documentation</value>
   </data>
   <data name="Menu_CheckUpdates" xml:space="preserve">
-    <value>Check for updates...</value>
+    <value>Check for updates</value>
   </data>
   <data name="Menu_About" xml:space="preserve">
     <value>About Servy Manager</value>
@@ -387,13 +387,13 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
     <value>A service with this name already exists. Would you like to replace it?
 
-If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
+If the service is disabled and marked for deletion, the installation will fail until you restart the computer.</value>
   </data>
   <data name="Msg_ImportServiceConfirmation" xml:space="preserve">
     <value>A service with this name already exists. Would you like to replace it?
 
 You need to click Install after importing and restart the service for changes to take effect.
-If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
+If the service is disabled and marked for deletion, the installation will fail until you restart the computer.</value>
   </data>
 
   <data name="Msg_ServiceDisabledError" xml:space="preserve">
@@ -596,7 +596,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_LogOnAsColumnHeader_Name" xml:space="preserve">
-    <value>User Session Column</value>
+    <value>Log On As Column</value>
   </data>
   <data name="Automation_LogOnAsColumnCell_HelpText" xml:space="preserve">
     <value>View the user account the service is running as.</value>
