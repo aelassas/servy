@@ -577,7 +577,6 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.4...v9.5
 * fix(service): add debug logs for heartbeat ping URLs
 * fix(desktop): resolve PasswordBox styling issues
 * fix(desktop): crisp textbox cursor on low resolutions
-* fix(setup/net48): prevent uninstall conflict between x64 and ARM64 installers (#4990)
 * chore(deps): update dependencies
 * style: normalize source code line endings to CRLF
 * style: add .gitattributes to enforce CRLF line endings
