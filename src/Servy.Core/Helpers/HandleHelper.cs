@@ -35,7 +35,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <remarks>
         /// The pattern extracts the process name and process ID (PID) from lines formatted as:
-        /// <c>service.exe        pid: 1234   type: File     123: C:\Path\To\File.dll</c>
+        /// <c>service.exe     pid: 1234   type: File     123: C:\Path\To\File.dll</c>
         /// <list type="bullet">
         /// <item>
         /// <description><c>name</c>: Captures the executable name (e.g., "service.exe").</description>
@@ -82,12 +82,14 @@ namespace Servy.Core.Helpers
 
             using (var process = new Process { StartInfo = psi })
             {
+                // Synchronize writes and reads for StringBuilders to avoid race conditions when reading on timeout
+                var ioLock = new object();
                 // Use StringBuilders to capture stdout and stderr in the background to avoid deadlocks
                 var outputBuilder = new StringBuilder();
                 var errorBuilder = new StringBuilder();
 
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) errorBuilder.AppendLine(e.Data); };
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) { lock (ioLock) { outputBuilder.AppendLine(e.Data); } } };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) { lock (ioLock) { errorBuilder.AppendLine(e.Data); } } };
 
                 // UseShellExecute is false, so Start() cannot return false (there is no process to reuse):
                 // an unstartable executable surfaces as Win32Exception.
@@ -121,14 +123,25 @@ namespace Servy.Core.Helpers
                         process.WaitForExit();
                     }
 
-                    throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
+                    string timeoutStderr;
+                    lock (ioLock)
+                    {
+                        timeoutStderr = errorBuilder.ToString();
+                    }
+
+                    throw new TimeoutException($"handle.exe timed out. Stderr: {timeoutStderr}");
                 }
 
                 // Final WaitForExit() with no timeout flushes any in-flight async event handlers for the success path
                 process.WaitForExit();
 
-                string output = outputBuilder.ToString();
-                string error = errorBuilder.ToString();
+                string output;
+                string error;
+                lock (ioLock)
+                {
+                    output = outputBuilder.ToString();
+                    error = errorBuilder.ToString();
+                }
 
                 // Sysinternals handle.exe returns exit code 1 when it successfully executes but finds no handles.
                 List<Match> matches;
@@ -164,9 +177,9 @@ namespace Servy.Core.Helpers
                 }
 
                 // Check for specific handle.exe errors
-                if (string.IsNullOrWhiteSpace(output) && errorBuilder.Length > 0)
+                if (string.IsNullOrWhiteSpace(output) && error.Length > 0)
                 {
-                    Logger.Warn($"handle.exe produced error output: {errorBuilder}");
+                    Logger.Warn($"handle.exe produced error output: {error}");
                 }
 
                 foreach (Match match in matches)
