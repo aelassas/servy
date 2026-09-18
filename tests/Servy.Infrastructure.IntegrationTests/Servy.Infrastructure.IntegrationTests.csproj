@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
     <ProjectReference Include="..\..\src\Servy.Infrastructure\Servy.Infrastructure.csproj" />
     <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
