@@ -58,7 +58,7 @@ namespace Servy.Core.Validation
             if (string.IsNullOrWhiteSpace(content))
             {
                 errorMessage = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, FormatName);
-                Logger.Warn($"{FormatName} Import Blocked: input was empty or whitespace.");
+                Logger.Warn($"{FormatName} import blocked: input was empty or whitespace.");
                 return false;
             }
 
@@ -68,7 +68,7 @@ namespace Servy.Core.Validation
             if (byteLength > MaxPayloadBytes)
             {
                 errorMessage = string.Format(Strings.Msg_ImportPayloadTooLarge, FormatName, AppConfig.MaxConfigFileSizeMB);
-                Logger.Error(errorMessage);
+                Logger.Error($"{FormatName} import blocked: payload of {byteLength} bytes exceeds {MaxPayloadBytes} bytes.");
                 return false;
             }
 
@@ -85,21 +85,21 @@ namespace Servy.Core.Validation
             {
                 string detailMessage = ex.InnerException != null ? $"{ex.InnerException.Message} ({ex.Message})" : ex.Message;
                 errorMessage = string.Format(Strings.Msg_ImportInvalidStructure, FormatName, detailMessage);
-                Logger.Error($"{FormatName} import rejected: malformed document structure", ex);
+                Logger.Error($"{FormatName} import blocked: malformed document structure.", ex);
                 return false;
             }
             catch (Exception ex) // Catch-all for unexpected parser exceptions
             {
                 string detailMessage = ex.InnerException != null ? $"{ex.InnerException.Message} ({ex.Message})" : ex.Message;
                 errorMessage = string.Format(Strings.Msg_ImportStructureError, FormatName, detailMessage);
-                Logger.Error($"{FormatName} import failed with an unexpected parser exception ({ex.GetType().Name})", ex);
+                Logger.Error($"{FormatName} import blocked: unexpected parser exception ({ex.GetType().Name}).", ex);
                 return false;
             }
 
             if (dto == null)
             {
                 errorMessage = string.Format(Strings.Msg_ImportEmptyDefinition, FormatName);
-                Logger.Warn($"{FormatName} Import Blocked: parser returned no service definition.");
+                Logger.Warn($"{FormatName} import blocked: parser returned no service definition.");
                 return false;
             }
 
@@ -109,7 +109,7 @@ namespace Servy.Core.Validation
             {
                 errorMessage = string.Join("\n", validation.Errors);
 
-                Logger.Warn($"{FormatName} Import Blocked: Logical violation for service '{dto.Name ?? "Unknown"}'. Reason: {errorMessage}");
+                Logger.Warn($"{FormatName} import blocked: logical violation for service '{dto.Name ?? "Unknown"}'. Reason: {errorMessage}");
                 return false;
             }
 

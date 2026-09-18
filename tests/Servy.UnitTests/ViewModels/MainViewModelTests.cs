@@ -236,9 +236,9 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.ServiceName = "TestService";
             _viewModel.ServiceDisplayName = "TestServiceDisplayName";
             _viewModel.ServiceDescription = "Desc";
-            _viewModel.ProcessPath = @"C:\app\test.exe";
+            _viewModel.ExecutablePath = @"C:\app\test.exe";
             _viewModel.StartupDirectory = @"C:\app";
-            _viewModel.ProcessParameters = "--flag";
+            _viewModel.Parameters = "--flag";
             _viewModel.CpuAffinity = "0x1";
             _viewModel.StdoutPath = @"C:\logs\out.log";
             _viewModel.StderrPath = @"C:\logs\err.log";
@@ -272,7 +272,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PreLaunchRetryAttempts = "3";
             _viewModel.PreLaunchIgnoreFailure = true;
 
-            _viewModel.FailureProgramPath = @"C:\failureProgram\failureProgram.exe";
+            _viewModel.FailureProgramExecutablePath = @"C:\failureProgram\failureProgram.exe";
             _viewModel.FailureProgramStartupDirectory = @"C:\failureProgramDir";
             _viewModel.FailureProgramParameters = "--failureProgramParam1 val1";
 
@@ -415,17 +415,17 @@ namespace Servy.UnitTests.ViewModels
         #region Browse Method Tests
 
         [Theory]
-        [InlineData(nameof(MainViewModel.BrowseProcessPathCommand), nameof(MainViewModel.ProcessPath), "C:\\App\\proc.exe", false)]
+        [InlineData(nameof(MainViewModel.BrowseExecutablePathCommand), nameof(MainViewModel.ExecutablePath), "C:\\App\\proc.exe", false)]
         [InlineData(nameof(MainViewModel.BrowseStartupDirectoryCommand), nameof(MainViewModel.StartupDirectory), "C:\\AppDir", true)]
-        [InlineData(nameof(MainViewModel.BrowseFailureProgramPathCommand), nameof(MainViewModel.FailureProgramPath), "C:\\App\\fail.exe", false)]
+        [InlineData(nameof(MainViewModel.BrowseFailureProgramExecutablePathCommand), nameof(MainViewModel.FailureProgramExecutablePath), "C:\\App\\fail.exe", false)]
         [InlineData(nameof(MainViewModel.BrowseFailureProgramStartupDirectoryCommand), nameof(MainViewModel.FailureProgramStartupDirectory), "C:\\FailDir", true)]
-        [InlineData(nameof(MainViewModel.BrowsePreLaunchProcessPathCommand), nameof(MainViewModel.PreLaunchExecutablePath), "C:\\App\\pre.exe", false)]
+        [InlineData(nameof(MainViewModel.BrowsePreLaunchExecutablePathCommand), nameof(MainViewModel.PreLaunchExecutablePath), "C:\\App\\pre.exe", false)]
         [InlineData(nameof(MainViewModel.BrowsePreLaunchStartupDirectoryCommand), nameof(MainViewModel.PreLaunchStartupDirectory), "C:\\PreDir", true)]
-        [InlineData(nameof(MainViewModel.BrowsePostLaunchProcessPathCommand), nameof(MainViewModel.PostLaunchExecutablePath), "C:\\App\\post.exe", false)]
+        [InlineData(nameof(MainViewModel.BrowsePostLaunchExecutablePathCommand), nameof(MainViewModel.PostLaunchExecutablePath), "C:\\App\\post.exe", false)]
         [InlineData(nameof(MainViewModel.BrowsePostLaunchStartupDirectoryCommand), nameof(MainViewModel.PostLaunchStartupDirectory), "C:\\PostDir", true)]
-        [InlineData(nameof(MainViewModel.BrowsePreStopProcessPathCommand), nameof(MainViewModel.PreStopExecutablePath), "C:\\App\\prestop.exe", false)]
+        [InlineData(nameof(MainViewModel.BrowsePreStopExecutablePathCommand), nameof(MainViewModel.PreStopExecutablePath), "C:\\App\\prestop.exe", false)]
         [InlineData(nameof(MainViewModel.BrowsePreStopStartupDirectoryCommand), nameof(MainViewModel.PreStopStartupDirectory), "C:\\PreStopDir", true)]
-        [InlineData(nameof(MainViewModel.BrowsePostStopProcessPathCommand), nameof(MainViewModel.PostStopExecutablePath), "C:\\App\\poststop.exe", false)]
+        [InlineData(nameof(MainViewModel.BrowsePostStopExecutablePathCommand), nameof(MainViewModel.PostStopExecutablePath), "C:\\App\\poststop.exe", false)]
         [InlineData(nameof(MainViewModel.BrowsePostStopStartupDirectoryCommand), nameof(MainViewModel.PostStopStartupDirectory), "C:\\PostStopDir", true)]
         public void BrowseExecutableAndFolderCommands_Set_CorrectPaths_When_Selected(string commandName, string propertyName, string samplePath, bool isFolder)
         {
@@ -470,14 +470,14 @@ namespace Servy.UnitTests.ViewModels
         public void BrowseAndAssign_DoesNotOverwrite_ExistingPath_When_UserCancelsDialog()
         {
             // Arrange
-            _viewModel.ProcessPath = "C:\\Existing\\App.exe";
+            _viewModel.ExecutablePath = "C:\\Existing\\App.exe";
             _dialogServiceMock.Setup(d => d.OpenExecutable(It.IsAny<string>())).Returns((string)null);
 
             // Act
-            _viewModel.BrowseProcessPathCommand.Execute(null);
+            _viewModel.BrowseExecutablePathCommand.Execute(null);
 
             // Assert
-            Assert.Equal("C:\\Existing\\App.exe", _viewModel.ProcessPath);
+            Assert.Equal("C:\\Existing\\App.exe", _viewModel.ExecutablePath);
         }
 
         #endregion
@@ -491,9 +491,9 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.ServiceName = "TestService";
             _viewModel.ServiceDisplayName = "Display";
             _viewModel.ServiceDescription = "Desc";
-            _viewModel.ProcessPath = "test.exe";
+            _viewModel.ExecutablePath = "test.exe";
             _viewModel.StartupDirectory = @"C:\App";
-            _viewModel.ProcessParameters = "--args";
+            _viewModel.Parameters = "--args";
             _viewModel.SelectedStartupType = ServiceStartType.Disabled;
             _viewModel.SelectedProcessPriority = ProcessPriority.RealTime;
             _viewModel.CpuAffinity = "0x1";
@@ -515,7 +515,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
             _viewModel.HeartbeatUrlTimeoutSeconds = "29";
             _viewModel.EnableHeartbeatUrlFlags = !DefaultEnableHeartbeatUrlFlags;
-            _viewModel.FailureProgramPath = "fail.exe";
+            _viewModel.FailureProgramExecutablePath = "fail.exe";
             _viewModel.FailureProgramStartupDirectory = "fail_dir";
             _viewModel.FailureProgramParameters = "fail_args";
             _viewModel.EnvironmentVariables = "V=1";
@@ -558,9 +558,9 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(string.Empty, _viewModel.ServiceName);
             Assert.Equal(string.Empty, _viewModel.ServiceDisplayName);
             Assert.Equal(string.Empty, _viewModel.ServiceDescription);
-            Assert.Equal(string.Empty, _viewModel.ProcessPath);
+            Assert.Equal(string.Empty, _viewModel.ExecutablePath);
             Assert.Equal(string.Empty, _viewModel.StartupDirectory);
-            Assert.Equal(string.Empty, _viewModel.ProcessParameters);
+            Assert.Equal(string.Empty, _viewModel.Parameters);
             Assert.Equal(DefaultStartupType, _viewModel.SelectedStartupType);
             Assert.Equal(DefaultProcessPriority, _viewModel.SelectedProcessPriority);
             Assert.Equal(string.Empty, _viewModel.CpuAffinity);
@@ -583,7 +583,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(DefaultHeartbeatInterval.ToString(), _viewModel.HeartbeatInterval);
             Assert.Equal(DefaultMaxFailedChecks.ToString(), _viewModel.MaxFailedChecks);
             Assert.Equal(DefaultMaxRestartAttempts.ToString(), _viewModel.MaxRestartAttempts);
-            Assert.Equal(string.Empty, _viewModel.FailureProgramPath);
+            Assert.Equal(string.Empty, _viewModel.FailureProgramExecutablePath);
             Assert.Equal(string.Empty, _viewModel.FailureProgramStartupDirectory);
             Assert.Equal(string.Empty, _viewModel.FailureProgramParameters);
             Assert.Equal(string.Empty, _viewModel.HeartbeatUrl);
@@ -639,7 +639,7 @@ namespace Servy.UnitTests.ViewModels
         {
             // Arrange
             _viewModel.ServiceName = "TestService";
-            _viewModel.ProcessPath = "test.exe";
+            _viewModel.ExecutablePath = "test.exe";
             _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "555";
 
@@ -650,7 +650,7 @@ namespace Servy.UnitTests.ViewModels
 
             // Assert values remain unchanged
             Assert.Equal("TestService", _viewModel.ServiceName);
-            Assert.Equal("test.exe", _viewModel.ProcessPath);
+            Assert.Equal("test.exe", _viewModel.ExecutablePath);
             Assert.True(_viewModel.EnableSizeRotation);
             Assert.Equal("555", _viewModel.RotationSize);
         }
@@ -761,7 +761,7 @@ namespace Servy.UnitTests.ViewModels
             // Assert
             Assert.Equal("PolledService", _viewModel.ServiceName);
             Assert.Equal("Polled Service Display", _viewModel.ServiceDisplayName);
-            Assert.Equal("C:\\Polled\\Service.exe", _viewModel.ProcessPath);
+            Assert.Equal("C:\\Polled\\Service.exe", _viewModel.ExecutablePath);
             Assert.Equal(ServiceStartType.AutomaticDelayedStart, _viewModel.SelectedStartupType);
             Assert.Equal(ProcessPriority.BelowNormal, _viewModel.SelectedProcessPriority);
         }
@@ -871,9 +871,9 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(dto.Name, _viewModel.ServiceName);
             Assert.Equal(dto.DisplayName, _viewModel.ServiceDisplayName);
             Assert.Equal(dto.Description, _viewModel.ServiceDescription);
-            Assert.Equal(dto.ExecutablePath, _viewModel.ProcessPath);
+            Assert.Equal(dto.ExecutablePath, _viewModel.ExecutablePath);
             Assert.Equal(dto.StartupDirectory, _viewModel.StartupDirectory);
-            Assert.Equal(dto.Parameters, _viewModel.ProcessParameters);
+            Assert.Equal(dto.Parameters, _viewModel.Parameters);
             Assert.Equal(ServiceStartType.Disabled, _viewModel.SelectedStartupType);
             Assert.Equal(ProcessPriority.RealTime, _viewModel.SelectedProcessPriority);
             Assert.Equal(dto.CpuAffinity, _viewModel.CpuAffinity);
@@ -895,7 +895,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(dto.HeartbeatUrl, _viewModel.HeartbeatUrl);
             Assert.Equal("10", _viewModel.HeartbeatUrlTimeoutSeconds);
             Assert.True(_viewModel.EnableHeartbeatUrlFlags);
-            Assert.Equal(dto.FailureProgramPath, _viewModel.FailureProgramPath);
+            Assert.Equal(dto.FailureProgramPath, _viewModel.FailureProgramExecutablePath);
             Assert.Equal(dto.FailureProgramStartupDirectory, _viewModel.FailureProgramStartupDirectory);
             Assert.Equal(dto.FailureProgramParameters, _viewModel.FailureProgramParameters);
             Assert.Equal(dto.UserAccount, _viewModel.UserAccount);
@@ -962,9 +962,9 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.ServiceName = "ModelService";
             _viewModel.ServiceDisplayName = "Model Display";
             _viewModel.ServiceDescription = "Model Desc";
-            _viewModel.ProcessPath = "C:\\proc.exe";
+            _viewModel.ExecutablePath = "C:\\proc.exe";
             _viewModel.StartupDirectory = "C:\\Dir";
-            _viewModel.ProcessParameters = "--run";
+            _viewModel.Parameters = "--run";
             _viewModel.SelectedStartupType = ServiceStartType.Automatic;
             _viewModel.SelectedProcessPriority = ProcessPriority.Normal;
             _viewModel.CpuAffinity = "0x1";
@@ -986,7 +986,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
             _viewModel.HeartbeatUrlTimeoutSeconds = "10";
             _viewModel.EnableHeartbeatUrlFlags = true;
-            _viewModel.FailureProgramPath = "kill.exe";
+            _viewModel.FailureProgramExecutablePath = "kill.exe";
             _viewModel.FailureProgramStartupDirectory = "kill_dir";
             _viewModel.FailureProgramParameters = "--now";
             _viewModel.EnvironmentVariables = $"A=1{Environment.NewLine}B=2";
@@ -1025,9 +1025,9 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.ServiceName, dto.Name);
             Assert.Equal(_viewModel.ServiceDisplayName, dto.DisplayName);
             Assert.Equal(_viewModel.ServiceDescription, dto.Description);
-            Assert.Equal(_viewModel.ProcessPath, dto.ExecutablePath);
+            Assert.Equal(_viewModel.ExecutablePath, dto.ExecutablePath);
             Assert.Equal(_viewModel.StartupDirectory, dto.StartupDirectory);
-            Assert.Equal(_viewModel.ProcessParameters, dto.Parameters);
+            Assert.Equal(_viewModel.Parameters, dto.Parameters);
             Assert.Equal((int)ServiceStartType.Automatic, dto.StartupType);
             Assert.Equal((int)ProcessPriority.Normal, dto.Priority);
             Assert.Equal(_viewModel.CpuAffinity, dto.CpuAffinity);
@@ -1049,7 +1049,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.HeartbeatUrl, dto.HeartbeatUrl);
             Assert.Equal(10, dto.HeartbeatUrlTimeoutSeconds);
             Assert.True(dto.EnableHeartbeatUrlFlags);
-            Assert.Equal(_viewModel.FailureProgramPath, dto.FailureProgramPath);
+            Assert.Equal(_viewModel.FailureProgramExecutablePath, dto.FailureProgramPath);
             Assert.Equal(_viewModel.FailureProgramStartupDirectory, dto.FailureProgramStartupDirectory);
             Assert.Equal(_viewModel.FailureProgramParameters, dto.FailureProgramParameters);
             Assert.True(dto.RunAsLocalSystem);
