@@ -7,8 +7,8 @@
 This release includes bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * feat(manager): LogsView.xaml / LogEntryModel.cs - EventId is read off every Event Log entry, stored in an observable property and unit-tested, but no column, filter or detail pane ever reads it (#6022)
 * feat(scripts): add ShouldProcess confirmation prompt for SCM service installation in Servy-Restore.ps1
@@ -32,7 +32,7 @@ This release includes bug fixes, security patches, code quality improvements, an
 * ci(wiki.yml): Run parity check (dotnet test) step (main) never checks dotnet test's exit code, so a broken protected-variables parity check reports green (#6774)
 * ci(wiki.yml): Restore NuGet packages step (net48) runs nuget restore as a bare native call with no exit-code check (#6775)
 * chore(deps): update dependencies
-\</details\>
+</details>
 
 ### Downloads
 * [servy-10.1-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-arm64-installer.exe) - 71.46 MB
@@ -55,8 +55,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v10.0...v10.1
 This major release includes new backup and restore features, a hardened PowerShell module, bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * feat: add [Servy-Dump.ps1 and Servy-Restore.ps1](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) PowerShell backup and recovery scripts
 * fix(security): break inheritance and enforce read-only ACLs on configuration files
@@ -219,7 +219,7 @@ This major release includes new backup and restore features, a hardened PowerShe
 * ci(changelog.yml): CHANGELOG-v1.0-v5.2.md - the archive links nowhere: the #6218 split's pointer is one-directional (#6425)
 * ci(changelog.yml): changelog.yml - the auto-split path lacks the reset path's cleanup, so the next re-chunk (due: main is already 412 KB) strands CHANGELOG-v1.0-v5.2.md orphaned and duplicated (#6435)
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-10.0-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.0/servy-10.0-arm64-installer.exe) - 71.42 MB
@@ -242,8 +242,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.9...v10.0
 This release includes bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * fix(security): explicitly assign admin owner and streamline single-pass ACL hardening in Set-ServyExePermissions.ps1
 * fix(security): add admin privilege check to Set-ServyExePermissions.ps1
@@ -306,7 +306,7 @@ This release includes bug fixes, security patches, code quality improvements, an
 * fix(setup): servy.iss - AddToPath concatenates onto the raw PATH, so a machine PATH ending in a semicolon gains an empty ';;' element; RemoveFromPath rebuilds through the list (residual of #5467) (#5873)
 * fix: All 22 csproj - AssemblyDescription is not an SDK property, so every assembly ships with a blank Description while its AssemblyTitle neighbour binds (#5988)
 * chore(deps): update dependencies
-\</details\>
+</details>
 
 ### Downloads
 * [servy-9.9-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.9/servy-9.9-arm64-installer.exe) - 73.30 MB
@@ -329,8 +329,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.8...v9.9
 This release includes bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * fix(security): Set-ServyExePermissions.ps1 - the -TargetAccount regex forbids spaces, so 11 of the 23 aliases in ServiceAccounts.cs are rejected, including the 'NT AUTHORITY\LocalService' and 'NT AUTHORITY\NetworkService' const values the product itself stores (#5479)
 * fix(core): ConfigParser.cs / ServiceInstallValidator.cs - Enum.TryParse ORs comma-separated names on non-Flags enums, so "RestartService, RestartProcess" silently installs as RestartComputer (#5507)
@@ -371,7 +371,7 @@ This release includes bug fixes, security patches, code quality improvements, an
 * fix(setup): servy.iss - the install path is substituted into the Task Scheduler XMLs unescaped, so an install directory containing '&' produces malformed task definitions (residual of #1345) (#5466)
 * fix(setup): servy.iss - AddToPath's presence check does not Trim/NormalizeFolder the existing PATH entries the way RemoveFromPath does, so an entry with a trailing backslash gets a duplicate appended (residual of #4989) (#5467)
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-9.8-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.8/servy-9.8-arm64-installer.exe) - 73.31 MB
@@ -420,8 +420,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.6...v9.7
 This release includes UI/UX improvements for low and HD resolutions, bug fixes, security patches, code quality improvements, and documentation updates. The full changelog is listed below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * fix(core): ResourceHelper.cs - log messages still say GetHostProcessLastWriteTimeUTC after the #4804 Utc rename (#5154)
 * fix(core): Logger.cs - Initialize(null) wipes the re-init baseline while the writer stays live, turning every setter into a silent no-op (#5155)
@@ -476,7 +476,7 @@ This release includes UI/UX improvements for low and HD resolutions, bug fixes, 
 * fix: Servy.csproj (+ 4 sibling executables) - StripSymbols is set in every executable project but is a Native AOT-only property; no project publishes with AOT (#5265)
 * ci: fix Node.js 20 runner deprecation warnings
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-9.6-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.6/servy-9.6-arm64-installer.exe) - 71.00 MB
@@ -499,8 +499,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.5...v9.6
 This release brings ARM64 support to the Patch My PC Enterprise catalog, bug fixes, security patches, code quality improvements, and documentation updates. Full changelog listed below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * feat: add ARM64 support to the Patch My PC Enterprise catalog
 * fix: resolve DeepInstinct false positives for net48 and ARM64 builds
@@ -551,7 +551,7 @@ This release brings ARM64 support to the Patch My PC Enterprise catalog, bug fix
 * ci(changelog.yml): CHANGELOG.md - Download-section asset sizes render with 1 decimal when the second digit is 0, inconsistent with the other 420 lines (#5099)
 * docs(wiki): update documentation
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-9.5-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v9.5/servy-9.5-arm64-installer.exe) - 70.99 MB
@@ -875,8 +875,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.5...v8.6
 Servy 8.5 focuses on stability, security, and maintainability, with a large number of fixes across all components and full native support for ARM64. The full changelog is available below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * feat: provide ARM64 binaries (#2243)
 * fix: Wrapper executable not found (#4134)
@@ -1696,7 +1696,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * chore(deps): update dependencies
 * chore: various robustness, security, inconsistency and code quality fixes
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-8.5-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.5/servy-8.5-arm64-installer.exe) - 76.04 MB
@@ -1719,8 +1719,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.4...v8.5
 Servy 8.4 introduces enhanced recovery orchestration, improved security, significant performance optimizations, and bug fixes across the entire service ecosystem. The full changelog is available below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * feat(core): recovery for when the service process exits cleanly (#1311)
 * fix(core): Timing/retry magic numbers scattered across LogTailer, ServiceHelper, DapperExecutor, ProcessHelper, RotatingStreamWriter - consolidate into AppConfig (#818)
@@ -2277,7 +2277,7 @@ Servy 8.4 introduces enhanced recovery orchestration, improved security, signifi
 * ci: five workflow files saved as Windows-1252 (Non-ISO extended-ASCII) instead of UTF-8, breaking YAML 1.2 spec and rendering em-dashes as mojibake (#954)
 * chore(deps): update dependencies
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-8.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.4/servy-8.4-net48-sbom.xml) - 0.02 MB
@@ -2298,8 +2298,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.3...v8.4
 Servy 8.3 improves the UI experience and includes many fixes. The full changelog is available below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * fix(service): Console.CursorVisible causes service crash when running console app as Windows service (#814)
 * fix(core): ImportServiceCommandTests - MockXmlValidator/MockJsonValidator ignore isValid parameter (#738)
@@ -2384,7 +2384,7 @@ Servy 8.3 improves the UI experience and includes many fixes. The full changelog
 * ci(choco): retry loop around 'git push' never retries because PowerShell try/catch does not catch non-zero exit from native commands (#887)
 * chore(deps): updated dependencies
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-8.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.3/servy-8.3-net48-sbom.xml) - 0.02 MB
@@ -2431,8 +2431,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.1...v8.2
 Servy 8.1 introduces many fixes across main components. The full release notes are available in the expandable section below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * fix(core): Child folder ACLs in %ProgramData%\Servy break multi-account setups (#725)
 * fix(service): Partial nginx shutdown leaves orphan process running (#784)
@@ -2469,7 +2469,7 @@ Servy 8.1 introduces many fixes across main components. The full release notes a
 * ci(workflows): Multiple workflows - No permissions block, inheriting default read-write token scope (#589)
 * ci(scoop): scoop.yml - git config --global injects PAT into runner globally, persists for all subsequent steps (#777)
 
-\</details\>
+</details>
 
 ### Downloads
 * [servy-8.1-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.1/servy-8.1-net48-sbom.xml) - 0.02 MB
@@ -2490,8 +2490,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v8.0...v8.1
 Servy 8.0 introduces many fixes across all components. The full release notes are available in the expandable section below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * feat(core): allow MaxRestartAttempts to be set to 0 for unlimited restart attempts (#701)
 * feat(desktop): replace process parameters inputs by a resizable textarea (#700)
@@ -2549,7 +2549,7 @@ Servy 8.0 introduces many fixes across all components. The full release notes ar
 * ci(tmp): Workflow named "tmp" with no documented purpose (#720)
 * ci(setup-dotnet): uses dotnet-install -Channel (floating patch) instead of -Version (pinned) (#751)
 * ci(azure-pipelines): orphaned legacy CI alongside GitHub Actions, no tests/coverage/sign (#752)
-\</details\>
+</details>
 
 ### Downloads
 * [servy-8.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-net48-sbom.xml) - 0.02 MB
@@ -2570,8 +2570,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.9...v8.0
 Servy 7.9 introduces a [hardened security infrastructure](https://github.com/aelassas/servy/wiki/Security), significant performance optimizations, and a wealth of new features. It's packed with an extensive list of improvements, and the full release notes are available in the expandable section below.
 
 ### Full Changelog
-\<details\>
-  \<summary\>Click to expand release notes!\</summary\>
+<details>
+  <summary>Click to expand release notes!</summary>
 
 * feat(desktop): replace process parameters input by a resizable textarea (#700)
 * feat(manager): Get CPU and RAM usage of the whole process tree (#446)
@@ -3070,7 +3070,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * ci(scoop): force push to fork branch without checking if PR already merged (#624)
 * ci(loc): loc.yml peaceiris/actions-gh-pages needs contents:write but no permissions declared (#626)
 * chore(deps): update dependencies
-\</details\>
+</details>
 
 ### Downloads
 * [servy-7.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v7.9/servy-7.9-net48-sbom.xml) - 0.02 MB
