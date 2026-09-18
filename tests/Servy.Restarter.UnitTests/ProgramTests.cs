@@ -275,6 +275,76 @@ namespace Servy.Restarter.UnitTests
             }
         }
 
+        [Fact]
+        public async Task Main_RestartTimeoutExceedsHostWaitLimit_LogsWarning()
+        {
+            // Arrange
+            // 300s is above the 240s host service execution wait limit
+            // (AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond) and well inside
+            // AppConfig.MaxRestarterTimeoutSeconds, so ConfigParser.GetConfigInt passes it through
+            // unclamped and the over-budget warning branch is taken.
+            ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "300";
+
+            string connString = ConfigurationManager.AppSettings["DefaultConnection"];
+            string keyPath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
+            string ivPath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
+
+            string serviceName = "ManagedNet48ServiceForTimeoutWarning";
+            string[] args = new string[] { serviceName, TempDirectory };
+
+            AppFoldersHelper.EnsureFolders(connString, keyPath, ivPath);
+
+            using (var dbContext = new AppDbContext(connString))
+            using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
+            using (var secureData = new SecureData(protectedKeyProvider))
+            {
+                var dapperExecutor = new DapperExecutor(dbContext);
+                var xmlSerializer = new XmlServiceSerializer();
+                var jsonSerializer = new JsonServiceSerializer();
+                var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+
+                var service = new ServiceDto
+                {
+                    Name = serviceName,
+                    ExecutablePath = @"C:\MockPath\Service.exe"
+                };
+                await repository.AddAsync(service, CancellationToken.None);
+            }
+
+            var mockRestarter = new Mock<IServiceRestarter>();
+            mockRestarter
+                .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
+                .Returns(RestartResult.Restarted);
+
+            try
+            {
+                // Act
+                Program.Main(args, mockRestarter.Object);
+
+                // Assert
+                Assert.Equal(0, Environment.ExitCode);
+                AssertLogContainsMessage("Configured RestartTimeoutSeconds (300s) exceeds the host service execution wait limit (240s).");
+            }
+            finally
+            {
+                using (var dbContext = new AppDbContext(connString))
+                using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
+                using (var secureData = new SecureData(protectedKeyProvider))
+                {
+                    var dapperExecutor = new DapperExecutor(dbContext);
+                    var xmlSerializer = new XmlServiceSerializer();
+                    var jsonSerializer = new JsonServiceSerializer();
+                    var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+
+                    var existing = repository.GetByName(serviceName, decrypt: false);
+                    if (existing != null && existing.Id.HasValue)
+                    {
+                        await repository.DeleteAsync(existing.Id.Value, CancellationToken.None);
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region Verification Helpers
