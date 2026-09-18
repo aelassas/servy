@@ -198,11 +198,10 @@ function Copy-CommonArtifacts {
     $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1", "Servy-Dump.ps1", "Servy-Restore.ps1")
     foreach ($art in $cliArtifacts) {
         $sourcePath = Join-Path $CliDir $art
-        if (Test-Path $sourcePath) {
-            Copy-Item -Path $sourcePath -Destination $DestFolder -Force
-        } else {
+        if (-not (Test-Path $sourcePath)) {
             throw "Required CLI artifact missing: $sourcePath"
         }
+        Copy-Item -Path $sourcePath -Destination $DestFolder -Force
     }
 }
 

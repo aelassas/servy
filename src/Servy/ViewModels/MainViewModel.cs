@@ -74,6 +74,15 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the manager application is available.
+        /// </summary>
+        public bool IsManagerAppAvailable
+        {
+            get => _isManagerAppAvailable;
+            set => Set(() => _isManagerAppAvailable, v => _isManagerAppAvailable = v, value);
+        }
+
+        /// <summary>
         /// Gets or sets the name of the Windows service.
         /// </summary>
         public string? ServiceName
@@ -564,15 +573,6 @@ namespace Servy.ViewModels
         {
             get => _config.PreLaunchIgnoreFailure;
             set => Set(() => _config.PreLaunchIgnoreFailure, v => _config.PreLaunchIgnoreFailure = v, value);
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the manager application is available.
-        /// </summary>
-        public bool IsManagerAppAvailable
-        {
-            get => _isManagerAppAvailable;
-            set => Set(() => _isManagerAppAvailable, v => _isManagerAppAvailable = v, value);
         }
 
         /// <summary>
