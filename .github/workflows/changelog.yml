@@ -132,7 +132,6 @@ jobs:
                   $normalized = $Release.body -replace "`r`n", "`n"
                   (($normalized -split "`n") | ForEach-Object { $_.TrimEnd() }) -join "`n"
               }
-              # Protect-MarkdownTags on $body breaks HTML tags
               $body = Protect-MarkdownTags ($rawBody.Trim() -replace $dashPattern, '-')
 
               $bt = [char]96
