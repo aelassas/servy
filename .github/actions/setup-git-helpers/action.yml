@@ -27,14 +27,17 @@ runs:
             }
         }
 
-        # Helper: pull --rebase then push, retried up to $MaxRetries times for push races.
+        # Helper: pull --rebase then push, retried up to $MaxRetries times after initial attempt for push races.
         function Invoke-PushWithRetry {
             param([string]$PullRef, [string]$PushRef, [int]$MaxRetries = 5)
-            for ($i = 0; $i -lt $MaxRetries; $i++) {
+            if ($MaxRetries -lt 0) { throw "MaxRetries cannot be negative" }
+            $maxAttempts = $MaxRetries + 1
+
+            for ($i = 0; $i -lt $maxAttempts; $i++) {
                 try {
                     git rebase --abort 2>$null
                     git merge  --abort 2>$null
-                    Write-Host "Pull-rebase-push attempt $($i + 1) of $MaxRetries..."
+                    Write-Host "Pull-rebase-push attempt $($i + 1) of $maxAttempts..."
 
                     git pull --rebase=merges --autostash origin $PullRef
                     if ($LASTEXITCODE -ne 0) { throw "git pull failed with exit code $LASTEXITCODE" }
@@ -46,8 +49,8 @@ runs:
                     return
                 }
                 catch {
-                    if ($i -eq ($MaxRetries - 1)) {
-                        throw "Push operation failed critically after $MaxRetries attempts: $($_.Exception.Message)"
+                    if ($i -eq ($maxAttempts - 1)) {
+                        throw "Push operation failed critically after $maxAttempts attempts: $($_.Exception.Message)"
                     }
                     Write-Warning "$($_.Exception.Message). Retrying pull-rebase-push in 5 seconds..."
                     Start-Sleep -Seconds 5
