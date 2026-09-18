@@ -255,6 +255,60 @@ namespace Servy.Restarter.UnitTests
             }
         }
 
+        [Fact]
+        public void Main_RestartTimeoutExceedsHostWaitLimit_LogsWarning()
+        {
+            // Arrange
+            // 300s is above the 240s host service execution wait limit
+            // (AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond) and well inside
+            // AppConfig.MaxRestarterTimeoutSeconds, so ConfigParser.GetConfigInt passes it through
+            // unclamped and the over-budget warning branch is taken.
+            string serviceName = "ManagedServiceForTimeoutWarning";
+
+            using (var connection = new SQLiteConnection(SharedInMemoryConnectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "INSERT OR IGNORE INTO Services (Name, ExecutablePath) VALUES (@name, @path);";
+                    command.Parameters.AddWithValue("@name", serviceName);
+                    command.Parameters.AddWithValue("@path", "C:\\MockPath\\Service.exe");
+                    command.ExecuteNonQuery();
+                }
+            }
+
+            var mockRestarter = new Mock<IServiceRestarter>();
+            mockRestarter
+                .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
+                .Returns(RestartResult.Restarted);
+
+            try
+            {
+                File.WriteAllText(_tempConfigPath, BuildConfigJson("300"));
+                string[] args = new string[] { serviceName, TempDirectory };
+
+                // Act
+                Program.Main(args, mockRestarter.Object);
+
+                // Assert
+                Assert.Equal(0, Environment.ExitCode);
+                AssertLogContainsMessage("Configured RestartTimeoutSeconds (300s) exceeds the host service execution wait limit (240s).");
+            }
+            finally
+            {
+                using (var connection = new SQLiteConnection(SharedInMemoryConnectionString))
+                {
+                    connection.Open();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "DELETE FROM Services WHERE Name = @name;";
+                        command.Parameters.AddWithValue("@name", serviceName);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region Fatal Exception Resilience Blocks
