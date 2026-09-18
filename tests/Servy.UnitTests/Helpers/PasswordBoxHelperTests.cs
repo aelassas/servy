@@ -176,10 +176,5 @@ namespace Servy.UnitTests.Helpers
                 Assert.Equal(typedPassword, boundValue);
             }, createApp: true);
         }
-
-        private class FakePasswordViewModel
-        {
-            public string Password { get; set; } = string.Empty;
-        }
     }
 }
