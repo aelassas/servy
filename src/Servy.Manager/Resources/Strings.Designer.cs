@@ -61,7 +61,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays application information and copyright details..
+        ///   Looks up a localized string similar to Show application information and copyright details..
         /// </summary>
         public static string Automation_AboutMenuItem_HelpText {
             get {
@@ -79,7 +79,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Checks if a newer version of Servy is available..
+        ///   Looks up a localized string similar to Check if a newer version of Servy is available..
         /// </summary>
         public static string Automation_CheckUpdatesMenuItem_HelpText {
             get {
@@ -88,7 +88,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens the configuration app for the selected service..
+        ///   Looks up a localized string similar to Open the configuration app for the selected service..
         /// </summary>
         public static string Automation_ConfigMenu_HelpText {
             get {
@@ -115,7 +115,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Instructions on how to configure stdout and stderr redirection for live console output..
+        ///   Looks up a localized string similar to Read instructions on how to configure stdout and stderr redirection for live console output..
         /// </summary>
         public static string Automation_ConsoleInstructions_HelpText {
             get {
@@ -133,7 +133,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays scrolling log output. Use context menu to copy selected lines..
+        ///   Looks up a localized string similar to View scrolling log output. Use context menu to copy selected lines..
         /// </summary>
         public static string Automation_ConsoleLogList_HelpText {
             get {
@@ -169,7 +169,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the real-time standard output and error logs for the selected service..
+        ///   Looks up a localized string similar to View the real-time standard output and error logs for the selected service..
         /// </summary>
         public static string Automation_ConsoleTab_HelpText {
             get {
@@ -187,7 +187,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays real-time standard output and error logs for the selected service..
+        ///   Looks up a localized string similar to View the real-time standard output and error logs for the selected service..
         /// </summary>
         public static string Automation_ConsoleViewRoot_HelpText {
             get {
@@ -205,7 +205,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Copies selected console log lines to the clipboard..
+        ///   Looks up a localized string similar to Copy selected console log lines to the clipboard..
         /// </summary>
         public static string Automation_CopyLogMenuItem_HelpText {
             get {
@@ -223,7 +223,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Copies the Process ID to the clipboard..
+        ///   Looks up a localized string similar to Copy the Process ID to the clipboard..
         /// </summary>
         public static string Automation_CopyPidButton_HelpText {
             get {
@@ -232,7 +232,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The current CPU usage of the service..
+        ///   Looks up a localized string similar to View the current CPU usage of the service..
         /// </summary>
         public static string Automation_CpuColumnCell_HelpText {
             get {
@@ -250,7 +250,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Historical view of CPU percentage usage..
+        ///   Looks up a localized string similar to View historical graph of CPU percentage usage..
         /// </summary>
         public static string Automation_CpuGraphGrid_HelpText {
             get {
@@ -268,7 +268,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the real-time percentage of CPU utilized by the service process..
+        ///   Looks up a localized string similar to View the real-time percentage of CPU utilized by the service process..
         /// </summary>
         public static string Automation_CpuUsageLabel_HelpText {
             get {
@@ -286,7 +286,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Collapses all branches in the dependency tree..
+        ///   Looks up a localized string similar to Collapse all branches in the dependency tree..
         /// </summary>
         public static string Automation_DependenciesCollapseAllButton_HelpText {
             get {
@@ -295,7 +295,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Expands all branches in the dependency tree..
+        ///   Looks up a localized string similar to Expand all branches in the dependency tree..
         /// </summary>
         public static string Automation_DependenciesExpandAllButton_HelpText {
             get {
@@ -304,7 +304,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Information on the service dependency tree mechanism via Windows Service Control Manager..
+        ///   Looks up a localized string similar to Read information on the service dependency tree mechanism via Windows Service Control Manager..
         /// </summary>
         public static string Automation_DependenciesLegendInfo_HelpText {
             get {
@@ -322,7 +322,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Reloads the dependency tree for the selected service..
+        ///   Looks up a localized string similar to Reload the dependency tree for the selected service..
         /// </summary>
         public static string Automation_DependenciesRefreshButton_HelpText {
             get {
@@ -349,7 +349,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Indicates that pressing F5 refreshes the dependency tree..
+        ///   Looks up a localized string similar to Press F5 to refresh the dependency tree..
         /// </summary>
         public static string Automation_DependenciesShortcutInfo_HelpText {
             get {
@@ -367,7 +367,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Shows the service dependencies tree and status hierarchy..
+        ///   Looks up a localized string similar to View the service dependencies tree and status hierarchy..
         /// </summary>
         public static string Automation_DependenciesTab_HelpText {
             get {
@@ -385,7 +385,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays recursive dependencies for the selected service..
+        ///   Looks up a localized string similar to View recursive dependencies for the selected service..
         /// </summary>
         public static string Automation_DependenciesTreeView_HelpText {
             get {
@@ -403,7 +403,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Explains the status color indicators for tree nodes: green for running, red for stopped, orange for cycle..
+        ///   Looks up a localized string similar to View status color indicators for tree nodes: green for running, red for stopped, orange for cycle..
         /// </summary>
         public static string Automation_DependenciesUsageInfo_HelpText {
             get {
@@ -421,7 +421,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the service list and their hierarchical dependencies..
+        ///   Looks up a localized string similar to View the service list and their hierarchical dependencies..
         /// </summary>
         public static string Automation_DependenciesViewRoot_HelpText {
             get {
@@ -439,7 +439,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The description of the service..
+        ///   Looks up a localized string similar to View the description of the service..
         /// </summary>
         public static string Automation_DescriptionColumnCell_HelpText {
             get {
@@ -457,7 +457,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens the official Servy documentation..
+        ///   Looks up a localized string similar to Open the official Servy documentation..
         /// </summary>
         public static string Automation_DocMenuItem_HelpText {
             get {
@@ -466,7 +466,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens a menu containing documentation and update options..
+        ///   Looks up a localized string similar to Open a menu containing documentation and update options..
         /// </summary>
         public static string Automation_HelpMenu_HelpText {
             get {
@@ -475,7 +475,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Imports a service configuration from a JSON file..
+        ///   Looks up a localized string similar to Import a service configuration from a JSON file..
         /// </summary>
         public static string Automation_ImportJsonMenuItem_HelpText {
             get {
@@ -484,7 +484,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens a menu to import service configurations..
+        ///   Looks up a localized string similar to Open a menu to import service configurations..
         /// </summary>
         public static string Automation_ImportMenu_HelpText {
             get {
@@ -493,7 +493,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Imports a service configuration from an XML file..
+        ///   Looks up a localized string similar to Import a service configuration from an XML file..
         /// </summary>
         public static string Automation_ImportXmlMenuItem_HelpText {
             get {
@@ -502,7 +502,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays full message text and details for the selected log entry..
+        ///   Looks up a localized string similar to View full message text and details for the selected log entry..
         /// </summary>
         public static string Automation_LogDetailsTextBox_HelpText {
             get {
@@ -520,7 +520,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The user account the service is running as..
+        ///   Looks up a localized string similar to View the user account the service is running as..
         /// </summary>
         public static string Automation_LogOnAsColumnCell_HelpText {
             get {
@@ -538,7 +538,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the filtered list of diagnostic log entries..
+        ///   Looks up a localized string similar to View the filtered list of diagnostic log entries..
         /// </summary>
         public static string Automation_LogsDataGrid_HelpText {
             get {
@@ -556,7 +556,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Windows Event ID of the log entry..
+        ///   Looks up a localized string similar to View the Windows Event ID of the log entry..
         /// </summary>
         public static string Automation_LogsEventIdColumnCell_HelpText {
             get {
@@ -574,7 +574,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Shows total count and query execution duration for current logs filter..
+        ///   Looks up a localized string similar to View total count and query execution duration for current logs filter..
         /// </summary>
         public static string Automation_LogsFooterText_HelpText {
             get {
@@ -637,7 +637,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The severity level of the log entry..
+        ///   Looks up a localized string similar to View the severity level of the log entry..
         /// </summary>
         public static string Automation_LogsLevelColumnCell_HelpText {
             get {
@@ -682,7 +682,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The message text of the log entry..
+        ///   Looks up a localized string similar to View the message text of the log entry..
         /// </summary>
         public static string Automation_LogsMessageColumnCell_HelpText {
             get {
@@ -700,7 +700,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Executes the log search with current level, date, and keyword filters..
+        ///   Looks up a localized string similar to Execute the log search with current level, date, and keyword filters..
         /// </summary>
         public static string Automation_LogsSearchButton_HelpText {
             get {
@@ -709,7 +709,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Indicates that pressing F5 refreshes logs..
+        ///   Looks up a localized string similar to Press F5 to refresh logs..
         /// </summary>
         public static string Automation_LogsShortcutInfo_HelpText {
             get {
@@ -727,7 +727,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays a list of system events and diagnostic records for the service..
+        ///   Looks up a localized string similar to View a list of system events and diagnostic records for the service..
         /// </summary>
         public static string Automation_LogsTab_HelpText {
             get {
@@ -745,7 +745,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The timestamp of the log entry..
+        ///   Looks up a localized string similar to View the timestamp of the log entry..
         /// </summary>
         public static string Automation_LogsTimeColumnCell_HelpText {
             get {
@@ -781,7 +781,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays a list of system events and diagnostic records for services..
+        ///   Looks up a localized string similar to View a list of system events and diagnostic records for services..
         /// </summary>
         public static string Automation_LogsViewRoot_HelpText {
             get {
@@ -799,7 +799,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the total number of services loaded and execution time..
+        ///   Looks up a localized string similar to View total number of services loaded and execution duration..
         /// </summary>
         public static string Automation_MainFooterText_HelpText {
             get {
@@ -808,7 +808,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Provides options to import configuration, configure settings, and access help..
+        ///   Looks up a localized string similar to Access options to import configuration, configure settings, and access help..
         /// </summary>
         public static string Automation_MainMenu_HelpText {
             get {
@@ -826,7 +826,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Indicates that pressing F5 refreshes the service list..
+        ///   Looks up a localized string similar to Press F5 to refresh the service list..
         /// </summary>
         public static string Automation_MainShortcutInfo_HelpText {
             get {
@@ -835,7 +835,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the main list of managed services..
+        ///   Looks up a localized string similar to View the main list of managed services..
         /// </summary>
         public static string Automation_MainTab_HelpText {
             get {
@@ -853,7 +853,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Allows switching between Services, Performance, Console, Dependencies, and Logs views..
+        ///   Looks up a localized string similar to Switch between Services, Performance, Console, Dependencies, and Logs views..
         /// </summary>
         public static string Automation_MainTabControl_HelpText {
             get {
@@ -871,7 +871,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The main interface for the Servy service manager, used to configure service parameters and monitor execution..
+        ///   Looks up a localized string similar to Configure service parameters and monitor execution using the Servy Manager interface..
         /// </summary>
         public static string Automation_MainWindow_HelpText {
             get {
@@ -889,7 +889,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens a menu with additional actions for the current service..
+        ///   Looks up a localized string similar to Open a menu with additional actions for the current service..
         /// </summary>
         public static string Automation_MoreActionsButton_HelpText {
             get {
@@ -898,7 +898,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The name of the service..
+        ///   Looks up a localized string similar to View the name of the service..
         /// </summary>
         public static string Automation_NameColumnCell_HelpText {
             get {
@@ -934,7 +934,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays real-time CPU and memory usage statistics for the running service..
+        ///   Looks up a localized string similar to View real-time CPU and memory usage statistics for the running service..
         /// </summary>
         public static string Automation_PerformanceTab_HelpText {
             get {
@@ -952,7 +952,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays resource usage statistics for the selected process..
+        ///   Looks up a localized string similar to View resource usage statistics for the selected process..
         /// </summary>
         public static string Automation_PerformanceView_HelpText {
             get {
@@ -970,7 +970,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The process identifier (PID) of the running service..
+        ///   Looks up a localized string similar to View the process identifier (PID) of the running service..
         /// </summary>
         public static string Automation_PidColumnCell_HelpText {
             get {
@@ -988,7 +988,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the Process ID of the currently selected service process..
+        ///   Looks up a localized string similar to View the Process ID of the currently selected service process..
         /// </summary>
         public static string Automation_PidValue_HelpText {
             get {
@@ -1006,7 +1006,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The current RAM usage of the service..
+        ///   Looks up a localized string similar to View the current RAM usage of the service..
         /// </summary>
         public static string Automation_RamColumnCell_HelpText {
             get {
@@ -1024,7 +1024,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Historical view of memory usage..
+        ///   Looks up a localized string similar to View historical graph of memory usage..
         /// </summary>
         public static string Automation_RamGraphGrid_HelpText {
             get {
@@ -1042,7 +1042,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Displays the real-time memory usage of the service process..
+        ///   Looks up a localized string similar to View the real-time memory usage of the service process..
         /// </summary>
         public static string Automation_RamUsageLabel_HelpText {
             get {
@@ -1060,7 +1060,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restarts all selected services..
+        ///   Looks up a localized string similar to Restart all selected services..
         /// </summary>
         public static string Automation_RestartSelectedButton_HelpText {
             get {
@@ -1069,7 +1069,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restarts the current service..
+        ///   Looks up a localized string similar to Restart the current service..
         /// </summary>
         public static string Automation_RestartServiceButton_HelpText {
             get {
@@ -1087,7 +1087,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Resumes automatic scrolling to the latest log entry..
+        ///   Looks up a localized string similar to Resume automatic scrolling to the latest log entry..
         /// </summary>
         public static string Automation_ResumeScrollButton_HelpText {
             get {
@@ -1105,7 +1105,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens the configuration app for this service..
+        ///   Looks up a localized string similar to Open the configuration app for this service..
         /// </summary>
         public static string Automation_RowConfigMenuItem_HelpText {
             get {
@@ -1123,7 +1123,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Copies the current Process ID of the service to the clipboard..
+        ///   Looks up a localized string similar to Copy the current Process ID of the service to the clipboard..
         /// </summary>
         public static string Automation_RowCopyPidMenuItem_HelpText {
             get {
@@ -1132,7 +1132,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Exports the current service configuration to a JSON file..
+        ///   Looks up a localized string similar to Export the current service configuration to a JSON file..
         /// </summary>
         public static string Automation_RowExportJsonMenuItem_HelpText {
             get {
@@ -1141,7 +1141,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Exports the current service configuration to an XML file..
+        ///   Looks up a localized string similar to Export the current service configuration to an XML file..
         /// </summary>
         public static string Automation_RowExportXmlMenuItem_HelpText {
             get {
@@ -1150,7 +1150,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Installs the service configuration to the system..
+        ///   Looks up a localized string similar to Install the service configuration to the system..
         /// </summary>
         public static string Automation_RowInstallMenuItem_HelpText {
             get {
@@ -1168,7 +1168,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Removes the service from the Servy Manager list..
+        ///   Looks up a localized string similar to Remove the service from the Servy Manager list..
         /// </summary>
         public static string Automation_RowRemoveMenuItem_HelpText {
             get {
@@ -1186,7 +1186,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Uninstalls the service from the system..
+        ///   Looks up a localized string similar to Uninstall the service from the system..
         /// </summary>
         public static string Automation_RowUninstallMenuItem_HelpText {
             get {
@@ -1204,7 +1204,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Executes the service search..
+        ///   Looks up a localized string similar to Execute the service search..
         /// </summary>
         public static string Automation_SearchButton_HelpText {
             get {
@@ -1240,7 +1240,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Selects or deselects all services in the list..
+        ///   Looks up a localized string similar to Select or deselect all services in the list..
         /// </summary>
         public static string Automation_SelectAllServicesCheckBox_HelpText {
             get {
@@ -1285,7 +1285,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to List of managed services..
+        ///   Looks up a localized string similar to View and manage the list of services..
         /// </summary>
         public static string Automation_ServicesDataGrid_HelpText {
             get {
@@ -1330,7 +1330,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Starts all selected services..
+        ///   Looks up a localized string similar to Start all selected services..
         /// </summary>
         public static string Automation_StartSelectedButton_HelpText {
             get {
@@ -1339,7 +1339,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Starts the current service..
+        ///   Looks up a localized string similar to Start the current service..
         /// </summary>
         public static string Automation_StartServiceButton_HelpText {
             get {
@@ -1357,7 +1357,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The configured startup type for the service..
+        ///   Looks up a localized string similar to View the configured startup type for the service..
         /// </summary>
         public static string Automation_StartupTypeColumnCell_HelpText {
             get {
@@ -1375,7 +1375,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The current status of the service..
+        ///   Looks up a localized string similar to View the current status of the service..
         /// </summary>
         public static string Automation_StatusColumnCell_HelpText {
             get {
@@ -1393,7 +1393,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Stops all selected services..
+        ///   Looks up a localized string similar to Stop all selected services..
         /// </summary>
         public static string Automation_StopSelectedButton_HelpText {
             get {
@@ -1402,7 +1402,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Stops the current service..
+        ///   Looks up a localized string similar to Stop the current service..
         /// </summary>
         public static string Automation_StopServiceButton_HelpText {
             get {
@@ -2131,7 +2131,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to launch the Desktop application..
+        ///   Looks up a localized string similar to Failed to launch the Servy Desktop App..
         /// </summary>
         public static string Msg_DesktopAppLaunchFailed {
             get {
@@ -2179,7 +2179,7 @@ namespace Servy.Manager.Resources {
         ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
         ///
         ///You need to click Install after importing and restart the service for changes to take effect.
-        ///If the service is disabled and marked for deletion, installation will fail until you restart your PC..
+        ///If the service is disabled and marked for deletion, the installation will fail until you restart your PC..
         /// </summary>
         public static string Msg_ImportServiceConfirmation {
             get {

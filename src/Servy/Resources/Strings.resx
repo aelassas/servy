@@ -541,22 +541,23 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <!-- Automation Properties -->
+  <!-- Conventions: AutomationProperties.HelpText entries use the IMPERATIVE mood ("Enter...", "Select...", "Browse..."). -->
   <data name="Automation_ConfigMainWindow_Name" xml:space="preserve">
     <value>Servy Configuration Window</value>
   </data>
   <data name="Automation_ConfigMainWindow_HelpText" xml:space="preserve">
-    <value>Main window for creating and configuring a Servy Windows service.</value>
+    <value>Create and configure a Servy Windows service.</value>
   </data>
 
   <data name="Automation_MainMenu_Name" xml:space="preserve">
     <value>Main Menu</value>
   </data>
   <data name="Automation_MainMenu_HelpText" xml:space="preserve">
-    <value>Application menu for exporting, importing, and help options.</value>
+    <value>Access application menu options for exporting, importing, and help.</value>
   </data>
 
   <data name="Automation_MenuExport_HelpText" xml:space="preserve">
-    <value>Export service configuration menu.</value>
+    <value>Open the service configuration export menu.</value>
   </data>
   <data name="Automation_MenuExportXml_HelpText" xml:space="preserve">
     <value>Export configuration to an XML file.</value>
@@ -566,7 +567,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_MenuImport_HelpText" xml:space="preserve">
-    <value>Import service configuration menu.</value>
+    <value>Open the service configuration import menu.</value>
   </data>
   <data name="Automation_MenuImportXml_HelpText" xml:space="preserve">
     <value>Import configuration from an XML file.</value>
@@ -583,7 +584,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_MenuHelp_HelpText" xml:space="preserve">
-    <value>Help and documentation menu.</value>
+    <value>Open the help and documentation menu.</value>
   </data>
   <data name="Automation_MenuDoc_HelpText" xml:space="preserve">
     <value>Open the official Servy documentation.</value>
@@ -603,7 +604,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_TabItemMain_HelpText" xml:space="preserve">
-    <value>General configuration options for the service.</value>
+    <value>Configure general options for the service.</value>
   </data>
 
   <data name="Automation_TextBoxServiceName_Name" xml:space="preserve">
@@ -768,7 +769,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Select the action to take when the service fails health checks.</value>
   </data>
   <data name="Automation_ButtonRecoveryActionHelp_HelpText" xml:space="preserve">
-    <value>Shows help information for recovery actions.</value>
+    <value>Show help information for recovery actions.</value>
   </data>
   <data name="Automation_CheckBoxRecoveryOnCleanExit_HelpText" xml:space="preserve">
     <value>Check to run recovery action even if the process exits successfully.</value>
@@ -1097,18 +1098,18 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_ButtonInstall_HelpText" xml:space="preserve">
-    <value>Installs the configured service.</value>
+    <value>Install the configured service.</value>
   </data>
   <data name="Automation_ButtonUninstall_HelpText" xml:space="preserve">
-    <value>Uninstalls the configured service.</value>
+    <value>Uninstall the configured service.</value>
   </data>
   <data name="Automation_ButtonStart_HelpText" xml:space="preserve">
-    <value>Starts the configured service.</value>
+    <value>Start the configured service.</value>
   </data>
   <data name="Automation_ButtonStop_HelpText" xml:space="preserve">
-    <value>Stops the configured service.</value>
+    <value>Stop the configured service.</value>
   </data>
   <data name="Automation_ButtonRestart_HelpText" xml:space="preserve">
-    <value>Restarts the configured service.</value>
+    <value>Restart the configured service.</value>
   </data>
 </root>
