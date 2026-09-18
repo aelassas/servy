@@ -99,7 +99,7 @@ Get-Content $configPath | ForEach-Object {
 $signFlag = $config["SIGN"]
 Write-Host "signFlag=$signFlag"
 
-if ($signFlag -ine "true") {
+if ($signFlag -ne "true") {
     Write-Host "SIGN is not true in $configPath. Skipping signing."
     return
 }

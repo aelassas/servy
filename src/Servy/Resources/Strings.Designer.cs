@@ -349,7 +349,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Installs the configured service..
+        ///   Looks up a localized string similar to Install the configured service..
         /// </summary>
         public static string Automation_ButtonInstall_HelpText {
             get {
@@ -358,7 +358,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Shows help information for recovery actions..
+        ///   Looks up a localized string similar to Show help information for recovery actions..
         /// </summary>
         public static string Automation_ButtonRecoveryActionHelp_HelpText {
             get {
@@ -367,7 +367,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restarts the configured service..
+        ///   Looks up a localized string similar to Restart the configured service..
         /// </summary>
         public static string Automation_ButtonRestart_HelpText {
             get {
@@ -376,7 +376,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Starts the configured service..
+        ///   Looks up a localized string similar to Start the configured service..
         /// </summary>
         public static string Automation_ButtonStart_HelpText {
             get {
@@ -385,7 +385,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Stops the configured service..
+        ///   Looks up a localized string similar to Stop the configured service..
         /// </summary>
         public static string Automation_ButtonStop_HelpText {
             get {
@@ -394,7 +394,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Uninstalls the configured service..
+        ///   Looks up a localized string similar to Uninstall the configured service..
         /// </summary>
         public static string Automation_ButtonUninstall_HelpText {
             get {
@@ -529,7 +529,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Main window for creating and configuring a Servy Windows service..
+        ///   Looks up a localized string similar to Create and configure a Servy Windows service..
         /// </summary>
         public static string Automation_ConfigMainWindow_HelpText {
             get {
@@ -565,7 +565,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Application menu for exporting, importing, and help options..
+        ///   Looks up a localized string similar to Access application menu options for exporting, importing, and help..
         /// </summary>
         public static string Automation_MainMenu_HelpText {
             get {
@@ -619,7 +619,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Export service configuration menu..
+        ///   Looks up a localized string similar to Open the service configuration export menu..
         /// </summary>
         public static string Automation_MenuExport_HelpText {
             get {
@@ -646,7 +646,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Help and documentation menu..
+        ///   Looks up a localized string similar to Open the help and documentation menu..
         /// </summary>
         public static string Automation_MenuHelp_HelpText {
             get {
@@ -655,7 +655,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import service configuration menu..
+        ///   Looks up a localized string similar to Open the service configuration import menu..
         /// </summary>
         public static string Automation_MenuImport_HelpText {
             get {
@@ -763,7 +763,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to General configuration options for the service..
+        ///   Looks up a localized string similar to Configure general options for the service..
         /// </summary>
         public static string Automation_TabItemMain_HelpText {
             get {
