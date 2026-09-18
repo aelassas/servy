@@ -17,7 +17,7 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Searches for services matching the specified search text.
         /// </summary>
-        /// <param name="searchText">The text to search for in service names.</param>
+        /// <param name="searchText">The text to match against service names and descriptions.</param>
         /// <param name="calculatePerf">Whether to calculate CPU and RAM for the services.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of <see cref="Service"/> objects that match the search.</returns>
