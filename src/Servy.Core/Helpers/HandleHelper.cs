@@ -118,7 +118,8 @@ namespace Servy.Core.Helpers
                     // If the OS successfully tears down the target process tree layout within the drain limit,
                     // invoke the unbounded version to safely flush out outstanding in-flight async stream events
                     // before reading the errorBuilder buffer contents.
-                    if (process.WaitForExit(AppConfig.HandleExeKillDrainTimeoutMs))
+                    bool killConfirmed = process.WaitForExit(AppConfig.HandleExeKillDrainTimeoutMs);
+                    if (killConfirmed)
                     {
                         process.WaitForExit();
                     }
@@ -129,7 +130,8 @@ namespace Servy.Core.Helpers
                         timeoutStderr = errorBuilder.ToString();
                     }
 
-                    throw new TimeoutException($"handle.exe timed out. Stderr: {timeoutStderr}");
+                    string incompleteNote = killConfirmed ? string.Empty : " (process may still be running; stderr may be incomplete)";
+                    throw new TimeoutException($"handle.exe timed out. Stderr: {timeoutStderr}{incompleteNote}");
                 }
 
                 // Final WaitForExit() with no timeout flushes any in-flight async event handlers for the success path
