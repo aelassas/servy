@@ -23,7 +23,7 @@ namespace Servy.UI.Commands
         /// <param name="canExecute">An optional predicate to determine if the command is allowed to execute.</param>
         /// <param name="name">Command name.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="execute"/> is null.</exception>
-        public AsyncCommand(Func<object?, Task>? execute, Predicate<object?>? canExecute = null, string? name = null)
+        public AsyncCommand(Func<object?, Task> execute, Predicate<object?>? canExecute = null, string? name = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;

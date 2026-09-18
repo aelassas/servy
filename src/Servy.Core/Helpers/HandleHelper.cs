@@ -1,6 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
@@ -84,8 +85,8 @@ namespace Servy.Core.Helpers
             using (var process = new Process { StartInfo = psi })
             {
                 // Use StringBuilders to capture stdout and stderr in the background to avoid deadlocks
-                var outputBuilder = new System.Text.StringBuilder();
-                var errorBuilder = new System.Text.StringBuilder();
+                var outputBuilder = new StringBuilder();
+                var errorBuilder = new StringBuilder();
 
                 process.OutputDataReceived += (s, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
                 process.ErrorDataReceived += (s, e) => { if (e.Data != null) errorBuilder.AppendLine(e.Data); };
