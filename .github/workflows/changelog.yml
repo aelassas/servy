@@ -95,7 +95,7 @@ jobs:
                   $parts = [regex]::Split($fenceParts[$f], '(``.*?``|`[^`\n]*?`)')
                   for ($i = 0; $i -lt $parts.Count; $i++) {
                       if ($parts[$i] -notmatch '^`') {
-                          $parts[$i] = $parts[$i] -replace '<(/?(?!(?:details|summary|br|hr|p|div|span|b|i|strong|em|a|img|code|pre|blockquote|ul|ol|li|table|tr|td|th|thead|tbody)\b)[A-Za-z][A-Za-z0-9_]*(?:\s[^<>]*)?/?)>', '\<$1\>'
+                          $parts[$i] = $parts[$i] -replace '(?<!\\)<(/?(?!(?:details|summary|br|hr|p|div|span|b|i|strong|em|a|img|code|pre|blockquote|ul|ol|li|table|tr|td|th|thead|tbody)\b)[A-Za-z][A-Za-z0-9_]*(?:\s[^<>]*)?/?)>', '\<$1\>'
                       }                   
                   }
                   $fenceParts[$f] = ($parts -join '')
