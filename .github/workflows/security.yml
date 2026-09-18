@@ -152,6 +152,9 @@ jobs:
     timeout-minutes: 30
     name: Secret Scanning
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # Needed for gitleaks-action to comment on PRs with findings
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
