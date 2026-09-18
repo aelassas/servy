@@ -1,6 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using System.Diagnostics;
+using System.Text;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
@@ -218,6 +219,64 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Normal execution should finish well inside the kill timeout the SUT enforces.
             Assert.True(stopwatch.ElapsedMilliseconds < AppConfig.HandleExeTimeoutMs,
                 $"Normal execution took {stopwatch.ElapsedMilliseconds} ms, expected to stay under HandleExeTimeoutMs ({AppConfig.HandleExeTimeoutMs} ms).");
+        }
+
+        [Fact]
+        public async Task GetProcessesUsingFile_ConcurrentBufferAccess_DoesNotThrow_WhenSynchronized()
+        {
+            // Arrange
+            var ioLock = new object();
+            var outputBuilder = new StringBuilder();
+            var errorBuilder = new StringBuilder();
+            const int iterations = 5_000;
+
+            // Act: Stress-test the exact lock model used by HandleHelper to capture Output/Error streams while reading on timeout
+            var stdoutTask = Task.Run(() =>
+            {
+                for (int i = 0; i < iterations; i++)
+                {
+                    lock (ioLock)
+                    {
+                        outputBuilder.AppendLine($"Process stdout line {i}");
+                    }
+                }
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            var stderrTask = Task.Run(() =>
+            {
+                for (int i = 0; i < iterations; i++)
+                {
+                    lock (ioLock)
+                    {
+                        errorBuilder.AppendLine($"Process stderr line {i}");
+                    }
+                }
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            var readerTask = Task.Run(() =>
+            {
+                for (int i = 0; i < 200; i++)
+                {
+                    string currentError;
+                    string currentOutput;
+                    lock (ioLock)
+                    {
+                        currentError = errorBuilder.ToString();
+                        currentOutput = outputBuilder.ToString();
+                    }
+
+                    Assert.NotNull(currentError);
+                    Assert.NotNull(currentOutput);
+                }
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            var exception = await Record.ExceptionAsync(async () =>
+            {
+                await Task.WhenAll(stdoutTask, stderrTask, readerTask);
+            });
+
+            Assert.Null(exception);
         }
     }
 }
