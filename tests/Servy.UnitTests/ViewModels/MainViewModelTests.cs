@@ -119,6 +119,22 @@ namespace Servy.UnitTests.ViewModels
 
         #endregion
 
+        #region Design-Time Constructor Tests
+
+        [Fact]
+        public void DesignTimeConstructor_UsesDesignTimeStubs()
+        {
+            // Act
+            using (var designTimeViewModel = new MainViewModel())
+            {
+                // Assert
+                Assert.False(designTimeViewModel.IsBusy);
+                Assert.True(designTimeViewModel.IsManagerAppAvailable);
+            }
+        }
+
+        #endregion
+
         #region Core Property Tests
 
         [Fact]
