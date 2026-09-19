@@ -48,6 +48,23 @@ namespace Servy.Core.UnitTests.Services
             Assert.Throws<ObjectDisposedException>(() => wrapper.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(1)));
         }
 
+        [Fact]
+        public void Dispose_CalledTwice_IsIdempotentAndDoesNotThrow()
+        {
+            // Arrange
+            var wrapper = new ServiceControllerWrapper(StandardTestService);
+
+            // Act
+            wrapper.Dispose();
+            var ex = Record.Exception(() => wrapper.Dispose());
+
+            // Assert: the second call takes the _disposed early-return branch - it neither throws
+            // nor undoes the disposed state, which is what makes an explicit Dispose() inside a
+            // using block safe.
+            Assert.Null(ex);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.ServiceName);
+        }
+
         #endregion
 
         #region Tree Resolution & Dependency Hierarchy Tests
@@ -169,6 +186,51 @@ namespace Servy.Core.UnitTests.Services
 
                 sharedFromB.IsExpanded = true;
                 Assert.False(sharedFromC.IsExpanded);
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_SharedDependencyWithNestedChild_DeepClonesRecursively()
+        {
+            // Arrange: the same diamond as above, one level deeper - ServiceShared itself depends on
+            // ServiceLeaf. The cache hit on ServiceShared therefore clones a node that HAS children,
+            // which is the recursive case; in the test above ServiceShared is childless, so the clone
+            // loop never runs.
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ServiceB", "ServiceC" });
+                var mockB = CreateMockWrapper("ServiceB", "Service B", ServiceControllerStatus.Running, new[] { "ServiceShared" });
+                var mockC = CreateMockWrapper("ServiceC", "Service C", ServiceControllerStatus.Running, new[] { "ServiceShared" });
+                var mockShared = CreateMockWrapper("ServiceShared", "Shared Service", ServiceControllerStatus.Running, new[] { "ServiceLeaf" });
+                var mockLeaf = CreateMockWrapper("ServiceLeaf", "Leaf Service", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ServiceB", mockB.Object },
+                    { "ServiceC", mockC.Object },
+                    { "ServiceShared", mockShared.Object },
+                    { "ServiceLeaf", mockLeaf.Object }
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(name => mocks[name], TestContext.Current.CancellationToken);
+
+                // Assert
+                var sharedFromB = result.Dependencies[0].Dependencies.Single();
+                var sharedFromC = result.Dependencies[1].Dependencies.Single();
+
+                var leafFromB = sharedFromB.Dependencies.Single();
+                var leafFromC = sharedFromC.Dependencies.Single();
+                Assert.Equal("ServiceLeaf", leafFromB.ServiceName);
+                Assert.Equal("ServiceLeaf", leafFromC.ServiceName);
+
+                // The recursion is a DEEP clone, not a shallow reference copy: each tree position owns
+                // its own leaf, so UI state set on one does not mirror onto the other.
+                Assert.NotSame(leafFromB, leafFromC);
+
+                leafFromB.IsExpanded = true;
+                Assert.False(leafFromC.IsExpanded);
             }
         }
 
