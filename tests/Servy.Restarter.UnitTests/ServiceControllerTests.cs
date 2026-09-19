@@ -1,4 +1,5 @@
 using Servy.Testing;
+using System.ServiceProcess;
 
 namespace Servy.Restarter.UnitTests
 {
@@ -46,6 +47,20 @@ namespace Servy.Restarter.UnitTests
             {
                 // Act & Assert
                 Assert.Throws<InvalidOperationException>(controller.Stop);
+            }
+        }
+
+        [Fact]
+        public void WaitForStatus_WhenCalledWithTimeout_DelegatesToInnerController()
+        {
+            // Arrange
+            using (var controller = new ServiceController(DummyServiceName))
+            {
+                // Act & Assert
+                // Executing WaitForStatus against a non-existent service name causes System.ServiceProcess.ServiceController
+                // to attempt to query the SCM, throwing an InvalidOperationException.
+                Assert.Throws<InvalidOperationException>(() =>
+                    controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromMilliseconds(1)));
             }
         }
 
