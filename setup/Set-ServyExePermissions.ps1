@@ -33,7 +33,7 @@
     - 0 : Success. All target files were present and successfully hardened.
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target binaries/libraries are missing and must be extracted before hardening.
-    - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, or security exceptions.
+    - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, security exceptions, or link tampering.
     - 4 : Account Error. -TargetAccount could not be resolved by LSA or is an invalid target.
 
 .PARAMETER TargetAccount
@@ -335,6 +335,32 @@ try {
             } else {
                 $missing += $fileName
             }
+            continue
+        }
+
+        # Verify file is not a reparse point or NTFS hard link (#6866) - PS 2.0 compatible
+        $fileItem = Get-Item -Path $filePath
+        if (($fileItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -eq [System.IO.FileAttributes]::ReparsePoint) {
+            Write-Host "FAILED to harden '$fileName': File is a reparse point (symlink/junction) and cannot be hardened safely." -ForegroundColor Red
+            $failed += $fileName
+            continue
+        }
+
+        # Check for multiple hard links pointing to the target file
+        try {
+            $hardLinkOutput = & cmd.exe /c "fsutil hardlink list `"$filePath`"" 2>&1
+            if ($LASTEXITCODE -eq 0 -and $null -ne $hardLinkOutput) {
+                $linkLines = @($hardLinkOutput | Where-Object { -not [string]::IsNullOrEmpty($_) })
+                if ($linkLines.Count -gt 1) {
+                    Write-Host "FAILED to harden '$fileName': File has multiple NTFS hard links ($($linkLines.Count)) and cannot be hardened safely." -ForegroundColor Red
+                    $failed += $fileName
+                    continue
+                }
+            }
+        }
+        catch {
+            Write-Host "FAILED to harden '$fileName': Could not verify hard link status: $_" -ForegroundColor Red
+            $failed += $fileName
             continue
         }
 
