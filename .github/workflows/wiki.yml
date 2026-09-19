@@ -93,7 +93,7 @@ jobs:
         env:
           SERVY_WIKI_PATH: ${{ github.workspace }}/.wiki
         run: |
-          dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~ProtectedVariablesDocumentationTests" -- RunConfiguration.TreatNoTestsAsError=true
+          dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~Servy.Service.UnitTests.Documentation.ProtectedVariablesDocumentationTests" -- RunConfiguration.TreatNoTestsAsError=true
           if ($LASTEXITCODE -ne 0) {
             Write-Host "::error::Parity check failed on main (exit $LASTEXITCODE)."
             exit 1
@@ -160,7 +160,7 @@ jobs:
           "@ | Out-File -FilePath $runSettingsPath -Encoding utf8
 
           & $vsTest "tests\Servy.Service.UnitTests\bin\x64\Debug\Servy.Service.UnitTests.dll" `
-            /TestCaseFilter:"FullyQualifiedName~ProtectedVariablesDocumentationTests" `
+            /TestCaseFilter:"FullyQualifiedName~Servy.Service.UnitTests.Documentation.ProtectedVariablesDocumentationTests" `
             /Settings:"$runSettingsPath"
 
           if ($LASTEXITCODE -ne 0) {
