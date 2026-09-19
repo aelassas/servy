@@ -93,9 +93,16 @@ jobs:
         env:
           SERVY_WIKI_PATH: ${{ github.workspace }}/.wiki
         run: |
-          dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~ProtectedVariablesDocumentationTests"
+          $testOutput = dotnet test tests/Servy.Service.UnitTests --filter "FullyQualifiedName~ProtectedVariablesDocumentationTests" 2>&1 | Out-String
+          Write-Host $testOutput
+
           if ($LASTEXITCODE -ne 0) {
             Write-Host "::error::Parity check failed on main (exit $LASTEXITCODE)."
+            exit 1
+          }
+
+          if ($testOutput -match "Zero tests ran" -or $testOutput -match "total: 0") {
+            Write-Host "::error::No tests matched the filter. Parity check did not run."
             exit 1
           }
 
