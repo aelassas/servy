@@ -547,7 +547,7 @@ namespace Servy.Core.Helpers
 
             var targetPathDir = Path.GetDirectoryName(targetPath);
 
-            if (string.IsNullOrEmpty(targetPathDir))
+            if (string.IsNullOrWhiteSpace(targetPathDir))
             {
                 throw new IOException($"Could not resolve parent directory for extraction: {targetPath}");
             }

@@ -413,7 +413,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed background refresh.", ex);
+                Logger.Error("Failed background refresh.", ex);
             }
             finally
             {
@@ -509,7 +509,7 @@ namespace Servy.Manager.ViewModels
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error($"RefreshAllServicesAsync failed.", ex);
+                            Logger.Error("RefreshAllServicesAsync failed.", ex);
                         }
                         finally { Interlocked.Exchange(ref _isRefreshingFlag, 0); }
                     }, refreshToken);
@@ -881,7 +881,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to refresh all services.", ex);
+                Logger.Error("Failed to refresh all services.", ex);
             }
         }
 

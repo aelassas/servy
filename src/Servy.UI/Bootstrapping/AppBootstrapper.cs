@@ -478,7 +478,7 @@ namespace Servy.UI.Bootstrapping
             string directory = Path.GetDirectoryName(targetAppPublishPath);
             string fileName = Path.GetFileName(targetAppPublishPath);
 
-            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName)) return;
+            if (string.IsNullOrWhiteSpace(directory) || string.IsNullOrEmpty(fileName)) return;
 
             // Outer loop keeps the monitor alive for the lifetime of the application
             while (!_appLifetimeCts.Token.IsCancellationRequested)
