@@ -159,10 +159,17 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
-        /// Waits for an in-flight log rotation to complete or forcefully resets the rotation gate upon timeout.
-        /// The caller must hold <see cref="_lock"/>.
+        /// Waits for an in-flight log rotation to complete.
         /// </summary>
-        private void WaitForRotationToSettle()
+        /// <returns>
+        /// <c>true</c> if the in-flight rotation settled or no rotation was in progress;
+        /// <c>false</c> if waiting timed out while rotation remained in progress, signaling callers
+        /// to skip/defer stream operations to avoid attaching handles mid-rename.
+        /// </returns>
+        /// <remarks>
+        /// The caller must hold <see cref="_lock"/>.
+        /// </remarks>
+        private bool WaitForRotationToSettle()
         {
             // Block other threads from writing, flushing, or disposing
             // while the physical File.Move is taking place.
@@ -172,18 +179,20 @@ namespace Servy.Core.IO
                 // if PerformPhysicalRotation deadlocks or drops its PulseAll invocation.
                 if (!Monitor.Wait(_lock, AppConfig.LogRotationWaitTimeoutMs))
                 {
-                    // The rotation attempt timed out. We break out of the lock loop to prevent thread pool
-                    // exhaustion across stdout/stderr worker streams.
-                    Logger.Error(
-                        $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms. " +
-                        "Assuming rotation stalled. Forcefully resetting state gate and proceeding.");
+                    // Do NOT clear _rotationInProgress = false here!
+                    // Forcefully resetting the state gate while PerformPhysicalRotation is still running File.Move
+                    // allows waiting writers to call InitializeWriter() and attach a new handle to _file.FullName.
+                    // Because FileShare.Delete is active, Windows permits the move to complete, silently redirecting
+                    // subsequent writes into the rotated/archived log file (#6873).
+                    Logger.Warn(
+                        $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms for '{_file.Name}'. " +
+                        "Rotation is taking longer than expected; skipping write on this thread to avoid misdirecting log output.");
 
-                    // Forceful safety recovery: clear the gate so the system doesn't permanently deadlock
-                    _rotationInProgress = false;
-                    Monitor.PulseAll(_lock);
-                    break;
+                    return false;
                 }
             }
+
+            return true;
         }
 
         /// <summary>
@@ -215,7 +224,12 @@ namespace Servy.Core.IO
 
             lock (_lock)
             {
-                WaitForRotationToSettle();
+                if (!WaitForRotationToSettle())
+                {
+                    // Rotation is taking longer than LogRotationWaitTimeoutMs.
+                    // Skip this write pass instead of force-opening a handle on _file.FullName.
+                    return;
+                }
 
                 // Check disposal *after* waking up, in case Dispose was called while we waited
                 if (_disposed) return;
@@ -682,7 +696,10 @@ namespace Servy.Core.IO
         {
             lock (_lock)
             {
-                WaitForRotationToSettle();
+                if (!WaitForRotationToSettle())
+                {
+                    return;
+                }
 
                 _writer?.Flush();
 
