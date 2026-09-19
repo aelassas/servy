@@ -129,11 +129,11 @@ See [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
-Servy is free and open-source. If you use it in a commercial or revenue-generating context, or find it valuable, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/aelassas), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
+Servy is free and open-source. If Servy has helped you, saved you hours of development time, or powered your production workflows, supporting its maintenance makes a direct impact.
 
-Open-source software requires time, effort, and resources to maintain. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
+Building and maintaining software, publishing signed releases, delivering security updates, and providing system support takes dedicated time and financial resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp) or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
 
-If you have suggestions or issues or would like to contribute, feel free to [open an issue](https://github.com/aelassas/servy/issues) or [submit a pull request](https://github.com/aelassas/servy/pulls).
+If you have suggestions, feature requests, or issues, feel free to [open an issue](https://github.com/servy-win/servy/issues), start a [discussion](https://github.com/servy-win/servy/discussions), or [submit a pull request](https://github.com/servy-win/servy/pulls).
 
 ## Stats for Nerds
 
