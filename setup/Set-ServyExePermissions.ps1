@@ -273,12 +273,15 @@ try {
         $targetIsAdminMember = Test-ServyAdminGroupMember -AccountName $TargetAccount -Sid $targetSid -AdminSid $adminSid
     }
 
-    if ($targetIsAdminMember -eq $true) {
+    $targetIsConfirmedAdminMember = ($targetIsAdminMember -eq $true)
+    $targetAdminMembershipUnknown = ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)))
+
+    if ($targetIsConfirmedAdminMember) {
         Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
         Write-Host "          Its effective access will be FullControl, not the ReadAndExecute/Read this script writes." -ForegroundColor Cyan
         Write-Host "          Use a non-administrative service account for the trust boundary this script establishes." -ForegroundColor Cyan
     }
-    elseif ($null -eq $targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+    elseif ($targetAdminMembershipUnknown) {
         Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access after hardening."
     }
 
@@ -486,12 +489,12 @@ try {
 
     Write-Host "Executable and configuration permission hardening complete." -ForegroundColor Green
 
-    if ($targetIsAdminMember -eq$true) {
+    if ($targetIsConfirmedAdminMember) {
         Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
         Write-Host "          The explicit ACEs written above do NOT establish the single trust boundary this" -ForegroundColor Cyan
         Write-Host "          script promises. Use a non-administrative service account instead." -ForegroundColor Cyan
     }
-    elseif ($null -eq$targetIsAdminMember -and -not ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid))) {
+    elseif ($targetAdminMembershipUnknown) {
         Write-Warning "Could not verify whether '$TargetAccount' is a member of BUILTIN\Administrators. Manually confirm its effective access."
     }
 }
