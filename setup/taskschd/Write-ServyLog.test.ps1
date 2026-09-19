@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running Write-ServyLog.ps1 Tests              " -ForegroundColor Cyan
+Write-Host " Running Write-ServyLog.ps1 Tests               " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -151,10 +151,10 @@ try {
 
         # Keep LastWriteTime strictly increasing: the pruning sort is on LastWriteTime, so equal
         # stamps would make which-three-survive ambiguous and this assertion flaky.
-        Start-Sleep -Milliseconds 20
+        Start-Sleep -Milliseconds 120
     }
 
-    # The rotated filename embeds yyyyMMdd-HHmmss-fff, so lexical order is chronological order.
+    # The rotated filename embeds yyyyMMdd_HHmmss, so lexical order is chronological order.
     $backups = Get-ChildItem -Path $ScriptDir -Filter "test_prune_*.log" | Sort-Object Name
     if ($backups.Count -ne $PruneBackups) {
         Write-Host "FAIL: Expected $PruneBackups retained backups for pruning test, found $($backups.Count)." -ForegroundColor Red
