@@ -16,6 +16,7 @@
     <SolidColorBrush x:Key="GraphFillBrush" Color="#80C3ECFA" />
     <SolidColorBrush x:Key="GraphBorderBrush" Color="#757575" />
     <SolidColorBrush x:Key="GraphGridPenBrush" Color="#EBEBEB" />
+    <SolidColorBrush x:Key="GraphBackgroundBrush" Color="#FFFFFF" />
 
     <DrawingBrush x:Key="GraphGridBrush"
                   TileMode="Tile"
@@ -70,7 +71,7 @@
       </StackPanel>
 
       <Border Grid.Row="1"
-              Background="#FFFFFF"
+              Background="{StaticResource GraphBackgroundBrush}"
               BorderBrush="{StaticResource GraphBorderBrush}"
               BorderThickness="1"
               Margin="0,0,0,5">
@@ -115,7 +116,7 @@
       </Border>
 
       <Border Grid.Row="2"
-              Background="#FFFFFF"
+              Background="{StaticResource GraphBackgroundBrush}"
               BorderBrush="{StaticResource GraphBorderBrush}"
               BorderThickness="1"
               Margin="0,0,0,5">

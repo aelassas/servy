@@ -177,30 +177,6 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the click event for the Configuration menu item.
-        /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous configuration sequence.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The event data.</param>
-        private void Menu_ConfigClick(object sender, RoutedEventArgs e)
-            => _ = RunAsync(() => Menu_ConfigClickAsync(sender, e));
-
-        /// <summary>
-        /// Asynchronously initiates the application configuration sequence.
-        /// Executes the <see cref="MainViewModel.ConfigureCommand"/> to open the settings interface.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The event data.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        private async Task Menu_ConfigClickAsync(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is MainViewModel vm)
-            {
-                await vm.ConfigureCommand.ExecuteAsync(null);
-            }
-        }
-
-        /// <summary>
         /// Handles the <see cref="SelectionChanged"/> event of the main <see cref="TabControl"/>.
         /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous tab transition logic.
         /// </summary>
