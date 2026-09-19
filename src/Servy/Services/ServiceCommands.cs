@@ -382,8 +382,6 @@ namespace Servy.Services
         /// <inheritdoc />
         public async Task OpenManagerAsync(CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             string? managerPath = _appConfig.ManagerAppPublishPath;
             string baseDir = AppFoldersHelper.GetAppDirectory();
 
@@ -412,6 +410,8 @@ namespace Servy.Services
 
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var psi = new ProcessStartInfo
                 {
                     FileName = managerPath,
@@ -448,10 +448,10 @@ namespace Servy.Services
         /// <inheritdoc />
         public async Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var psi = new ProcessStartInfo
                 {
                     FileName = AppConfig.SecurityHardeningGuideLink,
