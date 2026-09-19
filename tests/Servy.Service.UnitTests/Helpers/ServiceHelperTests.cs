@@ -680,7 +680,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Assert
                 Assert.Equal(5000, helper.RequestedMilliseconds);
-                mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("Requested additional 5000 ms")), It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Requested additional 5000 ms")), It.IsAny<Exception>()), Times.Once);
                 mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }

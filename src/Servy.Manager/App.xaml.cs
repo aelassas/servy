@@ -103,10 +103,10 @@ namespace Servy.Manager
         public int RefreshIntervalInSeconds { get; private set; }
 
         /// <inheritdoc />
-        public int PerformanceRefreshIntervalInMs { get; private set; }
+        public int PerformanceRefreshIntervalMs { get; private set; }
 
         /// <inheritdoc />
-        public int ConsoleRefreshIntervalInMs { get; private set; }
+        public int ConsoleRefreshIntervalMs { get; private set; }
 
         /// <inheritdoc />
         public int ConsoleMaxLines { get; private set; }
@@ -129,7 +129,7 @@ namespace Servy.Manager
         }
 
         /// <inheritdoc />
-        public int DependenciesRefreshIntervalInMs { get; private set; }
+        public int DependenciesRefreshIntervalMs { get; private set; }
 
         /// <inheritdoc />
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
@@ -261,25 +261,25 @@ namespace Servy.Manager
                         AppConfig.MinRefreshIntervalInSeconds,
                         AppConfig.MaxRefreshIntervalInSeconds);
 
-                    PerformanceRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "PerformanceRefreshIntervalInMs",
-                        AppConfig.DefaultMonitoringRefreshIntervalInMs,
-                        AppConfig.MinPerformanceRefreshIntervalInMs,
-                        AppConfig.MaxPerformanceRefreshIntervalInMs);
+                    PerformanceRefreshIntervalMs = ConfigParser.GetConfigInt(config, "PerformanceRefreshIntervalInMs",
+                        AppConfig.DefaultMonitoringRefreshIntervalMs,
+                        AppConfig.MinPerformanceRefreshIntervalMs,
+                        AppConfig.MaxPerformanceRefreshIntervalMs);
 
-                    ConsoleRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "ConsoleRefreshIntervalInMs",
-                        AppConfig.DefaultMonitoringRefreshIntervalInMs,
-                        AppConfig.MinConsoleRefreshIntervalInMs,
-                        AppConfig.MaxConsoleRefreshIntervalInMs);
+                    ConsoleRefreshIntervalMs = ConfigParser.GetConfigInt(config, "ConsoleRefreshIntervalInMs",
+                        AppConfig.DefaultMonitoringRefreshIntervalMs,
+                        AppConfig.MinConsoleRefreshIntervalMs,
+                        AppConfig.MaxConsoleRefreshIntervalMs);
 
                     ConsoleMaxLines = ConfigParser.GetConfigInt(config, "ConsoleMaxLines",
                         AppConfig.DefaultConsoleMaxLines,
                         AppConfig.MinConsoleMaxLines,
                         AppConfig.MaxConsoleMaxLines);
 
-                    DependenciesRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "DependenciesRefreshIntervalInMs",
-                        AppConfig.DefaultMonitoringRefreshIntervalInMs,
-                        AppConfig.MinDependenciesRefreshIntervalInMs,
-                        AppConfig.MaxDependenciesRefreshIntervalInMs);
+                    DependenciesRefreshIntervalMs = ConfigParser.GetConfigInt(config, "DependenciesRefreshIntervalInMs",
+                        AppConfig.DefaultMonitoringRefreshIntervalMs,
+                        AppConfig.MinDependenciesRefreshIntervalMs,
+                        AppConfig.MaxDependenciesRefreshIntervalMs);
 
                     SearchDebounceDelayMs = ConfigParser.GetConfigInt(config, "SearchDebounceDelayMs",
                         AppConfig.DefaultSearchDebounceDelayMs,

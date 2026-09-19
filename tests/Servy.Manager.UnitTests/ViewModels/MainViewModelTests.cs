@@ -67,10 +67,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             _appConfigMock = new Mock<IAppConfiguration>();
             _appConfigMock.Setup(c => c.RefreshIntervalInSeconds).Returns(5);
-            _appConfigMock.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
+            _appConfigMock.Setup(c => c.PerformanceRefreshIntervalMs).Returns(1000);
             _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(500);
-            _appConfigMock.Setup(c => c.DependenciesRefreshIntervalInMs).Returns(1000);
-            _appConfigMock.Setup(c => c.ConsoleRefreshIntervalInMs).Returns(500);
+            _appConfigMock.Setup(c => c.DependenciesRefreshIntervalMs).Returns(1000);
+            _appConfigMock.Setup(c => c.ConsoleRefreshIntervalMs).Returns(500);
             _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(true);
             _appConfigMock.Setup(c => c.MaxBulkOperationParallelism).Returns(2);
 

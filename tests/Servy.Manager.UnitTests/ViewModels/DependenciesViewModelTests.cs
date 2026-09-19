@@ -44,7 +44,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _mockMessageBoxService = new Mock<IMessageBoxService>();
             _mockProcessKiller = new Mock<IProcessKiller>();
 
-            _mockAppConfig.Setup(c => c.DependenciesRefreshIntervalInMs).Returns(1000);
+            _mockAppConfig.Setup(c => c.DependenciesRefreshIntervalMs).Returns(1000);
 
             _mockUiDispatcher.Setup(d => d.InvokeAsync(It.IsAny<Action>()))
                              .Callback<Action>(action => action())

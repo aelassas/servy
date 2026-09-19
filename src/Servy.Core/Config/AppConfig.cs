@@ -238,7 +238,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default monitoring refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
-        public const int DefaultMonitoringRefreshIntervalInMs = 800;
+        public const int DefaultMonitoringRefreshIntervalMs = 800;
 
         /// <summary>
         /// The default maximum number of log lines to retain in the console tab.
@@ -1186,22 +1186,22 @@ namespace Servy.Core.Config
         public const int MaxRefreshIntervalInSeconds = 3_600;
 
         /// <summary>Minimum allowed interval for performance metric updates.</summary>
-        public const int MinPerformanceRefreshIntervalInMs = 100;
+        public const int MinPerformanceRefreshIntervalMs = 100;
         /// <summary>Maximum allowed interval for performance metric updates (5 minutes).</summary>
-        public const int MaxPerformanceRefreshIntervalInMs = 300_000;
+        public const int MaxPerformanceRefreshIntervalMs = 300_000;
 
         /// <summary>Minimum allowed interval for log console tailing updates.</summary>
-        public const int MinConsoleRefreshIntervalInMs = 100;
+        public const int MinConsoleRefreshIntervalMs = 100;
         /// <summary>Maximum allowed interval for log console tailing updates (5 minutes).</summary>
-        public const int MaxConsoleRefreshIntervalInMs = 300_000;
+        public const int MaxConsoleRefreshIntervalMs = 300_000;
 
         /// <summary>Minimum number of lines maintained in the log console buffer.</summary>
         public const int MinConsoleMaxLines = 100;
 
         /// <summary>Minimum allowed interval for refreshing service dependency trees.</summary>
-        public const int MinDependenciesRefreshIntervalInMs = 100;
+        public const int MinDependenciesRefreshIntervalMs = 100;
         /// <summary>Maximum allowed interval for refreshing service dependency trees (5 minutes).</summary>
-        public const int MaxDependenciesRefreshIntervalInMs = 300_000;
+        public const int MaxDependenciesRefreshIntervalMs = 300_000;
 
         /// <summary>Minimum delay for search input debouncing to prevent UI flicker.</summary>
         public const int MinSearchDebounceDelayMs = 100;

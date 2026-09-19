@@ -224,7 +224,7 @@ namespace Servy.Manager.ViewModels
         protected override ServiceItemBase SelectedServiceItem => SelectedService;
 
         /// <inheritdoc />
-        protected override int RefreshIntervalMs => _appConfig.ConsoleRefreshIntervalInMs;
+        protected override int RefreshIntervalMs => _appConfig.ConsoleRefreshIntervalMs;
 
         /// <inheritdoc />
         protected override ServiceItemBase CreateServiceItem(Service service)

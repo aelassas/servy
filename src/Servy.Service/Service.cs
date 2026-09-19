@@ -1138,7 +1138,7 @@ namespace Servy.Service
                 EnvironmentVariables = vars,
                 WaitChunkMs = _waitChunkMs,
                 ScmAdditionalTimeMs = _scmAdditionalTimeMs,
-                OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, _logger)),
+                OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, null)),
                 StdoutPath = options.PreLaunchStdoutPath,
                 StderrPath = options.PreLaunchStderrPath,
                 RedirectToWriters = !fireAndForget,
@@ -1479,7 +1479,7 @@ namespace Servy.Service
                     TimeoutMs = effectiveTimeoutMs,
                     WaitChunkMs = _waitChunkMs,
                     ScmAdditionalTimeMs = _scmAdditionalTimeMs,
-                    OnScmHeartbeat = time => _serviceHelper.RequestAdditionalTime(this, time, _logger),
+                    OnScmHeartbeat = time => _serviceHelper.RequestAdditionalTime(this, time, null),
                     LogErrorAsWarning = !logAsError,
                     EnableConsoleUI = options.EnableConsoleUI,
                 };

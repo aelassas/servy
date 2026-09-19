@@ -131,8 +131,8 @@ namespace Servy.UI.Bootstrapping
                 Exception ex = args.ExceptionObject as Exception;
                 Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
 
-                var dispatcher = Application.Current?.Dispatcher;
-                if (dispatcher != null && !dispatcher.HasShutdownStarted)
+                var dispatcher = app.Dispatcher;
+                if (!dispatcher.HasShutdownStarted)
                 {
                     try
                     {
@@ -171,9 +171,7 @@ namespace Servy.UI.Bootstrapping
 
                     // Key on the fault SITE, not the fault instance message: exception messages embed PIDs,
                     // file paths, and timestamps, which causes a varying message to defeat the rate limit entirely.
-                    var ex = args.Exception;
-                    var site = ex?.TargetSite is MethodBase m ? $"{m.DeclaringType?.FullName}.{m.Name}" : "?";
-                    var currentExceptionSignature = ex?.GetType().FullName + "@" + site;
+                    var currentExceptionSignature = args.Exception.GetType().FullName + ":" + args.Exception.Message;
 
                     // Allow the dialog if it is a new exception signature, or if the debounce window has elapsed
                     shouldShowDialog = currentExceptionSignature != _lastErrorDialogMessage

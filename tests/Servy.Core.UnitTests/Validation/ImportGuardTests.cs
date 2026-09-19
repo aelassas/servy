@@ -54,11 +54,12 @@ namespace Servy.Core.UnitTests.Validation
         {
             // Arrange
             string filePath = Path.Combine(TempDirectory, "huge.json");
+            long fileSizeBytes = AppConfig.MaxConfigFileSizeBytes + 1;
             using (var fs = new FileStream(filePath, FileMode.CreateNew))
             {
                 // SetLength extends the file without writing any data (the tail reads as zeros),
                 // so this costs 10 MiB of allocated disk but no write IO.
-                fs.SetLength(AppConfig.MaxConfigFileSizeBytes + 1);
+                fs.SetLength(fileSizeBytes);
             }
 
             // Act
@@ -82,7 +83,8 @@ namespace Servy.Core.UnitTests.Validation
                 resolvedPath = pathCheck.ValidPath.ResolvedPath;
             }
 
-            string expectedMessage = string.Format(Strings.Msg_ConfigSizeLimitReached, resolvedPath, AppConfig.MaxConfigFileSizeMB);
+            double actualSizeMb = (double)fileSizeBytes / (1024 * 1024);
+            string expectedMessage = string.Format(Strings.Msg_ConfigSizeLimitReached, resolvedPath, actualSizeMb, AppConfig.MaxConfigFileSizeMB);
             Assert.Equal(expectedMessage, result.ErrorMessage);
         }
 
