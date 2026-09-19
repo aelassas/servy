@@ -1665,6 +1665,23 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
+        public async Task OpenSecurityHardeningGuide_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new OperationCanceledException());
+
+            var sut = CreateSut();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.OpenSecurityHardeningGuideAsync(CancellationToken.None));
+
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+        }
+
+        [Fact]
         public async Task ExportConfig_OperationCanceled_PropagatesInsteadOfMasking()
         {
             // Arrange
