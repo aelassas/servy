@@ -19,6 +19,48 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
+        public void Status_WhenCalledOnActiveService_DelegatesToInnerController()
+        {
+            // Arrange
+            var controller = new ServiceController(DummyServiceName);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => _ = controller.Status);
+        }
+
+        [Fact]
+        public void Start_WhenCalledOnActiveService_DelegatesToInnerController()
+        {
+            // Arrange
+            var controller = new ServiceController(DummyServiceName);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(controller.Start);
+        }
+
+        [Fact]
+        public void Stop_WhenCalledOnActiveService_DelegatesToInnerController()
+        {
+            // Arrange
+            var controller = new ServiceController(DummyServiceName);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(controller.Stop);
+        }
+
+        [Fact]
+        public void Refresh_WhenCalledOnActiveService_DelegatesToInnerController()
+        {
+            // Arrange
+            using (var controller = new ServiceController(DummyServiceName))
+            {
+                // Act & Assert
+                var exception = Record.Exception(controller.Refresh);
+                Assert.Null(exception);
+            }
+        }
+
+        [Fact]
         public void Dispose_FirstInvocation_SetsDisposedFlagAndCleansUpState()
         {
             // Arrange
