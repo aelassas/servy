@@ -1015,9 +1015,12 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void DailyRotation_Local_DST_FallBack_DoesNotTriggerDuplicateRotationOnSameDate()
         {
-            // Arrange: Simulate DST fall-back hours within the same local calendar date
-            var initialRotationTime = new DateTime(2026, 10, 25, 1, 30, 0, DateTimeKind.Unspecified);
-            var repeatedTimeAfterFallBack = new DateTime(2026, 10, 25, 1, 30, 0, DateTimeKind.Unspecified);
+            // Arrange: Simulate the repeated hour of a DST fall-back. The local clock is set back,
+            // so the second reading of the ambiguous 01:xx hour is EARLIER on the wall clock than
+            // the first, while both readings are the same local calendar date. The two values have
+            // to differ, or the assertion below only proves that a value is not later than itself.
+            var initialRotationTime = new DateTime(2026, 10, 25, 1, 50, 0, DateTimeKind.Unspecified);
+            var repeatedTimeAfterFallBack = new DateTime(2026, 10, 25, 1, 10, 0, DateTimeKind.Unspecified);
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
             {
