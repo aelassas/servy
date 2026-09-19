@@ -620,7 +620,7 @@ namespace Servy.Manager.ViewModels
         {
             await _helpService.OpenAboutDialogAsync(
                string.Format(Strings.Text_About,
-               Core.Config.AppConfig.Version,
+               AppConfig.Version,
                Helper.GetBuiltWithFramework(),
                DateTime.Now.Year),
                UiAppConfig.Caption);
