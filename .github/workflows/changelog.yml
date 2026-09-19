@@ -66,6 +66,7 @@ jobs:
         run: |
           $repo = $env:GITHUB_REPOSITORY
           $changelogPath = "CHANGELOG.md"
+          $slnPath = "Servy.sln"
           $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
           $maxBytes = 400 * 1024 # Target ~400 KB cutoff threshold per file
 
@@ -248,6 +249,65 @@ jobs:
                   [System.IO.File]::WriteAllText($fileName, $archiveContent, $utf8NoBom)
                   $runningGlobalIdx += $chunk.Count
               }
+
+              # Synchronize solution solution items section in Servy.sln
+              if ([System.IO.File]::Exists($slnPath)) {
+                  $slnContent = [System.IO.File]::ReadAllText($slnPath, $utf8NoBom)
+                  $globalProjectHeader = 'Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"'
+                  
+                  if ($slnContent.Contains($globalProjectHeader)) {
+                      $headerIdx = $slnContent.IndexOf($globalProjectHeader)
+                      $sectionStartTag = "ProjectSection(SolutionItems) = preProject"
+                      $sectionEndTag = "EndProjectSection"
+                      
+                      $secStartIdx = $slnContent.IndexOf($sectionStartTag, $headerIdx)
+                      $secEndIdx = $slnContent.IndexOf($sectionEndTag, $secStartIdx)
+
+                      if ($secStartIdx -gt -1 -and $secEndIdx -gt $secStartIdx) {
+                          $beforeSection = $slnContent.Substring(0, $secStartIdx + $sectionStartTag.Length)
+                          $sectionBody = $slnContent.Substring($secStartIdx + $sectionStartTag.Length, $secEndIdx - ($secStartIdx + $sectionStartTag.Length))
+                          $afterSection = $slnContent.Substring($secEndIdx)
+
+                          # Split lines preserving exact line endings (\r\n or \n)
+                          $newline = if ($slnContent.Contains("`r`n")) { "`r`n" } else { "`n" }
+                          $lines =$sectionBody -split "`r?\n"
+                          
+                          # Filter out existing CHANGELOG-*.md entries
+                          $filteredLines = [System.Collections.Generic.List[string]]::new()
+                          foreach ($line in $lines) {
+                              if ($line -notmatch '^\s*CHANGELOG-.*\.md\s*=\s*CHANGELOG-.*\.md\s*$') {
+                                  $filteredLines.Add($line)
+                              }
+                          }
+
+                          # Construct new solution item lines for all generated archive files
+                          $newArchiveLines = [System.Collections.Generic.List[string]]::new()
+                          foreach ($archiveFile in ($archiveFileNames | Sort-Object)) {
+                              $newArchiveLines.Add("`t`t$archiveFile = $archiveFile")
+                          }
+
+                          # Merge and sort solution item lines alphabetically to maintain sln format conventions
+                          $itemLines = [System.Collections.Generic.List[string]]::new()
+                          foreach ($line in $filteredLines) {
+                              if ($line -match '^\s*([^\s=]+)\s*=') {
+                                  $itemLines.Add($line)
+                              }
+                          }
+                          foreach ($line in $newArchiveLines) {
+                              $itemLines.Add($line)
+                          }
+
+                          # Sort items based on the key/filename
+                          $sortedItems = $itemLines | Sort-Object -Property {
+                              if ($_ -match '^\s*([^\s=]+)\s*=') { $matches[1] } else { $_ }
+                          }
+
+                          $newSectionBody = $newline + ($sortedItems -join $newline) + $newline + "`t"
+                          $updatedSln =$beforeSection + $newSectionBody +$afterSection
+                          [System.IO.File]::WriteAllText($slnPath, $updatedSln,$utf8NoBom)
+                      }
+                  }
+              }
           }
 
           $isReset = ($env:IS_RESET -eq 'true')
@@ -299,14 +359,14 @@ jobs:
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Scope the check to CHANGELOG files so unrelated working-tree changes don't trigger a commit
-          $hasChanges = (Invoke-Git status --porcelain CHANGELOG*.md) -join "`n"
+          # Scope the check to CHANGELOG files and Servy.sln so unrelated working-tree changes don't trigger a commit
+          $hasChanges = (Invoke-Git status --porcelain CHANGELOG*.md Servy.sln) -join "`n"
           if ([string]::IsNullOrWhiteSpace($hasChanges)) {
-              Write-Host "No changes detected in CHANGELOG files. Nothing to update."
+              Write-Host "No changes detected in CHANGELOG files or Servy.sln. Nothing to update."
               exit 0
           }
 
-          Invoke-Git add CHANGELOG*.md
+          Invoke-Git add CHANGELOG*.md Servy.sln
 
           git diff --staged --quiet
           if ($LASTEXITCODE -ne 0) {
