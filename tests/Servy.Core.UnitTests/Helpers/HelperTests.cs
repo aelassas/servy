@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Resources;
+using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
@@ -801,6 +802,112 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        /// <summary>
+        /// Reads the ReadOnly attribute of <paramref name="path"/> without ever throwing.
+        /// Used as a handshake by the transient-lock tests below, from a background thread that
+        /// must not fault: an escaping exception there would tear the test host down rather than
+        /// fail a single test.
+        /// </summary>
+        private static bool HasReadOnlyAttribute(string path)
+        {
+            try
+            {
+                return File.Exists(path) && (File.GetAttributes(path) & FileAttributes.ReadOnly) == FileAttributes.ReadOnly;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+
+        [Fact]
+        public void WriteFileAtomic_TransientLockReleasedDuringRetry_Succeeds()
+        {
+            // Arrange
+            const int handshakeTimeoutMs = 5000;
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+
+            try
+            {
+                File.WriteAllText(targetPath, "initial-content");
+
+                // The ReadOnly attribute is a handshake here, not the subject under test:
+                // PrepareDestinationForMove clears it on the first pass of the retry loop, which is the only
+                // externally observable signal that the first File.Move has been attempted. Attribute
+                // access is exempt from share-mode checks, so it stays readable and writable through
+                // the lock below - the existing FailedMove tests already rely on that.
+                File.SetAttributes(targetPath, FileAttributes.ReadOnly);
+
+                // FileAccess.Read so the handle opens on a ReadOnly file, FileShare.None so the move
+                // onto targetPath fails the way an antivirus or indexer lock makes it fail.
+                using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    bool observed = false;
+                    var releaser = new Thread(() =>
+                    {
+                        try
+                        {
+                            var waited = Stopwatch.StartNew();
+                            while (waited.ElapsedMilliseconds < handshakeTimeoutMs && HasReadOnlyAttribute(targetPath))
+                            {
+                                Thread.Sleep(5);
+                            }
+
+                            observed = !HasReadOnlyAttribute(targetPath);
+
+                            // The attribute is cleared immediately before File.Move runs, so wait that
+                            // first attempt out: the write has to be proven to succeed on a LATER pass.
+                            Thread.Sleep(AppConfig.WriteFileAtomicRetryDelayMs / 4);
+                        }
+                        finally
+                        {
+                            lockStream.Dispose();
+                        }
+                    })
+                    { IsBackground = true };
+                    releaser.Start();
+
+                    try
+                    {
+                        // Act
+                        var elapsed = Stopwatch.StartNew();
+                        Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                        {
+                            using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                            {
+                                writer.Write("new-content");
+                            }
+                        }, TestContext.Current.CancellationToken);
+                        elapsed.Stop();
+
+                        // Assert
+                        Assert.True(observed, "The lock releaser never observed the retry loop clearing the ReadOnly attribute.");
+                        Assert.Equal("new-content", File.ReadAllText(targetPath));
+
+                        // At least one retry delay elapsed, so the move did not succeed on its first
+                        // attempt: this is the retry loop succeeding, not a plain overwrite.
+                        Assert.True(elapsed.ElapsedMilliseconds >= AppConfig.WriteFileAtomicRetryDelayMs,
+                            $"Expected at least one retry delay ({AppConfig.WriteFileAtomicRetryDelayMs} ms) to elapse, but the call returned after {elapsed.ElapsedMilliseconds} ms.");
+                    }
+                    finally
+                    {
+                        releaser.Join(handshakeTimeoutMs);
+                    }
+                }
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+            }
+        }
+
         #endregion
 
         #region WriteFileAtomicAsync Tests
@@ -943,6 +1050,88 @@ namespace Servy.Core.UnitTests.Helpers
 
                 FileAttributes attributes = File.GetAttributes(targetPath);
                 Assert.True((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly, "ReadOnly attribute should have been restored after async write failure.");
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+            }
+        }
+
+
+        [Fact]
+        public async Task WriteFileAtomicAsync_TransientLockReleasedDuringRetry_Succeeds()
+        {
+            // Arrange
+            const int handshakeTimeoutMs = 5000;
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+
+            try
+            {
+                File.WriteAllText(targetPath, "initial-content");
+
+                // The ReadOnly attribute is a handshake here, not the subject under test:
+                // PrepareDestinationForMove clears it on the first pass of WriteFileAtomicCore's loop, which is the only
+                // externally observable signal that the first File.Move has been attempted. Attribute
+                // access is exempt from share-mode checks, so it stays readable and writable through
+                // the lock below - the existing FailedMove tests already rely on that.
+                File.SetAttributes(targetPath, FileAttributes.ReadOnly);
+
+                // FileAccess.Read so the handle opens on a ReadOnly file, FileShare.None so the move
+                // onto targetPath fails the way an antivirus or indexer lock makes it fail.
+                using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    bool observed = false;
+                    var releaser = new Thread(() =>
+                    {
+                        try
+                        {
+                            var waited = Stopwatch.StartNew();
+                            while (waited.ElapsedMilliseconds < handshakeTimeoutMs && HasReadOnlyAttribute(targetPath))
+                            {
+                                Thread.Sleep(5);
+                            }
+
+                            observed = !HasReadOnlyAttribute(targetPath);
+
+                            // The attribute is cleared immediately before File.Move runs, so wait that
+                            // first attempt out: the write has to be proven to succeed on a LATER pass.
+                            Thread.Sleep(AppConfig.WriteFileAtomicRetryDelayMs / 4);
+                        }
+                        finally
+                        {
+                            lockStream.Dispose();
+                        }
+                    })
+                    { IsBackground = true };
+                    releaser.Start();
+
+                    try
+                    {
+                        // Act
+                        var elapsed = Stopwatch.StartNew();
+                        await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                        {
+                            byte[] data = Encoding.UTF8.GetBytes("new-async-content");
+                            await stream.WriteAsync(data, 0, data.Length, cancellationToken);
+                        }, TestContext.Current.CancellationToken);
+                        elapsed.Stop();
+
+                        // Assert
+                        Assert.True(observed, "The lock releaser never observed the retry loop clearing the ReadOnly attribute.");
+                        Assert.Equal("new-async-content", File.ReadAllText(targetPath));
+
+                        // At least one retry delay elapsed, so the move did not succeed on its first
+                        // attempt: this is the retry loop succeeding, not a plain overwrite.
+                        Assert.True(elapsed.ElapsedMilliseconds >= AppConfig.WriteFileAtomicRetryDelayMs,
+                            $"Expected at least one retry delay ({AppConfig.WriteFileAtomicRetryDelayMs} ms) to elapse, but the call returned after {elapsed.ElapsedMilliseconds} ms.");
+                    }
+                    finally
+                    {
+                        releaser.Join(handshakeTimeoutMs);
+                    }
+                }
             }
             finally
             {
