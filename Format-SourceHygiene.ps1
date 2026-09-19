@@ -81,12 +81,6 @@ $textExtensions = @(
     '.ahk', '.nuspec', '.txt'
 )
 
-# Extensionless files at the repo root that .editorconfig's bare [*] section still governs;
-# FileInfo.Extension can never match these (Path.GetExtension returns the whole filename
-# when the only '.' is the leading one), so they need a name-based check alongside the
-# extension-based one.
-$dotfileAllowList = @('.gitattributes', '.gitignore', '.editorconfig')
-
 # Collect repository text files excluding build output, version control, and generated files
 $filesToScan = Get-ChildItem -Path $baseDir -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object {
@@ -104,7 +98,11 @@ $filesToScan = Get-ChildItem -Path $baseDir -Recurse -File -ErrorAction Silently
                    ($_.Name -notlike '*.g.i.cs')
         }
 
-        return ($_.Extension -in $textExtensions) -or ($_.Name -in $dotfileAllowList)
+        # Extensionless dotfiles (e.g. .editorconfig, .gitattributes, .gitignore, .gitleaksignore)
+        # where FileInfo.Extension equals the whole filename rather than a file extension.
+        $isDotFile = $_.Name.StartsWith('.') -and ($_.Name.IndexOf('.', 1) -lt 0)
+
+        return ($_.Extension -in $textExtensions) -or $isDotFile
     }
 
 foreach ($file in $filesToScan) {
