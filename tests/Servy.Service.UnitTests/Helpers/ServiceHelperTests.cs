@@ -478,6 +478,31 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Verify(l => l.Info("Process restarted.", It.IsAny<Exception>()), Times.Once);
         }
 
+        [Fact]
+        public void RestartProcess_StartActionThrows_LogsErrorAndStillDisposesProcess()
+        {
+            // Arrange
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(1234);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            var mockLog = new Mock<IServyLogger>();
+            StartProcessCallback startAction =
+                (exe, args, dir, env, ct) => { throw new InvalidOperationException("Launch failed"); };
+
+            // Act
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+
+            // Assert
+            // The whole stop sequence succeeds here and only the relaunch throws, so the exception
+            // reaches the method's outer catch - the one arm the sibling tests above never enter,
+            // because each of their exceptions is swallowed by one of the two inner catches first.
+            mockProcess.Verify(p => p.Stop(1000), Times.Once);
+            mockLog.Verify(l => l.Error("Failed to restart process.", It.IsAny<InvalidOperationException>()), Times.Once);
+            mockProcess.Verify(p => p.Dispose(), Times.Once);
+        }
+
         #endregion
 
         #region RestartService Tests
@@ -578,6 +603,29 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Failed to restart computer")),
                 It.IsAny<Exception>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void RestartComputer_ProcessStartReturnsNull_LogsError()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            // Same shape as the RestartService null-return test one region above: shutdown.exe never
+            // starts, so the using block binds null and the guard inside it is the only thing that
+            // can report the failure - no exception is thrown, so the catch below it stays out of it.
+            _mockProcessHelper
+                .Setup(p => p.Start(It.IsAny<ProcessStartInfo>()))
+                .Returns((Process?)null);
+
+            // Act
+            _helper.RestartComputer(mockLog.Object);
+
+            // Assert
+            mockLog.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("no process was started")),
+                null),
                 Times.Once);
         }
 
