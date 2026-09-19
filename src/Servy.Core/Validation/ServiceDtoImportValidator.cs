@@ -66,7 +66,7 @@ namespace Servy.Core.Validation
             // Note: File-based imports are pre-bounded by ImportGuard at AppConfig.MaxConfigFileSizeBytes.
             // This check provides defense-in-depth for direct callers of TryValidate passing raw strings.
             long byteLength = Encoding.UTF8.GetByteCount(content);
-            if (byteLength > AppConfig.MaxConfigFileSizeBytes)
+            if (byteLength > MaxPayloadBytes)
             {
                 errorMessage = string.Format(Strings.Msg_ImportPayloadTooLarge, FormatName, AppConfig.MaxConfigFileSizeMB);
                 Logger.Error(errorMessage);
