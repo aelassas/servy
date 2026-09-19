@@ -6,7 +6,7 @@ function Write-ServyLog {
     param(
         [Parameter(Mandatory=$true)][string]$FilePath,
         [Parameter(Mandatory=$true)][string]$Message,
-        [int]$MaxSizeBytes   = 1048576, # 1 MB limit
+        [int]$MaxSizeBytes   = 10485760, # 10 MB limit, matches AppConfig.DefaultRotationSizeMB
         [int]$MaxBackupFiles = 10
     )
 
@@ -62,19 +62,20 @@ function Write-ServyLog {
                 $fileInfo = Get-Item $absPath
                 if ($fileInfo.Length -gt $MaxSizeBytes) {
                     # Rotate using local time to maintain chronologic consistency
-                    $localTime = (Get-Date).ToString('yyyyMMdd-HHmmss-fff', $inv)
+                    # Format string matches RotatingStreamWriter.RotationTimestampFormat (yyyyMMdd_HHmmss)
+                    $localTime = (Get-Date).ToString('yyyyMMdd_HHmmss', $inv)
                     $ext = [System.IO.Path]::GetExtension($absPath)
                     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($absPath)
 
-                    # Format: FileName_20260501-062849-301.log
+                    # Format: FileName_20260501_062849.log
                     $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
                     $target = Join-Path $logDir $rotatedFileName
 
                     if ([System.IO.File]::Exists($target)) {
                         $attempt = 0
                         do {
-                            Start-Sleep -Milliseconds 1
-                            $localTime = (Get-Date).ToString('yyyyMMdd-HHmmss-fff', $inv)
+                            Start-Sleep -Milliseconds 100
+                            $localTime = (Get-Date).ToString('yyyyMMdd_HHmmss', $inv)
                             $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
                             $target = Join-Path $logDir $rotatedFileName
                             $attempt++
@@ -86,7 +87,7 @@ function Write-ServyLog {
 
                     if ($MaxBackupFiles -gt 0) {
                         $rotatedPattern = "${baseName}_*${ext}"
-                        $stampRe = '^' + [regex]::Escape($baseName) + '_\d{8}-\d{6}-\d{3}' + [regex]::Escape($ext) + '$'
+                        $stampRe = '^' + [regex]::Escape($baseName) + '_\d{8}_\d{6}' + [regex]::Escape($ext) + '$'
                         Get-ChildItem -Path $logDir -Filter $rotatedPattern -ErrorAction SilentlyContinue |
                             Where-Object { $_.Name -match $stampRe } |
                             Sort-Object LastWriteTime -Descending |
