@@ -157,5 +157,27 @@ namespace Servy.Core.UnitTests.Config
             var expected = Path.Combine(AppConfig.ProgramDataPath, "security");
             Assert.Equal(expected, path);
         }
+
+        [Fact]
+        public void FindRepoRoot_NoSlnInAncestry_ThrowsInvalidOperationException()
+        {
+            // Arrange: an isolated directory under the OS temp root, whose ancestry cannot contain
+            // Servy.sln - the solution lives under the checkout, which is never an ancestor of the
+            // temp root on the CI runners or on a developer machine.
+            var isolatedDir = Path.Combine(Path.GetTempPath(), "ServyFindRepoRootTest_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(isolatedDir);
+
+            try
+            {
+                // Act & Assert: the walk reaches the drive root without a hit, so dir is null and the
+                // null-coalescing throw is the only way out of the method.
+                var ex = Assert.Throws<InvalidOperationException>(() => AppConfig.FindRepoRoot(isolatedDir));
+                Assert.Contains("Servy.sln", ex.Message);
+            }
+            finally
+            {
+                Directory.Delete(isolatedDir, recursive: true);
+            }
+        }
     }
 }
