@@ -20,7 +20,7 @@ namespace Servy.Manager.Config
         /// <summary>
         /// Gets the polling interval, in milliseconds, for retrieving process performance metrics such as CPU and RAM usage.
         /// </summary>
-        int PerformanceRefreshIntervalInMs { get; }
+        int PerformanceRefreshIntervalMs { get; }
 
         /// <summary>
         /// Gets the maximum number of log lines to retain in the live console viewer buffer.
@@ -30,12 +30,12 @@ namespace Servy.Manager.Config
         /// <summary>
         /// Gets the polling interval, in milliseconds, for fetching new standard output and standard error logs.
         /// </summary>
-        int ConsoleRefreshIntervalInMs { get; }
+        int ConsoleRefreshIntervalMs { get; }
 
         /// <summary>
         /// Gets the polling interval, in milliseconds, for refreshing the service dependencies tree.
         /// </summary>
-        int DependenciesRefreshIntervalInMs { get; }
+        int DependenciesRefreshIntervalMs { get; }
 
         /// <summary>
         /// Gets the file path to the published Servy Desktop application executable.

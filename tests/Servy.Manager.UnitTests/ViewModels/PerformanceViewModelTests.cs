@@ -41,7 +41,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _mockProcessKiller = new Mock<IProcessKiller>();
 
             // InitTimer() reads PerformanceRefreshIntervalInMs; give it a sane interval
-            _mockAppConfig.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
+            _mockAppConfig.Setup(c => c.PerformanceRefreshIntervalMs).Returns(1000);
 
             // Stub out formatting helpers to return predictable metric text
             _mockProcessHelper.Setup(p => p.FormatCpuUsage(It.IsAny<double>())).Returns("15%");

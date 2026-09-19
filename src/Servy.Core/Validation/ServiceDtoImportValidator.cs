@@ -62,12 +62,13 @@ namespace Servy.Core.Validation
             }
 
             // Prevent Memory Exhaustion / DoS
-            // Convert to byte count for accurate protection against multibyte UTF-8 payloads
+            // Note: File-based imports are pre-bounded by ImportGuard at AppConfig.MaxConfigFileSizeBytes.
+            // This check provides defense-in-depth for direct callers of TryValidate passing raw strings.
             long byteLength = Encoding.UTF8.GetByteCount(content);
-            if (byteLength > MaxPayloadBytes)
+            if (byteLength > AppConfig.MaxConfigFileSizeBytes)
             {
                 errorMessage = string.Format(Strings.Msg_ImportPayloadTooLarge, FormatName, AppConfig.MaxConfigFileSizeMB);
-                Logger.Error($"{FormatName} import blocked: payload of {byteLength} bytes exceeds {MaxPayloadBytes} bytes.");
+                Logger.Error(errorMessage);
                 return false;
             }
 

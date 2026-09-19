@@ -46,7 +46,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Default configuration values
             _appConfigMock = new Mock<IAppConfiguration>();
             _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(500);
-            _appConfigMock.Setup(c => c.ConsoleRefreshIntervalInMs).Returns(100);
+            _appConfigMock.Setup(c => c.ConsoleRefreshIntervalMs).Returns(100);
             _appConfigMock.Setup(c => c.SearchDebounceDelayMs).Returns(10); // Short debounce for testing
         }
 

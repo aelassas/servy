@@ -169,7 +169,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configuration file &apos;{0}&apos; exceeds maximum size ({1} MB)..
+        ///   Looks up a localized string similar to Configuration file &apos;{0}&apos; is {1:N2} MB, which exceeds the maximum allowed size of {2} MB..
         /// </summary>
         public static string Msg_ConfigSizeLimitReached {
             get {

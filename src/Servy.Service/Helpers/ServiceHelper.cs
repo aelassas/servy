@@ -514,7 +514,7 @@ namespace Servy.Service.Helpers
             try
             {
                 RequestAdditionalTimeCore(service, milliseconds);
-                logger?.Info($"Requested additional {milliseconds} ms for service operation.");
+                logger?.Debug($"Requested additional {milliseconds} ms for service operation.");
             }
             catch (InvalidOperationException)
             {

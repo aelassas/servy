@@ -15,9 +15,9 @@ namespace Servy.Manager.Config
         public bool ForceSoftwareRendering => false;
 
         public int RefreshIntervalInSeconds => Core.Config.AppConfig.DefaultRefreshIntervalInSeconds;
-        public int PerformanceRefreshIntervalInMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalInMs;
-        public int ConsoleRefreshIntervalInMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalInMs;
-        public int DependenciesRefreshIntervalInMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalInMs;
+        public int PerformanceRefreshIntervalMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalMs;
+        public int ConsoleRefreshIntervalMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalMs;
+        public int DependenciesRefreshIntervalMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalMs;
 
         public int ConsoleMaxLines => Core.Config.AppConfig.DefaultConsoleMaxLines;
         public int LogsWindowDays => Core.Config.AppConfig.DefaultLogsWindowDays;
