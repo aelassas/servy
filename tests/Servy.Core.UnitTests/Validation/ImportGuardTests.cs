@@ -85,5 +85,27 @@ namespace Servy.Core.UnitTests.Validation
             string expectedMessage = string.Format(Strings.Msg_ConfigSizeLimitReached, resolvedPath, AppConfig.MaxConfigFileSizeMB);
             Assert.Equal(expectedMessage, result.ErrorMessage);
         }
+
+        [Fact]
+        public void ValidatePathSecurityAndSize_FileAtSizeLimit_IsAccepted()
+        {
+            // Arrange: exactly at the limit. The guard rejects a file only when it is strictly
+            // larger, so a file of precisely MaxConfigFileSizeBytes is still a valid import.
+            string filePath = Path.Combine(TempDirectory, "at_limit.json");
+            using (var fs = new FileStream(filePath, FileMode.CreateNew))
+            {
+                // SetLength extends the file without writing any data (the tail reads as zeros),
+                // so this costs 10 MiB of allocated disk but no write IO.
+                fs.SetLength(AppConfig.MaxConfigFileSizeBytes);
+            }
+
+            // Act
+            var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out var content);
+
+            // Assert
+            Assert.True(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.None, result.FailureKind);
+            Assert.NotNull(content);
+        }
     }
 }
