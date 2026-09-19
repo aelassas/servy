@@ -145,6 +145,32 @@ namespace Servy.CLI.UnitTests
             Assert.False(string.IsNullOrWhiteSpace(result.StdErr), "The failure message must still reach stderr; --quiet suppresses the progress animation only.");
         }
 
+        [Fact]
+        public async Task Main_UnknownCommandProvided_ReportsItAndReturnsErrorExitCode()
+        {
+            // Arrange
+            // A verb that is not in GetVerbs() and does not start with a global flag dash, which is
+            // the exact shape the unknown-command guard exists to reject. No database, configuration
+            // or embedded-resource bootstrap is needed: the guard runs before all of them.
+            string[] args = { "frobnicate" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () =>
+            {
+                return await Program.Main(args);
+            });
+
+            // Assert
+            // Before the guard existed a mistyped verb was silently coerced to the help verb and exited
+            // 0, masking failures in automation, so the non-zero exit code is half the contract.
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+
+            // The other half: the message names the offending argument and reaches stderr, which is the
+            // only place in the solution that text is produced, so this assertion cannot pass unless the
+            // guard branch itself ran.
+            Assert.Contains("Unknown command 'frobnicate'", result.StdErr);
+        }
+
         #endregion
 
         public void Dispose()
