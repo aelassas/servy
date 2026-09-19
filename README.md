@@ -133,7 +133,7 @@ Servy is free and open-source. If Servy has helped you, saved you hours of devel
 
 Building and maintaining software, publishing signed releases, delivering security updates, and providing system support takes dedicated time and financial resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp) or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
 
-If you have suggestions, feature requests, or issues, feel free to [open an issue](https://github.com/servy-win/servy/issues), start a [discussion](https://github.com/servy-win/servy/discussions), or [submit a pull request](https://github.com/servy-win/servy/pulls).
+If you have suggestions, feature requests, or issues, feel free to [open an issue](https://github.com/servy-win/servy/issues), or [submit a pull request](https://github.com/servy-win/servy/pulls).
 
 ## Stats for Nerds
 
