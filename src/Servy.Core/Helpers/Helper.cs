@@ -383,7 +383,7 @@ namespace Servy.Core.Helpers
         {
             // Ensure the parent directory exists before attempting to create the temp file.
             var dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir))
+            if (!string.IsNullOrWhiteSpace(dir))
             {
                 Directory.CreateDirectory(dir);
             }
@@ -490,7 +490,7 @@ namespace Servy.Core.Helpers
         private static async ValueTask WriteFileAtomicCore(string path, Func<Stream, CancellationToken, ValueTask> writer, CancellationToken cancellationToken = default)
         {
             var dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir))
+            if (!string.IsNullOrWhiteSpace(dir))
             {
                 // Ensure the parent directory exists before attempting to create the file.
                 Directory.CreateDirectory(dir);
@@ -647,7 +647,7 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(filePath)) return;
 
             var directory = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(directory))
+            if (!string.IsNullOrWhiteSpace(directory))
             {
                 Directory.CreateDirectory(directory);
             }
@@ -780,7 +780,7 @@ namespace Servy.Core.Helpers
         public static bool HasAncestorReparsePoint(string fullPath)
         {
             var parentPath = Path.GetDirectoryName(fullPath);
-            if (string.IsNullOrEmpty(parentPath))
+            if (string.IsNullOrWhiteSpace(parentPath))
                 return false; // drive root or UNC share root - no ancestors to inspect
 
             var current = new DirectoryInfo(parentPath);
