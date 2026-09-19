@@ -215,14 +215,9 @@ try {
     $handleA64Path = [System.IO.Path]::Combine($programDataDir, 'handle64a.exe')
     $handleX64Path = [System.IO.Path]::Combine($programDataDir, 'handle64.exe')
 
-    if (Test-Path -Path $handleA64Path) {
-        $exeNames += 'handle64a.exe'
-    }
-    elseif (Test-Path -Path $handleX64Path) {
-        $exeNames += 'handle64.exe'
-    }
-    else {
-        # Neither handle binary is present on disk yet
+    if (Test-Path -Path $handleX64Path) { $exeNames += 'handle64.exe' }
+    if (Test-Path -Path $handleA64Path) { $exeNames += 'handle64a.exe' }
+    if (-not (Test-Path -Path $handleX64Path) -and -not (Test-Path -Path $handleA64Path)) {
         $exeNames += 'handle64.exe / handle64a.exe'
     }
 
