@@ -20,7 +20,7 @@ namespace Servy.UI.IntegrationTests.Services
 
         // UiHeadlessFixture, reached through [Collection(UiStaCollection.Name)], sets UiHeadless.IsEnabled for the
         // whole collection, and ShowCoreAsync returns on exactly that condition before it touches the
-        // dispatcher. These two tests therefore pin the headless contract - the console line and the
+        // dispatcher. These tests therefore pin the headless contract - the console line and the
         // auto-confirm - rather than any dispatch, which is what their names used to claim.
 
         [Fact]
@@ -35,6 +35,36 @@ namespace Servy.UI.IntegrationTests.Services
 
             // Assert
             Assert.Contains($"[HEADLESS INFO] {caption}: {message}", captured.StdOut);
+            Assert.DoesNotContain("Auto-answering", captured.StdOut);
+        }
+
+        [Fact]
+        public async Task ShowWarningAsync_InHeadlessMode_WritesHeadlessLineAndCompletes()
+        {
+            // Arrange
+            string message = "Test";
+            string caption = "Caption";
+
+            // Act
+            var captured = await ConsoleCapture.RunAsync(() => _service.ShowWarningAsync(message, caption));
+
+            // Assert
+            Assert.Contains($"[HEADLESS WARNING] {caption}: {message}", captured.StdOut);
+            Assert.DoesNotContain("Auto-answering", captured.StdOut);
+        }
+
+        [Fact]
+        public async Task ShowErrorAsync_InHeadlessMode_WritesHeadlessLineAndCompletes()
+        {
+            // Arrange
+            string message = "Test";
+            string caption = "Caption";
+
+            // Act
+            var captured = await ConsoleCapture.RunAsync(() => _service.ShowErrorAsync(message, caption));
+
+            // Assert
+            Assert.Contains($"[HEADLESS ERROR] {caption}: {message}", captured.StdOut);
             Assert.DoesNotContain("Auto-answering", captured.StdOut);
         }
 
