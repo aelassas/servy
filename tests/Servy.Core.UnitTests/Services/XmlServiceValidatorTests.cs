@@ -256,5 +256,33 @@ namespace Servy.Core.UnitTests.Services
             Assert.False(result);
             Assert.Equal(string.Format(Strings.Msg_ImportPayloadTooLarge, "XML", AppConfig.MaxConfigFileSizeMB), error);
         }
+
+        [Fact]
+        public void TryValidate_PayloadAtSizeLimit_IsAccepted()
+        {
+            // Arrange: a payload whose UTF-8 byte length is exactly the limit. The guard rejects
+            // only strictly-larger payloads, so this one must still be accepted.
+            var dto = new ServiceDto
+            {
+                Name = "MyService",
+                ExecutablePath = "C:\\Windows\\System32\\notepad.exe",
+                StopTimeout = 30
+            };
+            var xml = _serializer.Serialize(dto);
+            Assert.NotNull(xml);
+
+            var atLimitValidator = new TestableXmlServiceValidator(
+                new ServiceValidationRules(_processHelperMock.Object),
+                System.Text.Encoding.UTF8.GetByteCount(xml));
+
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = atLimitValidator.TryValidate(xml, out var error);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+        }
     }
 }
