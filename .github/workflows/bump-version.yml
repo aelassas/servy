@@ -50,7 +50,7 @@ jobs:
       - name: Set version vars
         uses: ./.github/actions/resolve-version
         with:
-          manual_tag: ${{ github.event.inputs.tag }}
+          manual_tag: ${{ inputs.tag }}
 
       # 2a. Compute the next version
       - name: Compute next version

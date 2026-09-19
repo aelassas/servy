@@ -34,7 +34,7 @@ jobs:
       - name: Resolve release version
         uses: ./.github/actions/resolve-version
         with:
-          manual_tag: ${{ github.event.inputs.tag }}
+          manual_tag: ${{ inputs.tag }}
           release_tag: ${{ github.event.release.tag_name }}
 
       - name: Publish Servy to WinGet
