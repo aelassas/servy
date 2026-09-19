@@ -144,6 +144,7 @@
     <Compile Include="Helpers\ProcessKillerTests.cs" />
     <Compile Include="Helpers\ReservedNamesTests.cs" />
     <Compile Include="Security\SecureDataHelper.cs" />
+    <Compile Include="Security\SecureDataLegacyBlockedExceptionTests.cs" />
     <Compile Include="Helpers\ServiceDtoFactory.cs" />
     <Compile Include="Helpers\ServiceDtoFactoryTests.cs" />
     <Compile Include="Helpers\ServiceDtoHelperTests.cs" />
