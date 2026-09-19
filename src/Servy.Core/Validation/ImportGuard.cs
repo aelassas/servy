@@ -31,7 +31,7 @@ namespace Servy.Core.Validation
             {
                 if (fileStream.Length > AppConfig.MaxConfigFileSizeBytes)
                 {
-                    double actualSizeMb = (double)fileStream.Length / (1024 * 1024);
+                    double actualSizeMb = (double)fileStream.Length / AppConfig.BytesInMegabyte;
                     var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, securityCheck.ValidPath.ResolvedPath, actualSizeMb, AppConfig.MaxConfigFileSizeMB);
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
