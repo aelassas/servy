@@ -1169,6 +1169,34 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
+        [Fact]
+        public void WaitForRotationToSettle_WhenTimeoutExceeded_PreventsHandleAttachment()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "timeout_protection.log");
+            File.WriteAllText(filePath, "initial log data");
+
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
+            {
+                // Trigger an initial write to initialize the stream
+                writer.WriteLine("hello");
+
+                // Simulate a closed writer state resulting from PrepareRotation()
+                TestReflection.SetField(writer, "_writer", null);
+
+                // Manually gate an in-flight rotation on disk
+                TestReflection.SetField(writer, "_rotationInProgress", true);
+
+                // Act: Attempt writing while rotation is marked in progress
+                // WaitForRotationToSettle will time out after LogRotationWaitTimeoutMs and return false.
+                writer.WriteLine("write_during_rotation_attempt");
+
+                // Assert: The writer property must remain null because InitializeWriter was skipped during the timeout
+                var currentWriter = TestReflection.GetField<StreamWriter>(writer, "_writer");
+                Assert.Null(currentWriter);
+            }
+        }
+
         #region Circuit Breaker & Permanent Failure Tests
 
         [Fact]
