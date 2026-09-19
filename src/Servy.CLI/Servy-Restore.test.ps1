@@ -2,11 +2,10 @@
 
 <#
 .SYNOPSIS
-    Unit test harness for Servy-Dump.ps1 helper functions.
+    Unit test harness for Servy-Restore.ps1 helper functions.
 
 .DESCRIPTION
-    Tests path resolution, sidecar expected hash extraction, ACL hardening (inheritance break,
-    explicit ACE purging, Administrators/SYSTEM exclusive FullControl), and archive entry validation guards
+    Tests path resolution, sidecar expected hash extraction, and archive entry validation guards
     (flat archive enforcement, path traversal defense, XML extension verification, and duplicate entry detection).
 #>
 
