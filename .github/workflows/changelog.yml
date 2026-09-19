@@ -254,12 +254,12 @@ jobs:
               if ([System.IO.File]::Exists($slnPath)) {
                   $slnContent = [System.IO.File]::ReadAllText($slnPath, $utf8NoBom)
                   $globalProjectHeader = 'Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"'
-                  
+
                   if ($slnContent.Contains($globalProjectHeader)) {
                       $headerIdx = $slnContent.IndexOf($globalProjectHeader)
                       $sectionStartTag = "ProjectSection(SolutionItems) = preProject"
                       $sectionEndTag = "EndProjectSection"
-                      
+
                       $secStartIdx = $slnContent.IndexOf($sectionStartTag, $headerIdx)
                       $secEndIdx = $slnContent.IndexOf($sectionEndTag, $secStartIdx)
 
@@ -271,7 +271,7 @@ jobs:
                           # Split lines preserving exact line endings (\r\n or \n)
                           $newline = if ($slnContent.Contains("`r`n")) { "`r`n" } else { "`n" }
                           $lines =$sectionBody -split "`r?\n"
-                          
+
                           # Filter out existing CHANGELOG-*.md entries
                           $filteredLines = [System.Collections.Generic.List[string]]::new()
                           foreach ($line in $lines) {

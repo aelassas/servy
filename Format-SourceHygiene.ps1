@@ -43,17 +43,15 @@ $ErrorActionPreference = "Stop"
 
 $baseDir = $PSScriptRoot
 
-# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions if available
-$helperPath = Join-Path $PSScriptRoot "Update-FileHelpers.ps1"
-if (Test-Path $helperPath) {
-    . $helperPath
+# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions
+$helperFile = "Update-FileHelpers.ps1"
+$helperPath = Join-Path $PSScriptRoot $helperFile
+if (-not (Test-Path $helperPath)) {
+    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
 }
+. $helperPath
 
-$exclusionRegex = if ($script:BuildArtifactExclusionRegex) {
-    $script:BuildArtifactExclusionRegex
-} else {
-    '[\\/](bin|obj|packages|\.git|\.vs|node_modules|coveragereport|TestResults)[\\/]'
-}
+$exclusionRegex = $script:BuildArtifactExclusionRegex
 
 if ($DryRun) {
     Write-Host "DRY-RUN: Previewing files violating whitespace hygiene and charset rules..." -ForegroundColor Yellow

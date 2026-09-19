@@ -16,7 +16,7 @@
     If specified, previews the files that would be converted without performing writes to disk.
 
 .PARAMETER ExcludeDirs
-    Array of folder names to exclude from processing. Defaults to 'bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'.
+    Array of folder names to exclude from processing. Defaults to $script:BuildArtifactExclusionDirs from Update-FileHelpers.ps1.
 
 .PARAMETER ExcludeExtensions
     Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite'.
@@ -39,7 +39,7 @@ param(
     [switch]$DryRun,
 
     [Parameter(Mandatory = $false)]
-    [string[]]$ExcludeDirs = @('bin', 'obj', 'packages', '.git', '.vs', 'node_modules', 'coveragereport', 'TestResults'),
+    [string[]]$ExcludeDirs = $null,
 
     [Parameter(Mandatory = $false)]
     [string[]]$ExcludeExtensions = @('.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite'),
@@ -74,16 +74,19 @@ if (Test-Path $gitAttributesPath) {
 # Default list of BOM-required extensions if Update-FileHelpers.ps1 is unavailable (.config kept for future App.config/Web.config support)
 $bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
 
-# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions and BOM policy if available
-$helperPath = Join-Path $PSScriptRoot "Update-FileHelpers.ps1"
-if (Test-Path $helperPath) {
-    . $helperPath
-    if ($script:BuildArtifactExclusionDirs -and -not $PSBoundParameters.ContainsKey('ExcludeDirs')) {
-        $ExcludeDirs = $script:BuildArtifactExclusionDirs
-    }
-    if ($script:BomRequiredExtensions) {
-        $bomRequiredExtensions = $script:BomRequiredExtensions
-    }
+# Dot-source Update-FileHelpers.ps1 for shared exclusion definitions and BOM policy
+$helperFile = "Update-FileHelpers.ps1"
+$helperPath = Join-Path $PSScriptRoot $helperFile
+if (-not (Test-Path $helperPath)) {
+    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
+}
+. $helperPath
+
+if (-not $PSBoundParameters.ContainsKey('ExcludeDirs')) {
+    $ExcludeDirs = $script:BuildArtifactExclusionDirs
+}
+if ($script:BomRequiredExtensions) {
+    $bomRequiredExtensions = $script:BomRequiredExtensions
 }
 
 # Construct UTF-8 encoding objects (With BOM for .ps1/.psm1/.psd1/.xml/.config [kept for future App.config/Web.config support], No BOM for other files)

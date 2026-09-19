@@ -10,8 +10,8 @@
 #   wiki's documented table in parity, checked at
 #   the moment the wiki changes rather than on the
 #   next unrelated push to the code repository.
-#   Runs against both main (current .NET runtime, 
-#   dotnet test) and net48 (.NET Framework 4.8, 
+#   Runs against both main (current .NET runtime,
+#   dotnet test) and net48 (.NET Framework 4.8,
 #   vstest.console.exe).
 # ==========================================================================================
 
@@ -156,7 +156,7 @@ jobs:
           }
 
           $runSettingsPath = Join-Path $env:TEMP "TreatNoTestsAsError.runsettings"
-          
+
           @"
           <?xml version="1.0" encoding="utf-8"?>
           <RunSettings>
