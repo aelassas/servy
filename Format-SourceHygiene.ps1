@@ -59,7 +59,6 @@ if ($DryRun) {
     Write-Host "Scanning and formatting files for whitespace hygiene and charset rules..." -ForegroundColor Cyan
 }
 
-$script:HadFailure = $false
 $scannedCount = 0
 $modifiedCount = 0
 $failedCount = 0
@@ -202,12 +201,10 @@ foreach ($file in $filesToScan) {
     catch [System.Text.DecoderFallbackException] {
         Write-Warning "Skipped ${relativePath}: undecodable bytes for detected encoding ($($sourceEncoding.WebName)): $_"
         $failedCount++
-        $script:HadFailure = $true
     }
     catch {
         Write-Warning "Failed to process ${relativePath}: $_"
         $failedCount++
-        $script:HadFailure = $true
     }
 }
 
@@ -235,6 +232,6 @@ if ($DryRun) {
     }
 }
 
-if ($failedCount -gt 0 -or $script:HadFailure) {
+if ($failedCount -gt 0) {
     exit 1
 }
