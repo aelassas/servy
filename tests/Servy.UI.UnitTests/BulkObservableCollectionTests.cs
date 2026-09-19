@@ -256,5 +256,50 @@ namespace Servy.UI.UnitTests
         }
 
         #endregion
+
+        #region Reentrancy Tests
+
+        [Fact]
+        public void AddRange_ReentrantAddRangeDuringResetNotification_ThrowsInvalidOperationException()
+        {
+            // Arrange: ObservableCollection<T>.CheckReentrancy() only throws while a change
+            // notification is being raised AND the event has more than one subscriber, so a
+            // second handler is required. The reentrant handler mutates only on its first
+            // invocation, so that the collection settles instead of recursing without bound
+            // if the guard is ever removed.
+            var collection = new BulkObservableCollection<int>();
+            var reentered = false;
+            collection.CollectionChanged += (s, e) => { };
+            collection.CollectionChanged += (s, e) =>
+            {
+                if (reentered) return;
+                reentered = true;
+                collection.AddRange(new[] { 99 });
+            };
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => collection.AddRange(new[] { 1, 2 }));
+        }
+
+        [Fact]
+        public void TrimToSize_ReentrantTrimToSizeDuringResetNotification_ThrowsInvalidOperationException()
+        {
+            // Arrange: see the AddRange sibling above for why two handlers and the one-shot
+            // flag are both needed.
+            var collection = new BulkObservableCollection<int> { 1, 2, 3, 4, 5 };
+            var reentered = false;
+            collection.CollectionChanged += (s, e) => { };
+            collection.CollectionChanged += (s, e) =>
+            {
+                if (reentered) return;
+                reentered = true;
+                collection.TrimToSize(0);
+            };
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => collection.TrimToSize(2));
+        }
+
+        #endregion
     }
 }
