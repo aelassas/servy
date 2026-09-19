@@ -214,15 +214,23 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         private class FlexibleDbConnectionStub : TestDbConnectionBase
         {
             private readonly bool _forceSyncTransactionPath;
+            private readonly IsolationLevel? _transactionIsolationLevel;
 
             /// <summary>
             /// Gets a value indicating whether the fallback synchronous transaction initialization tracker path was traversed.
             /// </summary>
             public bool SyncTransactionWasCalled { get; private set; }
 
-            public FlexibleDbConnectionStub(bool forceSyncTransactionPath = false)
+            /// <param name="forceSyncTransactionPath">Routes the async initialization track back onto the synchronous fallback when set.</param>
+            /// <param name="transactionIsolationLevel">
+            /// Isolation level the stub transaction reports. Left null the stub transaction is unconfigured, exactly as before;
+            /// pinned to a value the SQLite provider never selects on its own, it lets a caller tell a forwarded level apart
+            /// from a hard-coded one.
+            /// </param>
+            public FlexibleDbConnectionStub(bool forceSyncTransactionPath = false, IsolationLevel? transactionIsolationLevel = null)
             {
                 _forceSyncTransactionPath = forceSyncTransactionPath;
+                _transactionIsolationLevel = transactionIsolationLevel;
             }
 
             /// <inheritdoc />
@@ -240,7 +248,22 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
             {
                 SyncTransactionWasCalled = true;
-                return new Mock<DbTransaction>().Object;
+                return CreateStubTransaction();
+            }
+
+            /// <summary>
+            /// Builds the stub transaction the initialization track hands back, applying the pinned
+            /// isolation level when the test supplied one.
+            /// </summary>
+            private DbTransaction CreateStubTransaction()
+            {
+                var mockTx = new Mock<DbTransaction>();
+                if (_transactionIsolationLevel.HasValue)
+                {
+                    mockTx.Setup(tx => tx.IsolationLevel).Returns(_transactionIsolationLevel.Value);
+                }
+
+                return mockTx.Object;
             }
         }
 
@@ -460,6 +483,24 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => _executor.BeginTransaction());
             Assert.True(brokenConnectionSpy.WasDisposed, "The connection was not explicitly closed on an initialization error.");
+        }
+
+        [Fact]
+        public void BeginTransaction_IsolationLevel_ForwardsInnerTransactionLevel()
+        {
+            // Arrange
+            // The stub's transaction reports a level the SQLite provider never selects on its own, so the
+            // assertion below can only hold if the wrapper forwards the inner transaction's value rather
+            // than answering with one of its own.
+            var pinnedLevelStub = new FlexibleDbConnectionStub(transactionIsolationLevel: IsolationLevel.RepeatableRead);
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(pinnedLevelStub);
+
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                // Assert
+                Assert.Equal(IsolationLevel.RepeatableRead, tx.IsolationLevel);
+            }
         }
 
         [Fact]
