@@ -9,6 +9,37 @@ namespace Servy.UI.UnitTests
 {
     public class BulkObservableCollectionTests
     {
+        #region Constructor Tests
+
+        [Fact]
+        public void Constructor_FromIEnumerable_SeedsCollection()
+        {
+            // Arrange
+            IEnumerable<int> source = new[] { 1, 2, 3 };
+
+            // Act
+            var collection = new BulkObservableCollection<int>(source);
+
+            // Assert
+            Assert.Equal(new[] { 1, 2, 3 }, collection);
+        }
+
+        [Fact]
+        public void Constructor_FromList_SeedsCollection()
+        {
+            // Arrange: the static type is List<int>, so overload resolution selects the
+            // List<T> constructor rather than the IEnumerable<T> one above.
+            var source = new List<int> { 4, 5, 6 };
+
+            // Act
+            var collection = new BulkObservableCollection<int>(source);
+
+            // Assert
+            Assert.Equal(new[] { 4, 5, 6 }, collection);
+        }
+
+        #endregion
+
         #region AddRange Tests
 
         [Fact]
