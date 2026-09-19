@@ -55,7 +55,7 @@
       </MenuItem>
 
       <MenuItem Header="{x:Static resx:Strings.Menu_Config}"
-                Click="Menu_ConfigClick"
+                Command="{Binding ConfigureCommand}"
                 IsEnabled="{Binding IsConfiguratorEnabled}"
                 AutomationProperties.Name="{x:Static resx:Strings.Menu_Config}"
                 AutomationProperties.AutomationId="ConfigMenu"

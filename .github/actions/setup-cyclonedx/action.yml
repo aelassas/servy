@@ -39,7 +39,7 @@ runs:
       uses: ./.github/actions/download-with-retry
       with:
         url: "https://github.com/CycloneDX/cyclonedx-cli/releases/download/${{ inputs.cli_version }}/cyclonedx-win-x64.exe"
-        output_path: "%USERPROFILE%\\cyclonedx-cli\\cyclonedx.exe"
+        output_path: "${{ runner.temp }}/cyclonedx-cli/cyclonedx.exe"
         asset_name: "CycloneDX CLI executable"
         max_retries: ${{ inputs.max_retries }}
 
@@ -50,7 +50,7 @@ runs:
         INPUT_CLI_HASH: ${{ inputs.cli_hash }}
       run: |
         $cliHash = $env:INPUT_CLI_HASH
-        $cliDir  = "$env:USERPROFILE\cyclonedx-cli"
+        $cliDir  = "$env:RUNNER_TEMP\cyclonedx-cli"
         $outPath = "$cliDir\cyclonedx.exe"
 
         # --- SECURITY CHECK: SHA256 PINNING ---
@@ -70,7 +70,7 @@ runs:
       uses: ./.github/actions/download-with-retry
       with:
         url: "https://www.nuget.org/api/v2/package/CycloneDX/${{ inputs.tool_version }}"
-        output_path: "%USERPROFILE%\\cyclonedx-tool\\CycloneDX.${{ inputs.tool_version }}.nupkg"
+        output_path: "${{ runner.temp }}/cyclonedx-tool/CycloneDX.${{ inputs.tool_version }}.nupkg"
         asset_name: "CycloneDX NuGet package"
         max_retries: ${{ inputs.max_retries }}
 
@@ -89,7 +89,7 @@ runs:
         # one, this install fails with NU1101 rather than silently pulling it.
         $toolVersion = $env:INPUT_TOOL_VERSION
         $toolHash    = $env:INPUT_TOOL_HASH
-        $toolPkgDir  = "$env:USERPROFILE\cyclonedx-tool"
+        $toolPkgDir  = "$env:RUNNER_TEMP\cyclonedx-tool"
         $toolPkgPath = "$toolPkgDir\CycloneDX.$toolVersion.nupkg"
 
         Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."

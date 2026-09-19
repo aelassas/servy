@@ -1303,6 +1303,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Runs the search using the text entered in the search box..
+        /// </summary>
+        public static string Automation_SidebarSearchButton_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_SidebarSearchButton_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Type a keyword to search services..
         /// </summary>
         public static string Automation_SidebarSearchTextBox_HelpText {
@@ -1317,6 +1326,15 @@ namespace Servy.Manager.Resources {
         public static string Automation_SidebarSearchTextBox_Name {
             get {
                 return ResourceManager.GetString("Automation_SidebarSearchTextBox_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List of services matching the current search. Select a service to monitor it..
+        /// </summary>
+        public static string Automation_SidebarServicesDataGrid_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_SidebarServicesDataGrid_HelpText", resourceCulture);
             }
         }
         

@@ -41,6 +41,7 @@
                         Height="24"
                         AutomationProperties.AutomationId="SidebarSearchButton"
                         AutomationProperties.Name="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarSearchButton_HelpText}"
                         Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         Content="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         IsEnabled="{Binding IsBusy, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBooleanConverter}}" />
@@ -50,6 +51,7 @@
                       AutoGenerateColumns="False"
                       AutomationProperties.AutomationId="SidebarServicesDataGrid"
                       AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarServicesDataGrid_Name}"
+                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarServicesDataGrid_HelpText}"
                       Background="Transparent"
                       BorderBrush="#757575"
                       BorderThickness="1"
