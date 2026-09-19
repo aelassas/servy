@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.ViewModels;
@@ -184,7 +185,7 @@ namespace Servy.Manager.Views
                 return;
             }
 
-            for (int i = 0; i < Core.Config.AppConfig.ClipboardComMaxRetries; i++)
+            for (int i = 0; i < AppConfig.ClipboardComMaxRetries; i++)
             {
                 try
                 {
@@ -199,15 +200,15 @@ namespace Servy.Manager.Views
                     // failure: non-fatal, retry after the configured delay.
                 }
 
-                if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
+                if (i < AppConfig.ClipboardComMaxRetries - 1)
                 {
                     // Yield control back to the WPF dispatcher queue thread pump.
                     // This allows UI paint commands and input requests to flow normally while waiting to retry.
-                    await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs);
+                    await Task.Delay(AppConfig.ClipboardComRetryDelayMs);
                 }
             }
 
-            Logger.Warn($"Failed to copy {selected.Count} log line(s) to clipboard after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");
+            Logger.Warn($"Failed to copy {selected.Count} log line(s) to clipboard after {AppConfig.ClipboardComMaxRetries} attempts.");
 
             if (DataContext is ConsoleViewModel vm)
             {
