@@ -74,7 +74,7 @@ Assert-Equal "Trims leading whitespace and extracts hash" $hash2 "ABCD1234EF"
 Assert-True "Whitespace-only sidecar yields null" ($null -eq (Get-ServySidecarExpectedHash -SidecarText "   `t`n"))
 
 # --- 3. Archive Entry Security & Validation Guard Tests ---
-Write-Host "`n4. Testing Test-ServyDumpArchiveEntry..." -ForegroundColor Yellow
+Write-Host "`n3. Testing Test-ServyDumpArchiveEntry..." -ForegroundColor Yellow
 
 $rootPath = [System.IO.Path]::GetFullPath("C:\Temp\ServyRestore_Staging\")
 $seenEntries = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
