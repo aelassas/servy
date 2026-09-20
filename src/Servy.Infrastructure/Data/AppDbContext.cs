@@ -9,7 +9,6 @@ namespace Servy.Infrastructure.Data
     /// Provides a database context for creating SQLite connections.
     /// Implements the standard .NET disposal pattern.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class AppDbContext : IAppDbContext
     {
         private readonly string _connectionString;
@@ -19,6 +18,8 @@ namespace Servy.Infrastructure.Data
         /// Explicit static constructor guarantees SQLiteFunction metadata is registered
         /// in _registeredFunctions BEFORE any AppDbContext instance opens a connection.
         /// </summary>
+        [ExcludeFromCodeCoverage] // process-wide collation registration; which instance in the
+                                  // process registers first is not controllable from a test (#5764/#5770)
         static AppDbContext()
         {
             // Register the custom collation sequence process-wide before any connection opens.
