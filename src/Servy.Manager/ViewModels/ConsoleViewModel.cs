@@ -410,6 +410,9 @@ namespace Servy.Manager.ViewModels
                         ? stdoutHistoryTailer.GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit, cancellationToken: token)
                         : Task.FromResult<HistoryResult>(null);
 
+                    // This is where the same-file policy is enforced: skip stderr entirely when it
+                    // resolves to the same file as stdout, otherwise every line would be read and
+                    // shown twice. A null stderr result below is the outcome of this decision.
                     var stderrTask = hasUniqueStderr
                         ? stderrHistoryTailer.GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit, cancellationToken: token)
                         : Task.FromResult<HistoryResult>(null);
@@ -466,13 +469,17 @@ namespace Servy.Manager.ViewModels
                     if (sessionId != _currentSessionId) return;
 
                     // 5. Start Live Tailing, passing the Session ID
-                    // Start StdOut tailer if the result and path are valid
+                    // Start StdOut tailer. A null result means the matching history task was skipped
+                    // above, so a non-null result is itself the "this stream is in play" signal and
+                    // the path term repeated here cannot change the outcome.
                     if (outRes != null && !string.IsNullOrWhiteSpace(stdoutPath))
                     {
                         StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTimeUtc, sessionId, token);
                     }
 
-                    // Start StdErr tailer ONLY if it's a different file to prevent duplicate UI entries
+                    // Start StdErr tailer. The same-file check that prevents duplicate UI entries was
+                    // already made where stderrTask was built: errRes is non-null only when
+                    // hasUniqueStderr held there, so the term repeated here cannot change the outcome.
                     if (errRes != null && hasUniqueStderr)
                     {
                         StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTimeUtc, sessionId, token);
