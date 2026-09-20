@@ -670,6 +670,28 @@ namespace Servy.Manager.UnitTests.Services
             }
         }
 
+#if !DEBUG
+        [Fact]
+        public async Task ConfigureServiceAsync_TargetOutsideAppDirectory_RefusesToLaunch()
+        {
+            // Arrange
+            string outside = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(outside, string.Empty);
+            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(outside);
+            var sut = CreateServiceCommands();
+            try
+            {
+                // Act
+                await sut.ConfigureServiceAsync(new Service { Name = "TestService" }, TestContext.Current.CancellationToken);
+
+                // Assert
+                _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption), Times.Once);
+            }
+            finally { File.Delete(outside); }
+        }
+#endif
+
         #endregion
 
         #region Lifecycle Methods Tests

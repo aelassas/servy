@@ -1666,6 +1666,28 @@ namespace Servy.UnitTests.Services
             }
         }
 
+#if !DEBUG
+        [Fact]
+        public async Task OpenManager_TargetOutsideAppDirectory_RefusesToLaunch()
+        {
+            // Arrange
+            string outside = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(outside, string.Empty);
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(outside);
+            var sut = CreateSut();
+            try
+            {
+                // Act
+                await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ManagerAppLaunchFailed, UiAppConfig.Caption), Times.Once);
+            }
+            finally { File.Delete(outside); }
+        }
+#endif
+
         [Fact]
         public async Task OpenSecurityHardeningGuide_OperationCanceled_PropagatesInsteadOfMasking()
         {
