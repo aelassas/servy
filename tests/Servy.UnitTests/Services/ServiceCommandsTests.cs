@@ -709,7 +709,7 @@ namespace Servy.UnitTests.Services
                 var sut = CreateSut();
 
                 // Act
-                await sut.OpenSecurityHardeningGuideAsync(CancellationToken.None);
+                await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
 
                 // Assert
                 _processHelperMock.Verify(h => h.Start(It.Is<ProcessStartInfo>(psi =>
