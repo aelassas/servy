@@ -254,10 +254,9 @@ jobs:
         with:
           name: test-diagnostics-net48
           path: |
-            **/*.dmp
-            **/*.xml
-            **/*.trx
-            TestResults/**
+            TestResults/**/*.dmp
+            TestResults/**/*.xml
+            TestResults/**/*.trx
           if-no-files-found: ignore
 
       - name: Install ReportGenerator
