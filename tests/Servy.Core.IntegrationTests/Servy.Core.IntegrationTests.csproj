@@ -130,6 +130,7 @@
     <Compile Include="Helpers\ResourceHelperIntegrationTests.cs" />
     <Compile Include="Logging\EventLogLoggerIntegrationTests.cs" />
     <Compile Include="Logging\PowerShellEventIdsIntegrationTests.cs" />
+    <Compile Include="Setup\TaskSchdLauncherConvergenceIntegrationTests.cs" />
     <Compile Include="Native\LogonAsServiceGrantIntegrationTests.cs" />
     <Compile Include="Native\NativeMethodsIntegrationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
