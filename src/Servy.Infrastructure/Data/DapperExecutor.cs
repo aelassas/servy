@@ -18,7 +18,7 @@ namespace Servy.Infrastructure.Data
     public class DapperExecutor : IDapperExecutor
     {
         private const string RetryLoopMisconfiguredMessage =
-            "Database retry budget is exhausted before any attempt was made. Verify AppConfig.Db*MaxRetries is > 0.";
+            "Database retry budget is exhausted before any attempt was made. Verify AppConfig.DbSyncMaxAttempts and AppConfig.DbAsyncMaxAttempts are > 0.";
 
         private readonly IAppDbContext _dbContext;
 
@@ -170,7 +170,7 @@ namespace Servy.Infrastructure.Data
                     // Use the unified helper with Sync-specific configuration
                     int delay = CalculateBackoff(i, AppConfig.DbSyncInitialDelayMs, AppConfig.DbSyncMaxJitterMs);
 
-                    Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxAttempts}). Spinning for {delay}ms... Query: [{queryContext}]");
+                    Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxAttempts}). Retrying in {delay}ms... Query: [{queryContext}]");
 
                     Thread.Sleep(delay);
                 }
