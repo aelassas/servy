@@ -219,11 +219,6 @@ namespace Servy.Core.Config
         public static readonly string RecoveryFolderPath = Path.Combine(ProgramDataPath, RecoveryFolderName);
 
         /// <summary>
-        /// Path to the logs folder containing log files.
-        /// </summary>
-        public static readonly string LogsFolderPath = Path.Combine(ProgramDataPath, LogsFolderName);
-
-        /// <summary>
         /// The default SQLite connection string for the Servy application.
         /// </summary>
         /// <remarks>

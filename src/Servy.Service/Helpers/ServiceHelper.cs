@@ -323,7 +323,7 @@ namespace Servy.Service.Helpers
 
         /// <inheritdoc />
         public void RestartProcess(
-                    IProcessWrapper process,
+                    IProcessWrapper? process,
                     StartProcessCallback startProcess,
                     string realExePath,
                     string realArgs,

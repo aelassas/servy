@@ -125,7 +125,7 @@ namespace Servy.Service.Helpers
         /// <param name="stopTimeoutMs">Timeout in milliseconds to wait for the process to stop.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         void RestartProcess(
-            IProcessWrapper process,
+            IProcessWrapper? process,
             StartProcessCallback startProcess,
             string realExePath,
             string realArgs,

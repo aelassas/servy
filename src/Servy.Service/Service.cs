@@ -2432,7 +2432,7 @@ namespace Servy.Service
 
                 case RecoveryAction.RestartProcess:
                     _serviceHelper.RestartProcess(
-                        _childProcess!,
+                        _childProcess,
                         (exe, args, dir, envVars, ct) =>
                         {
                             StartProcess(exe, args, dir, envVars, ct);
