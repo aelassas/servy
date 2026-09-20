@@ -7,6 +7,7 @@ using Servy.Core.Enums;
 using Servy.Core.Validation;
 using Servy.Testing;
 using System;
+using System.Reflection;
 using Xunit;
 
 namespace Servy.CLI.UnitTests.Validation
@@ -237,6 +238,68 @@ namespace Servy.CLI.UnitTests.Validation
 
             // Assert
             Assert.Equal(propertyName, output);
+        }
+
+        [Fact]
+        public void MapEnum_FlagsEnum_CombinedValidValue_ReturnsCombinedInt()
+        {
+            // Arrange
+            // No production enum carries [Flags] today, so the bitmask arm of MapEnum is only
+            // reachable with a [Flags] type declared here. MapEnum is a private generic method,
+            // which TestReflection.InvokeNonPublicStatic cannot call (it would invoke the open
+            // generic definition), so the generic method is closed explicitly first.
+            var method = typeof(ServiceInstallValidator).GetMethod("MapEnum", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+            var closed = method.MakeGenericMethod(typeof(TestOnlyFlagsEnum));
+
+            // args[2] is the 'ref string error' parameter; Invoke writes it back into the array.
+            var args = new object[3];
+            args[0] = "A, B";
+            args[1] = "SomeProp";
+
+            // Act
+            var result = closed.Invoke(null, args);
+
+            // Assert
+            // A (1) | B (2): every bit maps to a declared name, so ToString() stays textual and
+            // differs from the underlying "3" - the branch returns the combined value.
+            Assert.Equal(3, Assert.IsType<int>(result));
+            Assert.Null(args[2]);
+        }
+
+        [Fact]
+        public void MapEnum_FlagsEnum_UnmappedBits_ReturnsNullWithPipeSeparatedOptions()
+        {
+            // Arrange
+            var method = typeof(ServiceInstallValidator).GetMethod("MapEnum", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+            var closed = method.MakeGenericMethod(typeof(TestOnlyFlagsEnum));
+
+            var args = new object[3];
+            args[0] = "A, 8"; // bit 8 is neither A nor B
+            args[1] = "SomeProp";
+
+            // Act
+            var result = closed.Invoke(null, args);
+
+            // Assert
+            // ToString() falls back to the raw "9", which equals the underlying value, so the
+            // unmapped bit is rejected and the options list is pipe-joined for a [Flags] enum.
+            Assert.Null(result);
+            Assert.Contains("A | B", (string)args[2]);
+        }
+
+        /// <summary>
+        /// Test-only [Flags] enumeration. The production enums MapEnum is called with
+        /// (ServiceStartType, ProcessPriority, DateRotationType, RecoveryAction) are all
+        /// non-[Flags], so nothing else in the repository drives the bitmask arm.
+        /// </summary>
+        [Flags]
+        private enum TestOnlyFlagsEnum
+        {
+            None = 0,
+            A = 1,
+            B = 2
         }
 
         #endregion
