@@ -1,7 +1,4 @@
 using Servy.Core.Config;
-using System;
-using System.IO;
-using Xunit;
 
 namespace Servy.Core.IntegrationTests.Setup
 {
