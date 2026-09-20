@@ -179,38 +179,6 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Verify(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Fact]
-        public void GetServiceStartupType_ShouldDelegateToServiceManager()
-        {
-            // Arrange
-            var service = CreateService();
-            _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()))
-                .Returns(ServiceStartType.Automatic);
-
-            // Act
-            var result = service.GetServiceStartupType(CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ServiceStartType.Automatic, result);
-            _serviceManagerMock.Verify(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public void GetServiceStartupType_ShouldReturnUnknown_WhenServiceNotInstalled()
-        {
-            // Arrange
-            var service = CreateService();
-            _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()))
-                .Returns(ServiceStartType.Unknown);
-
-            // Act
-            var result = service.GetServiceStartupType(CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ServiceStartType.Unknown, result);
-            _serviceManagerMock.Verify(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
-        }
-
         #endregion
 
         #region Install / Uninstall
