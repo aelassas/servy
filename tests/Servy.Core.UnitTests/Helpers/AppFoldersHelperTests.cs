@@ -221,6 +221,34 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public void EnsureFolders_DbFolderIsRootVault_SkipsTheRootAndStillSecuresTheRest()
+        {
+            // Arrange: Put the database file directly in the root vault, so dbFolder is the root itself
+            // and the loop reaches its self-skip branch. Every other success test nests all three files
+            // in dedicated subfolders, so this is the only arrangement that gets there.
+            var keyFolder = Path.Combine(TempDirectory, "keys");
+            var ivFolder = Path.Combine(TempDirectory, "iv");
+
+            var conn = $"Data Source={Path.Combine(TempDirectory, "Servy.db")};";
+            var key = Path.Combine(keyFolder, "key.aes");
+            var iv = Path.Combine(ivFolder, "iv.aes");
+
+            // Act
+            AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: TempDirectory);
+
+            // Assert: The self-skip drops the root from the loop only - it does not abandon the folders
+            // queued behind it, and the root is first in the list
+            Assert.True(Directory.Exists(keyFolder));
+            Assert.True(Directory.Exists(ivFolder));
+            Assert.True(Directory.Exists(Path.Combine(TempDirectory, "recovery")));
+            Assert.True(Directory.Exists(Path.Combine(TempDirectory, "logs")));
+
+            // Assert: The root keeps the protected ACL it was given before the loop
+            var rootSecurity = new DirectoryInfo(TempDirectory).GetAccessControl();
+            Assert.True(rootSecurity.AreAccessRulesProtected); // root vault -> inheritance broken
+        }
+
         [Theory]
         [InlineData("Data Source=Servy.db;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
         [InlineData("Data Source=:db:;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
