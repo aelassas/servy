@@ -97,6 +97,8 @@ namespace Servy.Core.Helpers
                 throw new ArgumentException("aesIVFilePath must be an absolute path", nameof(aesIVFilePath));
             if (rootVaultPath != null && string.IsNullOrWhiteSpace(rootVaultPath))
                 throw new ArgumentException("rootVaultPath cannot be whitespace", nameof(rootVaultPath));
+            if (rootVaultPath != null && !Helper.IsAbsolute(rootVaultPath))
+                throw new ArgumentException("rootVaultPath must be an absolute path", nameof(rootVaultPath));
 
             // 1. Utilize the BCL's robust connection string builder
             DbConnectionStringBuilder builder;
