@@ -64,6 +64,22 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void EnsureFolders_RelativeRootVaultPath_ThrowsForCorrectReason()
+        {
+            // Arrange
+            var conn = $"Data Source={Path.Combine(TempDirectory, "Servy.db")};";
+            var key = Path.Combine(TempDirectory, "key.aes");
+            var iv = Path.Combine(TempDirectory, "iv.aes");
+
+            // Act
+            var ex = Assert.Throws<ArgumentException>(() =>
+                AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: "CustomVault"));
+
+            // Assert
+            Assert.StartsWith("rootVaultPath must be an absolute path", ex.Message);
+        }
+
+        [Fact]
         public void EnsureFolders_AesKeyFilePathIsDriveRoot_ThrowsCannotDetermineFolder()
         {
             // Arrange
