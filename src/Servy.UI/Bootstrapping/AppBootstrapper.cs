@@ -337,6 +337,8 @@ namespace Servy.UI.Bootstrapping
                 // Note: Configuration and Logger settings are already loaded synchronously in OnStartup.
                 await Task.Run(async () =>
                 {
+                    var stopwatch = Stopwatch.StartNew();
+
                     // Registry-backed and unbounded; must not run on the UI thread, and must be
                     // inside the measured window so the splash floor reflects real elapsed time.
                     Helper.EnsureEventSourceExists();
@@ -344,8 +346,6 @@ namespace Servy.UI.Bootstrapping
                     CoreSettingsLoader.Validate(
                         new CoreSettings(ConnectionString, AESKeyFilePath, AESIVFilePath),
                         ".exe.config");
-
-                    var stopwatch = Stopwatch.StartNew();
 
                     AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
 

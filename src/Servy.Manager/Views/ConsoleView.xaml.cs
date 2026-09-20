@@ -56,7 +56,19 @@ namespace Servy.Manager.Views
             {
                 if (DataContext is ConsoleViewModel vm)
                 {
-                    vm.SetPaused(LogList.SelectedItems.Count > 0);
+                    if (LogList.SelectedItems.Count > 0)
+                    {
+                        vm.SetPaused(true);
+                    }
+                    else
+                    {
+                        var sv = Helper.GetVisualChild<ScrollViewer>(LogList);
+                        bool isAtBottom = sv != null && sv.VerticalOffset >= (sv.ScrollableHeight - ResumeAtBottomThresholdPx);
+                        if (isAtBottom)
+                        {
+                            vm.SetPaused(false);
+                        }
+                    }
                 }
             };
         }
