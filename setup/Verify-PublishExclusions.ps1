@@ -10,7 +10,7 @@
     are preserved.
 #>
 
-$ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
+$ScriptDir = $PSScriptRoot
 
 # Dot-source publish-common.ps1 to import Copy-TaskSchdArtifacts under test
 . (Join-Path $ScriptDir "publish-common.ps1")
@@ -34,9 +34,9 @@ try {
     New-Item -Path $sourcePath -ItemType Directory -Force | Out-Null
     New-Item -Path (Join-Path $sourcePath "SubFolder") -ItemType Directory -Force | Out-Null
 
-    Write-Host "==========================================================" -ForegroundColor Cyan
-    Write-Host "Testing publish.yml taskschd copy-exclusion filter..."      -ForegroundColor Cyan
-    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "=====================================================================" -ForegroundColor Cyan
+    Write-Host "Testing publish-common.ps1 Copy-TaskSchdArtifacts exclusion filter..." -ForegroundColor Cyan
+    Write-Host "=====================================================================" -ForegroundColor Cyan
 
     # Define mock test matrix data pairs [Relative Path, Should Copy]
     $MockFiles = @(
