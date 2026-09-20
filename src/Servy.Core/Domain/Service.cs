@@ -511,8 +511,11 @@ namespace Servy.Core.Domain
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// A <see cref="ServiceStartType"/> value representing the startup type,
-        /// or <c>null</c> if the service is not installed or the startup type cannot be determined.
+        /// A <see cref="ServiceStartType"/> value representing the startup type, or
+        /// <see cref="ServiceStartType.Unknown"/> if the service is not installed or the startup
+        /// type cannot be determined. The underlying manager query is non-nullable and reports a
+        /// missing service as <see cref="ServiceStartType.Unknown"/>, so this method never returns
+        /// <c>null</c> even though its signature permits one.
         /// </returns>
         public ServiceStartType? GetServiceStartupType(CancellationToken cancellationToken = default)
         {
