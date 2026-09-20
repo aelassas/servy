@@ -7,8 +7,8 @@ Set shell = CreateObject("WScript.Shell")
 ' Resolve the directory where this .vbs is located
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 
-' Build the path to the sibling .ps1 file
-ps1Path = fso.BuildPath(scriptDir, "ServyFailureEmail.ps1")
+' Build the path to the sibling .ps1 file dynamically based on launcher base name
+ps1Path = fso.BuildPath(scriptDir, fso.GetBaseName(WScript.ScriptFullName) & ".ps1")
 
 ' Verify the file exists before attempting to run it
 If Not fso.FileExists(ps1Path) Then
