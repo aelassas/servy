@@ -9,7 +9,11 @@ namespace Servy.Core.Services
         /// Retrieves a specific Windows service controller wrapper by service name.
         /// </summary>
         /// <param name="serviceName">The name that identifies the service to the system.</param>
-        /// <returns>An <see cref="IServiceControllerWrapper"/> instance for the target service.</returns>
+        /// <returns>
+        /// An <see cref="IServiceControllerWrapper"/> instance for the target service.
+        /// <b>The caller owns the returned wrapper and must dispose it</b>; it holds a live Service
+        /// Control Manager handle, the same as each element <see cref="GetServices"/> returns.
+        /// </returns>
         IServiceControllerWrapper GetService(string serviceName);
 
         /// <summary>
