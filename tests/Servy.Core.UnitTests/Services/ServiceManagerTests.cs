@@ -3080,6 +3080,32 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(ServiceStartType.Unknown, result);
         }
 
+        [Fact]
+        public void GetServiceStartupType_ShouldFallbackToAutomatic_WhenOpenServiceFails()
+        {
+            // Arrange
+            const string serviceName = "EventLog";
+
+            _mockController.Setup(x => x.StartType).Returns(ServiceStartMode.Automatic);
+
+            // OpenSCManager succeeds here, unlike the OpenSCManager-fails sibling test...
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(CreateScmHandle(1));
+
+            // ...but the OpenService call of the delayed-auto-start probe itself fails.
+            _mockWindowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), serviceName, SERVICE_QUERY_CONFIG))
+                .Returns(CreateServiceHandle(0));
+
+            // Act
+            var result = _serviceManager.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken);
+
+            // Assert
+            // The invalid service handle is a log-only path: the start type MapStartupType already
+            // resolved is kept, and nothing throws.
+            Assert.Equal(ServiceStartType.Automatic, result);
+            _mockWindowsServiceApi.Verify(x => x.OpenService(It.IsAny<SafeScmHandle>(), serviceName, SERVICE_QUERY_CONFIG), Times.Once);
+        }
+
         #endregion
 
         #region GetAllServices
