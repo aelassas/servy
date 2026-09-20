@@ -179,6 +179,24 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void Decrypt_MarkedV1_WhenLegacyDisabled_ThrowsSecureDataLegacyBlockedException()
+        {
+            // Arrange
+            if (AppConfig.AllowLegacyV1Decryption)
+            {
+                // Test targets disabled legacy v1 decryption policy
+                return;
+            }
+
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act & Assert
+                var ex = Assert.Throws<SecureDataLegacyBlockedException>(() => sp.Decrypt("SERVY_ENC:v1:anything"));
+                Assert.Contains("Legacy v1 decryption is disabled in this version", ex.Message);
+            }
+        }
+
+        [Fact]
         public void Decrypt_UnmarkedNonBase64_ReturnsRawInput()
         {
             // Arrange
