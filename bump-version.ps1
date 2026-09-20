@@ -5,10 +5,11 @@
     Updates the version and copyright notice of Servy across build-config.ps1, Directory.Build.props, and Servy.psd1.
 
 .DESCRIPTION
-    This script updates the version of Servy in multiple locations:
+    This script updates the version and copyright year of Servy in multiple locations:
     - setup\build-config.ps1    (Version hashtable key)
     - Directory.Build.props     (<Version>, <FileVersion>, <AssemblyVersion>, <Copyright>)
     - src\Servy.CLI\Servy.psd1  (ModuleVersion, Copyright)
+    The copyright year written is the current year at run time; it is not a parameter.
 
 .PARAMETER Version
     The new version to apply in 'Major.Minor' format (e.g., "8.0").
