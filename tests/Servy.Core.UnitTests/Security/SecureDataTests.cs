@@ -115,6 +115,29 @@ namespace Servy.Core.UnitTests.Security
             }
         }
 
+        [Fact]
+        public void Decrypt_UnmarkedStrictBase64_LegacyDecryptionFails_ReturnsRawInputAsPlaintext()
+        {
+            // Arrange
+            Assert.SkipUnless(AppConfig.AllowLegacyV1Decryption, "Legacy V1 decryption disabled");
+
+            // 10 raw bytes -> "AQIDBAUGBwgJCg==": strictly Base64 (length is a multiple of 4, every
+            // character is in the standard alphabet and the only padding is trailing), so the unmarked
+            // payload reaches DecryptV1 - but 10 bytes is not a whole number of AES blocks, so the
+            // CryptoStream read throws CryptographicException and the defensive fallback must catch it.
+            var corruptLegacyPayload = Convert.ToBase64String(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
+
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act
+                var result = sp.Decrypt(corruptLegacyPayload);
+
+                // Assert
+                // The documented fallback returns the input unchanged rather than propagating the failure.
+                Assert.Equal(corruptLegacyPayload, result);
+            }
+        }
+
         #endregion
 
         #region Branch Coverage: Fallbacks & Tampering
