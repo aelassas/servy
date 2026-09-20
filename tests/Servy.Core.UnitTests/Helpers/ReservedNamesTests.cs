@@ -80,7 +80,8 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void IsReservedDeviceName_NullOrEmpty_ReturnsFalse(string segment)
+        [InlineData("   ")]
+        public void IsReservedDeviceName_NullOrWhitespace_ReturnsFalse(string segment)
         {
             // Act
             bool result = ReservedNames.IsReservedDeviceName(segment);
@@ -165,7 +166,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("CON. . \t.")]
         [InlineData("COM1.\t ")]
         [InlineData("LPT¹..  \t")]
-        public void IsReservedDeviceName_TrailingSpacesPeriodsOrTabs_StripsAndReturnsTrue(string segment)
+        public void IsReservedDeviceName_TrailingPeriodsSpacesOrTabs_StripsAndReturnsTrue(string segment)
         {
             // Act
             bool result = ReservedNames.IsReservedDeviceName(segment);
