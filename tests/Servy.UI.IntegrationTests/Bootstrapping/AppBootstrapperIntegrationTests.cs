@@ -68,7 +68,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
             try
             {
-                string globalLogPath = Path.Combine(Logger.LogsPath, _logFile);
+                string globalLogPath = Path.Combine(AppConfig.LogsFolderPath, _logFile);
                 if (File.Exists(globalLogPath))
                 {
                     File.Delete(globalLogPath);

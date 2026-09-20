@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.UI.Commands;
 
@@ -153,7 +154,7 @@ namespace Servy.UI.UnitTests.Commands
             // name the thirty production call sites pass is never observed.
             const string commandName = "StartSelectedCommand";
             var logFileName = $"AsyncCommandTests_{Guid.NewGuid():N}.log";
-            var logPath = Path.Combine(Logger.LogsPath, logFileName);
+            var logPath = Path.Combine(AppConfig.LogsFolderPath, logFileName);
 
             var previousContext = SynchronizationContext.Current;
             var testContext = new TestSynchronizationContext();
