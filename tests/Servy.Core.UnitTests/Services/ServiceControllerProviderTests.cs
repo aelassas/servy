@@ -28,25 +28,25 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetService_NullName_ThrowsArgumentNullException()
+        public void GetService_NullName_ThrowsArgumentException()
         {
             // Arrange
             var provider = new ServiceControllerProvider(_ => throw new InvalidOperationException("The factory must not be invoked for an invalid name."));
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => provider.GetService(null!));
+            Assert.Throws<ArgumentException>(() => provider.GetService(null!));
         }
 
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public void GetService_EmptyOrWhitespaceName_ThrowsArgumentNullException(string serviceName)
+        public void GetService_EmptyOrWhitespaceName_ThrowsArgumentException(string serviceName)
         {
             // Arrange
             var provider = new ServiceControllerProvider(_ => throw new InvalidOperationException("The factory must not be invoked for an invalid name."));
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => provider.GetService(serviceName));
+            Assert.Throws<ArgumentException>(() => provider.GetService(serviceName));
         }
 
         [Fact]
