@@ -902,6 +902,179 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_UpdateExistingService_ReopenForConfigFails_ReturnsFailure()
+        {
+            // Arrange
+            var scmHandle = CreateScmHandle(123);
+            var serviceName = "TestService";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceAccounts.LocalSystem,
+                null))
+                .Returns(CreateServiceHandle(0));
+
+            _mockWindowsServiceApi.Setup(x => x.GetServices())
+                .Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = serviceName } });
+
+            // UpdateServiceConfig opens the service with CHANGE_CONFIG | QUERY_CONFIG and succeeds.
+            var updateHandle = CreateServiceHandle(456);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG))
+                .Returns(updateHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                updateHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceAccounts.LocalSystem,
+                null,
+                It.IsAny<string>()))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                updateHandle,
+                It.IsAny<uint>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            // ...but the reopen for the pre-shutdown and delayed-auto-start updates, which asks for
+            // CHANGE_CONFIG alone, fails.
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG))
+                .Returns(CreateServiceHandle(0));
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(5);
+
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = "Test Description",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                StartupDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+            };
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            // The reopen failure surfaces as a failed OperationResult and never reaches the
+            // delayed-auto-start update that follows it.
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to open service", result.ErrorMessage);
+            _mockWindowsServiceApi.Verify(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_UpdateExistingService_PreShutdownFails_ReturnsFailure()
+        {
+            // Arrange
+            var scmHandle = CreateScmHandle(123);
+            var serviceName = "TestService";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceAccounts.LocalSystem,
+                null))
+                .Returns(CreateServiceHandle(0));
+
+            _mockWindowsServiceApi.Setup(x => x.GetServices())
+                .Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = serviceName } });
+
+            // UpdateServiceConfig opens the service with CHANGE_CONFIG | QUERY_CONFIG and succeeds.
+            var updateHandle = CreateServiceHandle(456);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG))
+                .Returns(updateHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                updateHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceAccounts.LocalSystem,
+                null,
+                It.IsAny<string>()))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                updateHandle,
+                It.IsAny<uint>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            // The reopen succeeds this time...
+            var reopenHandle = CreateServiceHandle(789);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG))
+                .Returns(reopenHandle);
+
+            // ...but the pre-shutdown deadline update on the reopened handle fails.
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(reopenHandle, It.IsAny<uint>(), It.IsAny<IntPtr>()))
+                .Returns(false);
+
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = "Test Description",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                StartupDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+            };
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            // UpdateServiceConfig has already committed to the SCM, so the failure must be reported
+            // rather than swallowed, and the delayed-auto-start update must not run.
+            Assert.False(result.IsSuccess);
+            Assert.Contains("CRITICAL STATE DRIFT", result.ErrorMessage);
+            Assert.Contains("pre-shutdown timeout", result.ErrorMessage);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(reopenHandle, It.IsAny<uint>(), It.IsAny<IntPtr>()), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Never);
+        }
+
+        [Fact]
         public async Task InstallService_RequestPreShutdownTimeout()
         {
             // Arrange
