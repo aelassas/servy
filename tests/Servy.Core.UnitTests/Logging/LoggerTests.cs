@@ -37,9 +37,9 @@ namespace Servy.Core.UnitTests.Logging
             ResetFallbackCounters();
 
             _testFileName = $"TestLog_{Guid.NewGuid():N}.log";
-            _fullLogPath = Path.Combine(Logger.LogsPath, _testFileName);
-            _initFallbackPath = Path.Combine(Logger.LogsPath, "LoggerInitializationErrors.log");
-            _writeFallbackPath = Path.Combine(Logger.LogsPath, "LoggerWriteErrors.log");
+            _fullLogPath = Path.Combine(AppConfig.LogsFolderPath, _testFileName);
+            _initFallbackPath = Path.Combine(AppConfig.LogsFolderPath, "LoggerInitializationErrors.log");
+            _writeFallbackPath = Path.Combine(AppConfig.LogsFolderPath, "LoggerWriteErrors.log");
 
             CleanupFiles();
         }
@@ -112,7 +112,7 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Shutdown();
 
             // Capture a directory listing snapshot to verify no file system leaks occur
-            var logDirectory = new DirectoryInfo(Logger.LogsPath);
+            var logDirectory = new DirectoryInfo(AppConfig.LogsFolderPath);
             int initialLogFileCount = logDirectory.Exists ? logDirectory.GetFiles("*.log").Length : 0;
 
             // Act
