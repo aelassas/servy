@@ -256,6 +256,24 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void Decrypt_MarkedUnknownVersionWithEmbeddedColon_ThrowsWithTruncatedSnippet()
+        {
+            // Arrange
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // "v3:payload" carries an unrecognized version tag followed by a colon, so the
+                // snippet is capped at the tag. The existing "SERVY_ENC:NotBase64!" case has no
+                // colon at all and only reaches the other arm of that cap.
+                string input = "SERVY_ENC:v3:payload";
+
+                // Act & Assert
+                // The message must not echo the rest of the payload back to the caller.
+                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+                Assert.Contains("Unsupported encryption version marker: 'v3'", ex.Message);
+            }
+        }
+
+        [Fact]
         public void Decrypt_TamperedV2_ThrowsIntegrityException()
         {
             // Arrange
