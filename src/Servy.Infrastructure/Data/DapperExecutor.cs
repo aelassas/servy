@@ -136,7 +136,7 @@ namespace Servy.Infrastructure.Data
                 }
                 catch
                 {
-                    connection?.Dispose();
+                    connection.Dispose();
                     throw;
                 }
             }, "BEGIN TRANSACTION")!;
@@ -355,7 +355,7 @@ namespace Servy.Infrastructure.Data
                 }
                 catch
                 {
-                    connection?.Dispose();
+                    connection.Dispose();
                     throw;
                 }
             }, cancellationToken, "BEGIN TRANSACTION"))!;
