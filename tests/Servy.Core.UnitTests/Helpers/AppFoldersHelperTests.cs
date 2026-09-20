@@ -222,7 +222,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void EnsureFolders_DbFolderIsRootVault_SkipsTheRootAndStillSecuresTheRest()
+        public void EnsureFolders_DbFolderIsRootVault_StillCreatesTheFoldersQueuedBehindTheRoot()
         {
             // Arrange: Put the database file directly in the root vault, so dbFolder is the root itself
             // and the loop reaches its self-skip branch. Every other success test nests all three files
@@ -237,14 +237,18 @@ namespace Servy.Core.UnitTests.Helpers
             // Act
             AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: TempDirectory);
 
-            // Assert: The self-skip drops the root from the loop only - it does not abandon the folders
-            // queued behind it, and the root is first in the list
+            // Assert: The loop does not abandon the entries queued behind the root. The root is the
+            // first element of subFolders, so a self-skip that left the loop instead of stepping over
+            // one entry would leave all four of these uncreated.
             Assert.True(Directory.Exists(keyFolder));
             Assert.True(Directory.Exists(ivFolder));
             Assert.True(Directory.Exists(Path.Combine(TempDirectory, "recovery")));
             Assert.True(Directory.Exists(Path.Combine(TempDirectory, "logs")));
 
-            // Assert: The root keeps the protected ACL it was given before the loop
+            // Assert: The loop leaves the protection the root was given before it in place. This is a
+            // regression guard, not evidence that the self-skip fired: with the skip removed, canonicalRoot
+            // still does not start with normalizedRoot (which carries a trailing separator), so the root
+            // would be re-secured with the same breakInheritance: true and the end state would be identical.
             var rootSecurity = new DirectoryInfo(TempDirectory).GetAccessControl();
             Assert.True(rootSecurity.AreAccessRulesProtected); // root vault -> inheritance broken
         }
