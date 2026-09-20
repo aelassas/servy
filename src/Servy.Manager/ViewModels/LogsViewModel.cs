@@ -305,7 +305,7 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Gets the list of available log levels for filtering.
-        /// Levels exposed in the filter dropdown - excludes Critical/Verbose because Servy itself never emits them
+        /// Levels exposed in the filter dropdown - excludes Critical/Verbose because Servy itself never emits them.
         /// </summary>
         /// <returns>Log levels.</returns>
         private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))

@@ -27,8 +27,9 @@ namespace Servy.Core.Helpers
         );
 
         /// <summary>
-        /// Returns true when <paramref name="segment"/> names a Windows reserved device, applying the
-        /// trailing space/period/tab stripping Win32 performs before resolving a device name.
+        /// Returns true when <paramref name="segment"/> names a Windows reserved device, after stripping
+        /// trailing periods and spaces (which Win32 removes during path canonicalization) and trailing tabs
+        /// (which it does not - stripped here as well so a name cannot dodge the guard on a stray tab).
         /// </summary>
         /// <param name="segment">The path segment to evaluate.</param>
         public static bool IsReservedDeviceName(string segment) =>
