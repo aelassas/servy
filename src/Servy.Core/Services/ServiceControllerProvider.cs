@@ -34,7 +34,7 @@ namespace Servy.Core.Services
         public IServiceControllerWrapper GetService(string serviceName)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
-                throw new ArgumentNullException(nameof(serviceName));
+                throw new ArgumentException("serviceName cannot be null or whitespace.", nameof(serviceName));
 
             return _factory(serviceName);
         }
