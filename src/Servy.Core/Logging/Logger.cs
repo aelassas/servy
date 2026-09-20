@@ -536,11 +536,14 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional exception; when present it is formatted and appended as " | Exception: ...".</param>
         private static void WriteLeveled(LogLevel targetLevel, string message, Exception ex)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message) && ex == null) return;
 
             if ((LogLevel)_currentLogLevel <= targetLevel)
             {
-                Log(targetLevel, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
+                string entry = ex != null
+                    ? (string.IsNullOrEmpty(message) ? FormatException(ex) : $"{message} | Exception: {FormatException(ex)}")
+                    : message;
+                Log(targetLevel, entry);
             }
         }
 
