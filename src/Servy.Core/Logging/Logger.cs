@@ -17,11 +17,6 @@ namespace Servy.Core.Logging
     public static class Logger
     {
         /// <summary>
-        /// Logs folder path.
-        /// </summary>
-        public static readonly string LogsPath = Path.Combine(AppConfig.ProgramDataPath, "logs");
-
-        /// <summary>
         /// Matches any sequence of standard or Unicode line terminators
         /// </summary>
         private static readonly Regex LineBreakingRegex = new Regex(@"\r\n|[\r\n\u0085\u2028\u2029]",
@@ -49,7 +44,7 @@ namespace Servy.Core.Logging
         /// <summary>
         /// Gets the effective directory path where active log output is currently written.
         /// </summary>
-        public static string EffectiveLogsPath => !string.IsNullOrEmpty(_logDirectory) ? _logDirectory : LogsPath;
+        public static string EffectiveLogsPath => !string.IsNullOrEmpty(_logDirectory) ? _logDirectory : AppConfig.LogsFolderPath;
 
         /// <summary>
         /// The maximum number of backup log files to keep.
