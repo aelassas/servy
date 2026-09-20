@@ -54,7 +54,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 Servy is free and open-source. If Servy has helped you, saved you hours of development time, or powered your production workflows, supporting its maintenance makes a direct impact.
 
-Building and maintaining software, publishing signed releases, delivering security updates, and providing system support takes dedicated time and financial resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp) or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
+Building and maintaining software, publishing signed releases, delivering security updates, and providing system support takes dedicated time and financial resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/) or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
 
 If you have suggestions, feature requests, or issues, feel free to [open an issue](https://github.com/aelassas/servy/issues), or [submit a pull request](https://github.com/aelassas/servy/pulls).
 
