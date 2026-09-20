@@ -2524,6 +2524,17 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Verify(x => x.DeleteService(It.IsAny<SafeServiceHandle>()), Times.Never);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UninstallService_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.UninstallServiceAsync(serviceName, CancellationToken.None));
+            Assert.Equal("serviceName", exception.ParamName);
+        }
+
         [Fact]
         public async Task StartService_ShouldReturnTrue_WhenAlreadyRunning()
         {
@@ -2609,6 +2620,17 @@ namespace Servy.Core.UnitTests.Services
             Assert.False(result.IsSuccess);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task StartService_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.StartServiceAsync(serviceName, cancellationToken: CancellationToken.None));
+            Assert.Equal("serviceName", exception.ParamName);
+        }
+
         [Fact]
         public async Task StopService_ShouldReturnTrue_WhenAlreadyStopped()
         {
@@ -2690,6 +2712,17 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task StopService_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.StopServiceAsync(serviceName, cancellationToken: CancellationToken.None));
+            Assert.Equal("serviceName", exception.ParamName);
         }
 
         [Fact]
