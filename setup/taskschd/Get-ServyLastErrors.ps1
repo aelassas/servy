@@ -114,7 +114,7 @@ function Get-ServyLastErrors {
         }
 
         # Throw instead of exit to preserve caller's process/cleanup
-        throw "Servy Event Query Failure: $errorMsg"
+        throw $errorMsg
     }
 
     # -------------------------------

@@ -1206,7 +1206,7 @@ namespace Servy.Core.Services
                 {
                     int err = _win32ErrorProvider.GetLastWin32Error();
                     Logger.Debug($"Could not open '{info.Name}' for native details (Win32 {err}); leaving details unset.");
-                    info.Description = string.Format(Strings.Msg_DetailsUnavailableAccessDenied);
+                    info.Description = Strings.Msg_DetailsUnavailableAccessDenied;
                     return;
                 }
 
