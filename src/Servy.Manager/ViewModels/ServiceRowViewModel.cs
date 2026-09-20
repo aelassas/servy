@@ -38,13 +38,13 @@ namespace Servy.Manager.ViewModels
             Service.PropertyChanged += Service_PropertyChanged;
 
             StartCommand = new AsyncCommand(StartServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Stopped,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled && Service.Status == ServiceStatus.Stopped,
                 name: nameof(StartCommand));
             StopCommand = new AsyncCommand(StopServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Running,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled && Service.Status == ServiceStatus.Running,
                 name: nameof(StopCommand));
             RestartCommand = new AsyncCommand(RestartServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Running,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled && Service.Status == ServiceStatus.Running,
                 name: nameof(RestartCommand));
             ConfigureCommand = new AsyncCommand(ConfigureServiceAsync,
                 CanExecuteServiceCommand,
@@ -53,7 +53,7 @@ namespace Servy.Manager.ViewModels
                 CanExecuteServiceCommand, // We don't check Service.IsInstalled != true to allow re-installing an installed service to update its configuration in DB and SCM
                 name: nameof(InstallCommand));
             UninstallCommand = new AsyncCommand(UninstallServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled,
                 name: nameof(UninstallCommand));
             RemoveCommand = new AsyncCommand(RemoveServiceAsync,
                 CanExecuteServiceCommand,
