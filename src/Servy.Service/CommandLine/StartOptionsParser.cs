@@ -182,7 +182,7 @@ namespace Servy.Service.CommandLine
             {
                 return EnvironmentVariableParser.Parse(raw ?? string.Empty);
             }
-            catch (Exception ex) when (ex is FormatException || ex is ArgumentException)
+            catch (FormatException ex)
             {
                 Logger.Error(
                     $"Service '{serviceName}': stored {fieldName} value is malformed and could not be parsed " +
