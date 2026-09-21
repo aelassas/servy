@@ -81,14 +81,14 @@ namespace Servy.Service.Helpers
         /// </summary>
         private static readonly string KeywordBoundaryPattern =
             @"(?i)(?:" +
-                @"(?<=^|[^a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:" + string.Join("|", LooseKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
+                @"(?<![a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:" + string.Join("|", LooseKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
                 @"|" +
                 @"(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", StrictKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
             @")";
 
         /// <summary>
         /// A specialized regex for matching sensitive keys.
-        /// Uses the same boundary logic as MaskingRegex to avoid false positives like 'MONKEY_TYPE'.
+        /// Uses the same boundary logic as MaskingRegex to avoid false positives like 'APIPATH' or 'PRIVATELY'.
         /// </summary>
         private static readonly Regex KeyMatcherRegex = new Regex(
             KeywordBoundaryPattern,
