@@ -29,6 +29,9 @@ $script:ServyTimeoutSeconds = 600
 # Retained for backward compatibility with previous versions (9.8 and below).
 $script:ServyMaxBufferChars = 1048576
 
+# Maximum length of sensitive values (e.g., parameters, environment variables). Values longer than this will trigger validation errors.
+$script:ServySensitiveValueMaxLength = 28000
+
 # Shared validation pattern for KEY=VALUE;KEY=VALUE environment-variable strings
 # Uses Atomic Groups (?>...) to prevent Catastrophic Backtracking (ReDoS) on overlapping escape branches.
 $script:EnvVarValidationPattern = '^\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*)(;\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?\s*$'
@@ -1192,7 +1195,10 @@ function Install-ServyService {
           })]
         [string] $StartupDir,
 
-        [ValidateLength(0, 28000)]
+        [ValidateScript({
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
         [string] $Params,
 
         # Service Lifecycle and Priority
@@ -1275,16 +1281,22 @@ function Install-ServyService {
           })]
         [string] $FailureProgramStartupDir,
 
-        [ValidateLength(0, 28000)]
+        [ValidateScript({
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
         [string] $FailureProgramParams,
 
         # Cap the value length to keep the injected environment variable well within the
         # per-variable Windows environment-block limit (~32,767 chars). NOTE: this value is
         # passed to the CLI via an environment variable (see Resolve-SecureParameter), not on
         # the command line, so it does not count against the command-line length budget.
-        [ValidateLength(0, 28000)]
         [ValidateScript({
-            if ($_ -match $script:EnvVarValidationPattern) { $true }
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
+        [ValidateScript({
+            if ([string]::IsNullOrEmpty($_) -or $_ -match $script:EnvVarValidationPattern) { $true }
             else { throw "Invalid -EnvVars format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\\`"'." }
         })]
         [string] $EnvVars,
@@ -1312,12 +1324,18 @@ function Install-ServyService {
           })]
         [string] $PreLaunchStartupDir,
 
-        [ValidateLength(0, 28000)]
+        [ValidateScript({
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
         [string] $PreLaunchParams,
 
-        [ValidateLength(0, 28000)]
         [ValidateScript({
-            if ($_ -match $script:EnvVarValidationPattern) { $true }
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
+        [ValidateScript({
+            if ([string]::IsNullOrEmpty($_) -or $_ -match $script:EnvVarValidationPattern) { $true }
             else { throw "Invalid -PreLaunchEnv format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\\`"'." }
         })]
         [string] $PreLaunchEnv,
@@ -1349,7 +1367,10 @@ function Install-ServyService {
           })]
         [string] $PostLaunchStartupDir,
 
-        [ValidateLength(0, 28000)]
+        [ValidateScript({
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
         [string] $PostLaunchParams,
 
         # Debug Logs
@@ -1368,7 +1389,10 @@ function Install-ServyService {
           })]
         [string] $PreStopStartupDir,
 
-        [ValidateLength(0, 28000)]
+        [ValidateScript({
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
         [string] $PreStopParams,
 
         [ValidateRange(0, 86400)]
@@ -1389,7 +1413,10 @@ function Install-ServyService {
           })]
         [string] $PostStopStartupDir,
 
-        [ValidateLength(0, 28000)]
+        [ValidateScript({
+            if ($_.Length -le $script:ServySensitiveValueMaxLength) { $true }
+            else { throw "Value exceeds the maximum length of $script:ServySensitiveValueMaxLength characters (to stay within the Windows environment-block limit)." }
+        })]
         [string] $PostStopParams
     )
 
