@@ -410,6 +410,37 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void TryResolveValidChild_AccessDeniedOnIdleProcess_CatchesWin32ExceptionAndReturnsNull()
+        {
+            // Arrange - PID 0, the System Idle pseudo-process, is enumerable and resolvable but
+            // refuses every property query with ERROR_ACCESS_DENIED, including for an elevated
+            // caller. PID 4 (System), which the Format sibling above uses, does NOT: on an elevated
+            // host its properties read back normally, so a test anchored on PID 4 skips itself
+            // instead of reaching the arm it names. Measured on this repo's Windows CI runner,
+            // where PID 0 was the only one of ~140 live processes to deny StartTime.
+            Process idleProcess = null;
+            try { idleProcess = Process.GetProcessById(0); }
+            catch (ArgumentException) { /* Ignore */ }
+
+            if (idleProcess is null) return; // Skip - PID 0 (Idle) is not resolvable on this host.
+
+            using (idleProcess)
+            {
+                // Precondition: TryResolveValidChild reads StartTime before its lifetime checks, so that
+                // is the property that must actually be denied - otherwise this test exercises the
+                // lifetime-bounds path, not the Win32Exception fallback.
+                var denied = Record.Exception(() => _ = idleProcess.StartTime);
+                if (!(denied is Win32Exception)) return; // Skip - StartTime on PID 0 did not raise Win32Exception
+
+                // Act
+                var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", idleProcess.Id, DateTime.Now, DateTime.UtcNow);
+
+                // Assert
+                Assert.Null(result);
+            }
+        }
+
         #endregion
 
         #region Integration Test Helpers
