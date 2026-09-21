@@ -1071,91 +1071,91 @@ namespace Servy.ViewModels
         /// before updating configuration properties, ensuring that user cancellation of a dialog
         /// does not overwrite existing valid paths.
         /// </remarks>
-        private void BrowseAndAssign(Func<string, string> dialogAction, Action<string> propertySetter)
+        private void BrowseAndAssign(Func<string> dialogAction, Action<string> propertySetter)
         {
-            var result = dialogAction(null);
+            var result = dialogAction();
             if (!string.IsNullOrEmpty(result)) propertySetter(result);
         }
 
         /// <summary>
         /// Opens a dialog to browse for an executable file and sets <see cref="ExecutablePath"/>.
         /// </summary>
-        private void BrowseExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => ExecutablePath = v);
+        private void BrowseExecutablePath() => BrowseAndAssign(() => _dialogService.OpenExecutable(), v => ExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="StartupDirectory"/>.
         /// </summary>
-        private void BrowseStartupDirectory() => BrowseAndAssign(_dialogService.OpenFolder, v => StartupDirectory = v);
+        private void BrowseStartupDirectory() => BrowseAndAssign(() => _dialogService.OpenFolder(), v => StartupDirectory = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for standard output redirection.
         /// </summary>
-        private void BrowseStdoutPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => StdoutPath = v);
+        private void BrowseStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => StdoutPath = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for standard error redirection.
         /// </summary>
-        private void BrowseStderrPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => StderrPath = v);
+        private void BrowseStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => StderrPath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramExecutablePath"/>.
         /// </summary>
-        private void BrowseFailureProgramExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => FailureProgramExecutablePath = v);
+        private void BrowseFailureProgramExecutablePath() => BrowseAndAssign(() => _dialogService.OpenExecutable(), v => FailureProgramExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="FailureProgramStartupDirectory"/>.
         /// </summary>
-        private void BrowseFailureProgramStartupDirectory() => BrowseAndAssign(_dialogService.OpenFolder, v => FailureProgramStartupDirectory = v);
+        private void BrowseFailureProgramStartupDirectory() => BrowseAndAssign(() => _dialogService.OpenFolder(), v => FailureProgramStartupDirectory = v);
 
         /// <summary>
         /// Opens a dialog to browse for a pre-launch executable file and sets <see cref="PreLaunchExecutablePath"/>.
         /// </summary>
-        private void BrowsePreLaunchExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PreLaunchExecutablePath = v);
+        private void BrowsePreLaunchExecutablePath() => BrowseAndAssign(() => _dialogService.OpenExecutable(), v => PreLaunchExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="PreLaunchStartupDirectory"/>.
         /// </summary>
-        private void BrowsePreLaunchStartupDirectory() => BrowseAndAssign(_dialogService.OpenFolder, v => PreLaunchStartupDirectory = v);
+        private void BrowsePreLaunchStartupDirectory() => BrowseAndAssign(() => _dialogService.OpenFolder(), v => PreLaunchStartupDirectory = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard output redirection.
         /// </summary>
-        private void BrowsePreLaunchStdoutPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => PreLaunchStdoutPath = v);
+        private void BrowsePreLaunchStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => PreLaunchStdoutPath = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard error redirection.
         /// </summary>
-        private void BrowsePreLaunchStderrPath() => BrowseAndAssign(_ => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => PreLaunchStderrPath = v);
+        private void BrowsePreLaunchStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => PreLaunchStderrPath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a post-launch executable file and sets <see cref="PostLaunchExecutablePath"/>.
         /// </summary>
-        private void BrowsePostLaunchExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PostLaunchExecutablePath = v);
+        private void BrowsePostLaunchExecutablePath() => BrowseAndAssign(() => _dialogService.OpenExecutable(), v => PostLaunchExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="PostLaunchStartupDirectory"/>.
         /// </summary>
-        private void BrowsePostLaunchStartupDirectory() => BrowseAndAssign(_dialogService.OpenFolder, v => PostLaunchStartupDirectory = v);
+        private void BrowsePostLaunchStartupDirectory() => BrowseAndAssign(() => _dialogService.OpenFolder(), v => PostLaunchStartupDirectory = v);
 
         /// <summary>
         /// Opens a dialog to browse for a pre-stop executable file and sets <see cref="PreStopExecutablePath"/>.
         /// </summary>
-        private void BrowsePreStopExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PreStopExecutablePath = v);
+        private void BrowsePreStopExecutablePath() => BrowseAndAssign(() => _dialogService.OpenExecutable(), v => PreStopExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a pre-stop folder and sets <see cref="PreStopStartupDirectory"/>.
         /// </summary>
-        private void BrowsePreStopStartupDirectory() => BrowseAndAssign(_dialogService.OpenFolder, v => PreStopStartupDirectory = v);
+        private void BrowsePreStopStartupDirectory() => BrowseAndAssign(() => _dialogService.OpenFolder(), v => PreStopStartupDirectory = v);
 
         /// <summary>
         /// Opens a dialog to browse for a post-stop executable file and sets <see cref="PostStopExecutablePath"/>.
         /// </summary>
-        private void BrowsePostStopExecutablePath() => BrowseAndAssign(_dialogService.OpenExecutable, v => PostStopExecutablePath = v);
+        private void BrowsePostStopExecutablePath() => BrowseAndAssign(() => _dialogService.OpenExecutable(), v => PostStopExecutablePath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a post-stop folder and sets <see cref="PostStopStartupDirectory"/>.
         /// </summary>
-        private void BrowsePostStopStartupDirectory() => BrowseAndAssign(_dialogService.OpenFolder, v => PostStopStartupDirectory = v);
+        private void BrowsePostStopStartupDirectory() => BrowseAndAssign(() => _dialogService.OpenFolder(), v => PostStopStartupDirectory = v);
 
         #endregion
 
