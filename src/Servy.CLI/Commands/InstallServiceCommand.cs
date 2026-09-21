@@ -209,25 +209,24 @@ namespace Servy.CLI.Commands
         {
             var envValue = Environment.GetEnvironmentVariable(envVarName);
 
-            // If the environment variable exists but is only whitespace, warn and ignore it
-            if (envValue != null && string.IsNullOrWhiteSpace(envValue))
+            if (envValue == null)
+                return optionValue;
+
+            // Set but blank: warn and fall back to the command line rather than silently
+            // installing an empty password or parameter string.
+            if (string.IsNullOrWhiteSpace(envValue))
             {
                 Logger.Warn($"Environment variable '{envVarName}' contains only whitespace and will be ignored.");
                 return optionValue;
             }
 
-            if (!string.IsNullOrEmpty(envValue))
+            if (!string.IsNullOrEmpty(optionValue) && !string.Equals(envValue, optionValue, StringComparison.Ordinal))
             {
-                if (!string.IsNullOrEmpty(optionValue) && !string.Equals(envValue, optionValue, StringComparison.Ordinal))
-                {
-                    Logger.Warn($"Environment variable '{envVarName}' is overriding the explicitly provided command-line option.");
-                }
-
-                Logger.Info($"Using value from environment variable '{envVarName}'.");
-                return envValue;
+                Logger.Warn($"Environment variable '{envVarName}' is overriding the explicitly provided command-line option.");
             }
 
-            return optionValue;
+            Logger.Info($"Using value from environment variable '{envVarName}'.");
+            return envValue;
         }
     }
 }

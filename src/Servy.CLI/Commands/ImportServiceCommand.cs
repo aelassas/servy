@@ -255,7 +255,7 @@ namespace Servy.CLI.Commands
         private async Task<CommandResult> TryInstallServiceAsync(string serviceName, string format, CancellationToken cancellationToken = default)
         {
             // 1. Retrieve the service domain object
-            var serviceDto = await _serviceRepository.GetByNameAsync(serviceName, cancellationToken: cancellationToken);
+            var serviceDto = await _serviceRepository.GetByNameAsync(serviceName, decrypt: true, cancellationToken: cancellationToken);
 
             if (serviceDto == null)
             {

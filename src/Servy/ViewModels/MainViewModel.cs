@@ -1413,12 +1413,13 @@ namespace Servy.ViewModels
         /// Load current service configuration based on windows service name.
         /// </summary>
         /// <param name="serviceName">Service Name.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
-        public async Task LoadServiceConfigurationAsync(string? serviceName)
+        public async Task LoadServiceConfigurationAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
             try
             {
-                var dto = await _serviceRepository.GetByNameAsync(serviceName);
+                var dto = await _serviceRepository.GetByNameAsync(serviceName, decrypt: true, cancellationToken);
 
                 if (dto == null)
                 {
