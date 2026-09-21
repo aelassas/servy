@@ -119,6 +119,80 @@ namespace Servy.UnitTests.Services
             }
         }
 
+        #region Constructor Guard Tests
+
+        [Theory]
+        [InlineData("modelToServiceDto")]
+        [InlineData("bindServiceDtoToModel")]
+        [InlineData("serviceManager")]
+        [InlineData("messageBoxService")]
+        [InlineData("dialogService")]
+        [InlineData("serviceConfigurationValidator")]
+        [InlineData("xmlServiceValidator")]
+        [InlineData("jsonServiceValidator")]
+        [InlineData("appConfig")]
+        [InlineData("cursorService")]
+        [InlineData("xmlServiceSerializer")]
+        [InlineData("jsonServiceSerializer")]
+        [InlineData("processHelper")]
+        public void Constructor_NullDependency_ThrowsArgumentNullExceptionNamingThatParameter(string paramName)
+        {
+            // Arrange
+            // Every dependency starts valid; only the one named by the test case is replaced by
+            // null, so a missing guard is attributable to exactly one constructor parameter.
+            Func<ServiceDto?> modelToServiceDto = _modelToServiceDtoMock.Object;
+            Action<ServiceDto> bindServiceDtoToModel = dto => { };
+            IServiceManager serviceManager = _serviceManagerMock.Object;
+            IMessageBoxService messageBoxService = _messageBoxServiceMock.Object;
+            IFileDialogService dialogService = _dialogServiceMock.Object;
+            IServiceConfigurationValidator serviceConfigurationValidator = _serviceConfigurationValidatorMock.Object;
+            IXmlServiceValidator xmlServiceValidator = _xmlServiceValidatorMock.Object;
+            IJsonServiceValidator jsonServiceValidator = _jsonServiceValidatorMock.Object;
+            IAppConfiguration appConfig = _appConfigMock.Object;
+            ICursorService cursorService = _cursorServiceMock.Object;
+            IXmlServiceSerializer xmlServiceSerializer = _xmlServiceSerializerMock.Object;
+            IJsonServiceSerializer jsonServiceSerializer = _jsonServiceSerializerMock.Object;
+            IProcessHelper processHelper = _processHelperMock.Object;
+
+            switch (paramName)
+            {
+                case "modelToServiceDto": modelToServiceDto = null!; break;
+                case "bindServiceDtoToModel": bindServiceDtoToModel = null!; break;
+                case "serviceManager": serviceManager = null!; break;
+                case "messageBoxService": messageBoxService = null!; break;
+                case "dialogService": dialogService = null!; break;
+                case "serviceConfigurationValidator": serviceConfigurationValidator = null!; break;
+                case "xmlServiceValidator": xmlServiceValidator = null!; break;
+                case "jsonServiceValidator": jsonServiceValidator = null!; break;
+                case "appConfig": appConfig = null!; break;
+                case "cursorService": cursorService = null!; break;
+                case "xmlServiceSerializer": xmlServiceSerializer = null!; break;
+                case "jsonServiceSerializer": jsonServiceSerializer = null!; break;
+                case "processHelper": processHelper = null!; break;
+                default: throw new InvalidOperationException($"Unknown constructor parameter '{paramName}'.");
+            }
+
+            // Act + Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceCommands(
+                modelToServiceDto,
+                bindServiceDtoToModel,
+                serviceManager,
+                messageBoxService,
+                dialogService,
+                serviceConfigurationValidator,
+                xmlServiceValidator,
+                jsonServiceValidator,
+                appConfig,
+                cursorService,
+                xmlServiceSerializer,
+                jsonServiceSerializer,
+                processHelper));
+
+            Assert.Equal(paramName, ex.ParamName);
+        }
+
+        #endregion
+
         #region InstallService Branch and Catch Block Tests
 
         [Fact]
@@ -507,6 +581,32 @@ namespace Servy.UnitTests.Services
             Assert.Equal(dto.PostStopParameters, captured.PostStopArgs);
 
             Assert.Equal(dto.EnableDebugLogs, captured.EnableDebugLogs);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-5)]
+        public async Task InstallService_RotationSizeNotPositive_MapsRotationSizeInBytesToZero(int rotationSize)
+        {
+            // Arrange
+            // RotationSizeInBytes defaults to ToBytes(DefaultRotationSizeMB), so asserting 0 also
+            // rules out the option simply being left at its default.
+            var sut = CreateSut();
+            var dto = new ServiceDto { Name = "NoRotationService", RotationSize = rotationSize };
+
+            InstallServiceOptions? captured = null;
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(dto, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(captured);
+            Assert.Equal(0L, captured.RotationSizeInBytes);
         }
 
         #endregion
