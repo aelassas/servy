@@ -523,6 +523,53 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.True(containsBoth, $"Log file content did not fully stabilize with both outputs. Current file string content: '{content}'");
         }
 
+        [Fact]
+        public void Start_RedirectOutput_DifferentPaths_WritesStdoutAndStderrToSeparateFiles()
+        {
+            // Arrange
+            // Two distinct paths take errHandler's independent-file arm, the one the multiplexed
+            // test above cannot reach because it points both streams at a single file.
+            string stdoutPath = CreateTempFilePath();
+            string stderrPath = CreateTempFilePath();
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, TestTimeouts.ProcessLauncherTimeoutMs);
+            options.EnableConsoleUI = false;
+            options.RedirectToWriters = true;
+            options.StdoutPath = stdoutPath;
+            options.StderrPath = stderrPath;
+
+            // Act
+            using (var wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
+            {
+                Assert.True(wrapper.HasExited);
+            }
+
+            string stdoutContent = string.Empty;
+            string stderrContent = string.Empty;
+            bool bothStabilized = false;
+
+            for (int i = 0; i < TestTimeouts.MaxPollAttempts; i++)
+            {
+                try { stdoutContent = File.ReadAllText(stdoutPath); }
+                catch (IOException) { /* writer still holds the handle - retry */ }
+                try { stderrContent = File.ReadAllText(stderrPath); }
+                catch (IOException) { /* writer still holds the handle - retry */ }
+                if (stdoutContent.Contains("STDOUT_MSG") && stderrContent.Contains("STDERR_MSG"))
+                {
+                    bothStabilized = true;
+                    break;
+                }
+                Thread.Sleep(TestTimeouts.PollIntervalMs);
+            }
+
+            // Assert
+            Assert.True(bothStabilized, $"Log files did not fully stabilize. stdout: '{stdoutContent}', stderr: '{stderrContent}'");
+
+            // Each stream stayed in its own file; without these a regression that collapsed both
+            // onto one path would still satisfy the checks above
+            Assert.DoesNotContain("STDERR_MSG", stdoutContent);
+            Assert.DoesNotContain("STDOUT_MSG", stderrContent);
+        }
+
         #endregion
 
         #region Helpers & Mocks
