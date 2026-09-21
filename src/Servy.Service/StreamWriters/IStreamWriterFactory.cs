@@ -10,7 +10,22 @@ namespace Servy.Service.StreamWriters
         /// <summary>
         /// Creates a new <see cref="IStreamWriter"/> for the specified file path and rotation settings.
         /// </summary>
-        /// <inheritdoc cref="RotatingStreamWriter(string, bool, long, bool, DateRotationType, int, bool, Func{DateTime})"/>
+        /// <param name="path">The path to the log file.</param>
+        /// <param name="enableSizeRotation">
+        /// Enables rotation when the log file exceeds the size specified
+        /// in <paramref name="rotationSizeInBytes"/>.
+        /// </param>
+        /// <param name="rotationSizeInBytes">The maximum file size in bytes before rotating.</param>
+        /// <param name="enableDateRotation">
+        /// Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.
+        /// </param>
+        /// <param name="dateRotationType">
+        /// Defines the date-based rotation schedule (daily, weekly, monthly, or none).
+        /// <see cref="DateRotationType.None"/> disables date-based rotation even when
+        /// <paramref name="enableDateRotation"/> is <c>true</c>.
+        /// </param>
+        /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
+        /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
         /// <returns>An <see cref="IStreamWriter"/> instance.</returns>
         IStreamWriter Create(
             string path,
