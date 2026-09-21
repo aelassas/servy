@@ -6,7 +6,6 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Core.Validation;
-using Servy.Models;
 using Servy.Resources;
 using Servy.UI.Services;
 using Servy.Validation;
@@ -268,49 +267,13 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default)
-        {
-            if (!await IsServiceNameValidAsync(serviceName))
-            {
-                return false;
-            }
-
-            try
-            {
-                _cursorService.SetWaitCursor();
-                var res = await _serviceManager.UninstallServiceAsync(serviceName, cancellationToken);
-
-                if (!res.IsSuccess)
-                {
-                    var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
-                    Logger.Warn($"UninstallService failed: {msg}");
-                    await _messageBoxService.ShowErrorAsync(msg, Caption);
-                    return false;
-                }
-
-                await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
-                return true;
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(UnexpectedError, ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                return false;
-            }
-            finally
-            {
-                _cursorService.ResetCursor();
-            }
-        }
+        public Task<bool> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(
+                serviceName,
+                (name) => _serviceManager.UninstallServiceAsync(name, cancellationToken),
+                Strings.Msg_ServiceRemoved,
+                checkDisabled: false,
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task<bool> StartServiceAsync(string? serviceName, CancellationToken cancellationToken = default) =>

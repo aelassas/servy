@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:resx="clr-namespace:Servy.Manager.Resources"
         xmlns:views="clr-namespace:Servy.Manager.Views"
-        xmlns:vm="clr-namespace:Servy.Manager.ViewModels"
         xmlns:managerConverters="clr-namespace:Servy.Manager.Converters"
         xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"

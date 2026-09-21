@@ -256,14 +256,13 @@
                   </TextBlock>
 
                   <!-- Secondary Service Name Text -->
-                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,0,0">
-                    <StackPanel.Resources>
+                  <TextBlock Text="{Binding ServiceName, StringFormat=' ({0})'}"
+                             VerticalAlignment="Center"
+                             Margin="2,0,0,0">
+                    <TextBlock.Style>
                       <Style TargetType="TextBlock">
                         <Setter Property="Foreground" Value="#6D6D6D" />
                         <Style.Triggers>
-                          <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
-                            <Setter Property="Foreground" Value="White" />
-                          </DataTrigger>
                           <DataTrigger Binding="{Binding IsCyclic}" Value="True">
                             <Setter Property="Foreground" Value="#F39C12" />
                             <Setter Property="Opacity" Value="0.8" />
@@ -272,29 +271,14 @@
                             <Setter Property="Foreground" Value="#E67E22" />
                             <Setter Property="Opacity" Value="0.8" />
                           </DataTrigger>
-                          <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                              <Condition Binding="{Binding IsCyclic}" Value="True" />
-                              <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True" />
-                            </MultiDataTrigger.Conditions>
+                          <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
                             <Setter Property="Foreground" Value="White" />
                             <Setter Property="Opacity" Value="1.0" />
-                          </MultiDataTrigger>
-                          <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                              <Condition Binding="{Binding IsUnavailable}" Value="True" />
-                              <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True" />
-                            </MultiDataTrigger.Conditions>
-                            <Setter Property="Foreground" Value="White" />
-                            <Setter Property="Opacity" Value="1.0" />
-                          </MultiDataTrigger>
+                          </DataTrigger>
                         </Style.Triggers>
                       </Style>
-                    </StackPanel.Resources>
-                    <TextBlock Text=" (" />
-                    <TextBlock Text="{Binding ServiceName}" />
-                    <TextBlock Text=")" />
-                  </StackPanel>
+                    </TextBlock.Style>
+                  </TextBlock>
                 </StackPanel>
               </HierarchicalDataTemplate>
 

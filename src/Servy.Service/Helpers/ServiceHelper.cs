@@ -76,14 +76,14 @@ namespace Servy.Service.Helpers
         /// </summary>
         private static readonly string KeywordBoundaryPattern =
             @"(?i)(?:" +
-                @"(?<=^|[^a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:" + string.Join("|", LooseKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
+                @"(?<![a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:" + string.Join("|", LooseKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
                 @"|" +
                 @"(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", StrictKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
             @")";
 
         /// <summary>
         /// A specialized regex for matching sensitive keys.
-        /// Uses the same boundary logic as MaskingRegex to avoid false positives like 'MONKEY_TYPE'.
+        /// Uses the same boundary logic as MaskingRegex to avoid false positives like 'APIPATH' or 'PRIVATELY'.
         /// </summary>
         private static readonly Regex KeyMatcherRegex = new Regex(
             KeywordBoundaryPattern,
@@ -108,7 +108,6 @@ namespace Servy.Service.Helpers
                  // BRANCH A: Explicit Separators (:, =, /)
                  // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---")
                  // as long as the next word isn't another CLI flag.
-                 // Entire choice block is wrapped in an atomic group (?>...) to prevent catastrophic backtracking.
                  @"(?<sep>\s*[:=]\s*|/)" +
                  @"(?>(?:" +
                      @"(?<val>""[^""]*"")|" +            // Double quoted: captures quotes so the whole string gets masked cleanly
@@ -119,7 +118,6 @@ namespace Servy.Service.Helpers
                  // BRANCH B: Space Separator
                  // Consumes unquoted strings, supporting multi-word values (e.g., "my secret pass")
                  // but stops consuming if it detects a subsequent CLI flag.
-                 // Entire choice block is wrapped in an atomic group (?>...) to prevent catastrophic backtracking.
                  @"(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
                  @"(?>(?:" +
                      @"(?<val>""[^""]*"")|" +            // Double quoted: captures quotes so the whole string gets masked cleanly

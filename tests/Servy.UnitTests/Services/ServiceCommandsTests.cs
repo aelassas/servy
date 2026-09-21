@@ -47,6 +47,10 @@ namespace Servy.UnitTests.Services
             _modelToServiceDtoMock = new Mock<Func<ServiceDto?>>();
             _processHelperMock = new Mock<IProcessHelper>();
 
+            // Default service presence check to false so InstallService tests proceed by default
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(false);
+
             // Default all service-manager operations to success
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
@@ -210,7 +214,6 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "ValidInstallService" };
 
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled("ValidInstallService", It.IsAny<CancellationToken>())).Returns(false);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
@@ -425,7 +428,6 @@ namespace Servy.UnitTests.Services
 
             InstallServiceOptions? captured = null;
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(dto.Name, It.IsAny<CancellationToken>())).Returns(false);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
                 .ReturnsAsync(OperationResult.Success());
@@ -1191,16 +1193,16 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "MissingUninstallService";
-            string errorMsg = $"Service '{serviceName}' does not exist.";
-            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(OperationResult.Failure(errorMsg));
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
+                .Returns(false);
+
             // Act
             var result = await sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(errorMsg, UiAppConfig.Caption), Times.Once);
-            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1209,6 +1211,7 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "StuckService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Service marked for deletion."));
 
@@ -1229,6 +1232,7 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "SilentFailureService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateBlankFailureOperationResult(blankMessage));
 
@@ -1246,6 +1250,7 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "SecureSystemService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new UnauthorizedAccessException());
 
@@ -1263,6 +1268,7 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "CrashingUninstallService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("WMI Registry Failure"));
 
@@ -1284,6 +1290,7 @@ namespace Servy.UnitTests.Services
 
             // 1. Pass the IsServiceNameValid gate implicitly by using a standard name string
             // 2. Force UninstallServiceAsync to return a successful operational track result
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
@@ -1586,7 +1593,6 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "CancelledInstallService" };
 
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled("CancelledInstallService", It.IsAny<CancellationToken>())).Returns(false);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
@@ -1604,6 +1610,7 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var serviceName = "CancelledUninstallService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
