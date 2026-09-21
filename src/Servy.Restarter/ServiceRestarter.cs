@@ -150,7 +150,7 @@ namespace Servy.Restarter
                         {
                             _logger?.Error($"Timeout expired before wait could begin for service '{serviceName}' to reach Stopped state.");
                             throw new System.TimeoutException(
-                                $"Timeout expired while waiting for service '{serviceName}' to reach Stopped. " +
+                                $"Timeout expired before the wait for service '{serviceName}' to reach Stopped could begin. " +
                                 "The Stop command was issued; the service is stopping and will not be restarted by this run.");
                         }
 
@@ -211,7 +211,7 @@ namespace Servy.Restarter
                     {
                         _logger?.Error($"Timeout expired before wait could begin for service '{serviceName}' to reach Running state.");
                         throw new System.TimeoutException(
-                            $"Timeout expired while waiting for service '{serviceName}' to reach Running. " +
+                            $"Timeout expired before the wait for service '{serviceName}' to reach Running could begin. " +
                             "The Start command was issued; the service may still complete the transition.");
                     }
 

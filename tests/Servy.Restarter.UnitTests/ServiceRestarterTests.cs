@@ -147,7 +147,7 @@ namespace Servy.Restarter.UnitTests
             var ex = Assert.Throws<System.TimeoutException>(() =>
                 _restarter.RestartService(serviceName, TimeSpan.Zero));
 
-            Assert.Contains($"Timeout expired while waiting for service '{serviceName}' to reach Stopped.", ex.Message);
+            Assert.Contains($"Timeout expired before the wait for service '{serviceName}' to reach Stopped could begin.", ex.Message);
             _mockController.Verify(c => c.Stop(), Times.Once); // Stop is issued before the time check
 
             // Verify context handle cleanup rules execute on immediate stop timeouts
@@ -248,7 +248,7 @@ namespace Servy.Restarter.UnitTests
             var ex = Assert.Throws<System.TimeoutException>(() =>
                 _restarter.RestartService("MyService", TimeSpan.Zero));
 
-            Assert.Contains("Timeout expired while waiting for service", ex.Message);
+            Assert.Contains("Timeout expired before the wait for service", ex.Message);
             _mockController.Verify(c => c.Start(), Times.Once);
 
             // Ensure start timeouts pass the object disposal verification check
