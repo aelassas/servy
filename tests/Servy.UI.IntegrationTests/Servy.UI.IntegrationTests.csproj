@@ -132,6 +132,7 @@
     <Compile Include="Services\CursorServiceIntegrationTests.cs" />
     <Compile Include="Services\FileDialogServiceIntegrationTests.cs" />
     <Compile Include="Services\HelpServiceIntegrationTests.cs" />
+    <Compile Include="Services\MessageBoxServiceDispatchTests.cs" />
     <Compile Include="Services\MessageBoxServiceIntegrationTests.cs" />
     <Compile Include="Services\WpfUiDispatcherIntegrationTests.cs" />
     <Compile Include="UiHeadlessFixture.cs" />
