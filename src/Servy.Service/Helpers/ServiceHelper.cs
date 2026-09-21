@@ -17,6 +17,11 @@ namespace Servy.Service.Helpers
     {
         #region Logging Security
 
+        // Entries are matched with '_' as a word boundary on both sides, so a broad keyword
+        // (SECRET, TOKEN, PASSWORD, API) already covers PREFIX_KEYWORD and KEYWORD_SUFFIX
+        // (e.g. CLIENT_SECRET, APP_SECRET, SECRET_KEY, DATABASE_PASSWORD, API_KEY, TELEGRAM_TOKEN, DISCORD_TOKEN).
+        // Only add a compound entry when neither of its constituent parts is listed (e.g. PRIVATE_KEY, SSH_KEY).
+
         /// <summary>
         /// Long or unambiguous sensitive keywords where letter/digit prefixes are permitted
         /// (e.g., PGPASSWORD, DBPASSWORD, APITOKEN, APIKEY, MY_PASSWORD).
@@ -27,22 +32,22 @@ namespace Servy.Service.Helpers
             "PASSWORD", "PASSPHRASE", "USERPWD",
 
             // --- Web & Mobile Auth (JWT/OAuth/Personal Tokens) ---
-            "TOKEN", "CREDENTIAL", "CLIENT_SECRET",
+            "TOKEN", "CREDENTIAL",
 
             // --- Cloud & Infrastructure (AWS/Azure/GCP) ---
             "SECRET", "ACCOUNTKEY", "ACCESSKEY", "SIGNATURE",
 
             // --- Databases & Storage ---
             "CONNECTIONSTRING", "CONNSTR", "DATABASE_URL",
-            "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD",
+            "PROVIDER_CONNECTION_STRING",
 
             // --- Cryptography & Identity (Specific KEY variants) ---
-            "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY", "APIKEY",
+            "PRIVATE_KEY", "SSH_KEY", "APIKEY",
             "CERTIFICATE", "THUMBPRINT",
 
             // --- API & Integration Tokens ---
-            "APP_SECRET", "BROWSER_KEY", "WEBHOOK_URL",
-            "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN"
+            "BROWSER_KEY", "WEBHOOK_URL",
+            "KUBE_CONFIG"
         };
 
         /// <summary>
