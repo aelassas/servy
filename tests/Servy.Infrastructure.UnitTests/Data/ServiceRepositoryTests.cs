@@ -1600,6 +1600,84 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
+        public async Task CreateEncryptedClone_StripsTheCorruptMarkerAsHandleCorruptServiceDecryptionActuallyWritesIt()
+        {
+            // Arrange
+            // The marker is built by the real producer rather than transcribed here, so a reword of
+            // its text no longer passes unnoticed: the strip regex is the only other copy, and if the
+            // two drift apart this assertion fails instead of the marker reaching the Description column.
+            var repo = CreateRepository();
+            const string originalDescription = "This is the real service description.";
+
+            var dto = new ServiceDto
+            {
+                Name = "TestService",
+                Description = originalDescription,
+                Password = "plain_password"
+            };
+
+            TestReflection.InvokeNonPublic(repo, "HandleCorruptServiceDecryption", dto,
+                new InvalidOperationException("decryption failed", new CryptographicException("bad key")));
+
+            // Guard the guard: a producer that stopped marking would make the round-trip below vacuous.
+            Assert.NotEqual(originalDescription, dto.Description);
+
+            ServiceDto? capturedEncryptedClone = null;
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((sql, param, _, token) => capturedEncryptedClone = param as ServiceDto)
+                .ReturnsAsync(1);
+
+            // Act
+            await repo.AddAsync(dto, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(capturedEncryptedClone);
+            Assert.Equal(originalDescription, capturedEncryptedClone.Description);
+        }
+
+        [Fact]
+        public async Task CreateEncryptedClone_StripsTheLegacyMarkerAsHandleLegacyBlockedDecryptionActuallyWritesIt()
+        {
+            // Arrange
+            // Same round-trip for the second producer: its message is the longer of the two branches
+            // in the strip pattern and the one most likely to be reworded.
+            var repo = CreateRepository();
+            const string originalDescription = "Original clean description.";
+
+            var dto = new ServiceDto
+            {
+                Name = "LegacyRow",
+                Description = originalDescription,
+                Password = "plain_password"
+            };
+
+            TestReflection.InvokeNonPublic(repo, "HandleLegacyBlockedDecryption", dto,
+                new SecureDataLegacyBlockedException("v1 payload refused by policy"));
+
+            Assert.NotEqual(originalDescription, dto.Description);
+
+            ServiceDto? capturedEncryptedClone = null;
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((sql, param, _, token) => capturedEncryptedClone = param as ServiceDto)
+                .ReturnsAsync(1);
+
+            // Act
+            await repo.AddAsync(dto, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(capturedEncryptedClone);
+            Assert.Equal(originalDescription, capturedEncryptedClone.Description);
+        }
+
+        [Fact]
         public async Task PatchRuntimeStateAsync_ExistingNotNull_ExecutesApplyRuntimeState()
         {
             // Arrange
