@@ -5,6 +5,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -57,12 +58,13 @@ namespace Servy.Views
         /// Load current service configuration based on windows service name.
         /// </summary>
         /// <param name="serviceName">Service Name.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
-        public async Task LoadServiceConfigurationAsync(string serviceName)
+        public async Task LoadServiceConfigurationAsync(string serviceName, CancellationToken cancellationToken = default)
         {
             if (!string.IsNullOrWhiteSpace(serviceName))
             {
-                await _mainViewModel.LoadServiceConfigurationAsync(serviceName);
+                await _mainViewModel.LoadServiceConfigurationAsync(serviceName, cancellationToken);
             }
         }
 
