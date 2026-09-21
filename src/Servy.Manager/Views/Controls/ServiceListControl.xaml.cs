@@ -28,7 +28,7 @@ namespace Servy.Manager.Views.Controls
         /// </summary>
         public ObservableCollection<ServiceItemBase>? Services
         {
-            get => (ObservableCollection<ServiceItemBase>)GetValue(ServicesProperty);
+            get => (ObservableCollection<ServiceItemBase>?)GetValue(ServicesProperty);
             set => SetValue(ServicesProperty, value);
         }
 
@@ -47,7 +47,7 @@ namespace Servy.Manager.Views.Controls
         /// </summary>
         public ServiceItemBase? SelectedService
         {
-            get => (ServiceItemBase)GetValue(SelectedServiceProperty);
+            get => (ServiceItemBase?)GetValue(SelectedServiceProperty);
             set => SetValue(SelectedServiceProperty, value);
         }
 
@@ -69,7 +69,7 @@ namespace Servy.Manager.Views.Controls
         /// </summary>
         public string? SearchText
         {
-            get => (string)GetValue(SearchTextProperty);
+            get => (string?)GetValue(SearchTextProperty);
             set => SetValue(SearchTextProperty, value);
         }
 
@@ -91,7 +91,7 @@ namespace Servy.Manager.Views.Controls
         /// </summary>
         public string? SearchButtonText
         {
-            get => (string)GetValue(SearchButtonTextProperty);
+            get => (string?)GetValue(SearchButtonTextProperty);
             set => SetValue(SearchButtonTextProperty, value);
         }
 
@@ -128,7 +128,7 @@ namespace Servy.Manager.Views.Controls
         /// </summary>
         public ICommand? SearchCommand
         {
-            get => (ICommand)GetValue(SearchCommandProperty);
+            get => (ICommand?)GetValue(SearchCommandProperty);
             set => SetValue(SearchCommandProperty, value);
         }
 
