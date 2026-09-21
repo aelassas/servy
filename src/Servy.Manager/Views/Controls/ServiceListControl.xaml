@@ -67,7 +67,7 @@
                       HeadersVisibility="Column"
                       IsReadOnly="True"
                       IsSynchronizedWithCurrentItem="False"
-                      ItemsSource="{Binding Services, RelativeSource={RelativeSource AncestorType=UserControl}, IsAsync=True}"
+                      ItemsSource="{Binding Services, RelativeSource={RelativeSource AncestorType=UserControl}}"
                       ScrollViewer.CanContentScroll="True"
                       SelectedItem="{Binding SelectedService, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
                       SelectionMode="Single"
