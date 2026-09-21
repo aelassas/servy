@@ -558,6 +558,50 @@ namespace Servy.Service.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public void RestartService_RestarterExeMissing_LogsErrorAndAborts()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            var dir = GetTargetRestarterDirectory();
+
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+            // Move a real restarter out of the way rather than deleting it; the sibling test above
+            // creates a placeholder at this very path, so the missing-file guard is only reachable
+            // while nothing is there.
+            var backupPath = restarterPath + ".missing-branch.bak";
+            var moved = false;
+            if (File.Exists(restarterPath))
+            {
+                if (File.Exists(backupPath)) File.Delete(backupPath);
+                File.Move(restarterPath, backupPath);
+                moved = true;
+            }
+
+            try
+            {
+                // Act
+                _helper.RestartService("TestServiceMissingRestarter", mockLog.Object);
+
+                // Assert
+                // The guard returns before the ProcessStartInfo is built, so the start-failure
+                // branch one line below it - the only branch the sibling test drives - is never reached.
+                mockLog.Verify(l => l.Error("Servy.Restarter.Net48.exe not found.", It.IsAny<Exception>()), Times.Once);
+                _mockProcessHelper.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+            }
+            finally
+            {
+                // Restore the artifact this test displaced, whatever the assertions did
+                if (moved)
+                {
+                    if (File.Exists(restarterPath)) File.Delete(restarterPath);
+                    File.Move(backupPath, restarterPath);
+                }
+            }
+        }
+
         #endregion
 
         #region RestartComputer Tests
