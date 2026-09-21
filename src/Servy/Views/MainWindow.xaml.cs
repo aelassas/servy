@@ -60,13 +60,8 @@ namespace Servy.Views
         /// <param name="serviceName">Service Name.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
-        public async Task LoadServiceConfigurationAsync(string serviceName, CancellationToken cancellationToken = default)
-        {
-            if (!string.IsNullOrWhiteSpace(serviceName))
-            {
-                await _mainViewModel.LoadServiceConfigurationAsync(serviceName, cancellationToken);
-            }
-        }
+        public Task LoadServiceConfigurationAsync(string serviceName)
+            => _mainViewModel.LoadServiceConfigurationAsync(serviceName);
 
         /// <summary>
         /// Handles the <see cref="Window.Closed"/> event.

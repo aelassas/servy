@@ -1170,105 +1170,60 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Snapshots the form data on the UI thread and invokes <see cref="IServiceCommands.InstallServiceAsync"/> on a background thread.
+        /// Runs an asynchronous command body with <see cref="IsBusy"/> raised for its duration.
         /// </summary>
-        private async Task InstallServiceAsync(object parameter)
+        /// <param name="operation">The asynchronous command body to execute.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private async Task RunBusyAsync(Func<Task> operation)
         {
             try
             {
                 IsBusy = true;
-                var dto = ModelToServiceDto();
-                var success = await Task.Run(() => ServiceCommands.InstallServiceAsync(dto, ConfirmPassword, RunAsLocalSystem));
-                if (success)
-                {
-                    ConfirmPassword = string.Empty;
-                }
+                await operation();
             }
             finally
             {
                 ResetIsBusy();
             }
         }
+
+        /// <summary>
+        /// Snapshots the form data on the UI thread and invokes <see cref="IServiceCommands.InstallServiceAsync"/> on a background thread.
+        /// </summary>
+        private Task InstallServiceAsync(object parameter) => RunBusyAsync(async () =>
+        {
+            var dto = ModelToServiceDto();
+            var success = await Task.Run(() => ServiceCommands.InstallServiceAsync(dto, ConfirmPassword, RunAsLocalSystem));
+            if (success)
+            {
+                ConfirmPassword = string.Empty;
+            }
+        });
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.UninstallServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task UninstallServiceAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                _ = await Task.Run(() => ServiceCommands.UninstallServiceAsync(ServiceName));
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task UninstallServiceAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.UninstallServiceAsync(ServiceName)));
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.StartServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task StartServiceAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                _ = await Task.Run(() => ServiceCommands.StartServiceAsync(ServiceName));
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task StartServiceAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.StartServiceAsync(ServiceName)));
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.StopServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task StopServiceAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                _ = await Task.Run(() => ServiceCommands.StopServiceAsync(ServiceName));
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task StopServiceAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.StopServiceAsync(ServiceName)));
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.RestartServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task RestartServiceAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                _ = await Task.Run(() => ServiceCommands.RestartServiceAsync(ServiceName));
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task RestartServiceAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.RestartServiceAsync(ServiceName)));
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.OpenManagerAsync"/> to open the Servy Manager application.
         /// </summary>
-        private async Task OpenManagerAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                await ServiceCommands.OpenManagerAsync();
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task OpenManagerAsync(object parameter) => RunBusyAsync(() => ServiceCommands.OpenManagerAsync());
 
         #endregion
 
@@ -1277,7 +1232,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Clears all form fields and resets to default values.
         /// </summary>
-        private async Task ClearFormAsync(object parameter)
+        private Task ClearFormAsync(object parameter) => RunBusyAsync(async () =>
         {
             // Ask for confirmation before clearing everything
             bool confirm = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_ClearAll, UiAppConfig.Caption);
@@ -1287,7 +1242,7 @@ namespace Servy.ViewModels
 
             // Clear all fields
             ResetToDefaults();
-        }
+        });
 
         #endregion
 
@@ -1296,34 +1251,12 @@ namespace Servy.ViewModels
         /// <summary>
         /// Exports the current service configuration to an XML file selected by the user.
         /// </summary>
-        private async Task ExportXmlConfigAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                await Task.Run(() => ServiceCommands.ExportXmlConfigAsync(ConfirmPassword));
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task ExportXmlConfigAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.ExportXmlConfigAsync(ConfirmPassword)));
 
         /// <summary>
         /// Exports the current service configuration to a JSON file selected by the user.
         /// </summary>
-        private async Task ExportJsonConfigAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                await Task.Run(() => ServiceCommands.ExportJsonConfigAsync(ConfirmPassword));
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task ExportJsonConfigAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.ExportJsonConfigAsync(ConfirmPassword)));
 
         /// <summary>
         /// Opens a file dialog to select an XML configuration file for a service,
@@ -1331,18 +1264,7 @@ namespace Servy.ViewModels
         /// and maps the values to the main view model.
         /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        private async Task ImportXmlConfigAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                await Task.Run(() => ServiceCommands.ImportXmlConfigAsync());
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task ImportXmlConfigAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.ImportXmlConfigAsync()));
 
         /// <summary>
         /// Opens a file dialog to select a JSON configuration file for a service,
@@ -1350,18 +1272,7 @@ namespace Servy.ViewModels
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        private async Task ImportJsonConfigAsync(object parameter)
-        {
-            try
-            {
-                IsBusy = true;
-                await Task.Run(() => ServiceCommands.ImportJsonConfigAsync());
-            }
-            finally
-            {
-                ResetIsBusy();
-            }
-        }
+        private Task ImportJsonConfigAsync(object parameter) => RunBusyAsync(() => Task.Run(() => ServiceCommands.ImportJsonConfigAsync()));
 
         #endregion
 
