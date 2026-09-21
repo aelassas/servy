@@ -195,5 +195,54 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal(@"--config C:\App\config.json", result.expandedArgs);
             _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Arguments")), It.IsAny<Exception>()), Times.Never);
         }
+
+        [Fact]
+        public void ExpandAndAudit_NullLogger_SkipsWarningsAndStillExpands()
+        {
+            // Arrange
+            // ProcessLauncher documents the logger parameter as "can be null", so every
+            // logger?. call site inside the audit must take its null path.
+            var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "VAR", Value = "%MISSING%" } };
+            string args = "run %UNKNOWN%";
+
+            // Act
+            var result = ProcessHelper.ExpandAndAudit(vars, args, null, "Prefix");
+
+            // Assert
+            // Both placeholders stay unexpanded, so the warning site is reached with no logger to write to
+            Assert.Equal("%MISSING%", result.env["VAR"]);
+            Assert.Equal("run %UNKNOWN%", result.expandedArgs);
+        }
+
+        [Fact]
+        public void ExpandAndAudit_NullLoggerOnRegexTimeout_SwallowsTimeoutWithoutLogging()
+        {
+            // Arrange
+            var mockRegex = new Mock<IRegexWrapper>();
+            mockRegex.Setup(r => r.Matches(It.IsAny<string>()))
+                     .Throws(new RegexMatchTimeoutException());
+
+            // Swap the static wrapper for the mock
+            var original = ProcessHelper.EnvVarRegex;
+            ProcessHelper.EnvVarRegex = mockRegex.Object;
+
+            try
+            {
+                // Act
+                // The timeout arm reports through logger?.Error; with a null logger it must stay silent
+                var result = ProcessHelper.ExpandAndAudit(
+                    new List<EnvironmentVariable> { new EnvironmentVariable { Name = "TRIGGER", Value = "trigger" } },
+                    "trigger", null);
+
+                // Assert
+                Assert.Equal("trigger", result.env["TRIGGER"]);
+                Assert.Equal("trigger", result.expandedArgs);
+            }
+            finally
+            {
+                // Restore original
+                ProcessHelper.EnvVarRegex = original;
+            }
+        }
     }
 }
