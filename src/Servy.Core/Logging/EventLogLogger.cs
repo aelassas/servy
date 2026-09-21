@@ -222,7 +222,7 @@ namespace Servy.Core.Logging
                 }
 
                 var safeMessage = message.Length > AppConfig.EventLogMessageMaxChars
-                    ? message.Substring(0, AppConfig.EventLogMessageMaxChars) + AppConfig.EventLogTruncationSuffix
+                    ? message.Substring(0, Math.Max(0, AppConfig.EventLogMessageMaxChars - AppConfig.EventLogTruncationSuffix.Length)) + AppConfig.EventLogTruncationSuffix
                     : message;
 
                 using (var instanceLog = new EventLog(logName))
