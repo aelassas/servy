@@ -17,13 +17,19 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public class ServiceRepository : IServiceRepository
     {
+        private const string CorruptMarkerFormat = "[DECRYPTION FAILED: {0}] The record's key or payload is corrupt.";
+        private const string LegacyBlockedMarker = "[LEGACY ENCRYPTION BLOCKED] This record uses pre-v2 encryption, which is disabled. Export it with a v1-compatible version of Servy and re-import it here to upgrade.";
+        private const string OriginalDescriptionSeparator = " Original Description: ";
+
         private readonly IDapperExecutor _dapper;
         private readonly ISecureData _secureData;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
 
         private static readonly Regex DecryptionFailureMarkerRegex = new Regex(
-            @"^(?:\[DECRYPTION FAILED:[^\]]+\] The record's key or payload is corrupt\.|\[LEGACY ENCRYPTION BLOCKED\] This record uses pre-v2 encryption, which is disabled\. Export it with a v1-compatible version of Servy and re-import it here to upgrade\.) Original Description:\s*",
+            "^(?:" + Regex.Escape(string.Format(CorruptMarkerFormat, "__MARKER_PLACEHOLDER__")).Replace("__MARKER_PLACEHOLDER__", @"[^\\]+")
+            + "|" + Regex.Escape(LegacyBlockedMarker) + ")"
+            + Regex.Escape(OriginalDescriptionSeparator.TrimEnd()) + @"\s*",
             RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
@@ -32,15 +38,15 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private static readonly (Func<ServiceDto, string?> Get, Action<ServiceDto, string?> Set, string Name)[] SensitiveFields =
         {
-            (d => d.Parameters,                     (d, v) => d.Parameters = v,                     nameof(ServiceDto.Parameters)),
-            (d => d.FailureProgramParameters,      (d, v) => d.FailureProgramParameters = v,      nameof(ServiceDto.FailureProgramParameters)),
-            (d => d.PreLaunchParameters,           (d, v) => d.PreLaunchParameters = v,           nameof(ServiceDto.PreLaunchParameters)),
-            (d => d.PostLaunchParameters,          (d, v) => d.PostLaunchParameters = v,          nameof(ServiceDto.PostLaunchParameters)),
-            (d => d.Password,                      (d, v) => d.Password = v,                      nameof(ServiceDto.Password)),
-            (d => d.EnvironmentVariables,          (d, v) => d.EnvironmentVariables = v,          nameof(ServiceDto.EnvironmentVariables)),
+            (d => d.Parameters,                      (d, v) => d.Parameters = v,                      nameof(ServiceDto.Parameters)),
+            (d => d.FailureProgramParameters,       (d, v) => d.FailureProgramParameters = v,       nameof(ServiceDto.FailureProgramParameters)),
+            (d => d.PreLaunchParameters,            (d, v) => d.PreLaunchParameters = v,            nameof(ServiceDto.PreLaunchParameters)),
+            (d => d.PostLaunchParameters,           (d, v) => d.PostLaunchParameters = v,           nameof(ServiceDto.PostLaunchParameters)),
+            (d => d.Password,                       (d, v) => d.Password = v,                       nameof(ServiceDto.Password)),
+            (d => d.EnvironmentVariables,           (d, v) => d.EnvironmentVariables = v,           nameof(ServiceDto.EnvironmentVariables)),
             (d => d.PreLaunchEnvironmentVariables, (d, v) => d.PreLaunchEnvironmentVariables = v, nameof(ServiceDto.PreLaunchEnvironmentVariables)),
-            (d => d.PreStopParameters,             (d, v) => d.PreStopParameters = v,             nameof(ServiceDto.PreStopParameters)),
-            (d => d.PostStopParameters,            (d, v) => d.PostStopParameters = v,            nameof(ServiceDto.PostStopParameters)),
+            (d => d.PreStopParameters,              (d, v) => d.PreStopParameters = v,              nameof(ServiceDto.PreStopParameters)),
+            (d => d.PostStopParameters,             (d, v) => d.PostStopParameters = v,             nameof(ServiceDto.PostStopParameters)),
         };
 
         /// <summary>
@@ -560,9 +566,7 @@ namespace Servy.Infrastructure.Data
 
             Logger.Warn($"Legacy ciphertext refused by policy for service '{dto.Name}'. {ex.Message}");
 
-            dto.Description = $"[LEGACY ENCRYPTION BLOCKED] This record uses pre-v2 encryption, which is disabled. " +
-                              $"Export it with a v1-compatible version of Servy and re-import it here to upgrade. " +
-                              $"Original Description: {dto.Description}";
+            dto.Description = $"{LegacyBlockedMarker}{OriginalDescriptionSeparator}{dto.Description}";
         }
 
         /// <summary>
@@ -774,8 +778,7 @@ namespace Servy.Infrastructure.Data
             string rootCauseName = ex.InnerException?.GetType().Name ?? ex.GetType().Name;
 
             // Explicitly update descriptions to flag the target record in the UI
-            dto.Description = $"[DECRYPTION FAILED: {rootCauseName}] The record's key or payload is corrupt. " +
-                              $"Original Description: {dto.Description}";
+            dto.Description = $"{string.Format(CorruptMarkerFormat, rootCauseName)}{OriginalDescriptionSeparator}{dto.Description}";
 
             // Scrub every sensitive field via the SensitiveFields delegate table
             foreach (var field in SensitiveFields)

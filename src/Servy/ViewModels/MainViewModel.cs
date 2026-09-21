@@ -1174,7 +1174,11 @@ namespace Servy.ViewModels
             {
                 IsBusy = true;
                 var dto = ModelToServiceDto();
-                await Task.Run(() => ServiceCommands.InstallServiceAsync(dto, ConfirmPassword, RunAsLocalSystem));
+                var success = await Task.Run(() => ServiceCommands.InstallServiceAsync(dto, ConfirmPassword, RunAsLocalSystem));
+                if (success)
+                {
+                    ConfirmPassword = string.Empty;
+                }
             }
             finally
             {
@@ -1190,7 +1194,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.UninstallServiceAsync(ServiceName));
+                _ = await Task.Run(() => ServiceCommands.UninstallServiceAsync(ServiceName));
             }
             finally
             {
@@ -1206,7 +1210,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.StartServiceAsync(ServiceName));
+                _ = await Task.Run(() => ServiceCommands.StartServiceAsync(ServiceName));
             }
             finally
             {
@@ -1222,7 +1226,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.StopServiceAsync(ServiceName));
+                _ = await Task.Run(() => ServiceCommands.StopServiceAsync(ServiceName));
             }
             finally
             {
@@ -1238,7 +1242,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.RestartServiceAsync(ServiceName));
+                _ = await Task.Run(() => ServiceCommands.RestartServiceAsync(ServiceName));
             }
             finally
             {
