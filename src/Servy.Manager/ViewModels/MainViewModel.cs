@@ -436,7 +436,7 @@ namespace Servy.Manager.ViewModels
                     // fetchAndApplyAsync 1 of 4 (runs inside the pipeline's step 5 & 6):
                     // fetch data off UI thread
                     var stopwatch = Stopwatch.StartNew();
-                    var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
+                    var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, calculatePerf: true, token), token);
                     stopwatch.Stop();
                     Logger.Debug($"Fetched {results.Count} services in {stopwatch.ElapsedMilliseconds} ms");
 

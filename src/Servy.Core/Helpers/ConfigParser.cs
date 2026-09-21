@@ -229,22 +229,14 @@ namespace Servy.Core.Helpers
         /// <returns>The parsed integer within [<paramref name="min"/>, <paramref name="max"/>], or <paramref name="defaultValue"/> if invalid or missing.</returns>
         public static int GetConfigInt(NameValueCollection configuration, string key, int defaultValue, int min, int max)
         {
-            string value = configuration[key];
+            var parsedValue = ParseInt(configuration[key], defaultValue, key);
 
-            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedValue))
+            if (parsedValue >= min && parsedValue <= max)
             {
-                if (parsedValue >= min && parsedValue <= max)
-                {
-                    return parsedValue;
-                }
-
-                Logger.Warn($"Configuration value '{parsedValue}' for '{key}' is out of the safe range [{min}-{max}]. Falling back to default: {defaultValue}.");
-            }
-            else if (value != null)
-            {
-                Logger.Warn($"Invalid configuration entry '{value}' for '{key}'. Using default: {defaultValue}.");
+                return parsedValue;
             }
 
+            Logger.Warn($"Configuration value '{parsedValue}' for '{key}' is out of the safe range [{min}-{max}]. Falling back to default: {defaultValue}.");
             return defaultValue;
         }
     }
