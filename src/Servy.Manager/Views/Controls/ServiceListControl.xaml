@@ -18,65 +18,66 @@
       </Grid.RowDefinitions>
 
       <DockPanel Margin="6"
-                       FocusVisualStyle="{x:Null}"
-                       Focusable="True">
-        <TextBox Width="164"
-                         Height="24"
-                         Margin="0,0,6,0"
-                         VerticalContentAlignment="Center"
-                         SnapsToDevicePixels="False"
-                         UseLayoutRounding="False"
-                         TextOptions.TextFormattingMode="Display"
-                         TextOptions.TextRenderingMode="ClearType"
-                         AutomationProperties.AutomationId="SidebarSearchTextBox"
-                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarSearchTextBox_HelpText}"
-                         AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarSearchTextBox_Name}"
-                         Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}">
+                 FocusVisualStyle="{x:Null}"
+                 Focusable="True">
+        <Button Width="92"
+                Height="24"
+                DockPanel.Dock="Right"
+                AutomationProperties.AutomationId="SidebarSearchButton"
+                AutomationProperties.Name="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarSearchButton_HelpText}"
+                Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                Content="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                IsEnabled="{Binding IsBusy, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBooleanConverter}}" />
+
+        <TextBox Height="24"
+                 Margin="0,0,6,0"
+                 MinWidth="120"
+                 VerticalContentAlignment="Center"
+                 SnapsToDevicePixels="False"
+                 UseLayoutRounding="False"
+                 TextOptions.TextFormattingMode="Display"
+                 TextOptions.TextRenderingMode="ClearType"
+                 AutomationProperties.AutomationId="SidebarSearchTextBox"
+                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarSearchTextBox_HelpText}"
+                 AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarSearchTextBox_Name}"
+                 Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}">
           <TextBox.InputBindings>
             <KeyBinding Key="Enter" Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
           </TextBox.InputBindings>
         </TextBox>
-
-        <Button Width="92"
-                        Height="24"
-                        AutomationProperties.AutomationId="SidebarSearchButton"
-                        AutomationProperties.Name="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarSearchButton_HelpText}"
-                        Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Content="{Binding SearchButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        IsEnabled="{Binding IsBusy, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBooleanConverter}}" />
       </DockPanel>
 
       <DataGrid Grid.Row="1"
-                      AutoGenerateColumns="False"
-                      AutomationProperties.AutomationId="SidebarServicesDataGrid"
-                      AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarServicesDataGrid_Name}"
-                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarServicesDataGrid_HelpText}"
-                      Background="Transparent"
-                      BorderBrush="#757575"
-                      BorderThickness="1"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      CanUserReorderColumns="False"
-                      CanUserResizeRows="False"
-                      CanUserSortColumns="True"
-                      EnableColumnVirtualization="True"
-                      EnableRowVirtualization="True"
-                      FocusVisualStyle="{x:Null}"
-                      GridLinesVisibility="None"
-                      HeadersVisibility="Column"
-                      IsReadOnly="True"
-                      IsSynchronizedWithCurrentItem="False"
-                      ItemsSource="{Binding Services, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                      ScrollViewer.CanContentScroll="True"
-                      SelectedItem="{Binding SelectedService, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
-                      SelectionMode="Single"
-                      SelectionUnit="FullRow"
-                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                      VirtualizingStackPanel.IsVirtualizing="True"
-                      VirtualizingStackPanel.ScrollUnit="Pixel"
-                      VirtualizingStackPanel.VirtualizationMode="Recycling"
-                      Style="{StaticResource DataGridSelectionColorsStyle}">
+                AutoGenerateColumns="False"
+                AutomationProperties.AutomationId="SidebarServicesDataGrid"
+                AutomationProperties.Name="{x:Static resx:Strings.Automation_SidebarServicesDataGrid_Name}"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SidebarServicesDataGrid_HelpText}"
+                Background="Transparent"
+                BorderBrush="#757575"
+                BorderThickness="1"
+                CanUserAddRows="False"
+                CanUserDeleteRows="False"
+                CanUserReorderColumns="False"
+                CanUserResizeRows="False"
+                CanUserSortColumns="True"
+                EnableColumnVirtualization="True"
+                EnableRowVirtualization="True"
+                FocusVisualStyle="{x:Null}"
+                GridLinesVisibility="None"
+                HeadersVisibility="Column"
+                IsReadOnly="True"
+                IsSynchronizedWithCurrentItem="False"
+                ItemsSource="{Binding Services, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                ScrollViewer.CanContentScroll="True"
+                SelectedItem="{Binding SelectedService, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                SelectionMode="Single"
+                SelectionUnit="FullRow"
+                VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                VirtualizingStackPanel.IsVirtualizing="True"
+                VirtualizingStackPanel.ScrollUnit="Pixel"
+                VirtualizingStackPanel.VirtualizationMode="Recycling"
+                Style="{StaticResource DataGridSelectionColorsStyle}">
         <DataGrid.Resources>
           <Style TargetType="DataGridColumnHeader">
             <Setter Property="Padding" Value="10,7" />
@@ -109,25 +110,25 @@
 
         <DataGrid.Columns>
           <DataGridTemplateColumn Width="*"
-                                            CanUserReorder="False"
-                                            CanUserResize="False"
-                                            SortMemberPath="Name">
+                                  CanUserReorder="False"
+                                  CanUserResize="False"
+                                  SortMemberPath="Name">
             <DataGridTemplateColumn.Header>
               <TextBlock AutomationProperties.Name="{x:Static resx:Strings.Automation_ServiceNameHeader_Name}"
-                                       FontWeight="SemiBold"
-                                       Text="{x:Static resx:Strings.Column_Service}" />
+                         FontWeight="SemiBold"
+                         Text="{x:Static resx:Strings.Column_Service}" />
             </DataGridTemplateColumn.Header>
 
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <Border Padding="10,6"
-                                        Background="Transparent"
-                                        BorderBrush="#F0F0F0"
-                                        BorderThickness="0,0,0,1">
+                        Background="Transparent"
+                        BorderBrush="#F0F0F0"
+                        BorderThickness="0,0,0,1">
                   <TextBlock VerticalAlignment="Center"
-                                               AutomationProperties.Name="{Binding Name}"
-                                               Text="{Binding Name}"
-                                               TextTrimming="CharacterEllipsis" />
+                             AutomationProperties.Name="{Binding Name}"
+                             Text="{Binding Name}"
+                             TextTrimming="CharacterEllipsis" />
                 </Border>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>

@@ -135,20 +135,8 @@ namespace Servy.Manager.Views
 
                 // UI/UX Logic: Resume only if at the bottom AND nothing is selected.
                 // Otherwise, stay in "Paused" mode to protect the user's focus.
-                if (isAtBottom && LogList.SelectedItems.Count == 0)
-                {
-                    if (vm.IsPaused)
-                    {
-                        vm.SetPaused(false);
-                    }
-                }
-                else
-                {
-                    if (!vm.IsPaused)
-                    {
-                        vm.SetPaused(true);
-                    }
-                }
+                // SetPaused is a no-op when the state already matches.
+                vm.SetPaused(!(isAtBottom && LogList.SelectedItems.Count == 0));
             }
         }
 
