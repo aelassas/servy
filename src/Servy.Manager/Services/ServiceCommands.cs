@@ -569,7 +569,7 @@ namespace Servy.Manager.Services
             }
             catch (OperationCanceledException)
             {
-                string serviceName = service?.Name ?? "<unknown>";
+                string serviceName = service.Name ?? "<unknown>";
                 Logger.Debug($"Operation on {serviceName} was cancelled.");
                 throw;
             }
