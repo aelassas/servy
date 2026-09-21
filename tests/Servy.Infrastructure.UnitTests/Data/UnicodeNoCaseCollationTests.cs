@@ -1,5 +1,4 @@
 using Servy.Infrastructure.Data;
-using Xunit;
 
 namespace Servy.Infrastructure.UnitTests.Data
 {
@@ -10,25 +9,55 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public void Compare_BothNull_ReturnsZero()
         {
-            Assert.Equal(0, _collation.Compare(null, null));
+            // Arrange & Act
+            int result = _collation.Compare(null, null);
+
+            // Assert
+            Assert.Equal(0, result);
         }
 
         [Fact]
         public void Compare_FirstNull_ReturnsNegative()
         {
-            Assert.True(_collation.Compare(null, "a") < 0);
+            // Arrange & Act
+            int result = _collation.Compare(null, "a");
+
+            // Assert
+            Assert.True(result < 0);
         }
 
         [Fact]
         public void Compare_SecondNull_ReturnsPositive()
         {
-            Assert.True(_collation.Compare("a", null) > 0);
+            // Arrange & Act
+            int result = _collation.Compare("a", null);
+
+            // Assert
+            Assert.True(result > 0);
         }
 
         [Fact]
         public void Compare_DifferentCasing_TreatedAsEqual()
         {
-            Assert.Equal(0, _collation.Compare("A", "a"));
+            // Arrange & Act
+            int result = _collation.Compare("A", "a");
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public void Compare_AccentedCasing_TreatedAsEqual()
+        {
+            // Arrange
+            // The doc comment's own example ('ä' matches 'Ä') - the specific behavior that
+            // distinguishes this collation from SQLite's built-in, ASCII-only NOCASE.
+
+            // Act
+            int result = _collation.Compare("ä", "Ä");
+
+            // Assert
+            Assert.Equal(0, result);
         }
     }
 }
