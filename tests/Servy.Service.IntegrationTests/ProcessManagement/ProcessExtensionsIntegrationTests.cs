@@ -324,6 +324,56 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void GetAllDescendants_ChildMappedUnderTwoParents_ResolvesItOnlyOnce()
+        {
+            // Arrange - a synthetic map where the same child PID appears under two different
+            // parents (the shape a corrupted or racy Toolhelp32 snapshot can produce), so the
+            // walk would reach it twice without the visited-set cycle guard.
+            const int rootPid = 1000;
+            const int branchAPid = 2000;
+            const int branchBPid = 2001;
+            const int sharedChildPid = 3000;
+            var rootStartTime = DateTime.Now.AddMinutes(-5);
+
+            var byParent = new Dictionary<int, List<int>>
+            {
+                [rootPid] = new List<int> { branchAPid, branchBPid },
+                [branchAPid] = new List<int> { sharedChildPid },
+                [branchBPid] = new List<int> { sharedChildPid }, // same PID, second parent
+            };
+
+            var resolveCallCount = 0;
+            var sharedChild = Process.GetCurrentProcess();
+
+            try
+            {
+                // Act - both intermediates stay unresolved but keep their subtree, so each of
+                // them offers the shared child to the walk in turn
+                var descendants = ProcessExtensions.GetAllDescendants(rootPid, rootStartTime, byParent,
+                    (childPid, parentStartTime, snapshotTime) =>
+                    {
+                        if (childPid == sharedChildPid)
+                        {
+                            resolveCallCount++;
+                            return sharedChild;
+                        }
+
+                        return null;
+                    });
+
+                // Assert - the guard stopped the second visit, so the child was resolved once
+                // and is returned once rather than twice
+                Assert.Equal(1, resolveCallCount);
+                Assert.Single(descendants);
+                Assert.Same(sharedChild, descendants[0]);
+            }
+            finally
+            {
+                sharedChild.Dispose();
+            }
+        }
+
         #endregion
 
         #region TryResolveValidChild Private Method Reflection Tests
