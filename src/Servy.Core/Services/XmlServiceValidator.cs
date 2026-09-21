@@ -1,9 +1,7 @@
 using Servy.Core.DTOs;
-using Servy.Core.Resources;
 using Servy.Core.Security;
 using Servy.Core.Validation;
 using System.Xml;
-using System.Xml.Serialization;
 
 namespace Servy.Core.Services
 {

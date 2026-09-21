@@ -1,10 +1,9 @@
+using Servy.Core.DTOs;
+using Servy.Core.IO;
+using Servy.Core.Security;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
-using Servy.Core.DTOs;
-using Servy.Core.IO;
-using Servy.Core.Resources;
-using Servy.Core.Security;
 
 namespace Servy.Core.Services
 {
