@@ -664,7 +664,15 @@ namespace Servy.Manager.ViewModels
             // Resync state in case AppConfig changed while the Main tab was deactivated
             IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
 
-            Interlocked.CompareExchange(ref _cts, new CancellationTokenSource(), null);
+            if (Volatile.Read(ref _cts) == null)
+            {
+                var candidate = new CancellationTokenSource();
+                if (Interlocked.CompareExchange(ref _cts, candidate, null) != null)
+                {
+                    // Lost the race - another thread installed a CTS first.
+                    candidate.Dispose();
+                }
+            }
 
             if (_refreshTimer == null)
             {
