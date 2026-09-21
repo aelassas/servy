@@ -320,6 +320,56 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void GetAllDescendants_ChildMappedUnderTwoParents_ResolvesItOnlyOnce()
+        {
+            // Arrange - a synthetic map where the same child PID appears under two different
+            // parents (the shape a corrupted or racy Toolhelp32 snapshot can produce), so the
+            // walk would reach it twice without the visited-set cycle guard.
+            const int rootPid = 1000;
+            const int branchAPid = 2000;
+            const int branchBPid = 2001;
+            const int sharedChildPid = 3000;
+            var rootStartTime = DateTime.Now.AddMinutes(-5);
+
+            var byParent = new Dictionary<int, List<int>>
+            {
+                [rootPid] = new List<int> { branchAPid, branchBPid },
+                [branchAPid] = new List<int> { sharedChildPid },
+                [branchBPid] = new List<int> { sharedChildPid }, // same PID, second parent
+            };
+
+            var resolveCallCount = 0;
+            var sharedChild = Process.GetCurrentProcess();
+
+            try
+            {
+                // Act - both intermediates stay unresolved but keep their subtree, so each of
+                // them offers the shared child to the walk in turn
+                var descendants = ProcessExtensions.GetAllDescendants(rootPid, rootStartTime, byParent,
+                    (childPid, parentStartTime, snapshotTime) =>
+                    {
+                        if (childPid == sharedChildPid)
+                        {
+                            resolveCallCount++;
+                            return sharedChild;
+                        }
+
+                        return null;
+                    });
+
+                // Assert - the guard stopped the second visit, so the child was resolved once
+                // and is returned once rather than twice
+                Assert.Equal(1, resolveCallCount);
+                Assert.Single(descendants);
+                Assert.Same(sharedChild, descendants[0]);
+            }
+            finally
+            {
+                sharedChild.Dispose();
+            }
+        }
+
         #endregion
 
         #region TryResolveValidChild Private Method Reflection Tests
@@ -350,6 +400,38 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Act
                 var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", current.Id, skewedParentTime, snapshotTime);
+
+                // Assert
+                Assert.Null(result);
+            }
+        }
+
+        [Fact]
+        public void TryResolveValidChild_AccessDeniedOnIdleProcess_CatchesWin32ExceptionAndReturnsNull()
+        {
+            // Arrange - PID 0, the System Idle pseudo-process, is enumerable and resolvable but
+            // refuses every property query with ERROR_ACCESS_DENIED, including for an elevated
+            // caller. PID 4 (System), which the Format sibling above uses, does NOT: on an elevated
+            // host its properties read back normally, so a test anchored on PID 4 skips itself
+            // instead of reaching the arm it names. Measured on this repo's Windows CI runner,
+            // where PID 0 was the only one of ~140 live processes to deny StartTime.
+            Process? idleProcess = null;
+            try { idleProcess = Process.GetProcessById(0); }
+            catch (ArgumentException) { /* Ignore */ }
+
+            Assert.SkipWhen(idleProcess is null, "PID 0 (Idle) is not resolvable on this host.");
+
+            using (idleProcess)
+            {
+                // Precondition: TryResolveValidChild reads StartTime before its lifetime checks, so that
+                // is the property that must actually be denied - otherwise this test exercises the
+                // lifetime-bounds path, not the Win32Exception fallback.
+                var denied = Record.Exception(() => _ = idleProcess.StartTime);
+                Assert.SkipWhen(!(denied is Win32Exception),
+                    $"StartTime on PID 0 did not raise Win32Exception (got {denied?.GetType().Name ?? "no exception"}).");
+
+                // Act
+                var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", idleProcess.Id, DateTime.Now, DateTime.UtcNow);
 
                 // Assert
                 Assert.Null(result);
