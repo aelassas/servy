@@ -66,10 +66,8 @@ function Get-ServyLastErrors {
     $scriptHome = $PSScriptRoot
 
     if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
-        try {
-            $LastProcessed = ConvertFrom-WatermarkString -Value $LastProcessed
-        }
-        catch {
+        $LastProcessed = ConvertFrom-WatermarkString -Value $LastProcessed
+        if ($null -eq $LastProcessed) {
             throw "Invalid datetime value for LastProcessed"
         }
     }
