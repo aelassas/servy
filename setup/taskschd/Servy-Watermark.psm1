@@ -162,14 +162,16 @@ function Update-Watermark {
 
                 if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
                     try {
-                        # Non-empty content ensures ConvertFrom-WatermarkString returns a
-                        # DateTime or throws into the catch block below - never $null.
+                        # ConvertFrom-WatermarkString never throws - unparseable content returns
+                        # $null here, and PowerShell then evaluates "-le $null" as False, so a
+                        # corrupt file still falls through to the write below and gets healed.
                         $fileTimestamp = ConvertFrom-WatermarkString -Value $currentFileContent
                         if ($newestTimestamp -le $fileTimestamp) {
                             $shouldWrite = $false
                         }
                     } catch {
-                        # If file is corrupt or unparseable, overwrite it to heal state boundary
+                        # Unreachable today (nothing above throws); kept as a defensive net in
+                        # case a future edit to this block introduces something that can.
                         Write-Warning "Could not parse current timestamp file during update check. Overwriting to heal file."
                     }
                 }
