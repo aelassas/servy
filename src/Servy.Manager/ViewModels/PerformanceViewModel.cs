@@ -38,6 +38,15 @@ namespace Servy.Manager.ViewModels
         private const double GraphScaleHeadroom = 1.2;
 
         /// <summary>
+        /// Minimum CPU scale (%) so that the axis always spans the full normalised CPU range.
+        /// </summary>
+        /// <remarks>
+        /// CPU usage is normalised to 0-100% of whole-machine capacity before it reaches the graph,
+        /// so the axis never needs to be shorter than the metric's own range.
+        /// </remarks>
+        private const double MinCpuAxisMaximumPercent = 100.0;
+
+        /// <summary>
         /// Minimum RAM scale (MB) to avoid flat graphs for small processes.
         /// </summary>
         private const double MinRamAxisMaximumMb = 10;
@@ -341,10 +350,10 @@ namespace Servy.Manager.ViewModels
                 }
             }
 
-            // Grow the axis with the observed peak (plus headroom), but never below the fixed floor
-            // (100% for CPU, _ramDisplayMax MB for RAM) so small processes don't fill the graph.
+            // Grow the axis with the observed peak (plus headroom), but never below the fixed
+            // per-metric floor, so small processes don't fill the graph.
             double displayMax = isCpu
-                ? Math.Max(currentMax * GraphScaleHeadroom, 100.0)
+                ? Math.Max(currentMax * GraphScaleHeadroom, MinCpuAxisMaximumPercent)
                 : Math.Max(currentMax * GraphScaleHeadroom, MinRamAxisMaximumMb);
 
             var lineBuffer = isCpu ? _cpuBuffer : _ramBuffer;
