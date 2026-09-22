@@ -17,7 +17,7 @@
 
 .PARAMETER Tfm
     Target Framework Moniker to publish for.
-    Default: net10.0-windows.
+    Defaults to the value in build-config.ps1.
 
 .PARAMETER BuildConfiguration
     Build configuration to use.
@@ -46,12 +46,22 @@
           when absent, signing is skipped with a warning.
 #>
 param(
-    [string]$Tfm                = "net10.0-windows",
+    [string]$Tfm                = "",
     [string]$BuildConfiguration = "Release",
     [string]$Runtime            = "win-x64"
 )
 
 $P_PublishDir = $PSScriptRoot
+
+# Load central defaults
+$configPath = Join-Path $P_PublishDir "..\..\setup\build-config.ps1"
+if (Test-Path $configPath) {
+    $buildConfig = & $configPath
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+} else {
+    throw "Central build configuration not found at $configPath"
+}
+
 . (Join-Path $P_PublishDir "..\..\setup\build-common.ps1")
 
 Invoke-StandardPublish `

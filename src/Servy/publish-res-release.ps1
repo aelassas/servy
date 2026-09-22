@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.0
 
 param(
-    [string]$Tfm     = "net10.0-windows",
+    [string]$Tfm     = "",
     [string]$Runtime = "win-x64"
 )
 

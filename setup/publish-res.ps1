@@ -22,7 +22,7 @@
     The build configuration ("Debug" or "Release").
 
 .PARAMETER Tfm
-    Target framework moniker. Default: net10.0-windows.
+    Target framework moniker. Defaults to the value in build-config.ps1.
 
 .PARAMETER Runtime
     Target runtime. Default: win-x64.
@@ -41,13 +41,22 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration,
 
-    [string]$Tfm = "net10.0-windows",
+    [string]$Tfm = "",
     [string]$Runtime = "win-x64",
 
     [string]$OutputSuffix = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+# Load central defaults
+$configPath = Join-Path $PSScriptRoot "build-config.ps1"
+if (Test-Path $configPath) {
+    $buildConfig = & $configPath
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+} else {
+    throw "Central build configuration not found at $configPath"
+}
 
 # Import shared helpers (single source of truth for Assert-LastExitCode)
 . (Join-Path $PSScriptRoot "common-helpers.ps1")

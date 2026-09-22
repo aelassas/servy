@@ -93,6 +93,7 @@ function Copy-TaskSchdArtifacts {
 
     .PARAMETER Tfm
     The target framework moniker ("net10.0-windows") passed to the Inno preprocessor directive.
+    Defaults to the value in build-config.ps1.
 
     .PARAMETER MaxRetry
     The number of ISCC compilation attempts before giving up. Defaults to 3.
@@ -107,10 +108,19 @@ function Invoke-BuildInstaller {
         [Parameter(Mandatory=$true)][string]$Version,
         [string]$Arch = "x64",
         [string]$BuildConfiguration = "Release",
-        [string]$Tfm = "net10.0-windows",
+        [string]$Tfm = "",
         [int]$MaxRetry = 3,
         [int]$RetryDelaySeconds = 2
     )
+
+    # Load central defaults
+    $configPath = Join-Path $PC_ScriptDir "build-config.ps1"
+    if (Test-Path $configPath) {
+        $buildConfig = & $configPath
+        if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+    } else {
+        throw "Central build configuration not found at $configPath"
+    }
 
     Write-Host "--- Building Installer ---" -ForegroundColor Cyan
 

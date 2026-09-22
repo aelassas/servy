@@ -12,7 +12,7 @@
     otherwise signing is skipped with a warning.
 
 .PARAMETER Tfm
-    Target framework to build against. Default is "net10.0-windows".
+    Target framework to build against. Defaults to the value in build-config.ps1.
 
 .PARAMETER Runtime
     Runtime identifier (RID) for the published executable. Default is "win-x64".
@@ -25,13 +25,23 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Tfm                = "net10.0-windows",
+    [string]$Tfm                = "",
     [string]$Runtime            = "win-x64",
     [string]$BuildConfiguration = "Release",
     [switch]$Pause
 )
 
 $P_PublishDir = $PSScriptRoot
+
+# Load central defaults
+$configPath = Join-Path $P_PublishDir "..\..\setup\build-config.ps1"
+if (Test-Path $configPath) {
+    $buildConfig = & $configPath
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+} else {
+    throw "Central build configuration not found at $configPath"
+}
+
 . (Join-Path $P_PublishDir "..\..\setup\build-common.ps1")
 
 Invoke-StandardPublish `

@@ -12,7 +12,7 @@
          and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
 
 .PARAMETER Tfm
-    Target Framework Moniker (default: "net10.0-windows").
+    Target Framework Moniker. Defaults to the value in build-config.ps1.
 
 .PARAMETER BuildConfiguration
     Build configuration to use (default: "Release").
@@ -35,12 +35,21 @@
     ./publish.ps1 -Tfm "net10.0-windows" -BuildConfiguration "Debug" -Runtime "win-x64"
 #>
 param(
-    [string]$Tfm                = "net10.0-windows",
+    [string]$Tfm                = "",
     [string]$BuildConfiguration = "Release",
     [string]$Runtime            = "win-x64"
 )
 
 $P_PublishDir = $PSScriptRoot
+
+# Load central defaults
+$configPath = Join-Path $P_PublishDir "..\..\setup\build-config.ps1"
+if (Test-Path $configPath) {
+    $buildConfig = & $configPath
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+} else {
+    throw "Central build configuration not found at $configPath"
+}
 
 . (Join-Path $P_PublishDir "..\..\setup\build-common.ps1")
 

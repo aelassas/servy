@@ -65,10 +65,19 @@ function Invoke-StandardPublish {
     param(
         [Parameter(Mandatory=$true)][string]$ProjectDir,
         [Parameter(Mandatory=$true)][string]$ProjectName,
-        [string]$Tfm = "net10.0-windows",
+        [string]$Tfm = "",
         [string]$Runtime = "win-x64",
         [string]$BuildConfiguration = "Release"
     )
+
+    # Load central defaults
+    $configPath = Join-Path $BC_ScriptDir "build-config.ps1"
+    if (Test-Path $configPath) {
+        $buildConfig = & $configPath
+        if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+    } else {
+        throw "Central build configuration not found at $configPath"
+    }
 
     # Step 0: Publish resources if script exists
     $resSuffix = if ($BuildConfiguration -eq "Debug") { "debug" } else { "release" }

@@ -131,6 +131,47 @@ try {
         Write-Host "  [OK] $($mirror.Name) agrees on $expectedFull" -ForegroundColor Gray
     }
 
+    # Tfm has the same single-source contract as Version, kept the other way round: every
+    # publishing script defaults -Tfm to the empty string and resolves it from this file, so the
+    # moniker is written here and nowhere else. A literal put back into one of them re-creates the
+    # drift that only bump-runtime.ps1's blanket rewrite used to repair.
+
+    # Arrange
+    $tfmLiteralPattern = '\$Tfm\s*=\s*["'']net'
+    $repoRootFull = (Resolve-Path $repoRoot).Path
+    $tfmScripts = Get-ChildItem -Path $repoRoot -Recurse -Filter *.ps1 -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and $_.FullName -ne $PSCommandPath }
+
+    # Act
+    $tfmCopies = @()
+    $tfmConsumers = @()
+    foreach ($tfmScript in $tfmScripts) {
+        $tfmLines = Get-Content $tfmScript.FullName
+        if ($tfmLines -match '\$Tfm') { $tfmConsumers += $tfmScript.FullName }
+        foreach ($tfmLine in $tfmLines) {
+            if ($tfmLine -match $tfmLiteralPattern) {
+                $tfmRelative = if ($tfmScript.FullName.StartsWith($repoRootFull)) {
+                    $tfmScript.FullName.Substring($repoRootFull.Length).TrimStart([char]92, [char]47)
+                } else { $tfmScript.FullName }
+                $tfmCopies += "$($tfmRelative): $($tfmLine.Trim())"
+            }
+        }
+    }
+
+    # Assert
+    if ($tfmConsumers.Count -eq 0) {
+        Write-Host "FAIL: no script under $repoRoot takes a -Tfm parameter; the scan proves nothing." -ForegroundColor Red
+        exit 1
+    }
+
+    if ($tfmCopies.Count -gt 0) {
+        Write-Host "FAIL: $($tfmCopies.Count) script(s) carry their own TFM literal instead of reading it from build-config.ps1:" -ForegroundColor Red
+        foreach ($tfmCopy in $tfmCopies) { Write-Host "        $tfmCopy" -ForegroundColor Red }
+        exit 1
+    }
+
+    Write-Host "  [OK] $($tfmConsumers.Count) scripts take -Tfm and none carries its own copy of $($cfg.Tfm)" -ForegroundColor Gray
+
     Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "SUCCESS: build-config.ps1 validated successfully!" -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
