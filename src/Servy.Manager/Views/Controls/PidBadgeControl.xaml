@@ -12,14 +12,14 @@
           HorizontalAlignment="Left">
     <StackPanel Orientation="Horizontal">
       <TextBlock Text="{x:Static resx:Strings.Label_Pid}"
-                 Foreground="#1B7F9F"
+                 Foreground="{StaticResource AccentBrush}"
                  FontSize="11"
                  VerticalAlignment="Center"
                  Margin="0,0,5,0"
                  AutomationProperties.Name="{x:Static resx:Strings.Label_Pid}" />
 
       <TextBlock Text="{Binding Pid, ElementName=RootControl}"
-                 Foreground="#1B7F9F"
+                 Foreground="{StaticResource AccentBrush}"
                  FontWeight="Bold"
                  FontSize="12"
                  VerticalAlignment="Center"
@@ -49,7 +49,7 @@
           </Style>
         </Button.Style>
         <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-              Fill="#1B7F9F"
+              Fill="{StaticResource AccentBrush}"
               Stretch="Uniform"
               Width="12"
               Height="12" />
