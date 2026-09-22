@@ -1141,6 +1141,23 @@ namespace Servy.Core.Config
         public const int KeyProviderReadRetryBackoffBaseMs = 100;
 
         /// <summary>
+        /// The AES key length in bytes generated and cached by the protected key provider.
+        /// </summary>
+        /// <remarks>
+        /// 32 bytes is AES-256, which is the key size the <c>SecureData</c> consumer of this material
+        /// expects; changing it here without changing that consumer breaks decryption at runtime.
+        /// </remarks>
+        public const int AesKeySizeBytes = 32;
+
+        /// <summary>
+        /// The AES initialization vector length in bytes generated and cached by the protected key provider.
+        /// </summary>
+        /// <remarks>
+        /// 16 bytes is the AES block size and is independent of the key size.
+        /// </remarks>
+        public const int AesIvSizeBytes = 16;
+
+        /// <summary>
         /// The collection of lowercase file extensions allowed for service configuration file operations.
         /// </summary>
         /// <remarks>
