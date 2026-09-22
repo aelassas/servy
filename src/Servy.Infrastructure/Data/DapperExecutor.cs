@@ -235,7 +235,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Flattens and truncates an SQL string for clean, single-line log output.
         /// </summary>
-        private static string FormatSqlForLog(string? sql, int maxLength = 60)
+        private static string FormatSqlForLog(string? sql, int maxLength = AppConfig.DbSqlLogMaxLength)
         {
             if (string.IsNullOrWhiteSpace(sql)) return "Unknown Query";
 

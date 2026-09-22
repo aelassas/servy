@@ -1447,6 +1447,15 @@ namespace Servy.Core.Config
         public const int DbBackoffMaxMs = 5_000;
 
         /// <summary>
+        /// The maximum number of SQL characters written to a database retry log line before truncation.
+        /// </summary>
+        /// <remarks>
+        /// This constant bounds how much of a failing query an operator sees in the log, keeping the
+        /// retry warnings readable on a single line without hiding the statement that caused them.
+        /// </remarks>
+        public const int DbSqlLogMaxLength = 60;
+
+        /// <summary>
         /// Max DTOs per chunk when re-querying generated IDs after a batch upsert.
         /// Kept under SQLite's default SQLITE_MAX_VARIABLE_NUMBER (999) parameter limit.
         /// </summary>
