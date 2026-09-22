@@ -128,10 +128,23 @@ namespace Servy.Testing
         /// </summary>
         public static void AcceptSysinternalsEula()
         {
+            // Sysinternals tools check for acceptance under HKCU\Software\Sysinternals\Handle
+            AcceptSysinternalsEula(@"Software\Sysinternals\Handle");
+        }
+
+        /// <summary>
+        /// Programs the supplied current user registry sub key to suppress the Sysinternals graphical license box prompt.
+        /// </summary>
+        /// <param name="subKeyPath">The <c>HKEY_CURRENT_USER</c> relative sub key to pre-seed.</param>
+        /// <remarks>
+        /// Overload taken by tests so that the best-effort failure path can be reached without
+        /// disturbing the real Sysinternals key; callers want <see cref="AcceptSysinternalsEula()"/>.
+        /// </remarks>
+        public static void AcceptSysinternalsEula(string subKeyPath)
+        {
             try
             {
-                // Sysinternals tools check for acceptance under HKCU\Software\Sysinternals\Handle
-                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Sysinternals\Handle"))
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(subKeyPath))
                 {
                     if (key != null)
                     {
@@ -141,7 +154,10 @@ namespace Servy.Testing
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"WARNING: Failed to pre-seed EulaAccepted registry key. Details: {ex.Message}");
+                // Console.Error is captured by dotnet test and shown in the CI job log; Debug.WriteLine
+                // is invisible without an attached debugger, so a headless runner used to see nothing
+                // at all before handle64.exe went on to block on its EULA prompt.
+                Console.Error.WriteLine($"WARNING: Failed to pre-seed EulaAccepted registry key; handle64.exe may prompt for its EULA on this runner. Details: {ex.Message}");
             }
         }
 
