@@ -365,7 +365,7 @@ namespace Servy.Core.Helpers
         /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous write operation.</returns>
         public static Task WriteFileAtomicAsync(string path, Func<Stream, CancellationToken, Task> writeContent, CancellationToken ct = default)
-            => WriteFileAtomicCore(path, async (fs, t) => await writeContent(fs, t).ConfigureAwait(false), ct).AsTask();
+            => WriteFileAtomicCore(path, async (fs, t) => await writeContent(fs, t), ct).AsTask();
 
         /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
@@ -510,9 +510,8 @@ namespace Servy.Core.Helpers
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    // ConfigureAwait(false) is used here as we do not require the captured synchronization context.
-                    await writer(fs, cancellationToken).ConfigureAwait(false);
-                    await fs.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    await writer(fs, cancellationToken);
+                    await fs.FlushAsync(cancellationToken);
                     fs.Flush(flushToDisk: true);   // forces FlushFileBuffers; cheap if already flushed
                 }
 
@@ -535,7 +534,7 @@ namespace Servy.Core.Helpers
                         retries--;
                         Logger.Debug($"WriteFileAtomicCore retrying after transient '{ex.GetType().Name}': {ex.Message} (retries left: {retries})");
                         // Asynchronous delay to keep the thread pool unblocked during retries.
-                        await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken).ConfigureAwait(false);
+                        await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken);
                     }
                 }
             }
