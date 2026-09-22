@@ -130,8 +130,8 @@ function Get-ServyLastErrors {
     # -------------------------------
     # Filter out the event that exactly matches $LastProcessed (>= vs > issue)
     if ($LastProcessed) {
-      $lastUtc = ([datetime]$LastProcessed).ToUniversalTime()
-      $errors = @($errors | Where-Object { $_.TimeCreated.ToUniversalTime().Ticks -gt $lastUtc.Ticks })
+        $lastUtc = ([datetime]$LastProcessed).ToUniversalTime()
+        $errors = @($errors | Where-Object { $_.TimeCreated.ToUniversalTime().Ticks -gt $lastUtc.Ticks })
     }
 
     return $errors
