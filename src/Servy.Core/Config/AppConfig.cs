@@ -1168,6 +1168,18 @@ namespace Servy.Core.Config
         public const int KeyProviderReadRetryBackoffBaseMs = 100;
 
         /// <summary>
+        /// The number of consecutive DPAPI key-migration failures before escalation from a Warning
+        /// to a system-level Error and Windows Event Log entry.
+        /// </summary>
+        /// <remarks>
+        /// The counterpart of <see cref="LogRotationDeletionFailureEscalationThreshold"/> for key
+        /// migration: below this count a failure is transient noise and is logged as a Warning, at or
+        /// above it the machine is treated as persistently stuck in v7.8 null-entropy compatibility
+        /// mode and an Error is raised. It must stay above 1, or the transient Warning branch is dead.
+        /// </remarks>
+        public const int KeyProviderMigrationFailureEscalationThreshold = 3;
+
+        /// <summary>
         /// The AES key length in bytes generated and cached by the protected key provider.
         /// </summary>
         /// <remarks>
