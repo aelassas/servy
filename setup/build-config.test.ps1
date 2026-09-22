@@ -172,6 +172,66 @@ try {
 
     Write-Host "  [OK] $($tfmConsumers.Count) scripts take -Tfm and none carries its own copy of $($cfg.Tfm)" -ForegroundColor Gray
 
+    # The set of shipped executables is enumerated independently in three places, in three
+    # different orders: build.yml's $projects array, publish.yml's five build-and-sign step
+    # groups (which stay as separate steps per #1037) and generate-sbom.ps1's $projects table.
+    # Nothing ties them together, so adding a sixth executable to one and forgetting another is
+    # silent - a binary that is built but never SBOM'd, or published but never ARM64-verified.
+    # Membership is what has to agree; the three orders are deliberately left alone.
+
+    # Arrange
+    $workflowDir = Join-Path (Join-Path $repoRoot '.github') 'workflows'
+    $projectListSources = @(
+        @{ Name = '.github/workflows/build.yml';   Path = Join-Path $workflowDir 'build.yml' },
+        @{ Name = '.github/workflows/publish.yml'; Path = Join-Path $workflowDir 'publish.yml' },
+        @{ Name = 'setup/generate-sbom.ps1';       Path = Join-Path $scriptDir 'generate-sbom.ps1' }
+    )
+    $projectPathPattern = 'src[\\/][^"''\s]+\.csproj'
+
+    # Act
+    $projectLists = @()
+    foreach ($listSource in $projectListSources) {
+        if (-not (Test-Path $listSource.Path)) {
+            Write-Host "FAIL: $($listSource.Name) was not found at path: $($listSource.Path)" -ForegroundColor Red
+            exit 1
+        }
+
+        $listProjects = @([regex]::Matches((Get-Content $listSource.Path -Raw), $projectPathPattern) |
+            ForEach-Object { $_.Value -replace '\\', '/' } |
+            Sort-Object -Unique)
+
+        $projectLists += @{ Name = $listSource.Name; Projects = $listProjects }
+    }
+
+    # Assert
+    foreach ($projectList in $projectLists) {
+        if ($projectList.Projects.Count -eq 0) {
+            Write-Host "FAIL: no .csproj path was found in $($projectList.Name); the comparison proves nothing." -ForegroundColor Red
+            exit 1
+        }
+    }
+
+    $referenceList = $projectLists[0]
+    foreach ($projectList in $projectLists) {
+        if ($projectList.Name -eq $referenceList.Name) { continue }
+
+        $missingProjects = @($referenceList.Projects | Where-Object { $_ -notin $projectList.Projects })
+        $extraProjects   = @($projectList.Projects   | Where-Object { $_ -notin $referenceList.Projects })
+
+        if ($missingProjects.Count -gt 0 -or $extraProjects.Count -gt 0) {
+            Write-Host "FAIL: $($projectList.Name) does not ship the same project set as $($referenceList.Name)." -ForegroundColor Red
+            foreach ($missingProject in $missingProjects) {
+                Write-Host "        in $($referenceList.Name) but not in $($projectList.Name): $missingProject" -ForegroundColor Red
+            }
+            foreach ($extraProject in $extraProjects) {
+                Write-Host "        in $($projectList.Name) but not in $($referenceList.Name): $extraProject" -ForegroundColor Red
+            }
+            exit 1
+        }
+    }
+
+    Write-Host "  [OK] build.yml, publish.yml and generate-sbom.ps1 enumerate the same $($referenceList.Projects.Count) shipped projects" -ForegroundColor Gray
+
     Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "SUCCESS: build-config.ps1 validated successfully!" -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
