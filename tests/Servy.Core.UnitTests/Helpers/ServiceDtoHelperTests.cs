@@ -82,6 +82,19 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void HydrateDefaults_WhenUserAccountHasSurroundingWhitespace_TrimsIt()
+        {
+            // Arrange: Pad the account on both sides so the identity normalization step is observable
+            var dto = new ServiceDto { UserAccount = "  Domain\\User  " };
+
+            // Act
+            ServiceDtoHelper.HydrateDefaults(dto);
+
+            // Assert
+            Assert.Equal("Domain\\User", dto.UserAccount);
+        }
+
+        [Fact]
         public void ApplyDefaultsAndResetIdentity_WhenAllPropertiesAreNull_PopulatesEveryDefault()
         {
             // Arrange: Explicitly null every nullable property defensively to exercise ApplyDefaultsAndResetIdentity on an incomplete import
