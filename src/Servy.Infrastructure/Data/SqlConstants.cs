@@ -131,6 +131,6 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         public static readonly string UpsertSet =
             string.Join(", ", StandardColumns.Select(c => $"{c} = excluded.{c}")) +
-            ", PreviousStopTimeout = COALESCE(excluded.PreviousStopTimeout, Services.PreviousStopTimeout)";
+            ", PreviousStopTimeout = COALESCE(excluded.PreviousStopTimeout, " + ServicesTableName + ".PreviousStopTimeout)";
     }
 }
