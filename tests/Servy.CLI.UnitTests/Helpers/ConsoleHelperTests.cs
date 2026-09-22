@@ -7,6 +7,7 @@ namespace Servy.CLI.UnitTests.Helpers
     public class ConsoleHelperTests
     {
         private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
+        private const string WindowWidthOverrideFieldName = "_windowWidthOverride";
 
         [Fact]
         public async Task RunWithLoadingAnimation_NullAction()
@@ -106,11 +107,51 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the non-redirected branch where the animation runs.
-        /// Because we cannot reliably toggle Console.IsOutputRedirected back to false if the test runner
-        /// environment is already redirected (e.g., CI/CD builds or Test Explorer instances), this test uses
-        /// a custom TextWriter wrapper that simulates an IOException on property access to force coverage
-        /// of the deepest nested catch block.
+        /// Covers the non-redirected branch where Console.WindowWidth throws an IOException upon access.
+        /// </summary>
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenWindowWidthThrowsIOException_ExecutesFallbackNewline()
+        {
+            // Arrange
+            Func<Task> dummyAction = () => Task.Delay(50);
+
+            // Force output redirection to false to ensure the clear-line code path runs
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            // Ensure window width override is cleared so accessing Console.WindowWidth directly throws in unattached TTY / CI environments
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+
+            try
+            {
+                using (var sw = new StringWriter())
+                {
+                    var originalOut = Console.Out;
+                    Console.SetOut(sw);
+
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Testing Width Fault...");
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    Assert.Equal(Environment.NewLine, sw.ToString().Substring(sw.ToString().LastIndexOf(Environment.NewLine, StringComparison.Ordinal)));
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+            }
+        }
+
+        /// <summary>
+        /// Covers the non-redirected branch where the animation runs and line clearing write fails with an IOException.
+        /// Uses a custom TextWriter wrapper that simulates an IOException on property write access, and mocks
+        /// Console.WindowWidth via test seam to force execution into the clearing Console.Write branch.
         /// </summary>
         [Fact]
         public async Task RunWithLoadingAnimation_WhenLineClearingHitsIOException_ExecutesFallbackNewline()
@@ -118,8 +159,9 @@ namespace Servy.CLI.UnitTests.Helpers
             // Arrange
             Func<Task> dummyAction = () => Task.Delay(50); // Small delay to let the loop spin if it can
 
-            // Force output redirection to false to ensure the clear-line code path runs
+            // Force output redirection to false and window width to a positive value to ensure clearing Write path is reached
             TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 80);
 
             try
             {
@@ -141,7 +183,7 @@ namespace Servy.CLI.UnitTests.Helpers
                     }
 
                     // Assert
-                    // If Console.IsOutputRedirected is false in the runtime context but WindowWidth access drops an IOException,
+                    // If Console.IsOutputRedirected is false in the runtime context but clearing Write drops an IOException,
                     // the catch block handles it by calling Console.WriteLine(), appending the Environment.NewLine sequence.
                     Assert.True(faultingWriter.IsFallbackWriteLineCalled);
                 }
@@ -149,6 +191,7 @@ namespace Servy.CLI.UnitTests.Helpers
             finally
             {
                 TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
             }
         }
 
