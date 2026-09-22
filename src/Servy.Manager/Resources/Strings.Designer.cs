@@ -1321,7 +1321,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Search Services.
+        ///   Looks up a localized string similar to Search Services (sidebar).
         /// </summary>
         public static string Automation_SidebarSearchTextBox_Name {
             get {
@@ -1339,7 +1339,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Services List.
+        ///   Looks up a localized string similar to Services List (sidebar).
         /// </summary>
         public static string Automation_SidebarServicesDataGrid_Name {
             get {

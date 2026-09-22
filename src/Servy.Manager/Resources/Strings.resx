@@ -1005,13 +1005,13 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_SidebarSearchTextBox_Name" xml:space="preserve">
-    <value>Search Services</value>
+    <value>Search Services (sidebar)</value>
   </data>
   <data name="Automation_SidebarSearchTextBox_HelpText" xml:space="preserve">
     <value>Type a keyword to search services.</value>
   </data>
   <data name="Automation_SidebarServicesDataGrid_Name" xml:space="preserve">
-    <value>Services List</value>
+    <value>Services List (sidebar)</value>
   </data>
   <data name="Automation_SidebarSearchButton_HelpText" xml:space="preserve">
     <value>Runs the search using the text entered in the search box.</value>
