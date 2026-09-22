@@ -11,6 +11,21 @@ namespace Servy.Core.Security
     public static class SecurityHelper
     {
         /// <summary>
+        /// The well-known principals that stand for "any standard user" in Servy's DACL audits.
+        /// </summary>
+        /// <remarks>
+        /// Both the vault purge in <see cref="ApplySecurityRules"/> and the install-directory audit in
+        /// <c>PathSecurityGuard.IsDirectoryAclHardened</c> decide who counts as a standard user, so the
+        /// set is declared once here rather than rebuilt at each site.
+        /// </remarks>
+        public static readonly IReadOnlyList<SecurityIdentifier> BroadUnprivilegedSids = new[]
+        {
+            new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),       // Users
+            new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null), // Authenticated Users
+            new SecurityIdentifier(WellKnownSidType.WorldSid, null)              // Everyone
+        };
+
+        /// <summary>
         /// Ensures a directory exists and applies a restrictive security descriptor to mitigate
         /// local privilege escalation (LPE) risks by limiting access to high-privileged accounts.
         /// </summary>
@@ -184,10 +199,6 @@ namespace Servy.Core.Security
             }
 
             // 2. Define SIDs
-            var builtinUsersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);            // Users
-            var authenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null); // Authenticated Users
-            var everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);                       // Everyone
-
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
             var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
@@ -202,9 +213,7 @@ namespace Servy.Core.Security
                 // otherwise a user could never run a service under a custom account, as CreateSecureDirectory
                 // is invoked during service start, desktop app and manager startup, and CLI operations.
                 if (rule.AccessControlType == AccessControlType.Allow &&
-                    (rule.IdentityReference.Equals(builtinUsersSid) ||
-                     rule.IdentityReference.Equals(authenticatedUsersSid) ||
-                     rule.IdentityReference.Equals(everyoneSid)))
+                    BroadUnprivilegedSids.Contains(rule.IdentityReference as SecurityIdentifier))
                 {
                     security.RemoveAccessRule(rule);
                 }
