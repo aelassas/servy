@@ -15,7 +15,12 @@ namespace Servy.CLI.Helpers
         // Test Seam: Allows test infrastructure suites to mock or force redirection states deterministically
         private static bool? _isOutputRedirectedOverride;
 
+        // Test Seam: Allows test infrastructure suites to mock or force console window width deterministically
+        private static int? _windowWidthOverride;
+
         private static bool IsOutputRedirected => _isOutputRedirectedOverride ?? Console.IsOutputRedirected;
+
+        private static int WindowWidth => _windowWidthOverride ?? Console.WindowWidth;
 
         /// <summary>
         /// Runs an asynchronous action while displaying a console loading spinner.
@@ -78,7 +83,7 @@ namespace Servy.CLI.Helpers
                     {
                         if (!IsOutputRedirected)
                         {
-                            int width = Console.WindowWidth;
+                            int width = WindowWidth;
                             if (width > 0)
                             {
                                 // Clear the line and return the cursor to the start
