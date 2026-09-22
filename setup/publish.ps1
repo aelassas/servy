@@ -29,6 +29,7 @@
 #>
 # publish.ps1
 # Main setup bundle script for building the self-contained installer.
+[CmdletBinding()]
 param(
     [string]$Tfm     = "",
     [string]$Version = ""
