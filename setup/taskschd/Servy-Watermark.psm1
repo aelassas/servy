@@ -128,7 +128,7 @@ function Update-Watermark {
 
     # --- CRITICAL: Always advance the watermark ---
     # Update timestamp immediately for this specific event, regardless of email/toast success.
-    $newestTimestamp = $TimeCreated
+    $newestTimestamp = ([datetime]$TimeCreated).ToUniversalTime()
     $timestampString = $newestTimestamp.ToString("o")
 
     # Retry loop to gracefully handle concurrent FileShare.None lock collisions
@@ -198,6 +198,21 @@ function Update-Watermark {
                     $absoluteBackup    = [System.IO.Path]::GetFullPath($backupFile)
 
                     if (Test-Path $absoluteTimestamp) {
+                        # Re-check target watermark state immediately before commit to prevent stale-write regressions
+                        $recheckContent = [System.IO.File]::ReadAllText($absoluteTimestamp).Trim()
+                        if (-not [string]::IsNullOrWhiteSpace($recheckContent)) {
+                            try {
+                                $recheckTimestamp = ConvertFrom-WatermarkString -Value $recheckContent
+                                if ($null -ne $recheckTimestamp -and $newestTimestamp -le $recheckTimestamp) {
+                                    # Concurrent process advanced the watermark past us; discard staging and treat as completed
+                                    Remove-Item $absoluteTemp -Force -ErrorAction SilentlyContinue
+                                    break
+                                }
+                            } catch {
+                                # Corrupt file will be overwritten below
+                            }
+                        }
+
                         [System.IO.File]::Replace($absoluteTemp, $absoluteTimestamp, $absoluteBackup)
                     } else {
                         # First run scenario: The target file doesn't exist yet, so a basic Move is safe and atomic.

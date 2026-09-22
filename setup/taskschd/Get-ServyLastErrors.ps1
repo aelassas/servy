@@ -36,16 +36,24 @@
 function ConvertFrom-WatermarkString {
     <#
     .SYNOPSIS
-        Parses an ISO-8601 round-trip formatted date string into a DateTime instance.
+        Safely converts an ISO-8601 string to a UTC DateTime object.
     #>
     param([string]$Value)
-    if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
-    return [DateTime]::ParseExact(
-        $Value.Trim(),
-        'o',
-        [System.Globalization.CultureInfo]::InvariantCulture,
-        [System.Globalization.DateTimeStyles]::RoundtripKind
-    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $null
+    }
+
+    try {
+        $dt = [DateTime]::Parse(
+          $Value.Trim(),
+          [System.Globalization.CultureInfo]::InvariantCulture,
+          [System.Globalization.DateTimeStyles]::RoundtripKind
+          )
+          return $dt.ToUniversalTime()
+    } catch {
+          return $null
+    }
 }
 
 function Get-ServyLastErrors {
@@ -76,7 +84,7 @@ function Get-ServyLastErrors {
     try {
         # "Filter Left" - let the Event Log service handle the time filtering natively
         if ($LastProcessed) {
-            $filter.StartTime = $LastProcessed
+            $filter.StartTime = ([datetime]$LastProcessed).ToLocalTime()
             # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
             $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
         } else {
@@ -122,7 +130,8 @@ function Get-ServyLastErrors {
     # -------------------------------
     # Filter out the event that exactly matches $LastProcessed (>= vs > issue)
     if ($LastProcessed) {
-        $errors = @($errors | Where-Object { $_.TimeCreated -gt $LastProcessed })
+      $lastUtc = ([datetime]$LastProcessed).ToUniversalTime()
+      $errors = @($errors | Where-Object { $_.TimeCreated.ToUniversalTime().Ticks -gt $lastUtc.Ticks })
     }
 
     return $errors
