@@ -139,7 +139,7 @@ try {
     # Arrange
     $tfmLiteralPattern = '\$Tfm\s*=\s*["'']net'
     $repoRootFull = (Resolve-Path $repoRoot).Path
-    $tfmScripts = Get-ChildItem -Path $repoRoot -Recurse -Filter *.ps1 -ErrorAction SilentlyContinue |
+    $tfmScripts = Get-ChildItem -Path $repoRoot -Recurse -Filter *.ps1 |
         Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and $_.FullName -ne $PSCommandPath }
 
     # Act
