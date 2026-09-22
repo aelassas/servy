@@ -4,6 +4,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Resources;
+using Servy.Core.Security;
 using System;
 using System.IO;
 using System.Linq;
@@ -412,12 +413,6 @@ namespace Servy.Core.Validation
                 DirectorySecurity security = dirInfo.GetAccessControl(AccessControlSections.Access);
                 AuthorizationRuleCollection rules = security.GetAccessRules(true, true, typeof(SecurityIdentifier));
 
-                var nonAdminSids = new[]
-                {
-                    new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
-                    new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
-                    new SecurityIdentifier(WellKnownSidType.WorldSid, null) // Everyone
-                };
                 const FileSystemRights WriteClass =
                     FileSystemRights.WriteData |
                     FileSystemRights.AppendData |
@@ -430,7 +425,7 @@ namespace Servy.Core.Validation
 
                 foreach (FileSystemAccessRule rule in rules)
                 {
-                    if (nonAdminSids.Contains(rule.IdentityReference as SecurityIdentifier))
+                    if (SecurityHelper.BroadUnprivilegedSids.Contains(rule.IdentityReference as SecurityIdentifier))
                     {
                         if (rule.AccessControlType == AccessControlType.Allow)
                         {
