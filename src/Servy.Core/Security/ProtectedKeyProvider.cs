@@ -91,14 +91,14 @@ namespace Servy.Core.Security
         public byte[] GetKey()
         {
             ThrowIfDisposed();
-            return GetCachedOrGenerate(ref _cachedKey, _keyFilePath, 32, "encryption key");
+            return GetCachedOrGenerate(ref _cachedKey, _keyFilePath, AppConfig.AesKeySizeBytes, "encryption key");
         }
 
         /// <inheritdoc />
         public byte[] GetIV()
         {
             ThrowIfDisposed();
-            return GetCachedOrGenerate(ref _cachedIv, _ivFilePath, 16, "encryption IV");
+            return GetCachedOrGenerate(ref _cachedIv, _ivFilePath, AppConfig.AesIvSizeBytes, "encryption IV");
         }
 
         #endregion
