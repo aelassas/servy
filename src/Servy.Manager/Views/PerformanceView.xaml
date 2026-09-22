@@ -12,11 +12,11 @@
                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PerformanceView_HelpText}">
 
   <views:ServiceSearchUserControl.Resources>
-    <SolidColorBrush x:Key="GraphStrokeBrush" Color="#1B7F9F" />
-    <SolidColorBrush x:Key="GraphFillBrush" Color="#80C3ECFA" />
-    <SolidColorBrush x:Key="GraphBorderBrush" Color="#757575" />
-    <SolidColorBrush x:Key="GraphGridPenBrush" Color="#EBEBEB" />
-    <SolidColorBrush x:Key="GraphBackgroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="GraphStrokeBrush" Color="{Binding Color, Source={StaticResource AccentBrush}}" />
+    <SolidColorBrush x:Key="GraphFillBrush" Color="{Binding Color, Source={StaticResource AccentFillBrush}}" />
+    <SolidColorBrush x:Key="GraphBorderBrush" Color="{Binding Color, Source={StaticResource ControlBorderBrush}}" />
+    <SolidColorBrush x:Key="GraphGridPenBrush" Color="{Binding Color, Source={StaticResource AccentGridPenBrush}}" />
+    <SolidColorBrush x:Key="GraphBackgroundBrush" Color="{Binding Color, Source={StaticResource AccentBackgroundBrush}}" />
 
     <DrawingBrush x:Key="GraphGridBrush"
                   TileMode="Tile"
