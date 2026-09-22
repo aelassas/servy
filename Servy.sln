@@ -132,6 +132,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "taskschd", "taskschd", "{92
 		setup\taskschd\Get-ServyLastErrors.ps1 = setup\taskschd\Get-ServyLastErrors.ps1
 		setup\taskschd\Import-ServyDependencies.ps1 = setup\taskschd\Import-ServyDependencies.ps1
 		setup\taskschd\Servy-Watermark.psm1 = setup\taskschd\Servy-Watermark.psm1
+		setup\taskschd\Servy-Watermark.test.ps1 = setup\taskschd\Servy-Watermark.test.ps1
 		setup\taskschd\ServyFailureEmail.ps1 = setup\taskschd\ServyFailureEmail.ps1
 		setup\taskschd\ServyFailureEmail.vbs = setup\taskschd\ServyFailureEmail.vbs
 		setup\taskschd\ServyFailureEmail.xml = setup\taskschd\ServyFailureEmail.xml
