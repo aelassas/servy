@@ -984,12 +984,6 @@ namespace Servy.Core.Config
         public const int ServiceRestarterPollIntervalMs = 500;
 
         /// <summary>
-        /// Specifies the polling interval in milliseconds used to check if a managed process
-        /// has successfully exited during a teardown sequence.
-        /// </summary>
-        public const int ProcessExitPollIntervalMs = 500;
-
-        /// <summary>
         /// Specifies the refresh interval in milliseconds for the CLI progress spinner
         /// to maintain a smooth visual frame rate during long-running commands.
         /// </summary>
