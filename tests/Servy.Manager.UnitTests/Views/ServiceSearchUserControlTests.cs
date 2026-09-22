@@ -120,12 +120,15 @@ namespace Servy.Manager.UnitTests.Views
                 // Act
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
 
-                if (control.LastLoadedTask != null)
-                {
-                    await control.LastLoadedTask;
-                }
+                // The Loaded handler assigns LastLoadedTask unconditionally and synchronously, so the
+                // seam is always available once RaiseEvent returns. Pin its terminal state instead of
+                // guarding the await, exactly as the other Loaded tests in this file do.
+                var task = control.LastLoadedTask;
+                Assert.NotNull(task);
+                await task;
 
                 // Assert
+                Assert.Equal(TaskStatus.RanToCompletion, task.Status);
                 Assert.False(viewModel.ExecuteAsyncWasCalled);
             }, createApp: true);
         }
