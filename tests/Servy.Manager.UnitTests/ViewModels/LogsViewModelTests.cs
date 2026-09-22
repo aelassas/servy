@@ -432,6 +432,36 @@ namespace Servy.Manager.UnitTests.ViewModels
                         _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
                         Assert.False(vm.IsBusy);
                         Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
+                        _mockMessageBoxService.Verify(
+                            m => m.ShowErrorAsync("WMI Repository Event log corruption detected", UiAppConfig.Caption),
+                            Times.Once);
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task SearchCommand_ServiceThrowsUnrecognizedException_ShowsGenericErrorMessage()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    // Arrange - neither SecurityException nor InvalidOperationException, so the
+                    // generic-message arm of HandleSearchExceptionAsync is the one that must fire.
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ThrowsAsync(new TimeoutException("event log query timed out"));
+
+                    using (var vm = CreateViewModel())
+                    {
+                        // Act
+                        await vm.SearchCommand.ExecuteAsync(null);
+
+                        // Assert
+                        _mockMessageBoxService.Verify(
+                            m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption),
+                            Times.Once);
                     }
                 }
             }, createApp: true);
