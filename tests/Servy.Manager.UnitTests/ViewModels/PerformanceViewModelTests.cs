@@ -293,6 +293,34 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public void AddPoint_CpuPeakBelowTheFixedFloor_ScalesTheAxisAgainstThatFloor()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    // Stop the background DispatcherTimer so only the value added below reaches the buffer
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // 45.5 * GraphScaleHeadroom (1.2) is 54.6, which stays under the fixed CPU floor,
+                    // so the floor - not the observed peak - is what the axis is scaled against.
+                    const double cpuValue = 45.5;
+
+                    // Act
+                    TestReflection.InvokeNonPublic(vm, "AddPoint", cpuValue, MetricType.Cpu);
+
+                    // Assert
+                    // y = GraphHeight - (value / floor) * GraphHeight = 200 - (45.5 / 100) * 200 = 109.
+                    // The floor is spelled out as a literal on purpose: an assertion that read the
+                    // constant back would move with it and could no longer detect a change to it.
+                    var point = Assert.Single(vm.CpuPointCollection);
+                    Assert.Equal(109d, point.Y, 6);
+                }
+            }, createApp: true);
+        }
+
         #endregion
 
         #region Command Processing & Clear Framework Flags
