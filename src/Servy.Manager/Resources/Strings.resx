@@ -729,7 +729,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Logs Tab</value>
   </data>
   <data name="Automation_LogsTab_HelpText" xml:space="preserve">
-    <value>View a list of system events and diagnostic records for the service.</value>
+    <value>View a list of system events and diagnostic records for all services.</value>
   </data>
 
   <data name="Automation_MainFooterText_HelpText" xml:space="preserve">

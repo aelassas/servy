@@ -727,7 +727,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to View a list of system events and diagnostic records for the service..
+        ///   Looks up a localized string similar to View a list of system events and diagnostic records for all services..
         /// </summary>
         public static string Automation_LogsTab_HelpText {
             get {
