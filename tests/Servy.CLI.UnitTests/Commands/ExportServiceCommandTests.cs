@@ -398,6 +398,59 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.False(Directory.Exists(Path.Combine(TempDirectory, "write_fail_tree")), "The orphaned root created during execution should be removed too.");
         }
 
+        [Fact]
+        public void SaveFile_WriteThrowsIOException_WrapsFailureAndPropagates()
+        {
+            // Arrange
+            // The sibling rollback test above fails the StreamWriter CONSTRUCTOR (ArgumentException),
+            // which the write catch filter deliberately does not match. Hand back a genuinely
+            // writable handle whose forced flush-to-disk fails instead, so the failure lands inside
+            // the try block and reaches the IOException arm of the filter.
+            var filePath = Path.Combine(TempDirectory, "throwing_write.json");
+            _command.PathValidator = (userPath, mode, access, share) =>
+            {
+                var resolvedPath = Path.GetFullPath(userPath);
+                var throwingStream = new ThrowingFlushFileStream(resolvedPath);
+                return new ExportServiceCommand.PathSecurityResultWithStream(PathSecurityResult.Success(resolvedPath), throwingStream);
+            };
+
+            // Act
+            var ex = Assert.Throws<IOException>(() => InvokeSaveFile(filePath, "data"));
+
+            // Assert - the write failure is wrapped with the target path rather than surfacing raw,
+            // and the original IO error is preserved as the inner exception.
+            Assert.Contains("Failed to write export file", ex.Message);
+            Assert.Contains(Path.GetFullPath(filePath), ex.Message);
+            var inner = Assert.IsType<IOException>(ex.InnerException);
+            Assert.Equal("Simulated disk failure", inner.Message);
+        }
+
+        /// <summary>
+        /// A real, writable file stream whose first forced flush-to-disk fails, standing in for a
+        /// write-time IO failure (disk full, sharing violation) without needing one to occur.
+        /// Subsequent flushes succeed so the stream still disposes cleanly during unwinding.
+        /// </summary>
+        private sealed class ThrowingFlushFileStream : FileStream
+        {
+            private bool _thrown;
+
+            public ThrowingFlushFileStream(string path)
+                : base(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)
+            {
+            }
+
+            public override void Flush(bool flushToDisk)
+            {
+                if (!_thrown)
+                {
+                    _thrown = true;
+                    throw new IOException("Simulated disk failure");
+                }
+
+                base.Flush(flushToDisk);
+            }
+        }
+
         #endregion
 
         #region Reflection Helper Definition
