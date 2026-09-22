@@ -79,6 +79,7 @@ namespace Servy.Core.IntegrationTests.Logging
             string taskSchdDirectory = Path.Combine(_repoRoot, TaskSchdPath);
             string[] scripts = Directory.GetFiles(taskSchdDirectory, "*.ps1")
                 .Concat(Directory.GetFiles(taskSchdDirectory, "*.psm1"))
+                .Where(path => !path.EndsWith(".test.ps1", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(path => path, StringComparer.Ordinal)
                 .ToArray();
 
