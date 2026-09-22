@@ -22,6 +22,11 @@ permissions:
 
 env:
   LOC_BADGE_COLOR: green
+  # Shared exclusions, hoisted so one edit reaches both badges. The prod and tests
+  # lists differ only by the scope selector that sits between these two halves:
+  # prod excludes tests, the tests badge excludes tests/data and src instead.
+  LOC_IGNORE_HEAD: '.gitignore|*.txt|.github|setup'
+  LOC_IGNORE_TAIL: 'bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
 jobs:
   loc_job:
@@ -45,7 +50,7 @@ jobs:
           badge_label: 'LoC prod'
           badge_color: ${{ env.LOC_BADGE_COLOR }}
           badge: ./output/loc-prod.svg
-          ignore: '.gitignore|*.txt|.github|setup|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+          ignore: '${{ env.LOC_IGNORE_HEAD }}|tests|${{ env.LOC_IGNORE_TAIL }}'
 
       # ----------------------------
       # Tests LoC
@@ -59,7 +64,7 @@ jobs:
           badge_label: 'LoC tests'
           badge_color: ${{ env.LOC_BADGE_COLOR }}
           badge: ./output/loc-tests.svg
-          ignore: '.gitignore|*.txt|.github|setup|tests/data|src|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+          ignore: '${{ env.LOC_IGNORE_HEAD }}|tests/data|src|${{ env.LOC_IGNORE_TAIL }}'
 
       # ----------------------------
       # Total LoC
