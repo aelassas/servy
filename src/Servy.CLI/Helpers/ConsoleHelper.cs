@@ -1,4 +1,5 @@
 using Servy.CLI.Resources;
+using Servy.Core.Config;
 using System;
 using System.IO;
 using System.Threading;
@@ -49,7 +50,7 @@ namespace Servy.CLI.Helpers
                         Console.Write($"\r{message} {spinnerChars[spinnerIndex++ % spinnerChars.Length]}");
                         try
                         {
-                            await Task.Delay(100, cts.Token);
+                            await Task.Delay(AppConfig.ConsoleSpinnerDelayMs, cts.Token);
                         }
                         catch (OperationCanceledException) { /* Expected */ }
                     }

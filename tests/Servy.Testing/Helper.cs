@@ -25,11 +25,9 @@ namespace Servy.Testing
     {
         /// <summary>
         /// Gets the absolute filesystem path for the Sysinternals handle utility.
-        /// Dynamically selects the native binary based on runtime architecture to support ARM64 agents natively.
         /// </summary>
-        public static readonly string HandleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
-            ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
-            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
+        public static readonly string HandleExePath =
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppConfig.HandleExe);
 
         private static readonly object _extractionLock = new object();
         private static readonly object _applicationLock = new object();
