@@ -179,5 +179,20 @@ namespace Servy.Core.UnitTests.Config
                 Directory.Delete(isolatedDir, recursive: true);
             }
         }
+
+        [Fact]
+        public void KeyProviderMigrationFailureEscalationThreshold_LeavesTheTransientWarningBranchReachable()
+        {
+            // Act
+            var threshold = AppConfig.KeyProviderMigrationFailureEscalationThreshold;
+
+            // Assert
+            // ProtectedKeyProvider.GetOrGenerate escalates to Error at failCount >= threshold and
+            // logs a Warning below it. failCount starts at 1, so at a threshold of 1 the Warning
+            // branch can never run and the first transient migration failure is already reported as a
+            // persistent security degradation.
+            Assert.True(threshold > 1,
+                $"The escalation threshold must leave room for at least one transient Warning; got {threshold}.");
+        }
     }
 }

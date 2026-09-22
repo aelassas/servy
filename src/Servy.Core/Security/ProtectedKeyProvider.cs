@@ -46,11 +46,6 @@ namespace Servy.Core.Security
         /// </summary>
         private static readonly ConcurrentDictionary<string, int> MigrationFailureCounts = new ConcurrentDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>
-        /// The number of consecutive migration failures before escalating to a system-level Error/EventLog entry.
-        /// </summary>
-        private const int MigrationFailureEscalationThreshold = 3;
-
         #endregion
 
         #region Private Fields
@@ -421,7 +416,7 @@ namespace Servy.Core.Security
                         int failCount = MigrationFailureCounts.AddOrUpdate(path, 1, (_, count) => count + 1);
                         string baseMsg = $"Key migration to entropy-protected format failed for '{path}'";
 
-                        if (failCount >= MigrationFailureEscalationThreshold)
+                        if (failCount >= AppConfig.KeyProviderMigrationFailureEscalationThreshold)
                         {
                             string escalatedMsg = $"[EventID: {EventIds.PersistentMigrationFailure}] PERSISTENT SECURITY DEGRADATION: {baseMsg}. Failed {failCount} consecutive times. The file cannot be upgraded to modern encryption. System remains in v7.8 compatibility mode.";
                             TryWriteServyEventLog($"{escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.PersistentMigrationFailure);
@@ -429,7 +424,7 @@ namespace Servy.Core.Security
                         }
                         else
                         {
-                            string warningMsg = $"[EventID: {EventIds.TransientMigrationWarning}] {baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}";
+                            string warningMsg = $"[EventID: {EventIds.TransientMigrationWarning}] {baseMsg} (Attempt {failCount}/{AppConfig.KeyProviderMigrationFailureEscalationThreshold}): {ex.Message}";
                             TryWriteServyEventLog(warningMsg, EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
                             Logger.Warn(warningMsg);
                         }
