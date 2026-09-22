@@ -574,13 +574,21 @@ namespace Servy.Manager.UnitTests.ViewModels
                 int isDisposedAfterFirst = TestReflection.GetField<int>(vm, "_isDisposed");
                 Assert.Equal(1, isDisposedAfterFirst);
 
-                // Reset the guard so the second Dispose exercises the full dispose body again
-                TestReflection.SetField(vm, "_isDisposed", 0);
-                var doubleDisposeException = Record.Exception(vm.Dispose);
+                using (var sentinelCts = new CancellationTokenSource())
+                {
+                    // Arrange - a token planted after the first Dispose stands in for state that a
+                    // second, unguarded pass through ClearActiveSearchContext would cancel and dispose
+                    TestReflection.SetField(vm, "_searchCts", sentinelCts);
 
-                // Assert
-                Assert.Null(doubleDisposeException);
-                Assert.Equal(1, TestReflection.GetField<int>(vm, "_isDisposed"));
+                    // Act - Second teardown pass, reached naturally; nothing resets the guard in between
+                    var doubleDisposeException = Record.Exception(vm.Dispose);
+
+                    // Assert - The early return leaves the planted token untouched; without the guard
+                    // the dispose body would run a second time and cancel it
+                    Assert.Null(doubleDisposeException);
+                    Assert.False(sentinelCts.IsCancellationRequested, "The disposed guard did not exit early: the second Dispose ran the dispose body again.");
+                    Assert.Equal(1, TestReflection.GetField<int>(vm, "_isDisposed"));
+                }
             }
         }
 
