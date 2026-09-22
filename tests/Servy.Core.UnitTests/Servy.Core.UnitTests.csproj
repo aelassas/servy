@@ -147,6 +147,7 @@
     <Compile Include="Security\SecureDataLegacyBlockedExceptionTests.cs" />
     <Compile Include="Helpers\ServiceDtoFactory.cs" />
     <Compile Include="Helpers\ServiceDtoFactoryTests.cs" />
+    <Compile Include="Helpers\TestingHelperTests.cs" />
     <Compile Include="Helpers\ServiceDtoHelperTests.cs" />
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="Logging\EventLogReaderTests.cs" />
