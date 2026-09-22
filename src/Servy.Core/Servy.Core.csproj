@@ -1,12 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <AssemblyTitle>Servy.Core</AssemblyTitle>
     <Description>Shared functionality, utilities, and data models</Description>
     <Product>Servy.Core</Product>

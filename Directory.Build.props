@@ -6,6 +6,11 @@
     <AssemblyVersion>10.2.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
 
+    <!-- Shared SDK settings: one value, every project, no exceptions -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
     <!-- Globalization & Localization Optimizations -->
     <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
