@@ -526,6 +526,40 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public async Task StopServicesAsync_SettlesFromStartPendingToStopped_SkipsStopCall()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            int refreshCount = 0;
+            // The first Status read (after the unconditional entry Refresh()) must be StartPending so
+            // the method enters the settle loop instead of the early "already stopped" check. The
+            // SECOND Refresh() is the one inside the settle loop body; make that one observe Stopped,
+            // so the loop exits NORMALLY - the path both existing settle-loop tests miss, since each
+            // pins Status to StartPending forever and can only leave the loop by throwing.
+            scMock.Setup(x => x.Status).Returns(() => refreshCount < 2 ? ServiceControllerStatus.StartPending : ServiceControllerStatus.Stopped);
+            scMock.Setup(x => x.Refresh()).Callback(() => refreshCount++);
+
+            var serviceDto = new ServiceDto { Name = "SettlingService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("SettlingService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("SettlingService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            await serviceHelper.StopServicesAsync(new[] { "SettlingService" }, TestContext.Current.CancellationToken);
+
+            // Assert - the settle loop observed the transition to Stopped and fell through to the
+            // post-settle Stopped re-check, so no stop command was ever issued against a service
+            // that had already reached Stopped on its own.
+            scMock.Verify(x => x.Refresh(), Times.Exactly(2));
+            scMock.Verify(x => x.Stop(), Times.Never);
+        }
+
+        [Fact]
         public async Task StopServicesAsync_StopThrowsInvalidOperationException_SwallowsIfServiceIsStoppedOrStopPending()
         {
             // Arrange
