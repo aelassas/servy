@@ -9,6 +9,14 @@ namespace Servy.Infrastructure.UnitTests.Data
         private const string InMemoryConnectionString = "Data Source=:memory:";
 
         [Fact]
+        public void Constructor_NullConnectionString_ThrowsArgumentNullException()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(() => new AppDbContext(null!));
+
+            Assert.Equal("connectionString", exception.ParamName);
+        }
+
+        [Fact]
         public void CreateConnection_AfterDispose_ThrowsObjectDisposedException()
         {
             var context = new AppDbContext(InMemoryConnectionString);
