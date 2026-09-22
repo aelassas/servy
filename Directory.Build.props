@@ -11,6 +11,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
+    <!-- Every shipped executable is published self-contained: the publish scripts under
+         src/*/publish.ps1, setup/build-common.ps1, setup/publish-sc.ps1 and
+         .github/workflows/publish.yml all pass self-contained on the dotnet publish
+         command line. The condition keeps this property out of the RID-less projects
+         (the libraries and the test projects), because MSBuild fails with NETSDK1191,
+         "a runtime identifier for the property 'SelfContained' couldn't be inferred",
+         when SelfContained is set without a RuntimeIdentifier. A publish supplies one
+         with -r, so the property applies exactly where it is meaningful. -->
+    <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
+
     <!-- Globalization & Localization Optimizations -->
     <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
