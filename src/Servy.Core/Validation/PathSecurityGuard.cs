@@ -21,6 +21,32 @@ namespace Servy.Core.Validation
         private const string ExtendedUncPrefix = @"\\?\UNC\";
 
         /// <summary>
+        /// The protected system directories no imported or exported configuration file may live under.
+        /// Both validation stages match against this one set, so a root added here hardens the pre-handle
+        /// audit and the post-resolution re-check together. The special-folder paths are process-constant,
+        /// so resolving them once is safe.
+        /// </summary>
+        private static readonly string[] ProtectedFolders =
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+        };
+
+        /// <summary>
+        /// Returns the protected system directory <paramref name="candidate"/> sits under, or <c>null</c> when it sits under none.
+        /// </summary>
+        /// <param name="candidate">An absolute path to match against <see cref="ProtectedFolders"/>.</param>
+        /// <returns>The matched protected folder, or <c>null</c>.</returns>
+        private static string? FindProtectedFolderViolation(string candidate) =>
+            ProtectedFolders.FirstOrDefault(folder =>
+                !string.IsNullOrEmpty(folder) &&
+                candidate.StartsWith(
+                    folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>
         /// Audits a path before any handle is opened: no <see cref="FileStream"/> is created and nothing is created on disk.
         /// Read-only filesystem metadata is queried where a check requires it (volume type, ancestor reparse points, target existence and attributes).
         /// Covers UNC path blocking, network drive detection, reparse points, reserved device names, protected system directories, and allowed file extensions.
@@ -113,22 +139,6 @@ namespace Servy.Core.Validation
             }
 
             // System Protection Guard
-            string[] protectedFolders =
-            {
-                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                Environment.GetFolderPath(Environment.SpecialFolder.System),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-            };
-
-            // Centralized Protected Directory Matcher Local Function
-            string? FindProtectedFolderViolation(string candidate) =>
-                protectedFolders.FirstOrDefault(folder =>
-                    !string.IsNullOrEmpty(folder) &&
-                    candidate.StartsWith(
-                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                        StringComparison.OrdinalIgnoreCase));
-
             var violatedFolder = FindProtectedFolderViolation(fullPath);
 
             if (violatedFolder != null)
@@ -185,22 +195,6 @@ namespace Servy.Core.Validation
             }
 
             string fullPath = pathOnlyResult.ValidPath.ResolvedPath;
-
-            // Protected directory matcher local function for resolved path check below
-            string[] protectedFolders =
-            {
-                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                Environment.GetFolderPath(Environment.SpecialFolder.System),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-            };
-
-            string? FindProtectedFolderViolation(string candidate) =>
-                protectedFolders.FirstOrDefault(folder =>
-                    !string.IsNullOrEmpty(folder) &&
-                    candidate.StartsWith(
-                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                        StringComparison.OrdinalIgnoreCase));
 
             // Handle Resolution (Final Target Verification)
             bool createdByUs = !File.Exists(fullPath);
