@@ -96,6 +96,36 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Decides whether every bit of <paramref name="value"/> maps to a declared member of
+        /// <typeparamref name="TEnum"/>, honouring <see cref="FlagsAttribute"/> combinations.
+        /// </summary>
+        /// <typeparam name="TEnum">The enum type to validate against.</typeparam>
+        /// <param name="value">The already-converted enum value to validate.</param>
+        /// <returns><see langword="true"/> when the value is a valid member or flag combination; otherwise <see langword="false"/>.</returns>
+        /// <remarks>
+        /// This is the single home of that decision, shared by both <see cref="ParseEnum{TEnum}(int?, TEnum, string)"/>
+        /// overloads and by the CLI install validator, so a change to how Servy judges an enum value
+        /// valid is made once instead of once per copy. Callers that accept free text keep their own
+        /// comma guard: a comma is meaningful only in a flag combination, and this method sees the
+        /// parsed value rather than the text it came from.
+        /// </remarks>
+        public static bool IsValidEnumValue<TEnum>(TEnum value) where TEnum : struct, Enum
+        {
+            var enumType = typeof(TEnum);
+
+            if (enumType.IsDefined(typeof(FlagsAttribute), false))
+            {
+                // ToString() on a [Flags] enum returns member names when every bit maps to a declared
+                // member, and the raw number otherwise - so comparing against the numeric string
+                // detects unmapped bits across all underlying types, culture-invariantly.
+                var underlyingValue = Convert.ChangeType(value, Enum.GetUnderlyingType(enumType)).ToString();
+                return value.ToString() != underlyingValue;
+            }
+
+            return Enum.IsDefined(enumType, value);
+        }
+
+        /// <summary>
         /// Validates that a numeric value exists within the defined range or valid bitwise combinations of a specific <see cref="Enum"/>.
         /// </summary>
         /// <typeparam name="TEnum">The target enum type to validate against.</typeparam>
@@ -133,23 +163,12 @@ namespace Servy.Core.Helpers
                 // Ensure the numeric type matches the underlying enum type for valid Enum.IsDefined check
                 var convertedValue = Convert.ChangeType(value.Value, underlyingType);
 
-                // FORWARD-COMPATIBILITY: Check if this is a bitmask flags enum.
-                if (enumType.IsDefined(typeof(FlagsAttribute), false))
-                {
-                    // Convert numeric value back to enum type to allow safe processing
-                    TEnum parsedEnum = (TEnum)convertedValue;
+                // Convert numeric value back to enum type to allow safe processing
+                TEnum parsedEnum = (TEnum)convertedValue;
 
-                    // ToString() on a [Flags] enum returns member names when every bit maps to a declared
-                    // member, and the raw number otherwise - so comparing against the numeric string
-                    // detects unmapped bits across all underlying types.
-                    if (parsedEnum.ToString() != convertedValue.ToString())
-                    {
-                        return parsedEnum;
-                    }
-                }
-                else if (Enum.IsDefined(enumType, convertedValue))
+                if (IsValidEnumValue(parsedEnum))
                 {
-                    return (TEnum)convertedValue;
+                    return parsedEnum;
                 }
             }
             catch (Exception ex)
@@ -197,16 +216,10 @@ namespace Servy.Core.Helpers
                 // 3. Robustness check: Separate standard enums from bitmask flag enums.
                 // If it's a flags enum, TryParse naturally handles named combinations (e.g. "Read, Write")
                 // as well as combined numeric variants. We validate string parity to ensure it contains no out-of-range values.
-                if (enumType.IsDefined(typeof(FlagsAttribute), false))
-                {
-                    // ToString() falls back to the raw number when a bit maps to no declared member.
-                    // Comparing result.ToString() with the underlying value's string representation
-                    // provides a culture-invariant and width-agnostic check across all underlying types (e.g. ulong, long, int).
-                    var underlyingValue = Convert.ChangeType(result, Enum.GetUnderlyingType(enumType)).ToString();
-                    if (result.ToString() != underlyingValue)
-                        return result;
-                }
-                else if (value.IndexOf(',') < 0 && Enum.IsDefined(enumType, result))
+                // A comma is only meaningful in a [Flags] combination; for any other enum it is a
+                // malformed value that Enum.TryParse would otherwise accept.
+                if ((enumType.IsDefined(typeof(FlagsAttribute), false) || value.IndexOf(',') < 0)
+                    && IsValidEnumValue(result))
                 {
                     return result;
                 }

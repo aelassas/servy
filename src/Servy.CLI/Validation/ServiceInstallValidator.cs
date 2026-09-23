@@ -4,6 +4,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Validation;
 using System.Globalization;
@@ -206,19 +207,11 @@ namespace Servy.CLI.Validation
 
             if (Enum.TryParse<T>(val, true, out T result))
             {
-                // Check if the enum is a bitmask [Flags] layout
-                if (enumType.IsDefined(typeof(FlagsAttribute), false))
-                {
-                    // If the string contains unmapped or anonymous bits, ToString() drops back
-                    // to displaying a raw number. Comparing it against the normalized text
-                    // detects out-of-range flag corruption.
-                    var underlyingValue = Convert.ChangeType(result, Enum.GetUnderlyingType(enumType)).ToString();
-                    if (result.ToString() != underlyingValue)
-                    {
-                        return Convert.ToInt32(result);
-                    }
-                }
-                else if (val.IndexOf(',') < 0 && Enum.IsDefined(enumType, result))
+                // A comma is only meaningful in a [Flags] combination; for any other enum it is a
+                // malformed value that Enum.TryParse would otherwise accept. Whether the parsed
+                // value itself is valid is ConfigParser's decision, not a third copy of it.
+                if ((enumType.IsDefined(typeof(FlagsAttribute), false) || val.IndexOf(',') < 0)
+                    && ConfigParser.IsValidEnumValue(result))
                 {
                     return Convert.ToInt32(result);
                 }
