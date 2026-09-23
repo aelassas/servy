@@ -565,6 +565,39 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
+        [Theory]
+        [InlineData(@"C:\")]
+        [InlineData("C:/")]
+        public void NormalizePath_DriveRootOnly_PreservesRootSeparator(string input)
+        {
+            // Arrange
+            // The trailing-separator tests above all pass a path with a segment below the root, so
+            // they only ever exercise the TrimEnd return. A bare drive root is the one input the
+            // method deliberately returns untrimmed - the guard added for #1744.
+            var expected = @"C:\";
+
+            // Act
+            var result = Helper.NormalizePath(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void NormalizePath_PathWithNullCharacter_ReturnsNull()
+        {
+            // Arrange
+            // A NUL byte makes Path.GetFullPath throw, which is the only way into the catch that
+            // turns a malformed path into null instead of letting the exception reach the caller.
+            var input = "C:\\Invalid\0Path";
+
+            // Act
+            var result = Helper.NormalizePath(input);
+
+            // Assert
+            Assert.Null(result);
+        }
+
         #region WriteFileAtomic (Synchronous) Tests
 
         [Fact]
