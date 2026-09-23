@@ -186,11 +186,25 @@ namespace Servy.Manager.ViewModels
                 // Step 7: Stale-search recovery gate check. Restore original context states safely.
                 if (ReferenceEquals(Volatile.Read(ref _searchCts), newCts))
                 {
-                    _cursorService.ResetCursor();
-                    SearchButtonText = Strings.Button_Search;
-                    IsBusy = false;
+                    RestoreIdleSearchState();
                 }
             }
+        }
+
+        /// <summary>
+        /// Restores the idle search UI state: default cursor, default button caption, not busy.
+        /// </summary>
+        /// <remarks>
+        /// This is the single undo of the wait state the search pipeline sets up before it runs, and it is
+        /// reached from both exits - the pipeline's own Step 7 gate, and <see cref="ClearActiveSearchContext"/>
+        /// when no successor search will run that gate. Keeping one copy is what stops a future addition to
+        /// the wait state from being restored on only one of the two paths, which is the shape of #4375.
+        /// </remarks>
+        private void RestoreIdleSearchState()
+        {
+            _cursorService.ResetCursor();
+            SearchButtonText = Strings.Button_Search;
+            IsBusy = false;
         }
 
         /// <summary>
@@ -223,9 +237,7 @@ namespace Servy.Manager.ViewModels
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
                 // No successor search will run the Step 7 restore - do it here.
-                _cursorService.ResetCursor();
-                SearchButtonText = Strings.Button_Search;
-                IsBusy = false;
+                RestoreIdleSearchState();
             }
         }
 
