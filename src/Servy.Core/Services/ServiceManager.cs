@@ -866,7 +866,7 @@ namespace Servy.Core.Services
 
                     timeout = ServiceHelper.CalculateStartTimeout(
                         service.StartTimeout,
-                        string.IsNullOrEmpty(service.PreLaunchExecutablePath) ? 0 : (service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds),
+                        ServiceHelper.ResolvePreLaunchTimeout(service),
                         service.PreLaunchRetryAttempts ?? 0);
 
                     Logger.Info($"Attempting to start service '{serviceName}' with a timeout of {timeout} seconds.");
