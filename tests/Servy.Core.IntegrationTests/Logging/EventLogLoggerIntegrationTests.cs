@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Security;
 using System.Threading;
 using Xunit;
@@ -198,6 +199,89 @@ namespace Servy.Core.IntegrationTests.Logging
 
                 Assert.Equal(expectedEmitted, emitted);
                 Assert.Equal("[TestPrefix]", logger.Prefix);
+            }
+        }
+
+        [Theory]
+        [InlineData(LogLevel.Debug, true)]
+        [InlineData(LogLevel.Info, false)]
+        public void Debug_OuterLogger_AppliesTheDebugThresholdAndPrefix(LogLevel level, bool expectEmitted)
+        {
+            // Arrange
+            string source = GenerateSourceName();
+
+            // Act
+            string textLogOutput = CaptureDebugFileLog(source, level, logger => logger.Debug("outer debug message"));
+
+            // Assert
+            if (expectEmitted)
+            {
+                Assert.Contains("[Outer] outer debug message", textLogOutput);
+            }
+            else
+            {
+                Assert.DoesNotContain("outer debug message", textLogOutput);
+            }
+        }
+
+        [Theory]
+        [InlineData(LogLevel.Debug, true)]
+        [InlineData(LogLevel.Info, false)]
+        public void Debug_ScopedLogger_AppliesTheSameThresholdAndTheCombinedPrefix(LogLevel level, bool expectEmitted)
+        {
+            // Arrange
+            // The scope keeps no Debug body of its own, so this is the only assertion that the scoped
+            // site still applies the same threshold as its parent - the drift the shared body prevents.
+            string source = GenerateSourceName();
+
+            // Act
+            string textLogOutput = CaptureDebugFileLog(source, level, logger => logger.CreateScoped("Scope").Debug("scoped debug message"));
+
+            // Assert
+            if (expectEmitted)
+            {
+                Assert.Contains("[Outer] [Scope] scoped debug message", textLogOutput);
+            }
+            else
+            {
+                Assert.DoesNotContain("scoped debug message", textLogOutput);
+            }
+        }
+
+        /// <summary>
+        /// Runs <paramref name="act"/> against a logger built at <paramref name="level"/> with the Event Log
+        /// sink disabled, and returns what reached the file sink. Debug never writes to the Event Log, so the
+        /// file log is the only observable, and it is pointed at a temporary directory rather than the
+        /// product's own logs folder.
+        /// </summary>
+        private static string CaptureDebugFileLog(string source, LogLevel level, Action<EventLogLogger> act)
+        {
+            string tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
+            string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
+            string tempLogFilePath = Path.Combine(tempLogDir, tempLogFileName);
+
+            try
+            {
+                Logger.Shutdown();
+                Logger.Initialize(tempLogFileName, LogLevel.Debug, logDirectory: tempLogDir);
+
+                using (var logger = new EventLogLogger(source, level, false, "Outer"))
+                {
+                    act(logger);
+                }
+
+                // Flush and release the log file handle before reading it back
+                Logger.Shutdown();
+
+                return File.Exists(tempLogFilePath) ? File.ReadAllText(tempLogFilePath) : string.Empty;
+            }
+            finally
+            {
+                Logger.Shutdown();
+                if (Directory.Exists(tempLogDir))
+                {
+                    try { Directory.Delete(tempLogDir, recursive: true); } catch { /* Ignore cleanup errors */ }
+                }
             }
         }
 

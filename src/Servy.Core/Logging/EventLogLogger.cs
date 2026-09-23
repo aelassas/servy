@@ -116,14 +116,7 @@ namespace Servy.Core.Logging
         /// <inheritdoc />
         public void Debug(string message, Exception ex = null)
         {
-            if (string.IsNullOrEmpty(message)) return;
-
-            if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
-            {
-                // Debug logs are traditionally skipped for Event Log to avoid clutter,
-                // but we always keep the File Log.
-                Logger.Debug(Format(message), ex);
-            }
+            DebugCore(_currentLogLevel, Format, message, ex);
         }
 
         /// <inheritdoc />
@@ -163,6 +156,26 @@ namespace Servy.Core.Logging
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Centralized <see cref="LogLevel.Debug"/> pipeline handler shared by <see cref="EventLogLogger"/> and its
+        /// nested scoped logger, so the threshold check and the file-log-only routing are stated once.
+        /// </summary>
+        /// <param name="currentLevel">The active <see cref="LogLevel"/> threshold configured for the invoking scope.</param>
+        /// <param name="format">A delegate used to apply instance-specific prefixing to the message.</param>
+        /// <param name="message">The primary log text content.</param>
+        /// <param name="ex">An optional <see cref="Exception"/> to be appended to the log.</param>
+        private static void DebugCore(int currentLevel, Func<string, string> format, string message, Exception ex)
+        {
+            if (string.IsNullOrEmpty(message)) return;
+
+            if ((LogLevel)currentLevel <= LogLevel.Debug)
+            {
+                // Debug logs are traditionally skipped for Event Log to avoid clutter,
+                // but we always keep the File Log.
+                Logger.Debug(format(message), ex);
+            }
+        }
 
         /// <summary>
         /// Centralized parameterized log pipeline handler to eliminate code duplication across log severity variants.
@@ -351,12 +364,7 @@ namespace Servy.Core.Logging
             /// <inheritdoc />
             public void Debug(string message, Exception ex = null)
             {
-                if (string.IsNullOrEmpty(message)) return;
-
-                if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
-                {
-                    Logger.Debug(Format(message), ex);
-                }
+                DebugCore(_currentLogLevel, Format, message, ex);
             }
 
             /// <inheritdoc />
