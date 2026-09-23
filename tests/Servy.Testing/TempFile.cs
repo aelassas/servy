@@ -10,9 +10,6 @@ namespace Servy.Testing
     /// </summary>
     public sealed class TempFile : IDisposable
     {
-        private const int MaxRetryAttempts = 3;
-        private const int RetryDelayMs = 50;
-
         /// <summary>
         /// Gets the absolute path of the temporary file.
         /// The file itself exists only once something has written to it.
@@ -54,27 +51,14 @@ namespace Servy.Testing
         /// </summary>
         public void Dispose()
         {
-            for (int i = 0; i < MaxRetryAttempts; i++)
+            // Shared retry policy for transient Windows file locks (AV scans, indexer, async streams)
+            RetryDelete.Attempt(() =>
             {
-                try
+                if (File.Exists(Path))
                 {
-                    if (File.Exists(Path))
-                    {
-                        File.Delete(Path);
-                    }
-
-                    return;
+                    File.Delete(Path);
                 }
-                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
-                {
-                    if (i == MaxRetryAttempts - 1)
-                    {
-                        return;
-                    }
-
-                    Thread.Sleep(RetryDelayMs);
-                }
-            }
+            });
         }
     }
 }
