@@ -117,7 +117,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void EnsureDirectoryExists_NullOrEmpty_DoesNotThrow(string? path)
         {
             // Act & Assert
@@ -824,7 +824,6 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
-
         [Fact]
         public void WriteFileAtomic_TransientLockReleasedDuringRetry_Succeeds()
         {
@@ -1056,7 +1055,6 @@ namespace Servy.Core.UnitTests.Helpers
                 if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
             }
         }
-
 
         [Fact]
         public async Task WriteFileAtomicAsync_TransientLockReleasedDuringRetry_Succeeds()

@@ -529,6 +529,35 @@ namespace Servy.Core.Helpers
                         clearedReadOnly = false; // destination replaced; nothing left to restore
                         break;
                     }
+                    catch (UnauthorizedAccessException uex)
+                    {
+                        // Destination file has explicit file-level ACLs restricting direct overwrite (e.g., Read & Execute + Delete),
+                        // but grants explicit Delete permissions on the target binary.
+                        // Fall back to explicitly deleting the target file entry before moving.
+                        try
+                        {
+                            Logger.Debug($"WriteFileAtomicCore: File.Move overwrite denied on hardened target '{path}'. Fallback deleting target file.");
+                            if (File.Exists(path))
+                            {
+                                File.Delete(path);
+                            }
+
+                            File.Move(tmp, path);
+                            clearedReadOnly = false;
+                            break;
+                        }
+                        catch (Exception deleteEx)
+                        {
+                            if (retries <= 0)
+                            {
+                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and explicit delete fallback failed ({deleteEx.Message}).", uex, deleteEx);
+                            }
+
+                            retries--;
+                            Logger.Debug($"WriteFileAtomicCore retrying fallback delete after transient error: {deleteEx.Message} (retries left: {retries})");
+                            await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken);
+                        }
+                    }
                     catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
                     {
                         retries--;
