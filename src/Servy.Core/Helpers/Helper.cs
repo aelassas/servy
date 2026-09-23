@@ -455,7 +455,7 @@ namespace Servy.Core.Helpers
                             }
                         }
                     }
-                    catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
+                    catch (Exception ex) when (retries > 0 && ex is IOException)
                     {
                         retries--;
                         Logger.Debug($"WriteFileAtomic retrying after transient '{ex.GetType().Name}': {ex.Message} (retries left: {retries})");
@@ -558,7 +558,7 @@ namespace Servy.Core.Helpers
                             await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken);
                         }
                     }
-                    catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
+                    catch (Exception ex) when (retries > 0 && ex is IOException)
                     {
                         retries--;
                         Logger.Debug($"WriteFileAtomicCore retrying after transient '{ex.GetType().Name}': {ex.Message} (retries left: {retries})");
