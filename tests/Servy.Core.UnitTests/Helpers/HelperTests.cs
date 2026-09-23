@@ -861,6 +861,28 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public void WriteFileAtomic_TempPathExceedsMaxPathLength_ThrowsPathTooLongException()
+        {
+            // Arrange: a target path that is itself within MAX_PATH, but whose 21-character
+            // ".{16-hex}.tmp" staging suffix (added by GetUniqueTempPath) pushes the staging
+            // path past AppConfig.WriteFileAtomicMaxPathLength.
+            string prefix = Path.Combine(_testRoot, "t");
+            string targetPath = prefix + new string('a', AppConfig.WriteFileAtomicMaxPathLength - prefix.Length);
+
+            // Act
+            var ex = Assert.Throws<PathTooLongException>(() =>
+                Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                {
+                    Assert.Fail("writeContent must not run: the MAX_PATH guard is evaluated before the staging file is opened.");
+                }, CancellationToken.None));
+
+            // Assert: the target path was legal and the guard is what threw, not a long-path
+            // failure raised by the filesystem itself.
+            Assert.Equal(AppConfig.WriteFileAtomicMaxPathLength, targetPath.Length);
+            Assert.Contains("exceeds the Windows MAX_PATH limit", ex.Message);
+        }
+
         #endregion
 
         #region WriteFileAtomicAsync Tests
@@ -1090,6 +1112,28 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
             }
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicAsync_TempPathExceedsMaxPathLength_ThrowsPathTooLongException()
+        {
+            // Arrange: same legal target with an over-long staging path as the synchronous
+            // case; WriteFileAtomicCore carries its own copy of the guard.
+            string prefix = Path.Combine(_testRoot, "t");
+            string targetPath = prefix + new string('a', AppConfig.WriteFileAtomicMaxPathLength - prefix.Length);
+
+            // Act
+            var ex = await Assert.ThrowsAsync<PathTooLongException>(async () =>
+                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                {
+                    Assert.Fail("writer must not run: the MAX_PATH guard is evaluated before the staging file is opened.");
+                    await Task.CompletedTask;
+                }, CancellationToken.None));
+
+            // Assert: the target path was legal and the guard is what threw, not a long-path
+            // failure raised by the filesystem itself.
+            Assert.Equal(AppConfig.WriteFileAtomicMaxPathLength, targetPath.Length);
+            Assert.Contains("exceeds the Windows MAX_PATH limit", ex.Message);
         }
 
         #endregion
