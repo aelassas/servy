@@ -1,4 +1,3 @@
-using Servy.Core.Logging;
 using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
 using System.Windows;
@@ -47,22 +46,12 @@ namespace Servy.Manager.Views
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task UserControl_LoadedAsync(object sender, RoutedEventArgs e)
         {
-            try
+            // Only trigger the search if the ViewModel is initialized and the search has not yet run
+            // to avoid redundant API/DB calls on view switching.
+            // Cancellation and failures are handled by UiTaskRunner.RunAsync, which routes this method.
+            if (DataContext is ServiceSearchViewModelBase vm && !vm.HasSearched)
             {
-                // Only trigger the search if the ViewModel is initialized and the search has not yet run
-                // to avoid redundant API/DB calls on view switching.
-                if (DataContext is ServiceSearchViewModelBase vm && !vm.HasSearched)
-                {
-                    await vm.SearchCommand.ExecuteAsync(null);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected - a newer tab navigation / window close superseded this initial load.
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to perform initial service search in {ViewName}.", ex);
+                await vm.SearchCommand.ExecuteAsync(null);
             }
         }
     }
