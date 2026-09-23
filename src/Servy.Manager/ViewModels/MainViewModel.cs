@@ -55,6 +55,13 @@ namespace Servy.Manager.ViewModels
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 
+        /// <summary>
+        /// Gets the effective degree of parallelism for bulk and refresh work: 2x logical CPU cores,
+        /// capped by <see cref="IAppConfiguration.MaxBulkOperationParallelism"/>, never below 1.
+        /// </summary>
+        private int EffectiveParallelism =>
+            Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
+
         #endregion
 
         #region Properties
@@ -730,8 +737,8 @@ namespace Servy.Manager.ViewModels
                 await SetBusyStateAsync(true);
                 busyEntered = true;
 
-                // 3. Dispatch all operations concurrently: Scale parallelism up to 2x logical CPU cores, capped by application configuration.
-                int maxDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
+                // 3. Dispatch all operations concurrently, at the shared hardware-aware ceiling.
+                int maxDegreeOfParallelism = EffectiveParallelism;
 
                 using (var throttler = new SemaphoreSlim(maxDegreeOfParallelism))
                 {
@@ -832,8 +839,7 @@ namespace Servy.Manager.ViewModels
                 // We collect the updates in thread-safe bags instead of applying them immediately
                 var changedDtos = new System.Collections.Concurrent.ConcurrentBag<ServiceDto>();
                 var uiUpdates = new System.Collections.Concurrent.ConcurrentBag<ServiceUpdateInfo>();
-                // Scale parallelism up to 2x logical CPU cores, capped by application configuration.
-                int maxRefreshDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
+                int maxRefreshDegreeOfParallelism = EffectiveParallelism;
 
                 await Task.Run(() =>
                 {
