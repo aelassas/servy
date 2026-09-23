@@ -239,6 +239,37 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(3, rules.Count);
         }
 
+        [Fact]
+        public void ApplySecurityRules_ExplicitDenyRulesForMandatoryPrincipals_ArePurged()
+        {
+            // Arrange
+            // The anti-squatting purge drops explicit Deny rules for Administrators, Local System
+            // and the current user; every other ApplySecurityRules_* test seeds Allow rules only,
+            // so the Deny arm of the purge loop is evaluated but never taken.
+            var security = new DirectorySecurity();
+            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+            var currentUserSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+
+            security.AddAccessRule(new FileSystemAccessRule(adminSid, FileSystemRights.FullControl, AccessControlType.Deny));
+            security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Deny));
+            security.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, AccessControlType.Deny));
+
+            // Act
+            InvokeApplySecurityRules(security, currentUserSid);
+
+            // Assert
+            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                                .Cast<FileSystemAccessRule>()
+                                .ToList();
+
+            // One assertion per arm of the purge condition, so a regression that narrows which
+            // principals are covered names the principal it dropped.
+            Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny && r.IdentityReference == adminSid);
+            Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny && r.IdentityReference == systemSid);
+            Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny && r.IdentityReference == currentUserSid);
+        }
+
         #region breakInheritance:false Branch Coverage Tests
 
         [Fact]
