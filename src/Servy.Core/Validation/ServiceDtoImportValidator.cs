@@ -45,6 +45,16 @@ namespace Servy.Core.Validation
         protected abstract ServiceDto? Parse(string content);
 
         /// <summary>
+        /// Composes the detail fragment appended to an import failure message: the inner
+        /// exception's message with the wrapper's in parentheses when there is one, and the
+        /// exception's own message otherwise.
+        /// </summary>
+        /// <param name="ex">The exception raised while parsing the import payload.</param>
+        /// <returns>The detail fragment for the caller-facing error message.</returns>
+        private static string DetailMessage(Exception ex) =>
+            ex.InnerException != null ? $"{ex.InnerException.Message} ({ex.Message})" : ex.Message;
+
+        /// <summary>
         /// Validates the input content to ensure it can be deserialized and meets all service rules.
         /// </summary>
         /// <param name="content">The raw configuration string.</param>
@@ -83,14 +93,14 @@ namespace Servy.Core.Validation
             // This prevents the first catch from consuming unrelated exceptions when TException is narrowed.
             catch (Exception ex) when (ex is TException || (ex is InvalidOperationException && ex.InnerException is TException))
             {
-                string detailMessage = ex.InnerException != null ? $"{ex.InnerException.Message} ({ex.Message})" : ex.Message;
+                string detailMessage = DetailMessage(ex);
                 errorMessage = string.Format(Strings.Msg_ImportInvalidStructure, FormatName, detailMessage);
                 Logger.Error($"{FormatName} import blocked: malformed document structure.", ex);
                 return false;
             }
             catch (Exception ex) // Catch-all for unexpected parser exceptions
             {
-                string detailMessage = ex.InnerException != null ? $"{ex.InnerException.Message} ({ex.Message})" : ex.Message;
+                string detailMessage = DetailMessage(ex);
                 errorMessage = string.Format(Strings.Msg_ImportStructureError, FormatName, detailMessage);
                 Logger.Error($"{FormatName} import blocked: unexpected parser exception ({ex.GetType().Name}).", ex);
                 return false;

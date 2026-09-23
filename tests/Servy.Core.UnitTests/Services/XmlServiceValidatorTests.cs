@@ -28,6 +28,25 @@ namespace Servy.Core.UnitTests.Services
             protected override long MaxPayloadBytes { get; }
         }
 
+        // A validator whose parse step raises a caller-supplied exception, so the detail-message
+        // composition shared by both catch arms of ServiceDtoImportValidator can be asserted
+        // without depending on the framework serializer's own wording.
+        private sealed class ThrowingXmlServiceValidator : XmlServiceValidator
+        {
+            private readonly Exception _toThrow;
+
+            public ThrowingXmlServiceValidator(IServiceValidationRules rules, Exception toThrow)
+                : base(rules)
+            {
+                _toThrow = toThrow;
+            }
+
+            protected override ServiceDto? Parse(string content)
+            {
+                throw _toThrow;
+            }
+        }
+
         public XmlServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
@@ -283,6 +302,39 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result);
             Assert.Null(error);
+        }
+
+        [Fact]
+        public void TryValidate_StructuralExceptionWithInnerException_ReportsInnerMessageWithWrapperInParentheses()
+        {
+            // Arrange: an InvalidOperationException wrapping an XmlException takes the structural arm.
+            var thrown = new InvalidOperationException("wrapper-structural", new System.Xml.XmlException("inner-structural"));
+            var validator = new ThrowingXmlServiceValidator(new ServiceValidationRules(_processHelperMock.Object), thrown);
+            var expected = string.Format(Strings.Msg_ImportInvalidStructure, "XML", "inner-structural (wrapper-structural)");
+
+            // Act
+            var result = validator.TryValidate("<ServiceDto />", out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(expected, error);
+        }
+
+        [Fact]
+        public void TryValidate_UnexpectedExceptionWithInnerException_ReportsInnerMessageWithWrapperInParentheses()
+        {
+            // Arrange: an inner exception that is not an XmlException falls through to the catch-all arm,
+            // which composes its detail fragment the same way.
+            var thrown = new InvalidOperationException("wrapper-unexpected", new FormatException("inner-unexpected"));
+            var validator = new ThrowingXmlServiceValidator(new ServiceValidationRules(_processHelperMock.Object), thrown);
+            var expected = string.Format(Strings.Msg_ImportStructureError, "XML", "inner-unexpected (wrapper-unexpected)");
+
+            // Act
+            var result = validator.TryValidate("<ServiceDto />", out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(expected, error);
         }
     }
 }
