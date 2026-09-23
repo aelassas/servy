@@ -400,7 +400,11 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.True(hasSlept, "The handler loop body was never reached; the budget expired before entry.");
-            Assert.Contains("failed to reach Stopped within the timeout period", ex.Message);
+
+            // The loop-exhaustion exit, pinned to its own wording: every iteration ended in the catch
+            // arm, so no recovery command was ever accepted. The in-try expiry exit the sibling
+            // TimeExpiresAfterPendingCheckSucceeds test covers cannot satisfy this assertion.
+            Assert.Contains("failed to reach Stopped within the timeout period; the SCM did not accept a recovery command before the budget expired.", ex.Message);
 
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce(),
                 "The transitional error loop condition was short-circuited; code execution failed to traverse internal mid-loop monitoring steps.");
@@ -447,7 +451,11 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.True(hasSlept, "The handler loop body was never reached; the budget expired before entry.");
-            Assert.Contains("failed to reach Stopped within the timeout period", ex.Message);
+
+            // The in-try expiry exit, pinned to its own wording: the service is mid-transition and the
+            // budget ran out before WaitForStatus could be entered. The loop-exhaustion exit the sibling
+            // RemainingTimeExpiresInsideLoop test covers cannot satisfy this assertion.
+            Assert.Contains("failed to reach Stopped within the timeout period. The service is in transition and the budget expired before the wait could begin; the transition may still complete.", ex.Message);
 
             // The throw happens right after the pending check, so the wait is never entered - neither
             // here nor in the primary stop phase, which Stop() left before reaching it.
