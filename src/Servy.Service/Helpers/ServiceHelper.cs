@@ -437,20 +437,23 @@ namespace Servy.Service.Helpers
                         return;
                     }
 
+                    int restarterExeMaxWaitMs = GetRestarterExeMaxWaitMs();
+                    int restarterKillGracePeriodMs = GetRestarterKillGracePeriodMs();
+
                     // 1. Wait for the restarter to complete the Stop/Start cycle
-                    if (!process.WaitForExit(AppConfig.RestarterExeMaxWaitMs))
+                    if (!WaitForProcessExit(process, restarterExeMaxWaitMs))
                     {
-                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / (double)AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"Servy.Restarter.exe timed out after {restarterExeMaxWaitMs / (double)AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
                             // 2. Kill the orphaned restarter
-                            process.Kill();
+                            KillProcess(process);
 
                             // 3. Brief wait to ensure kernel cleanup is complete before we return control
-                            if (!process.WaitForExit(AppConfig.RestarterKillGracePeriodMs))
+                            if (!WaitForProcessExit(process, restarterKillGracePeriodMs))
                             {
-                                logger?.Warn($"Restarter killed, but kernel cleanup is taking longer than {AppConfig.RestarterKillGracePeriodMs / (double)AppConfig.MillisecondsPerSecond} seconds.");
+                                logger?.Warn($"Restarter killed, but kernel cleanup is taking longer than {restarterKillGracePeriodMs / (double)AppConfig.MillisecondsPerSecond} seconds.");
                             }
                         }
                         catch (Exception killEx)
@@ -476,6 +479,30 @@ namespace Servy.Service.Helpers
                 logger?.Error("Failed to launch restarter.", ex);
             }
         }
+
+        /// <summary>
+        /// Seam to retrieve the maximum wait time for the restarter process exit.
+        /// </summary>
+        protected virtual int GetRestarterExeMaxWaitMs()
+            => AppConfig.RestarterExeMaxWaitMs;
+
+        /// <summary>
+        /// Seam to retrieve the grace period wait time after killing the restarter process.
+        /// </summary>
+        protected virtual int GetRestarterKillGracePeriodMs()
+            => AppConfig.RestarterKillGracePeriodMs;
+
+        /// <summary>
+        /// Seam to wrap <see cref="Process.WaitForExit(int)"/> for unit testing.
+        /// </summary>
+        protected virtual bool WaitForProcessExit(Process process, int milliseconds)
+            => process.WaitForExit(milliseconds);
+
+        /// <summary>
+        /// Seam to wrap <see cref="Process.Kill()"/> for unit testing.
+        /// </summary>
+        protected virtual void KillProcess(Process process)
+            => process.Kill();
 
         /// <inheritdoc />
         public void RestartComputer(IServyLogger? logger)
