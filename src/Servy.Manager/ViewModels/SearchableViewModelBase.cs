@@ -112,6 +112,8 @@ namespace Servy.Manager.ViewModels
             var oldCts = Interlocked.Exchange(ref _searchCts, newCts);
             Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
+            OnSearchCtsSwapped();
+
             CancellationToken token;
             try
             {
@@ -192,6 +194,20 @@ namespace Servy.Manager.ViewModels
         /// When overridden in a derived class, provides a hook to display modal alert feedback if the underlying fetch sequence encounters an error.
         /// </summary>
         protected virtual Task HandleSearchExceptionAsync(Exception ex) => Task.CompletedTask;
+
+        /// <summary>
+        /// When overridden in a derived class, provides a synchronization point between the atomic
+        /// search token swap and the disposal recheck that immediately follows it.
+        /// </summary>
+        /// <remarks>
+        /// The base implementation does nothing and costs a virtual call per search. It exists so a
+        /// test double can hold the search thread inside that otherwise purely synchronous window and
+        /// release a concurrent <see cref="Dispose()"/> into it deterministically, which is the only
+        /// way to reach the recheck and its <see cref="ObjectDisposedException"/> handler on demand.
+        /// </remarks>
+        protected virtual void OnSearchCtsSwapped()
+        {
+        }
 
         /// <summary>
         /// Cancels the active search token and restores UI state (cursor, button text, busy flag).
