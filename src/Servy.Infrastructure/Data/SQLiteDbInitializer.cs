@@ -384,6 +384,28 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
+        /// Builds the full Services table DDL for the given table name from the Single Source of Truth (SqlConstants),
+        /// so the fresh-install schema and the Version 4 rebuild schema cannot drift apart.
+        /// </summary>
+        /// <param name="tableName">The target table name to create.</param>
+        /// <returns>A CREATE TABLE IF NOT EXISTS statement covering the primary key and every expected column.</returns>
+        private static string BuildCreateTableSql(string tableName)
+        {
+            var columnDefinitions = new List<string>
+            {
+                "Id INTEGER PRIMARY KEY AUTOINCREMENT" // PK is not in InsertColumns
+            };
+
+            foreach (var col in GetExpectedColumns())
+            {
+                columnDefinitions.Add($"{col} {GetSqlType(col)}");
+            }
+
+            // IF NOT EXISTS to prevent concurrent racer crashes.
+            return $"CREATE TABLE IF NOT EXISTS {tableName} (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
+        }
+
+        /// <summary>
         /// Queries the SQLite engine schema to map and return all current structural column fields for the Services table.
         /// </summary>
         private static HashSet<string> GetExistingColumnNames(DbConnection connection, DbTransaction transaction)
@@ -404,20 +426,7 @@ namespace Servy.Infrastructure.Data
         /// <param name="transaction">The active atomic transaction.</param>
         private static void ApplyVersion1(DbConnection connection, DbTransaction transaction)
         {
-            var expectedColumns = GetExpectedColumns();
-
-            var columnDefinitions = new List<string>
-            {
-                "Id INTEGER PRIMARY KEY AUTOINCREMENT" // PK is not in InsertColumns
-            };
-
-            foreach (var col in expectedColumns)
-            {
-                columnDefinitions.Add($"{col} {GetSqlType(col)}");
-            }
-
-            // IF NOT EXISTS to prevent concurrent racer crashes.
-            var createTableSql = $"CREATE TABLE IF NOT EXISTS {SqlConstants.ServicesTableName} (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
+            var createTableSql = BuildCreateTableSql(SqlConstants.ServicesTableName);
             connection.Execute(createTableSql, transaction: transaction);
 
             // Create the UNIQUE functional index (IF NOT EXISTS protects against concurrent creations)
@@ -526,21 +535,12 @@ namespace Servy.Infrastructure.Data
             Logger.Info($"Migrating database to Version 4: Rebuilding '{SqlConstants.ServicesTableName}' table to drop strict NOT NULL constraints.");
 
             var expectedColumns = GetExpectedColumns().ToList();
-            var columnDefinitions = new List<string>
-            {
-                "Id INTEGER PRIMARY KEY AUTOINCREMENT"
-            };
-
-            // Dynamically construct the v4 table schema matching the exact DTO definition
-            foreach (var col in expectedColumns)
-            {
-                columnDefinitions.Add($"{col} {GetSqlType(col)}");
-            }
 
             // Clean up any stale staging table left over from a prior failed/interrupted migration attempt
             connection.Execute("DROP TABLE IF EXISTS Services_v4;", transaction: transaction);
 
-            var createTableSql = $"CREATE TABLE IF NOT EXISTS Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
+            // Dynamically construct the v4 table schema matching the exact DTO definition
+            var createTableSql = BuildCreateTableSql("Services_v4");
             connection.Execute(createTableSql, transaction: transaction);
 
             // --- Extract only the columns that actually exist in the old table using unified discovery helper ---
