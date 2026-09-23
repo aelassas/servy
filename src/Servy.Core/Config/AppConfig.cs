@@ -1680,7 +1680,7 @@ namespace Servy.Core.Config
             // Development
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
 #else
-            // 1. Check local directory first (Critical for Unit Tests in Release mode and Portable execution)
+            // 1. Check local directory first (Critical for Unit Tests in Release mode)
             string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
             if (File.Exists(localPath))
             {
@@ -1688,6 +1688,7 @@ namespace Servy.Core.Config
             }
 
             // 2. Fallback to the hardened vault (Production Service mode)
+            // Installed and portable versions of Servy place the service executables in the vault %ProgramData%\Servy.
             return Path.Combine(ProgramDataPath, exeName);
 #endif
         }
