@@ -68,6 +68,35 @@ namespace Servy.Core.UnitTests.Security
             Assert.DoesNotContain(rules, r => r.IdentityReference == usersSid);
         }
 
+        [Theory]
+        [InlineData(WellKnownSidType.AuthenticatedUserSid)]
+        [InlineData(WellKnownSidType.WorldSid)]
+        public void CreateSecureDirectory_PurgesOtherBroadUnprivilegedSids(WellKnownSidType sidType)
+        {
+            // Arrange
+            // BroadUnprivilegedSids holds three principals and CreateSecureDirectory's purge step
+            // rejects an explicit Allow rule for any of them, but the sibling test above only ever
+            // drives the purge with the BuiltinUsers SID, so the other two arms have no coverage.
+            var path = Path.Combine(TempDirectory, "PurgeOtherSidDir_" + sidType);
+            Directory.CreateDirectory(path);
+            var dirInfo = new DirectoryInfo(path);
+
+            var sid = new SecurityIdentifier(sidType, null);
+            var acl = dirInfo.GetAccessControl();
+            acl.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.Read, AccessControlType.Allow));
+            dirInfo.SetAccessControl(acl);
+
+            // Act
+            SecurityHelper.CreateSecureDirectory(path);
+
+            // Assert
+            var finalAcl = dirInfo.GetAccessControl();
+            var rules = finalAcl.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                               .Cast<FileSystemAccessRule>();
+
+            Assert.DoesNotContain(rules, r => r.IdentityReference == sid);
+        }
+
         [Fact]
         public void CreateSecureDirectory_PreservesSpecificExplicitRulesWhilePurgingBroadGroups()
         {
