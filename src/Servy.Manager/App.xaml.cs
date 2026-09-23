@@ -304,11 +304,9 @@ namespace Servy.Manager
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     string configuredPath = config["DesktopAppPublishPath"] ?? AppConfig.DefaultDesktopAppPublishPath;
 
-                    if (PathSecurityGuard.IsSafelyContainedWithinAppDirectory(configuredPath, baseDirectory))
+                    if (PathSecurityGuard.TryResolveWithinAppDirectory(configuredPath, baseDirectory, out var resolvedPath))
                     {
-                        DesktopAppPublishPath = Helper.IsAbsolute(configuredPath)
-                            ? Path.GetFullPath(configuredPath)
-                            : Path.GetFullPath(Path.Combine(baseDirectory, configuredPath));
+                        DesktopAppPublishPath = resolvedPath;
                     }
                     else
                     {

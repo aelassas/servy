@@ -957,6 +957,69 @@ namespace Servy.Core.UnitTests.Validation
             Assert.False(result);
         }
 
+        [Fact]
+        public void TryResolveWithinAppDirectory_RelativeChildPath_ReturnsTheResolvedAbsolutePath()
+        {
+            // Arrange
+            string baseDir = TempDirectory;
+            string targetPath = "Servy.Manager.exe";
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(targetPath, baseDir, out string resolvedPath);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(Path.Combine(baseDir, targetPath), resolvedPath);
+        }
+
+        [Fact]
+        public void TryResolveWithinAppDirectory_SubdirectoryChildPath_ReturnsTheResolvedAbsolutePath()
+        {
+            // Arrange
+            string baseDir = TempDirectory;
+            string subDir = Path.Combine(baseDir, "bin");
+            Directory.CreateDirectory(subDir);
+            string targetPath = Path.Combine("bin", "Servy.Manager.exe");
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(targetPath, baseDir, out string resolvedPath);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(Path.Combine(subDir, "Servy.Manager.exe"), resolvedPath);
+        }
+
+        [Fact]
+        public void TryResolveWithinAppDirectory_AbsoluteChildPath_ReturnsTheSameAbsolutePath()
+        {
+            // Arrange
+            string baseDir = TempDirectory;
+            string targetPath = Path.Combine(baseDir, "Servy.Manager.exe");
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(targetPath, baseDir, out string resolvedPath);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(targetPath, resolvedPath);
+        }
+
+        [Fact]
+        public void TryResolveWithinAppDirectory_ExternalRootedPath_ReturnsFalseAndEmptyPath()
+        {
+            // Arrange
+            string baseDir = Path.Combine(TempDirectory, "App");
+            Directory.CreateDirectory(baseDir);
+            string externalPath = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(externalPath, baseDir, out string resolvedPath);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(string.Empty, resolvedPath);
+        }
+
         #endregion
 
         #region Directory ACL Hardening Guards

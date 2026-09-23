@@ -328,13 +328,19 @@ namespace Servy.Core.Validation
 
         /// <summary>
         /// Validates that a target file path resolves strictly within the specified base directory,
-        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points.
+        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points, and
+        /// hands back the resolved path so callers use the very string that was validated.
         /// </summary>
         /// <param name="targetPath">The path to validate.</param>
         /// <param name="baseDirectory">The trusted application directory.</param>
+        /// <param name="resolvedPath">
+        /// When this method returns <c>true</c>, the fully resolved target path; otherwise <see cref="string.Empty"/>.
+        /// </param>
         /// <returns><c>true</c> if the path is safely contained within the base directory; otherwise, <c>false</c>.</returns>
-        public static bool IsSafelyContainedWithinAppDirectory(string targetPath, string baseDirectory)
+        public static bool TryResolveWithinAppDirectory(string targetPath, string baseDirectory, out string resolvedPath)
         {
+            resolvedPath = string.Empty;
+
             if (string.IsNullOrWhiteSpace(targetPath) || string.IsNullOrWhiteSpace(baseDirectory))
             {
                 Logger.Warn("Path security validation failed: Target path or base directory is empty.");
@@ -378,6 +384,7 @@ namespace Servy.Core.Validation
                     return false;
                 }
 
+                resolvedPath = fullTargetPath;
                 return true;
             }
             catch (Exception ex)
@@ -386,6 +393,19 @@ namespace Servy.Core.Validation
                 return false;
             }
         }
+
+        /// <summary>
+        /// Validates that a target file path resolves strictly within the specified base directory,
+        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points.
+        /// </summary>
+        /// <param name="targetPath">The path to validate.</param>
+        /// <param name="baseDirectory">The trusted application directory.</param>
+        /// <returns><c>true</c> if the path is safely contained within the base directory; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// Thin wrapper over <see cref="TryResolveWithinAppDirectory"/> for callers that only need the verdict.
+        /// </remarks>
+        public static bool IsSafelyContainedWithinAppDirectory(string targetPath, string baseDirectory)
+            => TryResolveWithinAppDirectory(targetPath, baseDirectory, out _);
 
         /// <summary>
         /// Inspects the target file or directory ACL to verify standard non-admin users do not possess write or modify rights.
