@@ -50,6 +50,51 @@ namespace Servy.Service.UnitTests.Helpers
             _helper = new ServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object);
         }
 
+        private class TestableServiceHelper : ServiceHelper
+        {
+            private readonly Queue<bool> _waitForExitResults = new Queue<bool>();
+
+            public int RestarterExeMaxWaitMsOverride { get; set; } = 300000;
+            public int RestarterKillGracePeriodMsOverride { get; set; } = 5000;
+            public bool KillCalled { get; private set; }
+            public bool ShouldKillThrow { get; set; }
+
+            public TestableServiceHelper(ICommandLineProvider commandLineProvider, IProcessHelper processHelper)
+                : base(commandLineProvider, processHelper)
+            {
+            }
+
+            public void QueueWaitForExitResult(bool result)
+            {
+                _waitForExitResults.Enqueue(result);
+            }
+
+            protected override int GetRestarterExeMaxWaitMs()
+                => RestarterExeMaxWaitMsOverride;
+
+            protected override int GetRestarterKillGracePeriodMs()
+                => RestarterKillGracePeriodMsOverride;
+
+            protected override bool WaitForProcessExit(Process process, int milliseconds)
+            {
+                if (_waitForExitResults.Count > 0)
+                {
+                    return _waitForExitResults.Dequeue();
+                }
+
+                return true;
+            }
+
+            protected override void KillProcess(Process process)
+            {
+                KillCalled = true;
+                if (ShouldKillThrow)
+                {
+                    throw new InvalidOperationException("No process is associated with this object.");
+                }
+            }
+        }
+
         #region Initialization Verification Tests
 
         [Fact]
@@ -707,6 +752,166 @@ namespace Servy.Service.UnitTests.Helpers
                 if (createdDummy && File.Exists(restarterPath))
                 {
                     try { File.Delete(restarterPath); } catch { /* Ignore file locks */ }
+                }
+            }
+        }
+
+        #endregion
+
+        #region RestartService Timeout & Kill Branch Tests
+
+        [Fact]
+        public void RestartService_RestarterTimesOut_KillsOrphanedProcessAndLogsError()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+            var dir = GetTargetRestarterDirectory();
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+            bool createdDummy = false;
+            if (!File.Exists(restarterPath))
+            {
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
+                createdDummy = true;
+            }
+
+            var testableHelper = new TestableServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object)
+            {
+                RestarterExeMaxWaitMsOverride = 10,
+                RestarterKillGracePeriodMsOverride = 10
+            };
+
+            // Queue 1st WaitForExit (RestarterExeMaxWaitMs) -> false (timeout)
+            // Queue 2nd WaitForExit (RestarterKillGracePeriodMs) -> true (cleanup complete)
+            testableHelper.QueueWaitForExitResult(false);
+            testableHelper.QueueWaitForExitResult(true);
+
+            using (var dummyProcess = new Process())
+            {
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns(dummyProcess);
+
+                try
+                {
+                    // Act
+                    testableHelper.RestartService("TestServiceTimeout", mockLog.Object);
+
+                    // Assert
+                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
+                    Assert.True(testableHelper.KillCalled, "Orphaned restarter process should have been killed.");
+                }
+                finally
+                {
+                    if (createdDummy && File.Exists(restarterPath))
+                    {
+                        try { File.Delete(restarterPath); } catch { }
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void RestartService_RestarterTimesOut_KillGracePeriodExceeded_LogsWarning()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+            var dir = GetTargetRestarterDirectory();
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+            bool createdDummy = false;
+            if (!File.Exists(restarterPath))
+            {
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
+                createdDummy = true;
+            }
+
+            var testableHelper = new TestableServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object)
+            {
+                RestarterExeMaxWaitMsOverride = 10,
+                RestarterKillGracePeriodMsOverride = 10
+            };
+
+            // Queue 1st WaitForExit (RestarterExeMaxWaitMs) -> false (timeout)
+            // Queue 2nd WaitForExit (RestarterKillGracePeriodMs) -> false (cleanup delayed)
+            testableHelper.QueueWaitForExitResult(false);
+            testableHelper.QueueWaitForExitResult(false);
+
+            using (var dummyProcess = new Process())
+            {
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns(dummyProcess);
+
+                try
+                {
+                    // Act
+                    testableHelper.RestartService("TestServiceKillWaitTimeout", mockLog.Object);
+
+                    // Assert
+                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
+                    mockLog.Verify(l => l.Warn(It.Is<string>(m => m.Contains("kernel cleanup is taking longer than")), It.IsAny<Exception>()), Times.Once);
+                    Assert.True(testableHelper.KillCalled, "Orphaned restarter process should have been killed.");
+                }
+                finally
+                {
+                    if (createdDummy && File.Exists(restarterPath))
+                    {
+                        try { File.Delete(restarterPath); } catch { }
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void RestartService_RestarterTimesOut_KillThrowsException_LogsError()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+            var dir = GetTargetRestarterDirectory();
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+            bool createdDummy = false;
+            if (!File.Exists(restarterPath))
+            {
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
+                createdDummy = true;
+            }
+
+            var testableHelper = new TestableServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object)
+            {
+                RestarterExeMaxWaitMsOverride = 10,
+                ShouldKillThrow = true
+            };
+
+            // Queue 1st WaitForExit -> false (timeout), KillProcess will throw exception
+            testableHelper.QueueWaitForExitResult(false);
+
+            using (var dummyProcess = new Process())
+            {
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns(dummyProcess);
+
+                try
+                {
+                    // Act
+                    testableHelper.RestartService("TestServiceKillException", mockLog.Object);
+
+                    // Assert
+                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
+                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("Failed to kill orphaned restarter")), It.IsAny<Exception>()), Times.Once);
+                    Assert.True(testableHelper.KillCalled, "Orphaned restarter KillProcess should have been called.");
+                }
+                finally
+                {
+                    if (createdDummy && File.Exists(restarterPath))
+                    {
+                        try { File.Delete(restarterPath); } catch { }
+                    }
                 }
             }
         }
