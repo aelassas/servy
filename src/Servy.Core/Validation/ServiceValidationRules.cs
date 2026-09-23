@@ -100,25 +100,25 @@ namespace Servy.Core.Validation
             if (!string.IsNullOrWhiteSpace(dto.StderrPath) && !Helper.IsValidPath(dto.StderrPath))
                 result.Errors.Add(Strings.Msg_InvalidStderrPath);
 
+            // One shape for every bounded numeric field: the value, its two bounds and the message
+            // that reports them are stated once, at the single line where they meet.
+            void CheckRange(int? value, int min, int max, string message)
+            {
+                if (value.HasValue && (value < min || value > max))
+                    result.Errors.Add(string.Format(message, min, max));
+            }
+
             // Timeouts & Rotation Bounds
-            if (dto.StartTimeout.HasValue && (dto.StartTimeout < AppConfig.MinStartTimeout || dto.StartTimeout > AppConfig.MaxStartTimeout))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidStartTimeout, AppConfig.MinStartTimeout, AppConfig.MaxStartTimeout));
-            if (dto.StopTimeout.HasValue && (dto.StopTimeout < AppConfig.MinStopTimeout || dto.StopTimeout > AppConfig.MaxStopTimeout))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidStopTimeout, AppConfig.MinStopTimeout, AppConfig.MaxStopTimeout));
-            if (dto.RotationSize.HasValue && (dto.RotationSize < AppConfig.MinRotationSize || dto.RotationSize > AppConfig.MaxRotationSize))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidRotationSize, AppConfig.MinRotationSize, AppConfig.MaxRotationSize));
-            if (dto.MaxRotations.HasValue && (dto.MaxRotations < AppConfig.MinMaxRotations || dto.MaxRotations > AppConfig.MaxMaxRotations))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidMaxRotations, AppConfig.MinMaxRotations, AppConfig.MaxMaxRotations));
-            if (dto.HeartbeatUrlTimeoutSeconds.HasValue && (dto.HeartbeatUrlTimeoutSeconds < AppConfig.MinHeartbeatUrlTimeoutSeconds || dto.HeartbeatUrlTimeoutSeconds > AppConfig.MaxHeartbeatUrlTimeoutSeconds))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidHeartbeatUrlTimeout, AppConfig.MinHeartbeatUrlTimeoutSeconds, AppConfig.MaxHeartbeatUrlTimeoutSeconds));
+            CheckRange(dto.StartTimeout, AppConfig.MinStartTimeout, AppConfig.MaxStartTimeout, Strings.Msg_InvalidStartTimeout);
+            CheckRange(dto.StopTimeout, AppConfig.MinStopTimeout, AppConfig.MaxStopTimeout, Strings.Msg_InvalidStopTimeout);
+            CheckRange(dto.RotationSize, AppConfig.MinRotationSize, AppConfig.MaxRotationSize, Strings.Msg_InvalidRotationSize);
+            CheckRange(dto.MaxRotations, AppConfig.MinMaxRotations, AppConfig.MaxMaxRotations, Strings.Msg_InvalidMaxRotations);
+            CheckRange(dto.HeartbeatUrlTimeoutSeconds, AppConfig.MinHeartbeatUrlTimeoutSeconds, AppConfig.MaxHeartbeatUrlTimeoutSeconds, Strings.Msg_InvalidHeartbeatUrlTimeout);
 
             // Health & Recovery
-            if (dto.HeartbeatInterval.HasValue && (dto.HeartbeatInterval < AppConfig.MinHeartbeatInterval || dto.HeartbeatInterval > AppConfig.MaxHeartbeatInterval))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidHeartbeatInterval, AppConfig.MinHeartbeatInterval, AppConfig.MaxHeartbeatInterval));
-            if (dto.MaxFailedChecks.HasValue && (dto.MaxFailedChecks < AppConfig.MinMaxFailedChecks || dto.MaxFailedChecks > AppConfig.MaxMaxFailedChecks))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidMaxFailedChecks, AppConfig.MinMaxFailedChecks, AppConfig.MaxMaxFailedChecks));
-            if (dto.MaxRestartAttempts.HasValue && (dto.MaxRestartAttempts < AppConfig.MinMaxRestartAttempts || dto.MaxRestartAttempts > AppConfig.MaxMaxRestartAttempts))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts));
+            CheckRange(dto.HeartbeatInterval, AppConfig.MinHeartbeatInterval, AppConfig.MaxHeartbeatInterval, Strings.Msg_InvalidHeartbeatInterval);
+            CheckRange(dto.MaxFailedChecks, AppConfig.MinMaxFailedChecks, AppConfig.MaxMaxFailedChecks, Strings.Msg_InvalidMaxFailedChecks);
+            CheckRange(dto.MaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts, Strings.Msg_InvalidMaxRestartAttempts);
 
             // Heartbeat URL Validation
             if (!string.IsNullOrWhiteSpace(dto.HeartbeatUrl))
@@ -163,14 +163,11 @@ namespace Servy.Core.Validation
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStdoutPath);
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStderrPath) && !Helper.IsValidPath(dto.PreLaunchStderrPath))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStderrPath);
-            if (dto.PreLaunchTimeoutSeconds.HasValue && (dto.PreLaunchTimeoutSeconds < AppConfig.MinPreLaunchTimeoutSeconds || dto.PreLaunchTimeoutSeconds > AppConfig.MaxPreLaunchTimeoutSeconds))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds));
-            if (dto.PreLaunchRetryAttempts.HasValue && (dto.PreLaunchRetryAttempts < AppConfig.MinPreLaunchRetryAttempts || dto.PreLaunchRetryAttempts > AppConfig.MaxPreLaunchRetryAttempts))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts));
+            CheckRange(dto.PreLaunchTimeoutSeconds, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds, Strings.Msg_InvalidPreLaunchTimeout);
+            CheckRange(dto.PreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts, Strings.Msg_InvalidPreLaunchRetryAttempts);
 
             // Pre-Stop Timeout
-            if (dto.PreStopTimeoutSeconds.HasValue && (dto.PreStopTimeoutSeconds < AppConfig.MinPreStopTimeoutSeconds || dto.PreStopTimeoutSeconds > AppConfig.MaxPreStopTimeoutSeconds))
-                result.Errors.Add(string.Format(Strings.Msg_InvalidPreStopTimeout, AppConfig.MinPreStopTimeoutSeconds, AppConfig.MaxPreStopTimeoutSeconds));
+            CheckRange(dto.PreStopTimeoutSeconds, AppConfig.MinPreStopTimeoutSeconds, AppConfig.MaxPreStopTimeoutSeconds, Strings.Msg_InvalidPreStopTimeout);
 
             return result;
         }
