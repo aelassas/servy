@@ -162,6 +162,7 @@
     <Compile Include="Services\ServiceCommandsTests.cs" />
     <Compile Include="ViewModels\MonitoringViewModelBaseTests.cs" />
     <Compile Include="ViewModels\PerformanceViewModelTests.cs" />
+    <Compile Include="ViewModels\SearchableViewModelBaseTests.cs" />
     <Compile Include="ViewModels\ServiceRowViewModelTests.cs" />
     <Compile Include="ViewModels\ServiceSearchViewModelBaseTests.cs" />
     <Compile Include="Views\ServiceSearchUserControlTests.cs" />
