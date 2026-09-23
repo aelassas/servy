@@ -326,7 +326,10 @@ namespace Servy.Restarter
                     if (remaining <= TimeSpan.Zero)
                     {
                         _logger?.Error($"Timeout expired while waiting for service '{serviceName}' to reach '{targetStatus}'.");
-                        throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.", last);
+                        throw new System.TimeoutException(
+                            $"Service '{serviceName}' failed to reach {targetStatus} within the timeout period. " +
+                            "The service is in transition and the budget expired before the wait could begin; " +
+                            "the transition may still complete.", last);
                     }
 
                     controller.WaitForStatus(targetStatus, remaining);
@@ -364,7 +367,9 @@ namespace Servy.Restarter
             }
 
             _logger?.Error($"Transitional recovery loop exhausted full timeout waiting for service '{serviceName}' to reach '{targetStatus}'.");
-            throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.", last);
+            throw new System.TimeoutException(
+                $"Service '{serviceName}' failed to reach {targetStatus} within the timeout period; " +
+                "the SCM did not accept a recovery command before the budget expired.", last);
         }
     }
 }
