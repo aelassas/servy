@@ -206,6 +206,33 @@ namespace Servy.Restarter.UnitTests
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
+        [Theory]
+        [InlineData(Errors.ERROR_SERVICE_ALREADY_RUNNING)]
+        [InlineData(Errors.ERROR_SERVICE_NOT_ACTIVE)]
+        public void RestartService_StopThrowsOtherTransitionalScmCode_HandlesTransitionalErrorToStopped(int scmErrorCode)
+        {
+            // Arrange
+            // IsTransitional treats ERROR_SERVICE_ALREADY_RUNNING and ERROR_SERVICE_NOT_ACTIVE as
+            // retryable exactly like ERROR_SERVICE_CANNOT_ACCEPT_CTRL, but only the latter is driven
+            // by the sibling test above, so narrowing the other two arms would go unnoticed.
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)        // Step 1: Passes initial pending check
+                .Returns(ServiceControllerStatus.Running)        // Step 2: Enters Stop block
+                .Returns(ServiceControllerStatus.StopPending)    // HandleTransitionalError: First Refresh check (skips Stop() because pending)
+                .Returns(ServiceControllerStatus.Stopped);       // HandleTransitionalError: Reached target status
+
+            _mockController.Setup(c => c.Stop()).Throws(new Win32Exception(scmErrorCode));
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+            _mockController.Verify(c => c.Stop(), Times.Once); // Called once in primary Stop phase; skipped in HandleTransitionalError due to StopPending
+            _mockController.Verify(c => c.Start(), Times.Once); // Continues cleanly to start phase
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
         #endregion
 
         #region Phase 3: Start Step Boundaries
@@ -502,6 +529,30 @@ namespace Servy.Restarter.UnitTests
             var exceptionToThrow = throwInvalidOperation
                 ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
                 : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            _mockController.Setup(c => c.Status).Throws(exceptionToThrow);
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StatusThrowsMarkedForDeleteInSettleLoop_ReturnsServiceNotFoundWithoutStopOrStart(bool throwInvalidOperation)
+        {
+            // Arrange
+            // IsGone accepts ERROR_SERVICE_MARKED_FOR_DELETE alongside ERROR_SERVICE_DOES_NOT_EXIST,
+            // but every other disappearance test drives it with ERROR_SERVICE_DOES_NOT_EXIST only.
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service marked for delete", new Win32Exception(Errors.ERROR_SERVICE_MARKED_FOR_DELETE))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_MARKED_FOR_DELETE);
 
             _mockController.Setup(c => c.Status).Throws(exceptionToThrow);
 
