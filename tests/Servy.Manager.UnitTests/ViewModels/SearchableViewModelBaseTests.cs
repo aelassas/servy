@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Manager.Resources;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 
@@ -44,6 +45,23 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Interlocked.Increment(ref _fetchCallCount);
                     return Task.FromResult(0);
                 });
+
+            // The wait state is set AFTER the token swap, so a Dispose racing the swap never sees it.
+            // The pre-fetch yield hook is the point where the pipeline holds both a live token source
+            // and the applied wait state, which is the only state in which ClearActiveSearchContext's
+            // restore has anything to undo.
+            public Task RunSearchDisposingAtPreFetchAsync() =>
+                ExecuteSearchPipelineAsync(
+                    _ =>
+                    {
+                        Interlocked.Increment(ref _fetchCallCount);
+                        return Task.FromResult(0);
+                    },
+                    onPreFetchYieldAsync: () =>
+                    {
+                        RunOnSecondThread(Dispose);
+                        return Task.CompletedTask;
+                    });
         }
 
         private static void RunOnSecondThread(Action action)
@@ -93,6 +111,26 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Equal(0, viewModel.FetchCallCount);
             Assert.False(viewModel.IsBusy);
             Assert.False(viewModel.HasSearched);
+        }
+
+        [Fact]
+        public async Task Dispose_WhileSearchHoldsTheWaitState_RestoresTheIdleSearchUiState()
+        {
+            // Arrange
+            // Disposing from the pre-fetch yield hook nulls the active token source, so the pipeline's
+            // own Step 7 gate no longer matches and does not restore. ClearActiveSearchContext is then
+            // the only path that can undo the wait state, which is what this asserts.
+            var cursorService = new Mock<ICursorService>();
+            var viewModel = new RacingSearchViewModel(cursorService.Object, _ => { });
+
+            // Act
+            await viewModel.RunSearchDisposingAtPreFetchAsync();
+
+            // Assert
+            Assert.False(viewModel.IsBusy);
+            Assert.Equal(Strings.Button_Search, viewModel.SearchButtonText);
+            cursorService.Verify(c => c.SetWaitCursor(), Times.Once);
+            cursorService.Verify(c => c.ResetCursor(), Times.Once);
         }
     }
 }
