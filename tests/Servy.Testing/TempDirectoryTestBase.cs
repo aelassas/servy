@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Threading;
 
 namespace Servy.Testing
 {
@@ -11,9 +10,6 @@ namespace Servy.Testing
     /// </summary>
     public abstract class TempDirectoryTestBase : IDisposable
     {
-        private const int MaxRetryAttempts = 3;
-        private const int RetryDelayMs = 50;
-
         /// <summary>
         /// Gets the absolute filesystem path to the isolated temporary directory allocated for the current test.
         /// </summary>
@@ -34,24 +30,8 @@ namespace Servy.Testing
             if (!Directory.Exists(TempDirectory))
                 return;
 
-            // Retry loop to handle transient Windows file locks (AV scans, indexer, async streams)
-            for (int i = 0; i < MaxRetryAttempts; i++)
-            {
-                try
-                {
-                    Directory.Delete(TempDirectory, recursive: true);
-                    return; // Cleaned up successfully
-                }
-                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
-                {
-                    if (i == MaxRetryAttempts - 1)
-                    {
-                        // Final attempt failed due to persistent lock; allow orphan in %TEMP% rather than failing a passing test
-                        break;
-                    }
-                    Thread.Sleep(RetryDelayMs);
-                }
-            }
+            // Shared retry policy for transient Windows file locks (AV scans, indexer, async streams)
+            RetryDelete.Attempt(() => Directory.Delete(TempDirectory, recursive: true));
         }
     }
 }
