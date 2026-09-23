@@ -16,8 +16,6 @@ using Servy.UI.Services;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Windows;
 
 namespace Servy.Manager.Services
 {
@@ -524,37 +522,10 @@ namespace Servy.Manager.Services
                 string pidValue = service.Pid.Value.ToString();
                 string serviceName = service.Name ?? "<unknown>";
 
-                bool success = false;
-
-                // Move the retry loop outside the Dispatcher to prevent UI freezing
-                for (int i = 0; i < AppConfig.ClipboardComMaxRetries; i++)
-                {
-                    // Accessing the Clipboard requires the STA thread (UI Thread)
-                    // We invoke only the granular action on the dispatcher
-                    success = await _dispatcher.InvokeAsync(() =>
-                    {
-                        try
-                        {
-                            Clipboard.SetText(pidValue);
-                            return true;
-                        }
-                        catch (ExternalException)
-                        {
-                            // COMException (clipboard locked by another process) or any other Win32 clipboard
-                            // failure: non-fatal, retry after the configured delay.
-                            return false;
-                        }
-                    });
-
-                    if (success) break;
-
-                    // If we failed, wait asynchronously before trying again.
-                    // This allows the UI thread to remain responsive during the wait.
-                    if (i < AppConfig.ClipboardComMaxRetries - 1)
-                    {
-                        await Task.Delay(AppConfig.ClipboardComRetryDelayMs, cancellationToken: cancellationToken);
-                    }
-                }
+                // This command can be invoked off the UI thread, so the dispatcher is handed to the
+                // shared helper, which keeps the retry loop outside it to prevent UI freezing and
+                // invokes only the granular clipboard write on the STA thread.
+                bool success = await UI.Helpers.ClipboardHelper.TrySetTextAsync(pidValue, _dispatcher, cancellationToken);
 
                 if (success)
                 {
