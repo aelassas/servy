@@ -161,7 +161,7 @@ namespace Servy.CLI
                     var startCommand = new StartServiceCommand(serviceManager);
                     var stopCommand = new StopServiceCommand(serviceManager);
                     var restartCommand = new RestartServiceCommand(serviceManager);
-                    var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
+                    var uninstallCommand = new UninstallServiceCommand(serviceManager);
                     var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                     var exportCommand = new ExportServiceCommand(serviceRepository);
 
