@@ -183,6 +183,16 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceCLIExe = $"{ServyServiceCLIFileName}.exe";
 
         /// <summary>
+        /// The base file name (without extension) of the Servy Restarter executable.
+        /// </summary>
+        public const string ServyRestarterFileName = "Servy.Restarter";
+
+        /// <summary>
+        /// The full file name (with extension) of the Servy Restarter executable.
+        /// </summary>
+        public static readonly string ServyRestarterExe = $"{ServyRestarterFileName}.exe";
+
+        /// <summary>
         /// The root folder name under ProgramData.
         /// </summary>
         public const string AppFolderName = "Servy";
@@ -1674,6 +1684,18 @@ namespace Servy.Core.Config
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Service.exe</c>.</returns>
         public static string GetServyUIServicePath() => ResolveExe(ServyServiceUIFileName);
+
+        /// <summary>
+        /// Gets the absolute path to the Servy Restarter executable.
+        /// </summary>
+        /// <remarks>
+        /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
+        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests work)
+        /// before falling back to the hardened <c>ProgramData</c> vault, where installed and portable
+        /// versions of Servy place the service executables.
+        /// </remarks>
+        /// <returns>The full file path to <c>Servy.Restarter.exe</c>.</returns>
+        public static string GetServyRestarterPath() => ResolveExe(ServyRestarterFileName);
 
         /// <summary>
         /// Converts a size in megabytes (MB) to bytes.

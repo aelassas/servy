@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -9,10 +10,6 @@ using Servy.Service.ProcessManagement;
 using System.Diagnostics;
 using System.ServiceProcess;
 using ServiceHelper = Servy.Service.Helpers.ServiceHelper;
-
-#if !DEBUG
-using Servy.Core.Config;
-#endif
 
 namespace Servy.Service.UnitTests.Helpers
 {
@@ -1372,14 +1369,11 @@ namespace Servy.Service.UnitTests.Helpers
 
         private static string GetTargetRestarterDirectory()
         {
-            // ROBUSTNESS: In Release configurations, the SUT expects the restarter binary
-            // to be located in AppConfig.ProgramDataPath. In Debug, it expects BaseDirectory.
-            // We write the file directly where the compiled execution path expects it.
-#if DEBUG
-            return AppFoldersHelper.GetAppDirectory();
-#else
-            return AppConfig.ProgramDataPath;
-#endif
+            // ROBUSTNESS: ask the SUT's own resolver where the restarter is expected rather than
+            // re-deriving the DEBUG/RELEASE split here. These tests drive RestartService's error
+            // branches, not its path resolution, so the fixture belongs wherever the code looks;
+            // AppConfig.GetServyRestarterPath is asserted on its own in Servy.Core.UnitTests.
+            return Path.GetDirectoryName(AppConfig.GetServyRestarterPath())!;
         }
 
         #endregion

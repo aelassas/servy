@@ -146,6 +146,18 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
+        public void GetServyRestarterPath_ShouldReturnFullPath()
+        {
+            // Act
+            var path = AppConfig.GetServyRestarterPath();
+
+            // Assert
+            Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
+            Assert.EndsWith("Servy.Restarter.exe", path, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
         public void ProgramDataPath_ShouldBeUnderCommonApplicationData()
         {
             // Act

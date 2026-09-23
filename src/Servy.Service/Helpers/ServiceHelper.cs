@@ -401,23 +401,13 @@ namespace Servy.Service.Helpers
         {
             try
             {
-#if DEBUG
-                var dir = AppFoldersHelper.GetAppDirectory();
-#else
-                var dir = AppConfig.ProgramDataPath;
-#endif
-
-                if (string.IsNullOrWhiteSpace(dir))
-                {
-                    logger?.Error("Execution Aborted: The directory path for the restarter is invalid.");
-                    return;
-                }
-
-                var restarter = Path.Combine(dir, "Servy.Restarter.exe");
+                // Same resolution rules as the other shipped executables: AppConfig owns the
+                // DEBUG/RELEASE split for all three, so the validation and the launch cannot drift.
+                var restarter = AppConfig.GetServyRestarterPath();
 
                 if (!File.Exists(restarter))
                 {
-                    logger?.Error("Servy.Restarter.exe not found.");
+                    logger?.Error($"{AppConfig.ServyRestarterExe} not found.");
                     return;
                 }
 

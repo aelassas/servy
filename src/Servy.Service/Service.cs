@@ -92,7 +92,11 @@ namespace Servy.Service
         /// <summary>
         /// The base file name (without extension) of the embedded Servy Restarter executable.
         /// </summary>
-        private const string ServyRestarterExeFileName = "Servy.Restarter";
+        /// <remarks>
+        /// Aliases <see cref="AppConfig.ServyRestarterFileName"/> so the extraction here and the
+        /// lookup in <see cref="AppConfig.GetServyRestarterPath"/> cannot disagree on the name.
+        /// </remarks>
+        private const string ServyRestarterExeFileName = AppConfig.ServyRestarterFileName;
 
         #endregion
 
