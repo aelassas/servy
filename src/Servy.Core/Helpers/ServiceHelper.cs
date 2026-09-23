@@ -128,9 +128,7 @@ namespace Servy.Core.Helpers
                         }
 
                         // ROBUSTNESS: Leverage the symmetric helper method instead of nested ternary operations
-                        int preLaunchTimeout = string.IsNullOrEmpty(service.PreLaunchExecutablePath)
-                            ? 0
-                            : (service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds);
+                        int preLaunchTimeout = ResolvePreLaunchTimeout(service);
 
                         int timeout = CalculateStartTimeout(service.StartTimeout, preLaunchTimeout, service.PreLaunchRetryAttempts ?? 0);
                         var waitTime = TimeSpan.FromSeconds(timeout);
@@ -446,6 +444,19 @@ namespace Servy.Core.Helpers
             string.IsNullOrEmpty(service?.PreStopExecutablePath)
                 ? 0
                 : (service?.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds);
+
+        /// <summary>
+        /// Resolves the pre-launch timeout in seconds for the specified service.
+        /// </summary>
+        /// <param name="service">The service instance to evaluate.</param>
+        /// <returns>
+        /// <c>0</c> if no pre-launch executable path is configured; otherwise, the configured
+        /// <see cref="Service.PreLaunchTimeoutSeconds"/> or <see cref="AppConfig.DefaultPreLaunchTimeoutSeconds"/> as fallback.
+        /// </returns>
+        public static int ResolvePreLaunchTimeout(ServiceDto? service) =>
+            string.IsNullOrEmpty(service?.PreLaunchExecutablePath)
+                ? 0
+                : (service?.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds);
 
         #endregion
 
