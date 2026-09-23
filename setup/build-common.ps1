@@ -14,53 +14,6 @@ $BC_ScriptDir = $PSScriptRoot
 # Import helpers
 . (Join-Path $BC_ScriptDir "common-helpers.ps1")
 
-<#
-.SYNOPSIS
-    Executes a scriptblock with automatic retries on failure.
-#>
-function Invoke-WithRetry {
-    param(
-        [Parameter(Mandatory=$true)]
-        [scriptblock]$Command,
-
-        [Parameter(Mandatory=$true)]
-        [string]$ErrorMessage,
-
-        [int]$MaxRetries = 3,
-        [int]$RetryDelaySeconds = 5
-    )
-
-    $attempt = 0
-    $success = $false
-
-    while ($attempt -lt $MaxRetries) {
-        $attempt++
-        if ($attempt -gt 1) {
-            Write-Host "Retrying command (Attempt $attempt of $MaxRetries)..." -ForegroundColor Yellow
-        }
-
-        # Reset exit code before execution
-        $global:LASTEXITCODE = 0
-
-        & $Command
-
-        if ($global:LASTEXITCODE -eq 0) {
-            $success = $true
-            break
-        } else {
-            Write-Warning "Command exited with code $($global:LASTEXITCODE)."
-            if ($attempt -lt $MaxRetries) {
-                Write-Host "Waiting $RetryDelaySeconds seconds before next attempt..." -ForegroundColor DarkGray
-                Start-Sleep -Seconds $RetryDelaySeconds
-            }
-        }
-    }
-
-    if (-not $success) {
-        throw "$ErrorMessage (Failed after $MaxRetries attempts)"
-    }
-}
-
 function Invoke-StandardPublish {
     param(
         [Parameter(Mandatory=$true)][string]$ProjectDir,

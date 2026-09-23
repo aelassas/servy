@@ -95,11 +95,10 @@ function Copy-TaskSchdArtifacts {
     The target framework moniker ("net10.0-windows") passed to the Inno preprocessor directive.
     Defaults to the value in build-config.ps1.
 
-    .PARAMETER MaxRetry
-    The number of ISCC compilation attempts before giving up. Defaults to 3.
-
-    .PARAMETER RetryDelaySeconds
-    Seconds to wait between attempts, allowing an anti-virus file lock to release. Defaults to 2.
+    .NOTES
+    The compilation is wrapped in Invoke-WithRetry (common-helpers.ps1), the shared
+    retry policy, so the attempt count and the knob names are the same here as
+    everywhere else the build scripts retry a native command.
 #>
 function Invoke-BuildInstaller {
     param (
@@ -108,9 +107,7 @@ function Invoke-BuildInstaller {
         [Parameter(Mandatory=$true)][string]$Version,
         [string]$Arch = "x64",
         [string]$BuildConfiguration = "Release",
-        [string]$Tfm = "",
-        [int]$MaxRetry = 3,
-        [int]$RetryDelaySeconds = 2
+        [string]$Tfm = ""
     )
 
     # Load central defaults
@@ -124,38 +121,12 @@ function Invoke-BuildInstaller {
 
     Write-Host "--- Building Installer ---" -ForegroundColor Cyan
 
-    $currentAttempt = 0
-    $success = $false
-
-    while (-not $success -and $currentAttempt -lt $MaxRetry) {
-        try {
-            $currentAttempt++
-            if ($currentAttempt -gt 1) {
-                Write-Host "Inno Setup retry attempt $currentAttempt..." -ForegroundColor Yellow
-            }
-
-            & $InnoCompiler $IssFile "/DMyAppVersion=$Version" "/DArch=$Arch" "/DBuildConfiguration=$BuildConfiguration" "/DTfm=$Tfm"
-
-            # MUST check exit code manually to trigger the 'catch' block
-            if ($LASTEXITCODE -eq 0) {
-                $success = $true
-                Write-Host "Installer built successfully." -ForegroundColor Green
-            } else {
-                throw "ISCC.exe failed with exit code $LASTEXITCODE"
-            }
-        }
-        catch {
-            # Treat any non-zero exit as potentially transient for the first few retries.
-            if ($currentAttempt -lt $MaxRetry) {
-                # Transient failure: pause to let the AV file lock release before retrying.
-                Write-Warning "Inno Setup failed (likely AV lock). Waiting $($RetryDelaySeconds)s before retry..."
-                Start-Sleep -Seconds $RetryDelaySeconds
-            } else {
-                # This bubbles up to the global catch block at the bottom of publish.ps1
-                throw "Inno Setup failed after $MaxRetry attempts. $_"
-            }
-        }
+    # Retried because anti-virus scanners transiently lock the freshly written installer.
+    Invoke-WithRetry -ErrorMessage "Inno Setup (ISCC.exe) failed" -RetryDelaySeconds 2 -Command {
+        & $InnoCompiler $IssFile "/DMyAppVersion=$Version" "/DArch=$Arch" "/DBuildConfiguration=$BuildConfiguration" "/DTfm=$Tfm"
     }
+
+    Write-Host "Installer built successfully." -ForegroundColor Green
 }
 
 <#
