@@ -4,8 +4,8 @@ using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Services;
+using Servy.UI.ViewModels;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 namespace Servy.Manager.ViewModels
 {
@@ -13,7 +13,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel representing a single row in the Services DataGrid.
     /// Exposes the underlying Service model and row-level commands.
     /// </summary>
-    public class ServiceRowViewModel : INotifyPropertyChanged, IDisposable
+    public class ServiceRowViewModel : ViewModelBase, IDisposable
     {
         private readonly IServiceCommands _serviceCommands;
         private readonly ICursorService _cursorService;
@@ -81,14 +81,7 @@ namespace Servy.Manager.ViewModels
         public bool IsSelected
         {
             get => _isSelected;
-            set
-            {
-                if (_isSelected != value)
-                {
-                    _isSelected = value;
-                    OnPropertyChanged();
-                }
-            }
+            set => Set(ref _isSelected, value);
         }
 
         /// <summary>
@@ -97,14 +90,7 @@ namespace Servy.Manager.ViewModels
         public bool IsChecked
         {
             get => _isChecked;
-            set
-            {
-                if (_isChecked != value)
-                {
-                    _isChecked = value;
-                    OnPropertyChanged();
-                }
-            }
+            set => Set(ref _isChecked, value);
         }
 
         /// <summary>
@@ -165,20 +151,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region INotifyPropertyChanged
-
-        /// <summary>
-        /// Occurs when a property value changes.
-        /// </summary>
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event.
-        /// </summary>
-        /// <param name="propertyName">Name of the changed property.</param>
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         /// <summary>
         /// Handles property changes in the underlying <see cref="Service"/> and forwards them to the UI.
