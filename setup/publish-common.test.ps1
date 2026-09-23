@@ -1,7 +1,7 @@
 ﻿#requires -Version 5.0
 <#
 .SYNOPSIS
-    Sanity tests for the shared retry policy behind Invoke-BuildInstaller.
+    Sanity tests for publish-common.ps1's two shared-data sites.
 
 .DESCRIPTION
     Invoke-BuildInstaller in publish-common.ps1 drives ISCC.exe through Invoke-WithRetry,
@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host " Running publish-common.ps1 retry policy Tests      " -ForegroundColor Cyan
+Write-Host " Running publish-common.ps1 Tests                   " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -146,8 +146,78 @@ try {
     }
     Write-Host "  [OK] A permanent ISCC failure gives up after 3 attempts with the shared message." -ForegroundColor Gray
 
+    # --- The Task Scheduler exclusion list is declared once --------------------------
+    # The copy filter and the post-copy leak check are two deliberately different
+    # mechanisms, but they must enforce the same list, so the list itself is one array.
+
+    # Arrange
+    $publishCommonText = Get-Content -LiteralPath $publishCommonPath -Raw
+
+    # Act
+    $literalListCount = ([regex]::Matches($publishCommonText, [regex]::Escape("'smtp-cred.xml'"))).Count
+
+    # Assert
+    if ($null -eq $script:TaskSchdExcludedPatterns -or @($script:TaskSchdExcludedPatterns).Count -eq 0) {
+        Write-Host "FAIL: `$script:TaskSchdExcludedPatterns is not declared by publish-common.ps1." -ForegroundColor Red
+        exit 1
+    }
+    if ($literalListCount -ne 1) {
+        Write-Host "FAIL: the exclusion list should be spelled out exactly once, found $literalListCount copies." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] The Task Scheduler exclusion list is declared once, as a script-scoped array." -ForegroundColor Gray
+
+    # --- Both consumers enforce every pattern in that one array ----------------------
+    # The sample filenames are derived from the patterns, so a sixth pattern added to the
+    # array is exercised by both halves of this test without editing it.
+
+    # Arrange
+    $filterSource = Join-Path $tempDir "exclusions-src"
+    $filterDest = Join-Path $tempDir "exclusions-dst"
+    New-Item -ItemType Directory -Path (Join-Path $filterSource "SubFolder") -Force | Out-Null
+    New-Item -ItemType Directory -Path $filterDest -Force | Out-Null
+
+    $payloadName = "ServySecurity.ps1"
+    [System.IO.File]::WriteAllText((Join-Path $filterSource $payloadName), "payload")
+
+    $excludedSamples = @()
+    foreach ($pattern in $script:TaskSchdExcludedPatterns) {
+        $sample = $pattern -replace '\*', 'sample'
+        $excludedSamples += $sample
+        [System.IO.File]::WriteAllText((Join-Path $filterSource $sample), "sensitive")
+        [System.IO.File]::WriteAllText((Join-Path (Join-Path $filterSource "SubFolder") $sample), "sensitive")
+    }
+
+    # Act
+    Copy-TaskSchdArtifacts -SourcePath $filterSource -DestPath $filterDest
+    $copied = @(Get-ChildItem -Path $filterDest -Recurse -File | Select-Object -ExpandProperty Name)
+    $leaks = @(Get-ChildItem -Path $filterSource -Recurse -Include $script:TaskSchdExcludedPatterns)
+
+    # Assert
+    if ($copied -notcontains $payloadName) {
+        Write-Host "FAIL: the copy filter dropped the payload file '$payloadName'." -ForegroundColor Red
+        exit 1
+    }
+    foreach ($sample in $excludedSamples) {
+        if ($copied -contains $sample) {
+            Write-Host "FAIL: the copy filter let '$sample' through; it matches an excluded pattern." -ForegroundColor Red
+            exit 1
+        }
+    }
+    Write-Host "  [OK] The copy filter excludes every pattern in the shared array, nested included." -ForegroundColor Gray
+
+    # The leak check is the second, independent mechanism: -Include globbing over the same
+    # array. It has to recognise every pattern the copy filter does, or it silently stops
+    # being a check at all.
+    $expectedLeakCount = @($script:TaskSchdExcludedPatterns).Count * 2
+    if ($leaks.Count -ne $expectedLeakCount) {
+        Write-Host "FAIL: the leak check's -Include globbing matched $($leaks.Count) of $expectedLeakCount planted files." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] The leak check recognises every pattern in the same shared array." -ForegroundColor Gray
+
     Write-Host ""
-    Write-Host "SUCCESS: publish-common.ps1 retry policy tests passed." -ForegroundColor Green
+    Write-Host "SUCCESS: publish-common.ps1 retry policy and exclusion list tests passed." -ForegroundColor Green
     exit 0
 }
 catch {

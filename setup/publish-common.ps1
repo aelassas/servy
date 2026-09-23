@@ -14,6 +14,12 @@ $PC_ScriptDir = $PSScriptRoot
 # Import helpers
 . (Join-Path $PC_ScriptDir "common-helpers.ps1")
 
+# The Task Scheduler payload's exclusion list, in glob form, declared once. Two
+# enforcement points derive from it: the copy filter in Copy-TaskSchdArtifacts and the
+# post-copy leak check in Copy-CommonArtifacts. The two mechanisms stay independent on
+# purpose - the second is there to catch a bug in the first - but the data does not.
+$script:TaskSchdExcludedPatterns = @('smtp-cred.xml', 'temp.ps1', '*.dat', '*.log', '*.test.ps1')
+
 <#
     .SYNOPSIS
     Safely removes a file or directory if it exists on the system.
@@ -56,9 +62,8 @@ function Copy-TaskSchdArtifacts {
 
     Get-ChildItem -Path $SourcePath -Recurse -File |
         Where-Object {
-            $_.Name -notin @('smtp-cred.xml', 'temp.ps1') -and
-            $_.Extension -notin @('.dat', '.log') -and
-            $_.Name -notlike '*.test.ps1'
+            $name = $_.Name
+            -not ($script:TaskSchdExcludedPatterns | Where-Object { $name -like $_ })
         } |
         ForEach-Object {
             $rel    = $_.FullName.Substring($root.Length + 1)
@@ -168,8 +173,7 @@ function Copy-CommonArtifacts {
         Copy-TaskSchdArtifacts -SourcePath $taskSchdSource -DestPath $taskSchdDest
 
         # Post-copy verification to ensure no sensitive files leaked into the package
-        $excludedPatterns = @('smtp-cred.xml', '*.dat', '*.log', '*.test.ps1', 'temp.ps1')
-        $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include $excludedPatterns
+        $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include $script:TaskSchdExcludedPatterns
         if ($leaks) {
             throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"
         }
