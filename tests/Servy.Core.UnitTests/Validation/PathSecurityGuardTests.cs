@@ -1017,12 +1017,36 @@ namespace Servy.Core.UnitTests.Validation
             Assert.False(result);
         }
 
+        [Theory]
+        [InlineData(WellKnownSidType.AuthenticatedUserSid)]
+        [InlineData(WellKnownSidType.WorldSid)]
+        public void IsDirectoryAclHardened_OtherBroadUnprivilegedSidsModify_ReturnsFalse(WellKnownSidType sidType)
+        {
+            // Arrange
+            // SecurityHelper.BroadUnprivilegedSids holds three principals and IsDirectoryAclHardened
+            // rejects a write-class ACE for any of them, but the tests above only ever put the
+            // BuiltinUsers SID on a directory, so the other two arms have no coverage.
+            string testDir = Path.Combine(TempDirectory, $"acl_modify_dir_{sidType}");
+            Directory.CreateDirectory(testDir);
+            SetAccessRuleForSid(testDir, new SecurityIdentifier(sidType, null), FileSystemRights.Modify);
+
+            // Act
+            bool result = PathSecurityGuard.IsDirectoryAclHardened(testDir);
+
+            // Assert
+            Assert.False(result);
+        }
+
         private static void SetBuiltinUsersAccessRule(string directoryPath, FileSystemRights rights)
+        {
+            SetAccessRuleForSid(directoryPath, new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), rights);
+        }
+
+        private static void SetAccessRuleForSid(string directoryPath, SecurityIdentifier sid, FileSystemRights rights)
         {
             var security = new DirectorySecurity();
             security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-            var usersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
-            security.AddAccessRule(new FileSystemAccessRule(usersSid, rights, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(sid, rights, AccessControlType.Allow));
             security.AddAccessRule(new FileSystemAccessRule(WindowsIdentity.GetCurrent().User, FileSystemRights.FullControl, AccessControlType.Allow));
             new DirectoryInfo(directoryPath).SetAccessControl(security);
         }
