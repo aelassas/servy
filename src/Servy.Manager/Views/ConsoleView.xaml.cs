@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -185,27 +184,11 @@ namespace Servy.Manager.Views
                 return;
             }
 
-            for (int i = 0; i < AppConfig.ClipboardComMaxRetries; i++)
+            // Since this async execution targets the UI thread context, no dispatcher is passed:
+            // the shared helper then writes directly, on the STA context this handler already runs on.
+            if (await ClipboardHelper.TrySetTextAsync(text))
             {
-                try
-                {
-                    // Since this async execution targets the UI thread context,
-                    // this direct execution safely targets the required STA clipboard context.
-                    Clipboard.SetText(text);
-                    return;
-                }
-                catch (ExternalException)
-                {
-                    // COMException (clipboard locked by another process) or any other Win32 clipboard
-                    // failure: non-fatal, retry after the configured delay.
-                }
-
-                if (i < AppConfig.ClipboardComMaxRetries - 1)
-                {
-                    // Yield control back to the WPF dispatcher queue thread pump.
-                    // This allows UI paint commands and input requests to flow normally while waiting to retry.
-                    await Task.Delay(AppConfig.ClipboardComRetryDelayMs);
-                }
+                return;
             }
 
             Logger.Warn($"Failed to copy {selected.Count} log line(s) to clipboard after {AppConfig.ClipboardComMaxRetries} attempts.");
