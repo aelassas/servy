@@ -602,6 +602,115 @@ namespace Servy.Service.UnitTests.Helpers
             }
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(3)]
+        public void RestartService_RestarterExits_LogsTheExitCodeAtTheMatchingLevel(int exitCode)
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            var dir = GetTargetRestarterDirectory();
+
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+            // Same placeholder discipline as the siblings above: only create what this run needs,
+            // and never touch a real build artifact.
+            bool createdDummy = false;
+            if (!File.Exists(restarterPath))
+            {
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
+                createdDummy = true;
+            }
+
+            // RUNTIME BOUNDARY: a real, ALREADY EXITED Process, so WaitForExit returns true
+            // immediately and ExitCode reads back the value we asked for - the multi-minute
+            // RestarterExeMaxWaitMs loop is never entered.
+            using (var exitedProcess = new Process())
+            {
+                exitedProcess.StartInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c exit {exitCode}",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                exitedProcess.Start();
+                exitedProcess.WaitForExit(5000);
+
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns(exitedProcess);
+
+                try
+                {
+                    // Act
+                    _helper.RestartService("TestServiceExitCode" + exitCode, mockLog.Object);
+
+                    // Assert
+                    if (exitCode == 0)
+                    {
+                        mockLog.Verify(l => l.Info(It.Is<string>(m => m.Contains("exited with code 0")), It.IsAny<Exception>()), Times.Once);
+                        mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                    }
+                    else
+                    {
+                        mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains($"exited with non-zero code {exitCode}")), It.IsAny<Exception>()), Times.Once);
+                    }
+                }
+                finally
+                {
+                    // Clean up only if this specific test run spawned the temporary placeholder
+                    if (createdDummy && File.Exists(restarterPath))
+                    {
+                        try { File.Delete(restarterPath); } catch { /* Ignore file locks */ }
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void RestartService_StartThrows_LogsErrorAndDoesNotPropagate()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            var dir = GetTargetRestarterDirectory();
+
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+            bool createdDummy = false;
+            if (!File.Exists(restarterPath))
+            {
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
+                createdDummy = true;
+            }
+
+            _mockProcessHelper
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new System.ComponentModel.Win32Exception(5, "Access is denied"));
+
+            try
+            {
+                // Act
+                var ex = Record.Exception(() => _helper.RestartService("TestServiceStartThrows", mockLog.Object));
+
+                // Assert
+                // The launch failure is swallowed and logged; RestartService never propagates.
+                Assert.Null(ex);
+                mockLog.Verify(l => l.Error("Failed to launch restarter.", It.IsAny<Exception>()), Times.Once);
+            }
+            finally
+            {
+                if (createdDummy && File.Exists(restarterPath))
+                {
+                    try { File.Delete(restarterPath); } catch { /* Ignore file locks */ }
+                }
+            }
+        }
+
         #endregion
 
         #region RestartComputer Tests
