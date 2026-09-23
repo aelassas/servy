@@ -1656,8 +1656,9 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
-        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests and
-        /// portable execution work) and the ProgramData folder is used only as a fallback.
+        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests work)
+        /// before falling back to the hardened <c>ProgramData</c> vault, where installed and portable
+        /// versions of Servy place the service executables.
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Service.CLI.exe</c>.</returns>
         public static string GetServyCLIServicePath() => ResolveExe(ServyServiceCLIFileName);
@@ -1667,8 +1668,9 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
-        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests and
-        /// portable execution work) and the ProgramData folder is used only as a fallback.
+        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests work)
+        /// before falling back to the hardened <c>ProgramData</c> vault, where installed and portable
+        /// versions of Servy place the service executables.
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Service.exe</c>.</returns>
         public static string GetServyUIServicePath() => ResolveExe(ServyServiceUIFileName);
@@ -1692,7 +1694,8 @@ namespace Servy.Core.Config
         /// <remarks>
         /// In <c>DEBUG</c> mode, this resolves to the application's base directory (the build output folder),
         /// where the required executables are copied during the build. In <c>RELEASE</c> mode, it checks the application's
-        /// base directory (supporting unit tests/portable use) before falling back to the hardened <c>ProgramData</c> vault.
+        /// base directory (supporting unit tests) before falling back to the hardened <c>ProgramData</c> vault,
+        /// where installed and portable versions of Servy place the service executables.
         /// </remarks>
         private static string ResolveExe(string fileName)
         {
