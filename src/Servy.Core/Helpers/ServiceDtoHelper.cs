@@ -41,6 +41,7 @@ namespace Servy.Core.Helpers
             // Identity & Behavior
             dto.StartupType = dto.StartupType ?? (int)AppConfig.DefaultStartupType;
             dto.Priority = dto.Priority ?? (int)AppConfig.DefaultProcessPriority;
+            dto.RunAsLocalSystem = dto.RunAsLocalSystem ?? AppConfig.DefaultRunAsLocalSystem;
             dto.EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs;
 
             // Timeouts

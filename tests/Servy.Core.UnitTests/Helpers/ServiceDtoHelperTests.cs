@@ -83,6 +83,25 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal("CustomPassword", dto.Password);
         }
 
+        /// <summary>
+        /// Covers the hydration of RunAsLocalSystem by HydrateDefaults itself. The structural-default
+        /// helper cannot carry this one: the sibling no-reset test gives the field an explicit value so
+        /// the identity guarantee stays observable, and ApplyDefaultsAndResetIdentity overwrites it
+        /// unconditionally, so only this test fails when the hydration line is removed or its value drifts.
+        /// </summary>
+        [Fact]
+        public void HydrateDefaults_WhenRunAsLocalSystemIsNull_AppliesTheAppConfigDefault()
+        {
+            // Arrange: leave the identity flag unset, which is the only state the hydration line reads
+            var dto = new ServiceDto { RunAsLocalSystem = null };
+
+            // Act
+            ServiceDtoHelper.HydrateDefaults(dto);
+
+            // Assert
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, dto.RunAsLocalSystem);
+        }
+
         [Fact]
         public void HydrateDefaults_WhenUserAccountHasSurroundingWhitespace_TrimsIt()
         {
