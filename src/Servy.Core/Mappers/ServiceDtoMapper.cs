@@ -26,8 +26,6 @@ namespace Servy.Core.Mappers
             // PRECONDITION: every '!.Value' below is safe only because HydrateDefaults assigned that
             // property a default on the line above. Adding a nullable ServiceDto property that is read
             // with '!.Value' here REQUIRES a matching line in ServiceDtoHelper.HydrateDefaults.
-            // RunAsLocalSystem is the deliberate exception: it is hydrated only on the import path
-            // (ApplyDefaultsAndResetIdentity), so it is read with '??' instead.
             var hydratedDto = ServiceDtoHelper.Clone(dto);
             ServiceDtoHelper.HydrateDefaults(hydratedDto);
 
@@ -76,7 +74,7 @@ namespace Servy.Core.Mappers
                 FailureProgramParameters = hydratedDto.FailureProgramParameters,
                 EnvironmentVariables = hydratedDto.EnvironmentVariables,
                 ServiceDependencies = hydratedDto.ServiceDependencies,
-                RunAsLocalSystem = hydratedDto.RunAsLocalSystem ?? AppConfig.DefaultRunAsLocalSystem,
+                RunAsLocalSystem = hydratedDto.RunAsLocalSystem!.Value,
                 UserAccount = hydratedDto.UserAccount,
                 Password = hydratedDto.Password,
                 PreLaunchExecutablePath = hydratedDto.PreLaunchExecutablePath,
