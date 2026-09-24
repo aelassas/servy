@@ -239,13 +239,7 @@ namespace Servy.Manager.ViewModels
         {
             var currentSelection = (ConsoleService)selection;
             var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
-            var cloned = serviceDto?.Clone();
-            if (serviceDto != null && !(cloned is ServiceConsoleStateDto))
-            {
-                Logger.Error($"GetServiceConsoleStateAsync returned {cloned?.GetType().Name ?? "null"}; expected {nameof(ServiceConsoleStateDto)}.");
-                return;
-            }
-            var stateSnapshot = (ServiceConsoleStateDto?)cloned;
+            var stateSnapshot = serviceDto?.Clone();
 
             // Drop this tick if the user switched services while we were awaiting the DB call.
             if (!ReferenceEquals(currentSelection, _selectedService) || token.IsCancellationRequested) return;

@@ -24,6 +24,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Creates a copy of the current state.
         /// </summary>
-        public object Clone() => MemberwiseClone();
+        public ServiceConsoleStateDto Clone() => (ServiceConsoleStateDto)MemberwiseClone();
+
+        /// <summary>
+        /// Creates a copy of the current state (explicit interface implementation).
+        /// </summary>
+        /// <returns>A copy of the current state.</returns>
+        /// <remarks>Keep the interface for any generic ICloneable consumer.</remarks>
+        object ICloneable.Clone() => Clone();
     }
 }
