@@ -124,7 +124,6 @@
     <Compile Include="BulkObservableCollectionTests.cs" />
     <Compile Include="Commands\AsyncCommandTests.cs" />
     <Compile Include="Commands\RelayCommandTests.cs" />
-    <Compile Include="Converters\BoolToVisibilityConverterTests.cs" />
     <Compile Include="Converters\InverseBooleanConverterTests.cs" />
     <Compile Include="Design\DesignTimeMocksTests.cs" />
     <Compile Include="Helpers\ClipboardHelperTests.cs" />

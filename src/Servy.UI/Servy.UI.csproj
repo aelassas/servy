@@ -79,7 +79,6 @@
     <Compile Include="Commands\IAsyncCommand.cs" />
     <Compile Include="Commands\RelayCommand.cs" />
     <Compile Include="Constants\UiConstants.cs" />
-    <Compile Include="Converters\BoolToVisibilityConverter.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Design\DesignTimeMocks.cs" />
     <Compile Include="Helpers\ClipboardHelper.cs" />
