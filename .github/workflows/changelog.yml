@@ -107,10 +107,9 @@ jobs:
           Function Get-ReleaseEntry {
               param($Release, $PrevRelease)
 
-              # Regex pattern matching Unicode hyphens, n-dashes, m-dashes, minus signs, and related dash symbols
-              # U+2010 (hyphen), U+2011 (non-breaking hyphen), U+2012 (figure dash), U+2013 (en dash),
-              # U+2014 (em dash), U+2015 (horizontal bar), U+2212 (minus sign), plus Unicode Dash Punctuation (\p{Pd})
-              $dashPattern = '[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\p{Pd}]'
+              # Normalize all Unicode dash punctuation (\p{Pd}: hyphen, non-breaking hyphen, figure/en/em dash,
+              # horizontal bar, ...) plus the minus sign (U+2212, category Sm) to a plain ASCII hyphen.
+              $dashPattern = '[\u2212\p{Pd}]'
 
               $rawTitle = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
               $title = Protect-MarkdownTags ($rawTitle -replace $dashPattern, '-')
