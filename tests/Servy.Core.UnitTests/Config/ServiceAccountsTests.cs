@@ -184,5 +184,57 @@ namespace Servy.Core.UnitTests.Config
         }
 
         #endregion
+
+        #region ExpandLocalShorthand Tests
+
+        [Fact]
+        public void ExpandLocalShorthand_LeadingDotBackslash_ReplacesPrefixWithMachineName()
+        {
+            // Arrange
+            var account = @".\svc_user";
+
+            // Act
+            var result = ServiceAccounts.ExpandLocalShorthand(account);
+
+            // Assert
+            Assert.Equal(Environment.MachineName + @"\svc_user", result);
+        }
+
+        [Theory]
+        [InlineData(@"DOMAIN\svc_user")]          // already qualified
+        [InlineData("svc_user")]                  // bare name
+        [InlineData(@"NT AUTHORITY\LocalService")] // built-in alias
+        [InlineData(@"..\svc_user")]              // not the shorthand
+        [InlineData(@"x.\svc_user")]              // prefix is not leading
+        [InlineData("")]                          // nothing to expand
+        public void ExpandLocalShorthand_WithoutLeadingShorthand_ReturnsInputUnchanged(string account)
+        {
+            // Act
+            var result = ServiceAccounts.ExpandLocalShorthand(account);
+
+            // Assert
+            Assert.Equal(account, result);
+        }
+
+        [Fact]
+        public void ExpandLocalShorthand_IsTheSingleRuleSharedByValidationAndGrant()
+        {
+            // Arrange
+            // The credential validation gate and the "Log on as a service" grant path both expand
+            // the shorthand through this helper. Their two former hand-written spellings are pinned
+            // here so a change to the rule cannot silently agree with only one of them.
+            var account = @".\svc_user";
+            var validationGateShape = Environment.MachineName + account.Substring(1);
+            var grantPathShape = $"{Environment.MachineName}\\{account.Substring(2)}";
+
+            // Act
+            var result = ServiceAccounts.ExpandLocalShorthand(account);
+
+            // Assert
+            Assert.Equal(validationGateShape, result);
+            Assert.Equal(grantPathShape, result);
+        }
+
+        #endregion
     }
 }

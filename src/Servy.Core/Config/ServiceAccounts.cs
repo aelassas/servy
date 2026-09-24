@@ -112,5 +112,21 @@ namespace Servy.Core.Config
             // Keep trimming for safety
             return string.IsNullOrWhiteSpace(password) && account.Trim().EndsWith('$');
         }
+
+        /// <summary>
+        /// Expands the ".\" local-machine shorthand to "MACHINE\", leaving every other form untouched.
+        /// This is the single definition of the rule: the credential validation gate and the
+        /// "Log on as a service" grant path are two halves of one install and have to agree on
+        /// which name forms mean "an account on this machine".
+        /// </summary>
+        /// <param name="account">The account name to expand.</param>
+        /// <returns>
+        /// The account name with a leading ".\" replaced by the local machine name, or the input
+        /// unchanged when it carries no such prefix.
+        /// </returns>
+        public static string ExpandLocalShorthand(string account) =>
+            account.StartsWith(@".\", StringComparison.Ordinal)
+                ? Environment.MachineName + account.Substring(1)
+                : account;
     }
 }

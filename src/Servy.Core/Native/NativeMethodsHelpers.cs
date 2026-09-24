@@ -103,11 +103,7 @@ namespace Servy.Core.Native
             // 1. Identity Resolution
             try
             {
-                string translationName = username;
-                if (username.StartsWith(".\\", StringComparison.OrdinalIgnoreCase))
-                {
-                    translationName = Environment.MachineName + username.Substring(1);
-                }
+                string translationName = ServiceAccounts.ExpandLocalShorthand(username);
                 var ntAccount = new NTAccount(translationName);
                 _ = ntAccount.Translate(typeof(SecurityIdentifier));
             }
