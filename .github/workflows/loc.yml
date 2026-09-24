@@ -38,9 +38,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
 
-      - name: Initialize Git Script Helpers
-        uses: ./.github/actions/setup-git-helpers        
-
       # ----------------------------
       # Production LoC
       # ----------------------------
@@ -126,13 +123,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          GIT_USER_NAME: "github-actions[bot]"
+          GIT_USER_EMAIL: "github-actions[bot]@users.noreply.github.com"
         shell: bash
         run: |
-          . "$env:RUNNER_TEMP\git-helpers.ps1"
           cd ./output
-          Invoke-Git init
-          Set-BotGitIdentity
-          Invoke-Git checkout -b loc
-          Invoke-Git add -A
-          Invoke-Git commit -m "update loc badges"
-          Invoke-Git push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" loc --force
+          git init
+          git config user.name "$GIT_USER_NAME"
+          git config user.email "$GIT_USER_EMAIL"
+          git checkout -b loc
+          git add -A
+          git commit -m "update loc badges"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" loc --force
