@@ -20,6 +20,38 @@ namespace Servy.Core.UnitTests.Helpers
         private readonly int _floor = AppConfig.DefaultServiceStartTimeoutSeconds;
         private readonly int _buffer = AppConfig.ScmTimeoutBufferSeconds;
 
+        #region Constructor Tests
+
+        [Fact]
+        public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new ServiceHelper(null, controllerProviderMock.Object));
+
+            // Assert
+            Assert.Equal("serviceRepository", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullServiceControllerProvider_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new ServiceHelper(serviceRepoMock.Object, null));
+
+            // Assert
+            Assert.Equal("serviceControllerProvider", ex.ParamName);
+        }
+
+        #endregion
+
         #region StartServicesAsync Tests
 
         [Fact]
