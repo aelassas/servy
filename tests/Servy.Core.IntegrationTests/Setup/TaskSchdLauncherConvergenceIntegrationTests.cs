@@ -35,15 +35,15 @@ namespace Servy.Core.IntegrationTests.Setup
         {
             // Arrange
             string referenceName = LauncherFileNames[0];
-            string referenceContent = File.ReadAllText(Path.Combine(_taskSchdDir, referenceName));
+            byte[] referenceBytes = File.ReadAllBytes(Path.Combine(_taskSchdDir, referenceName));
 
             // Act & Assert
             for (int i = 1; i < LauncherFileNames.Length; i++)
             {
                 string otherName = LauncherFileNames[i];
-                string otherContent = File.ReadAllText(Path.Combine(_taskSchdDir, otherName));
+                byte[] otherBytes = File.ReadAllBytes(Path.Combine(_taskSchdDir, otherName));
 
-                Assert.Equal(referenceContent, otherContent);
+                Assert.Equal(referenceBytes, otherBytes);
             }
         }
 
