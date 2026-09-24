@@ -300,7 +300,7 @@ namespace Servy.Core.Helpers
                 var anyProtected = false;
                 foreach (var kvp in completeSnapshot)
                 {
-                    string snapName = StripExe(kvp.Value.Name ?? string.Empty);
+                    string snapName = StripExe(kvp.Value.Name);
 
                     if (string.Equals(snapName, normalizedName, StringComparison.OrdinalIgnoreCase))
                     {
@@ -627,7 +627,7 @@ namespace Servy.Core.Helpers
                     return;
                 }
 
-                DateTime parentStartTime = DateTime.MinValue;
+                DateTime parentStartTime;
 
                 try
                 {
