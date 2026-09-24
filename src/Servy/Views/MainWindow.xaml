@@ -232,7 +232,7 @@
               <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding ServiceDescription, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxServiceDescription_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_ServiceDescription}"
                        AutomationProperties.AutomationId="TextBoxServiceDescription"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxServiceDescription_HelpText}" />
 
@@ -263,7 +263,7 @@
               <TextBox Grid.Row="6" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding StartupDirectory, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxStartupDirectory_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_StartupDirectory}"
                        AutomationProperties.AutomationId="TextBoxStartupDirectory"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxStartupDirectory_HelpText}" />
               <Button Grid.Row="6" Grid.Column="2"
@@ -288,7 +288,7 @@
                        TextWrapping="Wrap" AcceptsReturn="False"
                        MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                        VerticalScrollBarVisibility="Auto"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxProcessParameters_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_ProcessParameters}"
                        AutomationProperties.AutomationId="TextBoxProcessParameters"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxProcessParameters_HelpText}" />
               <TextBlock Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"
@@ -328,7 +328,7 @@
               <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding CpuAffinity, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxCpuAffinity_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_CpuAffinity}"
                        AutomationProperties.AutomationId="TextBoxCpuAffinity"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxCpuAffinity_HelpText}" />
               <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
@@ -342,7 +342,7 @@
               <TextBox Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding StartTimeout, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxStartTimeout_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_StartTimeout}"
                        AutomationProperties.AutomationId="TextBoxStartTimeout"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxStartTimeout_HelpText}" />
               <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
@@ -356,7 +356,7 @@
               <TextBox Grid.Row="16" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding StopTimeout, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxStopTimeout_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_StopTimeout}"
                        AutomationProperties.AutomationId="TextBoxStopTimeout"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxStopTimeout_HelpText}" />
               <TextBlock Grid.Row="17" Grid.Column="1" Grid.ColumnSpan="2"
@@ -411,7 +411,7 @@
               <TextBox Grid.Row="0" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding StdoutPath, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxStdoutPath_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_StdoutPath}"
                        AutomationProperties.AutomationId="TextBoxStdoutPath"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxStdoutPath_HelpText}" />
               <Button Grid.Row="0" Grid.Column="2"
@@ -428,7 +428,7 @@
               <TextBox Grid.Row="1" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding StderrPath, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxStderrPath_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_StderrPath}"
                        AutomationProperties.AutomationId="TextBoxStderrPath"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxStderrPath_HelpText}" />
               <Button Grid.Row="1" Grid.Column="2"
@@ -454,7 +454,7 @@
                        Margin="0,5"
                        IsEnabled="{Binding EnableSizeRotation}"
                        Text="{Binding RotationSize, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxRotationSize_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_RotationSize}"
                        AutomationProperties.AutomationId="TextBoxRotationSize"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxRotationSize_HelpText}" />
               <TextBlock Grid.Row="3" Grid.Column="2"
@@ -495,7 +495,7 @@
                        Margin="0,5"
                        IsEnabled="{Binding EnableRotation}"
                        Text="{Binding MaxRotations, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxMaxRotations_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_MaxRotations}"
                        AutomationProperties.AutomationId="TextBoxMaxRotations"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxMaxRotations_HelpText}" />
               <TextBlock Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
@@ -575,7 +575,7 @@
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
                        Text="{Binding HeartbeatInterval, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxHeartbeatInterval_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_HeartbeatInterval}"
                        AutomationProperties.AutomationId="TextBoxHeartbeatInterval"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxHeartbeatInterval_HelpText}" />
               <TextBlock Grid.Row="1" Grid.Column="2"
@@ -590,7 +590,7 @@
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
                        Text="{Binding MaxFailedChecks, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxMaxFailedChecks_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_MaxFailedChecks}"
                        AutomationProperties.AutomationId="TextBoxMaxFailedChecks"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxMaxFailedChecks_HelpText}" />
               <TextBlock Grid.Row="2" Grid.Column="2"
@@ -651,7 +651,7 @@
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
                        Text="{Binding MaxRestartAttempts, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxMaxRestartAttempts_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_MaxRestartAttempts}"
                        AutomationProperties.AutomationId="TextBoxMaxRestartAttempts"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxMaxRestartAttempts_HelpText}" />
               <TextBlock Grid.Row="6" Grid.Column="2"
@@ -670,7 +670,7 @@
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
                        Text="{Binding HeartbeatUrl, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxHeartbeatUrl_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_HeartbeatUrl}"
                        AutomationProperties.AutomationId="TextBoxHeartbeatUrl"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxHeartbeatUrl_HelpText}" />
 
@@ -681,7 +681,7 @@
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
                        Text="{Binding HeartbeatUrlTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxHeartbeatUrlTimeoutSeconds_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_HeartbeatUrlTimeoutSeconds}"
                        AutomationProperties.AutomationId="TextBoxHeartbeatUrlTimeoutSeconds"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText}" />
               <TextBlock Grid.Row="9" Grid.Column="2"
@@ -741,7 +741,7 @@
                       AutomationProperties.AutomationId="ButtonBrowseFailureProgramStartupDir"
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowseFailureProgramStartupDir_HelpText}" />
               <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
-                         Text="{x:Static resx:Strings.Info_FailureProgramStartupDirectory}"
+                         Text="{x:Static resx:Strings.Info_HookStartupDirectory}"
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />
               <TextBlock Grid.Row="16" Grid.Column="1" Grid.ColumnSpan="2"
@@ -799,7 +799,7 @@
                        AcceptsReturn="True" TextWrapping="Wrap"
                        MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                        VerticalScrollBarVisibility="Auto"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxEnvVars_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_EnvironmentVariables}"
                        AutomationProperties.AutomationId="TextBoxEnvVars"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxEnvVars_HelpText}" />
               <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
@@ -817,7 +817,7 @@
                        AcceptsReturn="True" TextWrapping="Wrap"
                        MaxLines="{StaticResource UnlimitedTextBoxLines}" VerticalContentAlignment="Top"
                        VerticalScrollBarVisibility="Auto"
-                       AutomationProperties.Name="{x:Static resx:Strings.Automation_TextBoxServiceDependencies_Name}"
+                       AutomationProperties.Name="{x:Static resx:Strings.Label_ServiceDependencies}"
                        AutomationProperties.AutomationId="TextBoxServiceDependencies"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxServiceDependencies_HelpText}" />
               <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
@@ -986,7 +986,7 @@
                       AutomationProperties.AutomationId="ButtonBrowsePreLaunchDir"
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowsePreLaunchDir_HelpText}" />
               <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
-                         Text="{x:Static resx:Strings.Info_PreLaunchStartupDirectory}"
+                         Text="{x:Static resx:Strings.Info_HookStartupDirectory}"
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />
               <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
@@ -1165,7 +1165,7 @@
                       AutomationProperties.AutomationId="ButtonBrowsePostLaunchDir"
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowsePostLaunchDir_HelpText}" />
               <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
-                         Text="{x:Static resx:Strings.Info_PostLaunchStartupDirectory}"
+                         Text="{x:Static resx:Strings.Info_HookStartupDirectory}"
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />
               <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
@@ -1263,7 +1263,7 @@
                       AutomationProperties.AutomationId="ButtonBrowsePreStopDir"
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowsePreStopDir_HelpText}" />
               <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
-                         Text="{x:Static resx:Strings.Info_PreStopStartupDirectory}"
+                         Text="{x:Static resx:Strings.Info_HookStartupDirectory}"
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />
               <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
@@ -1380,7 +1380,7 @@
                       AutomationProperties.AutomationId="ButtonBrowsePostStopDir"
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowsePostStopDir_HelpText}" />
               <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
-                         Text="{x:Static resx:Strings.Info_PostStopStartupDirectory}"
+                         Text="{x:Static resx:Strings.Info_HookStartupDirectory}"
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />
               <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
