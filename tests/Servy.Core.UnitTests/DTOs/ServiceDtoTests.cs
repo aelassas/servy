@@ -80,6 +80,13 @@ namespace Servy.Core.UnitTests.DTOs
                 .Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList();
 
             // Assert
+            // Tripwire: ServiceDto has 63 public instance properties today. A property that is new
+            // AND carries neither attribute is absent from BOTH sides of the comparisons below, so
+            // they can never see it - the direction closed #5705 named and its fix did not close.
+            // A new property changes this count and fails here first, which forces `expected` above
+            // to be reconsidered; update the count alongside it whenever the DTO grows.
+            Assert.Equal(63, props.Length);
+
             // Security Regression: the ignored set must be exactly the set listed above, so adding
             // or removing either attribute has to be a deliberate edit of this test. Comparing both
             // attributes against the same list also pins that they never diverge - a value hidden
