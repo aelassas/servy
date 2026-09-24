@@ -270,6 +270,47 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Fact]
+        public async Task ConsoleSearchText_ClearedAfterSearch_RequestsForcedScrollToBottom()
+        {
+            // Arrange, Act & Assert (Kept Async Task - genuinely awaits Helper.WaitUntilAsync polling context)
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    vm.RawLines.Add(new LogLine("Operation successful", LogType.StdOut));
+                    vm.RawLines.Add(new LogLine("System Crash", LogType.StdErr));
+
+                    var scrolls = new List<bool>();
+                    vm.RequestScroll += (force) => scrolls.Add(force);
+
+                    vm.ConsoleSearchText = "Crash";
+                    await Helper.WaitUntilAsync(
+                        () => vm.VisibleLines.Cast<LogLine>().Count() == 1,
+                        TimeSpan.FromSeconds(2),
+                        TimeSpan.FromMilliseconds(20),
+                        TestContext.Current.CancellationToken);
+
+                    // A non-empty search refreshes the view but must not scroll back to the tail
+                    Assert.Empty(scrolls);
+
+                    // Act - Clear the search
+                    vm.ConsoleSearchText = string.Empty;
+                    await Helper.WaitUntilAsync(
+                        () => scrolls.Count > 0,
+                        TimeSpan.FromSeconds(2),
+                        TimeSpan.FromMilliseconds(20),
+                        TestContext.Current.CancellationToken);
+
+                    // Assert - exactly one FORCED scroll, and the full buffer is visible again
+                    Assert.Equal(new[] { true }, scrolls);
+                    Assert.Equal(2, vm.VisibleLines.Cast<LogLine>().Count());
+                }
+            });
+        }
+
         #endregion
 
         #region Base Monitoring Loop (OnTickAsync) Tests
