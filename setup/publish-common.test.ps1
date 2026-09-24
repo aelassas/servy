@@ -21,8 +21,9 @@ Write-Host ""
 
 $publishCommonPath = Join-Path $scriptDir "publish-common.ps1"
 $commonHelpersPath = Join-Path $scriptDir "common-helpers.ps1"
+$buildConfigPath = Join-Path $scriptDir "build-config.ps1"
 
-foreach ($required in @($publishCommonPath, $commonHelpersPath)) {
+foreach ($required in @($publishCommonPath, $commonHelpersPath, $buildConfigPath)) {
     if (-not (Test-Path $required)) {
         Write-Host "FAIL: required script was not found at path: $required" -ForegroundColor Red
         exit 1
@@ -65,6 +66,7 @@ function Get-AttemptCount {
 
 try {
     . $publishCommonPath | Out-Null
+    $cfg = & $buildConfigPath
 
     # --- Invoke-WithRetry is centralized in common-helpers.ps1 -----------------------
     # This is the duplication itself: publish-common.ps1 must reach the shared policy
@@ -101,7 +103,7 @@ try {
     New-FakeInnoCompiler -Path $transientCompiler -AttemptLog $transientLog -FailuresBeforeSuccess 1
 
     # Act
-    Invoke-BuildInstaller -InnoCompiler $transientCompiler -IssFile "servy.iss" -Version "1.2.3" | Out-Null
+    Invoke-BuildInstaller -InnoCompiler $transientCompiler -IssFile "servy.iss" -Version "1.2.3" -Tfm $cfg.Tfm | Out-Null
 
     # Assert
     $transientAttempts = Get-AttemptCount -AttemptLog $transientLog
@@ -123,7 +125,7 @@ try {
 
     # Act
     try {
-        Invoke-BuildInstaller -InnoCompiler $permanentCompiler -IssFile "servy.iss" -Version "1.2.3" | Out-Null
+        Invoke-BuildInstaller -InnoCompiler $permanentCompiler -IssFile "servy.iss" -Version "1.2.3" -Tfm $cfg.Tfm | Out-Null
     }
     catch {
         $caught = $_
@@ -216,8 +218,83 @@ try {
     }
     Write-Host "  [OK] The leak check recognises every pattern in the same shared array." -ForegroundColor Gray
 
+    # --- The moniker is resolved by the caller, not a second time in here -----------
+    # publish-sc.ps1, the one production caller, reads build-config.ps1 and passes the
+    # result in. A second load inside Invoke-BuildInstaller is a copy of that
+    # resolution whose fallback no real call site can reach.
+
+    # Arrange
+    $installerCommand = Get-Command Invoke-BuildInstaller -ErrorAction SilentlyContinue
+    $publishScPath = Join-Path $scriptDir "publish-sc.ps1"
+    if ($null -eq $installerCommand) {
+        Write-Host "FAIL: Invoke-BuildInstaller is not available after dot-sourcing publish-common.ps1." -ForegroundColor Red
+        exit 1
+    }
+    if (-not (Test-Path $publishScPath)) {
+        Write-Host "FAIL: the production caller was not found at path: $publishScPath" -ForegroundColor Red
+        exit 1
+    }
+
+    # Act
+    $installerTfmParameter = $installerCommand.Parameters['Tfm']
+    $installerTfmMandatory = $false
+    if ($null -ne $installerTfmParameter) {
+        foreach ($attribute in $installerTfmParameter.Attributes) {
+            if ($attribute -is [System.Management.Automation.ParameterAttribute] -and $attribute.Mandatory) {
+                $installerTfmMandatory = $true
+            }
+        }
+    }
+    $installerOwnLookup = $installerCommand.ScriptBlock.ToString() -match 'build-config\.ps1'
+    $publishScText = Get-Content -LiteralPath $publishScPath -Raw
+    $publishScResolves = ($publishScText -match 'build-config\.ps1') -and ($publishScText -match '-Tfm\s+\$Tfm')
+
+    # Assert
+    if ($null -eq $installerTfmParameter) {
+        Write-Host "FAIL: Invoke-BuildInstaller does not take a -Tfm parameter." -ForegroundColor Red
+        exit 1
+    }
+    if (-not $installerTfmMandatory) {
+        Write-Host "FAIL: Invoke-BuildInstaller -Tfm is optional again; the function can silently supply its own moniker." -ForegroundColor Red
+        exit 1
+    }
+    if ($installerOwnLookup) {
+        Write-Host "FAIL: Invoke-BuildInstaller loads build-config.ps1 itself; the moniker is resolved twice per installer build." -ForegroundColor Red
+        exit 1
+    }
+    if (-not $publishScResolves) {
+        Write-Host "FAIL: publish-sc.ps1 no longer resolves the moniker from build-config.ps1 and passes it as -Tfm." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] The moniker is resolved once, by publish-sc.ps1, and required by Invoke-BuildInstaller." -ForegroundColor Gray
+
+    # --- The caller's moniker is the one ISCC.exe is given --------------------------
+    # A moniker deliberately unlike build-config.ps1's proves the value reached the
+    # preprocessor directive from the call site rather than from a central default.
+
+    # Arrange
+    $probeTfm = "net99.0-windows"
+    if ($probeTfm -eq $cfg.Tfm) {
+        Write-Host "FAIL: the probe moniker equals build-config.ps1's '$($cfg.Tfm)'; the test could not tell the two apart." -ForegroundColor Red
+        exit 1
+    }
+    $probeLog = Join-Path $tempDir "probe-attempts.txt"
+    $probeCompiler = Join-Path $tempDir "iscc-probe.ps1"
+    New-FakeInnoCompiler -Path $probeCompiler -AttemptLog $probeLog -FailuresBeforeSuccess 0
+
+    # Act
+    Invoke-BuildInstaller -InnoCompiler $probeCompiler -IssFile "servy.iss" -Version "1.2.3" -Tfm $probeTfm | Out-Null
+
+    # Assert
+    $probeArgs = (Get-Content -LiteralPath $probeLog -Raw).Trim()
+    if ($probeArgs -notmatch [regex]::Escape("/DTfm=$probeTfm")) {
+        Write-Host "FAIL: ISCC.exe was given '$probeArgs' instead of the caller's /DTfm=$probeTfm." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] The caller's moniker reaches ISCC.exe unchanged." -ForegroundColor Gray
+
     Write-Host ""
-    Write-Host "SUCCESS: publish-common.ps1 retry policy and exclusion list tests passed." -ForegroundColor Green
+    Write-Host "SUCCESS: publish-common.ps1 retry policy, moniker and exclusion list tests passed." -ForegroundColor Green
     exit 0
 }
 catch {

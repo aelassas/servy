@@ -98,7 +98,7 @@ function Copy-TaskSchdArtifacts {
 
     .PARAMETER Tfm
     The target framework moniker ("net10.0-windows") passed to the Inno preprocessor directive.
-    Defaults to the value in build-config.ps1.
+    Required: the caller resolves it from build-config.ps1 and passes the result in.
 
     .NOTES
     The compilation is wrapped in Invoke-WithRetry (common-helpers.ps1), the shared
@@ -110,19 +110,10 @@ function Invoke-BuildInstaller {
         [Parameter(Mandatory=$true)][string]$InnoCompiler,
         [Parameter(Mandatory=$true)][string]$IssFile,
         [Parameter(Mandatory=$true)][string]$Version,
+        [Parameter(Mandatory=$true)][string]$Tfm,
         [string]$Arch = "x64",
-        [string]$BuildConfiguration = "Release",
-        [string]$Tfm = ""
+        [string]$BuildConfiguration = "Release"
     )
-
-    # Load central defaults
-    $configPath = Join-Path $PC_ScriptDir "build-config.ps1"
-    if (Test-Path $configPath) {
-        $buildConfig = & $configPath
-        if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
-    } else {
-        throw "Central build configuration not found at $configPath"
-    }
 
     Write-Host "--- Building Installer ---" -ForegroundColor Cyan
 
