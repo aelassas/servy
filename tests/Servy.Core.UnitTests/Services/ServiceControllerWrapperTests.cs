@@ -2,8 +2,8 @@ using Moq;
 using Servy.Core.Native;
 using Servy.Core.Resources;
 using Servy.Core.Services;
+using Servy.Testing;
 using System.ComponentModel;
-using System.Reflection;
 using System.ServiceProcess;
 
 namespace Servy.Core.UnitTests.Services
@@ -71,7 +71,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var wrapper = new ServiceControllerWrapper(StandardTestService);
-            var inner = GetInnerController(wrapper);
+            var inner = TestReflection.GetField<ServiceController>(wrapper, "_controller");
             var disposedCount = 0;
             inner.Disposed += (sender, args) => disposedCount++;
 
@@ -88,7 +88,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var wrapper = new ServiceControllerWrapper(StandardTestService);
-            var inner = GetInnerController(wrapper);
+            var inner = TestReflection.GetField<ServiceController>(wrapper, "_controller");
             var disposedCount = 0;
             inner.Disposed += (sender, args) => disposedCount++;
             wrapper.Dispose();
@@ -539,17 +539,6 @@ namespace Servy.Core.UnitTests.Services
         #endregion
 
         #region Test Helpers
-
-        private static ServiceController GetInnerController(ServiceControllerWrapper wrapper)
-        {
-            var field = typeof(ServiceControllerWrapper).GetField("_controller", BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(field);
-
-            var inner = field.GetValue(wrapper) as ServiceController;
-            Assert.NotNull(inner);
-
-            return inner;
-        }
 
         private static Mock<IServiceControllerWrapper> CreateMockWrapper(
             string serviceName,
