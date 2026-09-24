@@ -68,11 +68,7 @@ namespace Servy.Core.Native
             account = account.Trim();
 
             // Replace ".\" with machine name for local accounts
-            if (account.StartsWith(@".\", StringComparison.OrdinalIgnoreCase))
-            {
-                string machine = Environment.MachineName;
-                account = $"{machine}\\{account.Substring(2)}";
-            }
+            account = ServiceAccounts.ExpandLocalShorthand(account);
 
             try
             {
