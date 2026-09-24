@@ -90,8 +90,8 @@ jobs:
       - name: Compute SHA256
         shell: pwsh
         run: |
-          $HASH64 = (Get-FileHash "servy-${env:VERSION}-x64-installer.exe" -Algorithm SHA256).Hash.ToUpper()
-          $HASHARM64 = (Get-FileHash "servy-${env:VERSION}-arm64-installer.exe" -Algorithm SHA256).Hash.ToUpper()
+          $HASH64 = (Get-FileHash $env:CHOCO_DOWNLOAD_OUT_64 -Algorithm SHA256).Hash.ToUpper()
+          $HASHARM64 = (Get-FileHash $env:CHOCO_DOWNLOAD_OUT_ARM64 -Algorithm SHA256).Hash.ToUpper()
 
           Add-Content -Path $env:GITHUB_ENV -Value "HASH_64=$HASH64"
           Add-Content -Path $env:GITHUB_ENV -Value "HASH_ARM64=$HASHARM64"
@@ -124,9 +124,9 @@ jobs:
           $content = Get-Content $file -Raw
 
           # Build replacement strings for x64 and arm64 architectures
-          $url64Replacement = "`$url64         = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe'"
+          $url64Replacement = "`$url64          = '$env:CHOCO_DOWNLOAD_URL_64'"
           $checksum64Replacement = "`$checksum64    = '${env:HASH_64}'"
-          $urlArm64Replacement = "`$urlArm64      = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe'"
+          $urlArm64Replacement = "`$urlArm64      = '$env:CHOCO_DOWNLOAD_URL_ARM64'"
           $checksumArm64Replacement = "`$checksumArm64 = '${env:HASH_ARM64}'"
 
           Write-Host "URL64: $url64Replacement"
