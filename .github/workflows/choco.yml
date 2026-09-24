@@ -124,7 +124,7 @@ jobs:
           $content = Get-Content $file -Raw
 
           # Build replacement strings for x64 and arm64 architectures
-          $url64Replacement = "`$url64          = '$env:CHOCO_DOWNLOAD_URL_64'"
+          $url64Replacement = "`$url64         = '$env:CHOCO_DOWNLOAD_URL_64'"
           $checksum64Replacement = "`$checksum64    = '${env:HASH_64}'"
           $urlArm64Replacement = "`$urlArm64      = '$env:CHOCO_DOWNLOAD_URL_ARM64'"
           $checksumArm64Replacement = "`$checksumArm64 = '${env:HASH_ARM64}'"
