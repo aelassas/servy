@@ -317,6 +317,8 @@ namespace Servy.Core.Helpers
                         // This blocks until the service is Stopped or the waitTime expires
                         while (sc.Status != ServiceControllerStatus.Stopped)
                         {
+                            sc.Refresh();
+
                             if (elapsed() > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 
@@ -332,7 +334,6 @@ namespace Servy.Core.Helpers
 
                             cancellationToken.ThrowIfCancellationRequested();
                             await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
-                            sc.Refresh();
                         }
                     }
                 }
