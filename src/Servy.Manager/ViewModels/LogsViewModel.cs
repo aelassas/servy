@@ -298,7 +298,7 @@ namespace Servy.Manager.ViewModels
         {
             var message = ex is SecurityException || ex is InvalidOperationException
                 ? ex.Message
-                : Strings.Msg_UnexpectedError;
+                : Core.Resources.Strings.Msg_UnexpectedError;
 
             await _messageBoxService.ShowErrorAsync(message, UiAppConfig.Caption);
         }

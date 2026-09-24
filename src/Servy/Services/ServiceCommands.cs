@@ -119,7 +119,7 @@ namespace Servy.Services
 
             if (!File.Exists(wrapperExePath))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, Caption);
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_InvalidWrapperExePath, Caption);
                 return false;
             }
 
@@ -239,13 +239,13 @@ namespace Servy.Services
 
                 if (!res.IsSuccess)
                 {
-                    var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                    var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Core.Resources.Strings.Msg_UnexpectedError;
                     Logger.Warn($"InstallService failed: {msg}");
                     await _messageBoxService.ShowErrorAsync(msg, Caption);
                     return false;
                 }
 
-                await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, Caption);
+                await _messageBoxService.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceInstalled, Caption);
                 return true;
             }
             catch (OperationCanceledException)
@@ -260,7 +260,7 @@ namespace Servy.Services
             catch (Exception ex)
             {
                 Logger.Error(UnexpectedError, ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
             finally
@@ -283,7 +283,7 @@ namespace Servy.Services
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true, cancellationToken: cancellationToken),
-                Strings.Msg_ServiceStarted,
+                Core.Resources.Strings.Msg_ServiceStarted,
                 checkDisabled: true,
                 cancellationToken: cancellationToken);
 
@@ -292,7 +292,7 @@ namespace Servy.Services
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true, cancellationToken: cancellationToken),
-                Strings.Msg_ServiceStopped,
+                Core.Resources.Strings.Msg_ServiceStopped,
                 checkDisabled: false,
                 cancellationToken: cancellationToken);
 
@@ -301,7 +301,7 @@ namespace Servy.Services
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.RestartServiceAsync(name, logSuccessfulRestart: true, cancellationToken: cancellationToken),
-                Strings.Msg_ServiceRestarted,
+                Core.Resources.Strings.Msg_ServiceRestarted,
                 checkDisabled: true,
                 cancellationToken: cancellationToken);
 
@@ -440,7 +440,7 @@ namespace Servy.Services
             catch (Exception ex)
             {
                 Logger.Error($"Error opening security hardening guide link '{AppConfig.SecurityHardeningGuideLink}'", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, Caption);
             }
         }
 
@@ -502,7 +502,7 @@ namespace Servy.Services
                 }
                 else
                 {
-                    var errorMessage = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                    var errorMessage = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Core.Resources.Strings.Msg_UnexpectedError;
                     Logger.Warn($"Failed to execute operation on {serviceName}: {errorMessage}");
                     await _messageBoxService.ShowErrorAsync(errorMessage, Caption);
                     return false;
@@ -520,7 +520,7 @@ namespace Servy.Services
             catch (Exception ex)
             {
                 Logger.Error(UnexpectedError, ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
             finally
@@ -600,7 +600,7 @@ namespace Servy.Services
             catch (Exception ex)
             {
                 Logger.Error($"Failed to export service configuration to {formatName}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, Caption);
             }
             finally
             {
@@ -686,7 +686,7 @@ namespace Servy.Services
             catch (Exception ex)
             {
                 Logger.Error($"Failed to import service configuration from {formatName}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, Caption);
             }
             finally
             {

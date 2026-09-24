@@ -460,7 +460,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Assert
                         _mockMessageBoxService.Verify(
-                            m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption),
+                            m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption),
                             Times.Once);
                     }
                 }

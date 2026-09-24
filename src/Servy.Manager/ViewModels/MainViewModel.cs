@@ -539,7 +539,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected override async Task HandleSearchExceptionAsync(Exception ex)
         {
-            await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+            await _messageBoxService.ShowWarningAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption);
         }
 
         /// <summary>
