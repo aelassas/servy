@@ -364,8 +364,7 @@ jobs:
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
-          Invoke-Git config user.name "github-actions[bot]"
-          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          Set-BotGitIdentity
 
           # Scope the check to CHANGELOG files and Servy.sln so unrelated working-tree changes don't trigger a commit
           $hasChanges = (Invoke-Git status --porcelain CHANGELOG*.md Servy.sln) -join "`n"

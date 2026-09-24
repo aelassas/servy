@@ -191,8 +191,7 @@ jobs:
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Resolve-Path $manifestPath)
 
           # Commit and push back to aelassas/servy
-          Invoke-Git config user.name "github-actions[bot]"
-          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          Set-BotGitIdentity
 
           $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
           if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
@@ -231,8 +230,7 @@ jobs:
 
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Join-Path (Get-Location) $manifestPath)
 
-          Invoke-Git config user.name "github-actions[bot]"
-          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          Set-BotGitIdentity
 
           $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
           if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
@@ -297,8 +295,7 @@ jobs:
           $extractX64 = "servy-${env:VERSION}-x64-portable"
           $extractArm64 = "servy-${env:VERSION}-arm64-portable"
 
-          Invoke-Git config user.name "github-actions[bot]"
-          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          Set-BotGitIdentity
 
           if (-Not (Test-Path $manifestPath)) {
               # Source canonical metadata fields directly from the updated reference file in the workspace

@@ -81,8 +81,7 @@ jobs:
           $maxRetries = [int]$env:MAX_RETRIES
 
           # Configure commit identity for this checkout (repo-local; both branch iterations reuse it)
-          Invoke-Git config user.name "github-actions[bot]"
-          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          Set-BotGitIdentity
 
           $branches = @("main", "net48")
           foreach ($branch in $branches) {

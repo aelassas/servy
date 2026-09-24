@@ -57,4 +57,10 @@ runs:
                 }
             }
         }
+
+        # Helper: configure the bot commit identity for the current repository.
+        function Set-BotGitIdentity {
+            Invoke-Git config user.name  "github-actions[bot]"
+            Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+        }
         '@ | Out-File -FilePath "$env:RUNNER_TEMP\git-helpers.ps1" -Encoding utf8
