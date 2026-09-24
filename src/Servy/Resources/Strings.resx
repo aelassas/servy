@@ -319,7 +319,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Info_FailureProgram" xml:space="preserve">
     <value>Configure an optional script or executable to run when the process fails. If health monitoring is disabled, the program runs when the process exits with a non-zero code. If health monitoring is enabled, the program only runs after all configured recovery action retries have failed. It does not run when the process fails to start.</value>
   </data>
-  <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
+  <data name="Info_HookStartupDirectory" xml:space="preserve">
     <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
 
@@ -368,9 +368,6 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
   <data name="Label_ProcessPathNotRequired" xml:space="preserve">
     <value>Process Path</value>
-  </data>
-  <data name="Info_PreLaunchStartupDirectory" xml:space="preserve">
-    <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
   <data name="Label_PreLaunchTimeoutSeconds" xml:space="preserve">
     <value>Timeout</value>
@@ -465,10 +462,6 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Configure an optional script or executable to run after the process starts successfully.</value>
   </data>
 
-  <data name="Info_PostLaunchStartupDirectory" xml:space="preserve">
-    <value>Optional. If not set, defaults to the service working directory.</value>
-  </data>
-
   <!-- Debug-Logs -->
   <data name="Label_EnableDebugLogs" xml:space="preserve">
     <value>Enable debug logs</value>
@@ -496,9 +489,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Info_PreStop" xml:space="preserve">
     <value>Configure an optional script or executable to run before the main service stops. Use it for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while running, unless the timeout is set to 0.</value>
   </data>
-  <data name="Info_PreStopStartupDirectory" xml:space="preserve">
-    <value>Optional. If not set, defaults to the service working directory.</value>
-  </data>
   <data name="Label_PreStopTimeoutSeconds" xml:space="preserve">
     <value>Timeout</value>
   </data>
@@ -512,9 +502,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   <!-- Post-Stop -->
   <data name="Info_PostStop" xml:space="preserve">
     <value>Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown.</value>
-  </data>
-  <data name="Info_PostStopStartupDirectory" xml:space="preserve">
-    <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
 
   <!-- Miscellaneous -->
@@ -601,9 +588,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_TextBoxServiceDisplayName_HelpText" xml:space="preserve">
     <value>Enter the display name of the service.</value>
   </data>
-  <data name="Automation_TextBoxServiceDescription_Name" xml:space="preserve">
-    <value>Service Description</value>
-  </data>
   <data name="Automation_TextBoxServiceDescription_HelpText" xml:space="preserve">
     <value>Enter the description of the service.</value>
   </data>
@@ -621,9 +605,6 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Browse to select the executable process path.</value>
   </data>
 
-  <data name="Automation_TextBoxStartupDirectory_Name" xml:space="preserve">
-    <value>Startup Directory</value>
-  </data>
   <data name="Automation_TextBoxStartupDirectory_HelpText" xml:space="preserve">
     <value>Enter the startup working directory.</value>
   </data>
@@ -635,9 +616,6 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Browse to select the startup directory.</value>
   </data>
 
-  <data name="Automation_TextBoxProcessParameters_Name" xml:space="preserve">
-    <value>Process Parameters</value>
-  </data>
   <data name="Automation_TextBoxProcessParameters_HelpText" xml:space="preserve">
     <value>Enter the command line parameters for the process.</value>
   </data>
@@ -647,20 +625,11 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_ComboBoxProcessPriority_HelpText" xml:space="preserve">
     <value>Select the process priority level.</value>
   </data>
-  <data name="Automation_TextBoxCpuAffinity_Name" xml:space="preserve">
-    <value>CPU Affinity</value>
-  </data>
   <data name="Automation_TextBoxCpuAffinity_HelpText" xml:space="preserve">
     <value>Enter the logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>
   </data>
-  <data name="Automation_TextBoxStartTimeout_Name" xml:space="preserve">
-    <value>Start Timeout</value>
-  </data>
   <data name="Automation_TextBoxStartTimeout_HelpText" xml:space="preserve">
     <value>Enter the timeout in seconds for starting the service.</value>
-  </data>
-  <data name="Automation_TextBoxStopTimeout_Name" xml:space="preserve">
-    <value>Stop Timeout</value>
   </data>
   <data name="Automation_TextBoxStopTimeout_HelpText" xml:space="preserve">
     <value>Enter the timeout in seconds for stopping the service.</value>
@@ -673,9 +642,6 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Configure standard output and error logging settings.</value>
   </data>
 
-  <data name="Automation_TextBoxStdoutPath_Name" xml:space="preserve">
-    <value>Stdout File Path</value>
-  </data>
   <data name="Automation_TextBoxStdoutPath_HelpText" xml:space="preserve">
     <value>Enter the path for the standard output log file.</value>
   </data>
@@ -687,9 +653,6 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Browse to select the standard output log file.</value>
   </data>
 
-  <data name="Automation_TextBoxStderrPath_Name" xml:space="preserve">
-    <value>Stderr File Path</value>
-  </data>
   <data name="Automation_TextBoxStderrPath_HelpText" xml:space="preserve">
     <value>Enter the path for the standard error log file.</value>
   </data>
@@ -704,9 +667,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_CheckBoxEnableSizeRotation_HelpText" xml:space="preserve">
     <value>Check to enable log rotation based on file size.</value>
   </data>
-  <data name="Automation_TextBoxRotationSize_Name" xml:space="preserve">
-    <value>Rotation Size</value>
-  </data>
   <data name="Automation_TextBoxRotationSize_HelpText" xml:space="preserve">
     <value>Enter the maximum log file size before rotation.</value>
   </data>
@@ -715,9 +675,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
   <data name="Automation_ComboBoxDateRotationType_HelpText" xml:space="preserve">
     <value>Select the interval for date-based log rotation.</value>
-  </data>
-  <data name="Automation_TextBoxMaxRotations_Name" xml:space="preserve">
-    <value>Max Rotations</value>
   </data>
   <data name="Automation_TextBoxMaxRotations_HelpText" xml:space="preserve">
     <value>Enter the maximum number of rotated logs to keep.</value>
@@ -735,14 +692,8 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_CheckBoxEnableHealthMonitoring_HelpText" xml:space="preserve">
     <value>Check to enable background health monitoring for this service.</value>
   </data>
-  <data name="Automation_TextBoxHeartbeatInterval_Name" xml:space="preserve">
-    <value>Heartbeat Interval</value>
-  </data>
   <data name="Automation_TextBoxHeartbeatInterval_HelpText" xml:space="preserve">
     <value>Enter the health check heartbeat interval in seconds.</value>
-  </data>
-  <data name="Automation_TextBoxMaxFailedChecks_Name" xml:space="preserve">
-    <value>Max Failed Checks</value>
   </data>
   <data name="Automation_TextBoxMaxFailedChecks_HelpText" xml:space="preserve">
     <value>Enter the maximum number of failed checks before triggering recovery.</value>
@@ -756,23 +707,14 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_CheckBoxRecoveryOnCleanExit_HelpText" xml:space="preserve">
     <value>Check to run recovery action even if the process exits successfully.</value>
   </data>
-  <data name="Automation_TextBoxMaxRestartAttempts_Name" xml:space="preserve">
-    <value>Max Restart Attempts</value>
-  </data>
   <data name="Automation_TextBoxMaxRestartAttempts_HelpText" xml:space="preserve">
     <value>Enter the maximum number of restart attempts.</value>
   </data>
 
-  <data name="Automation_TextBoxHeartbeatUrl_Name" xml:space="preserve">
-    <value>Heartbeat URL</value>
-  </data>
   <data name="Automation_TextBoxHeartbeatUrl_HelpText" xml:space="preserve">
     <value>Enter the URL for the heartbeat endpoint.</value>
   </data>
 
-  <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_Name" xml:space="preserve">
-    <value>Heartbeat URL Timeout</value>
-  </data>
   <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText" xml:space="preserve">
     <value>Enter the health check heartbeat URL timeout in seconds.</value>
   </data>
@@ -818,14 +760,8 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_TabItemAdvanced_HelpText" xml:space="preserve">
     <value>Configure environment variables and service dependencies.</value>
   </data>
-  <data name="Automation_TextBoxEnvVars_Name" xml:space="preserve">
-    <value>Environment Variables</value>
-  </data>
   <data name="Automation_TextBoxEnvVars_HelpText" xml:space="preserve">
     <value>Enter environment variables for the service.</value>
-  </data>
-  <data name="Automation_TextBoxServiceDependencies_Name" xml:space="preserve">
-    <value>Service Dependencies</value>
   </data>
   <data name="Automation_TextBoxServiceDependencies_HelpText" xml:space="preserve">
     <value>Enter Windows service dependencies.</value>
