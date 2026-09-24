@@ -108,6 +108,8 @@
     <Compile Include="Services\IFileDialogService.cs" />
     <Compile Include="Services\IHelpService.cs" />
     <Compile Include="Services\IMessageBoxService.cs" />
+    <Compile Include="Validation\IServiceConfigurationValidator.cs" />
+    <Compile Include="Validation\ServiceConfigurationValidator.cs" />
     <Compile Include="Services\IUiDispatcher.cs" />
     <Compile Include="Services\MessageBoxService.cs" />
     <Compile Include="Services\WpfUiDispatcher.cs" />

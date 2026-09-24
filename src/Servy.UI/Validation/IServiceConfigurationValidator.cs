@@ -2,10 +2,12 @@ using Servy.Core.DTOs;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Servy.Validation
+namespace Servy.UI.Validation
 {
     /// <summary>
-    /// Provides functionality to validate service configurations.
+    /// Provides functionality to validate service configurations and report the outcome to the user.
+    /// Shared by the Servy and Servy Manager applications; the caption of the message box is supplied
+    /// by the hosting application when the validator is constructed.
     /// </summary>
     public interface IServiceConfigurationValidator
     {

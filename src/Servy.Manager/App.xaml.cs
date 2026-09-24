@@ -9,11 +9,11 @@ using Servy.Infrastructure.Data;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
-using Servy.Manager.Validation;
 using Servy.Manager.ViewModels;
 using Servy.Manager.Views;
 using Servy.UI.Bootstrapping;
 using Servy.UI.Services;
+using Servy.UI.Validation;
 using Servy.UI.Views;
 using System;
 using System.ComponentModel;
@@ -204,7 +204,7 @@ namespace Servy.Manager
                     var messageBoxService = new MessageBoxService(uiDispatcher);
                     var helpService = new HelpService(messageBoxService);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
-                    var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);
+                    var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules, UiAppConfig.Caption);
                     var eventLogService = new EventLogService(new EventLogReader());
                     var cursorService = new CursorService();
 

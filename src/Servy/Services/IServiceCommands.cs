@@ -1,7 +1,7 @@
 using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Models;
-using Servy.Validation;
+using Servy.UI.Validation;
 using System.Threading;
 using System.Threading.Tasks;
 

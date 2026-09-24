@@ -2,8 +2,8 @@ using Moq;
 using Servy.Core.DTOs;
 using Servy.Core.Validation;
 using Servy.Manager.Config;
-using Servy.Manager.Validation;
 using Servy.UI.Services;
+using Servy.UI.Validation;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +24,8 @@ namespace Servy.Manager.UnitTests.Validation
 
             _validator = new ServiceConfigurationValidator(
                 _messageBoxServiceMock.Object,
-                _validationRulesMock.Object);
+                _validationRulesMock.Object,
+                UiAppConfig.Caption);
         }
 
         #region Constructor Tests
@@ -34,7 +35,7 @@ namespace Servy.Manager.UnitTests.Validation
         {
             // Arrange, Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() =>
-                new ServiceConfigurationValidator(null, _validationRulesMock.Object));
+                new ServiceConfigurationValidator(null, _validationRulesMock.Object, UiAppConfig.Caption));
 
             Assert.Equal("messageBoxService", ex.ParamName);
         }
@@ -44,9 +45,19 @@ namespace Servy.Manager.UnitTests.Validation
         {
             // Arrange, Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() =>
-                new ServiceConfigurationValidator(_messageBoxServiceMock.Object, null));
+                new ServiceConfigurationValidator(_messageBoxServiceMock.Object, null, UiAppConfig.Caption));
 
             Assert.Equal("serviceValidationRules", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullCaption_ThrowsArgumentNullException()
+        {
+            // Arrange, Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new ServiceConfigurationValidator(_messageBoxServiceMock.Object, _validationRulesMock.Object, null));
+
+            Assert.Equal("caption", ex.ParamName);
         }
 
         #endregion

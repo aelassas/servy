@@ -11,7 +11,6 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
-using Servy.Manager.Validation;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
@@ -19,6 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Servy.UI.Validation;
 using Xunit;
 using TempFile = Servy.Testing.TempFile;
 
@@ -116,7 +116,7 @@ namespace Servy.Manager.UnitTests.Services
             using (var tempFile = new TempFile(".json").Write(json))
             {
                 _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
-                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(1);
@@ -188,7 +188,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 string outErr = null;
                 _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(1);
@@ -291,7 +291,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_FailedToLoadJson, UiAppConfig.Caption), Times.Once);
-                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
             }
         }
@@ -308,7 +308,7 @@ namespace Servy.Manager.UnitTests.Services
                 string outErr = null;
                 _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
                 _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "InvalidDomain" });
-                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
                 // Act
                 await sut.ImportJsonConfigAsync(CancellationToken.None);
@@ -339,7 +339,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 string outErr = null;
                 _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
                 _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(true);
@@ -380,7 +380,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 string outErr = null;
                 _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
                 _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(false);
@@ -412,7 +412,7 @@ namespace Servy.Manager.UnitTests.Services
                 string outErr = null;
                 _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
                 _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "FailedUpsert" });
-                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
                 // Act
@@ -1675,7 +1675,7 @@ namespace Servy.Manager.UnitTests.Services
                 _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
                 _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny)).Returns(true);
                 _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
-                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()))
                     .ThrowsAsync(new InvalidOperationException("DB unavailable"));
 
