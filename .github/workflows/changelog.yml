@@ -256,7 +256,7 @@ jobs:
                   $runningGlobalIdx += $chunk.Count
               }
 
-              # Synchronize solution solution items section in Servy.sln
+              # Synchronize the solution items section in Servy.sln
               if ([System.IO.File]::Exists($slnPath)) {
                   $slnContent = [System.IO.File]::ReadAllText($slnPath, $utf8NoBom)
                   $globalProjectHeader = 'Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"'
