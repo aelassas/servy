@@ -2206,15 +2206,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service wrapper executable not found..
-        /// </summary>
-        public static string Msg_InvalidWrapperExePath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidWrapperExePath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to An error occurred while switching tabs. Please try again..
         /// </summary>
         public static string Msg_MainTabControl_SelectionChangedError {
@@ -2316,42 +2307,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service was installed successfully..
-        /// </summary>
-        public static string Msg_ServiceInstalled {
-            get {
-                return ResourceManager.GetString("Msg_ServiceInstalled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Service was restarted successfully..
-        /// </summary>
-        public static string Msg_ServiceRestarted {
-            get {
-                return ResourceManager.GetString("Msg_ServiceRestarted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Service was started successfully..
-        /// </summary>
-        public static string Msg_ServiceStarted {
-            get {
-                return ResourceManager.GetString("Msg_ServiceStarted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Service was stopped successfully..
-        /// </summary>
-        public static string Msg_ServiceStopped {
-            get {
-                return ResourceManager.GetString("Msg_ServiceStopped", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965..
         /// </summary>
         public static string Msg_SqliteVersionWarningMessage {
@@ -2366,15 +2321,6 @@ namespace Servy.Manager.Resources {
         public static string Msg_SqliteVersionWarningTitle {
             get {
                 return ResourceManager.GetString("Msg_SqliteVersionWarningTitle", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to An unexpected error occurred..
-        /// </summary>
-        public static string Msg_UnexpectedError {
-            get {
-                return ResourceManager.GetString("Msg_UnexpectedError", resourceCulture);
             }
         }
         

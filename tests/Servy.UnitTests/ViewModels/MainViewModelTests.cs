@@ -787,7 +787,7 @@ namespace Servy.UnitTests.ViewModels
             await _viewModel.LoadServiceConfigurationAsync("ErrorService");
 
             // Assert
-            _messageBoxService.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion

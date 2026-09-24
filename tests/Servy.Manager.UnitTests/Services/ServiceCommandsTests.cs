@@ -719,7 +719,9 @@ namespace Servy.Manager.UnitTests.Services
 
             // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
             Assert.Equal(ServiceStatus.Running, service.Status);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStarted, UiAppConfig.Caption), Times.Once);
+            // Expected text as a literal, not through the accessor: the SUT and this test now read the
+            // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync("Service was started successfully.", UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -759,7 +761,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
             Assert.Equal(ServiceStatus.Stopped, service.Status);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -783,7 +785,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
             Assert.Equal(ServiceStatus.Running, service.Status);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1120,7 +1122,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -1194,7 +1196,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.CopyPidAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -1308,7 +1310,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ExportServiceToJsonAsync(service, TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1443,7 +1445,7 @@ namespace Servy.Manager.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.ConfigureServiceAsync(new Service { Name = "CancelledService" }, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         // Mirror image of the test above, from the same seam: a non-cancellation exception must fall through to
@@ -1460,7 +1462,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ConfigureServiceAsync(new Service { Name = "FaultyService" }, TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1477,7 +1479,7 @@ namespace Servy.Manager.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.InstallServiceAsync(service, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         [Fact]
@@ -1495,7 +1497,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1512,7 +1514,7 @@ namespace Servy.Manager.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.UninstallServiceAsync(service, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         [Fact]
@@ -1530,7 +1532,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1547,7 +1549,7 @@ namespace Servy.Manager.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.RemoveServiceAsync(service, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         [Fact]
@@ -1565,7 +1567,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1581,7 +1583,7 @@ namespace Servy.Manager.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.CopyPidAsync(service, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         [Fact]
@@ -1597,7 +1599,7 @@ namespace Servy.Manager.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.StartServiceAsync(service, showMessageBox: true, cancellationToken: TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         [Fact]
@@ -1615,7 +1617,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1632,7 +1634,7 @@ namespace Servy.Manager.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.ExportServiceToXmlAsync(service, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         [Fact]
@@ -1649,7 +1651,7 @@ namespace Servy.Manager.UnitTests.Services
                 await Assert.ThrowsAsync<OperationCanceledException>(() => sut.ImportJsonConfigAsync(cts.Token));
             }
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             _fileDialogServiceMock.Verify(d => d.OpenJson(It.IsAny<string?>()), Times.Never);
         }
 
@@ -1676,7 +1678,7 @@ namespace Servy.Manager.UnitTests.Services
             }
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             Assert.False(_refreshCalled);
         }

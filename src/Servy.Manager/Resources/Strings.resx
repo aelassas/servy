@@ -323,25 +323,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <!-- Messages -->
-  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
-    <value>Service wrapper executable not found.</value>
-  </data>
 
-  <data name="Msg_ServiceInstalled" xml:space="preserve">
-    <value>Service was installed successfully.</value>
-  </data>
-  <data name="Msg_UnexpectedError" xml:space="preserve">
-    <value>An unexpected error occurred.</value>
-  </data>
-  <data name="Msg_ServiceStarted" xml:space="preserve">
-    <value>Service was started successfully.</value>
-  </data>
-  <data name="Msg_ServiceStopped" xml:space="preserve">
-    <value>Service was stopped successfully.</value>
-  </data>
-  <data name="Msg_ServiceRestarted" xml:space="preserve">
-    <value>Service was restarted successfully.</value>
-  </data>
 
   <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
     <value>Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered.</value>

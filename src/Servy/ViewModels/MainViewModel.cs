@@ -1349,7 +1349,7 @@ namespace Servy.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Error loading configuration for service '{serviceName}'", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
         }
 

@@ -435,28 +435,13 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Browse</value>
   </data>
 
-  <data name="Msg_ServiceInstalled" xml:space="preserve">
-    <value>Service was installed successfully.</value>
-  </data>
   <data name="Msg_ServiceRemoved" xml:space="preserve">
     <value>Service was removed successfully.</value>
-  </data>
-  <data name="Msg_UnexpectedError" xml:space="preserve">
-    <value>An unexpected error occurred.</value>
   </data>
   <data name="Msg_AdminRightsRequired" xml:space="preserve">
     <value>Administrator privileges are required.</value>
   </data>
 
-  <data name="Msg_ServiceStarted" xml:space="preserve">
-    <value>Service was started successfully.</value>
-  </data>
-  <data name="Msg_ServiceStopped" xml:space="preserve">
-    <value>Service was stopped successfully.</value>
-  </data>
-  <data name="Msg_ServiceRestarted" xml:space="preserve">
-    <value>Service was restarted successfully.</value>
-  </data>
 
   <data name="Msg_ManagerAppNotFound" xml:space="preserve">
     <value>Servy Manager was not found.</value>
@@ -533,9 +518,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <!-- Miscellaneous -->
-  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
-    <value>Service wrapper executable not found.</value>
-  </data>
   <data name="Msg_ManagerAppLaunchFailed" xml:space="preserve">
     <value>Failed to launch Servy Manager.</value>
   </data>

@@ -215,7 +215,7 @@ namespace Servy.UnitTests.Services
 
                 // Assert
                 Assert.False(result);
-                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_InvalidWrapperExePath, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, UiAppConfig.Caption), Times.Once);
             }
             finally
             {
@@ -295,7 +295,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.True(result);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -337,7 +337,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == "ExistingServiceToOverwrite"), It.IsAny<CancellationToken>()), Times.Once);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -380,7 +380,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -418,7 +418,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -852,7 +852,7 @@ namespace Servy.UnitTests.Services
             await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -928,7 +928,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -964,7 +964,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -988,7 +988,9 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.True(result);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStarted, UiAppConfig.Caption), Times.Once);
+            // Expected text as a literal, not through the accessor: the SUT and this test now read the
+            // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync("Service was started successfully.", UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -1008,7 +1010,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.True(result);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -1032,7 +1034,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.True(result);
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceDisabledError, UiAppConfig.Caption), Times.Never);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -1129,7 +1131,7 @@ namespace Servy.UnitTests.Services
             await sut.ExportXmlConfigAsync("password", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1279,7 +1281,7 @@ namespace Servy.UnitTests.Services
             await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1341,7 +1343,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1377,7 +1379,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1426,7 +1428,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.True(result);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -1518,7 +1520,7 @@ namespace Servy.UnitTests.Services
             await sut.ExportJsonConfigAsync("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1700,7 +1702,7 @@ namespace Servy.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.InstallServiceAsync(dto, cancellationToken: TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1718,7 +1720,7 @@ namespace Servy.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1737,7 +1739,7 @@ namespace Servy.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1809,7 +1811,7 @@ namespace Servy.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         [Fact]
@@ -1829,7 +1831,7 @@ namespace Servy.UnitTests.Services
             await Assert.ThrowsAsync<OperationCanceledException>(
                 () => sut.ExportXmlConfigAsync("password", cancellationToken: TestContext.Current.CancellationToken));
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -1846,7 +1848,7 @@ namespace Servy.UnitTests.Services
                 await Assert.ThrowsAsync<OperationCanceledException>(
                     () => sut.ImportXmlConfigAsync(cancellationToken: cts.Token));
 
-                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
             }
         }
