@@ -5,7 +5,6 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:resx="clr-namespace:Servy.Manager.Resources"
                                 xmlns:views="clr-namespace:Servy.Manager.Views"
-                                xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
                                 xmlns:core="clr-namespace:Servy.Core.Services;assembly=Servy.Core"
                                 xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
                                 mc:Ignorable="d"
@@ -14,7 +13,7 @@
                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesViewRoot_HelpText}">
 
   <views:ServiceSearchUserControl.Resources>
-    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     <SolidColorBrush x:Key="DependencyCycleBrush" Color="#F39C12" />
     <SolidColorBrush x:Key="DependencyUnavailableBrush" Color="#E67E22" />
   </views:ServiceSearchUserControl.Resources>
@@ -64,7 +63,7 @@
                     VerticalAlignment="Center">
           <Button Style="{StaticResource ToolbarPillButtonStyle}"
                   Command="{Binding RefreshCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
                   ToolTip="{x:Static resx:Strings.Tooltip_Refresh}"
                   AutomationProperties.Name="{x:Static resx:Strings.Button_Refresh}"
                   AutomationProperties.AutomationId="RefreshButton"
@@ -89,7 +88,7 @@
                     VerticalAlignment="Center">
           <Button Style="{StaticResource ToolbarPillButtonStyle}"
                   Command="{Binding ExpandAllCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
                   ToolTip="{x:Static resx:Strings.Tooltip_ExpandAll}"
                   AutomationProperties.Name="{x:Static resx:Strings.Button_ExpandAll}"
                   AutomationProperties.AutomationId="ExpandAllButton"
@@ -105,7 +104,7 @@
                     VerticalAlignment="Center">
           <Button Style="{StaticResource ToolbarPillButtonStyle}"
                   Command="{Binding CollapseAllCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
                   ToolTip="{x:Static resx:Strings.Tooltip_CollapseAll}"
                   AutomationProperties.Name="{x:Static resx:Strings.Button_CollapseAll}"
                   AutomationProperties.AutomationId="CollapseAllButton"

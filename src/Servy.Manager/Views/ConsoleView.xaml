@@ -6,7 +6,6 @@
                                 xmlns:resx="clr-namespace:Servy.Manager.Resources"
                                 xmlns:models="clr-namespace:Servy.Manager.Models"
                                 xmlns:views="clr-namespace:Servy.Manager.Views"
-                                xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
                                 xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
                                 mc:Ignorable="d"
                                 AutomationProperties.Name="{x:Static resx:Strings.Automation_ConsoleViewRoot_Name}"
@@ -14,7 +13,7 @@
                                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConsoleViewRoot_HelpText}">
 
   <views:ServiceSearchUserControl.Resources>
-    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
   </views:ServiceSearchUserControl.Resources>
 
   <Grid>
@@ -60,7 +59,7 @@
                     Orientation="Horizontal"
                     VerticalAlignment="Center">
           <Button Command="{Binding ClearSelectionCommand}"
-                  Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
                   Style="{StaticResource ToolbarPillButtonStyle}"
                   Content="{x:Static resx:Strings.Button_Resume}"
                   ToolTip="{x:Static resx:Strings.Tooltip_Resume}"
