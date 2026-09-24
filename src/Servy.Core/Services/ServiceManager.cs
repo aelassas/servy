@@ -281,7 +281,6 @@ namespace Servy.Core.Services
             cancellationToken.ThrowIfCancellationRequested();
 
             if (options == null) throw new ArgumentNullException(nameof(options));
-            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
             if (string.IsNullOrWhiteSpace(options.ServiceName)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.WrapperExePath)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
@@ -710,7 +709,6 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
-            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot uninstall service without a repository.");
             if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
 
             SafeScmHandle? scmHandle = null;
@@ -842,8 +840,6 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default)
         {
-            if (_serviceRepository == null)
-                throw new InvalidOperationException("Service repository is not initialized. Cannot start service without a repository.");
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("service name cannot be null or whitespace.", nameof(serviceName));
 
@@ -897,8 +893,6 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true, CancellationToken cancellationToken = default)
         {
-            if (_serviceRepository == null)
-                throw new InvalidOperationException("Service repository is not initialized. Cannot stop service without a repository.");
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("service name cannot be null or whitespace.", nameof(serviceName));
 
