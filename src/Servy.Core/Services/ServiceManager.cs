@@ -27,9 +27,9 @@ namespace Servy.Core.Services
     /// </summary>
     /// <remarks>
     /// Architectural Intent:
-    /// Leaving these domains combined ensures strict atomic synchronization between the operating system's native
-    /// configuration states and the internal repository storage engine. This consolidation eliminates cross-process race
-    /// conditions and transactional state drift during high-contention service installation, modification, and uninstallation.
+    /// Keeping these domains together puts every SCM mutation and its matching repository write in one method, so a
+    /// partial failure between the two is detected and reported in place (see the state-drift errors InstallServiceAsync
+    /// raises) instead of being left for the caller to reconcile. It does not make the two stores transactional.
     /// </remarks>
     public class ServiceManager : IServiceManager
     {
