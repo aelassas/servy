@@ -36,7 +36,7 @@ namespace Servy.Core.UnitTests.DTOs
             };
 
             // Act
-            var clone = (ServiceConsoleStateDto)original.Clone();
+            var clone = original.Clone();
 
             // Assert
             Assert.NotSame(original, clone); // Verify it's a different instance
@@ -58,13 +58,35 @@ namespace Servy.Core.UnitTests.DTOs
             };
 
             // Act
-            var clone = (ServiceConsoleStateDto)original.Clone();
+            var clone = original.Clone();
 
             // Assert
             Assert.NotSame(original, clone);
             Assert.Equal(4321, clone.Pid);
             Assert.Null(clone.ActiveStdoutPath);
             Assert.Null(clone.ActiveStderrPath);
+        }
+
+        [Fact]
+        public void ICloneableClone_ShouldReturnIndependentCopyOfSameType()
+        {
+            // Arrange
+            var original = new ServiceConsoleStateDto
+            {
+                Pid = 777,
+                ActiveStdoutPath = "out.log",
+                ActiveStderrPath = "err.log"
+            };
+
+            // Act - go through the explicit interface member, which the typed Clone() overload hides.
+            var clone = ((ICloneable)original).Clone();
+
+            // Assert
+            var typed = Assert.IsType<ServiceConsoleStateDto>(clone);
+            Assert.NotSame(original, typed);
+            Assert.Equal(777, typed.Pid);
+            Assert.Equal("out.log", typed.ActiveStdoutPath);
+            Assert.Equal("err.log", typed.ActiveStderrPath);
         }
     }
 }
