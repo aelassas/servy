@@ -142,15 +142,6 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service configuration was saved, but installation failed for service &apos;{0}&apos;..
-        /// </summary>
-        public static string Msg_ImportInstallGeneralFailure {
-            get {
-                return ResourceManager.GetString("Msg_ImportInstallGeneralFailure", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Service configuration was saved, but the service &apos;{0}&apos; could not be located for installation..
         /// </summary>
         public static string Msg_ImportInstallLookupFailure {

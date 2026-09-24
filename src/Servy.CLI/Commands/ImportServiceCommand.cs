@@ -1,4 +1,5 @@
 using Servy.CLI.Enums;
+using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -277,11 +278,8 @@ namespace Servy.CLI.Commands
                 return CommandResult.Ok(string.Format(Strings.Msg_ImportInstallSuccess, format, serviceName));
             }
 
-            // Log the domain-specific error message
             Logger.Error($"Installation failed for {serviceName}: {res.ErrorMessage}");
-
-            // Return the specific error from the domain logic, or a localized general failure
-            return CommandResult.Fail(res.ErrorMessage ?? string.Format(Strings.Msg_ImportInstallGeneralFailure, serviceName));
+            return res.ToFailure();
         }
 
     }

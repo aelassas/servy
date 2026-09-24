@@ -52,9 +52,6 @@
   <data name="Msg_ImportInstallLookupFailure" xml:space="preserve">
     <value>Service configuration was saved, but the service '{0}' could not be located for installation.</value>
   </data>
-  <data name="Msg_ImportInstallGeneralFailure" xml:space="preserve">
-    <value>Service configuration was saved, but installation failed for service '{0}'.</value>
-  </data>
   <data name="Msg_ExportSuccess" xml:space="preserve">
     <value>{0} configuration exported successfully to: {1}</value>
   </data>
