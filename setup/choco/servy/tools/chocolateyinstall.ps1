@@ -8,7 +8,7 @@ $installerType = 'exe'
 $checksumType  = 'sha256'
 $silentArgs    = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL'
 
-$url64          = 'https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-x64-installer.exe'
+$url64         = 'https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-x64-installer.exe'
 $checksum64    = 'C323AF186B5FF36380FBE3EE49622F224218BCAFC5F3997CCC494C72D553385C'
 
 $urlArm64      = 'https://github.com/aelassas/servy/releases/download/v10.1/servy-10.1-arm64-installer.exe'
