@@ -71,13 +71,20 @@ jobs:
           $maxBytes = 400 * 1024 # Target ~400 KB cutoff threshold per file
 
           Write-Host "Fetching releases for $repo..."
-          # Use --slurp to combine paginated responses into a single JSON array,
-          # preventing 'ConvertFrom-Json' from failing on concatenated array fragments.
-          $rawJson = gh api repos/$repo/releases --paginate --slurp
-          if ($LASTEXITCODE -ne 0) {
-              throw 'gh api releases failed (exit ' + $LASTEXITCODE + '). Aborting changelog update.'
+          $maxRetries = [int]$env:MAX_RETRIES
+          $rawJson = $null
+          for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+              # Use --slurp to combine paginated responses into a single JSON array,
+              # preventing 'ConvertFrom-Json' from failing on concatenated array fragments.
+              $rawJson = gh api repos/$repo/releases --paginate --slurp
+              if ($LASTEXITCODE -eq 0) { break }
+              if ($attempt -eq $maxRetries) {
+                  throw 'gh api releases failed (exit ' + $LASTEXITCODE + ') after ' + $maxRetries + ' attempts. Aborting changelog update.'
+              }
+              Write-Host "gh api releases failed (attempt $attempt/$maxRetries), retrying..."
+              Start-Sleep -Seconds ([math]::Pow(2, $attempt))
           }
-
+          
           # ROBUSTNESS: Flatten the slurped array-of-arrays into a single stream of release objects
           $deserializedJson = $rawJson | ConvertFrom-Json | ForEach-Object { $_ }
           $releases = @($deserializedJson | Where-Object { $_.draft -eq $false })
