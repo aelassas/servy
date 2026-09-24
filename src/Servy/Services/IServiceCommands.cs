@@ -1,6 +1,6 @@
 using Servy.Core.DTOs;
 using Servy.Core.Services;
-using Servy.Validation;
+using Servy.UI.Validation;
 
 namespace Servy.Services
 {

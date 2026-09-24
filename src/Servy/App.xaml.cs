@@ -10,8 +10,8 @@ using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Bootstrapping;
 using Servy.UI.Services;
+using Servy.UI.Validation;
 using Servy.UI.Views;
-using Servy.Validation;
 using Servy.ViewModels;
 using Servy.Views;
 using System.ComponentModel;
@@ -173,7 +173,7 @@ namespace Servy
                     var messageBoxService = new MessageBoxService(uiDispatcher);
                     var helpService = new HelpService(messageBoxService);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
-                    var configValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);
+                    var configValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules, UiAppConfig.Caption);
 
                     // 3. Resolve Circular Dependency using Proxies
                     MainViewModel? viewModel = null;

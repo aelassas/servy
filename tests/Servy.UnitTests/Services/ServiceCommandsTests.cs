@@ -9,7 +9,7 @@ using Servy.Core.Services;
 using Servy.Services;
 using Servy.Testing;
 using Servy.UI.Services;
-using Servy.Validation;
+using Servy.UI.Validation;
 using System.Diagnostics;
 
 namespace Servy.UnitTests.Services

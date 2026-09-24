@@ -1,10 +1,11 @@
 using Moq;
+using Servy.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Validation;
 using Servy.UI.Services;
-using Servy.Validation;
+using Servy.UI.Validation;
 
 namespace Servy.UnitTests.Validation
 {
@@ -20,7 +21,7 @@ namespace Servy.UnitTests.Validation
             _mockMessageBox = new Mock<IMessageBoxService>();
             _mockProcessHelper = new Mock<IProcessHelper>();
             _validationRules = new ServiceValidationRules(_mockProcessHelper.Object);
-            _validator = new ServiceConfigurationValidator(_mockMessageBox.Object, _validationRules);
+            _validator = new ServiceConfigurationValidator(_mockMessageBox.Object, _validationRules, UiAppConfig.Caption);
         }
 
         #region Constructor Guard Tests
@@ -30,7 +31,7 @@ namespace Servy.UnitTests.Validation
         {
             // Act
             var ex = Assert.Throws<ArgumentNullException>(() =>
-                new ServiceConfigurationValidator(null!, _validationRules));
+                new ServiceConfigurationValidator(null!, _validationRules, UiAppConfig.Caption));
 
             // Assert
             Assert.Equal("messageBoxService", ex.ParamName);
@@ -41,10 +42,41 @@ namespace Servy.UnitTests.Validation
         {
             // Act
             var ex = Assert.Throws<ArgumentNullException>(() =>
-                new ServiceConfigurationValidator(_mockMessageBox.Object, null!));
+                new ServiceConfigurationValidator(_mockMessageBox.Object, null!, UiAppConfig.Caption));
 
             // Assert
             Assert.Equal("serviceValidationRules", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullCaption_ThrowsArgumentNullExceptionWithParamName()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new ServiceConfigurationValidator(_mockMessageBox.Object, _validationRules, null!));
+
+            // Assert
+            Assert.Equal("caption", ex.ParamName);
+        }
+
+        #endregion
+
+        #region Caption Tests
+
+        [Fact]
+        public async Task ValidateAsync_ValidationFails_ShowsErrorWithThisApplicationsCaption()
+        {
+            // Arrange
+            // The validator is shared with Servy Manager; the caption is the only per-application
+            // value, so it is asserted here rather than left to It.IsAny<string>().
+            var dto = new ServiceDto { Name = string.Empty };
+
+            // Act
+            var result = await _validator.ValidateAsync(dto, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
