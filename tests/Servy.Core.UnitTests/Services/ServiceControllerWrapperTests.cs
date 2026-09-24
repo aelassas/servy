@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
 using Xunit;
@@ -68,6 +69,41 @@ namespace Servy.Core.UnitTests.Services
             // using block safe.
             Assert.Null(ex);
             Assert.Throws<ObjectDisposedException>(() => wrapper.ServiceName);
+        }
+
+        [Fact]
+        public void Dispose_FirstInvocation_ReleasesInnerController()
+        {
+            // Arrange
+            var wrapper = new ServiceControllerWrapper(StandardTestService);
+            var inner = GetInnerController(wrapper);
+            var disposedCount = 0;
+            inner.Disposed += (sender, args) => disposedCount++;
+
+            // Act
+            wrapper.Dispose();
+
+            // Assert: the wrapper owns the inner ServiceController, so disposing it must release
+            // that controller exactly once.
+            Assert.Equal(1, disposedCount);
+        }
+
+        [Fact]
+        public void Dispose_CalledTwice_DoesNotReleaseInnerControllerAgain()
+        {
+            // Arrange
+            var wrapper = new ServiceControllerWrapper(StandardTestService);
+            var inner = GetInnerController(wrapper);
+            var disposedCount = 0;
+            inner.Disposed += (sender, args) => disposedCount++;
+            wrapper.Dispose();
+
+            // Act
+            wrapper.Dispose();
+
+            // Assert: the _disposed guard takes the early-return branch, so the inner controller's
+            // own Dispose() never runs a second time.
+            Assert.Equal(1, disposedCount);
         }
 
         #endregion
@@ -508,6 +544,17 @@ namespace Servy.Core.UnitTests.Services
         #endregion
 
         #region Test Helpers
+
+        private static ServiceController GetInnerController(ServiceControllerWrapper wrapper)
+        {
+            var field = typeof(ServiceControllerWrapper).GetField("_controller", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(field);
+
+            var inner = field.GetValue(wrapper) as ServiceController;
+            Assert.NotNull(inner);
+
+            return inner;
+        }
 
         private static Mock<IServiceControllerWrapper> CreateMockWrapper(
             string serviceName,
