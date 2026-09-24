@@ -1,6 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.Native;
+using Servy.Core.Services;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -10,21 +11,21 @@ using System.Threading;
 namespace Servy.Restarter
 {
     /// <summary>
-    /// Implements service restart functionality using <see cref="IServiceController"/> abstraction.
+    /// Implements service restart functionality using <see cref="IServiceControllerWrapper"/> abstraction.
     /// </summary>
     public class ServiceRestarter : IServiceRestarter
     {
-        private readonly Func<string, IServiceController> _controllerFactory;
+        private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
         private readonly IServyLogger _logger;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ServiceRestarter"/>.
         /// </summary>
-        /// <param name="controllerFactory">Factory method to create <see cref="IServiceController"/> instances for a service name.</param>
+        /// <param name="controllerFactory">Factory method to create <see cref="IServiceControllerWrapper"/> instances for a service name.</param>
         /// <param name="logger">Optional logger instance for operational telemetry and diagnostic auditing.</param>
-        public ServiceRestarter(Func<string, IServiceController> controllerFactory = null, IServyLogger logger = null)
+        public ServiceRestarter(Func<string, IServiceControllerWrapper> controllerFactory = null, IServyLogger logger = null)
         {
-            _controllerFactory = controllerFactory ?? (name => new ServiceController(name));
+            _controllerFactory = controllerFactory ?? (name => new ServiceControllerWrapper(name));
             _logger = logger;
         }
 
@@ -264,7 +265,7 @@ namespace Servy.Restarter
         /// a status check and a command execution.
         /// </summary>
         /// <param name="serviceName">Windows Service name.</param>
-        /// <param name="controller">The <see cref="IServiceController"/> instance to manage.</param>
+        /// <param name="controller">The <see cref="IServiceControllerWrapper"/> instance to manage.</param>
         /// <param name="targetStatus">The desired <see cref="ServiceControllerStatus"/> (typically Running or Stopped).</param>
         /// <param name="timeout">The maximum <see cref="TimeSpan"/> allowed for the entire recovery operation.</param>
         /// <returns>
@@ -276,13 +277,13 @@ namespace Servy.Restarter
         /// before the <paramref name="timeout"/> expires.
         /// </exception>
         /// <remarks>
-        /// This method uses an interrogation loop with <see cref="IServiceController.Refresh"/>
+        /// This method uses an interrogation loop with <see cref="IServiceControllerWrapper.Refresh"/>
         /// to wait out the <see cref="InvalidOperationException"/>, <see cref="Win32Exception"/>
         /// and <see cref="System.ServiceProcess.TimeoutException"/> errors raised while the Windows SCM
         /// holds the service in a state transition. A re-probe after each failure distinguishes a service
         /// that is still transitioning from one that has been uninstalled.
         /// </remarks>
-        private RestartResult? HandleTransitionalError(string serviceName, IServiceController controller, ServiceControllerStatus targetStatus, TimeSpan timeout)
+        private RestartResult? HandleTransitionalError(string serviceName, IServiceControllerWrapper controller, ServiceControllerStatus targetStatus, TimeSpan timeout)
         {
             var stopwatch = Stopwatch.StartNew();
             _logger?.Debug($"Entering transitional recovery loop for service '{serviceName}' targeting state '{targetStatus}'.");

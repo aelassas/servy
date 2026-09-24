@@ -125,7 +125,6 @@
   <ItemGroup>
     <Compile Include="ProgramTests.cs" />
     <Compile Include="ProgramTestsCollection.cs" />
-    <Compile Include="ServiceControllerTests.cs" />
     <Compile Include="ServiceRestarterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

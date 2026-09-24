@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Native;
+using Servy.Core.Services;
 using Servy.Testing;
 using System;
 using System.ComponentModel;
@@ -11,12 +12,12 @@ namespace Servy.Restarter.UnitTests
 {
     public class ServiceRestarterTests
     {
-        private readonly Mock<IServiceController> _mockController;
+        private readonly Mock<IServiceControllerWrapper> _mockController;
         private readonly ServiceRestarter _restarter;
 
         public ServiceRestarterTests()
         {
-            _mockController = new Mock<IServiceController>();
+            _mockController = new Mock<IServiceControllerWrapper>();
             // Inject factory returning the mock controller
             _restarter = new ServiceRestarter(name => _mockController.Object);
         }
