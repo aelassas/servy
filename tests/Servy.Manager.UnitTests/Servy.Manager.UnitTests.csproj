@@ -153,7 +153,6 @@
     <Compile Include="Utils\HistoryResultTests.cs" />
     <Compile Include="Utils\LogTailerTests.cs" />
     <Compile Include="Utils\UiTaskRunnerTests.cs" />
-    <Compile Include="Validation\ServiceConfigurationValidatorTests.cs" />
     <Compile Include="ViewModels\ConsoleViewModelTests.cs" />
     <Compile Include="ViewModels\DependenciesViewModelTests.cs" />
     <Compile Include="ViewModels\LogsViewModelTests.cs" />
