@@ -267,50 +267,52 @@ jobs:
                       $sectionEndTag = "EndProjectSection"
 
                       $secStartIdx = $slnContent.IndexOf($sectionStartTag, $headerIdx)
-                      $secEndIdx = $slnContent.IndexOf($sectionEndTag, $secStartIdx)
+                      if ($secStartIdx -gt -1) {
+                          $secEndIdx = $slnContent.IndexOf($sectionEndTag, $secStartIdx)
 
-                      if ($secStartIdx -gt -1 -and $secEndIdx -gt $secStartIdx) {
-                          $beforeSection = $slnContent.Substring(0, $secStartIdx + $sectionStartTag.Length)
-                          $sectionBody = $slnContent.Substring($secStartIdx + $sectionStartTag.Length, $secEndIdx - ($secStartIdx + $sectionStartTag.Length))
-                          $afterSection = $slnContent.Substring($secEndIdx)
+                          if ($secEndIdx -gt $secStartIdx) {
+                              $beforeSection = $slnContent.Substring(0, $secStartIdx + $sectionStartTag.Length)
+                              $sectionBody = $slnContent.Substring($secStartIdx + $sectionStartTag.Length, $secEndIdx - ($secStartIdx + $sectionStartTag.Length))
+                              $afterSection = $slnContent.Substring($secEndIdx)
 
-                          # Split lines preserving exact line endings (\r\n or \n)
-                          $newline = if ($slnContent.Contains("`r`n")) { "`r`n" } else { "`n" }
-                          $lines =$sectionBody -split "`r?\n"
+                              # Split lines preserving exact line endings (\r\n or \n)
+                              $newline = if ($slnContent.Contains("`r`n")) { "`r`n" } else { "`n" }
+                              $lines =$sectionBody -split "`r?\n"
 
-                          # Filter out existing CHANGELOG-*.md entries
-                          $filteredLines = [System.Collections.Generic.List[string]]::new()
-                          foreach ($line in $lines) {
-                              if ($line -notmatch '^\s*CHANGELOG-.*\.md\s*=\s*CHANGELOG-.*\.md\s*$') {
-                                  $filteredLines.Add($line)
+                              # Filter out existing CHANGELOG-*.md entries
+                              $filteredLines = [System.Collections.Generic.List[string]]::new()
+                              foreach ($line in $lines) {
+                                  if ($line -notmatch '^\s*CHANGELOG-.*\.md\s*=\s*CHANGELOG-.*\.md\s*$') {
+                                      $filteredLines.Add($line)
+                                  }
                               }
-                          }
 
-                          # Construct new solution item lines for all generated archive files
-                          $newArchiveLines = [System.Collections.Generic.List[string]]::new()
-                          foreach ($archiveFile in ($archiveFileNames | Sort-Object)) {
-                              $newArchiveLines.Add("`t`t$archiveFile = $archiveFile")
-                          }
+                              # Construct new solution item lines for all generated archive files
+                              $newArchiveLines = [System.Collections.Generic.List[string]]::new()
+                              foreach ($archiveFile in ($archiveFileNames | Sort-Object)) {
+                                  $newArchiveLines.Add("`t`t$archiveFile = $archiveFile")
+                              }
 
-                          # Merge and sort solution item lines alphabetically to maintain sln format conventions
-                          $itemLines = [System.Collections.Generic.List[string]]::new()
-                          foreach ($line in $filteredLines) {
-                              if ($line -match '^\s*([^\s=]+)\s*=') {
+                              # Merge and sort solution item lines alphabetically to maintain sln format conventions
+                              $itemLines = [System.Collections.Generic.List[string]]::new()
+                              foreach ($line in $filteredLines) {
+                                  if ($line -match '^\s*([^\s=]+)\s*=') {
+                                      $itemLines.Add($line)
+                                  }
+                              }
+                              foreach ($line in $newArchiveLines) {
                                   $itemLines.Add($line)
                               }
-                          }
-                          foreach ($line in $newArchiveLines) {
-                              $itemLines.Add($line)
-                          }
 
-                          # Sort items based on the key/filename
-                          $sortedItems = $itemLines | Sort-Object -Property {
-                              if ($_ -match '^\s*([^\s=]+)\s*=') { $matches[1] } else { $_ }
-                          }
+                              # Sort items based on the key/filename
+                              $sortedItems = $itemLines | Sort-Object -Property {
+                                  if ($_ -match '^\s*([^\s=]+)\s*=') { $matches[1] } else { $_ }
+                              }
 
-                          $newSectionBody = $newline + ($sortedItems -join $newline) + $newline + "`t"
-                          $updatedSln =$beforeSection + $newSectionBody +$afterSection
-                          [System.IO.File]::WriteAllText($slnPath, $updatedSln,$utf8NoBom)
+                              $newSectionBody = $newline + ($sortedItems -join $newline) + $newline + "`t"
+                              $updatedSln =$beforeSection + $newSectionBody +$afterSection
+                              [System.IO.File]::WriteAllText($slnPath, $updatedSln,$utf8NoBom)
+                          }
                       }
                   }
               }
