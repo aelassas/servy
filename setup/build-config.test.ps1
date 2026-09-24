@@ -132,7 +132,7 @@ try {
     }
 
     # Tfm has the same single-source contract as Version, kept the other way round: every
-    # publishing script defaults -Tfm to the empty string and resolves it from this file, so the
+    # publishing script either resolves -Tfm from this file or requires it from its caller, so the
     # moniker is written here and nowhere else. A literal put back into one of them re-creates the
     # drift that only bump-runtime.ps1's blanket rewrite used to repair.
 
