@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Native;
+using Servy.Core.Services;
 using Servy.Testing;
 using System.ComponentModel;
 using System.ServiceProcess;
@@ -8,12 +9,12 @@ namespace Servy.Restarter.UnitTests
 {
     public class ServiceRestarterTests
     {
-        private readonly Mock<IServiceController> _mockController;
+        private readonly Mock<IServiceControllerWrapper> _mockController;
         private readonly ServiceRestarter _restarter;
 
         public ServiceRestarterTests()
         {
-            _mockController = new Mock<IServiceController>();
+            _mockController = new Mock<IServiceControllerWrapper>();
             // Inject factory returning the mock controller
             _restarter = new ServiceRestarter(name => _mockController.Object);
         }
@@ -804,8 +805,8 @@ namespace Servy.Restarter.UnitTests
             _mockController.SetupSequence(c => c.Refresh())
                 .Throws(probeException) // Recovery poll 1: drives the transitional catch
                 .Throws(probeException) // Re-probe inside that catch: not gone, so the loop must go on
-                .Pass()                 // Recovery poll 2
-                .Pass();                // Start-phase refresh
+                .Pass()                  // Recovery poll 2
+                .Pass();                 // Start-phase refresh
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
