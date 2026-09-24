@@ -186,6 +186,14 @@ namespace Servy.CLI.Commands
         /// <summary>
         /// Core logic for processing service imports across different formats.
         /// </summary>
+        /// <param name="opts">Import service options; <see cref="ImportServiceOptions.InstallService"/> decides whether step 5 runs.</param>
+        /// <param name="content">The raw configuration file content, already read and size-checked by the caller.</param>
+        /// <param name="formatName">The format label used in messages ("XML" or "JSON").</param>
+        /// <param name="validator">Format-specific validation; returns whether <paramref name="content"/> is valid and the error text when it is not.</param>
+        /// <param name="repoImporter">Persists the deserialized DTO and returns the number of affected rows.</param>
+        /// <param name="deserializer">Format-specific deserializer; returns <c>null</c> when <paramref name="content"/> cannot be materialized.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A <see cref="CommandResult"/> indicating success or the first failing step.</returns>
         private async Task<CommandResult> ProcessImportInternalAsync(
              ImportServiceOptions opts,
              string content,
