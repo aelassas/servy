@@ -2805,6 +2805,50 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task StartService_ShouldReturnFailure_WhenServiceNeverReachesRunning()
+        {
+            // Arrange
+            var serviceName = "TestService";
+
+            // The service accepts Start but never leaves StartPending, so the wait loop runs to the
+            // end of its budget. With no StartTimeout configured that budget is
+            // CalculateStartTimeout(null, 0, 0) - the start floor plus the SCM buffer - polled every
+            // 500 ms: like its uninstall-timeout sibling this test really waits rather than mocking
+            // time, which is the only way to reach the arm from outside the class.
+            var expectedTimeout = ServiceHelper.CalculateStartTimeout(null, 0, 0);
+
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StartPending);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = serviceName });
+
+            // Act
+            var result = await _serviceManager.StartServiceAsync(serviceName, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains($"did not reach 'Running' status within the {expectedTimeout}s timeout", result.ErrorMessage);
+
+            // The command was issued: the failure is the deadline expiring, not a skipped Start
+            _mockController.Verify(c => c.Start(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StartService_ShouldRethrow_WhenTokenIsAlreadyCancelled()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act & Assert
+                // The cancellation arm rethrows; the generic catch below it would have converted the
+                // cancellation into a Failure result instead.
+                await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                    _serviceManager.StartServiceAsync("TestService", cancellationToken: cts.Token));
+            }
+        }
+
+        [Fact]
         public async Task StopService_ShouldReturnTrue_WhenAlreadyStopped()
         {
             // Arrange
@@ -2896,6 +2940,48 @@ namespace Servy.Core.UnitTests.Services
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.StopServiceAsync(serviceName, cancellationToken: CancellationToken.None));
             Assert.Equal("serviceName", exception.ParamName);
+        }
+
+        [Fact]
+        public async Task StopService_ShouldReturnFailure_WhenServiceNeverStops()
+        {
+            // Arrange
+            var serviceName = "TestService";
+
+            // The service accepts Stop but stays Running, so the wait loop runs to the end of its
+            // budget - CalculateStopTimeout(null, null, 0), the stop floor plus the SCM buffer -
+            // polled every 500 ms. The same real-wait tradeoff as the start-timeout sibling above.
+            var expectedTimeout = ServiceHelper.CalculateStopTimeout(null, null, 0);
+
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = serviceName });
+
+            // Act
+            var result = await _serviceManager.StopServiceAsync(serviceName, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains($"did not stop within {expectedTimeout} seconds", result.ErrorMessage);
+
+            // The command was issued: the failure is the deadline expiring, not a skipped Stop
+            _mockController.Verify(c => c.Stop(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopService_ShouldRethrow_WhenTokenIsAlreadyCancelled()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act & Assert
+                // The cancellation arm rethrows; the generic catch below it would have converted the
+                // cancellation into a Failure result instead.
+                await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                    _serviceManager.StopServiceAsync("TestService", cancellationToken: cts.Token));
+            }
         }
 
         [Fact]

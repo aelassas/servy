@@ -171,6 +171,7 @@
     <Compile Include="Services\ServiceDependencyNodeTests.cs" />
     <Compile Include="Services\ServiceExporterTests.cs" />
     <Compile Include="Services\ServiceManagerTests.cs" />
+    <Compile Include="Services\ServiceManagerDiagnosticsTests.cs" />
     <Compile Include="Services\ServiceManagerStartTimeoutTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />
