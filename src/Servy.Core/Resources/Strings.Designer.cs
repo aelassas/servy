@@ -268,7 +268,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Environment variable key cannot be empty..
+        ///   Looks up a localized string similar to Environment variable key cannot be empty (record {0})..
         /// </summary>
         public static string Msg_EnvironmentVariableKeyEmpty {
             get {
@@ -286,7 +286,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Each environment variable must contain an unescaped &apos;=&apos; character to separate the key from the value..
+        ///   Looks up a localized string similar to Each environment variable must contain an unescaped &apos;=&apos; character to separate the key from the value (record {0})..
         /// </summary>
         public static string Msg_EnvironmentVariableMissingEquals {
             get {

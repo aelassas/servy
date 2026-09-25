@@ -244,19 +244,19 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Act & Assert
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
-            Assert.Contains(Strings.Msg_EnvironmentVariableKeyEmpty, ex.Message);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableKeyEmpty, 1), ex.Message);
         }
 
         [Theory]
-        [InlineData(@"KEY\=NOEQUAL")]
-        [InlineData(@"KEY\\\=NOEQUAL")]
-        public void Parse_NoUnescapedEquals_ThrowsFormatException(string input)
+        [InlineData(@"KEY\=NOEQUAL", 1)]
+        [InlineData(@"KEY\\\=NOEQUAL", 1)]
+        public void Parse_NoUnescapedEquals_ThrowsFormatException(string input, int recordPosition)
         {
             // Arrange & Act
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert
-            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, ex.Message);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, recordPosition), ex.Message);
         }
 
         [Theory]
@@ -358,17 +358,16 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Theory]
-        [InlineData("KEY=Line1\nLine2")]
-        [InlineData("KEY=Line1\rLine2")]
-        [InlineData("KEY=Line1\r\nLine2")]
-        public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input)
+        [InlineData("KEY=Line1\nLine2", 2)]
+        [InlineData("KEY=Line1\rLine2", 2)]
+        [InlineData("KEY=Line1\r\nLine2", 3)]
+        public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input, int recordPosition)
         {
             // Act & Assert
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert - the message describes the missing '=' without echoing raw values
-            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, ex.Message);
-            Assert.Contains("(record ", ex.Message);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, recordPosition), ex.Message);
             Assert.DoesNotContain("Line2", ex.Message);
         }
 
