@@ -1,7 +1,6 @@
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
