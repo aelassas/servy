@@ -137,7 +137,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.False(result);
-            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
+            Assert.Contains(error, e => e.Contains(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 1)));
         }
 
         [Fact]
@@ -151,7 +151,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.False(result);
-            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableKeyEmpty));
+            Assert.Contains(error, e => e.Contains(string.Format(Strings.Msg_EnvironmentVariableKeyEmpty, 1)));
         }
 
         [Fact]
@@ -195,7 +195,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.False(result);
-            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
+            Assert.Contains(error, e => e.Contains(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 1)));
         }
 
         [Fact]
@@ -209,7 +209,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.False(result);
-            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableKeyEmpty));
+            Assert.Contains(error, e => e.Contains(string.Format(Strings.Msg_EnvironmentVariableKeyEmpty, 1)));
         }
 
         [Fact]
@@ -259,7 +259,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Assert
             Assert.False(isValid);
             Assert.Single(errorMessages);
-            Assert.Contains(errorMessages, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
+            Assert.Contains(errorMessages, e => e.Contains(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 2)));
         }
 
         [Fact]
@@ -275,6 +275,22 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.False(isValid);
             Assert.NotEmpty(errorMessages);
             Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, "KEY"), errorMessages[0]);
+        }
+
+        [Fact]
+        public void Validate_MissingEquals_FormatsTheRecordPositionIntoTheMessage()
+        {
+            // Arrange
+            var input = "A=1;NOEQUALS";
+
+            // Act
+            var valid = EnvironmentVariablesValidator.Validate(input, out var errors);
+
+            // Assert
+            Assert.False(valid);
+            var error = Assert.Single(errors);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 2), error);
+            Assert.DoesNotContain("{0}", error);
         }
 
         #region Key Formatting and Security Robustness Rule Tests
