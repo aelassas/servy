@@ -324,7 +324,7 @@ jobs:
           # Create the directory just in case
           mkdir -p ~/.gnupg
 
-          # Use gpg --batch to skip interactive prompts, and try a secondary, robust keyserver
+          # Use gpg --batch to skip interactive prompts and fetch the key from keyserver.ubuntu.com
           gpg --batch --keyserver hkps://keyserver.ubuntu.com --recv-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
 
           # Verify the import

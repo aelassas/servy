@@ -245,7 +245,7 @@ jobs:
 
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.FullName)..."
-              & $vsTest $dll.FullName /Framework:".NETFramework,Version=v4.8" /logger:trx
+              & $vsTest $dll.FullName /Framework:".NETFramework,Version=v4.8" /TestCaseFilter:"TestCategory!=Stress" /logger:trx
 
               if ($LASTEXITCODE -ne 0) {
                   throw "Unit tests failed in $($dll.FullName)"

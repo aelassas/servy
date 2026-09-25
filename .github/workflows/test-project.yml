@@ -75,15 +75,19 @@ jobs:
 
           Write-Host "Searching for project matching: '$inputName' under ./tests..." -ForegroundColor Cyan
 
-          # Locate project file under ./tests/
-          $projectFile = Get-ChildItem -Path "$env:GITHUB_WORKSPACE/tests" -Recurse -Filter "*$inputName*" |
-            Where-Object { $_.Extension -eq '.csproj' } |
-            Select-Object -First 1
+          $leaf = Split-Path -Leaf $inputName          # accepts a bare filename or a path
+          if ($leaf -notlike '*.csproj') { $leaf = "$leaf.csproj" }
 
-          if (-not $projectFile) {
-              Write-Host "::error::Could not locate project file matching '$inputName' inside ./tests/."
+          $matches = @(Get-ChildItem -Path "$env:GITHUB_WORKSPACE/tests" -Recurse -Filter $leaf)
+          if ($matches.Count -eq 0) {
+              Write-Host "::error::No project named '$leaf' under ./tests/."
               exit 1
           }
+          if ($matches.Count -gt 1) {
+              Write-Host "::error::'$leaf' matches $($matches.Count) projects: $($matches.FullName -join ', ')"
+              exit 1
+          }
+          $projectFile = $matches[0]
 
           $projName = $projectFile.BaseName
           $vsTest = $env:VSTEST_PATH
