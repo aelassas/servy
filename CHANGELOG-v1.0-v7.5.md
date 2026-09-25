@@ -736,8 +736,8 @@ Compare changes: https://github.com/aelassas/servy/compare/v4.4...v4.5
 
 **Date:** 2026-01-01 | **Tag:** [`v4.4`](https://github.com/aelassas/servy/tree/v4.4)
 
-* chore(desktopapp): improve service logon information text
-* chore(desktopapp): remove unused `System.ServiceProcess.ServiceController` reference
+* chore(desktop): improve service logon information text
+* chore(desktop): remove unused `System.ServiceProcess.ServiceController` reference
 * chore(cli): improve service user install command help text
 * test(tests): add missing unit tests to achieve 100% code coverage
 * ci(net48): fix publish and test workflows
