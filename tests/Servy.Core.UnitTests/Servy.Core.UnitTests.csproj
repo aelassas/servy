@@ -170,6 +170,7 @@
     <Compile Include="Services\ServiceControllerWrapperTests.cs" />
     <Compile Include="Services\ServiceDependencyNodeTests.cs" />
     <Compile Include="Services\ServiceExporterTests.cs" />
+    <Compile Include="Services\FakeServiceHandles.cs" />
     <Compile Include="Services\ServiceManagerTests.cs" />
     <Compile Include="Services\ServiceManagerDiagnosticsTests.cs" />
     <Compile Include="Services\ServiceManagerStartTimeoutTests.cs" />
