@@ -93,7 +93,7 @@ namespace Servy.UI.UnitTests.Design
             Assert.True((await manager.RestartServiceAsync("test", cancellationToken: ct)).IsSuccess);
 
             // Act & Assert - Status branches
-            Assert.Equal(ServiceControllerStatus.Stopped, manager.GetServiceStatus("test", cancellationToken: ct));
+            Assert.Null(manager.GetServiceStatus("test", cancellationToken: ct));
             Assert.False(manager.IsServiceInstalled("test", ct));
             Assert.Equal(ServiceStartType.Manual, manager.GetServiceStartupType("test", cancellationToken: ct));
 

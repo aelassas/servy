@@ -101,8 +101,13 @@ namespace Servy.UI.Design
         public Task<OperationResult> RestartServiceAsync(string? serviceName, bool logSuccessfulRestart = true, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
+        /// <summary>
+        /// Returns null to agree with <see cref="IsServiceInstalled"/> and <see cref="GetAllServices"/>:
+        /// a non-null status is the real implementation's signal that the service is present, so
+        /// returning one here would preview a state the SCM cannot be in.
+        /// </summary>
         public ServiceControllerStatus? GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default)
-            => ServiceControllerStatus.Stopped;
+            => null;
 
         public bool IsServiceInstalled(string? serviceName, CancellationToken cancellationToken = default) => false;
 
