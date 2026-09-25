@@ -382,6 +382,17 @@ namespace Servy.Core.UnitTests.Services
         }
 
         /// <summary>
+        /// Replaces the manager's clock and poll delay with a virtual clock that advances by the requested
+        /// delay on every poll, so a WaitForStatusAsync budget is walked in full without spending wall-clock.
+        /// </summary>
+        private static void UseVirtualClock(ServiceManager manager)
+        {
+            var now = DateTimeOffset.UtcNow;
+            manager.UtcNow = () => now;
+            manager.DelayAsync = (ms, _) => { now = now.AddMilliseconds(ms); return Task.CompletedTask; };
+        }
+
+        /// <summary>
         /// Arranges the native and repository mocks for a successful installation of a service that does not yet
         /// exist, and captures the <see cref="ServiceDto"/> handed to <see cref="IServiceRepository.UpsertAsync"/>.
         /// </summary>
@@ -2658,8 +2669,10 @@ namespace Servy.Core.UnitTests.Services
 
             // The service never reaches Stopped, so the wait loop runs to the end of its budget.
             // With no database row the budget is CalculateStopTimeout(null, null, 0), i.e. the
-            // 5s floor plus the 15s SCM buffer, polled every 500 ms: this test really waits ~20s
-            // rather than mocking time, the same tradeoff its polling sibling accepts at ~1s.
+            // 5s floor plus the 15s SCM buffer, polled every 500 ms. The clock and the delay are
+            // both substituted below, so the loop still walks the whole budget one poll interval
+            // at a time and still leaves through the same timeout arm, in milliseconds of
+            // wall-clock instead of the ~20s this test used to spend waiting for real time.
             var mockController = new Mock<IServiceControllerWrapper>();
             mockController.Setup(c => c.Refresh());
             mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
@@ -2671,6 +2684,8 @@ namespace Servy.Core.UnitTests.Services
                 _mockWin32ErrorProvider.Object,
                 _mockServiceRepository.Object
             );
+
+            UseVirtualClock(_serviceManager);
 
             // Act
             var result = await _serviceManager.UninstallServiceAsync(serviceName, CancellationToken.None);
@@ -2812,9 +2827,11 @@ namespace Servy.Core.UnitTests.Services
             // The service accepts Start but never leaves StartPending, so the wait loop runs to the
             // end of its budget. With no StartTimeout configured that budget is
             // CalculateStartTimeout(null, 0, 0) - the start floor plus the SCM buffer - polled every
-            // 500 ms: like its uninstall-timeout sibling this test really waits rather than mocking
-            // time, which is the only way to reach the arm from outside the class.
+            // 500 ms. Substituting the clock and the delay keeps every one of those polls and the
+            // same timeout arm while spending no real time on them; this test used to wait 45s.
             var expectedTimeout = ServiceHelper.CalculateStartTimeout(null, 0, 0);
+
+            UseVirtualClock(_serviceManager);
 
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StartPending);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -2949,8 +2966,11 @@ namespace Servy.Core.UnitTests.Services
 
             // The service accepts Stop but stays Running, so the wait loop runs to the end of its
             // budget - CalculateStopTimeout(null, null, 0), the stop floor plus the SCM buffer -
-            // polled every 500 ms. The same real-wait tradeoff as the start-timeout sibling above.
+            // polled every 500 ms. Clock and delay are substituted as in the start-timeout sibling
+            // above, so the arm is still reached through every poll but without the ~20s wait.
             var expectedTimeout = ServiceHelper.CalculateStopTimeout(null, null, 0);
+
+            UseVirtualClock(_serviceManager);
 
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -3526,7 +3546,7 @@ namespace Servy.Core.UnitTests.Services
             // The service still lands in the list, carrying the timeout sentinel rather than the
             // generic fault one, and none of the details the cancelled query could not supply.
             Assert.Single(result);
-            Assert.Equal("(details unavailable: native query timed out)", result[0].Description);
+            Assert.Equal(Strings.Msg_DetailsUnavailableTimedOut, result[0].Description);
             Assert.Empty(result[0].LogOnAs);
         }
 
@@ -3551,7 +3571,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             // PopulateNativeDetails rejects the blank name before opening anything; the generic arm keeps the row.
             Assert.Single(result);
-            Assert.Equal("(details unavailable: ArgumentException)", result[0].Description);
+            Assert.Equal(string.Format(Strings.Msg_DetailsUnavailableFaulted, nameof(ArgumentException)), result[0].Description);
             _mockWindowsServiceApi.Verify(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
         }
 
@@ -3592,7 +3612,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             // GetServiceUser's Win32Exception escapes PopulateNativeDetails and lands in the generic arm.
             Assert.Single(result);
-            Assert.Equal("(details unavailable: Win32Exception)", result[0].Description);
+            Assert.Equal(string.Format(Strings.Msg_DetailsUnavailableFaulted, nameof(Win32Exception)), result[0].Description);
             Assert.Empty(result[0].LogOnAs);
         }
 

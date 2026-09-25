@@ -428,8 +428,6 @@ namespace Servy.Core.Logging
             // Fast path: nothing to write to. Shutdown() is the only writer that nulls this.
             if (_writer == null) return;
 
-            if (string.IsNullOrEmpty(message)) return;
-
             // DEADLOCK GUARD: If the underlying RotatingStreamWriter calls Logger.Warn/Error
             // during its rotation loop, it will synchronously re-enter this method on the same thread.
             // Sending it back to _writer.WriteLine will hit Monitor.Wait and permanently hang the thread.
@@ -559,8 +557,6 @@ namespace Servy.Core.Logging
         /// <returns>A formatted string with frame separators instead of newlines.</returns>
         private static string FormatException(Exception ex)
         {
-            if (ex == null) return string.Empty;
-
             var sb = new StringBuilder();
 
             // Stack tracking for true tree traversal
