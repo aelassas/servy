@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Unit test runner for setup/taskschd/Servy-Watermark.psm1 module.
@@ -144,8 +144,8 @@ try {
         exit 1
     }
     Write-Host "  [OK] Get-EventsToProcess correctly pre-filters feedback loops and sorts events." -ForegroundColor Gray
-    
-    
+
+
     Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "SUCCESS: Servy-Watermark.psm1 validated successfully!" -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan

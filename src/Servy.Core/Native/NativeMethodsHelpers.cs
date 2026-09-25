@@ -98,7 +98,7 @@ namespace Servy.Core.Native
             string domain = parts[0].Trim();
             string user = parts[1].Trim();
 
-            if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(user?.TrimEnd('$')))
+            if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(user.TrimEnd('$')))
             {
                 throw new ArgumentException(invalidMsg);
             }

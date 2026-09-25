@@ -295,6 +295,21 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.DoesNotContain("{0}", error);
         }
 
+        [Fact]
+        public void Validate_CrlfSeparatedRecordMissingEquals_ReportsTheSamePositionAsParse()
+        {
+            // Arrange
+            var input = "A=1\r\nNOEQUALS";
+
+            // Act
+            var valid = EnvironmentVariablesValidator.Validate(input, out var errors);
+
+            // Assert
+            Assert.False(valid);
+            var error = Assert.Single(errors);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 2), error);
+        }
+
         #region Key Formatting and Security Robustness Rule Tests
 
         [Fact]
