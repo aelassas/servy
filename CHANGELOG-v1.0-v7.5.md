@@ -1334,9 +1334,9 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.3...v1.4
 * feat(core): add failure program recovery action
 * feat(core): add support for gMSA accounts
 * feat(cli): add [Servy PowerShell module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module)
-* feat(configurator,cli): change rotation size unit from bytes to megabytes (MB) for improved readability [#10](https://github.com/aelassas/servy/issues/10)
-* fix(configurator,cli): ensure rotation and health check default values are persisted correctly
-* fix(configurator): correct confirm password validation
+* feat(desktop,cli): change rotation size unit from bytes to megabytes (MB) for improved readability (#10)
+* fix(desktop,cli): ensure rotation and health check default values are persisted correctly
+* fix(desktop): correct confirm password validation
 * chore: update dependencies
 
 ### Downloads
