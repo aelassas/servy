@@ -118,6 +118,7 @@
     <Compile Include="CliOptionTypes.cs" />
     <Compile Include="ConsoleCapture.cs" />
     <Compile Include="Helper.cs" />
+    <Compile Include="LogCapture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RetryDelete.cs" />
     <Compile Include="TempDirectoryTestBase.cs" />

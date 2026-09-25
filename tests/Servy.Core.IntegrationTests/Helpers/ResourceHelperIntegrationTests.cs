@@ -567,13 +567,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             var testServices = new List<string> { "Servy_Service_A" };
 
-            // Route the static Logger into a private temp directory (the logDirectory seam) so the
-            // restart-failure entry written inside the finally block can be read back, without
-            // touching the product's own logs directory.
-            string tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
-            string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
-            string tempLogFilePath = Path.Combine(tempLogDir, tempLogFileName);
-
             // exe routes to KillProcessTreeAndParents on this branch
             _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
             _fakeAssembly.OnGetManifestResourceStream = name => new MemoryStream(new byte[] { 0x01 });
@@ -582,44 +575,29 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>()))
                               .ThrowsAsync(new InvalidOperationException("restart boom"));
 
-            try
-            {
-                Logger.Shutdown();
-                Logger.Initialize(tempLogFileName, LogLevel.Info, logDirectory: tempLogDir);
+            // Act
+            // LogCapture routes the static Logger into a private temp directory (the logDirectory
+            // seam) so the restart-failure entry written inside the finally block can be read back,
+            // without touching the product's own logs directory.
+            var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
+                _fakeAssembly,
+                "Servy.Resources",
+                fileName,
+                extension,
+                stopServices: true,
+                cancellationToken: CancellationToken.None));
 
-                // Act
-                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                    _fakeAssembly,
-                    "Servy.Resources",
-                    fileName,
-                    extension,
-                    stopServices: true,
-                    cancellationToken: CancellationToken.None);
+            // Assert
+            // The restart failure is logged inside the finally block, never rethrown, so the copy's own
+            // outcome is what the method returns.
+            Assert.True(result);
+            Assert.True(File.Exists(Path.Combine(TempDirectory, $"{fileName}.{extension}")));
+            _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
 
-                // Flush and release the log file handle before reading it back
-                Logger.Shutdown();
-
-                // Assert
-                // The restart failure is logged inside the finally block, never rethrown, so the copy's own
-                // outcome is what the method returns.
-                Assert.True(result);
-                Assert.True(File.Exists(Path.Combine(TempDirectory, $"{fileName}.{extension}")));
-                _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
-
-                // ... and the "Logs" half of the name: the failure is reported, with its exception
-                // passed through rather than swallowed.
-                string textLogOutput = File.Exists(tempLogFilePath) ? File.ReadAllText(tempLogFilePath) : string.Empty;
-                Assert.Contains("previously-running services failed to restart", textLogOutput);
-                Assert.Contains("restart boom", textLogOutput);
-            }
-            finally
-            {
-                Logger.Shutdown();
-                if (Directory.Exists(tempLogDir))
-                {
-                    try { Directory.Delete(tempLogDir, recursive: true); } catch { /* Ignore cleanup errors */ }
-                }
-            }
+            // ... and the "Logs" half of the name: the failure is reported, with its exception
+            // passed through rather than swallowed.
+            Assert.Contains("previously-running services failed to restart", textLogOutput);
+            Assert.Contains("restart boom", textLogOutput);
         }
 
         [Fact]

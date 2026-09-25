@@ -256,33 +256,13 @@ namespace Servy.Core.IntegrationTests.Logging
         /// </summary>
         private static string CaptureDebugFileLog(string source, LogLevel level, Action<EventLogLogger> act)
         {
-            string tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
-            string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
-            string tempLogFilePath = Path.Combine(tempLogDir, tempLogFileName);
-
-            try
+            return LogCapture.Run(() =>
             {
-                Logger.Shutdown();
-                Logger.Initialize(tempLogFileName, LogLevel.Debug, logDirectory: tempLogDir);
-
                 using (var logger = new EventLogLogger(source, level, false, "Outer"))
                 {
                     act(logger);
                 }
-
-                // Flush and release the log file handle before reading it back
-                Logger.Shutdown();
-
-                return File.Exists(tempLogFilePath) ? File.ReadAllText(tempLogFilePath) : string.Empty;
-            }
-            finally
-            {
-                Logger.Shutdown();
-                if (Directory.Exists(tempLogDir))
-                {
-                    try { Directory.Delete(tempLogDir, recursive: true); } catch { /* Ignore cleanup errors */ }
-                }
-            }
+            }, LogLevel.Debug);
         }
 
         [Fact]

@@ -8,9 +8,9 @@ using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Logging;
+using Servy.Testing;
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +40,7 @@ namespace Servy.Core.UnitTests.Services
             mocks.Win32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1072);
 
             // Act
-            var capture = await RunWithCapturedLogAsync(() => mocks.Manager.InstallServiceAsync(mocks.Options, cancellationToken: CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => mocks.Manager.InstallServiceAsync(mocks.Options, cancellationToken: CancellationToken.None), LogLevel.Debug);
 
             // Assert
             Assert.False(capture.Result.IsSuccess);
@@ -62,7 +62,7 @@ namespace Servy.Core.UnitTests.Services
                 .Throws(new InvalidOperationException("SCM handle already closed"));
 
             // Act
-            var capture = await RunWithCapturedLogAsync(() => mocks.Manager.InstallServiceAsync(mocks.Options, cancellationToken: CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => mocks.Manager.InstallServiceAsync(mocks.Options, cancellationToken: CancellationToken.None), LogLevel.Debug);
 
             // Assert
             // The rollback runs inside a finally: an exception escaping it would replace the install's
@@ -102,8 +102,8 @@ namespace Servy.Core.UnitTests.Services
                 new Mock<IServiceRepository>().Object);
 
             // Act
-            var capture = await RunWithCapturedLogAsync(() =>
-                Task.FromResult(manager.GetServiceStartupType(serviceName, CancellationToken.None)));
+            var capture = await LogCapture.RunAsync(() =>
+                Task.FromResult(manager.GetServiceStartupType(serviceName, CancellationToken.None)), LogLevel.Debug);
 
             // Assert
             Assert.Equal(ServiceStartType.Unknown, capture.Result);
@@ -117,60 +117,6 @@ namespace Servy.Core.UnitTests.Services
         #endregion
 
         #region Test Helpers
-
-        /// <summary>The result of an action plus everything the static logger wrote while it ran.</summary>
-        private sealed class LogCapture<T>
-        {
-            public LogCapture(T result, string log)
-            {
-                Result = result;
-                Log = log;
-            }
-
-            public T Result { get; }
-
-            public string Log { get; }
-        }
-
-        /// <summary>
-        /// Routes the static <see cref="Logger"/> into a private temp directory at Debug level, runs
-        /// <paramref name="action"/>, and returns its result together with the log text.
-        /// </summary>
-        private static async Task<LogCapture<T>> RunWithCapturedLogAsync<T>(Func<Task<T>> action)
-        {
-            var tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
-            var tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
-            var tempLogFilePath = Path.Combine(tempLogDir, tempLogFileName);
-
-            try
-            {
-                Logger.Shutdown();
-                Logger.Initialize(tempLogFileName, LogLevel.Debug, logDirectory: tempLogDir);
-
-                var result = await action();
-
-                // Flush and release the log file handle before reading it back
-                Logger.Shutdown();
-
-                var text = File.Exists(tempLogFilePath) ? File.ReadAllText(tempLogFilePath) : string.Empty;
-                return new LogCapture<T>(result, text);
-            }
-            finally
-            {
-                Logger.Shutdown();
-
-                // Initialize's logDirectory override is sticky - Shutdown does not clear it - so point
-                // the static logger back at its default folder before leaving, or every later test in
-                // the assembly writes into the temp directory this one is about to delete.
-                Logger.Initialize(null, logDirectory: AppConfig.LogsFolderPath);
-                Logger.Shutdown();
-
-                if (Directory.Exists(tempLogDir))
-                {
-                    try { Directory.Delete(tempLogDir, recursive: true); } catch { /* Ignore cleanup errors */ }
-                }
-            }
-        }
 
         /// <summary>
         /// The smallest install arrangement that reaches the rollback: the service is created, then
