@@ -168,11 +168,7 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public void LogStartupArguments(StartOptions options, IServyLogger? logger)
         {
-            if (options == null)
-            {
-                logger?.Error("StartOptions is null.");
-                return;
-            }
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             // 1. PUBLIC DATA: Logged to both Local Log and Windows Event Log (logger?.Info)
             logger?.Info(
@@ -314,6 +310,8 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public bool ValidateAndLog(StartOptions options, IServyLogger? logger)
         {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
             LogStartupArguments(options, logger);
 
             if (!ValidateStartupOptions(logger, options))

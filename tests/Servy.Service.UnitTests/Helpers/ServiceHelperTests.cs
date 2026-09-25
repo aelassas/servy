@@ -131,16 +131,13 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void LogStartupArguments_NullOptions_LogsError()
+        public void LogStartupArguments_NullOptions_ThrowsArgumentNullException()
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
 
-            // Act
-            _helper.LogStartupArguments(null!, mockLog.Object);
-
-            // Assert
-            mockLog.Verify(l => l.Error("StartOptions is null.", It.IsAny<Exception>()), Times.Once);
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => _helper.LogStartupArguments(null!, mockLog.Object));
         }
 
         [Fact]
@@ -301,6 +298,16 @@ namespace Servy.Service.UnitTests.Helpers
         #endregion
 
         #region ValidateAndLog Tests
+
+        [Fact]
+        public void ValidateAndLog_NullOptions_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => _helper.ValidateAndLog(null!, mockLog.Object));
+        }
 
         [Fact]
         public void ValidateAndLog_AllPathsValid_ReturnsTrue_NoErrorsLogged()
