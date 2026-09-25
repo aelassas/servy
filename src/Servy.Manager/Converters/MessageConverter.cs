@@ -26,7 +26,7 @@ namespace Servy.Manager.Converters
 
             var text = value.ToString();
             var firstLine = text?
-                .Split(LineSeparators, StringSplitOptions.None)
+                .Split(LineSeparators, 2, StringSplitOptions.None)
                 .FirstOrDefault();
 
             return firstLine ?? string.Empty;
