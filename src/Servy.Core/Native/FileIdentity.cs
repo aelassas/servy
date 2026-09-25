@@ -7,7 +7,7 @@ namespace Servy.Core.Native
     /// reaches nested types, so while this struct lived there the only method body in the file
     /// was absent from the coverage report and the tests driving it counted for nothing.
     /// </remarks>
-    public struct FILE_IDENTITY
+    public struct FileIdentity
     {
         /// <summary>The unique file index.</summary>
         public ulong FileIndex;
@@ -30,7 +30,7 @@ namespace Servy.Core.Native
         /// <c>true</c> if the files are proven different or if identity is undeterminable;
         /// <c>false</c> only if they are proven to be the same file object.
         /// </returns>
-        public bool IsDifferentFrom(FILE_IDENTITY other)
+        public bool IsDifferentFrom(FileIdentity other)
         {
             // If one probe succeeded and the other failed, they are fundamentally different states.
             if (IsValidHandleInfo != other.IsValidHandleInfo) return true;

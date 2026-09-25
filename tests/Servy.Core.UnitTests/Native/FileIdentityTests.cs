@@ -7,7 +7,7 @@ using Xunit;
 namespace Servy.Core.UnitTests.Native
 {
     /// <summary>
-    /// Unit tests for <see cref="FILE_IDENTITY.IsDifferentFrom"/>, a pure in-memory
+    /// Unit tests for <see cref="FileIdentity.IsDifferentFrom"/>, a pure in-memory
     /// comparison of four struct fields. The whole truth table of the method lives here, so a
     /// coverage audit of one branch never has to be answered from two projects.
     /// </summary>
@@ -17,7 +17,7 @@ namespace Servy.Core.UnitTests.Native
         public void FileIdentity_FileTrackingStructures_ValidatesEqualityAndRotationDifferences()
         {
             // Arrange
-            var idA = new FILE_IDENTITY
+            var idA = new FileIdentity
             {
                 FileIndex = 12345,
                 VolumeSerialNumber = 98765,
@@ -25,7 +25,7 @@ namespace Servy.Core.UnitTests.Native
                 IsValidHandleInfo = true
             };
 
-            var idB = new FILE_IDENTITY
+            var idB = new FileIdentity
             {
                 FileIndex = 12345,
                 VolumeSerialNumber = 98765,
@@ -33,7 +33,7 @@ namespace Servy.Core.UnitTests.Native
                 IsValidHandleInfo = true
             };
 
-            var idC = new FILE_IDENTITY
+            var idC = new FileIdentity
             {
                 FileIndex = 54321, // Differs by index path
                 VolumeSerialNumber = 98765,
@@ -42,7 +42,7 @@ namespace Servy.Core.UnitTests.Native
             };
 
             // Assert behavior when VolumeSerialNumber differs independently
-            var idVolumeMismatch = new FILE_IDENTITY
+            var idVolumeMismatch = new FileIdentity
             {
                 FileIndex = 12345,
                 VolumeSerialNumber = 11111, // Differs by serial path
@@ -61,8 +61,8 @@ namespace Servy.Core.UnitTests.Native
         {
             // Arrange
             // Unnumbered Guard: Validation status asymmetry must trigger immediate difference flag
-            var idValid = new FILE_IDENTITY { IsValidHandleInfo = true, PrefixDigest = "SAME" };
-            var idInvalid = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "SAME" };
+            var idValid = new FileIdentity { IsValidHandleInfo = true, PrefixDigest = "SAME" };
+            var idInvalid = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "SAME" };
 
             // Act & Assert
             Assert.True(idValid.IsDifferentFrom(idInvalid), "Handle info status inequality must evaluate as structurally different file tracks.");
@@ -73,13 +73,13 @@ namespace Servy.Core.UnitTests.Native
         {
             // Arrange
             // Branch (2) Secondary Probe: Both handle checks fail (e.g. FAT32 volume layers). Compare contents using PrefixDigest
-            var baseId = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
-            var matchingId = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
-            var differingId = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_B" };
+            var baseId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
+            var matchingId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
+            var differingId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_B" };
 
             // Branch (2) Secondary Probe Asymmetric Null: one side has no digest - the conjunction guard must fail,
             // falling through to Branch (3) Fallback rather than attempting string comparison against null.
-            var digestMissing = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
+            var digestMissing = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null };
 
             // Act & Assert
             Assert.False(baseId.IsDifferentFrom(matchingId), "Identical content hashes on invalid handle states must evaluate as unchanged.");
@@ -93,8 +93,8 @@ namespace Servy.Core.UnitTests.Native
         {
             // Arrange: Two identities where handle info failed (IsValidHandleInfo=false)
             // but content probes succeeded on empty files (PrefixDigest=string.Empty).
-            var identity1 = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = string.Empty };
-            var identity2 = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = string.Empty };
+            var identity1 = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = string.Empty };
+            var identity2 = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = string.Empty };
 
             // Act
             bool isDifferent = identity1.IsDifferentFrom(identity2);
@@ -108,15 +108,15 @@ namespace Servy.Core.UnitTests.Native
         {
             // Arrange
             // Branch (3) Fallback: No robust identifiers available on either side. Should report 'true' as a safe default.
-            var blindIdA = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
-            var blindIdB = new FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null };
+            var blindIdA = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null };
+            var blindIdB = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null };
 
             // Act & Assert
             Assert.True(blindIdA.IsDifferentFrom(blindIdB), "Undeterminable file identities must fall back to 'true' to safely force metadata loop updates.");
         }
 
         /// <summary>
-        /// Guards what makes every assertion above count: <see cref="FILE_IDENTITY"/> must stay
+        /// Guards what makes every assertion above count: <see cref="FileIdentity"/> must stay
         /// outside <see cref="NativeMethods"/>, whose class-level
         /// <see cref="ExcludeFromCodeCoverageAttribute"/> covers its nested types as well. Nesting
         /// the struct back, or marking it directly, removes <c>IsDifferentFrom</c> from the coverage
@@ -126,14 +126,14 @@ namespace Servy.Core.UnitTests.Native
         public void FileIdentity_IsDifferentFrom_IsNotExcludedFromCodeCoverage()
         {
             // Arrange
-            var method = typeof(FILE_IDENTITY).GetMethod(nameof(FILE_IDENTITY.IsDifferentFrom));
+            var method = typeof(FileIdentity).GetMethod(nameof(FileIdentity.IsDifferentFrom));
             Assert.NotNull(method);
 
             // Act
             var exclusions = new List<string>();
             if (method.GetCustomAttribute<ExcludeFromCodeCoverageAttribute>() != null)
             {
-                exclusions.Add(nameof(FILE_IDENTITY.IsDifferentFrom));
+                exclusions.Add(nameof(FileIdentity.IsDifferentFrom));
             }
 
             for (var declaring = method.DeclaringType; declaring != null; declaring = declaring.DeclaringType)
