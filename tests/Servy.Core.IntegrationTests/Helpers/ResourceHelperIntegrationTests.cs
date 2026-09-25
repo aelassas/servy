@@ -6,6 +6,7 @@ using System.Reflection;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
+    [Collection(CoreOsIntegrationCollection.Name)]
     public class ResourceHelperIntegrationTests : TempDirectoryTestBase
     {
         private readonly Mock<IServiceHelper> _mockServiceHelper;
