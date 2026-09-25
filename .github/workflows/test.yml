@@ -43,6 +43,8 @@ jobs:
 
     env:
       MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
+      # One gate for every coverage step below: only the matrix leg that uploads, and on a manual
+      # workflow_dispatch only when the upload_coverage input opted in (it defaults to false)
       UPLOAD_COVERAGE: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) }}
 
     steps:
