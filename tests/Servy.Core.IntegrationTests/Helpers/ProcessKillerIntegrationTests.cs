@@ -435,7 +435,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 return -1;
             });
 
-            if (readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ChildTimeoutSeconds)))
+            if (readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds)))
             {
                 childPid = readTask.Result;
             }
