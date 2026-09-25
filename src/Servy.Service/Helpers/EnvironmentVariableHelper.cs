@@ -192,6 +192,21 @@ namespace Servy.Service.Helpers
                 }
             }
 
+            // Direct-cycle diagnosis happens here, once per custom variable, because the token scan
+            // inside ExpandWithDictionary is re-entered once per variable per pass and would repeat
+            // the identical warning for every one of them.
+            foreach (var key in customSnapshot.Keys)
+            {
+                string definition = customSnapshot[key];
+                if (definition == null) continue;
+
+                if (definition.IndexOf("%" + key + "%", StringComparison.OrdinalIgnoreCase) >= 0
+                    && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                {
+                    Logger.Warn($"Direct cycle detected for variable '{key}'; leaving literal placeholder.");
+                }
+            }
+
             // 3. Recursive Expansion (Multi-pass Fixed-Point Resolution)
             bool changed;
             int pass = 0;
@@ -354,9 +369,11 @@ namespace Servy.Service.Helpers
 
                     // If there is no inherited OS value to append to, leave the placeholder
                     // intact so the user understands why the append operation did not occur.
+                    // The warning for this case is emitted once per variable by
+                    // ExpandEnvironmentVariables(List<EnvironmentVariable>); this scan runs once per
+                    // variable per pass, so warning here would repeat the same line.
                     if (string.IsNullOrEmpty(inheritedValue))
                     {
-                        Logger.Warn($"Direct cycle detected for variable '{kvp.Key}'; leaving literal placeholder.");
                         continue;
                     }
 

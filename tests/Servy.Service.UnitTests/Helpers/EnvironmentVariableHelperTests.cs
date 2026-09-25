@@ -1,8 +1,10 @@
 using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Logging;
 using Servy.Service.Helpers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -528,6 +530,69 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal("prefix_%C%_suffix", expanded["A"]);
             Assert.Equal("prefix_foo_%A%", expanded["B"]);
             Assert.Equal("foo_%B%_suffix", expanded["C"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_SelfReferenceWithNoOsValue_WarnsOncePerVariable()
+        {
+            // Arrange: Tests Issue #6035 - the warning used to be emitted once per custom variable per
+            // expansion pass, so a single mis-specified variable produced one identical line per sibling.
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "CYCLE_ONCE_VAR", Value = "%CYCLE_ONCE_VAR%;\\bin" },
+                new EnvironmentVariable { Name = "SIBLING_ONE", Value = "one" },
+                new EnvironmentVariable { Name = "SIBLING_TWO", Value = "%SIBLING_ONE%_two" },
+                new EnvironmentVariable { Name = "SIBLING_THREE", Value = "%SIBLING_TWO%_three" },
+                new EnvironmentVariable { Name = "SIBLING_FOUR", Value = "%SIBLING_THREE%_four" },
+                new EnvironmentVariable { Name = "SIBLING_FIVE", Value = "%SIBLING_FOUR%_five" }
+            };
+
+            // Act
+            string log = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables(vars));
+
+            // Assert
+            int warnings = CountOccurrences(log, "Direct cycle detected for variable 'CYCLE_ONCE_VAR'");
+            Assert.Equal(1, warnings);
+        }
+
+        /// <summary>
+        /// Points the static logger at a file of its own, runs <paramref name="act"/> and returns what was
+        /// written. The direct-cycle diagnosis has no return value, so its log output is the only thing a
+        /// test can observe.
+        /// </summary>
+        private static string CaptureExpansionLog(Action act)
+        {
+            string fileName = $"EnvVarExpansionTestLog_{Guid.NewGuid():N}.log";
+            string fullPath = Path.Combine(AppConfig.LogsFolderPath, fileName);
+
+            try
+            {
+                Logger.Shutdown();
+                Logger.Initialize(fileName);
+                act();
+                Logger.Shutdown();
+
+                return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
+            }
+            finally
+            {
+                Logger.Shutdown();
+                try { if (File.Exists(fullPath)) File.Delete(fullPath); } catch { }
+            }
+        }
+
+        private static int CountOccurrences(string haystack, string needle)
+        {
+            int count = 0;
+            int index = haystack.IndexOf(needle, StringComparison.Ordinal);
+
+            while (index >= 0)
+            {
+                count++;
+                index = haystack.IndexOf(needle, index + needle.Length, StringComparison.Ordinal);
+            }
+
+            return count;
         }
 
         #endregion
