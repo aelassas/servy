@@ -221,6 +221,77 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        /// <summary>
+        /// Collects the service names of the nodes that are currently expanded, walking the specified
+        /// collection and all their children.
+        /// Uses the same explicit stack and visited set as <see cref="SetExpansion"/>, because the
+        /// dependency graph is a DAG in which one node instance is shared across several branches.
+        /// </summary>
+        /// <param name="nodes">The collection of <see cref="ServiceDependencyNode"/> to process.</param>
+        /// <returns>
+        /// A case-insensitive set of the service names whose nodes were expanded; empty when none was.
+        /// </returns>
+        private HashSet<string> CollectExpanded(IEnumerable<ServiceDependencyNode> nodes)
+        {
+            var expanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var visited = new HashSet<ServiceDependencyNode>();
+            var stack = new Stack<ServiceDependencyNode>(nodes);
+
+            while (stack.Count > 0)
+            {
+                var node = stack.Pop();
+                if (!visited.Add(node)) continue;
+
+                if (node.IsExpanded && !string.IsNullOrEmpty(node.ServiceName))
+                {
+                    expanded.Add(node.ServiceName);
+                }
+
+                if (node.Dependencies != null)
+                {
+                    foreach (var child in node.Dependencies)
+                    {
+                        stack.Push(child);
+                    }
+                }
+            }
+
+            return expanded;
+        }
+
+        /// <summary>
+        /// Re-expands the nodes whose service name is contained in the specified set, walking the
+        /// specified collection and all their children. Nodes outside the set are left untouched,
+        /// so the freshly expanded root stays open.
+        /// Uses the same explicit stack and visited set as <see cref="SetExpansion"/>.
+        /// </summary>
+        /// <param name="nodes">The collection of <see cref="ServiceDependencyNode"/> to process.</param>
+        /// <param name="expanded">The service names to re-expand, as returned by <see cref="CollectExpanded"/>.</param>
+        private void RestoreExpansion(IEnumerable<ServiceDependencyNode> nodes, HashSet<string> expanded)
+        {
+            var visited = new HashSet<ServiceDependencyNode>();
+            var stack = new Stack<ServiceDependencyNode>(nodes);
+
+            while (stack.Count > 0)
+            {
+                var node = stack.Pop();
+                if (!visited.Add(node)) continue;
+
+                if (expanded.Contains(node.ServiceName))
+                {
+                    node.IsExpanded = true;
+                }
+
+                if (node.Dependencies != null)
+                {
+                    foreach (var child in node.Dependencies)
+                    {
+                        stack.Push(child);
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region Public Methods
@@ -246,6 +317,10 @@ namespace Servy.Manager.ViewModels
                 }
                 serviceName = SelectedService.Name;
 
+                // Capture which branches the user had open, so a refresh does not collapse them:
+                // the rebuild returns new node instances, whose IsExpanded all start out false.
+                var expanded = CollectExpanded(DependencyTree);
+
                 IsBusy = true;
                 DependencyTree.Clear();
 
@@ -260,6 +335,12 @@ namespace Servy.Manager.ViewModels
                 {
                     root.IsExpanded = true;
                     DependencyTree.Add(root);
+
+                    // Restore the previous expansion state; the root stays open regardless.
+                    if (expanded.Count > 0)
+                    {
+                        RestoreExpansion(DependencyTree, expanded);
+                    }
                 }
             }
             catch (OperationCanceledException) { /* Ignored */ }

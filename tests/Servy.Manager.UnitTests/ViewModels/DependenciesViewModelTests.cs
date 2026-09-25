@@ -447,6 +447,115 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task LoadDependencyTreeAsync_Refresh_RestoresPreviouslyExpandedBranches()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        // Arrange
+                        viewModel = CreateViewModel();
+                        var mockService = new DependencyService { Name = "ServyCore" };
+
+                        // Every load hands back a fresh graph, as ServiceControllerWrapper does: its
+                        // fullyExpanded cache is per call, so the second root and child are different
+                        // instances whose IsExpanded both start out false.
+                        ServiceDependencyNode secondChild = null;
+                        var loads = 0;
+                        _mockServiceManager.Setup(m => m.GetDependencies("ServyCore", It.IsAny<CancellationToken>()))
+                                           .Returns(() =>
+                                           {
+                                               var root = new ServiceDependencyNode("ServyCore", "Friendly Core");
+                                               var child = new ServiceDependencyNode("ServyDep", "Friendly Dep");
+                                               root.Dependencies.Add(child);
+                                               if (++loads == 2) secondChild = child;
+                                               return root;
+                                           });
+
+                        viewModel.SelectedService = mockService; // Triggers the 1st Load invocation internally
+
+                        await Helper.WaitUntilAsync(
+                            () => viewModel.DependencyTree.Count > 0 && !viewModel.IsBusy,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // the user opens the child branch, which the two-way IsExpanded binding
+                        // records on the node instance
+                        viewModel.DependencyTree[0].Dependencies[0].IsExpanded = true;
+
+                        // Act
+                        await viewModel.LoadDependencyTreeAsync(null); // Triggers the 2nd Load invocation
+
+                        // Assert
+                        Assert.NotNull(secondChild);
+                        Assert.Single(viewModel.DependencyTree);
+                        Assert.Same(secondChild, viewModel.DependencyTree[0].Dependencies[0]);
+                        Assert.True(viewModel.DependencyTree[0].IsExpanded);
+                        Assert.True(secondChild.IsExpanded);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task LoadDependencyTreeAsync_Refresh_LeavesCollapsedBranchesCollapsed()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        // Arrange
+                        ServiceDependencyNode secondChild = null;
+                        var loads = 0;
+                        viewModel = CreateViewModel();
+                        var mockService = new DependencyService { Name = "ServyCore" };
+
+                        _mockServiceManager.Setup(m => m.GetDependencies("ServyCore", It.IsAny<CancellationToken>()))
+                                           .Returns(() =>
+                                           {
+                                               var root = new ServiceDependencyNode("ServyCore", "Friendly Core");
+                                               var child = new ServiceDependencyNode("ServyDep", "Friendly Dep");
+                                               root.Dependencies.Add(child);
+                                               if (++loads == 2) secondChild = child;
+                                               return root;
+                                           });
+
+                        viewModel.SelectedService = mockService; // Triggers the 1st Load invocation internally
+
+                        await Helper.WaitUntilAsync(
+                            () => viewModel.DependencyTree.Count > 0 && !viewModel.IsBusy,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // Act - the user leaves the child collapsed, so only the root was ever expanded
+                        await viewModel.LoadDependencyTreeAsync(null); // Triggers the 2nd Load invocation
+
+                        // Assert
+                        Assert.NotNull(secondChild);
+                        Assert.True(viewModel.DependencyTree[0].IsExpanded);
+                        Assert.False(secondChild.IsExpanded);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task LoadDependencyTreeAsync_ManagerThrowsException_DisplaysErrorMessageBox()
         {
             await Helper.RunOnSTA(async () =>
