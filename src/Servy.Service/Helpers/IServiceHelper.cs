@@ -133,6 +133,9 @@ namespace Servy.Service.Helpers
         /// <param name="logger">Logger instance.</param>
         /// <param name="stopTimeoutMs">Timeout in milliseconds to wait for the process to stop.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="startProcess"/> is null.
+        /// </exception>
         void RestartProcess(
             IProcessWrapper process,
             StartProcessCallback startProcess,
