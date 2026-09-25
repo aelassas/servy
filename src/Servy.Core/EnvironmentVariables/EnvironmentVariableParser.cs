@@ -53,7 +53,6 @@ namespace Servy.Core.EnvironmentVariables
                     // Map the structured validation result to a specific FormatException without leaking raw record values.
                     // Using the enum (rather than matching localized message text) keeps the
                     // mapping correct regardless of UI culture.
-
                     switch (resultKind)
                     {
                         case EnvVarValidationResultKind.MissingEquals:
