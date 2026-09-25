@@ -8,9 +8,7 @@ using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Logging;
-using Servy.Testing;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
 namespace Servy.Core.UnitTests.Services
@@ -24,7 +22,7 @@ namespace Servy.Core.UnitTests.Services
     [Collection(LoggerCollection.Name)]
     public class ServiceManagerDiagnosticsTests : IDisposable
     {
-        private readonly List<IntPtr> _unmanagedAllocations = new List<IntPtr>();
+        private readonly FakeServiceHandles _handles = new FakeServiceHandles();
 
         #region Install rollback logging
 
@@ -179,8 +177,8 @@ namespace Servy.Core.UnitTests.Services
 
             public InstallMocks(ServiceManagerDiagnosticsTests owner)
             {
-                var scmHandle = owner.CreateScmHandle();
-                ServiceHandle = owner.CreateServiceHandle();
+                var scmHandle = owner._handles.Scm();
+                ServiceHandle = owner._handles.Service();
 
                 WindowsServiceApi = new Mock<IWindowsServiceApi>();
                 Win32ErrorProvider = new Mock<IWin32ErrorProvider>();
@@ -236,50 +234,9 @@ namespace Servy.Core.UnitTests.Services
             public InstallServiceOptions Options { get; }
         }
 
-        private SafeScmHandle CreateScmHandle()
-        {
-            var handle = Activator.CreateInstance(typeof(SafeScmHandle), true) as SafeScmHandle;
-            Assert.NotNull(handle);
-
-            // TestReflection automatically ascends the inheritance chain to locate and invoke 'SetHandle' on SafeHandle
-            TestReflection.InvokeNonPublic(handle, "SetHandle", Allocate());
-            return handle;
-        }
-
-        private SafeServiceHandle CreateServiceHandle()
-        {
-            var handle = Activator.CreateInstance(typeof(SafeServiceHandle), true) as SafeServiceHandle;
-            Assert.NotNull(handle);
-
-            TestReflection.InvokeNonPublic(handle, "SetHandle", Allocate());
-            return handle;
-        }
-
-        /// <summary>
-        /// Allocates unmanaged space so a valid handle wrapper does not fault the runtime on Dispose.
-        /// </summary>
-        private IntPtr Allocate()
-        {
-            var ptr = Marshal.AllocHGlobal(64);
-            lock (_unmanagedAllocations)
-            {
-                _unmanagedAllocations.Add(ptr);
-            }
-
-            return ptr;
-        }
-
         public void Dispose()
         {
-            lock (_unmanagedAllocations)
-            {
-                foreach (var ptr in _unmanagedAllocations)
-                {
-                    Marshal.FreeHGlobal(ptr);
-                }
-
-                _unmanagedAllocations.Clear();
-            }
+            _handles.Dispose();
         }
 
         #endregion
