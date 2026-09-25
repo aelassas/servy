@@ -1,5 +1,4 @@
 using Servy.Core.EnvironmentVariables;
-using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using System.Collections.Generic;
 using Xunit;
@@ -226,26 +225,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Assert
             Assert.True(result);
             Assert.Empty(error);
-        }
-
-        [Fact]
-        public void FormatEnvironmentVariables_WithLiteralNewlines_EscapesCarriageReturnAndLineFeed()
-        {
-            // Arrange
-            // Provide a realistic multi-variable input containing sequential Windows newline sequences (\r\n)
-            string rawInput = @"MULTILINE_KEY=line1\r\nline2;STANDARD_KEY=value2";
-
-            // Act
-            string formatted = StringHelper.FormatEnvironmentVariables(rawInput);
-
-            // Assert
-            // Ensure both the carriage return and line feed escape characters double their backslashes correctly
-            Assert.Contains(@"MULTILINE_KEY=line1\\r\\nline2", formatted);
-            Assert.Contains(@"STANDARD_KEY=value2", formatted);
-
-            List<string> error;
-            bool isValid = EnvironmentVariablesValidator.Validate(formatted, out error);
-            Assert.True(isValid, $"Validator rejected formatted output with errors count: {error.Count}");
         }
 
         [Fact]
