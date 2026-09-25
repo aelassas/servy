@@ -303,7 +303,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             // 1. Verify environment variable syntax validation error
-            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 1), result.Errors);
 
             // 2. Verify service dependency regex character validation error
             Assert.Contains(string.Format(Strings.Msg_InvalidServiceDependencyName, "MissingDep?"), result.Errors);
@@ -328,7 +328,7 @@ namespace Servy.Core.UnitTests.Validation
             // Assert
             Assert.Contains(Strings.Msg_InvalidPreLaunchPath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreLaunchStartupDirectory, result.Errors);
-            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 1), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts), result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreLaunchStdoutPath, result.Errors);
