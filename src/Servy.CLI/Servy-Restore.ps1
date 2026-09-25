@@ -245,15 +245,6 @@ else {
 $tempExtractDir = $null
 
 try {
-    # Prompt for confirmation if -Install switch is provided
-    if ($Install.IsPresent) {
-        $confirmMessage = "Windows services will be replaced in the Windows Service Control Manager (SCM). Are you sure you want to continue?"
-        if (-not $PSCmdlet.ShouldProcess("Windows Service Control Manager (SCM)", $confirmMessage)) {
-            Write-Host "Operation cancelled by user." -ForegroundColor Yellow
-            exit 0
-        }
-    }
-
     # Ensure the script is executing with Administrator privileges
     $currentIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $currentPrincipal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
@@ -499,6 +490,12 @@ try {
         $imported = New-Object System.Collections.Generic.List[string]
         $failed   = New-Object System.Collections.Generic.List[object]
 
+        $actionMessage = if ($Install.IsPresent) { "Import into the Servy database and install into the Windows SCM" } else { "Import into the Servy database (existing configurations are overwritten)" }
+        if (-not $PSCmdlet.ShouldProcess("$($xmlFileList.Count) service configuration file(s) from '$resolvedArchivePath'", $actionMessage)) {
+            Write-Host "No configurations were imported." -ForegroundColor Yellow
+            exit 0
+        }        
+
         # Iterate through extracted XML files and import each service configuration with per-item exception isolation
         foreach ($xmlFile in $xmlFileList) {
             Write-Host "Importing configuration from '$($xmlFile.Name)'..." -ForegroundColor Green
@@ -572,7 +569,7 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
     finally {
         # Clean up temporary extraction directory and extracted XML files with explicit failure reporting
         if (Test-Path -Path $tempExtractDir) {
-            Remove-Item -Path $tempExtractDir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $tempExtractDir -Recurse -Force -ErrorAction SilentlyContinue -WhatIf:$false
 
             if (Test-Path -Path $tempExtractDir) {
                 Write-Host @"

@@ -357,7 +357,7 @@ try {
             $probeFile = [System.IO.Path]::Combine($parentDir, ".servydump_probe_" + [System.IO.Path]::GetRandomFileName())
             try {
                 [System.IO.File]::WriteAllBytes($probeFile, @())
-                Remove-Item -Path $probeFile -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path $probeFile -Force -ErrorAction SilentlyContinue -WhatIf:$false
             }
             catch {
                 Write-Host "Target destination directory '$parentDir' is not writable: $_" -ForegroundColor Red
@@ -613,6 +613,17 @@ public static class ServySafePs2SqliteRecord
     Write-Host "`nRegistered Servy Services:" -ForegroundColor Cyan
     $serviceTable | Format-Table -AutoSize | Out-String | Write-Host
 
+    if ($serviceNames.Count -eq 0) {
+        Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
+        exit 0
+    }
+
+    $dumpTargetAction = if ($Uninstall.IsPresent) { "Export $serviceNames.Count service(s) to '$resolvedArchivePath' and uninstall them from SCM/database" } else { "Export $serviceNames.Count service(s) to '$resolvedArchivePath'" }
+    if (-not $PSCmdlet.ShouldProcess("$($serviceNames.Count) service(s) from database", $dumpTargetAction)) {
+        Write-Host "Operation cancelled by user." -ForegroundColor Yellow
+        exit 0
+    }
+
     # Create an isolated temporary directory for staging exported XML files inside the try/finally scope
     $tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDump_" + [System.IO.Path]::GetRandomFileName())
 
@@ -627,11 +638,6 @@ public static class ServySafePs2SqliteRecord
             Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
             Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
             exit 4
-        }
-
-        if ($serviceNames.Count -eq 0) {
-            Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
-            exit 0
         }
 
         Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
@@ -689,6 +695,7 @@ public static class ServySafePs2SqliteRecord
                 $compressParams = @{
                     Path            = $stagedItemsToCompress
                     DestinationPath = $resolvedArchivePath
+                    WhatIf          = $false
                 }
 
                 if ($Overwrite.IsPresent) {
@@ -700,7 +707,7 @@ public static class ServySafePs2SqliteRecord
             else {
                 try {
                     if ($Overwrite.IsPresent -and (Test-Path -Path $resolvedArchivePath)) {
-                        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+                        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue -WhatIf:$false
                     }
 
                     # Use dynamic string types to prevent PS 2.0 parser from crashing on missing literal assemblies
@@ -716,7 +723,7 @@ public static class ServySafePs2SqliteRecord
                 }
                 catch {
                     if ($Overwrite.IsPresent -and (Test-Path -Path $resolvedArchivePath)) {
-                        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+                        Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue -WhatIf:$false
                     }
                     Set-Content -Path $resolvedArchivePath -Value ("PK" + [char]5 + [char]6 + ("`0" * 18))
                     $shellApp = New-Object -ComObject Shell.Application
@@ -744,7 +751,7 @@ public static class ServySafePs2SqliteRecord
             Write-Host "`nWARNING: Could not restrict permissions on the archive '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
 
             # Best-effort removal of the unprotected archive
-            Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $resolvedArchivePath -Force -ErrorAction SilentlyContinue -WhatIf:$false
 
             if (Test-Path -Path $resolvedArchivePath) {
                 Write-Host "The archive could NOT be removed. It EXISTS UNPROTECTED at '$resolvedArchivePath' and contains plain-text service configurations - delete or protect it manually." -ForegroundColor Red
@@ -754,7 +761,7 @@ public static class ServySafePs2SqliteRecord
             }
 
             if ($Overwrite.IsPresent -and (Test-Path -Path $sidecarPath)) {
-                Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
                 if (Test-Path -Path $sidecarPath) {
                     Write-Host "WARNING: A pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
                 }
@@ -765,7 +772,7 @@ public static class ServySafePs2SqliteRecord
 
         # Remove pre-existing sidecar only after compression and hardening succeed to avoid corrupting surviving backups
         if ($Overwrite.IsPresent -and (Test-Path -Path $sidecarPath)) {
-            Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
             if (Test-Path -Path $sidecarPath) {
                 Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
             }
@@ -795,7 +802,7 @@ public static class ServySafePs2SqliteRecord
         catch {
             $sidecarWriteFailed = $true
             if (Test-Path -Path $sidecarPath) {
-                Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
             }
             Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
 
@@ -852,23 +859,21 @@ public static class ServySafePs2SqliteRecord
                     $affectedTable | Format-Table -AutoSize | Out-String | Write-Host
                 }
 
-                if ($PSCmdlet.ShouldProcess("$($exported.Count) exported service(s)", "Uninstall from SCM and delete from the Servy database")) {
-                    Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+                Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
 
-                    foreach ($serviceName in $exported) {
-                        Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
-                        try {
-                            Uninstall-ServyService -Name $serviceName -ErrorAction Stop
-                        }
-                        catch {
-                            Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+                foreach ($serviceName in $exported) {
+                    Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
+                    try {
+                        Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                    }
+                    catch {
+                        Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
 
-                            # PowerShell 2.0 compatible property assignment for error array
-                            $errObj = New-Object PSObject
-                            $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
-                            $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value "Uninstall failed: $($_.Exception.Message)"
-                            $failed.Add($errObj)
-                        }
+                        # PowerShell 2.0 compatible property assignment for error array
+                        $errObj = New-Object PSObject
+                        $errObj | Add-Member -MemberType NoteProperty -Name "Service" -Value $serviceName
+                        $errObj | Add-Member -MemberType NoteProperty -Name "Reason" -Value "Uninstall failed: $($_.Exception.Message)"
+                        $failed.Add($errObj)
                     }
                 }
             }
@@ -914,7 +919,7 @@ NOTE ON SERVICE RESTORATION:
     finally {
         # Clean up temporary staging directory and XML files with explicit failure reporting
         if (Test-Path -Path $tempStagingDir) {
-            Remove-Item -Path $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue -WhatIf:$false
 
             if (Test-Path -Path $tempStagingDir) {
                 Write-Host @"
@@ -940,7 +945,7 @@ finally {
         while ($null -ne $dir -and $dir -ne $createdRootBoundary -and (Test-Path -Path $dir)) {
             $items = Get-ChildItem -Path $dir -ErrorAction SilentlyContinue
             if ($null -ne $items -and @($items).Count -gt 0) { break }
-            Remove-Item -Path $dir -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $dir -Force -ErrorAction SilentlyContinue -WhatIf:$false
             $dir = [System.IO.Path]::GetDirectoryName($dir)
         }
     }
