@@ -388,19 +388,19 @@ namespace Servy.Core.Native
         /// <summary>Creates a service object and adds it to the specified SCM database.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern SafeServiceHandle CreateService(
-          SafeScmHandle hSCManager,
-          string lpServiceName,
-          string lpDisplayName,
-          uint dwDesiredAccess,
-          uint dwServiceType,
-          uint dwStartType,
-          uint dwErrorControl,
-          string lpBinaryPathName,
-          string? lpLoadOrderGroup,
-          IntPtr lpdwTagId,
-          string? lpDependencies,
-          string? lpServiceStartName,
-          string? lpPassword);
+            SafeScmHandle hSCManager,
+            string lpServiceName,
+            string lpDisplayName,
+            uint dwDesiredAccess,
+            uint dwServiceType,
+            uint dwStartType,
+            uint dwErrorControl,
+            string lpBinaryPathName,
+            string? lpLoadOrderGroup,
+            IntPtr lpdwTagId,
+            string? lpDependencies,
+            string? lpServiceStartName,
+            string? lpPassword);
 
         /// <summary>Opens an existing service.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -462,23 +462,23 @@ namespace Servy.Core.Native
         /// <summary>Changes optional service configuration (Description).</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool ChangeServiceConfig2(
-              SafeServiceHandle hService,
-              uint dwInfoLevel,
-              ref SERVICE_DESCRIPTION lpInfo);
+            SafeServiceHandle hService,
+            uint dwInfoLevel,
+            ref SERVICE_DESCRIPTION lpInfo);
 
         /// <summary>Changes optional service configuration (Delayed Auto Start).</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool ChangeServiceConfig2(
-              SafeServiceHandle hService,
-              uint dwInfoLevel,
-              ref SERVICE_DELAYED_AUTO_START_INFO lpInfo);
+            SafeServiceHandle hService,
+            uint dwInfoLevel,
+            ref SERVICE_DELAYED_AUTO_START_INFO lpInfo);
 
         /// <summary>Changes optional service configuration using a raw buffer pointer.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool ChangeServiceConfig2(
-              SafeServiceHandle hService,
-              uint dwInfoLevel,
-              IntPtr lpInfo);
+            SafeServiceHandle hService,
+            uint dwInfoLevel,
+            IntPtr lpInfo);
 
         /// <summary>Updates the SCM's status information for the calling service.</summary>
         [DllImport("advapi32.dll", SetLastError = true)]
@@ -581,10 +581,10 @@ namespace Servy.Core.Native
         /// <summary>Retrieves the final path for the specified file handle.</summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern uint GetFinalPathNameByHandle(
-           SafeFileHandle hFile,
-           [Out] StringBuilder lpszFilePath,
-           uint cchFilePath,
-           uint dwFlags);
+            SafeFileHandle hFile,
+            [Out] StringBuilder lpszFilePath,
+            uint cchFilePath,
+            uint dwFlags);
 
         /// <summary>Attempts to log a user on to the local computer.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
