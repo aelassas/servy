@@ -92,14 +92,8 @@
   <data name="Msg_ServiceInstalled" xml:space="preserve">
     <value>Service was installed successfully.</value>
   </data>
-  <data name="Msg_ServiceRemoved" xml:space="preserve">
-    <value>Service was removed successfully.</value>
-  </data>
   <data name="Msg_UnexpectedError" xml:space="preserve">
     <value>An unexpected error occurred.</value>
-  </data>
-  <data name="Msg_AdminRightsRequired" xml:space="preserve">
-    <value>Administrator privileges are required.</value>
   </data>
   <data name="Msg_ServiceStarted" xml:space="preserve">
     <value>Service was started successfully.</value>

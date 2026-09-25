@@ -151,15 +151,6 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Administrator privileges are required..
-        /// </summary>
-        public static string Msg_AdminRightsRequired {
-            get {
-                return ResourceManager.GetString("Msg_AdminRightsRequired", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Arguments for field &apos;{0}&apos; exceed the Windows command-line limit of {1} characters..
         /// </summary>
         public static string Msg_ArgumentsLengthReachedForField {
@@ -1047,15 +1038,6 @@ namespace Servy.Core.Resources {
         public static string Msg_ServiceNotFoundDetailed {
             get {
                 return ResourceManager.GetString("Msg_ServiceNotFoundDetailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Service was removed successfully..
-        /// </summary>
-        public static string Msg_ServiceRemoved {
-            get {
-                return ResourceManager.GetString("Msg_ServiceRemoved", resourceCulture);
             }
         }
         
