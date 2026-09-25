@@ -399,13 +399,9 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
                 keySide ? Strings.Msg_EnvironmentVariableKeyInvalidChars : Strings.Msg_EnvironmentVariableValueInvalidChars,
                 expectedName);
 
-            // The validator's own message has to survive the GeneralFailure arm ...
+            // The validator's own message has to survive the GeneralFailure arm unchanged,
+            // rather than being misreported as a newline failure.
             Assert.Equal(expected, ex.Message);
-
-            // ... rather than being misreported as a newline failure or degrading to the arm's
-            // blank-errorMessage fallback.
-            Assert.DoesNotContain("forbidden newline", ex.Message);
-            Assert.DoesNotContain("failed validation tracking", ex.Message);
         }
     }
 }
