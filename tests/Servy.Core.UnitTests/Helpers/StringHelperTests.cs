@@ -158,5 +158,20 @@ namespace Servy.Core.UnitTests.Helpers
 
             Assert.Equal(expected, result);
         }
+
+        [Fact]
+        public void FormatEnvironmentVariables_UnknownEscapeLetters_DoubleTheirBackslash()
+        {
+            // Arrange
+            // The value carries the two-character sequences \r and \n, not a newline: Parse keeps the
+            // backslash of an unknown escape, and Escape doubles it on the way back out.
+            string rawInput = @"MULTILINE_KEY=line1\r\nline2;STANDARD_KEY=value2";
+
+            // Act
+            string formatted = StringHelper.FormatEnvironmentVariables(rawInput);
+
+            // Assert
+            Assert.Equal(string.Join(Environment.NewLine, new[] { @"MULTILINE_KEY=line1\\r\\nline2", "STANDARD_KEY=value2" }), formatted);
+        }
     }
 }
