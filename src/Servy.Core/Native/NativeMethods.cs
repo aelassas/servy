@@ -28,7 +28,7 @@ namespace Servy.Core.Native
         public const int LOGON32_LOGON_NETWORK = 3;
         /// <summary>Uses the standard logon provider for the system.</summary>
         public const int LOGON32_PROVIDER_DEFAULT = 0;
-        ///<summary>Logon type: Service. Intended for service accounts that run in the background without user interaction.</summary>
+        /// <summary>Logon type: Service. Intended for service accounts that run in the background without user interaction.</summary>
         public const int LOGON32_LOGON_SERVICE = 5;
 
         /// <summary>Snapshot flag: Includes all processes in the system in the snapshot.</summary>
@@ -257,7 +257,7 @@ namespace Servy.Core.Native
         [StructLayout(LayoutKind.Sequential)]
         public struct FILETIME
         {
-            /// <summary>Specifies the low-order 32 bits of the file time. </summary>
+            /// <summary>Specifies the low-order 32 bits of the file time.</summary>
             public uint dwLowDateTime;
             /// <summary>Specifies the high-order 32 bits of the file time.</summary>
             public uint dwHighDateTime;
