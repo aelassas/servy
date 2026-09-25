@@ -128,6 +128,7 @@ function Test-ServyAdminGroupMember {
             $entry = [ADSI]"LDAP://<SID=$($Sid.Value)>"
             $upn = [string]$entry.Properties['userPrincipalName'].Value
         }
+        # Expected for local accounts (no LDAP object behind the SID) or an unreachable domain controller; fall back below.
         catch { }
     }
     if ($upn) {
