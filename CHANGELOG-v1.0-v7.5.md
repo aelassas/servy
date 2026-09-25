@@ -1183,7 +1183,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v2.1...v2.2
 
 * fix(clients): `Servy.Service.exe` not copied when Windows is installed on a drive letter other than `C:` (#16)
 * fix(clients): load `appsettings.json` from project root in debug and exe directory in release (#16)
-* fix(configurator): export XML and JSON not working when password is supplied
+* fix(desktop): export XML and JSON not working when password is supplied
 
 ### Downloads
 * [servy-2.1-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v2.1/servy-2.1-net48-x64-installer.exe) - 17.22 MB
@@ -1263,10 +1263,10 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.7...v1.8
 * feat(manager): add PID column and Copy PID action to services
 * fix(core): optimize resource copying for better performance
 * fix(core): reliably update service without checking Win32 error
+* fix(desktop): load configuration from appsettings.json
 * fix(manager): performance issues on UI thread when loading and updating services
 * fix(manager): adjust actions column width in services
 * fix(manager): load configuration from appsettings.manager.json
-* fix(configurator): load configuration from appsettings.json
 * fix(cli): load configuration from appsettings.cli.json
 * fix(cli): correct help text for `--preLaunchEnv` argument in `install` command
 * chore: update dependencies
@@ -1285,7 +1285,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.6...v1.7
 
 * feat(core): add support for [post-launch actions](https://github.com/aelassas/servy/wiki/Pre-Launch-&-Post-Launch-Actions#post-launch)
 * feat(installer): add Servy to [Scoop package manager](https://github.com/aelassas/servy/wiki/Installation-Guide#quick-install)
-* fix(configurator): increase tab height for better visibility
+* fix(desktop): increase tab height for better visibility
 * fix(installer): adjust LZMA dictionary size to 64MB to reduce memory usage during install
 
 ### Downloads
@@ -1317,7 +1317,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v1.4...v1.5
 
 * fix(cli,psm1): add `--quiet` and `-q` options to CLI and `-Quiet` switch to PowerShell module (#11)
 * fix(cli): rotation size calculation
-* fix(configurator): make failure program path optional instead of required
+* fix(desktop): make failure program path optional instead of required
 
 ### Downloads
 * [servy-1.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v1.4/servy-1.4-net48-x64-installer.exe) - 4.18 MB
