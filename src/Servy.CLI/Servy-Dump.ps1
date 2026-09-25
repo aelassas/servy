@@ -17,6 +17,13 @@
     If the -Uninstall switch parameter is supplied, each successfully exported service is also uninstalled from
     the Windows Service Control Manager (SCM) and removed from the Servy database.
 
+    PROMPT & WHATIF BEHAVIOR:
+    The script supports -WhatIf and -Confirm via CmdletBinding(SupportsShouldProcess = $true).
+    The main dump/export operation (and uninstallation if -Uninstall is specified) is guarded by ShouldProcess.
+    When run with -WhatIf, the export/uninstall operation is safely previewed without modifying the SCM, database,
+    or output files, and internal temporary cleanup operations bypass -WhatIf (-WhatIf:$false) to ensure staging
+    directories are always properly cleaned up.    
+
     EXIT CODES:
     - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
@@ -618,7 +625,7 @@ public static class ServySafePs2SqliteRecord
         exit 0
     }
 
-    $dumpTargetAction = if ($Uninstall.IsPresent) { "Export $serviceNames.Count service(s) to '$resolvedArchivePath' and uninstall them from SCM/database" } else { "Export $serviceNames.Count service(s) to '$resolvedArchivePath'" }
+    $dumpTargetAction = if ($Uninstall.IsPresent) { "Export $($serviceNames.Count) service(s) to '$resolvedArchivePath' and uninstall them from SCM/database" } else { "Export $($serviceNames.Count) service(s) to '$resolvedArchivePath'" }
     if (-not $PSCmdlet.ShouldProcess("$($serviceNames.Count) service(s) from database", $dumpTargetAction)) {
         Write-Host "Operation cancelled by user." -ForegroundColor Yellow
         exit 0
