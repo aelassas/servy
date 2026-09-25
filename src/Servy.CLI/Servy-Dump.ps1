@@ -363,7 +363,7 @@ try {
         exit 0
     }
 
-    # Register C# P/Invoke wrapper targeting Windows native %SystemRoot%\System32\winsqlite3.dll with UTF-16 marshaling
+    # Register C# P/Invoke wrapper targeting Windows native %SystemRoot%\System32\winsqlite3.dll with a UTF-8 database path and UTF-16 column marshaling
     if (-not ([System.Management.Automation.PSTypeName]'ServyNativeWinSqliteRecord').Type) {
         $sqliteBinding = @"
 using System;
