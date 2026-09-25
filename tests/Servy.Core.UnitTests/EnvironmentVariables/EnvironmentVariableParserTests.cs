@@ -244,7 +244,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Act & Assert
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
-            Assert.Contains("Environment variable key cannot be empty", ex.Message);
+            Assert.Contains(Strings.Msg_EnvironmentVariableKeyEmpty, ex.Message);
         }
 
         [Theory]
@@ -256,7 +256,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert
-            Assert.Contains("no unescaped '='", ex.Message);
+            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, ex.Message);
         }
 
         [Theory]
@@ -354,8 +354,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert
-            Assert.Contains($"Environment variable '{key}' contains a forbidden newline character", ex.Message);
-            Assert.Contains("Multi-line values are not supported", ex.Message);
+            Assert.Contains(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key), ex.Message);
         }
 
         [Theory]
@@ -367,9 +366,9 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Act & Assert
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
-            // Verify exception message describes missing '=' without echoing raw values
-            Assert.Contains("no unescaped '='", ex.Message);
-            Assert.Contains("position ", ex.Message);
+            // Assert - the message describes the missing '=' without echoing raw values
+            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, ex.Message);
+            Assert.Contains("(record ", ex.Message);
             Assert.DoesNotContain("Line2", ex.Message);
         }
 
