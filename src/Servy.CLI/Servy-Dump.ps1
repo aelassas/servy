@@ -17,6 +17,13 @@
     If the -Uninstall switch parameter is supplied, each successfully exported service is also uninstalled from
     the Windows Service Control Manager (SCM) and removed from the Servy database.
 
+    PROMPT & WHATIF BEHAVIOR:
+    The script supports -WhatIf and -Confirm via CmdletBinding(SupportsShouldProcess = $true).
+    The main dump/export operation (and uninstallation if -Uninstall is specified) is guarded by ShouldProcess.
+    When run with -WhatIf, the export/uninstall operation is safely previewed without modifying the SCM, database,
+    or output files, and internal temporary cleanup operations bypass -WhatIf (-WhatIf:$false) to ensure staging
+    directories are always properly cleaned up.
+
     EXIT CODES:
     - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
@@ -339,7 +346,7 @@ try {
             $probeFile = [System.IO.Path]::Combine($parentDir, ".servydump_probe_" + [System.IO.Path]::GetRandomFileName())
             try {
                 [System.IO.File]::WriteAllBytes($probeFile, @())
-                Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue
+                Remove-Item -LiteralPath $probeFile -Force -ErrorAction SilentlyContinue -WhatIf:$false
                 if (Test-Path -LiteralPath $probeFile) {
                     Write-Host "WARNING: The write probe '$probeFile' could not be removed from '$parentDir' (create is allowed but delete is not) - delete it manually." -ForegroundColor Yellow
                 }
@@ -473,6 +480,38 @@ public static class ServyNativeWinSqliteRecord
         }
     }
 
+    # Query Servy SQLite database via Windows native winsqlite3.dll
+    try {
+        $servicesList = [ServyNativeWinSqliteRecord]::GetServices($dbPath)
+        $serviceNames = @($servicesList | Select-Object -ExpandProperty Name)
+
+        # Build and display service account table for debugging / diagnostic inspection
+        $serviceTable = foreach ($svc in $servicesList) {
+            [PSCustomObject]@{
+                'Service Name' = $svc.Name
+                'User Account' = if ([string]::IsNullOrWhiteSpace($svc.UserAccount)) { '[LocalSystem]' } else { $svc.UserAccount }
+            }
+        }
+
+        Write-Host "`nRegistered Servy Services:" -ForegroundColor Cyan
+        $serviceTable | Format-Table -AutoSize | Out-String | Write-Host
+    }
+    catch {
+        Write-Host "Failed to query Servy database at '$dbPath': $($_.Exception.Message)" -ForegroundColor Red
+        exit 4
+    }
+
+    if ($serviceNames.Count -eq 0) {
+        Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
+        exit 0
+    }
+
+    $dumpTargetAction = if ($Uninstall.IsPresent) { "Export $($serviceNames.Count) service(s) to '$resolvedArchivePath' and uninstall them from SCM/database" } else { "Export $($serviceNames.Count) service(s) to '$resolvedArchivePath'" }
+    if (-not $PSCmdlet.ShouldProcess("$($serviceNames.Count) service(s) from database", $dumpTargetAction)) {
+        Write-Host "Operation cancelled by user." -ForegroundColor Yellow
+        exit 0
+    }
+
     # Create an isolated temporary directory for staging exported XML files inside the try/finally scope
     $tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDump_" + [System.IO.Path]::GetRandomFileName())
 
@@ -487,32 +526,6 @@ public static class ServyNativeWinSqliteRecord
             Write-Host "WARNING: Could not restrict permissions on the staging directory '$tempStagingDir': $($_.Exception.Message)" -ForegroundColor Red
             Write-Host "It will hold UNENCRYPTED PLAIN-TEXT service configurations. Aborting to avoid exposing them." -ForegroundColor Red
             exit 4
-        }
-
-        # Query Servy SQLite database via Windows native winsqlite3.dll
-        try {
-            $servicesList = [ServyNativeWinSqliteRecord]::GetServices($dbPath)
-            $serviceNames = @($servicesList | Select-Object -ExpandProperty Name)
-
-            # Build and display service account table for debugging / diagnostic inspection
-            $serviceTable = foreach ($svc in $servicesList) {
-                [PSCustomObject]@{
-                    'Service Name' = $svc.Name
-                    'User Account' = if ([string]::IsNullOrWhiteSpace($svc.UserAccount)) { '[LocalSystem]' } else { $svc.UserAccount }
-                }
-            }
-
-            Write-Host "`nRegistered Servy Services:" -ForegroundColor Cyan
-            $serviceTable | Format-Table -AutoSize | Out-String | Write-Host
-        }
-        catch {
-            Write-Host "Failed to query Servy database at '$dbPath': $($_.Exception.Message)" -ForegroundColor Red
-            exit 4
-        }
-
-        if ($serviceNames.Count -eq 0) {
-            Write-Host "No services were found in the database at '$dbPath'." -ForegroundColor Yellow
-            exit 0
         }
 
         Write-Host "Found $($serviceNames.Count) service(s) to export..." -ForegroundColor Cyan
@@ -564,6 +577,7 @@ public static class ServyNativeWinSqliteRecord
             LiteralPath      = $stagedItemsToCompress
             DestinationPath  = $resolvedArchivePath
             CompressionLevel = "Optimal"
+            WhatIf           = $false
         }
 
         if ($Overwrite.IsPresent) {
@@ -587,7 +601,7 @@ public static class ServyNativeWinSqliteRecord
             Write-Host "`nWARNING: Could not restrict permissions on the archive '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
 
             # Best-effort removal of the unprotected archive
-            Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue -WhatIf:$false
 
             if (Test-Path -LiteralPath $resolvedArchivePath) {
                 Write-Host "The archive could NOT be removed. It EXISTS UNPROTECTED at '$resolvedArchivePath' and contains plain-text service configurations - delete or protect it manually." -ForegroundColor Red
@@ -597,7 +611,7 @@ public static class ServyNativeWinSqliteRecord
             }
 
             if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
-                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
+                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
                 if (Test-Path -LiteralPath $sidecarPath) {
                     Write-Host "WARNING: A pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
                 }
@@ -608,7 +622,7 @@ public static class ServyNativeWinSqliteRecord
 
         # Remove pre-existing sidecar only after compression and hardening succeed to avoid corrupting surviving backups
         if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
-            Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
             if (Test-Path -LiteralPath $sidecarPath) {
                 Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
             }
@@ -624,9 +638,9 @@ public static class ServyNativeWinSqliteRecord
             Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
         }
         catch {
-            $sidecarWriteFailed = $true
+            $sidecarWriteFailed =$true
             if (Test-Path -LiteralPath $sidecarPath) {
-                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue
+                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
             }
             Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
 
@@ -674,18 +688,16 @@ public static class ServyNativeWinSqliteRecord
                     $affectedTable | Format-Table -AutoSize | Out-String | Write-Host
                 }
 
-                if ($PSCmdlet.ShouldProcess("$($exported.Count) exported service(s)", "Uninstall from SCM and delete from the Servy database")) {
-                    Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
+                Write-Host "`nUninstalling successfully exported service(s) from SCM and database..." -ForegroundColor Cyan
 
-                    foreach ($serviceName in $exported) {
-                        Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
-                        try {
-                            Uninstall-ServyService -Name $serviceName -ErrorAction Stop
-                        }
-                        catch {
-                            Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
-                            $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = "Uninstall failed: $($_.Exception.Message)" })
-                        }
+                foreach ($serviceName in $exported) {
+                    Write-Host "Uninstalling service '$serviceName'..." -ForegroundColor Yellow
+                    try {
+                        Uninstall-ServyService -Name $serviceName -ErrorAction Stop
+                    }
+                    catch {
+                        Write-Host "  FAILED to uninstall '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
+                        $failed.Add([PSCustomObject]@{ Service = $serviceName; Reason = "Uninstall failed: $($_.Exception.Message)" })
                     }
                 }
             }
@@ -731,7 +743,7 @@ NOTE ON SERVICE RESTORATION:
     finally {
         # Clean up temporary staging directory and XML files with explicit failure reporting
         if (Test-Path -LiteralPath $tempStagingDir) {
-            Remove-Item -LiteralPath $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $tempStagingDir -Recurse -Force -ErrorAction SilentlyContinue -WhatIf:$false
 
             if (Test-Path -LiteralPath $tempStagingDir) {
                 Write-Host @"
@@ -755,9 +767,9 @@ finally {
     if ($null -ne $createdParentPath -and (Test-Path -LiteralPath $createdParentPath) -and -not (Test-Path -LiteralPath $resolvedArchivePath)) {
         $dir = $createdParentPath
         while ($null -ne $dir -and $dir -ne $createdRootBoundary -and (Test-Path -LiteralPath $dir)) {
-            $items = Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue
+            $items = Get-ChildItem -LiteralPath$dir -Force -ErrorAction SilentlyContinue
             if ($null -ne $items -and @($items).Count -gt 0) { break }
-            Remove-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue -WhatIf:$false
             $dir = [System.IO.Path]::GetDirectoryName($dir)
         }
     }
