@@ -171,6 +171,17 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Log On As</value>
   </data>
 
+  <!-- Built-in service accounts (Log On As column values) -->
+  <data name="Account_LocalSystem" xml:space="preserve">
+    <value>Local System</value>
+  </data>
+  <data name="Account_LocalService" xml:space="preserve">
+    <value>Local Service</value>
+  </data>
+  <data name="Account_NetworkService" xml:space="preserve">
+    <value>Network Service</value>
+  </data>
+
   <!-- Status -->
   <data name="Status_Stopped" xml:space="preserve">
     <value>Stopped</value>

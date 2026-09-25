@@ -1663,6 +1663,33 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Local System.
+        /// </summary>
+        public static string Account_LocalSystem {
+            get {
+                return ResourceManager.GetString("Account_LocalSystem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Local Service.
+        /// </summary>
+        public static string Account_LocalService {
+            get {
+                return ResourceManager.GetString("Account_LocalService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Network Service.
+        /// </summary>
+        public static string Account_NetworkService {
+            get {
+                return ResourceManager.GetString("Account_NetworkService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Message.
         /// </summary>
         public static string Column_Message {
