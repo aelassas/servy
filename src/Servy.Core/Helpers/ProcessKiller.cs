@@ -486,6 +486,12 @@ namespace Servy.Core.Helpers
         /// <inheritdoc />
         public bool KillProcessesUsingFile(string filePath)
         {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                Logger.Warn("KillProcessesUsingFile called with a null or empty file path.");
+                return false;
+            }
+
             if (!File.Exists(filePath))
             {
                 Logger.Info($"File not found: {filePath}");
