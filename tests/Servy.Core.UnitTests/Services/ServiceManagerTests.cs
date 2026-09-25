@@ -3500,6 +3500,104 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void GetAllServices_ShouldSetTimedOutSentinel_WhenNativeQueryIsCancelled()
+        {
+            // Arrange
+            var mockSvc = new Mock<IServiceControllerWrapper>();
+            mockSvc.Setup(s => s.ServiceName).Returns("TestSvc");
+            mockSvc.Setup(s => s.Status).Returns(ServiceControllerStatus.Running);
+            mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Manual);
+
+            _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(() => CreateScmHandle(1));
+
+            // The per-service linked token fires between two native calls in production; throwing it from
+            // the first native call reaches the same catch without waiting out PopulateNativeDetailsTimeoutMs.
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()))
+                .Throws(new OperationCanceledException());
+
+            // Act
+            var result = _serviceManager.GetAllServices(CancellationToken.None);
+
+            // Assert
+            // The service still lands in the list, carrying the timeout sentinel rather than the
+            // generic fault one, and none of the details the cancelled query could not supply.
+            Assert.Single(result);
+            Assert.Equal("(details unavailable: native query timed out)", result[0].Description);
+            Assert.Empty(result[0].LogOnAs);
+        }
+
+        [Fact]
+        public void GetAllServices_ShouldSetFaultSentinel_WhenServiceNameIsBlank()
+        {
+            // Arrange
+            var mockSvc = new Mock<IServiceControllerWrapper>();
+            mockSvc.Setup(s => s.ServiceName).Returns("   ");
+            mockSvc.Setup(s => s.Status).Returns(ServiceControllerStatus.Running);
+            mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Manual);
+
+            _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(() => CreateScmHandle(1));
+
+            // Act
+            var result = _serviceManager.GetAllServices(CancellationToken.None);
+
+            // Assert
+            // PopulateNativeDetails rejects the blank name before opening anything; the generic arm keeps the row.
+            Assert.Single(result);
+            Assert.Equal("(details unavailable: ArgumentException)", result[0].Description);
+            _mockWindowsServiceApi.Verify(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
+        }
+
+        [Fact]
+        public void GetAllServices_ShouldSetFaultSentinel_WhenQueryServiceConfigSecondPassFails()
+        {
+            // Arrange
+            var svcHandle = CreateServiceHandle(1);
+            var mockSvc = new Mock<IServiceControllerWrapper>();
+            mockSvc.Setup(s => s.ServiceName).Returns("TestSvc");
+            mockSvc.Setup(s => s.Status).Returns(ServiceControllerStatus.Running);
+            mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Manual);
+
+            _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(() => CreateScmHandle(1));
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), "TestSvc", It.IsAny<uint>()))
+                .Returns(svcHandle);
+
+            // Pass 1 (size probe) succeeds with a positive size; pass 2 (fill) fails, which is the untested arm.
+            const int size = 256;
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigOut((SafeServiceHandle h, IntPtr p, int s, out int req) => req = size))
+                .Returns(false);
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigOut((SafeServiceHandle h, IntPtr p, int s, out int req) => req = size))
+                .Returns(false);
+
+            // ERROR_ACCESS_DENIED, the code the second pass reads before it throws.
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var result = _serviceManager.GetAllServices(CancellationToken.None);
+
+            // Assert
+            // GetServiceUser's Win32Exception escapes PopulateNativeDetails and lands in the generic arm.
+            Assert.Single(result);
+            Assert.Equal("(details unavailable: Win32Exception)", result[0].Description);
+            Assert.Empty(result[0].LogOnAs);
+        }
+
+        [Fact]
         public void GetAllServices_ShouldHandleEmptyConfig_AndDelayedFalse()
         {
             // Arrange
