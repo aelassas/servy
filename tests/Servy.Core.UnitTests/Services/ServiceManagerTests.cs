@@ -3536,7 +3536,7 @@ namespace Servy.Core.UnitTests.Services
             // The service still lands in the list, carrying the timeout sentinel rather than the
             // generic fault one, and none of the details the cancelled query could not supply.
             Assert.Single(result);
-            Assert.Equal("(details unavailable: native query timed out)", result[0].Description);
+            Assert.Equal(Strings.Msg_DetailsUnavailableTimedOut, result[0].Description);
             Assert.Empty(result[0].LogOnAs);
         }
 
@@ -3561,7 +3561,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             // PopulateNativeDetails rejects the blank name before opening anything; the generic arm keeps the row.
             Assert.Single(result);
-            Assert.Equal("(details unavailable: ArgumentException)", result[0].Description);
+            Assert.Equal(string.Format(Strings.Msg_DetailsUnavailableFaulted, nameof(ArgumentException)), result[0].Description);
             _mockWindowsServiceApi.Verify(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
         }
 
@@ -3602,7 +3602,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             // GetServiceUser's Win32Exception escapes PopulateNativeDetails and lands in the generic arm.
             Assert.Single(result);
-            Assert.Equal("(details unavailable: Win32Exception)", result[0].Description);
+            Assert.Equal(string.Format(Strings.Msg_DetailsUnavailableFaulted, nameof(Win32Exception)), result[0].Description);
             Assert.Empty(result[0].LogOnAs);
         }
 
