@@ -46,6 +46,8 @@ namespace Servy.Manager.UnitTests.Converters
         [InlineData("First line\nSecond line", "First line")]
         [InlineData("First line\r\nSecond line", "First line")]
         [InlineData("First line\rSecond line", "First line")]
+        [InlineData("First line\nSecond line\nThird line", "First line")]
+        [InlineData("First line\r\nSecond\rThird\nFourth", "First line")]
         [InlineData("", "")]
         public void Convert_ValidString_ReturnsFirstLine(string input, string expected)
         {
