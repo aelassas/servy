@@ -381,7 +381,7 @@ try {
     # -----------------------------------------------------------------------------
     # Database Inspection Layer
     # 1. Attempt ADO.NET using System.Data.SQLite.dll (present in Servy net48 build)
-    # 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using UTF-16 and sqlite3_open_v2 (Read-Only)
+    # 2. Dynamic P/Invoke wrapper safe for PowerShell 2.0 / .NET 3.5 CLR using a UTF-8 database path with UTF-16 column marshaling and sqlite3_open_v2 (Read-Only)
     # -----------------------------------------------------------------------------
 
     $servicesList = New-Object System.Collections.Generic.List[object]
