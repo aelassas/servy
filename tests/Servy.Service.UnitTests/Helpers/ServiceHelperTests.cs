@@ -538,42 +538,20 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var mockLog = new Mock<IServyLogger>();
 
-            var dir = GetTargetRestarterDirectory();
-
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
-
-            // Defensively ensure a dummy restarter file exists in the sandbox if it isn't already present,
-            // without modifying or deleting a real build artifact.
-            bool createdDummy = false;
-            if (!File.Exists(restarterPath))
+            using (new PlaceholderRestarter())
             {
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
-                createdDummy = true;
-            }
+                // Mock the process helper to return null. This guarantees we bypass the multi-minute
+                // constant timeout loop and safely test the start failure pathway without deleting production binaries.
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns((Process)null);
 
-            // Mock the process helper to return null. This guarantees we bypass the multi-minute
-            // constant timeout loop and safely test the start failure pathway without deleting production binaries.
-            _mockProcessHelper
-                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
-                .Returns((Process)null);
-
-            try
-            {
                 // Act
                 _helper.RestartService("TestServiceToRecovery", mockLog.Object);
 
                 // Assert
                 // Verify that the start failure branch executed cleanly and surfaced the corresponding error profile
                 mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.Net48.exe.", It.IsAny<Exception>()), Times.Once);
-            }
-            finally
-            {
-                // Clean up only if this specific test run spawned the temporary placeholder
-                if (createdDummy && File.Exists(restarterPath))
-                {
-                    try { File.Delete(restarterPath); } catch { /* Ignore file locks */ }
-                }
             }
         }
 
@@ -629,23 +607,10 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var mockLog = new Mock<IServyLogger>();
 
-            var dir = GetTargetRestarterDirectory();
-
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
-
-            // Same placeholder discipline as the siblings above: only create what this run needs,
-            // and never touch a real build artifact.
-            bool createdDummy = false;
-            if (!File.Exists(restarterPath))
-            {
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
-                createdDummy = true;
-            }
-
             // RUNTIME BOUNDARY: a real, ALREADY EXITED Process, so WaitForExit returns true
             // immediately and ExitCode reads back the value we asked for - the multi-minute
             // RestarterExeMaxWaitMs loop is never entered.
+            using (new PlaceholderRestarter())
             using (var exitedProcess = new Process())
             {
                 exitedProcess.StartInfo = new ProcessStartInfo
@@ -662,29 +627,18 @@ namespace Servy.Service.UnitTests.Helpers
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
                     .Returns(exitedProcess);
 
-                try
-                {
-                    // Act
-                    _helper.RestartService("TestServiceExitCode" + exitCode, mockLog.Object);
+                // Act
+                _helper.RestartService("TestServiceExitCode" + exitCode, mockLog.Object);
 
-                    // Assert
-                    if (exitCode == 0)
-                    {
-                        mockLog.Verify(l => l.Info(It.Is<string>(m => m.Contains("exited with code 0")), It.IsAny<Exception>()), Times.Once);
-                        mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
-                    }
-                    else
-                    {
-                        mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains($"exited with non-zero code {exitCode}")), It.IsAny<Exception>()), Times.Once);
-                    }
-                }
-                finally
+                // Assert
+                if (exitCode == 0)
                 {
-                    // Clean up only if this specific test run spawned the temporary placeholder
-                    if (createdDummy && File.Exists(restarterPath))
-                    {
-                        try { File.Delete(restarterPath); } catch { /* Ignore file locks */ }
-                    }
+                    mockLog.Verify(l => l.Info(It.Is<string>(m => m.Contains("exited with code 0")), It.IsAny<Exception>()), Times.Once);
+                    mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                }
+                else
+                {
+                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains($"exited with non-zero code {exitCode}")), It.IsAny<Exception>()), Times.Once);
                 }
             }
         }
@@ -695,24 +649,12 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var mockLog = new Mock<IServyLogger>();
 
-            var dir = GetTargetRestarterDirectory();
-
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
-
-            bool createdDummy = false;
-            if (!File.Exists(restarterPath))
+            using (new PlaceholderRestarter())
             {
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
-                createdDummy = true;
-            }
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Throws(new System.ComponentModel.Win32Exception(5, "Access is denied"));
 
-            _mockProcessHelper
-                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
-                .Throws(new System.ComponentModel.Win32Exception(5, "Access is denied"));
-
-            try
-            {
                 // Act
                 var ex = Record.Exception(() => _helper.RestartService("TestServiceStartThrows", mockLog.Object));
 
@@ -720,13 +662,6 @@ namespace Servy.Service.UnitTests.Helpers
                 // The launch failure is swallowed and logged; RestartService never propagates.
                 Assert.Null(ex);
                 mockLog.Verify(l => l.Error("Failed to launch restarter.", It.IsAny<Exception>()), Times.Once);
-            }
-            finally
-            {
-                if (createdDummy && File.Exists(restarterPath))
-                {
-                    try { File.Delete(restarterPath); } catch { /* Ignore file locks */ }
-                }
             }
         }
 
@@ -739,17 +674,6 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var dir = GetTargetRestarterDirectory();
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
-
-            bool createdDummy = false;
-            if (!File.Exists(restarterPath))
-            {
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
-                createdDummy = true;
-            }
-
             var testableHelper = new TestableServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object)
             {
                 RestarterExeMaxWaitMsOverride = 10,
@@ -761,28 +685,19 @@ namespace Servy.Service.UnitTests.Helpers
             testableHelper.QueueWaitForExitResult(false);
             testableHelper.QueueWaitForExitResult(true);
 
+            using (new PlaceholderRestarter())
             using (var dummyProcess = new Process())
             {
                 _mockProcessHelper
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
                     .Returns(dummyProcess);
 
-                try
-                {
-                    // Act
-                    testableHelper.RestartService("TestServiceTimeout", mockLog.Object);
+                // Act
+                testableHelper.RestartService("TestServiceTimeout", mockLog.Object);
 
-                    // Assert
-                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
-                    Assert.True(testableHelper.KillCalled, "Orphaned restarter process should have been killed.");
-                }
-                finally
-                {
-                    if (createdDummy && File.Exists(restarterPath))
-                    {
-                        try { File.Delete(restarterPath); } catch { }
-                    }
-                }
+                // Assert
+                mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
+                Assert.True(testableHelper.KillCalled, "Orphaned restarter process should have been killed.");
             }
         }
 
@@ -791,17 +706,6 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var dir = GetTargetRestarterDirectory();
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
-
-            bool createdDummy = false;
-            if (!File.Exists(restarterPath))
-            {
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
-                createdDummy = true;
-            }
-
             var testableHelper = new TestableServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object)
             {
                 RestarterExeMaxWaitMsOverride = 10,
@@ -813,29 +717,20 @@ namespace Servy.Service.UnitTests.Helpers
             testableHelper.QueueWaitForExitResult(false);
             testableHelper.QueueWaitForExitResult(false);
 
+            using (new PlaceholderRestarter())
             using (var dummyProcess = new Process())
             {
                 _mockProcessHelper
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
                     .Returns(dummyProcess);
 
-                try
-                {
-                    // Act
-                    testableHelper.RestartService("TestServiceKillWaitTimeout", mockLog.Object);
+                // Act
+                testableHelper.RestartService("TestServiceKillWaitTimeout", mockLog.Object);
 
-                    // Assert
-                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
-                    mockLog.Verify(l => l.Warn(It.Is<string>(m => m.Contains("kernel cleanup is taking longer than")), It.IsAny<Exception>()), Times.Once);
-                    Assert.True(testableHelper.KillCalled, "Orphaned restarter process should have been killed.");
-                }
-                finally
-                {
-                    if (createdDummy && File.Exists(restarterPath))
-                    {
-                        try { File.Delete(restarterPath); } catch { }
-                    }
-                }
+                // Assert
+                mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Warn(It.Is<string>(m => m.Contains("kernel cleanup is taking longer than")), It.IsAny<Exception>()), Times.Once);
+                Assert.True(testableHelper.KillCalled, "Orphaned restarter process should have been killed.");
             }
         }
 
@@ -844,17 +739,6 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var dir = GetTargetRestarterDirectory();
-            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
-
-            bool createdDummy = false;
-            if (!File.Exists(restarterPath))
-            {
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
-                createdDummy = true;
-            }
-
             var testableHelper = new TestableServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object)
             {
                 RestarterExeMaxWaitMsOverride = 10,
@@ -864,29 +748,20 @@ namespace Servy.Service.UnitTests.Helpers
             // Queue 1st WaitForExit -> false (timeout), KillProcess will throw exception
             testableHelper.QueueWaitForExitResult(false);
 
+            using (new PlaceholderRestarter())
             using (var dummyProcess = new Process())
             {
                 _mockProcessHelper
                     .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
                     .Returns(dummyProcess);
 
-                try
-                {
-                    // Act
-                    testableHelper.RestartService("TestServiceKillException", mockLog.Object);
+                // Act
+                testableHelper.RestartService("TestServiceKillException", mockLog.Object);
 
-                    // Assert
-                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
-                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("Failed to kill orphaned restarter")), It.IsAny<Exception>()), Times.Once);
-                    Assert.True(testableHelper.KillCalled, "Orphaned restarter KillProcess should have been called.");
-                }
-                finally
-                {
-                    if (createdDummy && File.Exists(restarterPath))
-                    {
-                        try { File.Delete(restarterPath); } catch { }
-                    }
-                }
+                // Assert
+                mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("Failed to kill orphaned restarter")), It.IsAny<Exception>()), Times.Once);
+                Assert.True(testableHelper.KillCalled, "Orphaned restarter KillProcess should have been called.");
             }
         }
 
@@ -1357,6 +1232,38 @@ namespace Servy.Service.UnitTests.Helpers
             // branches, not its path resolution, so the fixture belongs wherever the code looks;
             // AppConfig.GetServyRestarterPath is asserted on its own in Servy.Core.UnitTests.
             return Path.GetDirectoryName(AppConfig.GetServyRestarterPath());
+        }
+
+        /// <summary>
+        /// Puts a placeholder Servy.Restarter.Net48.exe where RestartService looks for it, but only when
+        /// nothing is there already, and removes it on dispose only in that case - a real build
+        /// artifact is never overwritten or deleted (#3111, #4910).
+        /// </summary>
+        private sealed class PlaceholderRestarter : IDisposable
+        {
+            private readonly string _path;
+            private readonly bool _created;
+
+            public PlaceholderRestarter()
+            {
+                var dir = GetTargetRestarterDirectory();
+                _path = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+                if (!File.Exists(_path))
+                {
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    File.WriteAllText(_path, "Temporary Test Placeholder");
+                    _created = true;
+                }
+            }
+
+            public void Dispose()
+            {
+                if (_created && File.Exists(_path))
+                {
+                    try { File.Delete(_path); } catch { /* Ignore file locks */ }
+                }
+            }
         }
 
         #endregion
