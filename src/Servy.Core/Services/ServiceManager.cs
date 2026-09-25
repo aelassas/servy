@@ -1122,15 +1122,15 @@ namespace Servy.Core.Services
 
                                 PopulateNativeDetails(scmHandle, info, cts.Token);
                             }
-                            catch (OperationCanceledException)
+                            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                             {
-                                info.Description = "(details unavailable: native query timed out)";
+                                info.Description = Strings.Msg_DetailsUnavailableTimedOut;
                                 Logger.Warn($"Native SCM query timed out for service: {info.Name}");
                             }
-                            catch (Exception ex)
+                            catch (Exception ex) when (!(ex is OperationCanceledException))
                             {
                                 Logger.Debug($"Native details collection faulted for {info.Name}: {ex.Message}");
-                                info.Description = $"(details unavailable: {ex.GetType().Name})";
+                                info.Description = string.Format(Strings.Msg_DetailsUnavailableFaulted, ex.GetType().Name);
                             }
                         }
 
@@ -1410,13 +1410,11 @@ namespace Servy.Core.Services
             {
                 case ServiceStartType.AutomaticDelayedStart:
                 case ServiceStartType.Automatic:
-                    return (uint)ServiceStartType.Automatic;
-
+                    return SERVICE_AUTO_START;
                 case ServiceStartType.Manual:
-                    return (uint)ServiceStartType.Manual;
-
+                    return SERVICE_DEMAND_START;
                 case ServiceStartType.Disabled:
-                    return (uint)ServiceStartType.Disabled;
+                    return SERVICE_DISABLED;
 
                 case ServiceStartType.Unknown:
                     throw new ArgumentOutOfRangeException(

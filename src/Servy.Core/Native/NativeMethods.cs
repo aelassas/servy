@@ -102,8 +102,14 @@ namespace Servy.Core.Native
 
         #region Service Configuration & Type Flags
 
+        /// <summary>Service start type: started automatically by the service control manager during system startup.</summary>
+        public const int SERVICE_AUTO_START = 0x00000002;
+
         /// <summary>Service start type: started by the service control manager when a process calls StartService.</summary>
         public const int SERVICE_DEMAND_START = 0x00000003;
+
+        /// <summary>Service start type: disabled and cannot be started.</summary>
+        public const int SERVICE_DISABLED = 0x00000004;
 
         /// <summary>Logs the error and continues the startup operation if the service fails to start.</summary>
         public const uint SERVICE_ERROR_NORMAL = 0x00000001;
