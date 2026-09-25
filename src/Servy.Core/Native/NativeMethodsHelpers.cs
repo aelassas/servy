@@ -282,7 +282,7 @@ namespace Servy.Core.Native
 
                                 byte[] hashBytes = sha256.GetHashAndReset();
 
-                                // Lowercase hex string rather than a byte[] so FILE_IDENTITY.IsDifferentFrom
+                                // Lowercase hex string rather than a byte[] so FileIdentity.IsDifferentFrom
                                 // can compare digests with != instead of comparing arrays by reference.
                                 identity.PrefixDigest = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
                             }
