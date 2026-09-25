@@ -147,7 +147,8 @@ namespace Servy.Core.UnitTests.Native
             // Assert
             Assert.True(
                 exclusions.Count == 0,
-                "FILE_IDENTITY.IsDifferentFrom is excluded from the coverage report by "
+                string.Format("{0}.{1} is excluded from the coverage report by ",
+                    nameof(FileIdentity), nameof(FileIdentity.IsDifferentFrom))
                 + string.Format("[ExcludeFromCodeCoverage] on: {0}. ", string.Join(", ", exclusions))
                 + "The tests in this class then assert real behaviour but contribute nothing to the "
                 + "published coverage number, which is what issue 6985 reported.");
