@@ -49,10 +49,7 @@ namespace Servy.Core.UnitTests.Services
             {
                 foreach (var ptr in _allocations)
                 {
-                    if (ptr != IntPtr.Zero)
-                    {
-                        Marshal.FreeHGlobal(ptr);
-                    }
+                    Marshal.FreeHGlobal(ptr);
                 }
 
                 _allocations.Clear();
