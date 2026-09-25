@@ -41,6 +41,19 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.DoesNotContain('\n', (string)result);
         }
 
+        [Fact]
+        public void Convert_ObjectWhoseToStringReturnsNull_ReturnsEmptyString()
+        {
+            // Arrange
+            var value = new NullToStringObject();
+
+            // Act
+            var result = _converter.Convert(value, typeof(string), null, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal(string.Empty, result);
+        }
+
         [Theory]
         [InlineData("Single line", "Single line")]
         [InlineData("First line\nSecond line", "First line")]
@@ -68,6 +81,15 @@ namespace Servy.Manager.UnitTests.Converters
 
             // Assert
             Assert.Equal(Binding.DoNothing, result);
+        }
+
+        /// <summary>
+        /// A bound object whose <see cref="object.ToString"/> returns null, which is the only
+        /// input that reaches the converter's null-coalescing arms.
+        /// </summary>
+        private sealed class NullToStringObject
+        {
+            public override string ToString() => null;
         }
     }
 }
