@@ -40,11 +40,11 @@ namespace Servy.Service.UnitTests.Helpers
         public void EnvVarRegex_ValidPlaceholders_MatchesExpectedVariables(string input)
         {
             // Act
-            MatchCollection matches = ProcessHelper.EnvVarRegex.Matches(input);
+            var matches = ProcessHelper.EnvVarRegex.MatchValues(input).ToList();
 
             // Assert
             Assert.Single(matches);
-            Assert.Equal(input, matches[0].Value);
+            Assert.Equal(input, matches[0]);
         }
 
         [Fact]
@@ -54,13 +54,13 @@ namespace Servy.Service.UnitTests.Helpers
             string input = @"C:\Program Files\%MY_APP%\bin;%ProgramFiles(x86)%\Common;%DOTNET_ROOT%";
 
             // Act
-            MatchCollection matches = ProcessHelper.EnvVarRegex.Matches(input);
+            var matches = ProcessHelper.EnvVarRegex.MatchValues(input).ToList();
 
             // Assert
             Assert.Equal(3, matches.Count);
-            Assert.Equal("%MY_APP%", matches[0].Value);
-            Assert.Equal("%ProgramFiles(x86)%", matches[1].Value);
-            Assert.Equal("%DOTNET_ROOT%", matches[2].Value);
+            Assert.Equal("%MY_APP%", matches[0]);
+            Assert.Equal("%ProgramFiles(x86)%", matches[1]);
+            Assert.Equal("%DOTNET_ROOT%", matches[2]);
         }
 
         [Theory]
@@ -72,7 +72,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void EnvVarRegex_InvalidOrMalformedPlaceholders_DoesNotMatch(string input)
         {
             // Act
-            MatchCollection matches = ProcessHelper.EnvVarRegex.Matches(input);
+            var matches = ProcessHelper.EnvVarRegex.MatchValues(input).ToList();
 
             // Assert
             Assert.Empty(matches);
@@ -133,7 +133,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockRegex = new Mock<IRegexWrapper>();
-            mockRegex.Setup(r => r.Matches(It.IsAny<string>()))
+            mockRegex.Setup(r => r.MatchValues(It.IsAny<string>()))
                      .Throws(new RegexMatchTimeoutException());
 
             // Swap the static wrapper for the mock
@@ -151,6 +151,43 @@ namespace Servy.Service.UnitTests.Helpers
                     It.Is<string>(s => s.Contains("Regex timeout")),
                     It.IsAny<RegexMatchTimeoutException>()),
                     Times.AtLeastOnce);
+            }
+            finally
+            {
+                // Restore original
+                ProcessHelper.EnvVarRegex = original;
+            }
+        }
+
+        [Fact]
+        public void ExpandAndAudit_StubbedMatchValues_WarnsOncePerReturnedPlaceholder()
+        {
+            // Arrange
+            // MatchValues returns strings, so the warning branch is now stubbable: the old
+            // MatchCollection return type had no accessible constructor, which left Throws()
+            // as the only outcome a mock of this seam could express.
+            var mockRegex = new Mock<IRegexWrapper>();
+            mockRegex.Setup(r => r.MatchValues(It.IsAny<string>()))
+                     .Returns(new[] { "%FOO%", "%BAR%" });
+
+            var original = ProcessHelper.EnvVarRegex;
+            ProcessHelper.EnvVarRegex = mockRegex.Object;
+
+            try
+            {
+                // Act
+                ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "anything", _mockLogger.Object);
+
+                // Assert
+                _mockLogger.Verify(l => l.Warn(
+                    It.Is<string>(msg => msg == "Unexpanded environment variable %FOO% in Arguments"),
+                    It.IsAny<Exception>()),
+                    Times.Once);
+
+                _mockLogger.Verify(l => l.Warn(
+                    It.Is<string>(msg => msg == "Unexpanded environment variable %BAR% in Arguments"),
+                    It.IsAny<Exception>()),
+                    Times.Once);
             }
             finally
             {
@@ -219,7 +256,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockRegex = new Mock<IRegexWrapper>();
-            mockRegex.Setup(r => r.Matches(It.IsAny<string>()))
+            mockRegex.Setup(r => r.MatchValues(It.IsAny<string>()))
                      .Throws(new RegexMatchTimeoutException());
 
             // Swap the static wrapper for the mock

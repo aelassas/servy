@@ -71,11 +71,8 @@ namespace Servy.Service.Helpers
 
             try
             {
-                var matches = EnvVarRegex.Matches(input);
-
-                foreach (Match match in matches)
+                foreach (string placeholder in EnvVarRegex.MatchValues(input))
                 {
-                    string placeholder = match.Value;
                     logger?.Warn($"Unexpanded environment variable {placeholder} in {context}");
                 }
             }

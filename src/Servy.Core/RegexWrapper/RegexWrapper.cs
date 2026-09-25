@@ -20,15 +20,18 @@ namespace Servy.Core.RegexWrapper
         }
 
         /// <summary>
-        /// Searches the specified input string for all occurrences of the regular expression.
+        /// Returns the text of every match of the regular expression in the input string.
         /// </summary>
         /// <param name="input">The string to search for a match.</param>
-        /// <returns>A collection of successful matches found in the input string.</returns>
-        /// <exception cref="RegexMatchTimeoutException">Thrown while the returned collection is enumerated, if the execution time exceeds the regex timeout interval. Enumerate inside the try block that should observe the timeout.</exception>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="input"/> is null.</exception>
-        public MatchCollection Matches(string input)
+        /// <returns>The matched substrings, in the order they occur.</returns>
+        /// <exception cref="RegexMatchTimeoutException">Thrown while the returned sequence is enumerated, if the execution time exceeds the regex timeout interval. Enumerate inside the try block that should observe the timeout.</exception>
+        /// <exception cref="ArgumentNullException">Thrown while the returned sequence is enumerated, when <paramref name="input"/> is null.</exception>
+        public IEnumerable<string> MatchValues(string input)
         {
-            return _regex.Matches(input);
+            foreach (Match match in _regex.Matches(input))
+            {
+                yield return match.Value;
+            }
         }
     }
 }
