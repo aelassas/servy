@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Tests path resolution, destination normalization, service name sanitization,
-    Win32 reserved device name prefixing, collision disambiguation, and ACL hardening.
+    Win32 reserved device name prefixing, and collision disambiguation (ACL hardening is covered by Servy.test.ps1).
 #>
 
 Set-StrictMode -Version 2.0
