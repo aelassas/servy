@@ -414,14 +414,6 @@ namespace Servy.Manager.ViewModels
 
                 await RefreshAllServicesAsync(token);
             }
-            catch (OperationCanceledException)
-            {
-                // Clean exit
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Failed background refresh.", ex);
-            }
             finally
             {
                 Interlocked.Exchange(ref _isRefreshingFlag, 0);
@@ -510,15 +502,10 @@ namespace Servy.Manager.ViewModels
                         {
                             await RefreshAllServicesAsync(refreshToken);
                         }
-                        catch (OperationCanceledException)
+                        finally
                         {
-                            // expected when cancelled
+                            Interlocked.Exchange(ref _isRefreshingFlag, 0);
                         }
-                        catch (Exception ex)
-                        {
-                            Logger.Error("RefreshAllServicesAsync failed.", ex);
-                        }
-                        finally { Interlocked.Exchange(ref _isRefreshingFlag, 0); }
                     }, refreshToken);
 
                     return vms.Count;
