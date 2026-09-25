@@ -113,7 +113,7 @@ namespace Servy.Manager.Utils
 
                 long lastPosition = startPos;
                 DateTime lastCreationTime = startCreated;
-                FILE_IDENTITY? knownIdentity = null;
+                FileIdentity? knownIdentity = null;
                 int consecutiveFailures = 0;
 
                 // Track flush-torn string segments across polling boundaries

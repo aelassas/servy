@@ -217,12 +217,12 @@ namespace Servy.Core.Native
         /// Probes a file to capture its unique identity using OS handles and cryptographic content digests.
         /// </summary>
         /// <param name="fs">The open file stream.</param>
-        /// <returns>A populated identity structure. Check <see cref="FILE_IDENTITY.IsValidHandleInfo"/> for success state.</returns>
-        public static FILE_IDENTITY GetFileIdentity(FileStream fs)
+        /// <returns>A populated identity structure. Check <see cref="FileIdentity.IsValidHandleInfo"/> for success state.</returns>
+        public static FileIdentity GetFileIdentity(FileStream fs)
         {
             if (fs == null) throw new ArgumentNullException(nameof(fs));
 
-            var identity = new FILE_IDENTITY { PrefixDigest = null };
+            var identity = new FileIdentity { PrefixDigest = null };
 
             // 1. Kernel32 Handle Probe
             try
