@@ -1,7 +1,5 @@
 using Servy.Core.Native;
 using Servy.Testing;
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Servy.Core.UnitTests.Services
