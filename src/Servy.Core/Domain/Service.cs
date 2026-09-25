@@ -515,6 +515,11 @@ namespace Servy.Core.Domain
         /// settings, monitoring options, recovery actions, etc.) to the underlying
         /// <see cref="IServiceManager"/> implementation.
         /// </para>
+        /// <para>
+        /// A <see cref="Win32Exception"/> raised while opening the Service Control Manager or creating/updating
+        /// the service is not thrown to the caller: the <see cref="ServiceManager"/> implementation catches it and
+        /// reports it as a failed <see cref="OperationResult"/>.
+        /// </para>
         /// </remarks>
         /// <returns>
         /// A task that represents the asynchronous install operation. The task result
@@ -527,10 +532,6 @@ namespace Servy.Core.Domain
         /// <exception cref="ArgumentException">
         /// Thrown if required properties such as <see cref="Name"/> or
         /// <see cref="ExecutablePath"/> are null, empty, or whitespace.
-        /// </exception>
-        /// <exception cref="Win32Exception">
-        /// Thrown if the Service Control Manager cannot be accessed or the service
-        /// cannot be created/updated.
         /// </exception>
         public async Task<OperationResult> InstallAsync(string? wrapperExeDir = null, bool isCLI = false, CancellationToken cancellationToken = default)
         {
@@ -632,10 +633,11 @@ namespace Servy.Core.Domain
         /// <exception cref="ArgumentException">
         /// Thrown if <see cref="Name"/> is null, empty, or whitespace.
         /// </exception>
-        /// <exception cref="Win32Exception">
-        /// Thrown if the Service Control Manager cannot be accessed or the service
-        /// cannot be removed.
-        /// </exception>
+        /// <remarks>
+        /// A <see cref="Win32Exception"/> raised while opening the Service Control Manager or removing the
+        /// service is not thrown to the caller: the <see cref="ServiceManager"/> implementation catches it and
+        /// reports it as a failed <see cref="OperationResult"/>.
+        /// </remarks>
         public async Task<OperationResult> UninstallAsync(CancellationToken cancellationToken = default)
         {
             return await _serviceManager.UninstallServiceAsync(Name, cancellationToken);
