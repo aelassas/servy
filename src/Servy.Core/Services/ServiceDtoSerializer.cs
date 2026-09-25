@@ -62,16 +62,11 @@ namespace Servy.Core.Services
             }
             catch (Exception ex)
             {
+                // FormatLineInfo returns string.Empty when the parser carried no coordinates, so a
+                // single interpolation renders both shapes and every import failure shares one phrase.
                 var lineInfoMessage = FormatLineInfo(ex);
 
-                if (!string.IsNullOrEmpty(lineInfoMessage))
-                {
-                    Logger.Error($"{FormatName} Deserialization failed{lineInfoMessage}.", ex);
-                }
-                else
-                {
-                    Logger.Error($"{FormatName} Deserialization encountered a failure.", ex);
-                }
+                Logger.Error($"{FormatName} Deserialization failed{lineInfoMessage}.", ex);
 
                 return null;
             }
