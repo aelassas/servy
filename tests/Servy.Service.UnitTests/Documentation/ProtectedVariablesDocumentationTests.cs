@@ -85,7 +85,7 @@ namespace Servy.Service.UnitTests.Documentation
             Assert.NotEmpty(documentedVariables);
 
             // 3. Fetch active C# implementation set from EnvironmentVariableHelper
-            var actualProtectedVariables = new HashSet<string>(EnvironmentVariableHelper.ProtectedVariables, StringComparer.OrdinalIgnoreCase);
+            var actualProtectedVariables = new HashSet<string>(EnvironmentVariableHelper.ProtectedVariableNames, StringComparer.OrdinalIgnoreCase);
 
             // 4. Perform bidirectional set difference validation against the isolated environment variable column
             var missingFromDoc = actualProtectedVariables.Except(documentedVariables, StringComparer.OrdinalIgnoreCase).ToList();
