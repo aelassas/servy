@@ -25,7 +25,7 @@
     Array of specific filenames to exclude. Defaults to 'coverage.cobertura.xml'.
 
 .NOTES
-    Target Runtime: PowerShell 5.0+
+    Target Runtime: PowerShell 5.1+
 
 .EXAMPLE
     .\Format-SourceFiles.ps1
