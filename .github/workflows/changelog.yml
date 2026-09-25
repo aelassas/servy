@@ -84,7 +84,7 @@ jobs:
               Write-Host "gh api releases failed (attempt $attempt/$maxRetries), retrying..."
               Start-Sleep -Seconds ([math]::Pow(2, $attempt))
           }
-          
+
           # ROBUSTNESS: Flatten the slurped array-of-arrays into a single stream of release objects
           $deserializedJson = $rawJson | ConvertFrom-Json | ForEach-Object { $_ }
           $releases = @($deserializedJson | Where-Object { $_.draft -eq $false })

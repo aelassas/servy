@@ -50,7 +50,6 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-$script:HadFailure = $false
 
 # Anchor execution directly to repository root where the script lives
 $baseDir = $PSScriptRoot
@@ -71,9 +70,6 @@ if (Test-Path $gitAttributesPath) {
     }
 }
 
-# Default list of BOM-required extensions if Update-FileHelpers.ps1 is unavailable (.config kept for future App.config/Web.config support)
-$bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
-
 # Dot-source Update-FileHelpers.ps1 for shared exclusion definitions and BOM policy
 $helperFile = "Update-FileHelpers.ps1"
 $helperPath = Join-Path $PSScriptRoot $helperFile
@@ -85,9 +81,8 @@ if (-not (Test-Path $helperPath)) {
 if (-not $PSBoundParameters.ContainsKey('ExcludeDirs')) {
     $ExcludeDirs = $script:BuildArtifactExclusionDirs
 }
-if ($script:BomRequiredExtensions) {
-    $bomRequiredExtensions = $script:BomRequiredExtensions
-}
+
+$bomRequiredExtensions = $script:BomRequiredExtensions
 
 # Construct UTF-8 encoding objects (With BOM for .ps1/.psm1/.psd1/.xml/.config [kept for future App.config/Web.config support], No BOM for other files)
 $utf8WithBom = New-Object System.Text.UTF8Encoding($true)
@@ -217,7 +212,6 @@ foreach ($file in $files) {
     catch {
         Write-Warning "Failed to convert $($file.FullName): $_"
         $failedCount++
-        $script:HadFailure = $true
     }
 }
 
@@ -227,6 +221,6 @@ if ($DryRun) {
     Write-Host "`nCompleted: $scannedCount file(s) scanned, $convertedCount converted, $failedCount failed." -ForegroundColor Cyan
 }
 
-if ($failedCount -gt 0 -or $script:HadFailure) {
+if ($failedCount -gt 0) {
     exit 1
 }

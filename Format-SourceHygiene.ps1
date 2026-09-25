@@ -68,7 +68,7 @@ $lfEndingCount = 0
 $bomCount = 0
 
 # File extensions requiring UTF-8 BOM encoding (.config kept for future App.config/Web.config support)
-$bomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
+$bomRequiredExtensions = $script:BomRequiredExtensions
 
 # Extensions governed by .editorconfig whitespace and charset rules (mirroring [*] scope).
 # NOTE: .resx files are deliberately omitted because trailing spaces inside XML <value> elements
