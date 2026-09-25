@@ -55,10 +55,10 @@ namespace Servy.Core.EnvironmentVariables
                     switch (resultKind)
                     {
                         case EnvVarValidationResultKind.MissingEquals:
-                            throw new FormatException($"{Strings.Msg_EnvironmentVariableMissingEquals} (record {recordPosition}).");
+                            throw new FormatException(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, recordPosition));
 
                         case EnvVarValidationResultKind.EmptyKey:
-                            throw new FormatException($"{Strings.Msg_EnvironmentVariableKeyEmpty} (record {recordPosition}).");
+                            throw new FormatException(string.Format(Strings.Msg_EnvironmentVariableKeyEmpty, recordPosition));
 
                         case EnvVarValidationResultKind.ForbiddenNewline:
                             throw new FormatException(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key));
