@@ -69,6 +69,13 @@ namespace Servy.Core.IO
         private DateTime _rotationCooldownUntil = DateTime.MinValue;
 
         /// <summary>
+        /// How long <see cref="WaitForRotationToSettle"/> waits on <see cref="_lock"/> before giving up,
+        /// in milliseconds. Defaults to <see cref="AppConfig.LogRotationWaitTimeoutMs"/>; exposed as a
+        /// settable seam so tests can exercise the timeout arm without paying it in real wall-clock.
+        /// </summary>
+        internal int RotationWaitTimeoutMs { get; set; } = AppConfig.LogRotationWaitTimeoutMs;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriter"/> class.
         /// </summary>
         /// <param name="path">The path to the log file.</param>
@@ -180,7 +187,7 @@ namespace Servy.Core.IO
             {
                 // ROBUSTNESS: Use the timed overload of Monitor.Wait to prevent permanent thread freezes
                 // if PerformPhysicalRotation deadlocks or drops its PulseAll invocation.
-                if (!Monitor.Wait(_lock, AppConfig.LogRotationWaitTimeoutMs))
+                if (!Monitor.Wait(_lock, RotationWaitTimeoutMs))
                 {
                     // Do NOT clear _rotationInProgress = false here!
                     // Forcefully resetting the state gate while PerformPhysicalRotation is still running File.Move
@@ -188,7 +195,7 @@ namespace Servy.Core.IO
                     // Because FileShare.Delete is active, Windows permits the move to complete, silently redirecting
                     // subsequent writes into the rotated/archived log file (#6873).
                     Logger.Warn(
-                        $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms for '{_file.Name}'. " +
+                        $"Log rotation lock timed out after {RotationWaitTimeoutMs}ms for '{_file.Name}'. " +
                         "Rotation is taking longer than expected; skipping write on this thread to avoid misdirecting log output.");
 
                     return false;

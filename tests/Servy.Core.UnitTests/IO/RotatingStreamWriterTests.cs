@@ -1186,6 +1186,12 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
+                // Nothing here ever clears _rotationInProgress or pulses _lock, so every wait on the
+                // gate runs to its full timeout - once in WriteLine below and once more in Dispose,
+                // which also waits since #5526. Shorten the seam so the arm costs milliseconds
+                // instead of the 15 s production default, twice over.
+                writer.RotationWaitTimeoutMs = 50;
+
                 // Trigger an initial write to initialize the stream
                 writer.WriteLine("hello");
 
@@ -1196,7 +1202,7 @@ namespace Servy.Core.UnitTests.IO
                 TestReflection.SetField(writer, "_rotationInProgress", true);
 
                 // Act: Attempt writing while rotation is marked in progress
-                // WaitForRotationToSettle will time out after LogRotationWaitTimeoutMs and return false.
+                // WaitForRotationToSettle will time out after RotationWaitTimeoutMs and return false.
                 writer.WriteLine("write_during_rotation_attempt");
 
                 // Assert: The writer property must remain null because InitializeWriter was skipped during the timeout
