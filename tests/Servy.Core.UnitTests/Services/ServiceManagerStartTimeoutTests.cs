@@ -1,5 +1,4 @@
 using Moq;
-using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -8,6 +7,7 @@ using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Logging;
+using Servy.Testing;
 using System.ServiceProcess;
 
 namespace Servy.Core.UnitTests.Services
@@ -61,45 +61,14 @@ namespace Servy.Core.UnitTests.Services
                 mockWin32ErrorProvider.Object,
                 mockServiceRepository.Object);
 
-            // Route the static Logger into a private temp directory so the start entry can be read back
-            // without touching the product's own logs directory.
-            string tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
-            string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
-            string tempLogFilePath = Path.Combine(tempLogDir, tempLogFileName);
+            // Act
+            var (result, textLogOutput) = await LogCapture.RunAsync(
+                () => serviceManager.StartServiceAsync(serviceName, cancellationToken: TestContext.Current.CancellationToken));
 
-            try
-            {
-                Logger.Shutdown();
-                Logger.Initialize(tempLogFileName, LogLevel.Info, logDirectory: tempLogDir);
-
-                // Act
-                var result = await serviceManager.StartServiceAsync(serviceName, cancellationToken: TestContext.Current.CancellationToken);
-
-                // Flush and release the log file handle before reading it back
-                Logger.Shutdown();
-
-                // Assert
-                Assert.True(result.IsSuccess);
-                mockController.Verify(c => c.Start(), Times.Once);
-
-                string textLogOutput = File.Exists(tempLogFilePath) ? File.ReadAllText(tempLogFilePath) : string.Empty;
-                Assert.Contains($"with a timeout of {expectedTimeout} seconds", textLogOutput);
-            }
-            finally
-            {
-                Logger.Shutdown();
-
-                // Initialize's logDirectory override is sticky - Shutdown does not clear it - so point the
-                // static logger back at its default folder before leaving, or every later test in the
-                // assembly writes into the temp directory this one is about to delete.
-                Logger.Initialize(null, logDirectory: AppConfig.LogsFolderPath);
-                Logger.Shutdown();
-
-                if (Directory.Exists(tempLogDir))
-                {
-                    try { Directory.Delete(tempLogDir, recursive: true); } catch { /* Ignore cleanup errors */ }
-                }
-            }
+            // Assert
+            Assert.True(result.IsSuccess);
+            mockController.Verify(c => c.Start(), Times.Once);
+            Assert.Contains($"with a timeout of {expectedTimeout} seconds", textLogOutput);
         }
     }
 }

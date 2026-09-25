@@ -7,6 +7,7 @@ using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
+using Servy.Testing;
 using System.Diagnostics;
 using System.ServiceProcess;
 using ServiceHelper = Servy.Service.Helpers.ServiceHelper;
@@ -147,99 +148,76 @@ namespace Servy.Service.UnitTests.Helpers
         public void LogStartupArguments_EnableDebugLogsTrue_LogsMaskedSensitiveDataToTextLog()
         {
             // Arrange
-            // Route the static Logger into a private temp directory (the logDirectory seam from #5459)
-            // so the test never creates or re-ACLs the product's %ProgramData%\Servy\logs directory.
-            string tempLogDir = Path.Combine(Path.GetTempPath(), "ServyTestLogs", Guid.NewGuid().ToString("N"));
-            string tempLogFileName = $"Servy_Test_Log_{Guid.NewGuid():N}.log";
-            string tempLogFilePath = Path.Combine(tempLogDir, tempLogFileName);
+            var mockEventLog = new Mock<IServyLogger>();
 
-            try
+            var options = new StartOptions
             {
-                // Re-initialize static Logger cleanly for this test
-                Logger.Shutdown();
-                Logger.Initialize(tempLogFileName, LogLevel.Info, logDirectory: tempLogDir);
-
-                var mockEventLog = new Mock<IServyLogger>();
-
-                var options = new StartOptions
+                ServiceName = "SecureService",
+                EnableDebugLogs = true,
+                ExecutableArgs = "--password=SuperSecretPassword --api_key DB12345 --port 8080",
+                FailureProgramExecutableArgs = "/token:SecretToken123 /normalArg test",
+                EnvironmentVariables = new List<EnvironmentVariable>
                 {
-                    ServiceName = "SecureService",
-                    EnableDebugLogs = true,
-                    ExecutableArgs = "--password=SuperSecretPassword --api_key DB12345 --port 8080",
-                    FailureProgramExecutableArgs = "/token:SecretToken123 /normalArg test",
-                    EnvironmentVariables = new List<EnvironmentVariable>
-                    {
-                        new EnvironmentVariable { Name = "DB_PASSWORD", Value = "SqlPass123" },
-                        new EnvironmentVariable { Name = "AZURE_CREDENTIALS", Value = "{\"clientSecret\":\"SecretAzureKey\"}" },
-                        new EnvironmentVariable { Name = "NORMAL_ENV", Value = "PublicValue" }
-                    },
-                    PreLaunchExecutableArgs = "connect --jwt=TokenVal",
-                    PreLaunchEnvironmentVariables = new List<EnvironmentVariable>
-                    {
-                        new EnvironmentVariable { Name = "AUTH_TOKEN", Value = "JwtSecret" }
-                    },
-                    PostLaunchExecutableArgs = "--session \"Active Session Id\"",
-                    PreStopExecutableArgs = "stop --cert-thumbprint abcde123",
-                    PostStopExecutableArgs = "cleanup --pat SecretPatToken"
-                };
-
-                // Capture public parameters logged through the IServyLogger interface
-                var publicLoggedEntries = new List<string>();
-                mockEventLog
-                    .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
-                    .Callback<string, Exception?>((msg, _) => publicLoggedEntries.Add(msg));
-
-                // Act
-                _helper.LogStartupArguments(options, mockEventLog.Object);
-
-                // Flush/Shutdown static logger to release file handles
-                Logger.Shutdown();
-
-                // Assert
-                string publicLogOutput = string.Join(Environment.NewLine, publicLoggedEntries);
-                string textLogOutput = File.Exists(tempLogFilePath) ? File.ReadAllText(tempLogFilePath) : string.Empty;
-                string combinedLogOutput = publicLogOutput + Environment.NewLine + textLogOutput;
-
-                // 0. The dump actually happened on the channels under test
-                Assert.NotEmpty(publicLoggedEntries);
-                Assert.Contains("Startup Parameters", publicLogOutput, StringComparison.OrdinalIgnoreCase);
-                Assert.True(File.Exists(tempLogFilePath), $"Expected log file was not created at '{tempLogFilePath}'. Ensure process has write permissions.");
-                Assert.Contains("Startup Parameters - SENSITIVE DATA", textLogOutput, StringComparison.OrdinalIgnoreCase);
-
-                // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked anywhere
-                Assert.DoesNotContain("SuperSecretPassword", combinedLogOutput);
-                Assert.DoesNotContain("DB12345", combinedLogOutput);
-                Assert.DoesNotContain("SecretToken123", combinedLogOutput);
-                Assert.DoesNotContain("SqlPass123", combinedLogOutput);
-                Assert.DoesNotContain("SecretAzureKey", combinedLogOutput);
-                Assert.DoesNotContain("TokenVal", combinedLogOutput);
-                Assert.DoesNotContain("JwtSecret", combinedLogOutput);
-                Assert.DoesNotContain("Active Session Id", combinedLogOutput);
-                Assert.DoesNotContain("abcde123", combinedLogOutput);
-                Assert.DoesNotContain("SecretPatToken", combinedLogOutput);
-
-                // 2. Sensitive values were emitted in masked form in the local text log
-                Assert.Contains("********", textLogOutput);
-                Assert.Contains("--password=********", textLogOutput);
-                Assert.Contains("DB_PASSWORD", textLogOutput); // key kept for diagnosability
-                Assert.Contains("AZURE_CREDENTIALS=********", textLogOutput);
-
-                // 3. Confirm separation: Sensitive log section is present in text log, but NOT sent to the event logger interface
-                Assert.DoesNotContain("SENSITIVE DATA", publicLogOutput);
-
-                // 4. Non-sensitive data is untouched and present
-                Assert.Contains("PublicValue", textLogOutput);
-                Assert.Contains("--port 8080", textLogOutput);
-                Assert.Contains("/normalArg test", textLogOutput);
-            }
-            finally
-            {
-                Logger.Shutdown();
-                if (Directory.Exists(tempLogDir))
+                    new EnvironmentVariable { Name = "DB_PASSWORD", Value = "SqlPass123" },
+                    new EnvironmentVariable { Name = "AZURE_CREDENTIALS", Value = "{\"clientSecret\":\"SecretAzureKey\"}" },
+                    new EnvironmentVariable { Name = "NORMAL_ENV", Value = "PublicValue" }
+                },
+                PreLaunchExecutableArgs = "connect --jwt=TokenVal",
+                PreLaunchEnvironmentVariables = new List<EnvironmentVariable>
                 {
-                    try { Directory.Delete(tempLogDir, recursive: true); } catch { /* Ignore cleanup errors */ }
-                }
-            }
+                    new EnvironmentVariable { Name = "AUTH_TOKEN", Value = "JwtSecret" }
+                },
+                PostLaunchExecutableArgs = "--session \"Active Session Id\"",
+                PreStopExecutableArgs = "stop --cert-thumbprint abcde123",
+                PostStopExecutableArgs = "cleanup --pat SecretPatToken"
+            };
+
+            // Capture public parameters logged through the IServyLogger interface
+            var publicLoggedEntries = new List<string>();
+            mockEventLog
+                .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception?>((msg, _) => publicLoggedEntries.Add(msg));
+
+            // Act
+            // LogCapture routes the static Logger into a private temp directory (the logDirectory
+            // seam from #5459) so the test never creates or re-ACLs the product's own logs directory.
+            string textLogOutput = LogCapture.Run(() => _helper.LogStartupArguments(options, mockEventLog.Object));
+
+            // Assert
+            string publicLogOutput = string.Join(Environment.NewLine, publicLoggedEntries);
+            string combinedLogOutput = publicLogOutput + Environment.NewLine + textLogOutput;
+
+            // 0. The dump actually happened on the channels under test
+            Assert.NotEmpty(publicLoggedEntries);
+            Assert.Contains("Startup Parameters", publicLogOutput, StringComparison.OrdinalIgnoreCase);
+            Assert.NotEmpty(textLogOutput);
+            Assert.Contains("Startup Parameters - SENSITIVE DATA", textLogOutput, StringComparison.OrdinalIgnoreCase);
+
+            // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked anywhere
+            Assert.DoesNotContain("SuperSecretPassword", combinedLogOutput);
+            Assert.DoesNotContain("DB12345", combinedLogOutput);
+            Assert.DoesNotContain("SecretToken123", combinedLogOutput);
+            Assert.DoesNotContain("SqlPass123", combinedLogOutput);
+            Assert.DoesNotContain("SecretAzureKey", combinedLogOutput);
+            Assert.DoesNotContain("TokenVal", combinedLogOutput);
+            Assert.DoesNotContain("JwtSecret", combinedLogOutput);
+            Assert.DoesNotContain("Active Session Id", combinedLogOutput);
+            Assert.DoesNotContain("abcde123", combinedLogOutput);
+            Assert.DoesNotContain("SecretPatToken", combinedLogOutput);
+
+            // 2. Sensitive values were emitted in masked form in the local text log
+            Assert.Contains("********", textLogOutput);
+            Assert.Contains("--password=********", textLogOutput);
+            Assert.Contains("DB_PASSWORD", textLogOutput); // key kept for diagnosability
+            Assert.Contains("AZURE_CREDENTIALS=********", textLogOutput);
+
+            // 3. Confirm separation: Sensitive log section is present in text log, but NOT sent to the event logger interface
+            Assert.DoesNotContain("SENSITIVE DATA", publicLogOutput);
+
+            // 4. Non-sensitive data is untouched and present
+            Assert.Contains("PublicValue", textLogOutput);
+            Assert.Contains("--port 8080", textLogOutput);
+            Assert.Contains("/normalArg test", textLogOutput);
         }
 
         #endregion
