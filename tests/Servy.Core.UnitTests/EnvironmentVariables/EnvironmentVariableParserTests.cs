@@ -360,7 +360,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [Theory]
         [InlineData("KEY=Line1\nLine2", 2)]
         [InlineData("KEY=Line1\rLine2", 2)]
-        [InlineData("KEY=Line1\r\nLine2", 3)]
+        [InlineData("KEY=Line1\r\nLine2", 2)]
         public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input, int recordPosition)
         {
             // Act & Assert

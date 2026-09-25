@@ -30,14 +30,16 @@ namespace Servy.Core.EnvironmentVariables
             // Split input by unescaped semicolons and newlines
             var variables = EscapedTokenizer.SplitByUnescapedDelimiters(environmentVariables, EscapedTokenizer.EnvVarRecordDelimiters);
 
-            foreach (var variable in variables)
+            for (int i = 0; i < variables.Length; i++)
             {
+                var variable = variables[i];
+
                 // Skip empty segments (possible if input ends with delimiter)
                 if (string.IsNullOrWhiteSpace(variable))
                     continue;
 
-                // Call the centralized grammar rule validation engine to guarantee parity with Parser checks
-                if (!ProcessAndValidateRecord(variable, out _, out _, out string errorMessage, out _))
+                // Same 1-based split index the parser reports, so both callers name the same record
+                if (!ProcessAndValidateRecord(variable, i + 1, out _, out _, out string errorMessage, out _))
                 {
                     errors.Add(errorMessage);
                 }
@@ -49,7 +51,7 @@ namespace Servy.Core.EnvironmentVariables
         /// <summary>
         /// Shared syntax validation block used by both Validator and Parser to guarantee alignment.
         /// </summary>
-        internal static bool ProcessAndValidateRecord(string part, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind)
+        internal static bool ProcessAndValidateRecord(string part, int recordPosition, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind)
         {
             key = string.Empty;
             value = string.Empty;
@@ -62,7 +64,7 @@ namespace Servy.Core.EnvironmentVariables
             int eqIdx = EscapedTokenizer.IndexOfUnescapedChar(part, '=');
             if (eqIdx < 0)
             {
-                errorMessage = Strings.Msg_EnvironmentVariableMissingEquals;
+                errorMessage = string.Format(Strings.Msg_EnvironmentVariableMissingEquals, recordPosition);
                 resultKind = EnvVarValidationResultKind.MissingEquals;
                 return false;
             }
@@ -75,7 +77,7 @@ namespace Servy.Core.EnvironmentVariables
 
             if (string.IsNullOrEmpty(key))
             {
-                errorMessage = Strings.Msg_EnvironmentVariableKeyEmpty;
+                errorMessage = string.Format(Strings.Msg_EnvironmentVariableKeyEmpty, recordPosition);
                 resultKind = EnvVarValidationResultKind.EmptyKey;
                 return false;
             }

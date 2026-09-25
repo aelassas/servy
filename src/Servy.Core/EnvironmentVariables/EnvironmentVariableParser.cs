@@ -36,8 +36,9 @@ namespace Servy.Core.EnvironmentVariables
 
             var result = new List<EnvironmentVariable>();
 
-            // Sync delimiters with the Validator to support multi-line input
-            var parts = EscapedTokenizer.SplitByUnescapedDelimiters(input, EscapedTokenizer.EnvVarRecordDelimiters);
+            // Sync delimiters with the Validator to support multi-line input;
+            // normalize \r\n to \n first so Windows line endings are treated as a single record boundary.
+            var parts = EscapedTokenizer.SplitByUnescapedDelimiters(input.Replace("\r\n", "\n"), EscapedTokenizer.EnvVarRecordDelimiters);
 
             for (int i = 0; i < parts.Length; i++)
             {
@@ -46,13 +47,14 @@ namespace Servy.Core.EnvironmentVariables
                 if (string.IsNullOrWhiteSpace(part))
                     continue;
 
+                int recordPosition = i + 1;
+
                 // Delegate execution to the centralized validation rules block to maintain perfect logic alignment
-                if (!EnvironmentVariablesValidator.ProcessAndValidateRecord(part, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind))
+                if (!EnvironmentVariablesValidator.ProcessAndValidateRecord(part, recordPosition, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind))
                 {
                     // Map the structured validation result to a specific FormatException without leaking raw record values.
                     // Using the enum (rather than matching localized message text) keeps the
                     // mapping correct regardless of UI culture.
-                    int recordPosition = i + 1;
 
                     switch (resultKind)
                     {
