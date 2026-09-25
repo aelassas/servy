@@ -1,13 +1,61 @@
 using Servy.Core.Config;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Config
 {
     public class ServiceAccountsTests
     {
+        #region Parity Tests
+
+        [Fact]
+        public void RunnableServiceAccounts_ParityWithServyDumpScript_MatchesCanonicalSet()
+        {
+            // Arrange
+            string scriptPath = Testing.Helper.GetServyDumpPs1Path();
+            Assert.True(File.Exists(scriptPath), $"Target script missing at path: {scriptPath}");
+
+            string scriptText = File.ReadAllText(scriptPath);
+
+            // Extract the foreach ($a in @( ... )) alias list feeding $script:runnableServiceAccounts
+            var match = Regex.Match(
+                scriptText,
+                @"\$script:runnableServiceAccounts\s*=.*?foreach\s*\(\$a\s+in\s+@\((?<content>.*?)\)\)",
+                RegexOptions.Singleline);
+
+            Assert.True(match.Success, "Failed to locate the $script:runnableServiceAccounts alias list in Servy-Dump.ps1");
+
+            string arrayContent = match.Groups["content"].Value;
+
+            // The alias list is single-quoted throughout, so a single-quote capture keeps values
+            // such as '.\Local System' intact where a whitespace-excluding pattern would not.
+            var scriptAliases = Regex.Matches(arrayContent, @"'(?<name>[^']+)'")
+                .Cast<Match>()
+                .Select(m => m.Groups["name"].Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var canonicalAliases = ServiceAccounts.RunnableServiceAccounts;
+
+            // Act
+            var missingInScript = canonicalAliases.Except(scriptAliases, StringComparer.OrdinalIgnoreCase).ToList();
+            var extraInScript = scriptAliases.Except(canonicalAliases, StringComparer.OrdinalIgnoreCase).ToList();
+
+            // Assert
+            Assert.True(
+                missingInScript.Count == 0,
+                $"Servy-Dump.ps1 is missing aliases defined in ServiceAccounts.cs: {string.Join(", ", missingInScript)}");
+
+            Assert.True(
+                extraInScript.Count == 0,
+                $"Servy-Dump.ps1 contains aliases not present in ServiceAccounts.cs: {string.Join(", ", extraInScript)}");
+        }
+
+        #endregion
+
         #region Constants & Collections Tests
 
         [Fact]
