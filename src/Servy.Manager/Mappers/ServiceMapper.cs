@@ -60,7 +60,6 @@ namespace Servy.Manager.Mappers
                 IsInstalled = false,
                 IsDesktopAppAvailable = isDesktopAppAvailable,
                 Pid = service.Pid,
-                IsPidEnabled = service.Pid != null,
                 CpuUsage = cpuUsage,
                 RamUsage = ramUsage,
                 StdoutPath = service.StdoutPath ?? string.Empty,
@@ -90,7 +89,6 @@ namespace Servy.Manager.Mappers
             {
                 Name = item.Name,
                 Pid = item.Pid,
-                IsPidEnabled = item.Pid != null,
             };
             if (item is ConsoleService consoleService)
             {
