@@ -1041,7 +1041,6 @@ namespace Servy.Manager.ViewModels
             if (info.RequiresPidUpdate)
             {
                 service.Pid = info.NewPid;
-                service.IsPidEnabled = service.Pid != null;
             }
 
             service.CpuUsage = info.CpuUsage;
