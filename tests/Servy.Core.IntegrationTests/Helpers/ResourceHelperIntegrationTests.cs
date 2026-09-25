@@ -308,7 +308,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         public async Task CopyEmbeddedResource_WhenResourceStreamNotFound_ReturnsFalse()
         {
             // Arrange
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns((Stream?)null); // Simulate missing resource
 
             // Act
@@ -327,8 +326,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "dll";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
-
             // Provide a real memory stream with dummy data
             var dummyData = new byte[] { 0x01, 0x02, 0x03 };
             var memoryStream = new MemoryStream(dummyData);
@@ -343,6 +340,9 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(File.Exists(targetPath));
             var writtenBytes = File.ReadAllBytes(targetPath);
             Assert.Equal(dummyData, writtenBytes);
+            // The target file does not exist before the Act, so the lock probe short-circuits
+            // and ProcessKiller is never invoked
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
         }
 
         [Theory]
@@ -355,9 +355,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
             var testServices = new List<string> { "Servy_Service_A", "Servy_Service_B" };
-
-            // Configure the process killer mock to return true for file handle clearing
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(targetPath)).Returns(true);
 
             // Mock the assembly to return a valid manifest stream so execution passes the initial safeguards
             var dummyResourceBytes = new byte[] { 0xAA, 0xBB, 0xCC };
@@ -392,6 +389,9 @@ namespace Servy.Core.IntegrationTests.Helpers
             // 1. Verify the core copy transaction reported a success state
             Assert.True(result);
             Assert.True(File.Exists(targetPath));
+            // The target file does not exist before the Act, so the lock probe short-circuits
+            // and ProcessKiller is never invoked
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
 
             // 2. VERIFICATION LOOP: Confirm the service management pipeline executed gracefully in order
             if (isCli)
@@ -485,7 +485,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void CopyEmbeddedResourceForceSync_WhenResourceStreamNotFound_ReturnsFalse()
         {
             // Arrange
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns((Stream?)null); // Simulate missing resource
 
             // Act
@@ -504,8 +503,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
-
             var dummyData = new byte[] { 0x0A, 0x0B, 0x0C };
             var memoryStream = new MemoryStream(dummyData);
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(memoryStream);
@@ -518,6 +515,9 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(result);
             Assert.True(File.Exists(targetPath));
             Assert.Equal(dummyData, File.ReadAllBytes(targetPath));
+            // The target file does not exist before the Act, so the lock probe short-circuits
+            // and ProcessKiller is never invoked
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -556,7 +556,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             var testServices = new List<string> { "Servy_Service_A" };
 
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
                          .Returns(() => new MemoryStream(new byte[] { 0x01 }));
             _mockServiceHelper.Setup(s => s.GetRunningServyUIServices()).Returns(testServices);
