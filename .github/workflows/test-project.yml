@@ -78,16 +78,16 @@ jobs:
           $leaf = Split-Path -Leaf $inputName          # accepts a bare filename or a path
           if ($leaf -notlike '*.csproj') { $leaf = "$leaf.csproj" }
 
-          $matches = @(Get-ChildItem -Path "$env:GITHUB_WORKSPACE/tests" -Recurse -Filter $leaf)
-          if ($matches.Count -eq 0) {
+          $projectFiles = @(Get-ChildItem -Path "$env:GITHUB_WORKSPACE/tests" -Recurse -Filter $leaf)
+          if ($projectFiles.Count -eq 0) {
               Write-Host "::error::No project named '$leaf' under ./tests/."
               exit 1
           }
-          if ($matches.Count -gt 1) {
-              Write-Host "::error::'$leaf' matches $($matches.Count) projects: $($matches.FullName -join ', ')"
+          if ($projectFiles.Count -gt 1) {
+              Write-Host "::error::'$leaf' matches $($projectFiles.Count) projects: $($projectFiles.FullName -join ', ')"
               exit 1
           }
-          $projectFile = $matches[0]
+          $projectFile = $projectFiles[0]
 
           $projName = $projectFile.BaseName
           $vsTest = $env:VSTEST_PATH
