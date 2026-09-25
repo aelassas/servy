@@ -320,7 +320,7 @@ namespace Servy.Manager
                     else
                     {
                         // Perform diagnostic ACL check on target executable directory
-                        PathSecurityGuard.IsDirectoryAclHardened(DesktopAppPublishPath);
+                        PathSecurityGuard.WarnIfDirectoryAclNotHardened(DesktopAppPublishPath);
                     }
                 }
             };

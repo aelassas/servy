@@ -15,7 +15,7 @@ namespace Servy.Core.Security
         /// </summary>
         /// <remarks>
         /// Both the vault purge in <see cref="ApplySecurityRules"/> and the install-directory audit in
-        /// <c>PathSecurityGuard.IsDirectoryAclHardened</c> decide who counts as a standard user, so the
+        /// <c>PathSecurityGuard.WarnIfDirectoryAclNotHardened</c> decide who counts as a standard user, so the
         /// set is declared once here rather than rebuilt at each site.
         /// </remarks>
         public static readonly IReadOnlyList<SecurityIdentifier> BroadUnprivilegedSids = new[]
