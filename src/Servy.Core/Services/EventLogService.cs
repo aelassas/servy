@@ -3,7 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Resources;
-using System.Diagnostics.Eventing.Reader;
+using System.Diagnostics.Eventing.Reader;   // EventLogException
 using System.Security;
 using System.Text.RegularExpressions;
 
@@ -105,13 +105,13 @@ namespace Servy.Core.Services
 
                 try
                 {
-                    var eventQuery = new EventLogQuery(AppConfig.EventLogName, PathType.LogName, query)
-                    {
-                        ReverseDirection = true   // newest events first, so the MaxResults cap keeps the most recent
-                    };
-
                     // Request the lazy iterator over the underlying EventLogReader.
-                    var records = _reader.ReadEvents(eventQuery, AppConfig.EventLogMaxResults * AppConfig.EventLogPrefetchCushion); // Generous cushion
+                    // newestFirst: true so the MaxResults cap keeps the most recent events.
+                    var records = _reader.ReadEvents(
+                        AppConfig.EventLogName,
+                        query,
+                        newestFirst: true,
+                        AppConfig.EventLogMaxResults * AppConfig.EventLogPrefetchCushion); // Generous cushion
 
                     // ROBUSTNESS: The foreach enumeration loop must run within the try block.
                     // Since ReadEvents is a lazy iterator, this is where the service handle is actually requested,
