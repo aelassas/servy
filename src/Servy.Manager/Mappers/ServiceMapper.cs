@@ -2,7 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Manager.Models;
-using UiAppConfig = Servy.Manager.Config.UiAppConfig;
+using Servy.Manager.Resources;
 
 namespace Servy.Manager.Mappers
 {
@@ -56,7 +56,7 @@ namespace Servy.Manager.Mappers
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
                 Status = ServiceStatus.None,
-                LogOnAs = service.RunAsLocalSystem ? UiAppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount),
+                LogOnAs = service.RunAsLocalSystem ? Strings.Account_LocalSystem : GetLogOnAsDisplayName(service.UserAccount),
                 IsInstalled = false,
                 IsDesktopAppAvailable = isDesktopAppAvailable,
                 Pid = service.Pid,
@@ -110,18 +110,18 @@ namespace Servy.Manager.Mappers
         public static string GetLogOnAsDisplayName(string? userSession)
         {
             // Resolving display name for service account identity.
-            // If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the UI-friendly constant.
+            // If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the localized UI label.
             if (string.IsNullOrEmpty(userSession))
-                return UiAppConfig.LocalSystem;
+                return Strings.Account_LocalSystem;
 
             if (ServiceAccounts.LocalSystemAliases.Contains(userSession))
-                return UiAppConfig.LocalSystem;
+                return Strings.Account_LocalSystem;
 
             if (ServiceAccounts.LocalServiceAliases.Contains(userSession))
-                return UiAppConfig.LocalService;
+                return Strings.Account_LocalService;
 
             if (ServiceAccounts.NetworkServiceAliases.Contains(userSession))
-                return UiAppConfig.NetworkService;
+                return Strings.Account_NetworkService;
 
             return userSession;
         }
