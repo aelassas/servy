@@ -232,6 +232,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to (details unavailable: {0}).
+        /// </summary>
+        public static string Msg_DetailsUnavailableFaulted {
+            get {
+                return ResourceManager.GetString("Msg_DetailsUnavailableFaulted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (details unavailable: native query timed out).
+        /// </summary>
+        public static string Msg_DetailsUnavailableTimedOut {
+            get {
+                return ResourceManager.GetString("Msg_DetailsUnavailableTimedOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Display name exceeds {0} characters..
         /// </summary>
         public static string Msg_DisplayNameLengthReached {
