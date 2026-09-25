@@ -408,20 +408,24 @@ namespace Servy.Core.Validation
             => TryResolveWithinAppDirectory(targetPath, baseDirectory, out _);
 
         /// <summary>
-        /// Inspects the target file or directory ACL to verify standard non-admin users do not possess write or modify rights.
+        /// Inspects the target file or directory ACL and logs a security notice when standard
+        /// non-admin users possess write or modify rights.
         /// </summary>
         /// <param name="path">The directory or file path to evaluate.</param>
-        /// <returns><c>true</c> if the ACL is hardened against standard user modification; otherwise, <c>false</c>.</returns>
-        public static bool IsDirectoryAclHardened(string path)
+        /// <remarks>
+        /// Diagnostic only: the check produces a log entry, not a verdict, so there is no value for a
+        /// caller to act on and no case in which an ACL that could not be inspected is reported as hardened.
+        /// </remarks>
+        public static void WarnIfDirectoryAclNotHardened(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
-                return false;
+                return;
 
             try
             {
                 string targetDir = File.Exists(path) ? Path.GetDirectoryName(path) : path;
                 if (!Directory.Exists(targetDir))
-                    return true;
+                    return;
 
                 var dirInfo = new DirectoryInfo(targetDir);
                 DirectorySecurity security = dirInfo.GetAccessControl(AccessControlSections.Access);
@@ -447,18 +451,15 @@ namespace Servy.Core.Validation
                             if (hasWriteModify)
                             {
                                 Logger.Warn($"ACL Security Notice: Directory '{targetDir}' grants Write/Modify access to standard users ({rule.IdentityReference.Value}).");
-                                return false;
+                                return;
                             }
                         }
                     }
                 }
-
-                return true;
             }
             catch (Exception ex)
             {
                 Logger.Warn($"ACL security check notice for '{path}': {ex.Message}");
-                return true;
             }
         }
     }

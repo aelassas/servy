@@ -1,5 +1,8 @@
 using Microsoft.Win32.SafeHandles;
+using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Core.Resources;
+using Servy.Core.UnitTests.Logging;
 using Servy.Core.Validation;
 using Servy.Testing;
 using System;
@@ -13,6 +16,7 @@ using Xunit;
 
 namespace Servy.Core.UnitTests.Validation
 {
+    [Collection(LoggerCollection.Name)] // WarnIfDirectoryAclNotHardened is asserted through the static Logger
     public class PathSecurityGuardTests : TempDirectoryTestBase
     {
         private static class NativeTestMethods
@@ -1028,30 +1032,32 @@ namespace Servy.Core.UnitTests.Validation
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void IsDirectoryAclHardened_NullOrWhitespace_ReturnsFalse(string path)
+        public void WarnIfDirectoryAclNotHardened_NullOrWhitespace_LogsNothing(string path)
         {
             // Act
-            bool result = PathSecurityGuard.IsDirectoryAclHardened(path);
+            string log = CaptureAclCheckLog(() => PathSecurityGuard.WarnIfDirectoryAclNotHardened(path));
 
             // Assert
-            Assert.False(result);
+            Assert.DoesNotContain("ACL", log, StringComparison.Ordinal);
         }
 
         [Fact]
-        public void IsDirectoryAclHardened_NonExistentDirectory_ReturnsTrue()
+        public void WarnIfDirectoryAclNotHardened_NonExistentDirectory_LogsNothing()
         {
             // Arrange
             string nonExistent = Path.Combine(TempDirectory, $"missing_dir_{Guid.NewGuid():N}");
 
             // Act
-            bool result = PathSecurityGuard.IsDirectoryAclHardened(nonExistent);
+            string log = CaptureAclCheckLog(() => PathSecurityGuard.WarnIfDirectoryAclNotHardened(nonExistent));
 
             // Assert
-            Assert.True(result);
+            // A directory that does not exist is no longer reported as hardened; nothing was checked,
+            // so nothing is claimed.
+            Assert.DoesNotContain("ACL", log, StringComparison.Ordinal);
         }
 
         [Fact]
-        public void IsDirectoryAclHardened_UsersReadExecuteOnly_ReturnsTrue()
+        public void WarnIfDirectoryAclNotHardened_UsersReadExecuteOnly_LogsNothing()
         {
             // Arrange
             string testDir = Path.Combine(TempDirectory, "acl_read_execute_dir");
@@ -1059,14 +1065,14 @@ namespace Servy.Core.UnitTests.Validation
             SetBuiltinUsersAccessRule(testDir, FileSystemRights.ReadAndExecute);
 
             // Act
-            bool result = PathSecurityGuard.IsDirectoryAclHardened(testDir);
+            string log = CaptureAclCheckLog(() => PathSecurityGuard.WarnIfDirectoryAclNotHardened(testDir));
 
             // Assert
-            Assert.True(result);
+            Assert.DoesNotContain("ACL", log, StringComparison.Ordinal);
         }
 
         [Fact]
-        public void IsDirectoryAclHardened_UsersModify_ReturnsFalse()
+        public void WarnIfDirectoryAclNotHardened_UsersModify_LogsSecurityNotice()
         {
             // Arrange
             string testDir = Path.Combine(TempDirectory, "acl_modify_dir");
@@ -1074,30 +1080,58 @@ namespace Servy.Core.UnitTests.Validation
             SetBuiltinUsersAccessRule(testDir, FileSystemRights.Modify);
 
             // Act
-            bool result = PathSecurityGuard.IsDirectoryAclHardened(testDir);
+            string log = CaptureAclCheckLog(() => PathSecurityGuard.WarnIfDirectoryAclNotHardened(testDir));
 
             // Assert
-            Assert.False(result);
+            Assert.Contains("ACL Security Notice", log, StringComparison.Ordinal);
+            Assert.Contains(testDir, log, StringComparison.Ordinal);
         }
 
         [Theory]
         [InlineData(WellKnownSidType.AuthenticatedUserSid)]
         [InlineData(WellKnownSidType.WorldSid)]
-        public void IsDirectoryAclHardened_OtherBroadUnprivilegedSidsModify_ReturnsFalse(WellKnownSidType sidType)
+        public void WarnIfDirectoryAclNotHardened_OtherBroadUnprivilegedSidsModify_LogsSecurityNotice(WellKnownSidType sidType)
         {
             // Arrange
-            // SecurityHelper.BroadUnprivilegedSids holds three principals and IsDirectoryAclHardened
-            // rejects a write-class ACE for any of them, but the tests above only ever put the
+            // SecurityHelper.BroadUnprivilegedSids holds three principals and WarnIfDirectoryAclNotHardened
+            // warns about a write-class ACE for any of them, but the tests above only ever put the
             // BuiltinUsers SID on a directory, so the other two arms have no coverage.
             string testDir = Path.Combine(TempDirectory, $"acl_modify_dir_{sidType}");
             Directory.CreateDirectory(testDir);
             SetAccessRuleForSid(testDir, new SecurityIdentifier(sidType, null), FileSystemRights.Modify);
 
             // Act
-            bool result = PathSecurityGuard.IsDirectoryAclHardened(testDir);
+            string log = CaptureAclCheckLog(() => PathSecurityGuard.WarnIfDirectoryAclNotHardened(testDir));
 
             // Assert
-            Assert.False(result);
+            Assert.Contains("ACL Security Notice", log, StringComparison.Ordinal);
+            Assert.Contains(testDir, log, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Points the static logger at a file of its own, runs <paramref name="act"/> and returns what
+        /// was written. <see cref="PathSecurityGuard.WarnIfDirectoryAclNotHardened"/> is diagnostic only,
+        /// so its log output is the only thing a test can observe.
+        /// </summary>
+        private static string CaptureAclCheckLog(Action act)
+        {
+            string fileName = $"AclCheckTestLog_{Guid.NewGuid():N}.log";
+            string fullPath = Path.Combine(AppConfig.LogsFolderPath, fileName);
+
+            try
+            {
+                Logger.Shutdown();
+                Logger.Initialize(fileName);
+                act();
+                Logger.Shutdown();
+
+                return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
+            }
+            finally
+            {
+                Logger.Shutdown();
+                try { if (File.Exists(fullPath)) File.Delete(fullPath); } catch { }
+            }
         }
 
         private static void SetBuiltinUsersAccessRule(string directoryPath, FileSystemRights rights)
