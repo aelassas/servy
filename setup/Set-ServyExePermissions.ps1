@@ -119,21 +119,31 @@ function Test-ServyAdminGroupMember {
         [System.Security.Principal.SecurityIdentifier]$AdminSid
     )
 
-    # Fast path: construct a token for the account and ask it directly. This is the only check that
-    # correctly follows nested domain/global group membership, but it requires the "Act as part of the
-    # operating system" privilege and S4U logon support, so it fails for gMSAs and many service accounts.
-    try {
-        $identity = New-Object System.Security.Principal.WindowsIdentity($AccountName)
+    # Fast path: construct a token for the account using its UPN and ask it directly. This is a domain-only
+    # check that correctly follows nested domain/global group membership, but it requires the account to have
+    # a userPrincipalName, the "Act as part of the operating system" privilege, and S4U logon support.
+    $upn = $null
+    if ($Sid.IsAccountSid() -and $Sid.AccountDomainSid -ne $null) {
         try {
-            $principal = New-Object System.Security.Principal.WindowsPrincipal($identity)
-            return $principal.IsInRole($AdminSid)
+            $entry = [ADSI]"LDAP://<SID=$($Sid.Value)>"
+            $upn = [string]$entry.Properties['userPrincipalName'].Value
         }
-        finally {
-            $identity.Dispose()
-        }
+        catch { }
     }
-    catch {
-        # Expected for gMSA/service accounts and most non-interactive principals; fall back below.
+    if ($upn) {
+        try {
+            $identity = New-Object System.Security.Principal.WindowsIdentity($upn)
+            try {
+                $principal = New-Object System.Security.Principal.WindowsPrincipal($identity)
+                return $principal.IsInRole($AdminSid)
+            }
+            finally {
+                $identity.Dispose()
+            }
+        }
+        catch {
+            # Expected for gMSA/service accounts and most non-interactive principals; fall back below.
+        }
     }
 
     # Fallback: enumerate the local Administrators group's members via ADSI and compare SIDs directly.
@@ -333,13 +343,16 @@ try {
         # Check for multiple hard links pointing to the target file
         try {
             $hardLinkOutput = & cmd.exe /c "fsutil hardlink list `"$filePath`"" 2>&1
-            if ($LASTEXITCODE -eq 0 -and $null -ne $hardLinkOutput) {
-                $linkLines = @($hardLinkOutput | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-                if ($linkLines.Count -gt 1) {
-                    Write-Host "FAILED to harden '$fileName': File has multiple NTFS hard links ($($linkLines.Count)) and cannot be hardened safely." -ForegroundColor Red
-                    $failed += $fileName
-                    continue
-                }
+            $linkLines = @($hardLinkOutput | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            if ($LASTEXITCODE -ne 0 -or $linkLines.Count -eq 0) {
+                Write-Host "FAILED to harden '$fileName': Could not verify hard link status (fsutil exit $LASTEXITCODE)." -ForegroundColor Red
+                $failed += $fileName
+                continue
+            }
+            if ($linkLines.Count -gt 1) {
+                Write-Host "FAILED to harden '$fileName': File has multiple NTFS hard links ($($linkLines.Count)) and cannot be hardened safely." -ForegroundColor Red
+                $failed += $fileName
+                continue
             }
         }
         catch {
