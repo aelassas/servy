@@ -349,12 +349,14 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("KEY=Line1\\\r\\\nLine2")]
         public void Parse_ValueContainsForbiddenNewline_ThrowsFormatException(string input)
         {
-            // Arrange & Act
+            // Arrange
             const string key = "KEY";
+
+            // Act
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
-            // Assert
-            Assert.Contains(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key), ex.Message);
+            // Assert - the whole message, so a stray prefix or suffix around the resource fails the test
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key), ex.Message);
         }
 
         [Theory]
