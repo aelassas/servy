@@ -333,7 +333,8 @@ namespace Servy.Core.UnitTests.IO
         public void Flush_WhenWriterIsNull_DoesNothing()
         {
             // Arrange
-            using (var writer = CreateWriter(Path.Combine(TempDirectory, "test.txt"), true, 10))
+            var path = Path.Combine(TempDirectory, "test.txt");
+            using (var writer = CreateWriter(path, true, 10))
             {
                 // Act
                 // Calling Flush should not throw
@@ -341,6 +342,7 @@ namespace Servy.Core.UnitTests.IO
 
                 // Assert
                 Assert.Null(exception);
+                Assert.False(File.Exists(path), "Flush must not lazily initialize the writer, so the file stays uncreated.");
             }
         }
 
@@ -368,6 +370,7 @@ namespace Servy.Core.UnitTests.IO
 
             // Assert
             Assert.Null(ex2);
+            Assert.DoesNotContain("Line after disposal", File.ReadAllText(_logFilePath));
         }
 
         [Fact]
@@ -461,7 +464,8 @@ namespace Servy.Core.UnitTests.IO
         public void Write_WhenWriterIsNull_DoesNothingAfterDisposal()
         {
             // Arrange
-            var writer = CreateWriter(Path.Combine(TempDirectory, "test.txt"), true, 10);
+            var path = Path.Combine(TempDirectory, "test.txt");
+            var writer = CreateWriter(path, true, 10);
             writer.Dispose();
 
             // Act
@@ -469,6 +473,7 @@ namespace Servy.Core.UnitTests.IO
 
             // Assert
             Assert.Null(exception);
+            Assert.False(File.Exists(path), "A disposed writer must not lazily create the file.");
         }
 
         [Fact]
