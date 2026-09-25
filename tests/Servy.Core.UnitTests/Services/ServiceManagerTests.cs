@@ -377,6 +377,17 @@ namespace Servy.Core.UnitTests.Services
         }
 
         /// <summary>
+        /// Replaces the manager's clock and poll delay with a virtual clock that advances by the requested
+        /// delay on every poll, so a WaitForStatusAsync budget is walked in full without spending wall-clock.
+        /// </summary>
+        private static void UseVirtualClock(ServiceManager manager)
+        {
+            var now = DateTimeOffset.UtcNow;
+            manager.UtcNow = () => now;
+            manager.DelayAsync = (ms, _) => { now = now.AddMilliseconds(ms); return Task.CompletedTask; };
+        }
+
+        /// <summary>
         /// Arranges the native and repository mocks for a successful installation of a service that does not yet
         /// exist, and captures the <see cref="ServiceDto"/> handed to <see cref="IServiceRepository.UpsertAsync"/>.
         /// </summary>
@@ -2669,9 +2680,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
             );
 
-            var now = DateTimeOffset.UtcNow;
-            _serviceManager.UtcNow = () => now;
-            _serviceManager.DelayAsync = (ms, _) => { now = now.AddMilliseconds(ms); return Task.CompletedTask; };
+            UseVirtualClock(_serviceManager);
 
             // Act
             var result = await _serviceManager.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
@@ -2817,9 +2826,7 @@ namespace Servy.Core.UnitTests.Services
             // same timeout arm while spending no real time on them; this test used to wait 45s.
             var expectedTimeout = ServiceHelper.CalculateStartTimeout(null, 0, 0);
 
-            var now = DateTimeOffset.UtcNow;
-            _serviceManager.UtcNow = () => now;
-            _serviceManager.DelayAsync = (ms, _) => { now = now.AddMilliseconds(ms); return Task.CompletedTask; };
+            UseVirtualClock(_serviceManager);
 
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StartPending);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -2958,9 +2965,7 @@ namespace Servy.Core.UnitTests.Services
             // above, so the arm is still reached through every poll but without the ~20s wait.
             var expectedTimeout = ServiceHelper.CalculateStopTimeout(null, null, 0);
 
-            var now = DateTimeOffset.UtcNow;
-            _serviceManager.UtcNow = () => now;
-            _serviceManager.DelayAsync = (ms, _) => { now = now.AddMilliseconds(ms); return Task.CompletedTask; };
+            UseVirtualClock(_serviceManager);
 
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
