@@ -235,7 +235,7 @@ namespace Servy.Core.Helpers
                         var now = DateTime.UtcNow;
                         var totalTime = process.TotalProcessorTime;
 
-                        if (!_prevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
+                        if (!_prevCpuTimes.TryGetValue(pid, out var prev))
                         {
                             UpdateCpuSample(pid, now, totalTime);
                             return new ProcessMetrics(0, ram);
