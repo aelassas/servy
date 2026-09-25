@@ -12,7 +12,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -64,6 +63,22 @@ namespace Servy.Core.Services
         private readonly IWindowsServiceApi _windowsServiceApi;
         private readonly IWin32ErrorProvider _win32ErrorProvider;
         private readonly IServiceRepository _serviceRepository;
+
+        #endregion
+
+        #region Internal Test Seams
+
+        /// <summary>
+        /// Gets or sets the clock <see cref="WaitForStatusAsync"/> measures its timeout budget against.
+        /// Defaults to the real UTC clock; substituted by tests so the timeout arm can be reached without waiting for it.
+        /// </summary>
+        internal Func<DateTimeOffset> UtcNow { get; set; } = () => DateTimeOffset.UtcNow;
+
+        /// <summary>
+        /// Gets or sets the delay <see cref="WaitForStatusAsync"/> awaits between Service Control Manager polls.
+        /// Defaults to <see cref="Task.Delay(int, CancellationToken)"/>; substituted by tests so the timeout arm can be reached without waiting for it.
+        /// </summary>
+        internal Func<int, CancellationToken, Task> DelayAsync { get; set; } = Task.Delay;
 
         #endregion
 
@@ -259,18 +274,18 @@ namespace Servy.Core.Services
         /// <param name="timeoutSeconds">Maximum wait duration in seconds.</param>
         /// <param name="cancellationToken">Token to observe while polling.</param>
         /// <returns><c>true</c> if the service reached the desired status before timing out; otherwise, <c>false</c>.</returns>
-        private static async Task<bool> WaitForStatusAsync(
+        private async Task<bool> WaitForStatusAsync(
             IServiceControllerWrapper sc,
             ServiceControllerStatus desired,
             int timeoutSeconds,
             CancellationToken cancellationToken)
         {
             sc.Refresh();
-            var sw = Stopwatch.StartNew();
+            var deadline = UtcNow().AddSeconds(timeoutSeconds);
             while (sc.Status != desired)
             {
-                if (sw.Elapsed.TotalSeconds >= timeoutSeconds) return false;
-                await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
+                if (UtcNow() >= deadline) return false;
+                await DelayAsync(AppConfig.ScmPollIntervalMs, cancellationToken);
                 sc.Refresh();
             }
             return true;
