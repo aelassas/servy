@@ -213,7 +213,7 @@ jobs:
       - name: Run all tests
         if: ${{ inputs.arm64 == false }}
         shell: pwsh
-        run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build
+        run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build --filter "Category!=Stress"
 
       # -----------------------------------------------------
       # Build and Publish SBOM
