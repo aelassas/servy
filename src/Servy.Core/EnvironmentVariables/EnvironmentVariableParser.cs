@@ -1,3 +1,5 @@
+using Servy.Core.Resources;
+
 namespace Servy.Core.EnvironmentVariables
 {
     /// <summary>
@@ -53,13 +55,13 @@ namespace Servy.Core.EnvironmentVariables
                     switch (resultKind)
                     {
                         case EnvVarValidationResultKind.MissingEquals:
-                            throw new FormatException($"Invalid environment variable at position {recordPosition} (no unescaped '=').");
+                            throw new FormatException($"{Strings.Msg_EnvironmentVariableMissingEquals} (record {recordPosition}).");
 
                         case EnvVarValidationResultKind.EmptyKey:
-                            throw new FormatException($"Environment variable key cannot be empty (record {recordPosition}).");
+                            throw new FormatException($"{Strings.Msg_EnvironmentVariableKeyEmpty} (record {recordPosition}).");
 
                         case EnvVarValidationResultKind.ForbiddenNewline:
-                            throw new FormatException($"Environment variable '{key}' contains a forbidden newline character. Multi-line values are not supported.");
+                            throw new FormatException(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key));
 
                         case EnvVarValidationResultKind.GeneralFailure:
                         default:
