@@ -70,6 +70,9 @@ namespace Servy.Service.Helpers
         /// The scoped logger instance used for public output. If <see langword="null"/>, public diagnostic
         /// information will not be recorded.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="options"/> is null.
+        /// </exception>
         /// <remarks>
         /// <para>
         /// This method acts as the "black box" recorder for the service startup. Public parameter metadata is logged
@@ -97,6 +100,9 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="options"/> is null.
+        /// </exception>
         bool ValidateAndLog(StartOptions options, IServyLogger? logger);
 
         /// <summary>
