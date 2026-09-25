@@ -110,7 +110,6 @@ namespace Servy.Service.UnitTests.Helpers
         public void LogStartupArguments_LogsPublicData()
         {
             // Arrange
-            var args = new[] { "arg1", "arg2" };
             var options = new StartOptions
             {
                 ServiceName = "TestService",
