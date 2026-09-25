@@ -2,6 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
+using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -121,6 +122,36 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Null(_serializer.Deserialize(xml));
+        }
+
+        [Fact]
+        public void Deserialize_MalformedXml_LogsFailureWithLineInfo()
+        {
+            // Arrange: XmlException path, so FormatLineInfo has coordinates to append.
+            string malformedXml = "<ServiceDto><Name>UnclosedTag";
+
+            // Act
+            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Deserialize(malformedXml));
+
+            // Assert
+            Assert.Null(result);
+            Assert.Contains("XML Deserialization failed at line", textLogOutput);
+        }
+
+        [Fact]
+        public void Deserialize_WellFormedXmlWithUnconvertibleValue_LogsTheSameFailurePhrase()
+        {
+            // Arrange: FormatException path, so FormatLineInfo returns string.Empty; the entry must
+            // still carry the phrase the line-info branch logs, or half the import failures are
+            // invisible to a grep for it.
+            string xml = "<ServiceDto><Name>S</Name><StartTimeout>abc</StartTimeout></ServiceDto>";
+
+            // Act
+            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Deserialize(xml));
+
+            // Assert
+            Assert.Null(result);
+            Assert.Contains("XML Deserialization failed.", textLogOutput);
         }
 
         [Fact]
