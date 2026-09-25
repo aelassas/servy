@@ -363,7 +363,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("KEY=Line1\r\nLine2", 2)]
         public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input, int recordPosition)
         {
-            // Act & Assert
+            // Act
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert - the message describes the missing '=' without echoing raw values
