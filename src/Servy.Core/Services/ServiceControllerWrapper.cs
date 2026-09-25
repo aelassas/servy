@@ -302,7 +302,6 @@ namespace Servy.Core.Services
         /// </summary>
         private static bool HasCyclicDescendant(ServiceDependencyNode node)
         {
-            if (node == null) return false;
             if (node.IsCyclic) return true;
 
             foreach (var child in node.Dependencies)
@@ -330,7 +329,7 @@ namespace Servy.Core.Services
 
             if (disposing)
             {
-                _controller?.Dispose();
+                _controller.Dispose();
             }
 
             _disposed = true;
