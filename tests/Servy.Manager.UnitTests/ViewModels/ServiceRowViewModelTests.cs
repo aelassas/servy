@@ -304,8 +304,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 LogOnAs = "LocalSystem",
                 IsInstalled = true,
                 IsDesktopAppAvailable = true,
-                Pid = 1234,
-                IsPidEnabled = true,
+                Pid = 1234,   // IsPidEnabled is derived from this
                 CpuUsage = 5.5,
                 RamUsage = 1024 * 1024 // 1 MB
             };
@@ -344,6 +343,26 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Core model mutations should still stream through at-least-once via automatic forwarding hooks
             Assert.Contains(nameof(vm.Status), propertiesChanged);
             Assert.Contains(nameof(vm.Pid), propertiesChanged);
+        }
+
+        [Theory]
+        [InlineData(null, 4321, true)]
+        [InlineData(4321, null, false)]
+        public void IsPidEnabled_IsDerivedFromPid_AndIsRaisedWhenPidChanges(int? initialPid, int? newPid, bool expected)
+        {
+            // Arrange
+            var service = new Service { Name = "RowSvc", Pid = initialPid };
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+            var propertiesChanged = new List<string>();
+            vm.PropertyChanged += (s, e) => { if (e.PropertyName != null) propertiesChanged.Add(e.PropertyName); };
+
+            // Act - only Pid is written; nothing restates the IsPidEnabled rule
+            service.Pid = newPid;
+
+            // Assert - the Copy PID menu item binds IsPidEnabled through this passthrough, so the
+            // notification matters as much as the value
+            Assert.Equal(expected, vm.IsPidEnabled);
+            Assert.Contains(nameof(vm.IsPidEnabled), propertiesChanged);
         }
 
         [Fact]
