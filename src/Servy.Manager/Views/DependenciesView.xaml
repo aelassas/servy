@@ -286,7 +286,7 @@
               <Style x:Key="BaseTreeViewItemStyle" TargetType="TreeViewItem" BasedOn="{StaticResource TreeViewItemSelectionColorsStyle}">
                 <!--
                      IsExpanded is bound in TwoWay mode to the ViewModel to keep the expansion state in sync,
-                     Especially useful when the tree is refreshed, ensuring that previously expanded nodes remain expanded.
+                     especially when the tree is refreshed, ensuring that previously expanded nodes remain expanded.
                 -->
                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                 <Setter Property="Padding" Value="2" />
