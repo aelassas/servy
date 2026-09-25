@@ -43,6 +43,7 @@ jobs:
 
     env:
       MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
+      UPLOAD_COVERAGE: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) }}
 
     steps:
       - name: Checkout repository
@@ -173,7 +174,7 @@ jobs:
       # -----------------------------------------------------
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
-        if: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) }}
+        if: ${{ env.UPLOAD_COVERAGE == 'true' }}
         run: |
           $workspace = $env:GITHUB_WORKSPACE
           $filters = . (Join-Path $workspace "tests/coverage-filters.ps1")
@@ -225,7 +226,7 @@ jobs:
       # Third-Party Metrics Tracking Uploads (x64 Only Context)
       # -----------------------------------------------------
       - name: Import Codecov Public GPG Key
-        if: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) }}
+        if: ${{ env.UPLOAD_COVERAGE == 'true' }}
         continue-on-error: true
         shell: bash
         run: |
@@ -242,7 +243,7 @@ jobs:
         id: codecov
         continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
-        if: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) }}
+        if: ${{ env.UPLOAD_COVERAGE == 'true' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: TestResults/fixed/coverage.cobertura.xml
@@ -256,7 +257,7 @@ jobs:
         id: coveralls
         continue-on-error: true
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
-        if: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) }}
+        if: ${{ env.UPLOAD_COVERAGE == 'true' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: ${{ github.workspace }}
@@ -268,7 +269,7 @@ jobs:
           COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
 
       - name: Notify Metrics Platform Status in case of failure
-        if: ${{ matrix.upload_coverage == true && (github.event_name != 'workflow_dispatch' || inputs.upload_coverage) && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
+        if: ${{ env.UPLOAD_COVERAGE == 'true' && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #v9.0.0
         with:
           script: |
