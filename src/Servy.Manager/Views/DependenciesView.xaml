@@ -284,7 +284,7 @@
               </HierarchicalDataTemplate>
 
               <Style x:Key="BaseTreeViewItemStyle" TargetType="TreeViewItem" BasedOn="{StaticResource TreeViewItemSelectionColorsStyle}">
-                <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                 <Setter Property="Padding" Value="2" />
               </Style>
             </TreeView.Resources>
