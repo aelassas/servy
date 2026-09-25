@@ -419,12 +419,10 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="level">The severity level enum.</param>
         /// <param name="message">The content of the log entry.</param>
-        private static void Log(LogLevel level, string? message)
+        private static void Log(LogLevel level, string message)
         {
             // Fast path: nothing to write to. Shutdown() is the only writer that nulls this.
             if (_writer == null) return;
-
-            if (string.IsNullOrEmpty(message)) return;
 
             // DEADLOCK GUARD: If the underlying RotatingStreamWriter calls Logger.Warn/Error
             // during its rotation loop, it will synchronously re-enter this method on the same thread.
@@ -555,8 +553,6 @@ namespace Servy.Core.Logging
         /// <returns>A formatted string with frame separators instead of newlines.</returns>
         private static string FormatException(Exception ex)
         {
-            if (ex == null) return string.Empty;
-
             var sb = new StringBuilder();
 
             // Stack tracking for true tree traversal
