@@ -200,10 +200,11 @@ jobs:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
         run: |
           $nupkg = "setup/choco/servy/servy.${env:VERSION}.0.nupkg"
-          if (-not (Test-Path $nupkg)) {
-              throw "Expected nupkg not found at '$nupkg' - choco pack likely did not produce it."
-          }
-          choco push $nupkg --source "https://community.chocolatey.org/api/v2/package" --api-key $env:CHOCOLATEY_API_KEY
-          if ($LASTEXITCODE -ne 0) {
-              throw "choco push failed with exit code $LASTEXITCODE"
+          $maxRetries = [int]$env:MAX_RETRIES
+          for ($i = 1; $i -le $maxRetries; $i++) {
+              choco push $nupkg --source "https://community.chocolatey.org/api/v2/package" --api-key $env:CHOCOLATEY_API_KEY
+              if ($LASTEXITCODE -eq 0) { break }
+              if ($i -eq $maxRetries) { throw "choco push failed with exit code $LASTEXITCODE after $maxRetries attempts" }
+              Write-Warning "choco push attempt $i of $maxRetries failed (exit $LASTEXITCODE). Retrying in 15 seconds..."
+              Start-Sleep -Seconds 15
           }
