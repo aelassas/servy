@@ -265,5 +265,48 @@ namespace Servy.Core.UnitTests.Services
             Assert.False(result);
             Assert.Equal(string.Format(Strings.Msg_ImportPayloadTooLarge, "JSON", AppConfig.MaxConfigFileSizeMB), error);
         }
+
+        #region TryValidate overload that hands the parsed definition back
+
+        [Fact]
+        public void TryValidate_ValidJson_HandsBackHydratedDtoWithIdentityReset()
+        {
+            // Arrange
+            // RunAsLocalSystem/UserAccount/Password are [JsonIgnore], so the raw parse leaves them null;
+            // HeartbeatInterval is absent from the manifest and must come from AppConfig.
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe" };
+            var json = JsonConvert.SerializeObject(dto);
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(json, out var error, out var parsed);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+            Assert.NotNull(parsed);
+            Assert.Equal("TestService", parsed.Name);
+            Assert.Equal(AppConfig.DefaultHeartbeatInterval, parsed.HeartbeatInterval);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, parsed.RunAsLocalSystem);
+            Assert.Null(parsed.UserAccount);
+            Assert.Null(parsed.Password);
+        }
+
+        [Fact]
+        public void TryValidate_InvalidJson_HandsBackNoDto()
+        {
+            // Arrange
+            var invalidJson = "{ \"Name\": ";
+
+            // Act
+            var result = _validator.TryValidate(invalidJson, out var error, out var parsed);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotNull(error);
+            Assert.Null(parsed);
+        }
+
+        #endregion
     }
 }

@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Resources;
 using System;
@@ -61,9 +62,55 @@ namespace Servy.Core.Validation
         /// <param name="content">The raw configuration string.</param>
         /// <param name="errorMessage">When this method returns, contains the error message if validation failed.</param>
         /// <returns><c>true</c> if validation succeeded; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// The parsed definition is discarded. Callers that also need it should use
+        /// <see cref="TryValidate(string, out string, out ServiceDto)"/>, which parses the payload once.
+        /// </remarks>
         public bool TryValidate(string content, out string errorMessage)
         {
+            return TryValidateCore(content, out errorMessage, out _);
+        }
+
+        /// <summary>
+        /// Validates the input content and hands back the definition it parsed, so that a caller which
+        /// needs the object does not have to parse the same payload a second time.
+        /// </summary>
+        /// <param name="content">The raw configuration string.</param>
+        /// <param name="errorMessage">When this method returns, contains the error message if validation failed.</param>
+        /// <param name="dto">When this method returns <c>true</c>, contains the parsed definition with
+        /// <see cref="ServiceDtoHelper.ApplyDefaultsAndResetIdentity"/> already applied; otherwise, <c>null</c>.</param>
+        /// <returns><c>true</c> if validation succeeded; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// Hydration runs after validation, never before, so the domain rules still see the raw parse and
+        /// both overloads accept and reject exactly the same payloads.
+        /// </remarks>
+        public bool TryValidate(string content, out string errorMessage, out ServiceDto dto)
+        {
+            if (!TryValidateCore(content, out errorMessage, out dto) || dto == null)
+            {
+                dto = null;
+                return false;
+            }
+
+            // Reproduce what ServiceDtoSerializer.Deserialize did for the caller that used to re-parse:
+            // hydrate absent optional fields from AppConfig and apply the Global Identity Reset on Import.
+            ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Performs the size, structural and domain validation shared by both <c>TryValidate</c> overloads
+        /// and returns the raw parse, with no defaults hydrated and no identity reset applied.
+        /// </summary>
+        /// <param name="content">The raw configuration string.</param>
+        /// <param name="errorMessage">When this method returns, contains the error message if validation failed.</param>
+        /// <param name="dto">When this method returns <c>true</c>, contains the raw parsed definition; otherwise, <c>null</c>.</param>
+        /// <returns><c>true</c> if validation succeeded; otherwise, <c>false</c>.</returns>
+        private bool TryValidateCore(string content, out string errorMessage, out ServiceDto dto)
+        {
             errorMessage = null;
+            dto = null;
 
             if (string.IsNullOrWhiteSpace(content))
             {
@@ -84,7 +131,6 @@ namespace Servy.Core.Validation
             }
 
             // 1. Structural Validation & Deserialization
-            ServiceDto dto;
             try
             {
                 dto = Parse(content);
@@ -121,6 +167,7 @@ namespace Servy.Core.Validation
                 errorMessage = string.Join("\n", validation.Errors);
 
                 Logger.Warn($"{FormatName} import blocked: logical violation for service '{dto.Name ?? "Unknown"}'. Reason: {errorMessage}");
+                dto = null;
                 return false;
             }
 

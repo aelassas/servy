@@ -22,5 +22,19 @@ namespace Servy.Core.Services
         /// A caller that validates and then deserializes the same payload parses it twice.
         /// </remarks>
         bool TryValidate(string json, out string errorMessage);
+
+        /// <summary>
+        /// Attempts to validate the provided JSON string and hands back the definition it parsed.
+        /// </summary>
+        /// <param name="json">The raw JSON configuration string to validate.</param>
+        /// <param name="errorMessage">When this method returns <c>false</c>, contains a descriptive error message; otherwise, <c>null</c>.</param>
+        /// <param name="dto">When this method returns <c>true</c>, contains the parsed service definition with
+        /// defaults hydrated and the Global Identity Reset on Import applied; otherwise, <c>null</c>.</param>
+        /// <returns><c>true</c> if the JSON is valid and meets domain requirements; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// This is the overload the import pipelines use: it performs the single parse of the payload, so a
+        /// caller no longer has to hand the same string to a deserializer afterwards.
+        /// </remarks>
+        bool TryValidate(string json, out string errorMessage, out DTOs.ServiceDto dto);
     }
 }

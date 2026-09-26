@@ -162,7 +162,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "XmlService", ExecutablePath = realPath };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(xmlContent)).Returns(dto);
+            MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -186,7 +186,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockJsonValidator(true);
             var dto = new ServiceDto { Name = "JsonService", ExecutablePath = realPath };
-            _jsonServiceSerializer.Setup(s => s.Deserialize(jsonContent)).Returns(dto);
+            MockJsonValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -220,14 +220,14 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ExecuteAsync_DeserializerReturnsNull_ReturnsDeserializationFailure()
+        public async Task ExecuteAsync_ValidatorReturnsNullDto_ReturnsDeserializationFailure()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto />");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
             MockXmlValidator(true);
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto)null);
+            MockXmlValidator(true, dto: null);
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
@@ -238,14 +238,14 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ExecuteAsync_JsonDeserializerReturnsNull_ReturnsDeserializationFailure()
+        public async Task ExecuteAsync_JsonValidatorReturnsNullDto_ReturnsDeserializationFailure()
         {
             // Arrange
             File.WriteAllText(_legalJsonPath, "{}");
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath };
 
             MockJsonValidator(true);
-            _jsonServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto)null);
+            MockJsonValidator(true, dto: null);
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
@@ -265,7 +265,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
@@ -287,7 +287,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockJsonValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
-            _jsonServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockJsonValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
@@ -309,7 +309,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "ThrowingService", ExecutablePath = realPath };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock
                 .Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>()))
@@ -342,7 +342,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = string.Empty };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
@@ -361,7 +361,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"Z:\Missing\Dir\Engine.exe" };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
             _processHelper.Setup(p => p.ValidatePath(@"Z:\Missing\Dir\Engine.exe", It.IsAny<bool>())).Returns(false);
 
             // Act
@@ -382,7 +382,7 @@ namespace Servy.CLI.UnitTests.Commands
             MockXmlValidator(true);
             // Executable path is legal, but a secondary attribute property (like WorkingDirectory) is invalid
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\notepad.exe", StartupDirectory = @"Y:\Invalid\Folder" };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
 
             _processHelper.Setup(p => p.ValidatePath(@"C:\Windows\notepad.exe", true)).Returns(true);
             _processHelper.Setup(p => p.ValidatePath(@"Y:\Invalid\Folder", false)).Returns(false);
@@ -409,7 +409,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "GhostService", ExecutablePath = realPath };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
             _serviceRepoMock.Setup(r => r.GetByNameAsync("GhostService", true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
@@ -432,7 +432,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "OperationalService", ExecutablePath = realPath };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
             _serviceRepoMock.Setup(r => r.GetByNameAsync("OperationalService", true, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
@@ -456,7 +456,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "FailInstallService", ExecutablePath = realPath };
-            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
             _serviceRepoMock.Setup(r => r.GetByNameAsync("FailInstallService", true, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
@@ -477,19 +477,21 @@ namespace Servy.CLI.UnitTests.Commands
 
         #region Test Initialization Mocking Helpers
 
-        private void MockXmlValidator(bool isValid, string errorMsg = null)
+        private void MockXmlValidator(bool isValid, string errorMsg = null, ServiceDto dto = null)
         {
             string dummy = errorMsg;
+            ServiceDto parsed = dto;
             _xmlValidatorMock
-                .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy))
+                .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy, out parsed))
                 .Returns(isValid);
         }
 
-        private void MockJsonValidator(bool isValid, string errorMsg = null)
+        private void MockJsonValidator(bool isValid, string errorMsg = null, ServiceDto dto = null)
         {
             string dummy = errorMsg;
+            ServiceDto parsed = dto;
             _jsonValidatorMock
-                .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy))
+                .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy, out parsed))
                 .Returns(isValid);
         }
 

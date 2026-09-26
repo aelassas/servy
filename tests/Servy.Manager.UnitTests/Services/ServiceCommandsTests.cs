@@ -121,19 +121,18 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(1);
 
-                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny))
-                    .Returns(true);
-
-                _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>()))
-                    .Returns(dto);
+                ServiceDto jsonParsedDto = dto;
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out jsonParsedDto)).Returns(true);
 
                 // Act
                 await sut.ImportJsonConfigAsync(CancellationToken.None);
 
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-                _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
-                _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
+                _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
+                // The single-parse invariant: the validator handed the DTO back, so the
+                // deserializer is never asked to parse the same payload a second time.
+                _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportJson_Success, UiAppConfig.Caption), Times.Once);
                 Assert.True(_refreshCalled);
             }
@@ -151,16 +150,15 @@ namespace Servy.Manager.UnitTests.Services
                 _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempJsonFile.Path);
 
                 string outErr = "Invalid JSON";
-                _jsonServiceValidatorMock
-                    .Setup(v => v.TryValidate(It.IsAny<string>(), out outErr))
-                    .Returns(false);
+                ServiceDto jsonParsedDto = null;
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out jsonParsedDto)).Returns(false);
 
                 // Act
                 await sut.ImportJsonConfigAsync(CancellationToken.None);
 
                 // Assert
                 // Explicit verify constraint ensures that execution actually bypassed the path guard and hit the format validator
-                _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
+                _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
@@ -187,22 +185,22 @@ namespace Servy.Manager.UnitTests.Services
                 _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempFile.Path);
 
                 string outErr = null;
-                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
+                ServiceDto xmlParsedDto = dto;
+                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out xmlParsedDto)).Returns(true);
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(1);
-
-                _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>()))
-                    .Returns(dto);
 
                 // Act
                 await sut.ImportXmlConfigAsync(CancellationToken.None);
 
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
-                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
+                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
+                // The single-parse invariant: the validator handed the DTO back, so the
+                // deserializer is never asked to parse the same payload a second time.
+                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportXml_Success, UiAppConfig.Caption), Times.Once);
                 Assert.True(_refreshCalled);
             }
@@ -220,16 +218,15 @@ namespace Servy.Manager.UnitTests.Services
                 _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempXmlFile.Path);
 
                 string outErr = "Malformed XML";
-                _xmlServiceValidatorMock
-                    .Setup(v => v.TryValidate(It.IsAny<string>(), out outErr))
-                    .Returns(false);
+                ServiceDto xmlParsedDto = null;
+                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out xmlParsedDto)).Returns(false);
 
                 // Act
                 await sut.ImportXmlConfigAsync(CancellationToken.None);
 
                 // Assert
                 // Explicit verify constraint ensures that execution actually bypassed the path guard and hit the format validator
-                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
+                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
@@ -247,7 +244,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ImportJsonConfigAsync(CancellationToken.None);
 
             // Assert
-            _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Never);
+            _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Never);
             Assert.False(_refreshCalled);
         }
 
@@ -267,7 +264,9 @@ namespace Servy.Manager.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_SecurityUncPathProhibited, UiAppConfig.Caption), Times.Once);
 
             // Nothing after the guard runs on a refused path
-            _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Never);
+            _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Never);
+            // The single-parse invariant: the validator handed the DTO back, so the
+            // deserializer is never asked to parse the same payload a second time.
             _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             Assert.False(_refreshCalled);
@@ -283,8 +282,8 @@ namespace Servy.Manager.UnitTests.Services
             {
                 _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
                 string outErr = null;
-                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-                _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto)null);
+                ServiceDto jsonParsedDto = null;
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out jsonParsedDto)).Returns(true);
 
                 // Act
                 await sut.ImportJsonConfigAsync(CancellationToken.None);
@@ -306,8 +305,8 @@ namespace Servy.Manager.UnitTests.Services
             {
                 _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
                 string outErr = null;
-                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-                _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "InvalidDomain" });
+                ServiceDto jsonParsedDto = new ServiceDto { Name = "InvalidDomain" };
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out jsonParsedDto)).Returns(true);
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
                 // Act
@@ -338,22 +337,23 @@ namespace Servy.Manager.UnitTests.Services
                 _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempFile.Path);
 
                 string outErr = null;
-                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
+                ServiceDto xmlParsedDto = dto;
+                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out xmlParsedDto)).Returns(true);
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
                 _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(true);
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-                _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
-
                 // Act
                 await sut.ImportXmlConfigAsync(CancellationToken.None);
 
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()), Times.Once);
-                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
-                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
+                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
+                // The single-parse invariant: the validator handed the DTO back, so the
+                // deserializer is never asked to parse the same payload a second time.
+                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
                 Assert.True(_refreshCalled);
@@ -379,21 +379,22 @@ namespace Servy.Manager.UnitTests.Services
                 _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempFile.Path);
 
                 string outErr = null;
-                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
+                ServiceDto xmlParsedDto = dto;
+                _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out xmlParsedDto)).Returns(true);
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
                 _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(false);
-
-                _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
                 // Act
                 await sut.ImportXmlConfigAsync(CancellationToken.None);
 
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()), Times.Once);
-                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
-                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
+                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
+                // The single-parse invariant: the validator handed the DTO back, so the
+                // deserializer is never asked to parse the same payload a second time.
+                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
@@ -410,8 +411,8 @@ namespace Servy.Manager.UnitTests.Services
             {
                 _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
                 string outErr = null;
-                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-                _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "FailedUpsert" });
+                ServiceDto jsonParsedDto = new ServiceDto { Name = "FailedUpsert" };
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr, out jsonParsedDto)).Returns(true);
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
@@ -1673,8 +1674,8 @@ namespace Servy.Manager.UnitTests.Services
             using (var tempFile = new TempFile(".json").Write(json))
             {
                 _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
-                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny)).Returns(true);
-                _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+                ServiceDto jsonParsedDto = dto;
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out jsonParsedDto)).Returns(true);
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()))
                     .ThrowsAsync(new InvalidOperationException("DB unavailable"));
