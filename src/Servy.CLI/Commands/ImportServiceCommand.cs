@@ -194,7 +194,7 @@ namespace Servy.CLI.Commands
         /// <summary>
         /// Core logic for processing service imports across different formats.
         /// </summary>
-        /// <param name="opts">Import service options; <see cref="ImportServiceOptions.InstallService"/> decides whether step 5 runs.</param>
+        /// <param name="opts">Import service options; <see cref="ImportServiceOptions.InstallService"/> decides whether step 4 runs.</param>
         /// <param name="content">The raw configuration file content, already read and size-checked by the caller.</param>
         /// <param name="formatName">The format label used in messages ("XML" or "JSON").</param>
         /// <param name="validator">Format-specific validation; parses <paramref name="content"/> once and returns
@@ -218,12 +218,12 @@ namespace Servy.CLI.Commands
             if (dto == null)
                 return CommandResult.Fail(Strings.Msg_ImportDeserializationFailure);
 
-            // 3. Path validation
+            // 2. Path validation
             var pathValidation = ValidateServicePaths(dto);
             if (!pathValidation.IsSuccess)
                 return pathValidation;
 
-            // 4. Repository Import (only after validation passes)
+            // 3. Repository Import (only after validation passes)
             var affected = await repoImporter(dto);
             if (affected <= 0)
             {
@@ -234,7 +234,7 @@ namespace Servy.CLI.Commands
             if (!opts.InstallService)
                 return CommandResult.Ok(string.Format(Strings.Msg_ImportSuccessNoInstall, formatName));
 
-            // 5. Installation
+            // 4. Installation
             return await TryInstallServiceAsync(dto.Name ?? string.Empty, formatName, cancellationToken);
         }
 
