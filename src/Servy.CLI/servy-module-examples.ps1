@@ -113,6 +113,21 @@ Install-ServyService @installParams
 # Remove-Item Env:SERVY_PASSWORD
 
 # ----------------------------------------------------------------
+# Show the full configuration of one service (human-readable)
+# ----------------------------------------------------------------
+Show-ServyService -Name "DummyService" -Quiet
+
+# ----------------------------------------------------------------
+# List every service stored in the Servy database
+# ----------------------------------------------------------------
+Show-ServyServices -Quiet
+
+# ----------------------------------------------------------------
+# List only the services whose name or description matches a keyword
+# ----------------------------------------------------------------
+Show-ServyServices -Search "Dummy" -Quiet
+
+# ----------------------------------------------------------------
 # Export the service configuration (XML)
 # ----------------------------------------------------------------
 $exportXmlParams = @{

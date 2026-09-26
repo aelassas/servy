@@ -1757,6 +1757,97 @@ function Get-ServyServiceStatus {
     Invoke-ServyServiceCommand -Command "status" -Name $Name -Quiet:$Quiet -SkipElevationCheck -ErrorContext "Failed to get status of service '$Name'"
 }
 
+function Show-ServyService {
+    <#
+        .SYNOPSIS
+            Shows the full configuration of a Servy Windows service in a human-readable form.
+
+        .DESCRIPTION
+            Wraps the Servy CLI `show` command to print every stored setting of one service,
+            grouped by category and starting with the service name, its live status and its
+            process id. Use Export-ServyServiceConfig instead when the configuration is needed
+            as XML or JSON.
+
+            Requires Administrator privileges, because the configuration is read from the Servy
+            database under %ProgramData%\Servy. The stored credential is never printed.
+
+        .PARAMETER Quiet
+            Suppress spinner and run in non-interactive mode. Optional.
+
+        .PARAMETER Name
+            The name of the service to show. (Required)
+
+        .EXAMPLE
+            Show-ServyService -Name "MyService"
+            # Prints the full configuration of the service named 'MyService'.
+
+        .NOTES
+            The function calls Assert-Administrator to ensure the session has the
+            necessary permissions to access the Servy ProgramData directory.
+    #>
+    [CmdletBinding()]
+    param(
+        [switch] $Quiet,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Name
+    )
+
+    Invoke-ServyServiceCommand -Command "show" -Name $Name -Quiet:$Quiet -ErrorContext "Failed to show service '$Name'"
+}
+
+function Show-ServyServices {
+    <#
+        .SYNOPSIS
+            Lists every Servy Windows service stored in the database.
+
+        .DESCRIPTION
+            Wraps the Servy CLI `show` command with no service name, printing one line per
+            service with its name, display name, description, startup type, status and process id.
+            Use the Search parameter to narrow the list by a keyword matched against the service
+            name or description, the same way the Servy Manager search box does.
+
+            Requires Administrator privileges, because the configuration is read from the Servy
+            database under %ProgramData%\Servy.
+
+        .PARAMETER Quiet
+            Suppress spinner and run in non-interactive mode. Optional.
+
+        .PARAMETER Search
+            A keyword used to filter the list by service name or description. Optional;
+            when omitted, every service is listed.
+
+        .EXAMPLE
+            Show-ServyServices
+            # Lists every service stored in the Servy database.
+
+        .EXAMPLE
+            Show-ServyServices -Search "web"
+            # Lists the services whose name or description contains 'web'.
+
+        .NOTES
+            The function calls Assert-Administrator to ensure the session has the
+            necessary permissions to access the Servy ProgramData directory.
+    #>
+    [CmdletBinding()]
+    param(
+        [switch] $Quiet,
+
+        [Parameter(Mandatory = $false)]
+        [string] $Search
+    )
+
+    # Enforce elevation to allow CLI access to %ProgramData%\Servy
+    Assert-Administrator
+
+    # Add-Arg drops a null or empty value, so an omitted -Search adds no argument. Testing it
+    # here with [string]::IsNullOrWhiteSpace would break PS 2.0, whose .NET 3.5 lacks it.
+    $argsList = @()
+    $argsList = Add-Arg $argsList "--search" $Search
+
+    Invoke-ServyCli -Command "show" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to list services"
+}
+
 function Export-ServyServiceConfig {
     <#
         .SYNOPSIS
@@ -1899,6 +1990,8 @@ $publicFunctions = @(
     'Stop-ServyService',
     'Restart-ServyService',
     'Get-ServyServiceStatus',
+    'Show-ServyService',
+    'Show-ServyServices',
     'Export-ServyServiceConfig',
     'Import-ServyServiceConfig'
 )

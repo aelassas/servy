@@ -367,6 +367,672 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to show configuration for service '{0}'.
+        /// </summary>
+        public static string Msg_ShowServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_ShowServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displayed configuration for service '{0}'..
+        /// </summary>
+        public static string Msg_ShowServiceLogged {
+            get {
+                return ResourceManager.GetString("Msg_ShowServiceLogged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ensure the service exists in the Servy database and that your shell is running as Administrator..
+        /// </summary>
+        public static string Msg_ShowServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_ShowServiceSuggestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to list services.
+        /// </summary>
+        public static string Msg_ShowServicesAction {
+            get {
+                return ResourceManager.GetString("Msg_ShowServicesAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Listed {0} service(s)..
+        /// </summary>
+        public static string Msg_ShowServicesLogged {
+            get {
+                return ResourceManager.GetString("Msg_ShowServicesLogged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DESCRIPTION.
+        /// </summary>
+        public static string Msg_Show_Column_Description {
+            get {
+                return ResourceManager.GetString("Msg_Show_Column_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DISPLAY NAME.
+        /// </summary>
+        public static string Msg_Show_Column_DisplayName {
+            get {
+                return ResourceManager.GetString("Msg_Show_Column_DisplayName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to NAME.
+        /// </summary>
+        public static string Msg_Show_Column_Name {
+            get {
+                return ResourceManager.GetString("Msg_Show_Column_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PID.
+        /// </summary>
+        public static string Msg_Show_Column_Pid {
+            get {
+                return ResourceManager.GetString("Msg_Show_Column_Pid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to STARTUP TYPE.
+        /// </summary>
+        public static string Msg_Show_Column_StartupType {
+            get {
+                return ResourceManager.GetString("Msg_Show_Column_StartupType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to STATUS.
+        /// </summary>
+        public static string Msg_Show_Column_Status {
+            get {
+                return ResourceManager.GetString("Msg_Show_Column_Status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disabled.
+        /// </summary>
+        public static string Msg_Show_Disabled {
+            get {
+                return ResourceManager.GetString("Msg_Show_Disabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enabled.
+        /// </summary>
+        public static string Msg_Show_Enabled {
+            get {
+                return ResourceManager.GetString("Msg_Show_Enabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Account.
+        /// </summary>
+        public static string Msg_Show_Group_Account {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_Account", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Environment.
+        /// </summary>
+        public static string Msg_Show_Group_Environment {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_Environment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failure Program.
+        /// </summary>
+        public static string Msg_Show_Group_FailureProgram {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_FailureProgram", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Logs.
+        /// </summary>
+        public static string Msg_Show_Group_Logs {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_Logs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Other.
+        /// </summary>
+        public static string Msg_Show_Group_Other {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_Other", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Launch.
+        /// </summary>
+        public static string Msg_Show_Group_PostLaunch {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_PostLaunch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Post-Stop.
+        /// </summary>
+        public static string Msg_Show_Group_PostStop {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_PostStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Launch.
+        /// </summary>
+        public static string Msg_Show_Group_PreLaunch {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_PreLaunch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-Stop.
+        /// </summary>
+        public static string Msg_Show_Group_PreStop {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_PreStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recovery.
+        /// </summary>
+        public static string Msg_Show_Group_Recovery {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_Recovery", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Timeouts.
+        /// </summary>
+        public static string Msg_Show_Group_Timeouts {
+            get {
+                return ResourceManager.GetString("Msg_Show_Group_Timeouts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Active Stderr.
+        /// </summary>
+        public static string Msg_Show_Label_ActiveStderr {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_ActiveStderr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Active Stdout.
+        /// </summary>
+        public static string Msg_Show_Label_ActiveStdout {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_ActiveStdout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Console UI.
+        /// </summary>
+        public static string Msg_Show_Label_ConsoleUI {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_ConsoleUI", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to CPU Affinity.
+        /// </summary>
+        public static string Msg_Show_Label_CpuAffinity {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_CpuAffinity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Date Rotation.
+        /// </summary>
+        public static string Msg_Show_Label_DateRotation {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_DateRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Debug Logs.
+        /// </summary>
+        public static string Msg_Show_Label_DebugLogs {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_DebugLogs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dependencies.
+        /// </summary>
+        public static string Msg_Show_Label_Dependencies {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Dependencies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Description.
+        /// </summary>
+        public static string Msg_Show_Label_Description {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Name.
+        /// </summary>
+        public static string Msg_Show_Label_DisplayName {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_DisplayName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Environment Variables.
+        /// </summary>
+        public static string Msg_Show_Label_EnvironmentVariables {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_EnvironmentVariables", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Executable.
+        /// </summary>
+        public static string Msg_Show_Label_Executable {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Executable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Health Check.
+        /// </summary>
+        public static string Msg_Show_Label_HealthCheck {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_HealthCheck", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heartbeat.
+        /// </summary>
+        public static string Msg_Show_Label_Heartbeat {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Heartbeat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heartbeat URL.
+        /// </summary>
+        public static string Msg_Show_Label_HeartbeatUrl {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_HeartbeatUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ignore Failure.
+        /// </summary>
+        public static string Msg_Show_Label_IgnoreFailure {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_IgnoreFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Local Time.
+        /// </summary>
+        public static string Msg_Show_Label_LocalTimeRotation {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_LocalTimeRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log As Error.
+        /// </summary>
+        public static string Msg_Show_Label_LogAsError {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_LogAsError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max Attempts.
+        /// </summary>
+        public static string Msg_Show_Label_MaxAttempts {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_MaxAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max Failed Checks.
+        /// </summary>
+        public static string Msg_Show_Label_MaxFailedChecks {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_MaxFailedChecks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max Files.
+        /// </summary>
+        public static string Msg_Show_Label_MaxFiles {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_MaxFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Name.
+        /// </summary>
+        public static string Msg_Show_Label_Name {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to On Clean Exit.
+        /// </summary>
+        public static string Msg_Show_Label_OnCleanExit {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_OnCleanExit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameters.
+        /// </summary>
+        public static string Msg_Show_Label_Parameters {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Parameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pid.
+        /// </summary>
+        public static string Msg_Show_Label_Pid {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Pid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Priority.
+        /// </summary>
+        public static string Msg_Show_Label_Priority {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Priority", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recovery.
+        /// </summary>
+        public static string Msg_Show_Label_Recovery {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Recovery", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Retry Attempts.
+        /// </summary>
+        public static string Msg_Show_Label_RetryAttempts {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_RetryAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rotation Period.
+        /// </summary>
+        public static string Msg_Show_Label_RotationPeriod {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_RotationPeriod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rotation Size.
+        /// </summary>
+        public static string Msg_Show_Label_RotationSize {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_RotationSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Local System.
+        /// </summary>
+        public static string Msg_Show_Label_RunAsLocalSystem {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_RunAsLocalSystem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Size Rotation.
+        /// </summary>
+        public static string Msg_Show_Label_SizeRotation {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_SizeRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start.
+        /// </summary>
+        public static string Msg_Show_Label_Start {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Start", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Startup Dir.
+        /// </summary>
+        public static string Msg_Show_Label_StartupDir {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_StartupDir", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Startup Type.
+        /// </summary>
+        public static string Msg_Show_Label_StartupType {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_StartupType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Status.
+        /// </summary>
+        public static string Msg_Show_Label_Status {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stderr.
+        /// </summary>
+        public static string Msg_Show_Label_Stderr {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Stderr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stdout.
+        /// </summary>
+        public static string Msg_Show_Label_Stdout {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Stdout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stop.
+        /// </summary>
+        public static string Msg_Show_Label_Stop {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Stop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Timeout.
+        /// </summary>
+        public static string Msg_Show_Label_Timeout {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Timeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to URL Flags.
+        /// </summary>
+        public static string Msg_Show_Label_UrlFlags {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_UrlFlags", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to URL Timeout.
+        /// </summary>
+        public static string Msg_Show_Label_UrlTimeout {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_UrlTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Account.
+        /// </summary>
+        public static string Msg_Show_Label_UserAccount {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_UserAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} MB.
+        /// </summary>
+        public static string Msg_Show_Megabytes {
+            get {
+                return ResourceManager.GetString("Msg_Show_Megabytes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The --search option cannot be combined with --name. Use --name to show a single service, or --search to filter the service list..
+        /// </summary>
+        public static string Msg_Show_NameAndSearchNotAllowed {
+            get {
+                return ResourceManager.GetString("Msg_Show_NameAndSearchNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No.
+        /// </summary>
+        public static string Msg_Show_No {
+            get {
+                return ResourceManager.GetString("Msg_Show_No", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No services found..
+        /// </summary>
+        public static string Msg_Show_NoServices {
+            get {
+                return ResourceManager.GetString("Msg_Show_NoServices", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}s.
+        /// </summary>
+        public static string Msg_Show_Seconds {
+            get {
+                return ResourceManager.GetString("Msg_Show_Seconds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} service(s)..
+        /// </summary>
+        public static string Msg_Show_ServiceCount {
+            get {
+                return ResourceManager.GetString("Msg_Show_ServiceCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to -.
+        /// </summary>
+        public static string Msg_Show_ValueNotSet {
+            get {
+                return ResourceManager.GetString("Msg_Show_ValueNotSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Yes.
+        /// </summary>
+        public static string Msg_Show_Yes {
+            get {
+                return ResourceManager.GetString("Msg_Show_Yes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to start service &apos;{0}&apos;.
         /// </summary>
         public static string Msg_StartServiceAction {

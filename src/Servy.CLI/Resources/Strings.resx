@@ -155,4 +155,226 @@
   <data name="Msg_LogFailed" xml:space="preserve">
     <value>Failed to {0}</value>
   </data>
+  <data name="Msg_ShowServiceAction" xml:space="preserve">
+    <value>show configuration for service '{0}'</value>
+  </data>
+  <data name="Msg_ShowServicesAction" xml:space="preserve">
+    <value>list services</value>
+  </data>
+  <data name="Msg_ShowServiceSuggestion" xml:space="preserve">
+    <value>Ensure the service exists in the Servy database and that your shell is running as Administrator.</value>
+  </data>
+  <data name="Msg_ShowServiceLogged" xml:space="preserve">
+    <value>Displayed configuration for service '{0}'.</value>
+  </data>
+  <data name="Msg_ShowServicesLogged" xml:space="preserve">
+    <value>Listed {0} service(s).</value>
+  </data>
+  <data name="Msg_Show_NameAndSearchNotAllowed" xml:space="preserve">
+    <value>The --search option cannot be combined with --name. Use --name to show a single service, or --search to filter the service list.</value>
+  </data>
+  <data name="Msg_Show_NoServices" xml:space="preserve">
+    <value>No services found.</value>
+  </data>
+  <data name="Msg_Show_ServiceCount" xml:space="preserve">
+    <value>{0} service(s).</value>
+  </data>
+  <data name="Msg_Show_ValueNotSet" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="Msg_Show_Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Msg_Show_Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="Msg_Show_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Msg_Show_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Msg_Show_Seconds" xml:space="preserve">
+    <value>{0}s</value>
+  </data>
+  <data name="Msg_Show_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Msg_Show_Group_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Msg_Show_Group_Logs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="Msg_Show_Group_Timeouts" xml:space="preserve">
+    <value>Timeouts</value>
+  </data>
+  <data name="Msg_Show_Group_Recovery" xml:space="preserve">
+    <value>Recovery</value>
+  </data>
+  <data name="Msg_Show_Group_FailureProgram" xml:space="preserve">
+    <value>Failure Program</value>
+  </data>
+  <data name="Msg_Show_Group_Environment" xml:space="preserve">
+    <value>Environment</value>
+  </data>
+  <data name="Msg_Show_Group_PreLaunch" xml:space="preserve">
+    <value>Pre-Launch</value>
+  </data>
+  <data name="Msg_Show_Group_PostLaunch" xml:space="preserve">
+    <value>Post-Launch</value>
+  </data>
+  <data name="Msg_Show_Group_PreStop" xml:space="preserve">
+    <value>Pre-Stop</value>
+  </data>
+  <data name="Msg_Show_Group_PostStop" xml:space="preserve">
+    <value>Post-Stop</value>
+  </data>
+  <data name="Msg_Show_Group_Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Msg_Show_Label_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Msg_Show_Label_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Msg_Show_Label_Pid" xml:space="preserve">
+    <value>Pid</value>
+  </data>
+  <data name="Msg_Show_Label_DisplayName" xml:space="preserve">
+    <value>Display Name</value>
+  </data>
+  <data name="Msg_Show_Label_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Msg_Show_Label_StartupType" xml:space="preserve">
+    <value>Startup Type</value>
+  </data>
+  <data name="Msg_Show_Label_Priority" xml:space="preserve">
+    <value>Priority</value>
+  </data>
+  <data name="Msg_Show_Label_CpuAffinity" xml:space="preserve">
+    <value>CPU Affinity</value>
+  </data>
+  <data name="Msg_Show_Label_Executable" xml:space="preserve">
+    <value>Executable</value>
+  </data>
+  <data name="Msg_Show_Label_StartupDir" xml:space="preserve">
+    <value>Startup Dir</value>
+  </data>
+  <data name="Msg_Show_Label_Parameters" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="Msg_Show_Label_RunAsLocalSystem" xml:space="preserve">
+    <value>Local System</value>
+  </data>
+  <data name="Msg_Show_Label_UserAccount" xml:space="preserve">
+    <value>User Account</value>
+  </data>
+  <data name="Msg_Show_Label_Stdout" xml:space="preserve">
+    <value>Stdout</value>
+  </data>
+  <data name="Msg_Show_Label_Stderr" xml:space="preserve">
+    <value>Stderr</value>
+  </data>
+  <data name="Msg_Show_Label_ActiveStdout" xml:space="preserve">
+    <value>Active Stdout</value>
+  </data>
+  <data name="Msg_Show_Label_ActiveStderr" xml:space="preserve">
+    <value>Active Stderr</value>
+  </data>
+  <data name="Msg_Show_Label_SizeRotation" xml:space="preserve">
+    <value>Size Rotation</value>
+  </data>
+  <data name="Msg_Show_Label_RotationSize" xml:space="preserve">
+    <value>Rotation Size</value>
+  </data>
+  <data name="Msg_Show_Label_DateRotation" xml:space="preserve">
+    <value>Date Rotation</value>
+  </data>
+  <data name="Msg_Show_Label_RotationPeriod" xml:space="preserve">
+    <value>Rotation Period</value>
+  </data>
+  <data name="Msg_Show_Label_MaxFiles" xml:space="preserve">
+    <value>Max Files</value>
+  </data>
+  <data name="Msg_Show_Label_LocalTimeRotation" xml:space="preserve">
+    <value>Local Time</value>
+  </data>
+  <data name="Msg_Show_Label_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Msg_Show_Label_Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Msg_Show_Label_HealthCheck" xml:space="preserve">
+    <value>Health Check</value>
+  </data>
+  <data name="Msg_Show_Label_Heartbeat" xml:space="preserve">
+    <value>Heartbeat</value>
+  </data>
+  <data name="Msg_Show_Label_MaxFailedChecks" xml:space="preserve">
+    <value>Max Failed Checks</value>
+  </data>
+  <data name="Msg_Show_Label_Recovery" xml:space="preserve">
+    <value>Recovery</value>
+  </data>
+  <data name="Msg_Show_Label_OnCleanExit" xml:space="preserve">
+    <value>On Clean Exit</value>
+  </data>
+  <data name="Msg_Show_Label_MaxAttempts" xml:space="preserve">
+    <value>Max Attempts</value>
+  </data>
+  <data name="Msg_Show_Label_HeartbeatUrl" xml:space="preserve">
+    <value>Heartbeat URL</value>
+  </data>
+  <data name="Msg_Show_Label_UrlTimeout" xml:space="preserve">
+    <value>URL Timeout</value>
+  </data>
+  <data name="Msg_Show_Label_UrlFlags" xml:space="preserve">
+    <value>URL Flags</value>
+  </data>
+  <data name="Msg_Show_Label_EnvironmentVariables" xml:space="preserve">
+    <value>Environment Variables</value>
+  </data>
+  <data name="Msg_Show_Label_Dependencies" xml:space="preserve">
+    <value>Dependencies</value>
+  </data>
+  <data name="Msg_Show_Label_Timeout" xml:space="preserve">
+    <value>Timeout</value>
+  </data>
+  <data name="Msg_Show_Label_RetryAttempts" xml:space="preserve">
+    <value>Retry Attempts</value>
+  </data>
+  <data name="Msg_Show_Label_IgnoreFailure" xml:space="preserve">
+    <value>Ignore Failure</value>
+  </data>
+  <data name="Msg_Show_Label_LogAsError" xml:space="preserve">
+    <value>Log As Error</value>
+  </data>
+  <data name="Msg_Show_Label_ConsoleUI" xml:space="preserve">
+    <value>Console UI</value>
+  </data>
+  <data name="Msg_Show_Label_DebugLogs" xml:space="preserve">
+    <value>Debug Logs</value>
+  </data>
+  <data name="Msg_Show_Column_Name" xml:space="preserve">
+    <value>NAME</value>
+  </data>
+  <data name="Msg_Show_Column_DisplayName" xml:space="preserve">
+    <value>DISPLAY NAME</value>
+  </data>
+  <data name="Msg_Show_Column_Description" xml:space="preserve">
+    <value>DESCRIPTION</value>
+  </data>
+  <data name="Msg_Show_Column_StartupType" xml:space="preserve">
+    <value>STARTUP TYPE</value>
+  </data>
+  <data name="Msg_Show_Column_Status" xml:space="preserve">
+    <value>STATUS</value>
+  </data>
+  <data name="Msg_Show_Column_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
 </root>
