@@ -29,7 +29,7 @@ namespace Servy.Manager.Converters
         /// <param name="parameter">Optional parameter (unused).</param>
         /// <param name="culture">The culture to use in the converter.</param>
         /// <returns>A localized string corresponding to the enum value, or a customized fallback on errors.</returns>
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is TEnum enumValue && _map.TryGetValue(enumValue, out var resourceProvider))
             {
@@ -47,7 +47,7 @@ namespace Servy.Manager.Converters
         /// <param name="parameter">Optional parameter (unused).</param>
         /// <param name="culture">The culture to use in the converter.</param>
         /// <returns><see cref="Binding.DoNothing"/> because two-way binding is not supported.</returns>
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             return Binding.DoNothing;
         }

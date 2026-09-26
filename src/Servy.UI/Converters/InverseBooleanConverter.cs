@@ -17,7 +17,7 @@ namespace Servy.UI.Converters
         /// <param name="parameter">Not used.</param>
         /// <param name="culture">Not used.</param>
         /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <see cref="Binding.DoNothing"/>.</returns>
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is bool b) return !b;
             return Binding.DoNothing;
@@ -31,7 +31,7 @@ namespace Servy.UI.Converters
         /// <param name="parameter">Not used.</param>
         /// <param name="culture">Not used.</param>
         /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <see cref="Binding.DoNothing"/>.</returns>
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is bool b) return !b;
             return Binding.DoNothing;

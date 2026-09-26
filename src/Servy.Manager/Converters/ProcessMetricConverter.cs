@@ -76,7 +76,7 @@ namespace Servy.Manager.Converters
         /// The type pattern is deliberate: it folds the null check and the unboxing into one test,
         /// where a direct cast of a null box would throw.
         /// </remarks>
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             // Pattern matching handles the null check and unboxing in one go.
             // If the bound property is nullable and is null, the pattern match fails
@@ -92,7 +92,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// Not implemented (one-way binding only).
         /// </summary>
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             return Binding.DoNothing;
         }
