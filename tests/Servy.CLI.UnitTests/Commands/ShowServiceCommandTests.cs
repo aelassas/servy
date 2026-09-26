@@ -310,7 +310,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ExecuteAsync_SingleService_ReadsTheRecordWithoutDecrypting()
+        public async Task ExecuteAsync_SingleService_ReadsTheRecordDecrypted()
         {
             // Arrange
             GivenService(MinimalDto());
@@ -321,8 +321,59 @@ namespace Servy.CLI.UnitTests.Commands
             await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            // decrypt:false is what keeps the stored credential from ever being decrypted in this process.
-            _repository.Verify(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()), Times.Once);
+            // Eight of the nine columns encrypted at rest are rendered by the detail view, so reading
+            // with decrypt:false printed the stored ciphertext. export reads the same way.
+            _repository.Verify(r => r.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_EncryptedAtRestFields_AreRenderedAsPlaintext()
+        {
+            // Arrange
+            // Every value below sits in a column listed by ServiceRepository.SensitiveFields, so each
+            // one reaches the renderer as ciphertext unless the read decrypts.
+            var dto = MinimalDto();
+            dto.Parameters = "--config telegraf.conf";
+            dto.EnvironmentVariables = "API_HOST=example.internal";
+            dto.PreLaunchEnvironmentVariables = "PRELAUNCH_MODE=check";
+            dto.PreLaunchParameters = "--warmup";
+            dto.PostLaunchParameters = "--notify";
+            dto.PreStopParameters = "--drain";
+            dto.PostStopParameters = "--cleanup";
+            dto.FailureProgramParameters = "--alert";
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.Equal("--config telegraf.conf", RowValue(result.Message, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Contains("API_HOST=example.internal", result.Message);
+            Assert.Contains("PRELAUNCH_MODE=check", result.Message);
+            Assert.Contains("--warmup", result.Message);
+            Assert.Contains("--notify", result.Message);
+            Assert.Contains("--drain", result.Message);
+            Assert.Contains("--cleanup", result.Message);
+            Assert.Contains("--alert", result.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_ListMode_DoesNotPayForDecryption()
+        {
+            // Arrange
+            GivenServices(MinimalDto("alpha"));
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            // None of the six listed columns is encrypted at rest, so the list must not pay to decrypt.
+            _repository.Verify(r => r.SearchAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()), Times.Once);
+            _repository.Verify(r => r.SearchAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
