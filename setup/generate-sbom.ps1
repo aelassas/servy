@@ -29,30 +29,37 @@ param (
     [string]$OutputFile
 )
 
+# Anchor paths relative to script location and repository root so script invocation location does not break path resolution
+$scriptDir = $PSScriptRoot
+$repoRoot  = (Resolve-Path (Join-Path $scriptDir '..')).Path
+
+# Resolve OutputFile relative to the caller's current working directory before switching context
+$resolvedOutputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputFile)
+
 # Append the .0 patch component the CycloneDX schema requires
 $FullSbomVersion = "$($BaseVersion).0"
 
 $projects = @(
-    @{ Path = 'src\Servy\Servy.csproj';                      File = 'sbom-Servy.xml' }
-    @{ Path = 'src\Servy.CLI\Servy.CLI.csproj';              File = 'sbom-Servy.CLI.xml' }
-    @{ Path = 'src\Servy.Manager\Servy.Manager.csproj';      File = 'sbom-Servy.Manager.xml' }
-    @{ Path = 'src\Servy.Restarter\Servy.Restarter.csproj';  File = 'sbom-Servy.Restarter.xml' }
-    @{ Path = 'src\Servy.Service\Servy.Service.csproj';      File = 'sbom-Servy.Service.xml' }
+    @{ Path = Join-Path $repoRoot 'src\Servy\Servy.csproj';           File = 'sbom-Servy.xml' }
+    @{ Path = Join-Path $repoRoot 'src\Servy.CLI\Servy.CLI.csproj';       File = 'sbom-Servy.CLI.xml' }
+    @{ Path = Join-Path $repoRoot 'src\Servy.Manager\Servy.Manager.csproj';   File = 'sbom-Servy.Manager.xml' }
+    @{ Path = Join-Path $repoRoot 'src\Servy.Restarter\Servy.Restarter.csproj'; File = 'sbom-Servy.Restarter.xml' }
+    @{ Path = Join-Path $repoRoot 'src\Servy.Service\Servy.Service.csproj';   File = 'sbom-Servy.Service.xml' }
 )
 
-$inputFiles = $projects | ForEach-Object { $_.File }
+$inputFiles = $projects | ForEach-Object { Join-Path $scriptDir $_.File }
 
 try {
     # Explicitly check for native command failures to prevent partial SBOMs
     foreach ($p in $projects) {
-        dotnet-CycloneDX $p.Path --recursive --set-version "$FullSbomVersion" --output . --filename $p.File
+        dotnet-CycloneDX $p.Path --recursive --set-version "$FullSbomVersion" --output $scriptDir --filename $p.File
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet-CycloneDX failed for $($p.Path) (exit $LASTEXITCODE)"
         }
     }
 
     # Merge all component project files into the single specified target output file
-    cyclonedx merge --input-files $inputFiles --output-file "$OutputFile"
+    cyclonedx merge --input-files $inputFiles --output-file "$resolvedOutputFile"
     if ($LASTEXITCODE -ne 0) {
         throw "cyclonedx merge failed (exit $LASTEXITCODE)"
     }
