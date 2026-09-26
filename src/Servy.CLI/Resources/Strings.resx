@@ -377,4 +377,13 @@
   <data name="Msg_Show_Column_Pid" xml:space="preserve">
     <value>PID</value>
   </data>
+  <data name="Msg_Show_Label_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Msg_Show_Masked" xml:space="preserve">
+    <value>********</value>
+  </data>
+  <data name="Msg_Show_DecryptRequiresName" xml:space="preserve">
+    <value>The --decrypt option requires --name. The service list shows no encrypted field, so there is nothing to decrypt.</value>
+  </data>
 </root>

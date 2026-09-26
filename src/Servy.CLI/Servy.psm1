@@ -1768,8 +1768,12 @@ function Show-ServyService {
             process id. Use Export-ServyServiceConfig instead when the configuration is needed
             as XML or JSON.
 
+            The fields Servy encrypts at rest - the parameter and environment-variable fields -
+            are masked by default and are not even decrypted; pass -Decrypt to read them in clear
+            text. The stored password is masked either way and is never printed.
+
             Requires Administrator privileges, because the configuration is read from the Servy
-            database under %ProgramData%\Servy. The stored credential is never printed.
+            database under %ProgramData%\Servy.
 
         .PARAMETER Quiet
             Suppress spinner and run in non-interactive mode. Optional.
@@ -1777,9 +1781,17 @@ function Show-ServyService {
         .PARAMETER Name
             The name of the service to show. (Required)
 
+        .PARAMETER Decrypt
+            Show the encrypted parameter and environment-variable fields in clear text instead of
+            masked. Optional. The stored password stays masked.
+
         .EXAMPLE
             Show-ServyService -Name "MyService"
-            # Prints the full configuration of the service named 'MyService'.
+            # Prints the configuration of 'MyService' with the encrypted fields masked.
+
+        .EXAMPLE
+            Show-ServyService -Name "MyService" -Decrypt
+            # Prints the same configuration with the parameters and environment variables in clear text.
 
         .NOTES
             The function calls Assert-Administrator to ensure the session has the
@@ -1790,10 +1802,19 @@ function Show-ServyService {
         [switch] $Quiet,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $Name
+        [string] $Name,
+
+        [switch] $Decrypt
     )
 
-    Invoke-ServyServiceCommand -Command "show" -Name $Name -Quiet:$Quiet -ErrorContext "Failed to show service '$Name'"
+    # Enforce elevation to allow CLI access to %ProgramData%\Servy
+    Assert-Administrator
+
+    $argsList = @()
+    $argsList = Add-Arg $argsList "--name" $Name
+    if ($Decrypt) { $argsList = Add-Arg $argsList "--decrypt" -Flag }
+
+    Invoke-ServyCli -Command "show" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to show service '$Name'"
 }
 
 function Show-ServyServices {
