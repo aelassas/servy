@@ -17,6 +17,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: loc-${{ github.ref }}
+  cancel-in-progress: true    
+
 permissions:
   contents: write  # Required to push badges to the loc branch
 
