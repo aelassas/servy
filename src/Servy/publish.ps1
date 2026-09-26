@@ -34,6 +34,7 @@
 .EXAMPLE
     ./publish.ps1 -Tfm "net10.0-windows" -BuildConfiguration "Debug" -Runtime "win-x64"
 #>
+[CmdletBinding()]
 param(
     [string]$Tfm                = "",
     [string]$BuildConfiguration = "Release",

@@ -26,8 +26,8 @@
 [CmdletBinding()]
 param(
     [string]$Tfm                = "",
-    [string]$Runtime            = "win-x64",
     [string]$BuildConfiguration = "Release",
+    [string]$Runtime            = "win-x64",
     [switch]$Pause
 )
 

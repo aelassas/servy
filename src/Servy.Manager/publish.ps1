@@ -43,6 +43,7 @@
       - setup/signpath.ps1: signs the output when -BuildConfiguration is Release;
         when absent, signing is skipped with a warning.
 #>
+[CmdletBinding()]
 param(
     [string]$Tfm                = "",
     [string]$BuildConfiguration = "Release",
