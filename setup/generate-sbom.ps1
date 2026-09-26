@@ -31,7 +31,7 @@ param (
 
 # Anchor paths relative to script location and repository root so script invocation location does not break path resolution
 $scriptDir = $PSScriptRoot
-$repoRoot  = (Resolve-Path (Join-Path $scriptDir '..')).Path
+$repoRoot  = (Resolve-Path -LiteralPath (Join-Path $scriptDir '..')).Path
 
 # Resolve OutputFile relative to the caller's current working directory before switching context
 $resolvedOutputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputFile)
@@ -67,8 +67,8 @@ try {
 finally {
     # Clean up intermediate component SBOM files after generation pass
     foreach ($file in $inputFiles) {
-        if (Test-Path $file) {
-            Remove-Item -Path $file -Force -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath $file) {
+            Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
         }
     }
 }
