@@ -580,7 +580,7 @@ namespace Servy.Service.Helpers
         /// <returns>A semicolon-separated string of key-value pairs, or "None" if the collection is null.</returns>
         private static string EnvironmentVariablesToString(IEnumerable<EnvironmentVariable> vars)
         {
-            if (vars == null) return "None";
+            if (vars == null || !vars.Any()) return "None";
 
             return string.Join("; ", vars.Select(v =>
                 $"{v.Name}={MaskSensitiveValue(v.Name, v.Value)}"));
