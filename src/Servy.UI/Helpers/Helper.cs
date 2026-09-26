@@ -130,6 +130,5 @@ namespace Servy.UI.Helpers
             // Pass the formatted count and the duration to the plural template
             return string.Format(manyFormat, countText, durationText);
         }
-
     }
 }

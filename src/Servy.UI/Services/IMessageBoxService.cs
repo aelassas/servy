@@ -40,6 +40,5 @@ namespace Servy.UI.Services
         /// <c>true</c> if the user confirms (e.g., clicks Yes/OK); otherwise, <c>false</c>.
         /// </returns>
         Task<bool> ShowConfirmAsync(string message, string caption);
-
     }
 }

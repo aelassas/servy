@@ -232,7 +232,7 @@ namespace Servy.Service.ProcessManagement
         public bool? Stop(int timeoutMs)
         {
             ThrowIfDisposed();
-            return TryStopGracefullyOrKill(_process, timeoutMs: timeoutMs, postKillWaitMs: AppConfig.DefaultDescendantPostKillWaitMs);
+            return TryStopGracefullyOrKill(_process, timeoutMs: timeoutMs, postKillWaitMs: AppConfig.DefaultPostKillWaitMs);
         }
 
         /// <summary>
@@ -369,7 +369,7 @@ namespace Servy.Service.ProcessManagement
             // 2. TERMINATION: Kill the current node now that its children are dead
             _logger?.Info($"Terminating node: {process.Format()}");
 
-            bool? result = TryStopGracefullyOrKill(process, timeoutMs, AppConfig.DefaultDescendantPostKillWaitMs);
+            bool? result = TryStopGracefullyOrKill(process, timeoutMs, AppConfig.DefaultPostKillWaitMs);
 
             if (result == null)
             {
@@ -475,9 +475,9 @@ namespace Servy.Service.ProcessManagement
                 return false;
             }
 
-            if (!_process.WaitForExit(AppConfig.DefaultDescendantPostKillWaitMs))
+            if (!_process.WaitForExit(AppConfig.DefaultPostKillWaitMs))
             {
-                _logger?.Warn($"Process '{_process.Format()}' killed, but did not exit within {AppConfig.DefaultDescendantPostKillWaitMs / (double)AppConfig.MillisecondsPerSecond}s.");
+                _logger?.Warn($"Process '{_process.Format()}' killed, but did not exit within {AppConfig.DefaultPostKillWaitMs / (double)AppConfig.MillisecondsPerSecond}s.");
                 return false;
             }
 
