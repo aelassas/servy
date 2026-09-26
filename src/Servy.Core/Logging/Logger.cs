@@ -419,6 +419,41 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
+        /// Writes a multi-line report: the title, then every physical line of the body as its own
+        /// entry, so a composed section layout survives the single-line contract that
+        /// <see cref="Debug"/>, <see cref="Info"/>, <see cref="Warn"/> and <see cref="Error"/> enforce.
+        /// Use it for structured dumps; the leveled methods stay single-line.
+        /// </summary>
+        /// <param name="level">The severity level of the report; skipped if below the configured minimum.</param>
+        /// <param name="title">The report heading, written as its own entry.</param>
+        /// <param name="body">The report body; every physical line becomes its own entry.</param>
+        /// <remarks>
+        /// Each emitted line carries its own timestamp and level, which is what keeps a report
+        /// greppable. A leading indent is deliberately not added: <see cref="Log"/> sanitizes with
+        /// <c>Trim()</c>, so leading whitespace cannot reach the file anyway.
+        /// </remarks>
+        public static void Report(LogLevel level, string title, string body)
+        {
+            if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(body)) return;
+
+            if ((LogLevel)_currentLogLevel > level) return;
+
+            if (!string.IsNullOrEmpty(title))
+            {
+                Log(level, title);
+            }
+
+            if (string.IsNullOrEmpty(body)) return;
+
+            // Split on LF and drop a trailing CR, so a body composed with either "\n" or
+            // Environment.NewLine yields the same one-entry-per-line result.
+            foreach (var line in body.Split('\n'))
+            {
+                Log(level, line.TrimEnd('\r'));
+            }
+        }
+
+        /// <summary>
         /// Core logging logic that handles thread synchronization and delegated I/O via the rotating writer.
         /// </summary>
         /// <param name="level">The severity level enum.</param>

@@ -66,7 +66,7 @@ namespace Servy.Core.Config
             string eventLogStatus = instanceLogger != null ? isEventLogEnabled.ToString() : "n/a (no event-log sink in this process)";
 
             // Centralized debug logging prevents asymmetric log outputs
-            Logger.Debug("Servy Logger Configuration Loaded:" + Environment.NewLine +
+            Logger.Report(LogLevel.Debug, "Servy Logger Configuration Loaded:",
                 $"  LogLevel: {logLevel}" + Environment.NewLine +
                 $"  EnableSizeRotation: {enableSizeRotation}" + Environment.NewLine +
                 $"  LogRotationSizeMB: {logRotationSizeMB}" + Environment.NewLine +

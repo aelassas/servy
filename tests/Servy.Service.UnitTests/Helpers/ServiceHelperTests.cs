@@ -128,11 +128,13 @@ namespace Servy.Service.UnitTests.Helpers
             _helper.LogStartupArguments(options, mockLog.Object);
 
             // Assert
-            mockLog.Verify(l => l.Info(It.Is<string>(s =>
-                s.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) >= 0), It.IsAny<Exception>()),
+            // The public dump is a report now, so the title is its own argument and the composed
+            // sections arrive in the body rather than flattened into one Info message.
+            mockLog.Verify(l => l.Report(LogLevel.Info, It.Is<string>(t =>
+                t.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) >= 0), It.IsAny<string>()),
                 Times.Once);
 
-            mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("serviceName: TestService")), It.IsAny<Exception>()), Times.Once);
+            mockLog.Verify(l => l.Report(LogLevel.Info, It.IsAny<string>(), It.Is<string>(b => b.Contains("serviceName: TestService"))), Times.Once);
         }
 
         [Fact]
@@ -173,11 +175,12 @@ namespace Servy.Service.UnitTests.Helpers
                 PostStopExecutableArgs = "cleanup --pat SecretPatToken"
             };
 
-            // Capture public parameters logged through the IServyLogger interface
+            // Capture public parameters logged through the IServyLogger interface. The public dump
+            // is emitted as a report, so title and body are captured as the one entry they compose.
             var publicLoggedEntries = new List<string>();
             mockEventLog
-                .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
-                .Callback<string, Exception>((msg, _) => publicLoggedEntries.Add(msg));
+                .Setup(l => l.Report(It.IsAny<LogLevel>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Callback<LogLevel, string, string>((_, title, body) => publicLoggedEntries.Add(title + Environment.NewLine + body));
 
             // Act
             // LogCapture routes the static Logger into a private temp directory (the logDirectory

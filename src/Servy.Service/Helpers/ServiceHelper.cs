@@ -178,8 +178,9 @@ namespace Servy.Service.Helpers
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             // 1. PUBLIC DATA: Logged to both Local Log and Windows Event Log (logger?.Info)
-            logger?.Info(
-                  $"[Startup Parameters]\n" +
+            logger?.Report(
+                  LogLevel.Info,
+                  "[Startup Parameters]",
                   $"Servy version: {AppConfig.Version}\n\n" +
 
                   "--------Main-------------------\n" +
@@ -247,8 +248,9 @@ namespace Servy.Service.Helpers
                 string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
                 string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
 
-                Logger.Info(
-                    $"[Startup Parameters - SENSITIVE DATA]\n" +
+                Logger.Report(
+                    LogLevel.Info,
+                    "[Startup Parameters - SENSITIVE DATA]",
                     "NOTE: This section contains sensitive parameters including executable arguments and environment variables.\n" +
                     "--------Main (Sensitive)-------\n" +
                     $"- realArgs: {MaskRawArguments(options.ExecutableArgs)}\n\n" +

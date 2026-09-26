@@ -53,6 +53,27 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        public void Report(LogLevel level, string title, string body)
+        {
+            var message = string.IsNullOrEmpty(body) ? title : $"{title}\n{body}";
+
+            switch (level)
+            {
+                case LogLevel.Error:
+                    Error(message);
+                    break;
+                case LogLevel.Warn:
+                    Warn(message);
+                    break;
+                case LogLevel.Debug:
+                    Debug(message);
+                    break;
+                default:
+                    Info(message);
+                    break;
+            }
+        }
+
         public IServyLogger CreateScoped(string prefix) => this;
         public void SetLogLevel(LogLevel level) { }
         public void SetIsEventLogEnabled(bool isEnabled) { }
