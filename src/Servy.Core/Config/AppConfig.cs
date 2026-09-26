@@ -929,15 +929,14 @@ namespace Servy.Core.Config
         public const int EventLogMessageMaxChars = 31_000;
 
         /// <summary>
-        /// Specifies the default duration in milliseconds to wait for the operating system
-        /// to finalize the cleanup of a process and its descendant tree after a forced kill is issued.
+        /// Specifies the time to wait for a process to disappear after a forced Kill(), for the root child and each descendant.
         /// </summary>
         /// <remarks>
         /// This delay helps prevent race conditions where subsequent file system operations
         /// (like re-extracting resources) fail because the OS hasn't fully released file
         /// handles held by the terminated process tree.
         /// </remarks>
-        public const int DefaultDescendantPostKillWaitMs = 3_000;
+        public const int DefaultPostKillWaitMs = 3_000;
 
         /// <summary>
         /// Specifies the delay in milliseconds to wait after registering the PRESHUTDOWN notification

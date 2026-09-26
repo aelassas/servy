@@ -2869,7 +2869,7 @@ namespace Servy.Service
                 // ---------------------
 
                 // Total timeout = time for main process to stop + time for descendants to stop + safety buffer
-                var totalTimeoutMs = 2L * timeoutMs + childCount * ((long)timeoutMs + AppConfig.DefaultDescendantPostKillWaitMs) + AppConfig.SafeKillProcessSafetyBufferMs;
+                var totalTimeoutMs = 2L * timeoutMs + childCount * ((long)timeoutMs + AppConfig.DefaultPostKillWaitMs) + AppConfig.SafeKillProcessSafetyBufferMs;
 
                 Task<bool?> stopTask = Task.Run(() =>
                 {
@@ -2919,7 +2919,6 @@ namespace Servy.Service
                     }
                 }
                 finally { sw.Stop(); }
-
 
                 // 3. SAFE RESULT RETRIEVAL
                 // We only access .Result if the task truly succeeded.

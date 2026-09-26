@@ -442,10 +442,9 @@ namespace Servy.Manager.Services
                     // 2. Perform the deletion pass
                     var res = await _serviceRepository.DeleteAsync(service.Name, cancellationToken);
                     var success = res > 0;
-                    if (success) RemoveService(service);
-
                     if (success)
                     {
+                        RemoveService(service);
                         Logger.Info($"Service {service.Name} removed successfully.");
                     }
                     else
@@ -453,7 +452,6 @@ namespace Servy.Manager.Services
                         Logger.Error($"Failed to remove service {service.Name} from repository.");
                         await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption);
                     }
-
                     return success;
                 }
                 catch (OperationCanceledException)
