@@ -191,6 +191,7 @@ jobs:
           if (-Not (Test-Path $localTools)) { New-Item -ItemType Directory -Path $localTools | Out-Null }
 
           & dotnet new tool-manifest --force --output $localTools
+          if ($LASTEXITCODE -ne 0) { Write-Error "dotnet new tool-manifest failed (exit $LASTEXITCODE)" }
 
           Push-Location $localTools
           & dotnet tool install dotnet-reportgenerator-globaltool --version $filters.Version
