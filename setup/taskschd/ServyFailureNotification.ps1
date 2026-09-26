@@ -77,7 +77,7 @@ function Show-Notification {
         [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
         [void][Windows.UI.Notifications.NotificationSetting, Windows.UI.Notifications, ContentType = WindowsRuntime]
     } catch {
-        Write-FallbackError -Message "ServyToast: WinRT notification types are unavailable on this host ($($_.Exception.Message)). Toast delivery is not possible here; advancing the watermark." -ScriptDir $ScriptDir -FallbackFileName$FallbackLogFile
+        Write-FallbackError -Message "ServyToast: WinRT notification types are unavailable on this host ($($_.Exception.Message)). Toast delivery is not possible here; advancing the watermark." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
         return 'PermanentFailure'
     }
 
