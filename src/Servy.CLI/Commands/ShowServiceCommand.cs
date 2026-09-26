@@ -181,7 +181,8 @@ namespace Servy.CLI.Commands
             core.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.Parameters, decrypted));
             sections.Add(core);
 
-            // Account: the stored password is deliberately absent - see the class remarks.
+            // Account: the stored password gets a row only to show that one is set; its value is never
+            // rendered, not even under --decrypt - see the class remarks.
             var account = new Section(Strings.Msg_Show_Group_Account);
             account.IfSet(Strings.Msg_Show_Label_RunAsLocalSystem, FormatBoolean(dto.RunAsLocalSystem));
             account.IfSet(Strings.Msg_Show_Label_UserAccount, dto.UserAccount);
