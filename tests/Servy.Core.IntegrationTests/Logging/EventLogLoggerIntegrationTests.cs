@@ -393,6 +393,184 @@ namespace Servy.Core.IntegrationTests.Logging
 
         #endregion
 
+        #region Report & MapEventLogCategory Tests
+
+        [Fact]
+        public void Report_WhenTitleAndBodyAreNullOrEmpty_DoesNotEmit()
+        {
+            string source = GenerateSourceName();
+            using (var logger = new RecordingEventLogLogger(source, LogLevel.Debug, "Test"))
+            {
+                logger.Report(LogLevel.Info, null, null);
+                logger.Report(LogLevel.Info, string.Empty, string.Empty);
+
+                Assert.Empty(logger.Formatted);
+            }
+        }
+
+        [Theory]
+        [InlineData(LogLevel.Debug, LogLevel.Info, true)]
+        [InlineData(LogLevel.Info, LogLevel.Info, true)]
+        [InlineData(LogLevel.Warn, LogLevel.Info, false)]
+        [InlineData(LogLevel.Error, LogLevel.Warn, false)]
+        [InlineData(LogLevel.Error, LogLevel.Error, true)]
+        public void Report_RespectsLogLevelFiltering(LogLevel currentLevel, LogLevel targetLevel, bool expectEmitted)
+        {
+            string source = GenerateSourceName();
+            using (var logger = new RecordingEventLogLogger(source, currentLevel, "ReportPrefix"))
+            {
+                logger.Report(targetLevel, "Report Title", "Report Body");
+
+                if (expectEmitted)
+                {
+                    Assert.Contains(logger.Formatted, f => f.Contains("Report Title"));
+                }
+                else
+                {
+                    Assert.Empty(logger.Formatted);
+                }
+            }
+        }
+
+        [Fact]
+        public void Report_DebugLevel_FileOnly_SkipsEventLog()
+        {
+            if (!_isElevated) return;
+
+            string source = GenerateSourceName();
+            using (var logger = new EventLogLogger(source, LogLevel.Debug, isEventLogEnabled: true))
+            {
+                // Debug report should route to file log only, never writing to Windows Event Log
+                string logOutput = LogCapture.Run(() =>
+                {
+                    logger.Report(LogLevel.Debug, "Debug Report Title", "Debug Report Body");
+                }, LogLevel.Debug);
+
+                Assert.Contains("Debug Report Title", logOutput);
+                Assert.Contains("Debug Report Body", logOutput);
+            }
+        }
+
+        [Fact]
+        public void Report_WithTitleOnly_FormatsWithoutNewline()
+        {
+            string source = GenerateSourceName();
+            using (var logger = new RecordingEventLogLogger(source, LogLevel.Info, "TitlePrefix"))
+            {
+                logger.Report(LogLevel.Info, "Standalone Title", null);
+
+                Assert.Contains(logger.Formatted, f => f.Equals("Standalone Title", StringComparison.Ordinal));
+            }
+        }
+
+        [Theory]
+        [InlineData(LogLevel.Error, EventLogEntryType.Error, EventIds.Error)]
+        [InlineData(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning)]
+        [InlineData(LogLevel.Info, EventLogEntryType.Information, EventIds.Info)]
+        [InlineData(LogLevel.Debug, EventLogEntryType.Information, EventIds.Info)]
+        public void MapEventLogCategory_MapsCorrectEntryTypeAndEventId(LogLevel targetLevel, EventLogEntryType expectedType, int expectedId)
+        {
+            // Invoke internal static MapEventLogCategory via reflection
+            var method = typeof(EventLogLogger).GetMethod("MapEventLogCategory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            Assert.NotNull(method);
+
+            object[] parameters = new object[] { targetLevel, null, null };
+            method.Invoke(null, parameters);
+
+            EventLogEntryType actualType = (EventLogEntryType)parameters[1];
+            int actualId = (int)parameters[2];
+
+            Assert.Equal(expectedType, actualType);
+            Assert.Equal(expectedId, actualId);
+        }
+
+        [Fact]
+        public void Report_WhenEventLogEnabled_WritesToWindowsEventLog()
+        {
+            if (!_isElevated) return;
+
+            string source = GenerateSourceName();
+            if (!EventLog.SourceExists(source))
+            {
+                EventLog.CreateEventSource(source, AppConfig.EventLogName);
+            }
+
+            try
+            {
+                using (var logger = new EventLogLogger(source, LogLevel.Info, isEventLogEnabled: true))
+                {
+                    string title = "Integration Report " + Guid.NewGuid().ToString("N");
+                    string body = "Report Body Content";
+
+                    logger.Report(LogLevel.Info, title, body);
+
+                    using (var eventLog = new EventLog(AppConfig.EventLogName))
+                    {
+                        eventLog.Source = source;
+                        EventLogEntry foundEntry = null;
+
+                        const int maxRetries = 10;
+                        int retryCount = 0;
+                        int delayMs = 50;
+
+                        while (foundEntry == null && retryCount++ < maxRetries)
+                        {
+                            int count = eventLog.Entries.Count;
+                            for (int i = count - 1; i >= 0; i--)
+                            {
+                                if (eventLog.Entries[i].Source == source && eventLog.Entries[i].Message.Contains(title))
+                                {
+                                    foundEntry = eventLog.Entries[i];
+                                    break;
+                                }
+                            }
+
+                            if (foundEntry == null)
+                            {
+                                Thread.Sleep(delayMs);
+                                delayMs *= 2;
+                            }
+                        }
+
+                        if (foundEntry != null)
+                        {
+                            Assert.Contains(title, foundEntry.Message);
+                            Assert.Contains(body, foundEntry.Message);
+                            Assert.Equal(EventLogEntryType.Information, foundEntry.EntryType);
+                            Assert.Equal(EventIds.Info, foundEntry.InstanceId);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if (EventLog.SourceExists(source))
+                {
+                    EventLog.DeleteEventSource(source);
+                }
+            }
+        }
+
+        [Fact]
+        public void ScopedLogger_Report_DelegatesToParentWithCombinedPrefix()
+        {
+            string source = GenerateSourceName();
+            using (var logger = new EventLogLogger(source, LogLevel.Info, isEventLogEnabled: false, prefix: "Root"))
+            {
+                var scoped = logger.CreateScoped("Scope");
+
+                string logOutput = LogCapture.Run(() =>
+                {
+                    scoped.Report(LogLevel.Info, "Scoped Report Title", "Scoped Report Body");
+                }, LogLevel.Info);
+
+                Assert.Contains("[Root] [Scope] Scoped Report Title", logOutput);
+                Assert.Contains("Scoped Report Body", logOutput);
+            }
+        }
+
+        #endregion
+
         #region ScopedEventLogLogger Tests
 
         [Fact]
