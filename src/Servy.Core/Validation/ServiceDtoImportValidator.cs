@@ -3,6 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Resources;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Servy.Core.Validation
@@ -65,7 +66,7 @@ namespace Servy.Core.Validation
         /// The parsed definition is discarded. Callers that also need it should use
         /// <see cref="TryValidate(string?, out string?, out ServiceDto?)"/>, which parses the payload once.
         /// </remarks>
-        public bool TryValidate(string? content, out string? errorMessage) =>
+        public bool TryValidate(string? content, [NotNullWhen(false)] out string? errorMessage) =>
             TryValidateCore(content, out errorMessage, out _);
 
         /// <summary>

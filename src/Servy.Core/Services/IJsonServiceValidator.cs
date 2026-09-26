@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Servy.Core.Services
 {
     /// <summary>
@@ -21,7 +23,7 @@ namespace Servy.Core.Services
         /// the properties the Windows Service Control Manager needs (such as ExecutablePath).
         /// A caller that validates and then deserializes the same payload parses it twice.
         /// </remarks>
-        bool TryValidate(string? json, out string? errorMessage);
+        bool TryValidate(string? json, [NotNullWhen(false)] out string? errorMessage);
 
         /// <summary>
         /// Attempts to validate the provided JSON string and hands back the definition it parsed.

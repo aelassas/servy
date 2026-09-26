@@ -114,6 +114,26 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void HydrateDefaults_NormalizesEnvironmentVariablesAndDependencies()
+        {
+            // Arrange: Provide multi-line inputs requiring normalization
+            var dto = new ServiceDto
+            {
+                EnvironmentVariables = "VAR1=VAL1\r\nVAR2=VAL2\\",
+                ServiceDependencies = "Dep1\r\nDep2",
+                PreLaunchEnvironmentVariables = "PRE1=VAL1\nPRE2=VAL2"
+            };
+
+            // Act
+            ServiceDtoHelper.HydrateDefaults(dto);
+
+            // Assert: Strings should be normalized into single-line semicolon-delimited forms
+            Assert.Equal("VAR1=VAL1;VAR2=VAL2\\\\", dto.EnvironmentVariables);
+            Assert.Equal("Dep1;Dep2", dto.ServiceDependencies);
+            Assert.Equal("PRE1=VAL1;PRE2=VAL2", dto.PreLaunchEnvironmentVariables);
+        }
+
+        [Fact]
         public void ApplyDefaultsAndResetIdentity_WhenAllPropertiesAreNull_PopulatesEveryDefault()
         {
             // Arrange: Explicitly null every nullable property defensively to exercise ApplyDefaultsAndResetIdentity on an incomplete import

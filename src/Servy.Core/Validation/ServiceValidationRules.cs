@@ -151,13 +151,13 @@ namespace Servy.Core.Validation
             }
 
             // Environment & Dependencies
-            if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.EnvironmentVariables), out var envErrors))
+            if (!EnvironmentVariablesValidator.Validate(dto.EnvironmentVariables, out var envErrors))
                 result.Errors.AddRange(envErrors);
-            if (!ServiceDependenciesValidator.Validate(StringHelper.NormalizeString(dto.ServiceDependencies), out var depsErrors))
+            if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out var depsErrors))
                 result.Errors.AddRange(depsErrors);
 
             // Pre-Launch Environment & Destination Output Paths
-            if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables), out var preLaunchEnvErrors))
+            if (!EnvironmentVariablesValidator.Validate(dto.PreLaunchEnvironmentVariables, out var preLaunchEnvErrors))
                 result.Errors.AddRange(preLaunchEnvErrors);
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStdoutPath) && !Helper.IsValidPath(dto.PreLaunchStdoutPath))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStdoutPath);

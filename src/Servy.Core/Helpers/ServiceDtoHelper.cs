@@ -29,7 +29,8 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Populates null nullable properties with their matching system configurations sourced from <see cref="AppConfig"/>,
-        /// and normalizes identity fields by trimming surrounding whitespace from <c>UserAccount</c>.
+        /// normalizes string configuration fields (environment variables and dependencies), and normalizes identity fields
+        /// by trimming surrounding whitespace from <c>UserAccount</c>.
         /// Unlike <see cref="ApplyDefaultsAndResetIdentity"/>, it never resets or clears identity values.
         /// </summary>
         /// <param name="dto">The service data transfer object layout to populate. The instance is modified in place.</param>
@@ -75,6 +76,11 @@ namespace Servy.Core.Helpers
 
             // Identity Normalization
             dto.UserAccount = dto.UserAccount?.Trim();
+
+            // Environment & Dependencies Normalization
+            dto.EnvironmentVariables = StringHelper.NormalizeString(dto.EnvironmentVariables);
+            dto.ServiceDependencies = StringHelper.NormalizeString(dto.ServiceDependencies);
+            dto.PreLaunchEnvironmentVariables = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
 
             // Lifecycle Hooks (Pre-Launch)
             dto.PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
