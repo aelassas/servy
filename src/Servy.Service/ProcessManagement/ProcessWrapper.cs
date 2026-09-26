@@ -18,6 +18,18 @@ namespace Servy.Service.ProcessManagement
         private readonly IServyLogger? _logger;
         private bool _disposed;
 
+        #region Internal Test Seams
+
+        /// <summary>
+        /// Gets or sets the enumerator <see cref="StopTree"/> and <see cref="StopDescendants"/> resolve a
+        /// process's direct children through. Defaults to <see cref="ProcessExtensions.GetChildren"/>;
+        /// substituted by tests so the cascade can be handed a controlled child set, which is the only way
+        /// to observe how often each enumerated child is disposed and to drive a child whose disposal throws.
+        /// </summary>
+        internal Func<int, DateTime, List<Process>> ChildEnumerator { get; set; } = ProcessExtensions.GetChildren;
+
+        #endregion
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessWrapper"/> class with the specified <see cref="ProcessStartInfo"/>.
         /// </summary>
@@ -321,7 +333,7 @@ namespace Servy.Service.ProcessManagement
             List<Process> children;
             try
             {
-                children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+                children = ChildEnumerator(parentPid, parentStartTime);
             }
             catch (Exception ex)
             {
@@ -329,22 +341,22 @@ namespace Servy.Service.ProcessManagement
                 children = new List<Process>();
             }
 
+            // The finally below owns the whole enumerated set, including the children this loop never
+            // reaches when the cascade throws, so the loop body must not dispose its own child as well.
             try
             {
                 foreach (var child in children)
                 {
-                    using (child)
-                    {
-                        _logger?.Info($"Cascading stop to deeper descendant: {child.Format()}...");
-                        StopTree(child, timeoutMs);
-                    }
+                    _logger?.Info($"Cascading stop to deeper descendant: {child.Format()}...");
+                    StopTree(child, timeoutMs);
                 }
             }
             finally
             {
                 foreach (var child in children)
                 {
-                    try { child.Dispose(); } catch { }
+                    try { child.Dispose(); }
+                    catch (Exception ex) { _logger?.Debug($"Failed to dispose enumerated child handle: {ex.Message}"); }
                 }
             }
 
@@ -401,7 +413,7 @@ namespace Servy.Service.ProcessManagement
             List<Process> children;
             try
             {
-                children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+                children = ChildEnumerator(parentPid, parentStartTime);
             }
             catch (Exception ex)
             {
@@ -415,22 +427,22 @@ namespace Servy.Service.ProcessManagement
                 return;
             }
 
+            // The finally below owns the whole enumerated set, including the children this loop never
+            // reaches when the cascade throws, so the loop body must not dispose its own child as well.
             try
             {
                 foreach (var child in children)
                 {
-                    using (child) // We no longer need to dispose a native Handle, just the Process object
-                    {
-                        _logger?.Info($"Found descendant: {child.Format()}. Initiating cascaded kill...");
-                        StopTree(child, timeoutMs);
-                    }
+                    _logger?.Info($"Found descendant: {child.Format()}. Initiating cascaded kill...");
+                    StopTree(child, timeoutMs);
                 }
             }
             finally
             {
                 foreach (var child in children)
                 {
-                    try { child.Dispose(); } catch { }
+                    try { child.Dispose(); }
+                    catch (Exception ex) { _logger?.Debug($"Failed to dispose enumerated child handle: {ex.Message}"); }
                 }
             }
         }
