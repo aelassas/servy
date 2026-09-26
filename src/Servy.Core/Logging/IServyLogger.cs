@@ -68,5 +68,18 @@ namespace Servy.Core.Logging
         /// <param name="message">The message to log.</param>
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace, or <see langword="null"/>.</param>
         void Error(string message, Exception? ex = null);
+
+        /// <summary>
+        /// Logs a multi-line report: the title and then every physical line of the body, so a
+        /// composed section layout survives the single-line contract the leveled methods enforce.
+        /// </summary>
+        /// <remarks>
+        /// Sinks that render newlines (the Windows Event Log) receive the block as one entry;
+        /// the file sink receives one timestamped entry per physical line.
+        /// </remarks>
+        /// <param name="level">The <see cref="LogLevel"/> of the report.</param>
+        /// <param name="title">The report heading.</param>
+        /// <param name="body">The report body; every physical line is written separately to the file sink.</param>
+        void Report(LogLevel level, string title, string body);
     }
 }

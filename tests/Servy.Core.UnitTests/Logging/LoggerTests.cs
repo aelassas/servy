@@ -264,6 +264,99 @@ namespace Servy.Core.UnitTests.Logging
 
         #endregion
 
+        #region Report Tests
+
+        [Theory]
+        [InlineData("- alpha: 1\n- beta: 2")]
+        [InlineData("- alpha: 1\r\n- beta: 2")]
+        public void Report_WritesTitleAndEveryBodyLineAsItsOwnEntry(string body)
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Report(LogLevel.Info, "[Startup Parameters]", body);
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.ReadAllText(_fullLogPath);
+            string[] entries = ReadEntries(content);
+
+            Assert.Equal(3, entries.Length);
+            Assert.EndsWith("| [Startup Parameters]", entries[0]);
+            Assert.EndsWith("| - alpha: 1", entries[1]);
+            Assert.EndsWith("| - beta: 2", entries[2]);
+
+            // The flattened rendering the single-line contract used to produce is what this replaces.
+            Assert.DoesNotContain("- alpha: 1 ; - beta: 2", content);
+        }
+
+        [Fact]
+        public void Report_PreservesBlankLinesAsTheirOwnEntries()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Report(LogLevel.Info, "[Report]", "first section\n\nsecond section");
+            Logger.Shutdown();
+
+            // Assert
+            // The blank line between the two sections is a line of the composed layout, so it
+            // survives as an entry of its own rather than as a doubled " ; ; " separator.
+            string[] entries = ReadEntries(File.ReadAllText(_fullLogPath));
+            Assert.Equal(4, entries.Length);
+            Assert.EndsWith("| first section", entries[1]);
+            Assert.EndsWith("|", entries[2].TrimEnd());
+            Assert.EndsWith("| second section", entries[3]);
+        }
+
+        [Fact]
+        public void Report_BelowConfiguredLogLevel_WritesNothing()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName, LogLevel.Warn);
+
+            // Act
+            Logger.Report(LogLevel.Info, "[Hidden Report]", "hidden body line");
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.Exists(_fullLogPath) ? File.ReadAllText(_fullLogPath) : string.Empty;
+            Assert.DoesNotContain("[Hidden Report]", content);
+            Assert.DoesNotContain("hidden body line", content);
+        }
+
+        [Fact]
+        public void Report_EmptyTitleAndBody_WritesNothing()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Report(LogLevel.Info, string.Empty, string.Empty);
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.Exists(_fullLogPath) ? File.ReadAllText(_fullLogPath) : string.Empty;
+            Assert.Empty(ReadEntries(content));
+        }
+
+        /// <summary>
+        /// Splits the captured log text into entries without depending on the host's line
+        /// terminator, so the assertions read the same on the Windows runner and here.
+        /// </summary>
+        private static string[] ReadEntries(string content)
+        {
+            return content
+                .Split('\n')
+                .Select(line => line.TrimEnd('\r'))
+                .Where(line => line.Length > 0)
+                .ToArray();
+        }
+
+        #endregion
+
         #region Exception Formatting Tests
 
         [Fact]

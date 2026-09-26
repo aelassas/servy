@@ -136,6 +136,12 @@ namespace Servy.Core.Logging
             WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
         }
 
+        /// <inheritdoc />
+        public void Report(LogLevel level, string title, string body)
+        {
+            WriteReport((LogLevel)_currentLogLevel, level, title, body, Format, _isEventLogEnabled);
+        }
+
         #endregion
 
         #region IDisposable implementation
@@ -211,6 +217,69 @@ namespace Servy.Core.Logging
                     SafeWriteToEventLog(fullMessage, entryType, eventId);
                 }
                 fileSink(formatSelector(message), ex);
+            }
+        }
+
+        /// <summary>
+        /// Centralized report pipeline shared by <see cref="EventLogLogger"/> and its nested scoped
+        /// logger. The Event Log renders newlines, so it receives the composed block verbatim as one
+        /// entry exactly as <see cref="WriteLeveled"/> sends a message today; the file sink receives
+        /// the report through <see cref="Logger.Report"/>, one timestamped entry per physical line.
+        /// </summary>
+        /// <param name="currentLevel">The active <see cref="LogLevel"/> threshold configured for the invoking scope.</param>
+        /// <param name="targetLevel">The <see cref="LogLevel"/> required for this report to be processed.</param>
+        /// <param name="title">The report heading.</param>
+        /// <param name="body">The report body.</param>
+        /// <param name="formatSelector">A delegate used to apply instance-specific prefixing to the message.</param>
+        /// <param name="isEventLogSinkEnabled">Indicates whether the Windows Event Log sink is active for the current logger scope.</param>
+        private void WriteReport(
+            LogLevel currentLevel,
+            LogLevel targetLevel,
+            string title,
+            string body,
+            Func<string, string> formatSelector,
+            bool isEventLogSinkEnabled)
+        {
+            if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(body)) return;
+
+            if (currentLevel <= targetLevel)
+            {
+                // Debug stays file-only, to avoid Event Log clutter - the same rule DebugCore states.
+                if (isEventLogSinkEnabled && targetLevel > LogLevel.Debug)
+                {
+                    var block = string.IsNullOrEmpty(body) ? title : $"{title}\n{body}";
+                    MapEventLogCategory(targetLevel, out var entryType, out var eventId);
+                    SafeWriteToEventLog(formatSelector(block), entryType, eventId);
+                }
+
+                Logger.Report(targetLevel, formatSelector(title), body);
+            }
+        }
+
+        /// <summary>
+        /// Maps a <see cref="LogLevel"/> onto the Windows Event Log entry type and event ID the
+        /// leveled writers already use, so a report is categorized exactly as an Info, Warn or
+        /// Error entry is.
+        /// </summary>
+        /// <param name="level">The report severity.</param>
+        /// <param name="entryType">The matching <see cref="EventLogEntryType"/>.</param>
+        /// <param name="eventId">The matching application-specific event ID.</param>
+        private static void MapEventLogCategory(LogLevel level, out EventLogEntryType entryType, out int eventId)
+        {
+            switch (level)
+            {
+                case LogLevel.Error:
+                    entryType = EventLogEntryType.Error;
+                    eventId = EventIds.Error;
+                    break;
+                case LogLevel.Warn:
+                    entryType = EventLogEntryType.Warning;
+                    eventId = EventIds.Warning;
+                    break;
+                default:
+                    entryType = EventLogEntryType.Information;
+                    eventId = EventIds.Info;
+                    break;
             }
         }
 
@@ -382,6 +451,12 @@ namespace Servy.Core.Logging
             public void Error(string message, Exception? ex = null)
             {
                 _parent.WriteLeveled((LogLevel)_currentLogLevel, LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
+            }
+
+            /// <inheritdoc />
+            public void Report(LogLevel level, string title, string body)
+            {
+                _parent.WriteReport((LogLevel)_currentLogLevel, level, title, body, Format, _isEventLogEnabled);
             }
 
             /// <inheritdoc />

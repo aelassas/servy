@@ -307,7 +307,7 @@ namespace Servy.Service
                 AutoLog = isEventLogEnabled;
 
                 // --- Log Service-specific timing configurations ---
-                Logger.Debug("Servy Service Context Configuration Loaded:" + Environment.NewLine +
+                Logger.Report(LogLevel.Debug, "Servy Service Context Configuration Loaded:",
                     $"  WaitChunkMs: {_waitChunkMs}" + Environment.NewLine +
                     $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}");
 
