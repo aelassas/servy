@@ -262,7 +262,7 @@ try {
     if (-not (Test-Path -LiteralPath $signedPath)) {
         throw "SignPath did not produce the expected output file: $signedPath"
     }
-    Move-Item -LiteralPath $signedPath -Destination $Path
+    Move-Item -Force -LiteralPath $signedPath -Destination $Path
     Write-Host "Signing complete: $Path"
 }
 catch {
