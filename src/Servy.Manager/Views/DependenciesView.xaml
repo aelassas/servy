@@ -50,69 +50,62 @@
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Column="0"
-                    Orientation="Horizontal"
-                    Margin="0,0,6,6"
-                    VerticalAlignment="Center">
-          <controls:PidBadgeControl Pid="{Binding Pid}" CopyPidCommand="{Binding CopyPidCommand}" />
-        </StackPanel>
+        <controls:PidBadgeControl Grid.Column="0"
+                                  Pid="{Binding Pid}"
+                                  CopyPidCommand="{Binding CopyPidCommand}"
+                                  Margin="0,0,6,6"
+                                  VerticalAlignment="Center" />
 
-        <StackPanel Grid.Column="1"
-                    Orientation="Horizontal"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center">
-          <Button Style="{StaticResource ToolbarPillButtonStyle}"
-                  Command="{Binding RefreshCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
-                  ToolTip="{x:Static resx:Strings.Tooltip_Refresh}"
-                  AutomationProperties.Name="{x:Static resx:Strings.Button_Refresh}"
-                  AutomationProperties.AutomationId="RefreshButton"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesRefreshButton_HelpText}">
-            <StackPanel Orientation="Horizontal">
-              <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
-                    Fill="White"
-                    Width="10"
-                    Height="10"
-                    Stretch="Uniform"
-                    Margin="0,0,4,0"
-                    VerticalAlignment="Center" />
-              <TextBlock Text="{x:Static resx:Strings.Button_Refresh}"
-                         VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
-        </StackPanel>
-
-        <StackPanel Grid.Column="2"
-                    Orientation="Horizontal"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center">
-          <Button Style="{StaticResource ToolbarPillButtonStyle}"
-                  Command="{Binding ExpandAllCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
-                  ToolTip="{x:Static resx:Strings.Tooltip_ExpandAll}"
-                  AutomationProperties.Name="{x:Static resx:Strings.Button_ExpandAll}"
-                  AutomationProperties.AutomationId="ExpandAllButton"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesExpandAllButton_HelpText}">
-            <TextBlock Text="{x:Static resx:Strings.Button_ExpandAll}"
+        <Button Grid.Column="1"
+                Style="{StaticResource ToolbarPillButtonStyle}"
+                Command="{Binding RefreshCommand}"
+                Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                ToolTip="{x:Static resx:Strings.Tooltip_Refresh}"
+                Margin="0,0,6,0"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{x:Static resx:Strings.Button_Refresh}"
+                AutomationProperties.AutomationId="RefreshButton"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesRefreshButton_HelpText}">
+          <StackPanel Orientation="Horizontal">
+            <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
+                  Fill="White"
+                  Width="10"
+                  Height="10"
+                  Stretch="Uniform"
+                  Margin="0,0,4,0"
+                  VerticalAlignment="Center" />
+            <TextBlock Text="{x:Static resx:Strings.Button_Refresh}"
                        VerticalAlignment="Center" />
-          </Button>
-        </StackPanel>
+          </StackPanel>
+        </Button>
 
-        <StackPanel Grid.Column="3"
-                    Orientation="Horizontal"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center">
-          <Button Style="{StaticResource ToolbarPillButtonStyle}"
-                  Command="{Binding CollapseAllCommand}"
-                  Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
-                  ToolTip="{x:Static resx:Strings.Tooltip_CollapseAll}"
-                  AutomationProperties.Name="{x:Static resx:Strings.Button_CollapseAll}"
-                  AutomationProperties.AutomationId="CollapseAllButton"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesCollapseAllButton_HelpText}">
-            <TextBlock Text="{x:Static resx:Strings.Button_CollapseAll}"
-                       VerticalAlignment="Center" />
-          </Button>
-        </StackPanel>
+        <Button Grid.Column="2"
+                Style="{StaticResource ToolbarPillButtonStyle}"
+                Command="{Binding ExpandAllCommand}"
+                Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                ToolTip="{x:Static resx:Strings.Tooltip_ExpandAll}"
+                Margin="0,0,6,0"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{x:Static resx:Strings.Button_ExpandAll}"
+                AutomationProperties.AutomationId="ExpandAllButton"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesExpandAllButton_HelpText}">
+          <TextBlock Text="{x:Static resx:Strings.Button_ExpandAll}"
+                     VerticalAlignment="Center" />
+        </Button>
+
+        <Button Grid.Column="3"
+                Style="{StaticResource ToolbarPillButtonStyle}"
+                Command="{Binding CollapseAllCommand}"
+                Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                ToolTip="{x:Static resx:Strings.Tooltip_CollapseAll}"
+                Margin="0,0,6,0"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{x:Static resx:Strings.Button_CollapseAll}"
+                AutomationProperties.AutomationId="CollapseAllButton"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesCollapseAllButton_HelpText}">
+          <TextBlock Text="{x:Static resx:Strings.Button_CollapseAll}"
+                     VerticalAlignment="Center" />
+        </Button>
 
         <TextBlock Grid.Column="4"
                    Text="{x:Static resx:Strings.Dependencies_Info}"

@@ -63,12 +63,11 @@
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
-      <StackPanel Grid.Row="0"
-                  Orientation="Horizontal"
-                  Margin="0,0,0,6"
-                  VerticalAlignment="Center">
-        <controls:PidBadgeControl Pid="{Binding Pid}" CopyPidCommand="{Binding CopyPidCommand}" />
-      </StackPanel>
+      <controls:PidBadgeControl Grid.Row="0"
+                                Pid="{Binding Pid}"
+                                CopyPidCommand="{Binding CopyPidCommand}"
+                                Margin="0,0,0,6"
+                                VerticalAlignment="Center" />
 
       <Border Grid.Row="1"
               Background="{StaticResource GraphBackgroundBrush}"
