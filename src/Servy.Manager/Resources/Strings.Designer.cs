@@ -61,6 +61,33 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Local Service.
+        /// </summary>
+        public static string Account_LocalService {
+            get {
+                return ResourceManager.GetString("Account_LocalService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Local System.
+        /// </summary>
+        public static string Account_LocalSystem {
+            get {
+                return ResourceManager.GetString("Account_LocalSystem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Network Service.
+        /// </summary>
+        public static string Account_NetworkService {
+            get {
+                return ResourceManager.GetString("Account_NetworkService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show application information and copyright details..
         /// </summary>
         public static string Automation_AboutMenuItem_HelpText {
@@ -1663,33 +1690,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Local System.
-        /// </summary>
-        public static string Account_LocalSystem {
-            get {
-                return ResourceManager.GetString("Account_LocalSystem", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Local Service.
-        /// </summary>
-        public static string Account_LocalService {
-            get {
-                return ResourceManager.GetString("Account_LocalService", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Network Service.
-        /// </summary>
-        public static string Account_NetworkService {
-            get {
-                return ResourceManager.GetString("Account_NetworkService", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Message.
         /// </summary>
         public static string Column_Message {
@@ -2082,6 +2082,42 @@ namespace Servy.Manager.Resources {
         public static string Label_To {
             get {
                 return ResourceManager.GetString("Label_To", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All.
+        /// </summary>
+        public static string LogLevel_All {
+            get {
+                return ResourceManager.GetString("LogLevel_All", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error.
+        /// </summary>
+        public static string LogLevel_Error {
+            get {
+                return ResourceManager.GetString("LogLevel_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Information.
+        /// </summary>
+        public static string LogLevel_Information {
+            get {
+                return ResourceManager.GetString("LogLevel_Information", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warning.
+        /// </summary>
+        public static string LogLevel_Warning {
+            get {
+                return ResourceManager.GetString("LogLevel_Warning", resourceCulture);
             }
         }
         
