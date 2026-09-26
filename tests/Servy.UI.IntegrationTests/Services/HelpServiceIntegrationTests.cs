@@ -254,6 +254,58 @@ namespace Servy.UI.IntegrationTests.Services
         }
 
         [Fact]
+        public async Task CheckUpdates_AppLifetimeTokenAlreadyCanceled_ReportsCanceledAndNeverReachesTheResponse()
+        {
+            // Arrange
+            // The transport honours the token it is handed, as a real one does, and would otherwise answer
+            // with an older release and report "no updates"; the app lifetime token is cancelled before the call.
+            SetupTokenAwareHandlerResponse("{ \"tag_name\": \"v1.0.0\" }");
+            using (var appLifetimeCts = new CancellationTokenSource())
+            {
+                appLifetimeCts.Cancel();
+                var service = new HelpService(_mockMessageBox.Object, appLifetimeCts.Token);
+
+                // Act
+                await service.CheckUpdatesAsync(Caption);
+
+                // Assert
+                _mockMessageBox.Verify(
+                    m => m.ShowErrorAsync(It.Is<string>(t => t == Strings.Msg_UpdateCheckCanceled), Caption),
+                    Times.Once);
+                _mockMessageBox.Verify(
+                    m => m.ShowErrorAsync(It.Is<string>(t => t == Strings.Msg_UpdateCheckTimeout), Caption),
+                    Times.Never);
+                _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task CheckUpdates_CallerTokenAlreadyCanceled_ReportsCanceledAndNeverReachesTheResponse()
+        {
+            // Arrange
+            // Same shape through the per-call token the interface now accepts, with no app lifetime token.
+            SetupTokenAwareHandlerResponse("{ \"tag_name\": \"v1.0.0\" }");
+            using (var callerCts = new CancellationTokenSource())
+            {
+                callerCts.Cancel();
+
+                // Act
+                await _service.CheckUpdatesAsync(Caption, callerCts.Token);
+
+                // Assert
+                _mockMessageBox.Verify(
+                    m => m.ShowErrorAsync(It.Is<string>(t => t == Strings.Msg_UpdateCheckCanceled), Caption),
+                    Times.Once);
+                _mockMessageBox.Verify(
+                    m => m.ShowErrorAsync(It.Is<string>(t => t == Strings.Msg_UpdateCheckTimeout), Caption),
+                    Times.Never);
+                _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        [Fact]
         public async Task CheckUpdates_RequestFails_ShowsUpdateCheckFailedError()
         {
             // Arrange
@@ -298,6 +350,35 @@ namespace Servy.UI.IntegrationTests.Services
                 {
                     StatusCode = HttpStatusCode.OK,
                     Content = new StringContent(json)
+                });
+
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+        }
+
+        /// <summary>
+        /// Injects a strict handler mock that honours the <see cref="CancellationToken"/> it is handed - as a
+        /// real transport does - and otherwise answers every request with an OK response carrying the given body.
+        /// This is what makes the token reaching the transport assertable: a token-blind mock returns the
+        /// response even when the token is already cancelled, because nothing on the path checks it.
+        /// </summary>
+        /// <param name="json">The response body the mocked GitHub release endpoint returns when not cancelled.</param>
+        private void SetupTokenAwareHandlerResponse(string json)
+        {
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((_, token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    return Task.FromResult(new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(json)
+                    });
                 });
 
             InjectMockHandlerIntoStaticClient(mockHandler.Object);

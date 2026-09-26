@@ -22,6 +22,11 @@ namespace Servy.UI.Services
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
+        /// The application lifetime token, cancelled when the application begins shutting down.
+        /// </summary>
+        private readonly CancellationToken _appLifetimeToken;
+
+        /// <summary>
         /// Shared instance to prevent socket exhaustion and allow connection pooling.
         /// </summary>
         private static readonly HttpClient _httpClient = new HttpClient();
@@ -42,13 +47,15 @@ namespace Servy.UI.Services
         /// Initializes a new instance of the <see cref="HelpService"/> class.
         /// </summary>
         /// <param name="messageBoxService">The message box service used for UI dialogs.</param>
-        public HelpService(IMessageBoxService messageBoxService)
+        /// <param name="appLifetimeToken">The application lifetime token, cancelled when the application begins shutting down.</param>
+        public HelpService(IMessageBoxService messageBoxService, CancellationToken appLifetimeToken = default)
         {
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+            _appLifetimeToken = appLifetimeToken;
         }
 
         /// <inheritdoc />
-        public async Task OpenDocumentationAsync(string caption)
+        public async Task OpenDocumentationAsync(string caption, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -67,12 +74,14 @@ namespace Servy.UI.Services
         }
 
         /// <inheritdoc />
-        public async Task CheckUpdatesAsync(string caption)
+        public async Task CheckUpdatesAsync(string caption, CancellationToken cancellationToken = default)
         {
             try
             {
                 // Patience window for a manual UI trigger (see AppConfig.UpdateCheckTimeoutSeconds)
-                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(AppConfig.UpdateCheckTimeoutSeconds)))
+                using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(AppConfig.UpdateCheckTimeoutSeconds)))
+                // Link the timeout to application shutdown and to the caller, so closing the app cancels the request
+                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, _appLifetimeToken, cancellationToken))
                 using (var response = await _httpClient.GetAsync(AppConfig.LatestReleaseApiUrl, cts.Token))
                 {
                     response.EnsureSuccessStatusCode();
@@ -138,6 +147,14 @@ namespace Servy.UI.Services
             }
             catch (OperationCanceledException)
             {
+                if (_appLifetimeToken.IsCancellationRequested || cancellationToken.IsCancellationRequested)
+                {
+                    // Cancelled by application shutdown or by the caller, not by the update-check deadline
+                    Logger.Warn("Update check canceled.");
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UpdateCheckCanceled, caption);
+                    return;
+                }
+
                 // Specific handling for the update-check timeout (AppConfig.UpdateCheckTimeoutSeconds)
                 Logger.Warn("Update check timed out.");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UpdateCheckTimeout, caption);
@@ -166,7 +183,7 @@ namespace Servy.UI.Services
         }
 
         /// <inheritdoc />
-        public async Task OpenAboutDialogAsync(string about, string caption)
+        public async Task OpenAboutDialogAsync(string about, string caption, CancellationToken cancellationToken = default)
         {
             await _messageBoxService.ShowInfoAsync(about, caption);
         }

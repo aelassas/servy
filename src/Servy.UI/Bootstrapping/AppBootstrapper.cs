@@ -53,6 +53,12 @@ namespace Servy.UI.Bootstrapping
         #region Properties
 
         /// <summary>
+        /// Gets the token cancelled when the application begins shutting down, so services doing I/O
+        /// can unwind instead of resuming after <see cref="OnExit"/>.
+        /// </summary>
+        public CancellationToken AppLifetimeToken => _appLifetimeCts.Token;
+
+        /// <summary>
         /// Gets the initialized application database context.
         /// </summary>
         public AppDbContext DbContext { get; private set; }

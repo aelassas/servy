@@ -1165,7 +1165,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
-                _helpServiceMock.Setup(h => h.OpenDocumentationAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+                _helpServiceMock.Setup(h => h.OpenDocumentationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
                 // Act
                 RunOnPump(currentDispatcher, async () =>
@@ -1174,7 +1174,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -1187,7 +1187,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
-                _helpServiceMock.Setup(h => h.CheckUpdatesAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+                _helpServiceMock.Setup(h => h.CheckUpdatesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
                 // Act
                 RunOnPump(currentDispatcher, async () =>
@@ -1196,7 +1196,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -1209,7 +1209,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
-                _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+                _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
                 // Act
                 RunOnPump(currentDispatcher, async () =>
@@ -1218,7 +1218,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }

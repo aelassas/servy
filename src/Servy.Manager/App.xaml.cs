@@ -202,7 +202,7 @@ namespace Servy.Manager
                     var fileDialogService = new FileDialogService();
                     var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
                     var messageBoxService = new MessageBoxService(uiDispatcher);
-                    var helpService = new HelpService(messageBoxService);
+                    var helpService = new HelpService(messageBoxService, _bootstrapper.AppLifetimeToken);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules, UiAppConfig.Caption);
                     var eventLogService = new EventLogService(new EventLogReader());

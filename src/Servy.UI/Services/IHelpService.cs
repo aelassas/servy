@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.UI.Services
@@ -11,7 +12,8 @@ namespace Servy.UI.Services
         /// Opens the documentation for the application.
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed if the documentation cannot be opened.</param>
-        Task OpenDocumentationAsync(string caption);
+        /// <param name="cancellationToken">A token that cancels the operation, typically the application lifetime token.</param>
+        Task OpenDocumentationAsync(string caption, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks for application updates and reports the result to the user in a message box:
@@ -19,14 +21,16 @@ namespace Servy.UI.Services
         /// a newer release exists, or an error dialog when the check fails or times out.
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed during the update check.</param>
+        /// <param name="cancellationToken">A token that cancels the update check, typically the application lifetime token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task CheckUpdatesAsync(string caption);
+        Task CheckUpdatesAsync(string caption, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens an "About" dialog showing application information.
         /// </summary>
         /// <param name="about">The content to display in the About dialog.</param>
         /// <param name="caption">The caption of the About dialog window.</param>
-        Task OpenAboutDialogAsync(string about, string caption);
+        /// <param name="cancellationToken">A token that cancels the operation, typically the application lifetime token.</param>
+        Task OpenAboutDialogAsync(string about, string caption, CancellationToken cancellationToken = default);
     }
 }

@@ -697,14 +697,14 @@ namespace Servy.UnitTests.ViewModels
         public async Task OpenDocumentation_Calls_HelpService_With_Caption()
         {
             await _viewModel.OpenDocumentationCommand.ExecuteAsync(null);
-            _helpService.Verify(h => h.OpenDocumentationAsync(UiAppConfig.Caption), Times.Once);
+            _helpService.Verify(h => h.OpenDocumentationAsync(UiAppConfig.Caption, CancellationToken.None), Times.Once);
         }
 
         [Fact]
         public async Task CheckUpdatesAsync_Calls_HelpService_With_Caption()
         {
             await _viewModel.CheckUpdatesCommand.ExecuteAsync(null);
-            _helpService.Verify(h => h.CheckUpdatesAsync(UiAppConfig.Caption), Times.Once);
+            _helpService.Verify(h => h.CheckUpdatesAsync(UiAppConfig.Caption, CancellationToken.None), Times.Once);
         }
 
         [Fact]
@@ -719,7 +719,7 @@ namespace Servy.UnitTests.ViewModels
                     text.Contains(Core.Config.AppConfig.Version) &&
                     text.Contains(DateTime.Now.Year.ToString())
                 ),
-                UiAppConfig.Caption), Times.Once);
+                UiAppConfig.Caption, CancellationToken.None), Times.Once);
         }
 
         [Fact]

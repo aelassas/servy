@@ -133,17 +133,17 @@ namespace Servy.UI.Design
     /// </summary>
     public class DesignTimeHelpService : IHelpService
     {
-        public Task OpenDocumentationAsync(string caption)
+        public Task OpenDocumentationAsync(string caption, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
-        public Task CheckUpdatesAsync(string caption)
+        public Task CheckUpdatesAsync(string caption, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
-        public Task OpenAboutDialogAsync(string about, string caption)
+        public Task OpenAboutDialogAsync(string about, string caption, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

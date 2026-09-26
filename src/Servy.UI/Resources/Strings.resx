@@ -26,6 +26,10 @@
   <data name="Msg_UpdateAvailablePrompt" xml:space="preserve">
     <value>A new version of Servy is available. Do you want to download it?</value>
   </data>
+  <data name="Msg_UpdateCheckCanceled" xml:space="preserve">
+    <value>The update check was canceled.</value>
+    <comment>Displayed when the update check is canceled by application shutdown or by the caller, as opposed to the fixed update-check timeout.</comment>
+  </data>
   <data name="Msg_UpdateCheckTimeout" xml:space="preserve">
     <value>The update check timed out. Please try again later.</value>
   </data>
