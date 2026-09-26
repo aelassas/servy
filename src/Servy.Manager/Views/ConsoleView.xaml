@@ -48,25 +48,22 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Column="0"
-                    Orientation="Horizontal"
-                    Margin="0,0,0,6"
-                    VerticalAlignment="Center">
-          <controls:PidBadgeControl Pid="{Binding Pid}" CopyPidCommand="{Binding CopyPidCommand}" />
-        </StackPanel>
+        <controls:PidBadgeControl Grid.Column="0"
+                                  Pid="{Binding Pid}"
+                                  CopyPidCommand="{Binding CopyPidCommand}"
+                                  Margin="0,0,0,6"
+                                  VerticalAlignment="Center" />
 
-        <StackPanel Grid.Column="2"
-                    Orientation="Horizontal"
-                    VerticalAlignment="Center">
-          <Button Command="{Binding ClearSelectionCommand}"
-                  Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
-                  Style="{StaticResource ToolbarPillButtonStyle}"
-                  Content="{x:Static resx:Strings.Button_Resume}"
-                  ToolTip="{x:Static resx:Strings.Tooltip_Resume}"
-                  AutomationProperties.Name="{x:Static resx:Strings.Automation_ResumeScrollButton_Name}"
-                  AutomationProperties.AutomationId="ResumeScrollButton"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ResumeScrollButton_HelpText}" />
-        </StackPanel>
+        <Button Grid.Column="2"
+                Command="{Binding ClearSelectionCommand}"
+                Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
+                Style="{StaticResource ToolbarPillButtonStyle}"
+                Content="{x:Static resx:Strings.Button_Resume}"
+                ToolTip="{x:Static resx:Strings.Tooltip_Resume}"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{x:Static resx:Strings.Automation_ResumeScrollButton_Name}"
+                AutomationProperties.AutomationId="ResumeScrollButton"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ResumeScrollButton_HelpText}" />
 
         <TextBlock Grid.Column="4"
                    Text="{x:Static resx:Strings.Console_Info}"
