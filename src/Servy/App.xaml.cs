@@ -171,7 +171,7 @@ namespace Servy
                     // 2. Initialize UI Services
                     var fileDialogService = new FileDialogService();
                     var messageBoxService = new MessageBoxService(uiDispatcher);
-                    var helpService = new HelpService(messageBoxService);
+                    var helpService = new HelpService(messageBoxService, _bootstrapper.AppLifetimeToken);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var configValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules, UiAppConfig.Caption);
 

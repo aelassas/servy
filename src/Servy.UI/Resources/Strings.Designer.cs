@@ -115,6 +115,15 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The update check was canceled..
+        /// </summary>
+        public static string Msg_UpdateCheckCanceled {
+            get {
+                return ResourceManager.GetString("Msg_UpdateCheckCanceled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to check updates: {0}.
         /// </summary>
         public static string Msg_UpdateCheckFailed {
