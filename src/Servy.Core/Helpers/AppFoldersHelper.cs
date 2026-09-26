@@ -124,7 +124,7 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(dbFolder))
                 throw new InvalidOperationException("Cannot determine database folder path.");
             if (!Helper.IsAbsolute(dbFolder))
-                throw new ArgumentException("dbFolder must be an absolute path", nameof(dbFolder));
+                throw new InvalidOperationException("The database path in the connection string must be absolute.");
 
             var aesKeyFolder = Path.GetDirectoryName(aesKeyFilePath);
             if (string.IsNullOrWhiteSpace(aesKeyFolder))

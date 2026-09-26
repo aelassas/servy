@@ -160,6 +160,22 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void EnsureFolders_RelativeDataSource_ThrowsInvalidOperation()
+        {
+            // Arrange
+            var conn = "Data Source=db\\Servy.db;";
+            var key = Path.Combine(TempDirectory, "key.aes");
+            var iv = Path.Combine(TempDirectory, "iv.aes");
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => AppFoldersHelper.EnsureFolders(conn, key, iv, TempDirectory));
+
+            // Assert
+            Assert.Contains("absolute", ex.Message);
+        }
+
+        [Fact]
         public void EnsureFolders_DataSourceKeySpelling_Succeeds()
         {
             // Arrange
@@ -290,7 +306,6 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData("Data Source={tmp}\\db\\Servy.db;", "key.aes", "{tmp}\\iv\\iv.aes", "aesKeyFilePath must be an absolute path")]
         [InlineData("Data Source={tmp}\\db\\Servy.db;", "{tmp}\\key\\key.aes", "iv.aes", "aesIVFilePath must be an absolute path")]
-        [InlineData("Data Source=..\\Servy.db;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "dbFolder must be an absolute path")]
         public void EnsureFolders_PathNotRooted_ThrowsArgumentException(string conn, string key, string iv, string expectedMessage)
         {
             // Arrange
