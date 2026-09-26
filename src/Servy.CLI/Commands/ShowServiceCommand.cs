@@ -22,11 +22,28 @@ namespace Servy.CLI.Commands
     /// </para>
     /// <para>
     /// The command requires elevation because the records it reads live under <c>%ProgramData%\Servy</c>
-    /// and describe how privileged processes are launched. It never prints the stored credential: the
-    /// DTO is fetched with <c>decrypt: false</c>, so <see cref="ServiceDto.Password"/> is not even
-    /// decrypted in this process, and it is not among the rendered fields. That is the same contract the
-    /// service documents for debug logging - sensitive data is never shown by the CLI or the PowerShell
-    /// module - and it is why a password cannot leak through a widened console view.
+    /// and describe how privileged processes are launched.
+    /// </para>
+    /// <para>
+    /// <b>Encryption.</b> Nine columns are encrypted at rest (the registry is
+    /// <c>ServiceRepository.SensitiveFields</c>): the four parameter fields, the two pre/post-stop
+    /// parameter fields, both environment-variable fields, and the password. Eight of those nine are
+    /// rendered here, so the single-service read passes <c>decrypt: true</c> - under
+    /// <c>decrypt: false</c> the console showed the stored ciphertext instead of the configuration.
+    /// This matches <c>export</c>, which has always written those fields decrypted for the same
+    /// elevated caller: <c>ExportXmlAsync</c> and <c>ExportJsonAsync</c> both read with
+    /// <c>decrypt: true</c>.
+    /// </para>
+    /// <para>
+    /// <b>The password is still never printed.</b> That call decrypts it in memory, exactly as an export
+    /// does, but it is not among the rendered fields - the same way <see cref="ServiceDto.Password"/>
+    /// carries <c>[XmlIgnore]</c> and <c>[JsonIgnore]</c> so an export file never contains it. Adding a
+    /// password row is the one change to this class that would breach that contract.
+    /// </para>
+    /// <para>
+    /// The list mode deliberately keeps <c>decrypt: false</c>: none of its six columns is an encrypted
+    /// one, so decrypting every record would cost nine field decryptions per service for output that
+    /// cannot show any of them.
     /// </para>
     /// <para>
     /// Only labels are localized. Values that form a machine-readable vocabulary - the status token, the
@@ -87,7 +104,9 @@ namespace Servy.CLI.Commands
 
                 if (hasName)
                 {
-                    var dto = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: false, cancellationToken: cancellationToken);
+                    // decrypt: true - eight of the nine encrypted columns are rendered below, and the
+                    // password, which is the ninth, is not. See the class remarks.
+                    var dto = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: true, cancellationToken: cancellationToken);
 
                     if (dto == null)
                         return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
@@ -100,6 +119,8 @@ namespace Servy.CLI.Commands
                 // SearchAsync with an empty keyword is the repository's "everything" query, which is what
                 // the list mode wants when --search is absent; it is also the call the Manager's service
                 // list uses, so both surfaces narrow on the same fields.
+                // decrypt: false - none of the six listed columns is an encrypted one, so decrypting
+                // every record would buy nothing. See the class remarks.
                 var found = await _serviceRepository.SearchAsync(opts.SearchKeyword ?? string.Empty, decrypt: false, cancellationToken: cancellationToken);
 
                 var services = (found ?? Enumerable.Empty<ServiceDto>())
