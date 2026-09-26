@@ -22,6 +22,10 @@ inputs:
     description: 'Number of retries after the initial attempt (0 = try once, no retry)'
     required: false
     default: '4'
+  timeout_sec:
+    description: 'Per-attempt request timeout in seconds (0 = indefinite)'
+    required: false
+    default: '300'
 
 runs:
   using: 'composite'
@@ -33,12 +37,14 @@ runs:
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
         INPUT_ASSET_NAME: ${{ inputs.asset_name }}
         INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
+        INPUT_TIMEOUT_SEC: ${{ inputs.timeout_sec }}
       run: |
         $url     = $env:INPUT_URL
         # Expand any literal environment variable expressions (e.g. %USERPROFILE%) passed in output_path
         $out     = [Environment]::ExpandEnvironmentVariables($env:INPUT_OUTPUT_PATH)
         $asset   = $env:INPUT_ASSET_NAME
         $retries = [int]$env:INPUT_MAX_RETRIES
+        $timeout = [int]$env:INPUT_TIMEOUT_SEC
 
         if ($retries -lt 0) {
             throw "max_retries must be >= 0 (got $retries)."
@@ -53,7 +59,7 @@ runs:
         $attempts = $retries + 1
         for ($i = 0; $i -lt $attempts; $i++) {
             try {
-                Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
+                Invoke-WebRequest -Uri $url -OutFile $out -TimeoutSec $timeout -ErrorAction Stop
                 break
             }
             catch {
