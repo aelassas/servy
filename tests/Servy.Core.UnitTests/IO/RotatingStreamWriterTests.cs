@@ -1284,10 +1284,9 @@ namespace Servy.Core.UnitTests.IO
                         // Block the test execution thread until the background worker thread provably enters the rotation lifecycle
                         writeReachedRotationCheckSignal.Wait(2000, CancellationToken.None);
 
-                        // Small intentional delay to allow the unlocked move try loop to actively crash against the file lock handle
-                        Thread.Sleep(50);
+                        // Release the file lock before PerformPhysicalRotation exhausts all sync retry attempts
+                        locker.Dispose();
 
-                        locker.Dispose(); // Release lock to let retry succeed
                         await rotateTask;
                     }
                     finally
