@@ -28,6 +28,17 @@ namespace Servy.Core.Services
             _controller = new ServiceController(serviceName);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceControllerWrapper"/> class adopting an existing <see cref="ServiceController"/> instance.
+        /// </summary>
+        /// <param name="controller">The existing <see cref="ServiceController"/> instance to adopt and wrap.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="controller"/> is null.</exception>
+        internal ServiceControllerWrapper(ServiceController controller)
+        {
+            _controller = controller ?? throw new ArgumentNullException(nameof(controller));
+            _serviceName = controller.ServiceName;
+        }
+
         /// <inheritdoc />
         public string ServiceName
         {

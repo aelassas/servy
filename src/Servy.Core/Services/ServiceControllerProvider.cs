@@ -43,9 +43,10 @@ namespace Servy.Core.Services
         [ExcludeFromCodeCoverage]
         public IServiceControllerWrapper[] GetServices()
         {
-            // Retrieve native ServiceController instances from the OS,
-            // then map them to the custom wrapper using the provided factory.
-            return MapAndDisposeServices(sc => _factory(sc.ServiceName));
+            // Retrieve native ServiceController instances from the OS
+            // and adopt them directly into wrappers to preserve pre-populated SCM status/displayName metadata.
+            var controllers = ServiceController.GetServices();
+            return controllers.Select(sc => new ServiceControllerWrapper(sc)).ToArray();
         }
 
         /// <summary>

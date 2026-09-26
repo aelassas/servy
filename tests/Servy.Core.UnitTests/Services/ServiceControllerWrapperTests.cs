@@ -34,6 +34,32 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void InternalConstructor_NullController_ThrowsArgumentNullException()
+        {
+            // Arrange
+            ServiceController controller = null;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceControllerWrapper(controller));
+            Assert.Equal("controller", ex.ParamName);
+        }
+
+        [Fact]
+        public void InternalConstructor_AdoptsControllerAndReturnsServiceName()
+        {
+            // Arrange
+            using (var inner = new ServiceController(StandardTestService))
+            using (var wrapper = new ServiceControllerWrapper(inner))
+            {
+                // Act
+                var name = wrapper.ServiceName;
+
+                // Assert
+                Assert.Equal(StandardTestService, name);
+            }
+        }
+
+        [Fact]
         public void MemberAccess_PostDispose_ThrowsObjectDisposedException()
         {
             // Arrange
