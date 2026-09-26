@@ -164,6 +164,7 @@ namespace Servy.CLI
                     var uninstallCommand = new UninstallServiceCommand(serviceManager);
                     var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                     var exportCommand = new ExportServiceCommand(serviceRepository);
+                    var showCommand = new ShowServiceCommand(serviceRepository, serviceManager);
 
                     var xmlServiceValidator = new XmlServiceValidator(serviceValidationRules);
                     var jsonServiceValidator = new JsonServiceValidator(serviceValidationRules);
@@ -259,7 +260,8 @@ namespace Servy.CLI
                         ServiceStatusOptions,
                         RestartServiceOptions,
                         ExportServiceOptions,
-                        ImportServiceOptions
+                        ImportServiceOptions,
+                        ShowServiceOptions
                         >(args)
                         .MapResult(
                             async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
@@ -270,6 +272,7 @@ namespace Servy.CLI
                             async (ServiceStatusOptions opts) => await ExecuteWithRuntimeAsync(() => Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token)), opts.Quiet, requireDatabase: false, requireBinaries: false),
                             async (ExportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => exportCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
                             async (ImportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => importCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
+                            async (ShowServiceOptions opts) => await ExecuteWithRuntimeAsync(() => showCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
                             // Wrap synchronous error result in Task
                             errs =>
                             {

@@ -71,6 +71,8 @@
         'Stop-ServyService',
         'Restart-ServyService',
         'Get-ServyServiceStatus',
+        'Show-ServyService',
+        'Show-ServyServices',
         'Export-ServyServiceConfig',
         'Import-ServyServiceConfig'
     )
