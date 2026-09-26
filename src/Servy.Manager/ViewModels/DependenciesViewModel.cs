@@ -317,9 +317,12 @@ namespace Servy.Manager.ViewModels
                 }
                 serviceName = SelectedService.Name;
 
-                // Capture which branches the user had open, so a refresh does not collapse them:
-                // the rebuild returns new node instances, whose IsExpanded all start out false.
-                var expanded = CollectExpanded(DependencyTree);
+                // Capture which branches the user had open only if the currently displayed tree
+                // belongs to the same service being reloaded. This prevents expansion leakage across
+                // different service selections while preserving branch expansion on refreshes.
+                var expanded = DependencyTree.Count > 0 && string.Equals(DependencyTree[0].ServiceName, serviceName, StringComparison.OrdinalIgnoreCase)
+                    ? CollectExpanded(DependencyTree)
+                    : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 IsBusy = true;
                 DependencyTree.Clear();

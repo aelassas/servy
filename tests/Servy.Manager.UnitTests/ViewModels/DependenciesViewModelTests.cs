@@ -556,6 +556,74 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task LoadDependencyTreeAsync_SelectionChange_DoesNotLeakExpandedBranchesToNewService()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        // Arrange
+                        viewModel = CreateViewModel();
+                        var serviceA = new DependencyService { Name = "ServiceA" };
+                        var serviceB = new DependencyService { Name = "ServiceB" };
+
+                        var sharedChildA = new ServiceDependencyNode("RpcSs", "RPC Subsystem");
+                        var rootA = new ServiceDependencyNode("ServiceA", "Friendly Service A");
+                        rootA.Dependencies.Add(sharedChildA);
+
+                        ServiceDependencyNode childB = null;
+                        _mockServiceManager.Setup(m => m.GetDependencies("ServiceA", It.IsAny<CancellationToken>()))
+                                           .Returns(rootA);
+
+                        _mockServiceManager.Setup(m => m.GetDependencies("ServiceB", It.IsAny<CancellationToken>()))
+                                           .Returns(() =>
+                                           {
+                                               var root = new ServiceDependencyNode("ServiceB", "Friendly Service B");
+                                               childB = new ServiceDependencyNode("RpcSs", "RPC Subsystem");
+                                               root.Dependencies.Add(childB);
+                                               return root;
+                                           });
+
+                        // 1. Select Service A and wait for its tree to load
+                        viewModel.SelectedService = serviceA;
+
+                        await Helper.WaitUntilAsync(
+                            () => viewModel.DependencyTree.Count > 0 && !viewModel.IsBusy,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // Expand RpcSs on Service A's tree
+                        viewModel.DependencyTree[0].Dependencies[0].IsExpanded = true;
+
+                        // 2. Act: Switch selection to Service B
+                        viewModel.SelectedService = serviceB;
+
+                        await Helper.WaitUntilAsync(
+                            () => viewModel.DependencyTree.Count > 0 &&
+                                  viewModel.DependencyTree[0].ServiceName == "ServiceB" &&
+                                  !viewModel.IsBusy,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // Assert: RpcSs child branch on Service B should remain collapsed
+                        Assert.NotNull(childB);
+                        Assert.Equal("ServiceB", viewModel.DependencyTree[0].ServiceName);
+                        Assert.False(childB.IsExpanded);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task LoadDependencyTreeAsync_ManagerThrowsException_DisplaysErrorMessageBox()
         {
             await Helper.RunOnSTA(async () =>
