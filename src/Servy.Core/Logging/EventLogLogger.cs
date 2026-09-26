@@ -292,12 +292,18 @@ namespace Servy.Core.Logging
         /// <param name="message">The formatted log message to write.</param>
         /// <param name="type">The severity classification for the entry (Information, Warning, or Error).</param>
         /// <param name="eventId">The application-specific event ID.</param>
-        internal static void WriteRawToWindowsEventLog(string logName, string source, string message, EventLogEntryType type, int eventId)
+        /// <param name="ensureSourceRegistered">
+        /// <see langword="true"/> to check the source and register it when missing, for callers with no
+        /// initialization behind them; <see langword="false"/> for a caller that has already established
+        /// the source exists. <see cref="EventLog.SourceExists"/> enumerates the subkeys of every log
+        /// under HKLM, and on the instance path it runs once per entry written.
+        /// </param>
+        internal static void WriteRawToWindowsEventLog(string logName, string source, string message, EventLogEntryType type, int eventId, bool ensureSourceRegistered = true)
         {
             try
             {
                 // Source registration check: verify structural setup bounds ahead of writing entries
-                if (!EventLog.SourceExists(source))
+                if (ensureSourceRegistered && !EventLog.SourceExists(source))
                 {
                     EventLog.CreateEventSource(source, logName);
                 }
@@ -334,7 +340,10 @@ namespace Servy.Core.Logging
 
             // Delegate to the shared static writer so instance and static callers use the same
             // truncation and source-registration safeguards.
-            WriteRawToWindowsEventLog(AppConfig.EventLogName, _source, message, type, eventId);
+            // _isInitialized is only ever set true after InitializeEventLog has itself confirmed the
+            // source exists and is bound to AppConfig.EventLogName, and it is cleared on every failure
+            // path and on Dispose - so reaching here already proves the registration this would re-check.
+            WriteRawToWindowsEventLog(AppConfig.EventLogName, _source, message, type, eventId, ensureSourceRegistered: false);
         }
 
         /// <summary>
