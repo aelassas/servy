@@ -698,6 +698,134 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         #endregion
 
+        #region Enumerated Child Disposal Tests
+
+        [Fact]
+        public void StopDescendants_EnumeratedChild_IsDisposedExactlyOnce()
+        {
+            // Arrange
+            const int parentPid = 424241;
+            var child = new DisposeCountingProcess();
+
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            {
+                // The child is deliberately never started: the nested StopTree call then reads no PID, so it
+                // asks for the children of PID 0 and the cascade takes its already-exited path without
+                // touching a real OS process. The child is left unwrapped by a using on purpose - the sweep
+                // under test is what disposes it.
+                wrapper.ChildEnumerator = (pid, startTime) =>
+                    pid == parentPid ? new List<Process> { child } : new List<Process>();
+
+                // Act
+                wrapper.StopDescendants(parentPid, DateTime.Now, TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                // Assert
+                Assert.Equal(1, child.DisposeCount);
+            }
+        }
+
+        [Fact]
+        public void StopTree_EnumeratedChild_IsDisposedExactlyOnce()
+        {
+            // Arrange
+            var parent = new DisposeCountingProcess();
+            var child = new DisposeCountingProcess();
+            var handedOut = false;
+
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            {
+                // Neither process is started, so both levels of the cascade ask for the children of PID 0.
+                // Handing the set out once is what terminates the recursion.
+                wrapper.ChildEnumerator = (pid, startTime) =>
+                {
+                    if (handedOut) return new List<Process>();
+                    handedOut = true;
+                    return new List<Process> { child };
+                };
+
+                // Act
+                TestReflection.InvokeNonPublic(wrapper, "StopTree", parent, TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                // Assert
+                Assert.Equal(1, child.DisposeCount);
+            }
+
+            parent.Dispose();
+        }
+
+        [Fact]
+        public void StopDescendants_EnumeratedChildDisposeThrows_LogsDebugAndDoesNotPropagate()
+        {
+            // Arrange
+            const int parentPid = 424242;
+            var child = new DisposeCountingProcess { ThrowOnDispose = true };
+
+            try
+            {
+                using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+                {
+                    wrapper.ChildEnumerator = (pid, startTime) =>
+                        pid == parentPid ? new List<Process> { child } : new List<Process>();
+
+                    // Act
+                    var exception = Record.Exception(() =>
+                        wrapper.StopDescendants(parentPid, DateTime.Now, TestTimeouts.ProcessWrapperGracefulStopMs));
+
+                    // Assert
+                    Assert.Null(exception);
+                    Assert.Contains(_logger.Debugs, m =>
+                        m.Contains("Failed to dispose enumerated child handle")
+                        && m.Contains(DisposeCountingProcess.DisposeFailureMessage));
+                }
+            }
+            finally
+            {
+                // Teardown must not throw, and the sweep under test has already disposed it once.
+                child.ThrowOnDispose = false;
+                child.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// A <see cref="Process"/> that records how often it is explicitly disposed, and can be made to
+        /// throw from disposal. Handed to the cascade through <c>ProcessWrapper.ChildEnumerator</c>, which is
+        /// what makes the disposal of an enumerated child observable at all.
+        /// </summary>
+        private sealed class DisposeCountingProcess : Process
+        {
+            /// <summary>Message the simulated disposal failure carries, so a test can match on it.</summary>
+            public const string DisposeFailureMessage = "Simulated enumerated-child disposal failure.";
+
+            private int _disposeCount;
+
+            /// <summary>Gets the number of explicit <see cref="Process.Dispose()"/> calls this instance has seen.</summary>
+            public int DisposeCount => _disposeCount;
+
+            /// <summary>Gets or sets whether explicit disposal throws.</summary>
+            public bool ThrowOnDispose { get; set; }
+
+            protected override void Dispose(bool disposing)
+            {
+                // Only explicit disposal is counted, and only explicit disposal throws: raising from a
+                // finalizer would tear down the test host rather than fail a test.
+                if (!disposing)
+                {
+                    base.Dispose(false);
+                    return;
+                }
+
+                _disposeCount++;
+                base.Dispose(true);
+
+                if (ThrowOnDispose)
+                {
+                    throw new InvalidOperationException(DisposeFailureMessage);
+                }
+            }
+        }
+
+        #endregion
+
         [Fact]
         public void Kill_AlreadyExited_DoesNotThrow()
         {
