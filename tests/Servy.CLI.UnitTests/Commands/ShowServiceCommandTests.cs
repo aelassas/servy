@@ -248,6 +248,26 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task ExecuteAsync_NegativeStartupType_FallsBackToTheStoredNumber()
+        {
+            // Arrange
+            // ServiceStartType is uint-backed, so a negative stored ordinal cannot be converted and
+            // takes FormatEnum's OverflowException arm rather than the IsDefined fallback.
+            var dto = MinimalDto();
+            dto.StartupType = -1;
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("-1", RowValue(result.Message, CliStrings.Msg_Show_Label_StartupType));
+        }
+
+        [Fact]
         public async Task ExecuteAsync_PopulatedCategory_RendersItsHeadingAndRows()
         {
             // Arrange
