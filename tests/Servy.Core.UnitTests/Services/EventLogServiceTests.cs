@@ -53,18 +53,6 @@ namespace Servy.Core.UnitTests.Services
             yield return new ServyEventLogEntry { Message = "[service] second", ProviderName = AppConfig.EventSource };
         }
 
-        private static string GetInternalQuery(EventLogQuery queryObj)
-        {
-            var fields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
-                                              .Where(f => f.FieldType == typeof(string));
-            foreach (var field in fields)
-            {
-                var val = field.GetValue(queryObj) as string;
-                if (val != null && val.StartsWith("*")) return val;
-            }
-            return null;
-        }
-
         [Fact]
         public void Constructor_WhenReaderIsNull_ThrowsArgumentNullException()
         {
@@ -129,10 +117,10 @@ namespace Servy.Core.UnitTests.Services
             var mockReader = new Mock<IEventLogReader>();
             string capturedQuery = null;
 
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
-                .Callback<EventLogQuery, int>((queryObj, limit) =>
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) =>
                 {
-                    capturedQuery = GetInternalQuery(queryObj);
+                    capturedQuery = xpathQuery;
                 })
                 .Returns(Array.Empty<ServyEventLogEntry>());
 
@@ -147,16 +135,38 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task SearchAsync_PassesLogNameAndNewestFirstToTheReader()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Returns(Array.Empty<ServyEventLogEntry>());
+
+            var service = CreateService(mockReader);
+
+            // Act
+            await service.SearchAsync(null, null, null, null, CancellationToken.None);
+
+            // Assert: the log to read and the newest-first direction now cross the seam as values,
+            // so both are assertable without reflecting over EventLogQuery internals.
+            mockReader.Verify(r => r.ReadEvents(
+                AppConfig.EventLogName,
+                $"*[System[Provider[@Name='{AppConfig.EventSource}']]]",
+                true,
+                It.IsAny<int>()), Times.Once);
+        }
+
+        [Fact]
         public async Task SearchAsync_PopulatedSystemFilterString_BuildsSystemTagQuery()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             string capturedQuery = null;
 
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
-                .Callback<EventLogQuery, int>((queryObj, limit) =>
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) =>
                 {
-                    capturedQuery = GetInternalQuery(queryObj);
+                    capturedQuery = xpathQuery;
                 })
                 .Returns(Array.Empty<ServyEventLogEntry>());
 
@@ -182,10 +192,10 @@ namespace Servy.Core.UnitTests.Services
             var mockReader = new Mock<IEventLogReader>();
             string capturedQuery = null;
 
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
-                .Callback<EventLogQuery, int>((queryObj, limit) =>
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) =>
                 {
-                    capturedQuery = GetInternalQuery(queryObj);
+                    capturedQuery = xpathQuery;
                 })
                 .Returns(Array.Empty<ServyEventLogEntry>());
 
@@ -228,7 +238,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(Array.Empty<ServyEventLogEntry>());
 
             var service = new EventLogService(mockReader.Object, source);
@@ -249,7 +259,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(ThrowingIterator(new EventLogException("Service stopped")));
 
             var service = CreateService(mockReader);
@@ -267,7 +277,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(ThrowingIterator(new UnauthorizedAccessException("Access denied")));
 
             var service = CreateService(mockReader);
@@ -288,7 +298,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(1, 2, DateTime.UtcNow, "[service] error happened");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -307,7 +317,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "[service] warning");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -328,10 +338,10 @@ namespace Servy.Core.UnitTests.Services
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
             string capturedQuery = null;
 
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
-                      .Callback<EventLogQuery, int>((queryObj, limit) =>
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) =>
                       {
-                          capturedQuery = GetInternalQuery(queryObj);
+                          capturedQuery = xpathQuery;
                       })
                       .Returns(new[] { fakeEvt });
 
@@ -347,7 +357,7 @@ namespace Servy.Core.UnitTests.Services
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
 
-            mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
+            mockReader.Verify(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()), Times.Once);
 
             // Assert: both bounds are local calendar days converted to UTC - the caller's
             // time of day is discarded and the end bound is widened to the last tick of the day
@@ -367,10 +377,10 @@ namespace Servy.Core.UnitTests.Services
             var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "[service] unknown level");
             string capturedQuery = null;
 
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
-                      .Callback<EventLogQuery, int>((queryObj, limit) =>
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) =>
                       {
-                          capturedQuery = GetInternalQuery(queryObj);
+                          capturedQuery = xpathQuery;
                       })
                       .Returns(new[] { fakeEvt });
 
@@ -385,7 +395,7 @@ namespace Servy.Core.UnitTests.Services
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
 
-            mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
+            mockReader.Verify(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()), Times.Once);
 
             // Assert: only the upper bound is emitted, widened to the last tick of the local day
             var expectedEndUtc = DateTime.SpecifyKind(end.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime();
@@ -401,7 +411,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -421,7 +431,7 @@ namespace Servy.Core.UnitTests.Services
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt1 = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
             var fakeEvt2 = CreateFakeEvent(6, 2, DateTime.UtcNow.AddHours(-1), "[service] servy failed");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt1, fakeEvt2 });
 
             var service = CreateService(mockReader);
@@ -439,7 +449,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -457,7 +467,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -476,7 +486,7 @@ namespace Servy.Core.UnitTests.Services
             var mockReader = new Mock<IEventLogReader>();
             var timestamp = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             var fakeEvt = CreateFakeEvent(6, 4, timestamp, "[service] valid time");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -495,7 +505,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var evt = CreateFakeEvent(1, 1, DateTime.UtcNow, null);
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
 
@@ -512,7 +522,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var evt = CreateFakeEvent(1, 0, DateTime.UtcNow, "[service] Message");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
 
@@ -530,7 +540,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var evt = CreateFakeEvent(1, 1, DateTime.UtcNow, "[service] Message");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
             using (var cts = new CancellationTokenSource())
@@ -553,7 +563,7 @@ namespace Servy.Core.UnitTests.Services
             {
                 // The token is still uncancelled when SearchAsync is called, so Task.Run does run
                 // the delegate and the cancellation can only come from the in-loop checkpoint
-                mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                           .Returns(CancellingIterator(cts));
 
                 var service = CreateService(mockReader);
@@ -571,8 +581,8 @@ namespace Servy.Core.UnitTests.Services
             var mockReader = new Mock<IEventLogReader>();
             string capturedQuery = null;
 
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
-                      .Callback<EventLogQuery, int>((q, limit) => capturedQuery = GetInternalQuery(q))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) => capturedQuery = xpathQuery)
                       .Returns(Array.Empty<ServyEventLogEntry>());
 
             // Inject string.Empty to force systemFilterString to be empty
@@ -603,7 +613,7 @@ namespace Servy.Core.UnitTests.Services
                     message: $"[service] Message {i}"))
                 .ToList();
 
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(excessiveResults);
 
             var service = CreateService(mockReader);
@@ -636,7 +646,7 @@ namespace Servy.Core.UnitTests.Services
             nonMatchingEvent.ProviderName = "Microsoft-Windows-Kernel-General";
 
             mockReader
-                .Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
+                .Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                 .Returns(new[] { matchingEvent, nonMatchingEvent });
 
             var service = new EventLogService(mockReader.Object, string.Empty);

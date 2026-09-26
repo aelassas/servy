@@ -15,8 +15,13 @@ namespace Servy.Core.Logging
     {
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query, int maxReadCount)
+        public IEnumerable<ServyEventLogEntry> ReadEvents(string logName, string xpathQuery, bool newestFirst, int maxReadCount)
         {
+            var query = new EventLogQuery(logName, PathType.LogName, xpathQuery)
+            {
+                ReverseDirection = newestFirst
+            };
+
             using (var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query))
             {
                 int processedCount = 0;

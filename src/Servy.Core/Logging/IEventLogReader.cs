@@ -1,6 +1,5 @@
 using Servy.Core.DTOs;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 
 namespace Servy.Core.Logging
 {
@@ -12,15 +11,17 @@ namespace Servy.Core.Logging
     public interface IEventLogReader
     {
         /// <summary>
-        /// Reads events from the Windows Event Log using the specified <see cref="EventLogQuery"/>.
+        /// Reads events from the Windows Event Log matching the specified XPath selector.
         /// </summary>
-        /// <param name="query">
-        /// The query that defines which log to read and the conditions to filter events.
+        /// <param name="logName">Name of the log to read, for example "Application".</param>
+        /// <param name="xpathQuery">The XPath selector applied to the log.</param>
+        /// <param name="newestFirst">When <see langword="true"/>, events are returned newest first.</param>
+        /// <param name="maxReadCount">
+        /// Maximum number of events to read. A value of zero or less reads nothing.
         /// </param>
-        /// <param name="maxReadCount">Maximum number of events to read.</param>
         /// <returns>
         /// A collection of <see cref="ServyEventLogEntry"/> objects that match the query.
         /// </returns>
-        IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query, int maxReadCount);
+        IEnumerable<ServyEventLogEntry> ReadEvents(string logName, string xpathQuery, bool newestFirst, int maxReadCount);
     }
 }
