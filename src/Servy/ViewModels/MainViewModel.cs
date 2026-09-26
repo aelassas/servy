@@ -1368,12 +1368,16 @@ namespace Servy.ViewModels
         /// </remarks>
         public void BindServiceDtoToModel(ServiceDto dto)
         {
-            ServiceName = dto.Name ?? string.Empty;
-            ServiceDisplayName = dto.DisplayName ?? string.Empty;
-            ServiceDescription = dto.Description ?? string.Empty;
-            ExecutablePath = dto.ExecutablePath ?? string.Empty;
-            StartupDirectory = dto.StartupDirectory ?? string.Empty;
-            Parameters = dto.Parameters ?? string.Empty;
+            var cloned = ServiceDtoHelper.Clone(dto);
+            ServiceDtoHelper.HydrateDefaults(cloned);
+            var hydrated = cloned;
+
+            ServiceName = hydrated.Name ?? string.Empty;
+            ServiceDisplayName = hydrated.DisplayName ?? string.Empty;
+            ServiceDescription = hydrated.Description ?? string.Empty;
+            ExecutablePath = hydrated.ExecutablePath ?? string.Empty;
+            StartupDirectory = hydrated.StartupDirectory ?? string.Empty;
+            Parameters = hydrated.Parameters ?? string.Empty;
 
             SelectedStartupType = dto.StartupType is int st && st != (int)ServiceStartType.Unknown && Enum.IsDefined(typeof(ServiceStartType), (ServiceStartType)st)
                 ? (ServiceStartType)st
@@ -1383,70 +1387,70 @@ namespace Servy.ViewModels
                 ? (ProcessPriority)prio
                 : DefaultProcessPriority;
 
-            CpuAffinity = dto.CpuAffinity;
-            EnableConsoleUI = dto.EnableConsoleUI ?? DefaultEnableConsoleUI;
-            StdoutPath = dto.StdoutPath ?? string.Empty;
-            StderrPath = dto.StderrPath ?? string.Empty;
-            EnableSizeRotation = dto.EnableSizeRotation ?? DefaultEnableSizeRotation;
-            RotationSize = dto.RotationSize == null ? DefaultRotationSizeMB.ToString() : dto.RotationSize.Value.ToString();
-            EnableDateRotation = dto.EnableDateRotation ?? DefaultEnableDateRotation;
+            CpuAffinity = hydrated.CpuAffinity;
+            EnableConsoleUI = hydrated.EnableConsoleUI!.Value;
+            StdoutPath = hydrated.StdoutPath ?? string.Empty;
+            StderrPath = hydrated.StderrPath ?? string.Empty;
+            EnableSizeRotation = hydrated.EnableSizeRotation!.Value;
+            RotationSize = hydrated.RotationSize!.Value.ToString();
+            EnableDateRotation = hydrated.EnableDateRotation!.Value;
 
             SelectedDateRotationType = dto.DateRotationType is int drt && Enum.IsDefined(typeof(DateRotationType), (DateRotationType)drt)
                 ? (DateRotationType)drt
                 : DefaultDateRotationType;
 
-            MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.Value.ToString();
-            UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? DefaultUseLocalTimeForRotation;
-            EnableHealthMonitoring = dto.EnableHealthMonitoring ?? DefaultEnableHealthMonitoring;
-            HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.Value.ToString();
-            MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.Value.ToString();
+            MaxRotations = hydrated.MaxRotations!.Value.ToString();
+            UseLocalTimeForRotation = hydrated.UseLocalTimeForRotation!.Value;
+            EnableHealthMonitoring = hydrated.EnableHealthMonitoring!.Value;
+            HeartbeatInterval = hydrated.HeartbeatInterval!.Value.ToString();
+            MaxFailedChecks = hydrated.MaxFailedChecks!.Value.ToString();
 
             SelectedRecoveryAction = dto.RecoveryAction is int ra && Enum.IsDefined(typeof(RecoveryAction), (RecoveryAction)ra)
                 ? (RecoveryAction)ra
                 : DefaultRecoveryAction;
 
-            RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? DefaultRecoveryOnCleanExit;
-            MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.Value.ToString();
-            HeartbeatUrl = dto.HeartbeatUrl ?? string.Empty;
-            HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds == null ? DefaultHeartbeatUrlTimeoutSeconds.ToString() : dto.HeartbeatUrlTimeoutSeconds.Value.ToString();
-            EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? DefaultEnableHeartbeatUrlFlags;
-            FailureProgramExecutablePath = dto.FailureProgramPath ?? string.Empty;
-            FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory ?? string.Empty;
-            FailureProgramParameters = dto.FailureProgramParameters ?? string.Empty;
-            EnvironmentVariables = SafeFormatEnvironmentVariables(dto.EnvironmentVariables, nameof(dto.EnvironmentVariables), dto.Name);
-            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies);
-            RunAsLocalSystem = dto.RunAsLocalSystem ?? DefaultRunAsLocalSystem;
-            UserAccount = dto.UserAccount ?? string.Empty;
-            Password = dto.Password ?? string.Empty;
+            RecoveryOnCleanExit = hydrated.RecoveryOnCleanExit!.Value;
+            MaxRestartAttempts = hydrated.MaxRestartAttempts!.Value.ToString();
+            HeartbeatUrl = hydrated.HeartbeatUrl ?? string.Empty;
+            HeartbeatUrlTimeoutSeconds = hydrated.HeartbeatUrlTimeoutSeconds!.Value.ToString();
+            EnableHeartbeatUrlFlags = hydrated.EnableHeartbeatUrlFlags!.Value;
+            FailureProgramExecutablePath = hydrated.FailureProgramPath ?? string.Empty;
+            FailureProgramStartupDirectory = hydrated.FailureProgramStartupDirectory ?? string.Empty;
+            FailureProgramParameters = hydrated.FailureProgramParameters ?? string.Empty;
+            EnvironmentVariables = SafeFormatEnvironmentVariables(hydrated.EnvironmentVariables, nameof(hydrated.EnvironmentVariables), hydrated.Name);
+            ServiceDependencies = StringHelper.FormatServiceDependencies(hydrated.ServiceDependencies);
+            RunAsLocalSystem = hydrated.RunAsLocalSystem!.Value;
+            UserAccount = hydrated.UserAccount ?? string.Empty;
+            Password = hydrated.Password ?? string.Empty;
             ConfirmPassword = string.Empty;
-            PreLaunchExecutablePath = dto.PreLaunchExecutablePath ?? string.Empty;
-            PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory ?? string.Empty;
-            PreLaunchParameters = dto.PreLaunchParameters ?? string.Empty;
-            PreLaunchEnvironmentVariables = SafeFormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables, nameof(dto.PreLaunchEnvironmentVariables), dto.Name);
-            PreLaunchStdoutPath = dto.PreLaunchStdoutPath ?? string.Empty;
-            PreLaunchStderrPath = dto.PreLaunchStderrPath ?? string.Empty;
-            PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.Value.ToString();
-            PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts == null ? DefaultPreLaunchRetryAttempts.ToString() : dto.PreLaunchRetryAttempts.Value.ToString();
-            PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? DefaultPreLaunchIgnoreFailure;
+            PreLaunchExecutablePath = hydrated.PreLaunchExecutablePath ?? string.Empty;
+            PreLaunchStartupDirectory = hydrated.PreLaunchStartupDirectory ?? string.Empty;
+            PreLaunchParameters = hydrated.PreLaunchParameters ?? string.Empty;
+            PreLaunchEnvironmentVariables = SafeFormatEnvironmentVariables(hydrated.PreLaunchEnvironmentVariables, nameof(hydrated.PreLaunchEnvironmentVariables), hydrated.Name);
+            PreLaunchStdoutPath = hydrated.PreLaunchStdoutPath ?? string.Empty;
+            PreLaunchStderrPath = hydrated.PreLaunchStderrPath ?? string.Empty;
+            PreLaunchTimeoutSeconds = hydrated.PreLaunchTimeoutSeconds!.Value.ToString();
+            PreLaunchRetryAttempts = hydrated.PreLaunchRetryAttempts!.Value.ToString();
+            PreLaunchIgnoreFailure = hydrated.PreLaunchIgnoreFailure!.Value;
 
-            PostLaunchExecutablePath = dto.PostLaunchExecutablePath ?? string.Empty;
-            PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory ?? string.Empty;
-            PostLaunchParameters = dto.PostLaunchParameters ?? string.Empty;
+            PostLaunchExecutablePath = hydrated.PostLaunchExecutablePath ?? string.Empty;
+            PostLaunchStartupDirectory = hydrated.PostLaunchStartupDirectory ?? string.Empty;
+            PostLaunchParameters = hydrated.PostLaunchParameters ?? string.Empty;
 
-            EnableDebugLogs = dto.EnableDebugLogs ?? DefaultEnableDebugLogs;
+            EnableDebugLogs = hydrated.EnableDebugLogs!.Value;
 
-            StartTimeout = dto.StartTimeout == null ? DefaultStartTimeout.ToString() : dto.StartTimeout.Value.ToString();
-            StopTimeout = dto.StopTimeout == null ? DefaultStopTimeout.ToString() : dto.StopTimeout.Value.ToString();
+            StartTimeout = hydrated.StartTimeout!.Value.ToString();
+            StopTimeout = hydrated.StopTimeout!.Value.ToString();
 
-            PreStopExecutablePath = dto.PreStopExecutablePath ?? string.Empty;
-            PreStopStartupDirectory = dto.PreStopStartupDirectory ?? string.Empty;
-            PreStopParameters = dto.PreStopParameters ?? string.Empty;
-            PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds == null ? DefaultPreStopTimeoutSeconds.ToString() : dto.PreStopTimeoutSeconds.Value.ToString();
-            PreStopLogAsError = dto.PreStopLogAsError ?? DefaultPreStopLogAsError;
+            PreStopExecutablePath = hydrated.PreStopExecutablePath ?? string.Empty;
+            PreStopStartupDirectory = hydrated.PreStopStartupDirectory ?? string.Empty;
+            PreStopParameters = hydrated.PreStopParameters ?? string.Empty;
+            PreStopTimeoutSeconds = hydrated.PreStopTimeoutSeconds!.Value.ToString();
+            PreStopLogAsError = hydrated.PreStopLogAsError!.Value;
 
-            PostStopExecutablePath = dto.PostStopExecutablePath ?? string.Empty;
-            PostStopStartupDirectory = dto.PostStopStartupDirectory ?? string.Empty;
-            PostStopParameters = dto.PostStopParameters ?? string.Empty;
+            PostStopExecutablePath = hydrated.PostStopExecutablePath ?? string.Empty;
+            PostStopStartupDirectory = hydrated.PostStopStartupDirectory ?? string.Empty;
+            PostStopParameters = hydrated.PostStopParameters ?? string.Empty;
         }
 
         /// <summary>

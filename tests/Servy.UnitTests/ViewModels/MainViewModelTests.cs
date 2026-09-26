@@ -3,6 +3,7 @@ using Servy.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Services;
@@ -752,7 +753,7 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository.Setup(r => r.GetByNameAsync("PolledService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(sampleDto);
 
             // Act
-            await _viewModel.LoadServiceConfigurationAsync("PolledService");
+            await _viewModel.LoadServiceConfigurationAsync("PolledService", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("PolledService", _viewModel.ServiceName);
@@ -770,7 +771,7 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository.Setup(r => r.GetByNameAsync("MissingService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
 
             // Act
-            await _viewModel.LoadServiceConfigurationAsync("MissingService");
+            await _viewModel.LoadServiceConfigurationAsync("MissingService", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("KeepThisName", _viewModel.ServiceName);
@@ -784,7 +785,7 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository.Setup(r => r.GetByNameAsync("ErrorService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("DB Corrupt"));
 
             // Act
-            await _viewModel.LoadServiceConfigurationAsync("ErrorService");
+            await _viewModel.LoadServiceConfigurationAsync("ErrorService", TestContext.Current.CancellationToken);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
@@ -925,6 +926,39 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal($"ServiceA{Environment.NewLine}ServiceB", _viewModel.ServiceDependencies);
             Assert.Equal($"X=9{Environment.NewLine}Y=10", _viewModel.PreLaunchEnvironmentVariables);
             Assert.Equal(dto.RunAsLocalSystem, _viewModel.RunAsLocalSystem);
+        }
+
+        [Fact]
+        public void BindServiceDtoToModel_NullNullableFields_BindsToHydratedDefaults()
+        {
+            // Arrange
+            var dto = new ServiceDto
+            {
+                Name = "MinimalService",
+                ExecutablePath = "C:\\proc.exe"
+            };
+
+            var cloned = ServiceDtoHelper.Clone(dto);
+            ServiceDtoHelper.HydrateDefaults(cloned);
+            var hydrated = cloned;
+
+            // Act
+            _viewModel.BindServiceDtoToModel(dto);
+
+            // Assert - Nullable fields populated via HydrateDefaults fall back to defaults
+            Assert.Equal(hydrated.EnableConsoleUI!.Value, _viewModel.EnableConsoleUI);
+            Assert.Equal(hydrated.RotationSize!.Value.ToString(), _viewModel.RotationSize);
+            Assert.Equal(hydrated.MaxRotations!.Value.ToString(), _viewModel.MaxRotations);
+            Assert.Equal(hydrated.HeartbeatInterval!.Value.ToString(), _viewModel.HeartbeatInterval);
+            Assert.Equal(hydrated.MaxFailedChecks!.Value.ToString(), _viewModel.MaxFailedChecks);
+            Assert.Equal(hydrated.MaxRestartAttempts!.Value.ToString(), _viewModel.MaxRestartAttempts);
+            Assert.Equal(hydrated.HeartbeatUrlTimeoutSeconds!.Value.ToString(), _viewModel.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(hydrated.PreLaunchTimeoutSeconds!.Value.ToString(), _viewModel.PreLaunchTimeoutSeconds);
+            Assert.Equal(hydrated.PreLaunchRetryAttempts!.Value.ToString(), _viewModel.PreLaunchRetryAttempts);
+            Assert.Equal(hydrated.StartTimeout!.Value.ToString(), _viewModel.StartTimeout);
+            Assert.Equal(hydrated.StopTimeout!.Value.ToString(), _viewModel.StopTimeout);
+            Assert.Equal(hydrated.PreStopTimeoutSeconds!.Value.ToString(), _viewModel.PreStopTimeoutSeconds);
+            Assert.Equal(hydrated.RunAsLocalSystem!.Value, _viewModel.RunAsLocalSystem);
         }
 
         [Fact]
