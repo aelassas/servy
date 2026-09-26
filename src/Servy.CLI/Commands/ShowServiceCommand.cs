@@ -30,25 +30,26 @@ namespace Servy.CLI.Commands
     /// and describe how privileged processes are launched.
     /// </para>
     /// <para>
-    /// <b>Encryption.</b> Nine columns are encrypted at rest (the registry is
+    /// <b>Encryption, and what the default hides.</b> Nine columns are encrypted at rest (the registry is
     /// <c>ServiceRepository.SensitiveFields</c>): the four parameter fields, the two pre/post-stop
-    /// parameter fields, both environment-variable fields, and the password. Eight of those nine are
-    /// rendered here, so the single-service read passes <c>decrypt: true</c> - under
-    /// <c>decrypt: false</c> the console showed the stored ciphertext instead of the configuration.
-    /// This matches <c>export</c>, which has always written those fields decrypted for the same
-    /// elevated caller: <c>ExportXmlAsync</c> and <c>ExportJsonAsync</c> both read with
-    /// <c>decrypt: true</c>.
+    /// parameter fields, both environment-variable fields, and the password. By default every one of them
+    /// renders as <see cref="Strings.Msg_Show_Masked"/>, and the record is read with
+    /// <c>decrypt: false</c>, so the plaintext is not merely withheld from the console - it is never
+    /// produced in this process at all. A masked row still tells the reader the field is set, because an
+    /// unset column is blank in either mode.
     /// </para>
     /// <para>
-    /// <b>The password is still never printed.</b> That call decrypts it in memory, exactly as an export
-    /// does, but it is not among the rendered fields - the same way <see cref="ServiceDto.Password"/>
-    /// carries <c>[XmlIgnore]</c> and <c>[JsonIgnore]</c> so an export file never contains it. Adding a
-    /// password row is the one change to this class that would breach that contract.
+    /// <b><c>--decrypt</c> reveals eight of the nine.</b> With the flag the read passes
+    /// <c>decrypt: true</c> and the parameter and environment-variable fields print in clear text - the
+    /// same data <c>export</c> has always written for the same elevated caller
+    /// (<c>ExportXmlAsync</c> and <c>ExportJsonAsync</c> both read decrypted).
+    /// <b><see cref="ServiceDto.Password"/> is the exception and stays masked even then</b>, the same way
+    /// its <c>[XmlIgnore]</c> and <c>[JsonIgnore]</c> keep it out of an export file. Rendering the
+    /// password value is the one change to this class that would breach that contract.
     /// </para>
     /// <para>
-    /// The list mode deliberately keeps <c>decrypt: false</c>: none of its six columns is an encrypted
-    /// one, so decrypting every record would cost nine field decryptions per service for output that
-    /// cannot show any of them.
+    /// The flag is refused without a service name rather than ignored: the list mode renders none of the
+    /// nine columns, so it always reads with <c>decrypt: false</c> and there is nothing there to reveal.
     /// </para>
     /// <para>
     /// Only labels are localized. Values that form a machine-readable vocabulary - the status token, the
@@ -101,6 +102,12 @@ namespace Servy.CLI.Commands
                 if (hasName && !string.IsNullOrWhiteSpace(opts.SearchKeyword))
                     return CommandResult.Fail(Strings.Msg_Show_NameAndSearchNotAllowed);
 
+                // --decrypt reveals columns only the single-service view renders, so asking for it while
+                // listing is refused rather than ignored: silently accepting it would suggest the list had
+                // been unmasked when it never carried a masked field in the first place.
+                if (!hasName && opts.Decrypt)
+                    return CommandResult.Fail(Strings.Msg_Show_DecryptRequiresName);
+
                 // The stored records describe privileged launch configuration, so the verb is elevated.
                 if (!BypassElevationCheck)
                 {
@@ -109,14 +116,14 @@ namespace Servy.CLI.Commands
 
                 if (hasName)
                 {
-                    // decrypt: true - eight of the nine encrypted columns are rendered below, and the
-                    // password, which is the ninth, is not. See the class remarks.
-                    var dto = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: true, cancellationToken: cancellationToken);
+                    // The read is only decrypted when the caller asked to see the values, so by default
+                    // the plaintext is never produced in this process. See the class remarks.
+                    var dto = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: opts.Decrypt, cancellationToken: cancellationToken);
 
                     if (dto == null)
                         return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNotFound);
 
-                    var detail = BuildServiceDetail(dto, cancellationToken);
+                    var detail = BuildServiceDetail(dto, opts.Decrypt, cancellationToken);
                     Logger.Info(string.Format(Strings.Msg_ShowServiceLogged, opts.ServiceName));
                     return CommandResult.Ok(detail);
                 }
@@ -148,9 +155,13 @@ namespace Servy.CLI.Commands
         /// Renders the full configuration of one service as an aligned, category-grouped report.
         /// </summary>
         /// <param name="dto">The stored service configuration.</param>
+        /// <param name="decrypted">
+        /// <c>true</c> when the DTO was read decrypted and the caller asked to see the encrypted-at-rest
+        /// fields in clear text; <c>false</c> to mask them. The password is masked either way.
+        /// </param>
         /// <param name="cancellationToken">A token used when resolving the live service status.</param>
         /// <returns>The rendered report.</returns>
-        private string BuildServiceDetail(ServiceDto dto, CancellationToken cancellationToken)
+        private string BuildServiceDetail(ServiceDto dto, bool decrypted, CancellationToken cancellationToken)
         {
             var sections = new List<Section>();
 
@@ -167,13 +178,15 @@ namespace Servy.CLI.Commands
             core.IfSet(Strings.Msg_Show_Label_CpuAffinity, dto.CpuAffinity);
             core.Always(Strings.Msg_Show_Label_Executable, dto.ExecutablePath);
             core.Always(Strings.Msg_Show_Label_StartupDir, dto.StartupDirectory);
-            core.Always(Strings.Msg_Show_Label_Parameters, dto.Parameters);
+            core.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.Parameters, decrypted));
             sections.Add(core);
 
             // Account: the stored password is deliberately absent - see the class remarks.
             var account = new Section(Strings.Msg_Show_Group_Account);
             account.IfSet(Strings.Msg_Show_Label_RunAsLocalSystem, FormatYesNo(dto.RunAsLocalSystem));
             account.IfSet(Strings.Msg_Show_Label_UserAccount, dto.UserAccount);
+            // Always masked, including under --decrypt: the value is never rendered, only its presence.
+            account.IfSet(Strings.Msg_Show_Label_Password, Secret(dto.Password, decrypted: false));
             sections.Add(account);
 
             var logs = new Section(Strings.Msg_Show_Group_Logs);
@@ -209,19 +222,19 @@ namespace Servy.CLI.Commands
             var failure = new Section(Strings.Msg_Show_Group_FailureProgram);
             failure.IfSet(Strings.Msg_Show_Label_Executable, dto.FailureProgramPath);
             failure.IfSet(Strings.Msg_Show_Label_StartupDir, dto.FailureProgramStartupDirectory);
-            failure.IfSet(Strings.Msg_Show_Label_Parameters, dto.FailureProgramParameters);
+            failure.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.FailureProgramParameters, decrypted));
             sections.Add(failure);
 
             var environment = new Section(Strings.Msg_Show_Group_Environment);
-            environment.IfSet(Strings.Msg_Show_Label_EnvironmentVariables, dto.EnvironmentVariables);
+            environment.IfSet(Strings.Msg_Show_Label_EnvironmentVariables, Secret(dto.EnvironmentVariables, decrypted));
             environment.IfSet(Strings.Msg_Show_Label_Dependencies, dto.ServiceDependencies);
             sections.Add(environment);
 
             var preLaunch = new Section(Strings.Msg_Show_Group_PreLaunch);
             preLaunch.IfSet(Strings.Msg_Show_Label_Executable, dto.PreLaunchExecutablePath);
             preLaunch.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PreLaunchStartupDirectory);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Parameters, dto.PreLaunchParameters);
-            preLaunch.IfSet(Strings.Msg_Show_Label_EnvironmentVariables, dto.PreLaunchEnvironmentVariables);
+            preLaunch.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PreLaunchParameters, decrypted));
+            preLaunch.IfSet(Strings.Msg_Show_Label_EnvironmentVariables, Secret(dto.PreLaunchEnvironmentVariables, decrypted));
             preLaunch.IfSet(Strings.Msg_Show_Label_Stdout, dto.PreLaunchStdoutPath);
             preLaunch.IfSet(Strings.Msg_Show_Label_Stderr, dto.PreLaunchStderrPath);
             preLaunch.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreLaunchTimeoutSeconds));
@@ -232,13 +245,13 @@ namespace Servy.CLI.Commands
             var postLaunch = new Section(Strings.Msg_Show_Group_PostLaunch);
             postLaunch.IfSet(Strings.Msg_Show_Label_Executable, dto.PostLaunchExecutablePath);
             postLaunch.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PostLaunchStartupDirectory);
-            postLaunch.IfSet(Strings.Msg_Show_Label_Parameters, dto.PostLaunchParameters);
+            postLaunch.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PostLaunchParameters, decrypted));
             sections.Add(postLaunch);
 
             var preStop = new Section(Strings.Msg_Show_Group_PreStop);
             preStop.IfSet(Strings.Msg_Show_Label_Executable, dto.PreStopExecutablePath);
             preStop.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PreStopStartupDirectory);
-            preStop.IfSet(Strings.Msg_Show_Label_Parameters, dto.PreStopParameters);
+            preStop.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PreStopParameters, decrypted));
             preStop.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreStopTimeoutSeconds));
             preStop.IfSet(Strings.Msg_Show_Label_LogAsError, FormatYesNo(dto.PreStopLogAsError));
             sections.Add(preStop);
@@ -246,7 +259,7 @@ namespace Servy.CLI.Commands
             var postStop = new Section(Strings.Msg_Show_Group_PostStop);
             postStop.IfSet(Strings.Msg_Show_Label_Executable, dto.PostStopExecutablePath);
             postStop.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PostStopStartupDirectory);
-            postStop.IfSet(Strings.Msg_Show_Label_Parameters, dto.PostStopParameters);
+            postStop.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PostStopParameters, decrypted));
             sections.Add(postStop);
 
             var other = new Section(Strings.Msg_Show_Group_Other);
@@ -455,6 +468,25 @@ namespace Servy.CLI.Commands
         private static string FormatMegabytes(int? value)
         {
             return value.HasValue ? string.Format(Strings.Msg_Show_Megabytes, value.Value.ToString(CultureInfo.InvariantCulture)) : null;
+        }
+
+        /// <summary>
+        /// Renders a column that is encrypted at rest: the value when the caller asked for it, the mask
+        /// when not, and <c>null</c> when the column is unset so no row is emitted at all.
+        /// </summary>
+        /// <param name="value">The stored value - plaintext when the read was decrypted, ciphertext otherwise.</param>
+        /// <param name="decrypted">Whether the caller asked to see the value in clear text.</param>
+        /// <returns>The value, the mask, or <c>null</c> when unset.</returns>
+        /// <remarks>
+        /// Masking keys on whether the column holds anything, never on the content, so the mask cannot
+        /// leak the length or shape of a secret - and an unset column stays blank rather than becoming a
+        /// row of stars that would imply a value exists.
+        /// </remarks>
+        private static string Secret(string value, bool decrypted)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null;
+
+            return decrypted ? value : Strings.Msg_Show_Masked;
         }
 
         /// <summary>Substitutes the not-set placeholder for a blank value.</summary>

@@ -113,9 +113,16 @@ Install-ServyService @installParams
 # Remove-Item Env:SERVY_PASSWORD
 
 # ----------------------------------------------------------------
-# Show the full configuration of one service (human-readable)
+# Show the full configuration of one service (human-readable).
+# Encrypted fields are masked by default.
 # ----------------------------------------------------------------
 Show-ServyService -Name "DummyService" -Quiet
+
+# ----------------------------------------------------------------
+# Same, with the parameters and environment variables in clear text.
+# The stored password stays masked.
+# ----------------------------------------------------------------
+Show-ServyService -Name "DummyService" -Decrypt -Quiet
 
 # ----------------------------------------------------------------
 # List every service stored in the Servy database

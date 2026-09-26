@@ -466,6 +466,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The --decrypt option requires --name. The service list shows no encrypted field, so there is nothing to decrypt..
+        /// </summary>
+        public static string Msg_Show_DecryptRequiresName {
+            get {
+                return ResourceManager.GetString("Msg_Show_DecryptRequiresName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Disabled.
         /// </summary>
         public static string Msg_Show_Disabled {
@@ -790,6 +799,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Password.
+        /// </summary>
+        public static string Msg_Show_Label_Password {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pid.
         /// </summary>
         public static string Msg_Show_Label_Pid {
@@ -957,6 +975,15 @@ namespace Servy.CLI.Resources {
         public static string Msg_Show_Label_UserAccount {
             get {
                 return ResourceManager.GetString("Msg_Show_Label_UserAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ********.
+        /// </summary>
+        public static string Msg_Show_Masked {
+            get {
+                return ResourceManager.GetString("Msg_Show_Masked", resourceCulture);
             }
         }
         
