@@ -42,6 +42,8 @@ namespace Servy.Manager.Services
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
+        // Kept for the constructor contract: the import pipeline now gets its DTO from the validator's
+        // single parse, so these are no longer read. Dropping the parameters would change a public signature.
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IAppConfiguration _appConfig;
@@ -492,8 +494,7 @@ namespace Servy.Manager.Services
         public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 getFilePath: _fileDialogService.OpenXml,
-                validateContent: (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                deserialize: (content) => _xmlServiceSerializer.Deserialize(content),
+                validateContent: (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err, out var dto); return (isValid, err, dto); },
                 formatName: "XML",
                 loadErrorMessage: Strings.Msg_FailedToLoadXml,
                 successMessage: Strings.ImportXml_Success,
@@ -504,8 +505,7 @@ namespace Servy.Manager.Services
         public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 getFilePath: _fileDialogService.OpenJson,
-                validateContent: (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                deserialize: (content) => _jsonServiceSerializer.Deserialize(content),
+                validateContent: (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err, out var dto); return (isValid, err, dto); },
                 formatName: "JSON",
                 loadErrorMessage: Strings.Msg_FailedToLoadJson,
                 successMessage: Strings.ImportJson_Success,
@@ -777,7 +777,6 @@ namespace Servy.Manager.Services
         /// </summary>
         /// <param name="getFilePath">A delegate that opens an open file dialog and returns the source path.</param>
         /// <param name="validateContent">A delegate that performs raw format validation (e.g., schema or syntax checks).</param>
-        /// <param name="deserialize">A delegate that converts the validated string content into a <see cref="ServiceDto"/>.</param>
         /// <param name="formatName">The name of the format (e.g., "XML", "JSON") for logging purposes.</param>
         /// <param name="loadErrorMessage">The message to display if the file content is incompatible with the DTO structure.</param>
         /// <param name="successMessage">The message to display upon successful repository persistence.</param>
@@ -788,7 +787,7 @@ namespace Servy.Manager.Services
         /// The import follows a strict "Gatekeeper" pattern:
         /// <list type="number">
         /// <item><description>Security &amp; Size Check: Prevents large file attacks, UNC bypasses, and path traversal via <see cref="ImportGuard"/>.</description></item>
-        /// <item><description>Format Check: Ensures the raw string is valid XML/JSON.</description></item>
+        /// <item><description>Format Check: Ensures the raw string is valid XML/JSON, and materializes it.</description></item>
         /// <item><description>Domain Check: Validates business rules via <see cref="IServiceConfigurationValidator"/>.</description></item>
         /// <item><description>Persistence: Executes an Upsert in the database.</description></item>
         /// <item><description>UI Sync: Triggers the <see cref="RefreshServices"/> callback to update the dashboard.</description></item>
@@ -796,8 +795,7 @@ namespace Servy.Manager.Services
         /// </remarks>
         private async Task ImportConfigAsync(
             Func<string?, string?> getFilePath,
-            Func<string, (bool IsValid, string? ErrorMsg)> validateContent,
-            Func<string, ServiceDto?> deserialize,
+            Func<string, (bool IsValid, string? ErrorMsg, ServiceDto? Dto)> validateContent,
             string formatName,
             string loadErrorMessage,
             string successMessage,
@@ -819,6 +817,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
+                // The validator performs the single parse of the payload and hands the definition back.
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {
@@ -826,7 +825,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                var dto = deserialize(content);
+                var dto = validation.Dto;
                 if (dto == null)
                 {
                     await _messageBoxService.ShowErrorAsync(loadErrorMessage, UiAppConfig.Caption);

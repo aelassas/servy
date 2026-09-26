@@ -336,5 +336,89 @@ namespace Servy.Core.UnitTests.Services
             Assert.False(result);
             Assert.Equal(expected, error);
         }
+
+        #region TryValidate overload that hands the parsed definition back
+
+        [Fact]
+        public void TryValidate_ValidXml_HandsBackHydratedDtoWithIdentityReset()
+        {
+            // Arrange
+            // RunAsLocalSystem/UserAccount/Password are [XmlIgnore], so the raw parse leaves them null;
+            // HeartbeatInterval is absent from the manifest and must come from AppConfig.
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe" };
+            var xml = _serializer.Serialize(dto);
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(xml, out var error, out var parsed);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+            Assert.NotNull(parsed);
+            Assert.Equal("TestService", parsed.Name);
+            // Defaults hydrated, exactly as ServiceDtoSerializer.Deserialize used to do for the caller
+            Assert.Equal(AppConfig.DefaultHeartbeatInterval, parsed.HeartbeatInterval);
+            // Global Identity Reset on Import
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, parsed.RunAsLocalSystem);
+            Assert.Null(parsed.UserAccount);
+            Assert.Null(parsed.Password);
+        }
+
+        [Fact]
+        public void TryValidate_ValidXml_BothOverloadsAgree()
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe" };
+            var xml = _serializer.Serialize(dto);
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var twoArg = _validator.TryValidate(xml, out var twoArgError);
+            var threeArg = _validator.TryValidate(xml, out var threeArgError, out _);
+
+            // Assert
+            // Hydration runs after validation, so adding it cannot change which payloads are accepted.
+            Assert.Equal(twoArg, threeArg);
+            Assert.Equal(twoArgError, threeArgError);
+        }
+
+        [Fact]
+        public void TryValidate_InvalidXml_HandsBackNoDto()
+        {
+            // Arrange
+            var invalidXml = "<ServiceDto><Name>Test</Name>";
+
+            // Act
+            var result = _validator.TryValidate(invalidXml, out var error, out var parsed);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotNull(error);
+            Assert.Null(parsed);
+        }
+
+        [Fact]
+        public void TryValidate_DomainValidationFailure_HandsBackNoDto()
+        {
+            // Arrange
+            // The payload parses, so this is the arm where a definition exists but must not escape.
+            var dto = new ServiceDto
+            {
+                Name = new string('A', AppConfig.MaxServiceNameLength + 1),
+                ExecutablePath = "C:\\path\\to\\exe"
+            };
+            var xml = _serializer.Serialize(dto);
+
+            // Act
+            var result = _validator.TryValidate(xml, out var error, out var parsed);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotNull(error);
+            Assert.Null(parsed);
+        }
+
+        #endregion
     }
 }

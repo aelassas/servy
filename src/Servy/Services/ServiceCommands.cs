@@ -39,6 +39,8 @@ namespace Servy.Services
         private readonly IJsonServiceValidator _jsonServiceValidator;
         private readonly IAppConfiguration _appConfig;
         private readonly ICursorService _cursorService;
+        // Kept for the constructor contract: the import pipeline now gets its DTO from the validator's
+        // single parse, so these are no longer read. Dropping the parameters would change a public signature.
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IProcessHelper _processHelper;
@@ -326,8 +328,7 @@ namespace Servy.Services
         public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
-                (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => _xmlServiceSerializer.Deserialize(content),
+                (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err, out var dto); return (isValid, err, dto); },
                 "XML",
                 Strings.Msg_FailedToLoadXml,
                 cancellationToken);
@@ -336,8 +337,7 @@ namespace Servy.Services
         public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
-                (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => _jsonServiceSerializer.Deserialize(content),
+                (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err, out var dto); return (isValid, err, dto); },
                 "JSON",
                 Strings.Msg_FailedToLoadJson,
                 cancellationToken);
@@ -612,7 +612,6 @@ namespace Servy.Services
         /// <param name="getFilePath">A delegate that triggers a file open dialog and returns the selected source path.</param>
         /// <param name="validateContent">A delegate that performs raw content validation (e.g., schema or syntax checks)
         /// and returns a tuple indicating success and any associated error message.</param>
-        /// <param name="deserialize">A delegate that converts the raw file content into a <see cref="ServiceDto"/>.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging.</param>
         /// <param name="loadErrorMessage">The localized message to display if the file content cannot be mapped to the DTO.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
@@ -620,14 +619,13 @@ namespace Servy.Services
         /// <remarks>
         /// The import process follows a multi-stage security gate:
         /// 1. Security &amp; Size Check: Prevents large file attacks, UNC bypasses, and path traversal (via <see cref="ImportGuard"/>).
-        /// 2. Raw content/syntax validation.
+        /// 2. Raw content/syntax validation, which also materializes the DTO.
         /// 3. Logical domain validation (via <see cref="IServiceConfigurationValidator"/>).
         /// Only after passing all gates is the UI model updated.
         /// </remarks>
         private async Task ImportConfigAsync(
             Func<string?, string?> getFilePath,
-            Func<string, (bool IsValid, string? ErrorMsg)> validateContent,
-            Func<string, ServiceDto?> deserialize,
+            Func<string, (bool IsValid, string? ErrorMsg, ServiceDto? Dto)> validateContent,
             string formatName,
             string loadErrorMessage,
             CancellationToken cancellationToken = default)
@@ -649,6 +647,7 @@ namespace Servy.Services
                     return;
                 }
 
+                // The validator performs the single parse of the payload and hands the definition back.
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {
@@ -656,7 +655,7 @@ namespace Servy.Services
                     return;
                 }
 
-                var dto = deserialize(content);
+                var dto = validation.Dto;
                 if (dto == null)
                 {
                     await _messageBoxService.ShowErrorAsync(loadErrorMessage, Caption);

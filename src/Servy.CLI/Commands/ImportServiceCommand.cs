@@ -21,6 +21,8 @@ namespace Servy.CLI.Commands
     public class ImportServiceCommand : BaseCommand
     {
         private readonly IServiceRepository _serviceRepository;
+        // Kept for the constructor contract: the import pipeline now gets its DTO from the validator's
+        // single parse, so these are no longer read. Dropping the parameters would change a public signature.
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IServiceManager _serviceManager;
@@ -144,14 +146,13 @@ namespace Servy.CLI.Commands
                 opts,
                 content,
                 "XML",
-                xmlContent => _xmlServiceValidator.TryValidate(xmlContent, out var err) ? (true, null) : (false, err),
+                xmlContent => _xmlServiceValidator.TryValidate(xmlContent, out var err, out var dto) ? (true, null, dto) : (false, err, null),
                 dto => _serviceRepository.UpsertAsync(
                         dto,
                         preserveExistingRuntimeState: true,
                         preserveExistingCredentials: true,
                         cancellationToken: cancellationToken
                         ),
-                _xmlServiceSerializer.Deserialize,
                 cancellationToken: cancellationToken);
         }
 
@@ -169,14 +170,13 @@ namespace Servy.CLI.Commands
                 opts,
                 content,
                 "JSON",
-                jsonContent => _jsonServiceValidator.TryValidate(jsonContent, out var err) ? (true, null) : (false, err),
+                jsonContent => _jsonServiceValidator.TryValidate(jsonContent, out var err, out var dto) ? (true, null, dto) : (false, err, null),
                 dto => _serviceRepository.UpsertAsync(
                         dto,
                         preserveExistingRuntimeState: true,
                         preserveExistingCredentials: true,
                         cancellationToken: cancellationToken
                         ),
-                _jsonServiceSerializer.Deserialize,
                 cancellationToken: cancellationToken);
         }
 
@@ -186,27 +186,24 @@ namespace Servy.CLI.Commands
         /// <param name="opts">Import service options; <see cref="ImportServiceOptions.InstallService"/> decides whether step 5 runs.</param>
         /// <param name="content">The raw configuration file content, already read and size-checked by the caller.</param>
         /// <param name="formatName">The format label used in messages ("XML" or "JSON").</param>
-        /// <param name="validator">Format-specific validation; returns whether <paramref name="content"/> is valid and the error text when it is not.</param>
+        /// <param name="validator">Format-specific validation; parses <paramref name="content"/> once and returns
+        /// whether it is valid, the error text when it is not, and the parsed definition when it is.</param>
         /// <param name="repoImporter">Persists the deserialized DTO and returns the number of affected rows.</param>
-        /// <param name="deserializer">Format-specific deserializer; returns <c>null</c> when <paramref name="content"/> cannot be materialized.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or the first failing step.</returns>
         private async Task<CommandResult> ProcessImportInternalAsync(
              ImportServiceOptions opts,
              string content,
              string formatName,
-             Func<string, (bool Valid, string? Error)> validator,
+             Func<string, (bool Valid, string? Error, ServiceDto? Dto)> validator,
              Func<ServiceDto, Task<int>> repoImporter,
-             Func<string, ServiceDto?> deserializer,
              CancellationToken cancellationToken = default)
         {
-            // 1. Format Validation
-            var (isValid, error) = validator(content);
+            // 1. Format Validation, which also materializes the definition (one parse per import)
+            var (isValid, error, dto) = validator(content);
             if (!isValid)
                 return CommandResult.Fail(string.Format(Strings.Msg_ImportFormatInvalid, formatName, error));
 
-            // 2. Deserialization
-            var dto = deserializer(content);
             if (dto == null)
                 return CommandResult.Fail(Strings.Msg_ImportDeserializationFailure);
 

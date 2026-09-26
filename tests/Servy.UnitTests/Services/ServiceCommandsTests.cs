@@ -1152,7 +1152,7 @@ namespace Servy.UnitTests.Services
             await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Never);
+            _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out It.Ref<ServiceDto?>.IsAny), Times.Never);
         }
 
         [Fact]
@@ -1181,7 +1181,8 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(path);
 
             string? errorOut = "Missing closing brace delimiter.";
-            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut)).Returns(false);
+            ServiceDto? jsonParsedDto = null;
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut, out jsonParsedDto)).Returns(false);
 
             try
             {
@@ -1207,8 +1208,8 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(path);
 
             string? errorOut = null;
-            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut)).Returns(true);
-            _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto?)null);
+            ServiceDto? xmlParsedDto = null;
+            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut, out xmlParsedDto)).Returns(true);
 
             try
             {
@@ -1237,8 +1238,8 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(path);
 
             string? errorOut = null;
-            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut)).Returns(true);
-            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(sampleDto);
+            ServiceDto? jsonParsedDto = sampleDto;
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut, out jsonParsedDto)).Returns(true);
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(sampleDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             try
@@ -1593,8 +1594,8 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(path);
 
             string? validationError = null;
-            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);
-            _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(expectedDto);
+            ServiceDto? xmlParsedDto = expectedDto;
+            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError, out xmlParsedDto)).Returns(true);
 
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
@@ -1637,8 +1638,8 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(path);
 
             string? validationError = null;
-            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);
-            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(expectedDto);
+            ServiceDto? jsonParsedDto = expectedDto;
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError, out jsonParsedDto)).Returns(true);
 
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
