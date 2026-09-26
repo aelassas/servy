@@ -14,6 +14,7 @@
 
   <UserControl.Resources>
     <converters:MessageConverter x:Key="MessageConverter" />
+    <converters:LogLevelConverter x:Key="LogLevelConverter" />
   </UserControl.Resources>
 
   <Grid Margin="10">
@@ -42,7 +43,13 @@
                 Margin="0,0,10,0"
                 AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelComboBox_Name}"
                 AutomationProperties.AutomationId="LogsLevelComboBox"
-                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsLevelComboBox_HelpText}" />
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsLevelComboBox_HelpText}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding Converter={StaticResource LogLevelConverter}}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
 
       <TextBlock Text="{x:Static resx:Strings.Label_From}"
                  VerticalAlignment="Center"

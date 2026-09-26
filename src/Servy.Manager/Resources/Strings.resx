@@ -450,7 +450,19 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Loaded {0} services in {1}</value>
   </data>
 
-  <!-- Log Footer Templates -->
+  <!-- Logs Tab -->
+  <data name="LogLevel_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="LogLevel_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="LogLevel_Information" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="LogLevel_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
   <data name="Footer_Log_None" xml:space="preserve">
     <value>No logs found in {1}</value>
   </data>

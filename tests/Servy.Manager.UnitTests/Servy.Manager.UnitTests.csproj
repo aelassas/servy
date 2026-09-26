@@ -139,6 +139,7 @@
     <Compile Include="Config\DesignTimeAppConfigTests.cs" />
     <Compile Include="Converters\CpuUsageConverterTests.cs" />
     <Compile Include="Converters\EnumLocalizedConverterTests.cs" />
+    <Compile Include="Converters\LogLevelConverterTests.cs" />
     <Compile Include="Converters\MessageConverterTests.cs" />
     <Compile Include="Converters\PidConverterTests.cs" />
     <Compile Include="Converters\ProcessMetricConverterTests.cs" />
