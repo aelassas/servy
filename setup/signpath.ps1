@@ -183,7 +183,7 @@ if (!$apiToken -or !$organizationId -or !$projectSlug -or !$signingPolicySlug) {
     throw "Missing required SignPath configuration values (API Token, Organization ID, Project Slug, or Signing Policy Slug)."
 }
 
-if (-not (Test-Path $Path)) {
+if (-not (Test-Path -LiteralPath $Path)) {
     throw "File not found: $Path"
 }
 
@@ -243,9 +243,9 @@ try {
         $commonParams.ArtifactConfigurationSlug = $artifactConfigurationSlug
     }
 
-    if (Test-Path $signedPath) {
+    if (Test-Path -LiteralPath $signedPath) {
         Write-Warning "Removing stale artifact from previous run: $signedPath"
-        Remove-Item -Force $signedPath
+        Remove-Item -Force -LiteralPath $signedPath
     }
 
     $signingRequestId = Submit-SigningRequest @commonParams
@@ -259,10 +259,10 @@ catch {
 # REPLACE ORIGINAL FILE WITH SIGNED VERSION
 # ----------------------------------------------------------
 try {
-    if (-not (Test-Path $signedPath)) {
+    if (-not (Test-Path -LiteralPath $signedPath)) {
         throw "SignPath did not produce the expected output file: $signedPath"
     }
-    Move-Item -Force -Path $signedPath -Destination $Path
+    Move-Item -LiteralPath $signedPath -Destination $Path
     Write-Host "Signing complete: $Path"
 }
 catch {

@@ -71,11 +71,17 @@ function Show-Notification {
 
     $ToastTitle = "Servy - $ServiceName"
 
+    # Load WinRT assemblies before entering delivery trial block; if unavailable on this host,
+    # classify as a permanent failure so the watermark advances rather than looping indefinitely.
     try {
-        # Load WinRT assemblies
         [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
         [void][Windows.UI.Notifications.NotificationSetting, Windows.UI.Notifications, ContentType = WindowsRuntime]
+    } catch {
+        Write-FallbackError -Message "ServyToast: WinRT notification types are unavailable on this host ($($_.Exception.Message)). Toast delivery is not possible here; advancing the watermark." -ScriptDir $ScriptDir -FallbackFileName$FallbackLogFile
+        return 'PermanentFailure'
+    }
 
+    try {
         $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent(
             [Windows.UI.Notifications.ToastTemplateType]::ToastText02
         )
