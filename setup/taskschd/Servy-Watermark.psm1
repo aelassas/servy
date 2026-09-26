@@ -317,7 +317,7 @@ function ConvertFrom-ServyEventMessage {
     # from forcing a fallback to an 'Unknown Service' state.
     $firstLine, $rest = $Message -split "\r?\n", 2
 
-    if ($firstLine -match '^\[(.+?)\]\s*(.*)$') {
+    if ($firstLine -match '^\[(.+)\]\s*(.*)$') {
         return @{
             ServiceName = $matches[1]
             LogText = if ($rest) {
