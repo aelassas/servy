@@ -182,12 +182,6 @@
   <data name="Msg_Show_ValueNotSet" xml:space="preserve">
     <value>-</value>
   </data>
-  <data name="Msg_Show_Enabled" xml:space="preserve">
-    <value>Enabled</value>
-  </data>
-  <data name="Msg_Show_Disabled" xml:space="preserve">
-    <value>Disabled</value>
-  </data>
   <data name="Msg_Show_Yes" xml:space="preserve">
     <value>Yes</value>
   </data>

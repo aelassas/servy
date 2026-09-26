@@ -475,24 +475,6 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Disabled.
-        /// </summary>
-        public static string Msg_Show_Disabled {
-            get {
-                return ResourceManager.GetString("Msg_Show_Disabled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enabled.
-        /// </summary>
-        public static string Msg_Show_Enabled {
-            get {
-                return ResourceManager.GetString("Msg_Show_Enabled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Account.
         /// </summary>
         public static string Msg_Show_Group_Account {
