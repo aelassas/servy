@@ -33,7 +33,7 @@
 * [x] External Heartbeat Ping URL ([#2700](https://github.com/aelassas/servy/issues/2700))
 * [x] Allow configuring CPU affinity in service definitions ([#4436](https://github.com/aelassas/servy/issues/4436))
 * [x] Add dump and restore scripts for migration and VM cloning
-* [x] Add `show` CLI command to display service configuration in a human-readable format (https://github.com/aelassas/servy/issues/7018)
+* [x] Add `show` CLI command to display service configuration in a human-readable format ([#7018](https://github.com/aelassas/servy/issues/7018))
 * [ ] Add a management-only REST API for status, health metrics, and lifecycle control (start/stop/restart)
 * [ ] Add a web dashboard for remote service control and real-time performance graphs
 * [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
