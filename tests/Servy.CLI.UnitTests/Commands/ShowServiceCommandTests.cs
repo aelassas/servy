@@ -265,7 +265,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_Logs, result.Message);
             Assert.Equal(@"C:\logs\out.log", RowValue(result.Message, CliStrings.Msg_Show_Label_Stdout));
-            Assert.Equal(CliStrings.Msg_Show_Enabled, RowValue(result.Message, CliStrings.Msg_Show_Label_SizeRotation));
+            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_SizeRotation));
             Assert.Equal(string.Format(CliStrings.Msg_Show_Megabytes, 10), RowValue(result.Message, CliStrings.Msg_Show_Label_RotationSize));
         }
 
@@ -536,6 +536,34 @@ namespace Servy.CLI.UnitTests.Commands
                 .ToList();
             Assert.Single(separators);
             Assert.Equal(16, separators[0]);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_EveryBoolean_UsesOneVocabulary()
+        {
+            // Arrange
+            // Two "feature" flags and two predicates, which an earlier version rendered with two
+            // different word pairs on the same screen.
+            var dto = MinimalDto();
+            dto.EnableSizeRotation = true;
+            dto.EnableConsoleUI = false;
+            dto.UseLocalTimeForRotation = true;
+            dto.PreStopLogAsError = false;
+            dto.PreStopExecutablePath = @"C:\apps\prestop.exe";
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_SizeRotation));
+            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_LocalTimeRotation));
+            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_ConsoleUI));
+            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_LogAsError));
+            Assert.DoesNotContain("Enabled", result.Message);
+            Assert.DoesNotContain("Disabled", result.Message);
         }
 
         #endregion

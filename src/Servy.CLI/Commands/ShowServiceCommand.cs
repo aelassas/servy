@@ -183,7 +183,7 @@ namespace Servy.CLI.Commands
 
             // Account: the stored password is deliberately absent - see the class remarks.
             var account = new Section(Strings.Msg_Show_Group_Account);
-            account.IfSet(Strings.Msg_Show_Label_RunAsLocalSystem, FormatYesNo(dto.RunAsLocalSystem));
+            account.IfSet(Strings.Msg_Show_Label_RunAsLocalSystem, FormatBoolean(dto.RunAsLocalSystem));
             account.IfSet(Strings.Msg_Show_Label_UserAccount, dto.UserAccount);
             // Always masked, including under --decrypt: the value is never rendered, only its presence.
             account.IfSet(Strings.Msg_Show_Label_Password, Secret(dto.Password, decrypted: false));
@@ -194,12 +194,12 @@ namespace Servy.CLI.Commands
             logs.IfSet(Strings.Msg_Show_Label_Stderr, dto.StderrPath);
             logs.IfSet(Strings.Msg_Show_Label_ActiveStdout, dto.ActiveStdoutPath);
             logs.IfSet(Strings.Msg_Show_Label_ActiveStderr, dto.ActiveStderrPath);
-            logs.IfSet(Strings.Msg_Show_Label_SizeRotation, FormatToggle(dto.EnableSizeRotation));
+            logs.IfSet(Strings.Msg_Show_Label_SizeRotation, FormatBoolean(dto.EnableSizeRotation));
             logs.IfSet(Strings.Msg_Show_Label_RotationSize, FormatMegabytes(dto.RotationSize));
-            logs.IfSet(Strings.Msg_Show_Label_DateRotation, FormatToggle(dto.EnableDateRotation));
+            logs.IfSet(Strings.Msg_Show_Label_DateRotation, FormatBoolean(dto.EnableDateRotation));
             logs.IfSet(Strings.Msg_Show_Label_RotationPeriod, FormatEnum(typeof(DateRotationType), dto.DateRotationType));
             logs.IfSet(Strings.Msg_Show_Label_MaxFiles, dto.MaxRotations.HasValue ? dto.MaxRotations.Value.ToString(CultureInfo.InvariantCulture) : null);
-            logs.IfSet(Strings.Msg_Show_Label_LocalTimeRotation, FormatYesNo(dto.UseLocalTimeForRotation));
+            logs.IfSet(Strings.Msg_Show_Label_LocalTimeRotation, FormatBoolean(dto.UseLocalTimeForRotation));
             sections.Add(logs);
 
             var timeouts = new Section(Strings.Msg_Show_Group_Timeouts);
@@ -208,15 +208,15 @@ namespace Servy.CLI.Commands
             sections.Add(timeouts);
 
             var recovery = new Section(Strings.Msg_Show_Group_Recovery);
-            recovery.IfSet(Strings.Msg_Show_Label_HealthCheck, FormatToggle(dto.EnableHealthMonitoring));
+            recovery.IfSet(Strings.Msg_Show_Label_HealthCheck, FormatBoolean(dto.EnableHealthMonitoring));
             recovery.IfSet(Strings.Msg_Show_Label_Heartbeat, FormatSeconds(dto.HeartbeatInterval));
             recovery.IfSet(Strings.Msg_Show_Label_MaxFailedChecks, dto.MaxFailedChecks.HasValue ? dto.MaxFailedChecks.Value.ToString(CultureInfo.InvariantCulture) : null);
             recovery.IfSet(Strings.Msg_Show_Label_Recovery, FormatEnum(typeof(RecoveryAction), dto.RecoveryAction));
-            recovery.IfSet(Strings.Msg_Show_Label_OnCleanExit, FormatYesNo(dto.RecoveryOnCleanExit));
+            recovery.IfSet(Strings.Msg_Show_Label_OnCleanExit, FormatBoolean(dto.RecoveryOnCleanExit));
             recovery.IfSet(Strings.Msg_Show_Label_MaxAttempts, dto.MaxRestartAttempts.HasValue ? dto.MaxRestartAttempts.Value.ToString(CultureInfo.InvariantCulture) : null);
             recovery.IfSet(Strings.Msg_Show_Label_HeartbeatUrl, dto.HeartbeatUrl);
             recovery.IfSet(Strings.Msg_Show_Label_UrlTimeout, FormatSeconds(dto.HeartbeatUrlTimeoutSeconds));
-            recovery.IfSet(Strings.Msg_Show_Label_UrlFlags, FormatToggle(dto.EnableHeartbeatUrlFlags));
+            recovery.IfSet(Strings.Msg_Show_Label_UrlFlags, FormatBoolean(dto.EnableHeartbeatUrlFlags));
             sections.Add(recovery);
 
             var failure = new Section(Strings.Msg_Show_Group_FailureProgram);
@@ -239,7 +239,7 @@ namespace Servy.CLI.Commands
             preLaunch.IfSet(Strings.Msg_Show_Label_Stderr, dto.PreLaunchStderrPath);
             preLaunch.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreLaunchTimeoutSeconds));
             preLaunch.IfSet(Strings.Msg_Show_Label_RetryAttempts, dto.PreLaunchRetryAttempts.HasValue ? dto.PreLaunchRetryAttempts.Value.ToString(CultureInfo.InvariantCulture) : null);
-            preLaunch.IfSet(Strings.Msg_Show_Label_IgnoreFailure, FormatYesNo(dto.PreLaunchIgnoreFailure));
+            preLaunch.IfSet(Strings.Msg_Show_Label_IgnoreFailure, FormatBoolean(dto.PreLaunchIgnoreFailure));
             sections.Add(preLaunch);
 
             var postLaunch = new Section(Strings.Msg_Show_Group_PostLaunch);
@@ -253,7 +253,7 @@ namespace Servy.CLI.Commands
             preStop.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PreStopStartupDirectory);
             preStop.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PreStopParameters, decrypted));
             preStop.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreStopTimeoutSeconds));
-            preStop.IfSet(Strings.Msg_Show_Label_LogAsError, FormatYesNo(dto.PreStopLogAsError));
+            preStop.IfSet(Strings.Msg_Show_Label_LogAsError, FormatBoolean(dto.PreStopLogAsError));
             sections.Add(preStop);
 
             var postStop = new Section(Strings.Msg_Show_Group_PostStop);
@@ -263,8 +263,8 @@ namespace Servy.CLI.Commands
             sections.Add(postStop);
 
             var other = new Section(Strings.Msg_Show_Group_Other);
-            other.IfSet(Strings.Msg_Show_Label_ConsoleUI, FormatToggle(dto.EnableConsoleUI));
-            other.IfSet(Strings.Msg_Show_Label_DebugLogs, FormatToggle(dto.EnableDebugLogs));
+            other.IfSet(Strings.Msg_Show_Label_ConsoleUI, FormatBoolean(dto.EnableConsoleUI));
+            other.IfSet(Strings.Msg_Show_Label_DebugLogs, FormatBoolean(dto.EnableDebugLogs));
             sections.Add(other);
 
             return Render(sections);
@@ -438,18 +438,18 @@ namespace Servy.CLI.Commands
             }
         }
 
-        /// <summary>Renders an optional feature flag as Enabled or Disabled.</summary>
-        /// <param name="value">The stored flag, or <c>null</c> when unset.</param>
-        /// <returns>The rendered flag, or <c>null</c> when unset.</returns>
-        private static string FormatToggle(bool? value)
-        {
-            return value.HasValue ? (value.Value ? Strings.Msg_Show_Enabled : Strings.Msg_Show_Disabled) : null;
-        }
-
         /// <summary>Renders an optional boolean as Yes or No.</summary>
         /// <param name="value">The stored boolean, or <c>null</c> when unset.</param>
         /// <returns>The rendered boolean, or <c>null</c> when unset.</returns>
-        private static string FormatYesNo(bool? value)
+        /// <remarks>
+        /// Every boolean in the report goes through this one formatter, deliberately. An earlier version
+        /// split them into "feature flags" rendered as Enabled/Disabled and everything else as Yes/No,
+        /// which put two vocabularies for the same data type in one screen. Yes/No is the pair that reads
+        /// correctly on every label here: several of them - Local System, On Clean Exit, Ignore Failure,
+        /// Log As Error - are predicates rather than features, and "Ignore Failure: Enabled" is wrong in a
+        /// way "Ignore Failure: Yes" is not.
+        /// </remarks>
+        private static string FormatBoolean(bool? value)
         {
             return value.HasValue ? (value.Value ? Strings.Msg_Show_Yes : Strings.Msg_Show_No) : null;
         }
