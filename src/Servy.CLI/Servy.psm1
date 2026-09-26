@@ -36,12 +36,62 @@ $script:ServySensitiveValueMaxLength = 28000
 # Uses Atomic Groups (?>...) to prevent Catastrophic Backtracking (ReDoS) on overlapping escape branches.
 $script:EnvVarValidationPattern = '^\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*)(;\s*[^=;]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?\s*$'
 
+function Test-ServyLiteralPath {
+    <#
+        .SYNOPSIS
+            Determines whether all elements of a path exist literally, avoiding wildcard expansion.
+
+        .DESCRIPTION
+            Evaluates literal file or directory paths without interpreting wildcard characters (such as '[' or ']').
+            In PowerShell 3.0 and newer, it invokes 'Test-Path -LiteralPath'. In PowerShell 2.0, it falls back
+            to native .NET framework methods ([System.IO.File]::Exists and [System.IO.Directory]::Exists) to safely
+            test paths containing special characters.
+
+        .PARAMETER Path
+            Specifies the literal path to be tested.
+
+        .PARAMETER PathType
+            Specifies the type of the final path element. Valid values are 'Container' (directory) and 'Leaf' (file).
+            If omitted, checks whether either a file or directory exists at the path.
+
+        .OUTPUTS
+            System.Boolean - Returns $true if the path exists; otherwise $false.
+
+        .EXAMPLE
+            Test-ServyLiteralPath -Path "C:\Logs[1]\app.log" -PathType Leaf
+            # Returns $true if the file literally exists at 'C:\Logs[1]\app.log', ignoring the brackets as wildcards.
+    #>
+    param(
+        [string]$Path,
+        [string]$PathType
+    )
+    if ([string]::IsNullOrEmpty($Path)) { return $false }
+
+    if ($PSVersionTable.PSVersion.Major -ge 3) {
+        if ($PathType) {
+            return Test-Path -LiteralPath $Path -PathType $PathType
+        }
+        return Test-Path -LiteralPath $Path
+    }
+    else {
+        if ($PathType -eq 'Container') {
+            return [System.IO.Directory]::Exists($Path)
+        }
+        elseif ($PathType -eq 'Leaf') {
+            return [System.IO.File]::Exists($Path)
+        }
+        else {
+            return [System.IO.File]::Exists($Path) -or [System.IO.Directory]::Exists($Path)
+        }
+    }
+}
+
 # Shared validation for output-path parameters: the parent directory must exist,
 # or the path must be a bare filename (empty parent), per #2289.
 $script:ParentDirectoryExists = {
     $parent = Split-Path $_ -Parent
     if ([string]::IsNullOrEmpty($parent)) { return $true }
-    if (Test-Path $parent -PathType Container) { return $true }
+    if (Test-ServyLiteralPath $parent -PathType Container) { return $true }
     throw "Parent directory does not exist: $parent"
 }
 
@@ -84,19 +134,19 @@ $script:ServyCliPath = Join-Path $ModuleRoot "servy-cli.exe"
 # $env:ProgramW6432 explicitly points to 'C:\Program Files' on 64-bit Windows
 # even if the current PowerShell session is 32-bit (x86).
 $script:ServyProgramFilesPath = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
-if (-not (Test-Path $script:ServyCliPath)) {
+if (-not (Test-ServyLiteralPath $script:ServyCliPath)) {
     $script:ServyCliPath = Join-Path $script:ServyProgramFilesPath "Servy\servy-cli.exe"
 }
 
 # 3. Check system PATH
-if (-not (Test-Path $script:ServyCliPath)) {
+if (-not (Test-ServyLiteralPath $script:ServyCliPath)) {
     $pathSearch = Get-Command "servy-cli.exe" -CommandType Application -ErrorAction SilentlyContinue
-    if ($pathSearch -and (Test-Path $pathSearch.Definition)) {
+    if ($pathSearch -and (Test-ServyLiteralPath $pathSearch.Definition)) {
         $script:ServyCliPath = $pathSearch.Definition
     }
 }
 
-$script:ServyCliFound = Test-Path $script:ServyCliPath
+$script:ServyCliFound = Test-ServyLiteralPath $script:ServyCliPath
 
 # ----------------------------------------------------------------
 # Private Helper Functions
@@ -353,7 +403,7 @@ function Invoke-ServyCli {
     $process = $null
 
     try {
-        if (-not (Test-Path $script:ServyCliPath)) {
+        if (-not (Test-ServyLiteralPath $script:ServyCliPath)) {
             if ($script:ServyCliFound) {
                 throw "Servy CLI was located at module load time but is no longer present at '$($script:ServyCliPath)'. The file may have been moved or deleted; re-import the module to re-probe."
             } else {
@@ -1184,13 +1234,13 @@ function Install-ServyService {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
             else { throw "Executable not found: $_" }
           })]
         [string] $Path,
 
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
             else { throw "Startup directory not found: $_" }
           })]
         [string] $StartupDir,
@@ -1270,13 +1320,13 @@ function Install-ServyService {
         [switch] $EnableHeartbeatUrlFlags,
 
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
             else { throw "Failure program executable not found: $_" }
           })]
         [string] $FailureProgramPath,
 
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
             else { throw "Failure program startup directory not found: $_" }
           })]
         [string] $FailureProgramStartupDir,
@@ -1313,13 +1363,13 @@ function Install-ServyService {
 
         # Pre-launch
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
             else { throw "Pre-launch executable not found: $_" }
           })]
         [string] $PreLaunchPath,
 
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
             else { throw "Pre-launch startup directory not found: $_" }
           })]
         [string] $PreLaunchStartupDir,
@@ -1356,13 +1406,13 @@ function Install-ServyService {
 
         # Post-launch
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
             else { throw "Post-launch executable not found: $_" }
           })]
         [string] $PostLaunchPath,
 
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
             else { throw "Post-launch startup directory not found: $_" }
           })]
         [string] $PostLaunchStartupDir,
@@ -1378,13 +1428,13 @@ function Install-ServyService {
 
         # Pre-stop
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
             else { throw "Pre-stop executable not found: $_" }
           })]
         [string] $PreStopPath,
 
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
             else { throw "Pre-stop startup directory not found: $_" }
           })]
         [string] $PreStopStartupDir,
@@ -1402,13 +1452,13 @@ function Install-ServyService {
 
         # Post-stop
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
             else { throw "Post-stop executable not found: $_" }
           })]
         [string] $PostStopPath,
 
         [ValidateScript({
-            if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
+            if (Test-ServyLiteralPath ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
             else { throw "Post-stop startup directory not found: $_" }
           })]
         [string] $PostStopStartupDir,
@@ -1814,7 +1864,7 @@ function Import-ServyServiceConfig {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({
-            if (Test-Path $_ -PathType Leaf) { $true }
+            if (Test-ServyLiteralPath $_ -PathType Leaf) { $true }
             else { throw "Import configuration file not found: $_" }
           })]
         [string] $Path,
