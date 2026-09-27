@@ -786,6 +786,125 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Theory]
+        [InlineData(0, false)]        // the parent PID could not be read
+        [InlineData(424245, true)]    // the parent StartTime could not be read
+        public void StopDescendants_LineageNotCaptured_WarnsAndNeverEnumerates(int parentPid, bool startTimeMissing)
+        {
+            // Arrange
+            // Either half of the lineage being unreadable makes a PID/StartTime pair unsafe to match on,
+            // so the sweep must warn and return BEFORE enumerating rather than scan on a partial identity.
+            var enumeratorCalls = 0;
+
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            {
+                wrapper.ChildEnumerator = (pid, startTime) => { enumeratorCalls++; return new List<Process>(); };
+                var parentStartTime = startTimeMissing ? DateTime.MinValue : DateTime.Now;
+
+                // Act
+                wrapper.StopDescendants(parentPid, parentStartTime, TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                // Assert
+                Assert.Contains(_logger.Warnings, m => m.Contains("Descendant sweep skipped"));
+                Assert.Equal(0, enumeratorCalls);
+                // The early return is what is under test: reaching the enumeration would log the
+                // empty-result line instead.
+                Assert.DoesNotContain(_logger.Infos, m => m.Contains("No active descendants found"));
+            }
+        }
+
+        [Fact]
+        public void StopDescendants_EnumeratorThrows_WarnsAndDoesNotPropagate()
+        {
+            // Arrange
+            // A failed snapshot leaves the descendant set unknown, so the sweep abandons the cascade and
+            // reports it rather than letting the failure reach the caller that is stopping the service.
+            const int parentPid = 424246;
+
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            {
+                wrapper.ChildEnumerator = (pid, startTime) => throw new InvalidOperationException("snapshot failed");
+
+                // Act
+                var exception = Record.Exception(() =>
+                    wrapper.StopDescendants(parentPid, DateTime.Now, TestTimeouts.ProcessWrapperGracefulStopMs));
+
+                // Assert
+                Assert.Null(exception);
+                Assert.Contains(_logger.Warnings, m =>
+                    m.Contains($"Descendant enumeration for PID {parentPid} failed; skipping cascaded stop: snapshot failed"));
+            }
+        }
+
+        [Fact]
+        public void StopTree_EnumeratorThrows_WarnsAndStillTerminatesTheNode()
+        {
+            // Arrange
+            // StopTree's own enumeration failure is handled differently from StopDescendants': it falls back
+            // to an empty child set and carries on, so the node itself is still terminated.
+            var parent = new DisposeCountingProcess();
+
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            {
+                wrapper.ChildEnumerator = (pid, startTime) => throw new InvalidOperationException("snapshot failed");
+
+                // Act
+                var exception = Record.Exception(() =>
+                    TestReflection.InvokeNonPublic(wrapper, "StopTree", parent, TestTimeouts.ProcessWrapperGracefulStopMs));
+
+                // Assert
+                Assert.Null(exception);
+                Assert.Contains(_logger.Warnings, m => m.Contains("skipping sub-tree stop: snapshot failed"));
+                Assert.Contains(_logger.Infos, m => m.StartsWith("Terminating node:"));
+            }
+
+            parent.Dispose();
+        }
+
+        [Fact]
+        public void StopTree_EnumeratedChildDisposeThrows_LogsDebugAndDoesNotPropagate()
+        {
+            // Arrange
+            // The StopDescendants twin of this test covers that method's own disposal loop; StopTree owns a
+            // second one, and a handle that fails to close must not abort a shutdown in progress there either.
+            var parent = new DisposeCountingProcess();
+            var child = new DisposeCountingProcess { ThrowOnDispose = true };
+            var handedOut = false;
+
+            try
+            {
+                using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+                {
+                    // Neither process is started, so both levels of the cascade ask for the children of PID 0.
+                    // Handing the set out once is what terminates the recursion.
+                    wrapper.ChildEnumerator = (pid, startTime) =>
+                    {
+                        if (handedOut) return new List<Process>();
+                        handedOut = true;
+                        return new List<Process> { child };
+                    };
+
+                    // Act
+                    var exception = Record.Exception(() =>
+                        TestReflection.InvokeNonPublic(wrapper, "StopTree", parent, TestTimeouts.ProcessWrapperGracefulStopMs));
+
+                    // Assert
+                    Assert.Null(exception);
+                    Assert.Equal(1, child.DisposeCount);
+                    Assert.Contains(_logger.Debugs, m =>
+                        m.Contains("Failed to dispose enumerated child handle")
+                        && m.Contains(DisposeCountingProcess.DisposeFailureMessage));
+                }
+            }
+            finally
+            {
+                // Teardown must not throw, and the sweep under test has already disposed the child once.
+                child.ThrowOnDispose = false;
+                child.Dispose();
+                parent.Dispose();
+            }
+        }
+
         /// <summary>
         /// A <see cref="Process"/> that records how often it is explicitly disposed, and can be made to
         /// throw from disposal. Handed to the cascade through <c>ProcessWrapper.ChildEnumerator</c>, which is
