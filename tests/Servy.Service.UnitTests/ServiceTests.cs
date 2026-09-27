@@ -1429,8 +1429,9 @@ namespace Servy.Service.UnitTests
             {
                 service.StartForTest();
 
-                // A non-zero handle keeps the null-handle fallback (which ends in Environment.Exit)
-                // out of reach, so the reboot bypass is the only branch this command can take.
+                // OnCustomCommand checks _isRebooting before it looks at the handle, so the handle does
+                // not decide this branch. It is set non-zero anyway so that a later reordering of those
+                // two checks cannot reach the null-handle fallback, whose Environment.Exit would end the test host.
                 TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
                 TestReflection.SetField(service, "_isRebooting", true);
 
@@ -1564,7 +1565,8 @@ namespace Servy.Service.UnitTests
 
         /// <summary>
         /// Explicit teardown hook called by the xUnit test runner framework execution loop after each test finishes.
-        /// Flushes background handles to prevent WaitHandle/Semaphore leaks between individual testing suites.
+        /// Disposes every service the fixture's <see cref="ServiceTestContext"/> built, so their cancellation sources
+        /// and semaphores do not leak into the next test.
         /// </summary>
         public void Dispose()
         {
