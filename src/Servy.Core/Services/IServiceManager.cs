@@ -40,10 +40,13 @@ namespace Servy.Core.Services
         /// <param name="options">The options containing all configuration parameters for the service installation, including paths, names, and environment variables.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the installation to complete.</param>
         /// <returns>An <see cref="OperationResult"/> indicating whether the installation was successful and providing error details upon failure.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the required service repository has not been initialized.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown if <see cref="InstallServiceOptions.ServiceName"/>, <see cref="InstallServiceOptions.WrapperExePath"/>, or <see cref="InstallServiceOptions.RealExePath"/> is null or empty.</exception>
-        /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails via native APIs.</exception>
+        /// <remarks>
+        /// A failure to open the Service Control Manager or to create or update the service is caught and
+        /// returned as a failed <see cref="OperationResult"/>, not thrown as a <see cref="Win32Exception"/>;
+        /// cancellation still propagates as <see cref="OperationCanceledException"/>.
+        /// </remarks>
         Task<OperationResult> InstallServiceAsync(InstallServiceOptions options, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -52,7 +55,6 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The unique identifier (internal name) of the Windows service to be removed.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the service to stop or for database operations.</param>
         /// <returns>An <see cref="OperationResult"/> indicating whether the uninstallation was successful or providing diagnostic info if it failed.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the required service repository has not been initialized.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
         Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default);
 
@@ -63,7 +65,6 @@ namespace Servy.Core.Services
         /// <param name="logSuccessfulStart">Indicates whether to log a success message once the service has successfully reached the running state.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the start request or the wait loop.</param>
         /// <returns>An <see cref="OperationResult"/> indicating if the start sequence and optional wait period completed successfully.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the required service repository has not been initialized.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
         Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default);
 
@@ -74,7 +75,6 @@ namespace Servy.Core.Services
         /// <param name="logSuccessfulStop">Indicates whether to log a success message once the service has successfully reached the stopped state.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the stop request or the wait loop.</param>
         /// <returns>An <see cref="OperationResult"/> indicating if the stop sequence and optional wait period completed successfully.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the required service repository has not been initialized.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
         Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true, CancellationToken cancellationToken = default);
 
@@ -85,7 +85,6 @@ namespace Servy.Core.Services
         /// <param name="logSuccessfulRestart">Indicates whether to log a success message once the full restart cycle is complete.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel any part of the restart sequence.</param>
         /// <returns>An <see cref="OperationResult"/> indicating if the entire stop-and-start sequence completed successfully.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the required service repository has not been initialized.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
         Task<OperationResult> RestartServiceAsync(string? serviceName, bool logSuccessfulRestart = true, CancellationToken cancellationToken = default);
 
