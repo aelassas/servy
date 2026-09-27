@@ -310,7 +310,13 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "[service] warning");
+            string? capturedQuery = null;
+
             mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) =>
+                      {
+                          capturedQuery = xpathQuery;
+                      })
                       .Returns(new[] { fakeEvt });
 
             var service = CreateService(mockReader);
@@ -321,6 +327,10 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Warning, entry.Level);
+
+            // The entry's level is read back from the fixture: SearchAsync filters by level only through
+            // the XPath query, so the non-Error arm of the level clause is pinned by the query alone.
+            Assert.Equal($"*[System[Provider[@Name='{AppConfig.EventSource}'] and Level=3]]", capturedQuery);
         }
 
         [Fact]
