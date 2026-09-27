@@ -154,6 +154,112 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Error("SafeKillProcess background task failed: Boom!", It.IsAny<Exception>()), Times.Once);
         }
 
+        [Fact]
+        public void SafeKillProcess_LineageReadThrows_WarnsAndStillStopsDescendantsWithUnknownLineage()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Format()).Returns("child (0)");
+            mockProcess.Setup(p => p.Id).Throws(new InvalidOperationException("gone"));
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Act
+            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+            // Assert: an unreadable lineage is a warning, not a failure
+            _ctx.Logger.Verify(l => l.Warn(
+                "SafeKillProcess error while getting process PID and StartTime: gone", It.IsAny<Exception>()), Times.Once);
+
+            // ... and the cleanup still runs, with the unknown lineage passed through as it stands
+            mockProcess.Verify(p => p.StopDescendants(
+                0, DateTime.MinValue, TestTimeouts.ProcessWrapperProcessTimeoutMs), Times.Once);
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void SafeKillProcess_FormatThrows_LogsTheOuterCatchWarningAndDoesNotPropagate()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Format()).Throws(new InvalidOperationException("no handle"));
+
+            // Act: the opening log line formats the process, so the failure lands in the outer catch
+            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn("SafeKillProcess error: no handle", It.IsAny<Exception>()), Times.Once);
+
+            // ... and the stop sequence never started, so nothing is left half-killed
+            mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+            mockProcess.Verify(p => p.StopDescendants(
+                It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public void SafeKillProcess_StopExceedsSafetyBudget_PulsesScmThenAbandonsAndLogsTheLaterFault()
+        {
+            // Arrange: timeoutMs 0 and a PID that owns no descendants make the safety budget
+            // AppConfig.SafeKillProcessSafetyBufferMs (10 s), which two pulse intervals cross.
+            var service = _ctx.Build();
+
+            using var release = new ManualResetEventSlim(false);
+            using var laterFaultLogged = new ManualResetEventSlim(false);
+            _ctx.Logger
+                .Setup(l => l.Warn(It.Is<string>(s => s.Contains("later faulted")), It.IsAny<Exception>()))
+                .Callback(() => laterFaultLogged.Set());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Format()).Returns("hung (999999)");
+            mockProcess.Setup(p => p.Id).Returns(TestProcessIds.NeverValid);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns<int>(_ =>
+            {
+                release.Wait(TestTimeouts.CiGenerous);
+                throw new InvalidOperationException("kernel refused the kill");
+            });
+
+            try
+            {
+                // Act
+                service.InvokeSafeKillProcess(mockProcess.Object, 0);
+
+                // Assert: the wait pulsed the SCM before it gave up
+                _ctx.Helper.Verify(h => h.RequestAdditionalTime(
+                    service, It.IsAny<int>(), null), Times.AtLeastOnce);
+                _ctx.Logger.Verify(l => l.Error(
+                    "Stop operation exceeded safety limit. The process tree may be hung at the kernel level.",
+                    It.IsAny<Exception>()), Times.Once);
+
+                // ... and the still-running task was abandoned rather than waited out
+                _ctx.Logger.Verify(l => l.Warn(
+                    It.Is<string>(s => s.Contains("stop sequence did not complete within the safety budget")),
+                    It.IsAny<Exception>()), Times.Once);
+
+                // ... and no stop outcome was reported for a task that never produced one
+                _ctx.Logger.Verify(l => l.Info(
+                    It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Never);
+            }
+            finally
+            {
+                release.Set();
+            }
+
+            // Assert: the abandoned task is still observed, so its fault reaches the log
+            Assert.True(
+                laterFaultLogged.Wait(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken),
+                "the abandoned stop task's fault was never logged");
+            _ctx.Logger.Verify(l => l.Warn(
+                "Abandoned stop task for 'hung (999999)' later faulted: kernel refused the kill",
+                It.IsAny<Exception>()), Times.Once);
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
