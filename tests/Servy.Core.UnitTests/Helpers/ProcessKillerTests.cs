@@ -165,8 +165,25 @@ namespace Servy.Core.UnitTests.Helpers
             public Func<DateTime> StartTimeThunk { get; set; }
             public bool Killed { get; private set; }
 
-            public void Kill() => Killed = true;
-            public bool WaitForExit(int milliseconds) => true;
+            /// <summary>
+            /// Gets or sets the value <see cref="WaitForExit(int)"/> returns, so a test can drive the
+            /// "did not exit within the safety window" arms without waiting for a real timeout.
+            /// </summary>
+            public bool WaitForExitResult { get; set; } = true;
+
+            /// <summary>
+            /// Gets or sets the exception <see cref="Kill"/> throws, so a test can drive the
+            /// already-exited and access-denied arms of the kill loops.
+            /// </summary>
+            public Exception KillException { get; set; }
+
+            public void Kill()
+            {
+                if (KillException != null) throw KillException;
+                Killed = true;
+            }
+
+            public bool WaitForExit(int milliseconds) => WaitForExitResult;
             public void Dispose() { }
         }
 
@@ -461,6 +478,185 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.False(systemChild.Killed, "A legitimate critical system process executing from System32 must be protected.");
+        }
+
+        /// <summary>
+        /// Verifies that a parent still listed in the snapshot but no longer openable ends the upward
+        /// walk, rather than skipping over the dead link and killing the grandparent.
+        /// </summary>
+        [Fact]
+        public void KillParentProcesses_ParentVanishedAfterSnapshot_AbortsWalkBeforeGrandparent()
+        {
+            // Arrange
+            // PID 200 is registered in the snapshot only, so GetProcessById throws ArgumentException for it.
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess { Id = 100, ProcessName = "child", StartTime = now };
+            var grandparent = new FakeSystemProcess { Id = 300, ProcessName = "gp", StartTime = now.AddMinutes(-10) };
+
+            accessor.Processes[100] = child;
+            accessor.Processes[300] = grandparent;
+
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 300, Name = "parent" };
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 1, Name = "gp" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(child.Killed, "The tree kill still runs after the parent walk aborts.");
+            Assert.False(grandparent.Killed, "A vanished parent ends the upward walk; it must not skip to the grandparent.");
+        }
+
+        /// <summary>
+        /// Verifies that a legitimate critical system process found as a parent stops the upward walk
+        /// instead of being terminated.
+        /// </summary>
+        [Fact]
+        public void KillParentProcesses_ParentIsCriticalSystemProcess_IsNotKilled()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess { Id = 100, ProcessName = "child", StartTime = now };
+            var parent = new FakeSystemProcess
+            {
+                Id = 200,
+                ProcessName = "services",
+                ExecutablePath = @"C:\Windows\System32\services.exe",
+                StartTime = now.AddMinutes(-10)
+            };
+
+            accessor.Processes[100] = child;
+            accessor.Processes[200] = parent;
+
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 1, Name = "services.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(parent.Killed, "A protected parent stops the upward walk.");
+        }
+
+        /// <summary>
+        /// Verifies that an unreadable start time on the walk's starting child fails the PID-reuse guard
+        /// closed, while SafeStartTime still lets the target's own tree kill run.
+        /// </summary>
+        [Fact]
+        public void KillParentProcesses_ChildStartTimeUnreadable_AbortsWalkButStillKillsTarget()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess
+            {
+                Id = 100,
+                ProcessName = "child",
+                StartTimeThunk = () => throw new Win32Exception(5, "Access Denied")
+            };
+            var parent = new FakeSystemProcess { Id = 200, ProcessName = "parent", StartTime = now.AddMinutes(-10) };
+
+            accessor.Processes[100] = child;
+            accessor.Processes[200] = parent;
+
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 1, Name = "parent" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(parent.Killed, "Without the child start time the PID-reuse check cannot run, so the walk fails closed.");
+            Assert.True(child.Killed, "SafeStartTime keeps the unreadable start time from skipping the tree kill.");
+        }
+
+        /// <summary>
+        /// Verifies that a cycle in the snapshot parent chain is stopped by the visited set rather than
+        /// recursing until the stack is exhausted.
+        /// </summary>
+        [Fact]
+        public void KillParentProcesses_ParentCycleInSnapshot_TerminatesAndKillsParent()
+        {
+            // Arrange
+            // 100 -> 200 -> 100. Equal start times satisfy the PID-reuse tolerance in both directions,
+            // so only the visited set can stop the recursion.
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess { Id = 100, ProcessName = "child", StartTime = now };
+            var parent = new FakeSystemProcess { Id = 200, ProcessName = "parent", StartTime = now };
+
+            accessor.Processes[100] = child;
+            accessor.Processes[200] = parent;
+
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 100, Name = "parent" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(parent.Killed, "The walk kills the parent once and the cycle guard ends the recursion.");
+        }
+
+        /// <summary>
+        /// Verifies that a parent which times out or refuses to die is logged rather than escalated, and
+        /// that the target's own tree kill still runs.
+        /// </summary>
+        /// <param name="failure">Which failure the parent simulates: a wait timeout, an already-exited kill, or an access-denied kill.</param>
+        [Theory]
+        [InlineData("timeout")]
+        [InlineData("exited")]
+        [InlineData("other")]
+        public void KillParentProcesses_ParentKillFailsOrTimesOut_StillKillsTarget(string failure)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess { Id = 100, ProcessName = "child", StartTime = now };
+            var parent = new FakeSystemProcess { Id = 200, ProcessName = "parent", StartTime = now.AddMinutes(-10) };
+
+            switch (failure)
+            {
+                case "timeout": parent.WaitForExitResult = false; break;
+                case "exited": parent.KillException = new InvalidOperationException("exited"); break;
+                case "other": parent.KillException = new Win32Exception(5, "Access Denied"); break;
+                default: throw new ArgumentOutOfRangeException(nameof(failure));
+            }
+
+            accessor.Processes[100] = child;
+            accessor.Processes[200] = parent;
+
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 1, Name = "parent" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.True(result, "A parent that cannot be killed is logged, not escalated.");
+            Assert.True(child.Killed, "A failed parent kill must not abort the target's own tree kill.");
         }
 
         #endregion
