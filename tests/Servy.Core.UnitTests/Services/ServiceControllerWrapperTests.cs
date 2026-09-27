@@ -567,6 +567,47 @@ namespace Servy.Core.UnitTests.Services
             }
         }
 
+        [Fact]
+        public void GetDependencies_SubtreeWithPathDependentCycle_IsNotReusedFromCache()
+        {
+            // Arrange: Root -> [X, Y]; X -> [S]; S -> [X]; Y -> [S]. X is a cycle only on the path through X,
+            // so the S subtree built under X must not be reused from the cache under Y (#2241).
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "X", "Y" });
+                var mockX = CreateMockWrapper("X", "Alpha X", ServiceControllerStatus.Running, new[] { "S" });
+                var mockY = CreateMockWrapper("Y", "Bravo Y", ServiceControllerStatus.Running, new[] { "S" });
+                var mockS = CreateMockWrapper("S", "Shared S", ServiceControllerStatus.Running, new[] { "X" });
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "X", mockX.Object },
+                    { "Y", mockY.Object },
+                    { "S", mockS.Object }
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(name => mocks[name], CancellationToken.None);
+
+                // Assert: under X, S's child X is the cycle placeholder ("Alpha X" sorts before "Bravo Y")
+                var sUnderX = result.Dependencies[0].Dependencies.Single();
+                var xUnderSUnderX = sUnderX.Dependencies.Single();
+                Assert.True(xUnderSUnderX.IsCyclic);
+                Assert.Empty(xUnderSUnderX.Dependencies);
+
+                // Assert: under Y, the same X is NOT a cycle, so it is expanded and the cycle is one level
+                // deeper - which only holds while the cycle-free guard keeps that subtree out of the cache
+                var sUnderY = result.Dependencies[1].Dependencies.Single();
+                var xUnderSUnderY = sUnderY.Dependencies.Single();
+                Assert.Equal("X", xUnderSUnderY.ServiceName);
+                Assert.False(xUnderSUnderY.IsCyclic);
+                var cyclicS = Assert.Single(xUnderSUnderY.Dependencies);
+                Assert.Equal("S", cyclicS.ServiceName);
+                Assert.True(cyclicS.IsCyclic);
+            }
+        }
+
         #endregion
 
         #region Test Helpers
