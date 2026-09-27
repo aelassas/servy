@@ -88,13 +88,13 @@ namespace Servy.Core.UnitTests.Native
         {
             // Arrange
             // Branch (2) Secondary Probe: Both handle checks fail (e.g. FAT32 volume layers). Compare contents using PrefixDigest
-            var baseId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
-            var matchingId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
-            var differingId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_B" };
+            var baseId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "DIGEST_A" };
+            var matchingId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "DIGEST_A" };
+            var differingId = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = "DIGEST_B" };
 
             // Branch (2) Secondary Probe Asymmetric Null: one side has no digest - the conjunction guard must fail,
             // falling through to Branch (3) Fallback rather than attempting string comparison against null.
-            var digestMissing = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null! };
+            var digestMissing = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null };
 
             // Act & Assert
             Assert.False(baseId.IsDifferentFrom(matchingId), "Identical content hashes on invalid handle states must evaluate as unchanged.");
@@ -123,8 +123,8 @@ namespace Servy.Core.UnitTests.Native
         {
             // Arrange
             // Branch (3) Fallback: No robust identifiers available on either side. Should report 'true' as a safe default.
-            var blindIdA = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null! };
-            var blindIdB = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null! };
+            var blindIdA = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null };
+            var blindIdB = new FileIdentity { IsValidHandleInfo = false, PrefixDigest = null };
 
             // Act & Assert
             Assert.True(blindIdA.IsDifferentFrom(blindIdB), "Undeterminable file identities must fall back to 'true' to safely force metadata loop updates.");
