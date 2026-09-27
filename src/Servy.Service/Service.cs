@@ -1328,14 +1328,11 @@ namespace Servy.Service
         /// - Environment variables in arguments are expanded before execution.
         /// - The working directory defaults to <c>PostLaunchStartupDirectory</c>,
         ///   or falls back to the main service's working directory if not set.
-        /// - The process is started in a fire-and-forget manner; no handle is kept or awaited.
+        /// - The process is started in a fire-and-forget manner: it is not awaited, but its handle is kept in
+        ///   <c>_trackedHooks</c> so teardown can kill it if it is still running.
+        /// - Launch failures (e.g., file not found, access denied) are caught and logged by
+        ///   <see cref="RunFireAndForgetHook"/>; nothing is thrown to the caller.
         /// </remarks>
-        /// <exception cref="System.ComponentModel.Win32Exception">
-        /// Thrown if the executable cannot be started (e.g., file not found, access denied).
-        /// </exception>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if no file name is specified in <c>ProcessStartInfo</c>.
-        /// </exception>
         private void StartPostLaunchProcess()
         {
             RunFireAndForgetHook(
@@ -1727,7 +1724,7 @@ namespace Servy.Service
         private void HandleLogWriters(StartOptions options)
         {
             // Helper method to create a rotating writer if the path is valid.
-            // Logs an error if the path is invalid or null/whitespace.
+            // Returns null silently for a null/whitespace path; logs an error if the path is invalid.
             IStreamWriter? CreateWriter(string? path)
             {
                 if (string.IsNullOrWhiteSpace(path))
@@ -2025,7 +2022,9 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Inserts PID in database and updates PreviousStopTimeout, ActiveStdoutPath and ActiveStderrPath.
+        /// Updates the service's existing database row with the PID, and optionally PreviousStopTimeout; sets
+        /// ActiveStdoutPath and ActiveStderrPath when <paramref name="pid"/> is non-null and clears them when it is null.
+        /// Does nothing if the service has no row.
         /// </summary>
         /// <param name="pid">PID.</param>
         /// <param name="setPreviousStopTimeout">Indicates whether to set previous stop timeout.</param>
@@ -2074,7 +2073,7 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Resets PID to null in database.
+        /// Resets PID to null in database and clears ActiveStdoutPath and ActiveStderrPath.
         /// </summary>
         private void ClearProcessState()
         {
@@ -2271,8 +2270,10 @@ namespace Servy.Service
         /// <remarks>
         /// This method uses a "Gatekeeper" pattern via the <c>_isRecovering</c> flag to ensure that
         /// only one recovery action is executed at a time, even if multiple health checks fail
-        /// simultaneously. The flag is reset in a <c>finally</c> block to guarantee that
-        /// monitoring can resume regardless of whether the recovery succeeded or threw an exception.
+        /// simultaneously. The flag is reset in a <c>finally</c> block so that monitoring can resume
+        /// after a non-terminal action or after any action that threw. After a successful
+        /// <see cref="RecoveryAction.RestartService"/> or <see cref="RecoveryAction.RestartComputer"/>
+        /// the gate deliberately stays closed, because this service instance is about to be replaced.
         /// </remarks>
         private async Task InitiateRecoveryAsync()
         {
