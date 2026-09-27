@@ -452,6 +452,63 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Null(inner.InnerException);
         }
 
+        [Fact]
+        public async Task StartServicesAsync_PreLaunchConfigured_ExtendsStartDeadlineByResolvedPreLaunchWindow()
+        {
+            // Arrange
+            // The configured pre-launch window is what keeps this service inside its deadline: without it the
+            // wait budget is only the floor plus the SCM buffer, which the elapsed source below already exceeds.
+            const int preLaunchSeconds = 60;
+            int withoutPreLaunch = ServiceHelper.CalculateStartTimeout(null, 0, 0);
+            int withPreLaunch = ServiceHelper.CalculateStartTimeout(null, preLaunchSeconds, 0);
+            Assert.True(withoutPreLaunch < withPreLaunch);
+
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Stopped;
+            int refreshes = 0;
+
+            // Refresh 1 is the unconditional one on entry; refresh 2 opens the first start-wait iteration,
+            // which must still see Stopped so that the deadline check below it is actually evaluated - a
+            // service that reports Running on that first poll breaks out before the deadline is ever read.
+            const int refreshThatReportsRunning = 3;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (++refreshes >= refreshThatReportsRunning)
+                    currentStatus = ServiceControllerStatus.Running;
+            });
+
+            var serviceDto = new ServiceDto
+            {
+                Name = "PreLaunchService",
+                StartTimeout = null,
+                PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe",
+                PreLaunchTimeoutSeconds = preLaunchSeconds
+            };
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PreLaunchService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PreLaunchService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                // Sits above the no-pre-launch budget and below the pre-launch one.
+                ElapsedSourceFactory = () => () => TimeSpan.FromSeconds((withoutPreLaunch + withPreLaunch) / 2.0)
+            };
+
+            // Act
+            await serviceHelper.StartServicesAsync(new[] { "PreLaunchService" }, CancellationToken.None);
+
+            // Assert - no AggregateException: the deadline the loop measured against included the pre-launch window.
+            scMock.Verify(x => x.Start(), Times.Once);
+            scMock.Verify(x => x.Dispose(), Times.Once);
+            Assert.Equal(refreshThatReportsRunning, refreshes);
+        }
+
         #endregion
 
         #region StopServicesAsync Tests
@@ -891,6 +948,8 @@ namespace Servy.Core.UnitTests.Helpers
 
         #endregion
 
+        #region CalculateStartTimeout Tests
+
         /// <summary>
         /// Verifies that when the configured timeout is null and no pre-launch hook is specified,
         /// the calculation strictly uses the default floor plus the SCM communication buffer.
@@ -1115,6 +1174,8 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.Equal(expectedTimeout, actualTimeout);
         }
+
+        #endregion
 
         #region CalculateStopTimeout Tests
 
@@ -1351,63 +1412,6 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, result);
-        }
-
-        [Fact]
-        public async Task StartServicesAsync_PreLaunchConfigured_ExtendsStartDeadlineByResolvedPreLaunchWindow()
-        {
-            // Arrange
-            // The configured pre-launch window is what keeps this service inside its deadline: without it the
-            // wait budget is only the floor plus the SCM buffer, which the elapsed source below already exceeds.
-            const int preLaunchSeconds = 60;
-            int withoutPreLaunch = ServiceHelper.CalculateStartTimeout(null, 0, 0);
-            int withPreLaunch = ServiceHelper.CalculateStartTimeout(null, preLaunchSeconds, 0);
-            Assert.True(withoutPreLaunch < withPreLaunch);
-
-            var serviceRepoMock = new Mock<IServiceRepository>();
-            var controllerProviderMock = new Mock<IServiceControllerProvider>();
-            var scMock = new Mock<IServiceControllerWrapper>();
-
-            var currentStatus = ServiceControllerStatus.Stopped;
-            int refreshes = 0;
-
-            // Refresh 1 is the unconditional one on entry; refresh 2 opens the first start-wait iteration,
-            // which must still see Stopped so that the deadline check below it is actually evaluated - a
-            // service that reports Running on that first poll breaks out before the deadline is ever read.
-            const int refreshThatReportsRunning = 3;
-
-            scMock.Setup(x => x.Status).Returns(() => currentStatus);
-            scMock.Setup(x => x.Refresh()).Callback(() =>
-            {
-                if (++refreshes >= refreshThatReportsRunning)
-                    currentStatus = ServiceControllerStatus.Running;
-            });
-
-            var serviceDto = new ServiceDto
-            {
-                Name = "PreLaunchService",
-                StartTimeout = null,
-                PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe",
-                PreLaunchTimeoutSeconds = preLaunchSeconds
-            };
-
-            serviceRepoMock.Setup(x => x.GetByNameAsync("PreLaunchService", false, It.IsAny<CancellationToken>()))
-                           .ReturnsAsync(serviceDto);
-            controllerProviderMock.Setup(x => x.GetService("PreLaunchService")).Returns(scMock.Object);
-
-            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
-            {
-                // Sits above the no-pre-launch budget and below the pre-launch one.
-                ElapsedSourceFactory = () => () => TimeSpan.FromSeconds((withoutPreLaunch + withPreLaunch) / 2.0)
-            };
-
-            // Act
-            await serviceHelper.StartServicesAsync(new[] { "PreLaunchService" }, CancellationToken.None);
-
-            // Assert - no AggregateException: the deadline the loop measured against included the pre-launch window.
-            scMock.Verify(x => x.Start(), Times.Once);
-            scMock.Verify(x => x.Dispose(), Times.Once);
-            Assert.Equal(refreshThatReportsRunning, refreshes);
         }
 
         #endregion
