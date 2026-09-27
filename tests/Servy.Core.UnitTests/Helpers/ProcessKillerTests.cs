@@ -194,8 +194,21 @@ namespace Servy.Core.UnitTests.Helpers
             public Dictionary<int, List<int>> ByParent { get; set; } = new Dictionary<int, List<int>>();
             public int CurrentPid { get; set; } = 9999;
 
+            /// <summary>
+            /// Gets or sets the exception <see cref="BuildSnapshotAndChildMap"/> throws, so a test can
+            /// drive the entry points' Win32Exception and catch-all arms.
+            /// </summary>
+            public Exception SnapshotException { get; set; }
+
+            /// <summary>
+            /// Gets the per-PID exceptions <see cref="GetProcessById(int)"/> throws, so a test can make a
+            /// single snapshot match exit between the snapshot and the handle open.
+            /// </summary>
+            public Dictionary<int, Exception> GetProcessByIdErrors { get; } = new Dictionary<int, Exception>();
+
             public ISystemProcess GetProcessById(int pid)
             {
+                if (GetProcessByIdErrors.TryGetValue(pid, out var error)) throw error;
                 if (Processes.TryGetValue(pid, out var proc)) return proc;
                 throw new ArgumentException($"Process {pid} not found.");
             }
@@ -207,6 +220,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             public (Dictionary<int, ProcessInfoNode> Snapshot, Dictionary<int, List<int>> ByParent) BuildSnapshotAndChildMap()
             {
+                if (SnapshotException != null) throw SnapshotException;
                 return (Snapshot, ByParent);
             }
         }
@@ -657,6 +671,116 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.True(result, "A parent that cannot be killed is logged, not escalated.");
             Assert.True(child.Killed, "A failed parent kill must not abort the target's own tree kill.");
+        }
+
+        /// <summary>
+        /// Verifies that a name whose only snapshot match is a protected PID is reported as a refusal
+        /// rather than as "nothing to kill".
+        /// </summary>
+        [Fact]
+        public void KillProcessTreeAndParents_ByName_OnlyMatchIsTheCurrentProcess_RefusesAndReturnsFalse()
+        {
+            // Arrange
+            // The fake's own PID is always in protectedPids, so giving it the requested name makes the
+            // only match a protected one.
+            var accessor = new FakeSystemProcessAccessor();
+            accessor.Snapshot[accessor.CurrentPid] = new ProcessInfoNode { ParentId = 1, Name = "myworker.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: false);
+
+            // Assert
+            Assert.False(result, "A name whose only match is protected is a refusal, not 'nothing to kill'.");
+        }
+
+        /// <summary>
+        /// Verifies that a protected match is skipped while the unprotected matches of the same name are
+        /// still killed.
+        /// </summary>
+        [Fact]
+        public void KillProcessTreeAndParents_ByName_ProtectedAndUnprotectedMatch_KillsOnlyTheUnprotectedOne()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var other = new FakeSystemProcess { Id = 300, ProcessName = "myworker", StartTime = DateTime.UtcNow };
+
+            accessor.Processes[300] = other;
+            accessor.Snapshot[accessor.CurrentPid] = new ProcessInfoNode { ParentId = 1, Name = "myworker.exe" };
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 1, Name = "myworker.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(other.Killed, "A protected match must not suppress the kill of the unprotected ones.");
+        }
+
+        /// <summary>
+        /// Verifies that a matched PID which exits between the snapshot and the handle open is dropped
+        /// without stopping the kill of the remaining matches.
+        /// </summary>
+        /// <param name="invalidOperation">True to make the handle open fail with InvalidOperationException, false for ArgumentException.</param>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void KillProcessTreeAndParents_ByName_MatchExitsBeforeHandleOpens_KillsTheRemainingMatch(bool invalidOperation)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var survivor = new FakeSystemProcess { Id = 301, ProcessName = "myworker", StartTime = DateTime.UtcNow };
+
+            accessor.Processes[301] = survivor;
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 1, Name = "myworker.exe" };
+            accessor.Snapshot[301] = new ProcessInfoNode { ParentId = 1, Name = "myworker.exe" };
+            accessor.GetProcessByIdErrors[300] = invalidOperation
+                ? new InvalidOperationException("exited")
+                : (Exception)new ArgumentException("not running");
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(survivor.Killed, "One match exiting early must not stop the kill of the others.");
+        }
+
+        /// <summary>
+        /// Verifies that both entry points report a failed process-table snapshot as an error rather than
+        /// as a successful no-op.
+        /// </summary>
+        /// <param name="byName">True to exercise the by-name overload, false for the by-PID overload.</param>
+        /// <param name="win32">True to make the snapshot fail with Win32Exception, false with InvalidOperationException.</param>
+        [Theory]
+        [InlineData(true, true)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
+        public void KillProcessTreeAndParents_SnapshotThrows_ReturnsFalse(bool byName, bool win32)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor
+            {
+                SnapshotException = win32
+                    ? new Win32Exception(5, "Access Denied")
+                    : (Exception)new InvalidOperationException("snapshot failed")
+            };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = byName
+                ? killer.KillProcessTreeAndParents("myworker", killParents: true)
+                : killer.KillProcessTreeAndParents(300, killParents: true);
+
+            // Assert
+            Assert.False(result, "A failed snapshot is an error, not a successful no-op.");
         }
 
         #endregion
