@@ -783,6 +783,178 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(result, "A failed snapshot is an error, not a successful no-op.");
         }
 
+        /// <summary>
+        /// Verifies that a parent which has already exited leaves the children undatable, so the
+        /// PID-reuse guard refuses them rather than killing blind.
+        /// </summary>
+        [Fact]
+        public void KillChildren_ParentAlreadyExited_SkipsChildrenItCannotDate()
+        {
+            // Arrange
+            // PID 100 is in the maps only: GetProcessById throws, so parentStartTime stays MinValue.
+            var accessor = new FakeSystemProcessAccessor();
+            var child = new FakeSystemProcess { Id = 101, ProcessName = "child", StartTime = DateTime.UtcNow };
+
+            accessor.Processes[101] = child;
+            accessor.Snapshot[101] = new ProcessInfoNode { ParentId = 100, Name = "child" };
+            accessor.ByParent[100] = new List<int> { 101 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillChildren(100);
+
+            // Assert
+            Assert.False(child.Killed, "Without the parent start time the child cannot be told apart from a recycled PID.");
+        }
+
+        /// <summary>
+        /// Verifies that a listed child which started before its parent is treated as a recycled PID and
+        /// left alone, while the root is still killed.
+        /// </summary>
+        [Fact]
+        public void KillProcessTree_ChildStartedBeforeParent_IsTreatedAsRecycledAndSkipped()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var root = new FakeSystemProcess { Id = 100, ProcessName = "root", StartTime = now };
+            var recycled = new FakeSystemProcess { Id = 101, ProcessName = "unrelated", StartTime = now.AddMinutes(-5) };
+
+            accessor.Processes[100] = root;
+            accessor.Processes[101] = recycled;
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 1, Name = "root" };
+            accessor.ByParent[100] = new List<int> { 101 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(root.Killed);
+            Assert.False(recycled.Killed, "A 'child' older than its parent inherited the PID and is not a descendant.");
+        }
+
+        /// <summary>
+        /// Verifies that an unreadable root start time degrades the tree kill to best-effort: the root is
+        /// still killed, and the descendants that can no longer be dated against it are refused.
+        /// </summary>
+        [Fact]
+        public void KillProcessTree_RootStartTimeUnreadable_KillsRootButNotChildren()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+
+            var root = new FakeSystemProcess
+            {
+                Id = 100,
+                ProcessName = "root",
+                StartTimeThunk = () => throw new Win32Exception(5, "Access Denied")
+            };
+            var child = new FakeSystemProcess { Id = 101, ProcessName = "child", StartTime = DateTime.UtcNow };
+
+            accessor.Processes[100] = root;
+            accessor.Processes[101] = child;
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 1, Name = "root" };
+            accessor.ByParent[100] = new List<int> { 101 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(root.Killed, "An unreadable root start time degrades to best-effort; the root itself is still killed.");
+            Assert.False(child.Killed, "The children cannot be dated against a MinValue root, so the walk refuses them.");
+        }
+
+        /// <summary>
+        /// Verifies that one descendant which times out or refuses to die does not stop the walk over its
+        /// siblings or the kill of the root.
+        /// </summary>
+        /// <param name="failure">Which failure the first child simulates: a wait timeout, an already-gone kill, an already-exited kill, or an access-denied kill.</param>
+        [Theory]
+        [InlineData("timeout")]
+        [InlineData("gone")]
+        [InlineData("exited")]
+        [InlineData("other")]
+        public void WalkAndKillChildren_OneChildFailsToDie_StillKillsItsSiblingAndTheRoot(string failure)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var root = new FakeSystemProcess { Id = 100, ProcessName = "root", StartTime = now.AddMinutes(-1) };
+            var failing = new FakeSystemProcess { Id = 101, ProcessName = "failing", StartTime = now };
+            var sibling = new FakeSystemProcess { Id = 102, ProcessName = "sibling", StartTime = now };
+
+            switch (failure)
+            {
+                case "timeout": failing.WaitForExitResult = false; break;
+                case "gone": failing.KillException = new ArgumentException("gone"); break;
+                case "exited": failing.KillException = new InvalidOperationException("exited"); break;
+                case "other": failing.KillException = new Win32Exception(5, "Access Denied"); break;
+                default: throw new ArgumentOutOfRangeException(nameof(failure));
+            }
+
+            accessor.Processes[100] = root;
+            accessor.Processes[101] = failing;
+            accessor.Processes[102] = sibling;
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 1, Name = "root" };
+            accessor.ByParent[100] = new List<int> { 101, 102 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(100, killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(sibling.Killed, "One child failing must not stop the walk over its siblings.");
+            Assert.True(root.Killed, "One child failing must not stop the kill of the root.");
+        }
+
+        /// <summary>
+        /// Verifies that a root which times out or cannot be killed is logged and reported as handled,
+        /// rather than surfacing as an exception to the caller.
+        /// </summary>
+        /// <param name="throws">True to make the root's Kill throw, false to make its wait time out.</param>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void KillProcessTree_RootKillFailsOrTimesOut_IsLoggedNotThrown(bool throws)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var root = new FakeSystemProcess { Id = 100, ProcessName = "root", StartTime = DateTime.UtcNow };
+
+            if (throws)
+            {
+                root.KillException = new Win32Exception(5, "Access Denied");
+            }
+            else
+            {
+                root.WaitForExitResult = false;
+            }
+
+            accessor.Processes[100] = root;
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 1, Name = "root" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = false;
+            var ex = Record.Exception(() => result = killer.KillProcessTreeAndParents(100, killParents: false));
+
+            // Assert
+            Assert.Null(ex);
+            Assert.True(result, "A root that cannot be killed is logged inside the tree walk, so the call still reports success.");
+        }
+
         #endregion
     }
 }
