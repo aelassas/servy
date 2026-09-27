@@ -21,7 +21,7 @@
     Copyright         = 'Copyright © 2026 Akram El Assas. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description       = 'PowerShell module to manage Windows services using the Servy CLI. Provides functions to install, uninstall, start, stop, restart, export and import configurations, and check the status of Windows services. Works with both installed and portable versions of Servy.'
+    Description       = 'PowerShell module to manage Windows services using the Servy CLI. Provides functions to install, uninstall, start, stop, restart, export and import configurations, check the status of Windows services, and show a service''s configuration or list all services. Works with both installed and portable versions of Servy.'
 
     # Minimum version of the PowerShell engine required by this module
     PowerShellVersion = '2.0'
