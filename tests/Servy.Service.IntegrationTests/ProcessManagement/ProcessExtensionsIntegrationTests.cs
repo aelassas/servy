@@ -448,7 +448,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         /// <summary>
         /// Orchestrates a guaranteed strict PPID native tree using PowerShell.
         /// Uses Base64 EncodedCommands to allow infinite nesting depth without quote-escaping bugs.
-        /// Retries process initialization up to 3 times to withstand transient runner DLL loading failures (e.g. STATUS_DLL_INIT_FAILED / 0xC0000142).
+        /// Starts the root process up to <c>maxRetries</c> (5) times to withstand transient runner DLL loading failures (e.g. STATUS_DLL_INIT_FAILED / 0xC0000142).
         /// </summary>
         private Process SpawnProcessTree(int depth)
         {
