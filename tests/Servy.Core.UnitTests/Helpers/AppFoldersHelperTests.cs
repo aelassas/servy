@@ -254,6 +254,37 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void EnsureFolders_SiblingFolderSharingTheRootPrefix_BreaksInheritance()
+        {
+            // Arrange: a folder BESIDE the vault whose name starts with the vault's name.
+            // TempDirectory carries no trailing separator, so TempDirectory + "Sibling" is a
+            // real sibling and not a child. Only the separator appended to normalizedRoot
+            // (AppFoldersHelper.cs 152) keeps StartsWith from calling it a child.
+            var siblingDir = TempDirectory + "Sibling";
+            try
+            {
+                var dbFolder = Path.Combine(siblingDir, "db");
+                var conn = $"Data Source={Path.Combine(dbFolder, "Servy.db")};";
+                var key = Path.Combine(TempDirectory, "keys", "key.aes");
+                var iv = Path.Combine(TempDirectory, "iv", "iv.aes");
+
+                // Act
+                AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: TempDirectory);
+
+                // Assert: a prefix match without the trailing separator would treat the sibling as a
+                // child and keep inheritance, which would leave it reading C:\ProgramData ACLs.
+                Assert.True(Directory.Exists(dbFolder));
+                var dbSecurity = new DirectoryInfo(dbFolder).GetAccessControl();
+                Assert.True(dbSecurity.AreAccessRulesProtected); // sibling of root -> inheritance broken
+            }
+            finally
+            {
+                try { if (Directory.Exists(siblingDir)) Directory.Delete(siblingDir, true); }
+                catch { /* Prevent teardown exceptions */ }
+            }
+        }
+
+        [Fact]
         public void EnsureFolders_DbFolderIsRootVault_StillCreatesTheFoldersQueuedBehindTheRoot()
         {
             // Arrange: Put the database file directly in the root vault, so dbFolder is the root itself
