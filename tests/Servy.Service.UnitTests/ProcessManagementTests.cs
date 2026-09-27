@@ -1,6 +1,7 @@
 using Moq;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
+using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System;
@@ -263,6 +264,186 @@ namespace Servy.Service.UnitTests
                 _ctx.Logger.Verify(l => l.Warn(
                     "Abandoned stop task for 'hung (999999)' later faulted: kernel refused the kill",
                     It.IsAny<Exception>()), Times.Once);
+            }
+        }
+
+
+        private const string PreStopExe = @"C:\hooks\prestop.exe";
+
+        /// <summary>
+        /// Builds the options a pre-stop test needs, with a configured hook and a distinct service startup directory
+        /// so the working-directory fallback is observable.
+        /// </summary>
+        private static StartOptions CreatePreStopOptions(
+            string preStopStartupDirectory = @"C:\hooks",
+            int preStopTimeoutInSeconds = 5,
+            bool preStopLogAsError = false) => new StartOptions
+            {
+                ServiceName = "Test",
+                ExecutablePath = "test.exe",
+                StartupDirectory = @"C:\svc",
+                PreStopExecutablePath = PreStopExe,
+                PreStopStartupDirectory = preStopStartupDirectory,
+                PreStopTimeoutInSeconds = preStopTimeoutInSeconds,
+                PreStopLogAsError = preStopLogAsError,
+            };
+
+        [Fact]
+        public void StartPreStopProcess_NoExecutableConfigured_SkipsAndReturnsTrue()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+
+            // Act
+            var result = service.InvokeStartPreStopProcess(options);
+
+            // Assert
+            Assert.True(result);
+            _ctx.Logger.Verify(l => l.Info("No pre-stop executable configured. Skipping.", It.IsAny<Exception>()), Times.Once);
+            _ctx.ProcessFactory.Verify(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()), Times.Never);
+        }
+
+        [Fact]
+        public void StartPreStopProcess_FireAndForget_ReturnsTrueWithoutWaitingOnTheProcess()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            // A zero timeout clamps to 0 ms, which is what selects fire-and-forget
+            var options = CreatePreStopOptions(preStopTimeoutInSeconds: 0);
+
+            var preStop = new Mock<IProcessWrapper>();
+            preStop.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(preStop.Object);
+
+            // Act
+            var result = service.InvokeStartPreStopProcess(options);
+
+            // Assert
+            Assert.True(result);
+            _ctx.Logger.Verify(l => l.Info(
+                "Pre-stop configured as fire-and-forget. Continuing service stop immediately.",
+                It.IsAny<Exception>()), Times.Once);
+
+            // ... and the stop sequence is not held up by the hook
+            preStop.Verify(p => p.WaitForExit(It.IsAny<int>()), Times.Never);
+            preStop.VerifyGet(p => p.ExitCode, Times.Never);
+        }
+
+        [Theory]
+        [InlineData(null, @"C:\svc")]
+        [InlineData("", @"C:\svc")]
+        [InlineData("   ", @"C:\svc")]
+        [InlineData(@"C:\hooks", @"C:\hooks")]
+        public void StartPreStopProcess_WorkingDirectory_FallsBackToStartupDirectoryWhenPreStopDirectoryIsBlank(
+            string preStopStartupDirectory, string expectedWorkingDirectory)
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = CreatePreStopOptions(preStopStartupDirectory: preStopStartupDirectory);
+
+            ProcessStartInfo seenPsi = null;
+            var preStop = new Mock<IProcessWrapper>();
+            preStop.Setup(p => p.Start()).Returns(true);
+            preStop.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            preStop.Setup(p => p.ExitCode).Returns(0);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                .Returns(preStop.Object);
+
+            // Act
+            // The return value is the other theories' subject; here the only claim is which directory the
+            // launch was configured with, so nothing else is asserted and no other arm can redden this case.
+            service.InvokeStartPreStopProcess(options);
+
+            // Assert
+            Assert.NotNull(seenPsi);
+            Assert.Equal(expectedWorkingDirectory, seenPsi.WorkingDirectory);
+            Assert.Equal(PreStopExe, seenPsi.FileName);
+        }
+
+        [Theory]
+        [InlineData(0, false, true)]
+        [InlineData(0, true, true)]
+        [InlineData(3, false, true)]
+        [InlineData(3, true, false)]
+        public void StartPreStopProcess_SynchronousExit_LogsPerPolicyAndReturnsPerExitCode(
+            int exitCode, bool logAsError, bool expectedResult)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = CreatePreStopOptions(preStopLogAsError: logAsError);
+
+            var preStop = new Mock<IProcessWrapper>();
+            preStop.Setup(p => p.Start()).Returns(true);
+            preStop.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            preStop.Setup(p => p.ExitCode).Returns(exitCode);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(preStop.Object);
+
+            // Act
+            var result = service.InvokeStartPreStopProcess(options);
+
+            // Assert
+            Assert.Equal(expectedResult, result);
+
+            var exitMessage = $"Pre-stop process '{PreStopExe}' exited with code {exitCode}.";
+            if (exitCode == 0)
+            {
+                _ctx.Logger.Verify(l => l.Info("Pre-stop process completed successfully.", It.IsAny<Exception>()), Times.Once);
+                _ctx.Logger.Verify(l => l.Warn("Ignoring pre-stop failure and continuing service stop.", It.IsAny<Exception>()), Times.Never);
+            }
+            else if (logAsError)
+            {
+                // A failure carrying no exception takes LogIssue's single-argument Error overload
+                _ctx.Logger.Verify(l => l.Error(exitMessage, null), Times.Once);
+                _ctx.Logger.Verify(l => l.Warn(exitMessage, It.IsAny<Exception>()), Times.Never);
+                _ctx.Logger.Verify(l => l.Warn("Ignoring pre-stop failure and continuing service stop.", It.IsAny<Exception>()), Times.Never);
+            }
+            else
+            {
+                _ctx.Logger.Verify(l => l.Warn(exitMessage, null), Times.Once);
+                _ctx.Logger.Verify(l => l.Error(exitMessage, It.IsAny<Exception>()), Times.Never);
+                _ctx.Logger.Verify(l => l.Warn("Ignoring pre-stop failure and continuing service stop.", It.IsAny<Exception>()), Times.Once);
+            }
+        }
+
+        [Theory]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        public void StartPreStopProcess_LaunchThrows_LogsAtThePolicyLevelWithTheExceptionAndReturnsPerPolicy(
+            bool logAsError, bool expectedResult)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = CreatePreStopOptions(preStopLogAsError: logAsError);
+
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Throws(new Win32Exception(2, "The system cannot find the file specified."));
+
+            // Act
+            var result = service.InvokeStartPreStopProcess(options);
+
+            // Assert
+            Assert.Equal(expectedResult, result);
+            if (logAsError)
+            {
+                // The catch arm carries the exception, so LogIssue takes the two-argument Error overload
+                _ctx.Logger.Verify(l => l.Error("Pre-stop process failed.", It.IsNotNull<Exception>()), Times.Once);
+                _ctx.Logger.Verify(l => l.Warn("Ignoring pre-stop failure and continuing service stop.", It.IsAny<Exception>()), Times.Never);
+            }
+            else
+            {
+                _ctx.Logger.Verify(l => l.Warn("Pre-stop process failed.", It.IsNotNull<Exception>()), Times.Once);
+                _ctx.Logger.Verify(l => l.Error("Pre-stop process failed.", It.IsAny<Exception>()), Times.Never);
+                _ctx.Logger.Verify(l => l.Warn("Ignoring pre-stop failure and continuing service stop.", It.IsAny<Exception>()), Times.Once);
             }
         }
 

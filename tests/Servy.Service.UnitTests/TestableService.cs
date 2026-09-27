@@ -49,6 +49,7 @@ namespace Servy.Service.UnitTests
             public static readonly MethodInfo OnProcessExitedMethod = GetMethod("OnProcessExited");
             public static readonly MethodInfo StartProcessMethod = GetMethod("StartProcess");
             public static readonly MethodInfo SafeKillProcessMethod = GetMethod("SafeKillProcess");
+            public static readonly MethodInfo StartPreStopProcessMethod = GetMethod("StartPreStopProcess");
 
 
             private static FieldInfo GetField(string name) =>
@@ -130,6 +131,12 @@ namespace Servy.Service.UnitTests
         // Expose the private SafeKillProcess method, including the timeout it computes its deadline from
         public void InvokeSafeKillProcess(IProcessWrapper process, int timeoutMs) =>
             ServiceReflection.SafeKillProcessMethod.Invoke(this, new object[] { process, timeoutMs });
+
+        // Expose the private StartPreStopProcess method. Its return value IS the pre-stop failure policy
+        // (true when the hook succeeded or its failure is ignored), which Cleanup reads, so the tests
+        // assert on it rather than only on the log lines.
+        public bool InvokeStartPreStopProcess(StartOptions options) =>
+            (bool)ServiceReflection.StartPreStopProcessMethod.Invoke(this, new object[] { options });
 
         // Forces the state of the private backer field '_recoveryActionEnabled' via reflection.
         public void SetRecoveryActionEnabled(bool enabled) =>
