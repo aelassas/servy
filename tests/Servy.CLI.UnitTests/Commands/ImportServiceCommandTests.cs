@@ -148,7 +148,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = false };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "XmlService", ExecutablePath = realPath };
             MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
@@ -172,7 +171,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath, InstallService = false };
 
-            MockJsonValidator(true);
             var dto = new ServiceDto { Name = "JsonService", ExecutablePath = realPath };
             MockJsonValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
@@ -233,7 +231,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto />");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
-            MockXmlValidator(true);
             MockXmlValidator(true, dto: null);
 
             // Act
@@ -251,7 +248,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalJsonPath, "{}");
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath };
 
-            MockJsonValidator(true);
             MockJsonValidator(true, dto: null);
 
             // Act
@@ -270,7 +266,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto></ServiceDto>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = false };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
             MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
@@ -292,7 +287,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalJsonPath, "{}");
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath, InstallService = false };
 
-            MockJsonValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
             MockJsonValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
@@ -314,7 +308,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto></ServiceDto>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = false };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "ThrowingService", ExecutablePath = realPath };
             MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
@@ -347,7 +340,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = string.Empty };
             MockXmlValidator(true, dto: dto);
 
@@ -366,7 +358,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"Z:\Missing\Dir\Engine.exe" };
             MockXmlValidator(true, dto: dto);
             _processHelper.Setup(p => p.ValidatePath(@"Z:\Missing\Dir\Engine.exe", It.IsAny<bool>())).Returns(false);
@@ -386,7 +377,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
-            MockXmlValidator(true);
             // Executable path is legal, but a secondary attribute property (like WorkingDirectory) is invalid
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\notepad.exe", StartupDirectory = @"Y:\Invalid\Folder" };
             MockXmlValidator(true, dto: dto);
@@ -414,7 +404,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "GhostService", ExecutablePath = realPath };
             MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
@@ -437,7 +426,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "OperationalService", ExecutablePath = realPath };
             MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
@@ -461,7 +449,6 @@ namespace Servy.CLI.UnitTests.Commands
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
 
-            MockXmlValidator(true);
             var dto = new ServiceDto { Name = "FailInstallService", ExecutablePath = realPath };
             MockXmlValidator(true, dto: dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
