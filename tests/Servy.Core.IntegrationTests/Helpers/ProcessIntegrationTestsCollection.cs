@@ -10,7 +10,5 @@ namespace Servy.Core.IntegrationTests.Helpers
     {
         /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
         public const string Name = "ProcessIntegrationTests";
-
-        // Enforces strict sequential isolation across the execution suite
     }
 }
