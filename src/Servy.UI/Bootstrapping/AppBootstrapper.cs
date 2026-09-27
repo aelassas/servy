@@ -43,7 +43,7 @@ namespace Servy.UI.Bootstrapping
         private ErrorEventHandler? _availabilityErrorHandler;
         private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
         private DateTime _lastErrorDialogShown = DateTime.MinValue;
-        private string _lastErrorDialogSignature     = string.Empty;
+        private string _lastErrorDialogSignature = string.Empty;
 
         #endregion
 
