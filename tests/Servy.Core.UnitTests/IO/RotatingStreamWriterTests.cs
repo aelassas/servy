@@ -1035,15 +1035,15 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
-        public void DailyRotation_Local_Simulated_AllowsRotationAfterThreshold()
+        public void DailyRotation_Local_RotatesWhenNextCalendarDayIsReached()
         {
-            // Arrange: Use a fixed UTC date that is guaranteed to cross a day boundary
-            // April 10th, 10:00 AM UTC
+            // Arrange
+            // The Daily arm compares only the calendar dates of the two values it is given; it
+            // applies no minimum elapsed time and does no time-zone conversion.
+            // April 10th, 10:00 AM
             var lastRotationUtc = new DateTime(2026, 4, 10, 10, 0, 0, DateTimeKind.Utc);
 
-            // April 11th, 11:00 AM UTC (25 hours later)
-            // 25 hours ensures that even in the most extreme time zones,
-            // a new calendar day has started.
+            // April 11th, 11:00 AM - a later calendar date, which is all the arm asks for.
             var nowUtc = lastRotationUtc.AddHours(25);
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
@@ -1060,25 +1060,24 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
-        public void DailyRotation_UTC_IgnoresSafetyBuffer()
+        public void DailyRotation_RotatesAsSoonAsTheCalendarDayFlips()
         {
-            // Arrange: UTC mode, where the 23-hour DST safety buffer does not apply.
-            // Last rotation was yesterday at 11:59:59 PM
+            // Arrange
+            // Two seconds apart, across midnight: the Daily arm needs no minimum gap, only a
+            // later calendar date.
             var lastRotationUtc = new DateTime(2026, 4, 10, 23, 59, 59, DateTimeKind.Utc);
-
-            // Now is today at 00:00:01 AM (Only 2 seconds passed, but day changed)
             var nowUtc = new DateTime(2026, 4, 11, 0, 0, 1, DateTimeKind.Utc);
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: false))
             {
                 TestReflection.SetField(writer, "_lastRotationDate", lastRotationUtc);
 
-                // Act: Pass the simulated 'now'
+                // Act
                 var args = new object[] { nowUtc };
                 var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
-                // Assert: In UTC mode, we ignore the 23h buffer and rotate on day change
-                Assert.True(shouldRotate, "UTC mode should rotate immediately when the calendar day flips.");
+                // Assert
+                Assert.True(shouldRotate, "Daily rotation should trigger as soon as the calendar day flips.");
             }
         }
 
