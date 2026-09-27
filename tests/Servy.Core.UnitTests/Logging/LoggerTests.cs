@@ -459,6 +459,37 @@ namespace Servy.Core.UnitTests.Logging
         }
 
         [Fact]
+        public void FormatException_TruncatesInsideNestedInnerException_ClosesEveryOpenContextWithinTheCap()
+        {
+            // Arrange
+            // Two open "[Inner -> " contexts are outstanding when the cap is hit: Middle (depth 1)
+            // and the huge leaf (depth 2). The only other truncation test puts its payload on a flat
+            // exception, so the cut always lands at depth 0 where there is nothing to close.
+            int cap = AppConfig.LoggerMaxFormattedExceptionLength;
+            var leaf = new Exception(new string('x', cap + 1024));
+            var ex = new Exception("Root", new Exception("Middle", leaf));
+
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Error("Nested truncation", ex);
+            Logger.Shutdown();
+
+            // Assert
+            string segment = IsolateExceptionSegment(File.ReadAllText(_fullLogPath), "Nested truncation");
+            const string exceptionPrefix = "Nested truncation | Exception: ";
+            Assert.StartsWith(exceptionPrefix, segment);
+            string formatted = segment.Substring(exceptionPrefix.Length);
+
+            // Both open contexts are closed after the marker, so the segment stays scannable.
+            Assert.Equal(2, Regex.Matches(formatted, Regex.Escape("[Inner -> ")).Count);
+            Assert.EndsWith("... [truncated]]]", formatted);
+
+            // The closing brackets are reserved inside the cap, not appended past it.
+            Assert.Equal(cap, formatted.Length);
+        }
+
+        [Fact]
         public void FormatException_UnrollsAggregateExceptionSiblings_InCorrectChronologicalOrder()
         {
             // Arrange
