@@ -133,14 +133,15 @@ namespace Servy.CLI.UnitTests.Commands
 
         /// <summary>
         /// Pins the expected status token vocabulary against all native ServiceControllerStatus enum member names
-        /// plus the NotInstalled fallback literal, validating that the command options HelpText documentation stays synchronized.
+        /// plus the two fallback tokens the command emits for a null status (NotInstalled and Unknown), validating
+        /// that the command options HelpText documentation stays synchronized.
         /// </summary>
         [Fact]
-        public void ServiceStatusVocabulary_MatchesServiceControllerStatusAndNotInstalled()
+        public void ServiceStatusVocabulary_MatchesServiceControllerStatusAndFallbackTokens()
         {
             // Arrange
             var expectedTokens = Enum.GetNames(typeof(ServiceControllerStatus))
-                .Concat(new[] { nameof(ServiceStatus.NotInstalled) })
+                .Concat(new[] { nameof(ServiceStatus.NotInstalled), nameof(ServiceStatus.Unknown) })
                 .ToList();
 
             var verbAttr = typeof(ServiceStatusOptions)
