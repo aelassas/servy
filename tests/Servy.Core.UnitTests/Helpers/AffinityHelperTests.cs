@@ -176,6 +176,22 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Contains(rangeExpectedPrefix, ex2.Message);
         }
 
+        [Theory]
+        [InlineData("6-8", 8)]   // start in bounds, end == maxAllowedCores
+        [InlineData("0-64", 64)] // start in bounds, end past the 64-core cap
+        public void ParseAffinity_RangeEndOnlyOutOfBounds_ThrowsArgumentOutOfRangeException(string input, int maxAllowedCores)
+        {
+            // Arrange
+            string expected = string.Format(Strings.Msg_CoreIndexRangeOutOfBounds, input, maxAllowedCores - 1);
+
+            // Act
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity(input, maxAllowedCores));
+
+            // Assert - the bound is checked on the range END; a start-only check would let both rows
+            // through and return a mask naming a processor the host does not have.
+            Assert.Contains(expected, ex.Message);
+        }
+
         [Fact]
         public void ValidateAffinity_PublicOverload_UsesHostProcessorCountBoundedAt64()
         {
