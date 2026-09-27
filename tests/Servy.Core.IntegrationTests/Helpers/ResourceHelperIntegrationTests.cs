@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Testing;
 using System;
@@ -219,6 +220,41 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Assert
             Assert.True(result); // Should return true early without copying
             _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenHostIsNewerButWithinStalenessThreshold_KeepsExistingFile()
+        {
+            // Arrange
+            string fileName = "withinthreshold";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            // Anchor the existing extraction OLDER than the host executable, but by less than
+            // AppConfig.ResourceStalenessThresholdMinutes: the threshold term is the only reason it is kept
+            File.WriteAllText(targetPath, "existing content");
+            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddMinutes(-(AppConfig.ResourceStalenessThresholdMinutes / 2)));
+
+            // Let termination succeed and supply a stream, so a copy would visibly overwrite the
+            // file if the threshold were dropped instead of failing earlier for another reason
+            _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+
+            bool streamRequested = false;
+            _fakeAssembly.OnGetManifestResourceStream = _ =>
+            {
+                streamRequested = true;
+                return new MemoryStream(new byte[] { 0x01, 0x02, 0x03, 0x04 });
+            };
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                _fakeAssembly, "Servy.Resources", fileName, extension, stopServices: false);
+
+            // Assert
+            Assert.True(result); // Should return true early without copying
+            Assert.Equal("existing content", File.ReadAllText(targetPath));
+            Assert.False(streamRequested);
         }
 
         [Fact]
