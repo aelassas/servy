@@ -333,6 +333,52 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await Task.CompletedTask;
             }, createApp: true);
         }
+        [Fact]
+        public async Task SearchCommand_SecondSearch_DisposesAndUnhooksPreviousRows()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+
+                _serviceCommandsMock.SetupSequence(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<Service> { new Service { Name = "Old", IsInstalled = true } })
+                    .ReturnsAsync(new List<Service> { new Service { Name = "New", IsInstalled = true } });
+
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+
+                var oldRow = vm.ServicesView.Cast<ServiceRowViewModel>().Single();
+                Assert.Equal("Old", oldRow.Name);
+
+                // Act
+                // The second search rebuilds the collection, which is the only path that runs the
+                // dispose-and-unhook loop over the rows the first search created.
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                Assert.Equal("New", vm.ServicesView.Cast<ServiceRowViewModel>().Single().Name);
+
+                // The previous row was disposed, so it no longer holds its subscription to its Service model
+                Assert.True(TestReflection.GetField<bool>(oldRow, "_disposed"));
+
+                // And it was unhooked from the parent, so a stale row can no longer drive the parent's
+                // selection state. ServiceRowViewModel.Dispose does not clear its own PropertyChanged
+                // invocation list, so this is what pins the explicit unsubscription rather than the Dispose.
+                var raised = false;
+                vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.HasSelectedServices)) raised = true; };
+                oldRow.IsChecked = true;
+                Assert.False(raised);
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
 
         [Fact]
         public async Task SearchCommand_NullDispatcher_ExitsWithoutSearching()
