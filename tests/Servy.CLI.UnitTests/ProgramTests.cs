@@ -201,9 +201,9 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // Before this test no test reached any of the nine MapResult verb lambdas or the single
-            // PrintAndReturnAsync line they all return through, so a verb wired to the wrong bootstrap flags
-            // was invisible to the suite.
+            // This is the only test that reaches the single PrintAndReturnAsync line the nine MapResult verb
+            // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath enters the start
+            // lambda too, but it throws in the bootstrap before it gets there.
             Assert.Equal((int)CliExitCode.Success, result.Result);
             Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
         }
