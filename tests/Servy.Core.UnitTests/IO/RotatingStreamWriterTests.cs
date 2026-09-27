@@ -1527,8 +1527,10 @@ namespace Servy.Core.UnitTests.IO
         {
             // Arrange
             // Calendar.GetWeekOfYear is not ISO 8601: it never assigns a late-December date to
-            // week 1 of the following year, so the two dates below report different week numbers
-            // and the week-number term of the Weekly arm is what allows the rotation here.
+            // week 1 of the following year, so the two dates below report different week numbers.
+            // They are 362 days apart as well, so the elapsed-days term allows the rotation too and
+            // this test pins neither term on its own; the week-number term is pinned on its own by
+            // DateRotation_Weekly_Rotates_WhenMondayStartsANewWeekLessThan7DaysLater below.
             var filePath = Path.Combine(TempDirectory, "weekly_iso_bug.log");
 
             // Wed, Jan 1, 2025 - week 1
@@ -1576,6 +1578,37 @@ namespace Servy.Core.UnitTests.IO
 
                 // Assert
                 Assert.True(shouldRotate, "Should rotate because a full year has passed, although both dates are week 1.");
+            }
+        }
+
+        [Fact]
+        public void DateRotation_Weekly_Rotates_WhenMondayStartsANewWeekLessThan7DaysLater()
+        {
+            // Arrange
+            // One day apart, so the elapsed-days term of the Weekly arm is false and only the
+            // week-number term can allow the rotation.
+            var filePath = Path.Combine(TempDirectory, "weekly_new_week.log");
+            var lastRotationDate = new DateTime(2026, 4, 12, 12, 0, 0, DateTimeKind.Utc); // Sunday, week 15
+            var nowUtc = new DateTime(2026, 4, 13, 0, 0, 1, DateTimeKind.Utc);            // Monday, week 16
+
+            using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
+            {
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotationDate);
+
+                // Guard the premise: the two dates must be under 7 days apart and in different weeks,
+                // so a runtime that changed GetWeekOfYear fails here and says why.
+                var calendar = CultureInfo.InvariantCulture.Calendar;
+                Assert.True((nowUtc.Date - lastRotationDate.Date).TotalDays < 7);
+                Assert.NotEqual(
+                    calendar.GetWeekOfYear(lastRotationDate, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
+                    calendar.GetWeekOfYear(nowUtc, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday));
+
+                // Act
+                var args = new object[] { nowUtc };
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
+
+                // Assert
+                Assert.True(shouldRotate, "A Weekly log should roll over when a new calendar week starts, even less than 7 days after the last rotation.");
             }
         }
 
