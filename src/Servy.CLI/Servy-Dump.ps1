@@ -22,7 +22,7 @@
     The main dump/export operation (and uninstallation if -Uninstall is specified) is guarded by ShouldProcess.
     When run with -WhatIf, the export/uninstall operation is safely previewed without modifying the SCM, database,
     or output files, and internal temporary cleanup operations bypass -WhatIf (-WhatIf:$false) to ensure staging
-    directories are always properly cleaned up.    
+    directories are always properly cleaned up.
 
     EXIT CODES:
     - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).

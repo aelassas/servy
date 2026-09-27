@@ -18,7 +18,7 @@
     The restore action (database import and optional SCM installation) is guarded by ShouldProcess.
     When run with -WhatIf, the restore operation is previewed without modifying the database or SCM,
     and internal temporary extraction cleanup operations bypass -WhatIf (-WhatIf:$false) so extracted files
-    are properly cleaned up.    
+    are properly cleaned up.
 
     Per-service import errors are caught gracefully; every file in the archive is processed regardless of earlier
     failures. If at least one service imports successfully and one or more fail, an exit code of 7 is returned to
@@ -501,7 +501,7 @@ try {
         if (-not $PSCmdlet.ShouldProcess("$($xmlFileList.Count) service configuration file(s) from '$resolvedArchivePath'", $actionMessage)) {
             Write-Host "No configurations were imported." -ForegroundColor Yellow
             exit 0
-        }        
+        }
 
         # Iterate through extracted XML files and import each service configuration with per-item exception isolation
         foreach ($xmlFile in $xmlFileList) {
