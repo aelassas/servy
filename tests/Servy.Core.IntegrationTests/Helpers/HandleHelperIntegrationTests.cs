@@ -316,61 +316,32 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task GetProcessesUsingFile_ConcurrentBufferAccess_DoesNotThrow_WhenSynchronized()
+        public void GetProcessesUsingFile_ManyLinesOnBothStreams_ParsesEveryStdoutLine()
         {
             // Arrange
-            var ioLock = new object();
-            var outputBuilder = new StringBuilder();
-            var errorBuilder = new StringBuilder();
-            const int iterations = 5_000;
-
-            // Act: Stress-test the exact lock model used by HandleHelper to capture Output/Error streams while reading on timeout
-            var stdoutTask = Task.Run(() =>
+            // 200 pid: lines on stdout interleaved with stderr noise, so both async handlers append to
+            // their builders concurrently while the method is running. This replaces a test that
+            // stress-tested a hand copy of the lock model declared in the test itself and therefore
+            // could not fail for any change to the SUT.
+            var body = new StringBuilder();
+            for (int i = 1; i <= 200; i++)
             {
-                for (int i = 0; i < iterations; i++)
-                {
-                    lock (ioLock)
-                    {
-                        outputBuilder.AppendLine($"Process stdout line {i}");
-                    }
-                }
-            }, cancellationToken: TestContext.Current.CancellationToken);
+                body.Append($"echo holder{i}.exe pid: {i}   type: File   1A4: C:\\x.txt\r\n");
+                body.Append($"echo noise {i} 1>&2\r\n");
+            }
 
-            var stderrTask = Task.Run(() =>
-            {
-                for (int i = 0; i < iterations; i++)
-                {
-                    lock (ioLock)
-                    {
-                        errorBuilder.AppendLine($"Process stderr line {i}");
-                    }
-                }
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            body.Append("exit /b 0");
+            string script = CreateFakeHandleScript(body.ToString());
+            string testFile = CreateTempFile();
 
-            var readerTask = Task.Run(() =>
-            {
-                for (int i = 0; i < 200; i++)
-                {
-                    string currentError;
-                    string currentOutput;
-                    lock (ioLock)
-                    {
-                        currentError = errorBuilder.ToString();
-                        currentOutput = outputBuilder.ToString();
-                    }
-
-                    Assert.NotNull(currentError);
-                    Assert.NotNull(currentOutput);
-                }
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            // Act
+            var results = HandleHelper.GetProcessesUsingFile(script, testFile);
 
             // Assert
-            var exception = await Record.ExceptionAsync(async () =>
-            {
-                await Task.WhenAll(stdoutTask, stderrTask, readerTask);
-            });
-
-            Assert.Null(exception);
+            // The final unbounded WaitForExit on the success path flushes every in-flight
+            // OutputDataReceived event, so no stdout line is lost and none is parsed twice; the
+            // sequence equality pins the count, the values and the order at once.
+            Assert.Equal(Enumerable.Range(1, 200), results.Select(r => r.ProcessId));
         }
     }
 }
