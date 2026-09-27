@@ -444,7 +444,7 @@
                               AutomationProperties.AutomationId="RestartSelectedButton"
                               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RestartSelectedButton_HelpText}" />
 
-                      <!-- Plain hidden spacer replacing the unused data-bound button -->
+                      <!-- Hidden spacer the size of the rows' ⋮ button, so the three header buttons line up over the three row buttons -->
                       <Border Width="24" Height="24" Margin="5,0,0,0" Visibility="Hidden" />
                     </StackPanel>
                   </Grid>
