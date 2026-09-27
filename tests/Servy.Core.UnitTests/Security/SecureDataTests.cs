@@ -2,6 +2,8 @@ using Moq;
 using Servy.Core.Config;
 using Servy.Core.Security;
 using Servy.Testing;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Servy.Core.UnitTests.Security
 {
@@ -285,6 +287,53 @@ namespace Servy.Core.UnitTests.Security
                 // Assert
                 // Verify the error message relates to the integrity check
                 Assert.Contains("HMAC integrity check failed", ex.Message);
+            }
+        }
+
+        [Fact]
+        public void Decrypt_V2ValidHmacButInvalidPadding_WrapsAesFailureAsIntegrityException()
+        {
+            // Arrange
+            // Every other v2 tamper test flips a byte of a genuine Encrypt output, so the HMAC check
+            // rejects the payload before AES runs. This payload carries a CORRECT HMAC over a block
+            // that is not PKCS7-padded, so it reaches DecryptCbc and fails there.
+            // The constants mirror SecureData's private HkdfSalt / HkdfV2EncInfo / HkdfV2HmacInfo.
+            var salt = Encoding.UTF8.GetBytes("Servy.Core.Security.v2.Salt");
+            var encKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, _key, 32, salt, Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION"));
+            var hmacKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, _key, 32, salt, Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION"));
+
+            var iv = new byte[16];
+            byte[] ciphertext;
+            using (var aes = Aes.Create())
+            {
+                aes.Key = encKey;
+
+                // One all-zero block, unpadded: its decrypted last byte is 0x00, never a valid PKCS7 pad.
+                ciphertext = aes.EncryptCbc(new byte[16], iv, PaddingMode.None);
+            }
+
+            var signed = new byte[iv.Length + ciphertext.Length];
+            Buffer.BlockCopy(iv, 0, signed, 0, iv.Length);
+            Buffer.BlockCopy(ciphertext, 0, signed, iv.Length, ciphertext.Length);
+
+            var hmac = HMACSHA256.HashData(hmacKey, signed);
+            var combined = new byte[signed.Length + hmac.Length];
+            Buffer.BlockCopy(signed, 0, combined, 0, signed.Length);
+            Buffer.BlockCopy(hmac, 0, combined, signed.Length, hmac.Length);
+
+            var payload = "SERVY_ENC:v2:" + Convert.ToBase64String(combined);
+
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act
+                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(payload));
+
+                // Assert
+                // Assert.Throws matches the exact type, so removing the wrap (which would let the raw
+                // CryptographicException through the outer rethrow) fails here; the message prefix
+                // separates this arm from the HMAC arm.
+                Assert.StartsWith("AES decryption failed:", ex.Message);
+                Assert.IsAssignableFrom<CryptographicException>(ex.InnerException);
             }
         }
 
