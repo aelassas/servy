@@ -36,9 +36,9 @@ function Write-ServyLog {
         $hasLock = $false
 
         try {
-            # Wait up to 1 second for the lock to clear high-contention traffic jams
+            # Wait up to 10 seconds for the lock to clear high-contention traffic jams
             try {
-                $hasLock = $mutex.WaitOne(1000)
+                $hasLock = $mutex.WaitOne(10000)
             }
             catch [System.Threading.AbandonedMutexException] {
                 # Previous owner was killed mid-write; we now own the mutex. Proceed.
@@ -48,7 +48,7 @@ function Write-ServyLog {
             if (-not $hasLock) {
                 # Fail gracefully: log a warning to the console so the admin knows
                 # why the file was skipped, but allow the calling task to proceed.
-                Write-Warning "Servy Logging: Mutex timeout after 1s for $absPath. Log entry dropped to prevent service stall."
+                Write-Warning "Servy Logging: Mutex timeout after 10s for $absPath. Log entry dropped to prevent service stall."
                 return
             }
 
