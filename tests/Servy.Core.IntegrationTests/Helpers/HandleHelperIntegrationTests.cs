@@ -118,15 +118,24 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void GetProcessesUsingFile_ExitOneButAHandleWasParsed_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            // Exit code 1 only means "no handles" when nothing matched: a parsed pid: line contradicts
-            // that reading, so the fail-closed branch must still fire.
+            // The output also carries handle.exe's "no handles" sentence, so exit code 1 plus that
+            // text would read as a clean empty result on its own. Only the parsed pid: line
+            // contradicts it, which makes !matchedAny the one term that keeps the fail-closed branch
+            // firing.
             string script = CreateFakeHandleScript(
-                "echo holder.exe  pid: 4242  type: File  1A4: C:\\x.txt\r\nexit /b 1");
+                "echo No matching handles found.\r\n" +
+                "echo holder.exe  pid: 4242  type: File  1A4: C:\\x.txt\r\n" +
+                "exit /b 1");
             string testFile = CreateTempFile();
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(
                 () => HandleHelper.GetProcessesUsingFile(script, testFile));
+
+            // Assert
+            // The exit code is quoted into the message, which is the fail-closed branch at work
+            // rather than the clean empty-result return.
+            Assert.Contains("exit code 1", ex.Message);
         }
 
         [Fact]
