@@ -177,7 +177,8 @@ namespace Servy.UI.Bootstrapping
 
                     // Key on the fault SITE, not the fault instance message: exception messages embed PIDs,
                     // file paths, and timestamps, which causes a varying message to defeat the rate limit entirely.
-                    var currentExceptionSignature = args.Exception.GetType().FullName + ":" + args.Exception.Message;
+                    var site = args.Exception.TargetSite is MethodBase m ? $"{m.DeclaringType?.FullName}.{m.Name}" : "?";
+                    var currentExceptionSignature = args.Exception.GetType().FullName + "@" + site;
 
                     // Allow the dialog if it is a new exception signature, or if the debounce window has elapsed
                     shouldShowDialog = currentExceptionSignature != _lastErrorDialogMessage
