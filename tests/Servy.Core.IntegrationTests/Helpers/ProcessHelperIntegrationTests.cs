@@ -63,7 +63,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
         [Theory]
         [InlineData(false)] // Scenario 1: Never-existed PID (Throws ArgumentException)
-        [InlineData(true)]  // Scenario 2: Genuinely exited PID (Throws InvalidOperationException)
+        [InlineData(true)]  // Scenario 2: Genuinely exited PID (also throws ArgumentException: the PID is no longer running)
         public void GetProcessMetrics_ForInvalidOrExitedPid_ReturnsZeroesGracefully(bool useExitedProcess)
         {
             // Arrange
@@ -98,8 +98,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             var metrics = _sut.GetProcessMetrics(targetPid);
 
             // Assert
-            // Both code paths must cleanly intercept the respective native exception type
-            // and fallback to a safe, neutral metric layout instead of blowing up.
+            // Both scenarios reach the ArgumentException arm (GetProcessById on a PID that is not running)
+            // and must fall back to a safe, neutral metric layout instead of blowing up. The
+            // InvalidOperationException arm needs the process to exit between GetProcessById and the
+            // property reads, a race no test here can time.
             Assert.Equal(0, metrics.CpuUsage);
             Assert.Equal(0, metrics.RamUsage);
         }
