@@ -1,7 +1,9 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
+using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
@@ -379,6 +381,398 @@ namespace Servy.Service.UnitTests
                                                   It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                                                   It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                                                   Times.Once);
+        }
+
+        /// <summary>
+        /// Builds a <see cref="StartOptions"/> whose heartbeat fields pin the stability threshold that
+        /// <c>ConditionalResetRestartAttemptsAsync</c> computes, so a test can choose a file age that
+        /// falls on a known side of it.
+        /// </summary>
+        /// <param name="heartbeatIntervalInSeconds">The heartbeat interval, the first factor of the detection window.</param>
+        /// <param name="maxFailedChecks">The failed-check allowance, the second factor of the detection window.</param>
+        /// <param name="preLaunchTimeoutInSeconds">The pre-launch budget added to the threshold while pre-launch is enabled.</param>
+        /// <returns>Options carrying the default paths plus the requested stability inputs.</returns>
+        private static StartOptions CreateStabilityOptions(
+            int heartbeatIntervalInSeconds,
+            int maxFailedChecks,
+            int preLaunchTimeoutInSeconds = 0)
+        {
+            var options = ServiceTestContext.CreateDefaultStartOptions();
+            options.HeartbeatIntervalInSeconds = heartbeatIntervalInSeconds;
+            options.MaxFailedChecks = maxFailedChecks;
+            options.PreLaunchTimeoutInSeconds = preLaunchTimeoutInSeconds;
+            return options;
+        }
+
+        [Theory]
+        [InlineData("abc")]         // not an integer at all
+        [InlineData("-1")]          // parses, but fails the attempts >= 0 test
+        public async Task CheckHealth_RestartAttemptsFileCorrupt_WarnsAndRewritesCounterToZero(string content)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, content, TestContext.Current.CancellationToken);
+
+            try
+            {
+                TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(false);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                _ctx.Logger.Verify(l => l.Warn(
+                    It.Is<string>(s => s.Contains("Corrupt or invalid content found in restart attempts file")), It.IsAny<Exception>()),
+                    Times.Once);
+
+                // The counter is rewritten, not merely reported: a later read must find a usable value
+                Assert.Equal("0", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_RestartAttemptsFileUnreadable_AbortsRecoveryInsteadOfRestarting()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "1", TestContext.Current.CancellationToken);
+
+            try
+            {
+                TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(true);
+                mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetMaxFailedChecks(1);
+                service.SetMaxRestartAttempts(3);
+                service.SetRecoveryAction(RecoveryAction.RestartProcess);
+                service.SetFailedChecks(0);
+
+                // FileShare.None denies the reader inside the service, so the counter cannot be consulted
+                using (new FileStream(attemptsFile, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    // Act
+                    await service.InvokeCheckHealthAsync(null, null);
+                }
+
+                // Assert
+                _ctx.Logger.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("is unreadable") && s.Contains("MaxRestartAttempts cap cannot be enforced")), It.IsAny<Exception>()),
+                    Times.Once);
+
+                // The null return is the contract under test: recovery aborts rather than restarting blind
+                _ctx.Logger.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("Failed to read restart attempts from persistent storage. Aborting recovery.")), It.IsAny<Exception>()),
+                    Times.Once);
+
+                _ctx.Helper.Verify(h => h.RestartProcess(
+                    It.IsAny<IProcessWrapper>(),
+                    It.IsAny<StartProcessCallback>(),
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_RestartAttemptsFileNotWritable_LogsSaveFailureAndStillRecovers()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "1", TestContext.Current.CancellationToken);
+
+            try
+            {
+                TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(true);
+                mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetMaxFailedChecks(1);
+                service.SetMaxRestartAttempts(3);   // 1 of 3 used => the counter is incremented and saved
+                service.SetRecoveryAction(RecoveryAction.RestartProcess);
+                service.SetFailedChecks(0);
+
+                // FileShare.Read lets the counter be read but denies the atomic replace that persists it
+                using (new FileStream(attemptsFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    // Act
+                    await service.InvokeCheckHealthAsync(null, null);
+                }
+
+                // Assert
+                _ctx.Logger.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("Failed to save restart attempts to")), It.IsAny<Exception>()),
+                    Times.Once);
+
+                // A counter that cannot be persisted is logged, not fatal: the recovery action still runs
+                _ctx.Helper.Verify(h => h.RestartProcess(
+                    It.IsAny<IProcessWrapper>(),
+                    It.IsAny<StartProcessCallback>(),
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+
+                // The write never landed, so the on-disk counter is unchanged
+                Assert.Equal("1", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_RestartAttemptsFileOlderThanBoot_TouchesFileAndKeepsCounter()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "3", TestContext.Current.CancellationToken);
+
+            try
+            {
+                // A year ago is before any plausible boot time, so the reboot-detection arm is taken
+                File.SetLastWriteTimeUtc(attemptsFile, DateTime.UtcNow.AddYears(-1));
+
+                TestReflection.SetField(service, "_options", CreateStabilityOptions(heartbeatIntervalInSeconds: 1, maxFailedChecks: 1));
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(false);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                // The quota survives the reboot, so a RestartComputer recovery cannot loop forever
+                Assert.Equal("3", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+
+                // The file is anchored to the current session so in-session uptime decides the next check
+                Assert.True(File.GetLastWriteTimeUtc(attemptsFile) > DateTime.UtcNow.AddMinutes(-5));
+
+                _ctx.Logger.Verify(l => l.Info(
+                    It.Is<string>(s => s.Contains("Resetting restart attempts counter")), It.IsAny<Exception>()),
+                    Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_StableLongerThanResetThreshold_ResetsCounterToZero()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "3", TestContext.Current.CancellationToken);
+
+            try
+            {
+                // Detection window 1s, buffer 30s => threshold 31s; 45s of stability clears it
+                File.SetLastWriteTimeUtc(attemptsFile, DateTime.UtcNow.AddSeconds(-45));
+
+                TestReflection.SetField(service, "_options", CreateStabilityOptions(heartbeatIntervalInSeconds: 1, maxFailedChecks: 1));
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(false);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                _ctx.Logger.Verify(l => l.Info(
+                    It.Is<string>(s => s.Contains("Resetting restart attempts counter. Stable for")), It.IsAny<Exception>()),
+                    Times.Once);
+
+                Assert.Equal("0", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_StableShorterThanResetThreshold_KeepsCounter()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "3", TestContext.Current.CancellationToken);
+
+            try
+            {
+                // Same threshold as the reset test (31s), reached from the other side
+                File.SetLastWriteTimeUtc(attemptsFile, DateTime.UtcNow.AddSeconds(-5));
+
+                TestReflection.SetField(service, "_options", CreateStabilityOptions(heartbeatIntervalInSeconds: 1, maxFailedChecks: 1));
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(false);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                // A crash loop keeps its history: the counter is left alone below the threshold
+                Assert.Equal("3", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+
+                _ctx.Logger.Verify(l => l.Info(
+                    It.Is<string>(s => s.Contains("Resetting restart attempts counter")), It.IsAny<Exception>()),
+                    Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_PreLaunchEnabled_AddsPreLaunchTimeoutToResetThreshold()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "3", TestContext.Current.CancellationToken);
+
+            try
+            {
+                // 45s clears the 31s base threshold, and must not clear 31s + 300s of pre-launch budget
+                File.SetLastWriteTimeUtc(attemptsFile, DateTime.UtcNow.AddSeconds(-45));
+
+                TestReflection.SetField(service, "_options",
+                    CreateStabilityOptions(heartbeatIntervalInSeconds: 1, maxFailedChecks: 1, preLaunchTimeoutInSeconds: 300));
+                TestReflection.SetField(service, "_preLaunchEnabled", true);
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(false);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                Assert.Equal("3", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+
+                _ctx.Logger.Verify(l => l.Info(
+                    It.Is<string>(s => s.Contains("Resetting restart attempts counter")), It.IsAny<Exception>()),
+                    Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(3600, 2, 7200)]                                 // window over the cap
+        [InlineData(int.MaxValue, 2, int.MaxValue)]                  // product over int.MaxValue, clamped
+        public async Task CheckHealth_DetectionWindowExceedsCap_WarnsAndIgnoresTheCap(
+            int heartbeatIntervalInSeconds, int maxFailedChecks, int expectedDetectionWindowSeconds)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "3", TestContext.Current.CancellationToken);
+
+            try
+            {
+                File.SetLastWriteTimeUtc(attemptsFile, DateTime.UtcNow.AddSeconds(-45));
+
+                TestReflection.SetField(service, "_options",
+                    CreateStabilityOptions(heartbeatIntervalInSeconds, maxFailedChecks));
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(false);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                // The warning carries the clamped window, so it also pins the int.MaxValue guard
+                _ctx.Logger.Verify(l => l.Warn(
+                    It.Is<string>(s => s.Contains(
+                        $"Detection window ({expectedDetectionWindowSeconds}s) exceeds the reset cap ({AppConfig.ConditionalResetMaxThresholdSeconds}s)")),
+                    It.IsAny<Exception>()),
+                    Times.Once);
+
+                // The detection window replaces the cap as the threshold, so 45s cannot reset the counter
+                Assert.Equal("3", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
         }
 
         public void Dispose() => _ctx.Dispose();
