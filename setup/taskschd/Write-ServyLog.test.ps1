@@ -126,6 +126,8 @@ try {
         $Deficit = $ExpectedLines - $TotalLines
         if ($Deficit -gt 0) {
             Write-Host "FAIL: Missing data detected! Lost $Deficit log frames due to un-serialized write collisions." -ForegroundColor Red
+        } elseif ($Deficit -lt 0) {
+            Write-Host "FAIL: $(-$Deficit) more lines than the $ExpectedLines written - a write was duplicated." -ForegroundColor Red
         } else {
             Write-Host "FAIL: Total line count matches, but tracking execution warnings were emitted." -ForegroundColor Red
         }
