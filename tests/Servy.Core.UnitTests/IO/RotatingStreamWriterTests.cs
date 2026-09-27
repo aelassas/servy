@@ -1472,12 +1472,14 @@ namespace Servy.Core.UnitTests.IO
         public void DateRotation_Weekly_Rotates_WhenSameCalendarYearButOver7Days()
         {
             // Arrange
-            // This specifically covers Bug #1116 (ISO Calendar Year Mismatch)
+            // Calendar.GetWeekOfYear is not ISO 8601: it never assigns a late-December date to
+            // week 1 of the following year, so the two dates below report different week numbers
+            // and the week-number term of the Weekly arm is what allows the rotation here.
             var filePath = Path.Combine(TempDirectory, "weekly_iso_bug.log");
 
-            // Wed, Jan 1, 2025 (ISO Week 1 of 2025)
+            // Wed, Jan 1, 2025 - week 1
             var lastRotationDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            // Mon, Dec 29, 2025 (ISO Week 1 of 2026, but still Calendar Year 2025)
+            // Mon, Dec 29, 2025 - week 53 under FirstFourDayWeek/Monday, not week 1 of 2026
             var nowUtc = new DateTime(2025, 12, 29, 0, 0, 0, DateTimeKind.Utc);
 
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
@@ -1488,8 +1490,38 @@ namespace Servy.Core.UnitTests.IO
                 var args = new object[] { nowUtc };
                 var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
-                // Assert: The 7-day fallback should catch this and allow rotation
-                Assert.True(shouldRotate, "Should rotate because > 7 days have passed, despite both dates reporting as ISO Week 1 of Calendar Year 2025.");
+                // Assert
+                Assert.True(shouldRotate, "Should rotate because the two dates report different week numbers (1 and 53).");
+            }
+        }
+
+        [Fact]
+        public void DateRotation_Weekly_Rotates_WhenBothDatesShareWeekNumberAYearApart()
+        {
+            // Arrange
+            // Covers #1116: GetWeekOfYear(FirstFourDayWeek, Monday) returns 1 for both dates, so
+            // the week-number comparison alone would not rotate; only the elapsed-days term can.
+            var filePath = Path.Combine(TempDirectory, "weekly_same_week_number.log");
+            var lastRotationDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var nowUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
+            {
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotationDate);
+
+                // Guard the premise: if a runtime ever changed GetWeekOfYear, this fails here and
+                // says why, rather than letting the test go vacuous again.
+                var calendar = CultureInfo.InvariantCulture.Calendar;
+                Assert.Equal(
+                    calendar.GetWeekOfYear(lastRotationDate, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday),
+                    calendar.GetWeekOfYear(nowUtc, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday));
+
+                // Act
+                var args = new object[] { nowUtc };
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
+
+                // Assert
+                Assert.True(shouldRotate, "Should rotate because a full year has passed, although both dates are week 1.");
             }
         }
 
