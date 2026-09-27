@@ -830,6 +830,36 @@ namespace Servy.Core.UnitTests.IO
             Assert.Contains(fixedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture), rotated[0]);
         }
 
+        [Theory]
+        // Weekly: clock set back from Monday 00:15 (ISO week 16) to Sunday 23:30 (ISO week 15) - the #3211 DST case.
+        [InlineData(DateRotationType.Weekly, "2026-04-13T00:15:00", "2026-04-12T23:30:00")]
+        // Monthly: clock set back from June 1st 00:05 to May 31st 23:50.
+        [InlineData(DateRotationType.Monthly, "2026-06-01T00:05:00", "2026-05-31T23:50:00")]
+        // Weekly: forward two days, same ISO week (Monday -> Wednesday, both week 16) and under 7 days.
+        [InlineData(DateRotationType.Weekly, "2026-04-13T10:00:00", "2026-04-15T10:00:00")]
+        public void ShouldRotateByDate_WeeklyAndMonthly_DoNotRotate_OnBackwardClockOrSameWeek(DateRotationType type, string last, string now)
+        {
+            // Arrange
+            // Explicit values rather than the live clock, so the Weekly arm's week comparison is
+            // reached on every day of the week (see the closed #3605 flakiness on the live clock).
+            var lastRotationDate = DateTime.SpecifyKind(DateTime.Parse(last, CultureInfo.InvariantCulture), DateTimeKind.Utc);
+            var nowUtc = DateTime.SpecifyKind(DateTime.Parse(now, CultureInfo.InvariantCulture), DateTimeKind.Utc);
+            var filePath = Path.Combine(TempDirectory, "no_rotate_" + type + ".log");
+
+            using (var writer = CreateWriter(filePath, false, 0, true, type, 0))
+            {
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotationDate);
+
+                // Act
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", new object[] { nowUtc });
+
+                // Assert
+                // Rows 1 and 2 pin the forward-only guards #3211 added; row 3 pins the negative side
+                // of the week comparison, which no other test reaches deterministically.
+                Assert.False(shouldRotate, $"{type} must not rotate from {last} to {now}.");
+            }
+        }
+
         [Fact]
         public void SizeAndDateRotation_SizePrecedence_WhenBothEnabled()
         {
