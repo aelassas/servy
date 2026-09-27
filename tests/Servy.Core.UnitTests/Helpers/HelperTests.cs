@@ -807,7 +807,7 @@ namespace Servy.Core.UnitTests.Helpers
                 File.SetAttributes(targetPath, FileAttributes.ReadOnly);
 
                 // Lock with FileAccess.Read so opening the handle succeeds on a ReadOnly file,
-                // but FileShare.None blocks AtomicSecureMove from overwriting/moving onto targetPath.
+                // but FileShare.None makes the File.Move onto targetPath fail.
                 using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
                     Assert.ThrowsAny<Exception>(() =>
@@ -1085,7 +1085,7 @@ namespace Servy.Core.UnitTests.Helpers
                 File.SetAttributes(targetPath, FileAttributes.ReadOnly);
 
                 // Lock with FileAccess.Read so opening the handle succeeds on a ReadOnly file,
-                // but FileShare.None blocks AtomicSecureMove from overwriting/moving onto targetPath.
+                // but FileShare.None makes the File.Move onto targetPath fail.
                 using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
                     await Assert.ThrowsAnyAsync<Exception>(async () =>
