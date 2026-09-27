@@ -110,7 +110,7 @@ function Get-ServyLastErrors {
             $logPath = Join-Path $scriptHome "Get-ServyLastErrors.log"
             $loggerScript = Join-Path $scriptHome "Write-ServyLog.ps1"
 
-            if (Test-Path $loggerScript) {
+            if (Test-Path -LiteralPath $loggerScript) {
                 . $loggerScript
                 Write-ServyLog -FilePath $logPath -Message $errorMsg
             }
