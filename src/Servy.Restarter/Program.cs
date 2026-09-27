@@ -21,7 +21,7 @@ namespace Servy.Restarter
     public static class Program
     {
         /// <summary>
-        /// Main method. Expects a single argument: the service name to restart.
+        /// Main method. Expects one required argument: the service name to restart.
         /// An optional second argument can specify a custom logging directory (primarily for testing isolation).
         /// </summary>
         /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies custom log directory.</param>
