@@ -9,7 +9,7 @@ Write-Host ""
 $ScriptDir = $PSScriptRoot
 $LogScriptPath = Join-Path $ScriptDir "Write-ServyLog.ps1"
 
-if (-not (Test-Path $LogScriptPath)) {
+if (-not (Test-Path -LiteralPath $LogScriptPath)) {
     Write-Host "Error: Could not find Write-ServyLog.ps1 at $LogScriptPath" -ForegroundColor Red
     exit 1
 }
@@ -25,9 +25,9 @@ $MaxLogSize = 10240 # Force rotation quickly at a tiny 10 KB threshold
 # Both phases write their artifacts into $ScriptDir, so removing them is the suite's own
 # responsibility on every exit path, not only before the next run starts.
 function Remove-TestArtifacts {
-    if (Test-Path $TestLogPath) { Remove-Item $TestLogPath -Force -ErrorAction SilentlyContinue }
-    Get-ChildItem -Path $ScriptDir -Filter "test_output_*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
-    Get-ChildItem -Path $ScriptDir -Filter "test_prune*.log"   -ErrorAction SilentlyContinue | Remove-Item -Force
+    if (Test-Path -LiteralPath $TestLogPath) { Remove-Item -LiteralPath $TestLogPath -Force -ErrorAction SilentlyContinue }
+    Get-ChildItem -LiteralPath $ScriptDir -Filter "test_output_*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
+    Get-ChildItem -LiteralPath $ScriptDir -Filter "test_prune*.log"   -ErrorAction SilentlyContinue | Remove-Item -Force
 }
 
 # Clear anything a previous run left behind before starting.
@@ -105,14 +105,14 @@ try {
     # 2. Count total successfully written entries across active and rotated segments
     Write-Host "Auditing total written line counts..." -ForegroundColor Cyan
     $ActiveLines = 0
-    if (Test-Path $TestLogPath) {
-        $ActiveLines = (Get-Content $TestLogPath).Count
+    if (Test-Path -LiteralPath $TestLogPath) {
+        $ActiveLines = (Get-Content -LiteralPath $TestLogPath).Count
     }
 
     $RotatedLines = 0
-    $RotatedFiles = Get-ChildItem -Path $ScriptDir -Filter "test_output_*.log"
+    $RotatedFiles = Get-ChildItem -LiteralPath $ScriptDir -Filter "test_output_*.log"
     foreach ($file in $RotatedFiles) {
-        $RotatedLines += (Get-Content $file.FullName).Count
+        $RotatedLines += (Get-Content -LiteralPath $file.FullName).Count
     }
 
     $TotalLines = $ActiveLines + $RotatedLines
@@ -155,7 +155,7 @@ try {
     }
 
     # The rotated filename embeds yyyyMMdd_HHmmss, so lexical order is chronological order.
-    $backups = Get-ChildItem -Path $ScriptDir -Filter "test_prune_*.log" | Sort-Object Name
+    $backups = Get-ChildItem -LiteralPath $ScriptDir -Filter "test_prune_*.log" | Sort-Object Name
     if ($backups.Count -ne $PruneBackups) {
         Write-Host "FAIL: Expected $PruneBackups retained backups for pruning test, found $($backups.Count)." -ForegroundColor Red
         Write-Host "====================================================" -ForegroundColor Cyan
@@ -165,7 +165,7 @@ try {
     # Retention must keep the NEWEST segments. Counting alone cannot see an inverted sort:
     # dropping -Descending in Write-ServyLog.ps1 keeps the three OLDEST and still leaves three files.
     $kept = $backups | ForEach-Object {
-        $raw = Get-Content $_.FullName -Raw
+        $raw = Get-Content -LiteralPath $_.FullName -Raw
         if ($raw -match '(PRUNE-\d{2})') { $Matches[1] } else { "<no-payload:$($_.Name)>" }
     }
     $expected = @(($PruneWrites - $PruneBackups)..($PruneWrites - 1) | ForEach-Object { "PRUNE-{0:D2}" -f $_ })
@@ -178,7 +178,7 @@ try {
 
     # The active log must survive pruning and hold the final payload; nothing else asserts that
     # the live file is not itself a pruning candidate.
-    $activeRaw = if (Test-Path $PrunePath) { Get-Content $PrunePath -Raw } else { "" }
+    $activeRaw = if (Test-Path -LiteralPath $PrunePath) { Get-Content -LiteralPath $PrunePath -Raw } else { "" }
     $lastPayload = "PRUNE-{0:D2}" -f $PruneWrites
     if ($activeRaw -notmatch [regex]::Escape($lastPayload)) {
         Write-Host "FAIL: Active log '$([System.IO.Path]::GetFileName($PrunePath))' should hold $lastPayload after pruning." -ForegroundColor Red
