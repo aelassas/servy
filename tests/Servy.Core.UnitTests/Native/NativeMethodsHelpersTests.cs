@@ -326,6 +326,30 @@ namespace Servy.Core.UnitTests.Native
             Assert.Null(identity.PrefixDigest); // Prefix probe skipped/failed (returns null, not string.Empty)
         }
 
+        [Fact]
+        public void GetFileIdentity_StreamPositionedMidFile_RestoresCallerPosition()
+        {
+            // Arrange
+            string filePath = Path.Combine(_testDir, "position.log");
+            File.WriteAllText(filePath, "0123456789ABCDEFGHIJ");
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                // A non-zero start, so a probe that leaves the stream at 0 or at the end of its read is visible.
+                fs.Seek(7, SeekOrigin.Begin);
+
+                // Act
+                var identity = NativeMethodsHelpers.GetFileIdentity(fs);
+
+                // Assert
+                // The content probe did run and moved the stream, so the restore in the finally block
+                // is what puts it back. This is the contract established by issue 1479.
+                Assert.False(string.IsNullOrEmpty(identity.PrefixDigest));
+                Assert.Equal(7, fs.Position);
+                Assert.Equal((int)'7', fs.ReadByte());
+            }
+        }
+
         #endregion
     }
 }
