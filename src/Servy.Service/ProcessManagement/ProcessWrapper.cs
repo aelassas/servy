@@ -596,7 +596,9 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <param name="process">The native process to which the signal will be sent.</param>
         /// <returns>
-        /// <see langword="true"/> if the signal was successfully generated;
+        /// <see langword="true"/> if the signal was successfully generated, or if the process shares a console
+        /// the service cannot attach to (<see cref="Errors.ERROR_PIPE_NOT_CONNECTED"/>), in which case no signal is
+        /// generated here and the process is assumed to have received the root wrapper's earlier broadcast;
         /// <see langword="false"/> if the process does not have a console or the signal could not be sent;
         /// <see langword="null"/> if the process has already exited.
         /// </returns>
@@ -609,7 +611,8 @@ namespace Servy.Service.ProcessManagement
         /// <para>
         /// <b>Safety:</b> To prevent the calling service from terminating itself when the signal is broadcast,
         /// the service's own Ctrl+C handler is suppressed using <c>SetConsoleCtrlHandler(null, true)</c>
-        /// for the duration of the signal generation.
+        /// before the signal is generated, and the same ignore flag is re-asserted afterwards rather than
+        /// cleared, because ignoring Ctrl+C is the service's steady state (set in <c>OnStart</c>).
         /// </para>
         /// </remarks>
         private bool? SendCtrlC(Process process)
