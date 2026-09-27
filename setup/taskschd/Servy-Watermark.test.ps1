@@ -13,7 +13,7 @@ Write-Host " Running Servy-Watermark.psm1 Tests                 " -ForegroundCol
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
-if (-not (Test-Path $modulePath)) {
+if (-not (Test-Path -LiteralPath $modulePath)) {
     Write-Host "FAIL: Servy-Watermark.psm1 was not found at path: $modulePath" -ForegroundColor Red
     exit 1
 }
