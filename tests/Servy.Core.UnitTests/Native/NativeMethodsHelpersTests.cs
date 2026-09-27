@@ -350,6 +350,34 @@ namespace Servy.Core.UnitTests.Native
             }
         }
 
+        [Fact]
+        public void GetFileIdentity_ReadFails_LeavesPrefixDigestNullAndRestoresPosition()
+        {
+            // Arrange
+            string filePath = Path.Combine(_testDir, "writeonly.log");
+            File.WriteAllText(filePath, "0123456789ABCDEFGHIJ");
+
+            // A write-only stream can seek but not read, so the probe's first Read throws
+            // NotSupportedException after Seek(0) has already moved the stream. The sibling
+            // ClosedStream test goes through CanSeek == false and never reaches the catch.
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+            {
+                fs.Seek(7, SeekOrigin.Begin);
+
+                // Act
+                var identity = NativeMethodsHelpers.GetFileIdentity(fs);
+
+                // Assert
+                // A failed content probe is "undeterminable" (null), never an empty-file digest,
+                // which IsDifferentFrom would read as "proven same" (#5160).
+                Assert.Null(identity.PrefixDigest);
+
+                // The finally block restores the caller's position on the exception path too (#1479);
+                // moving the restore to the end of the inner try keeps every other test green.
+                Assert.Equal(7, fs.Position);
+            }
+        }
+
         #endregion
     }
 }
