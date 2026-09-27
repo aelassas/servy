@@ -434,7 +434,8 @@ namespace Servy.Infrastructure.Data
                 if (service == null)
                     return OperationResult.Failure(deserializationFailedMessage);
 
-                // Preserve runtime state (PID, ActiveStdoutPath/ActiveStderrPath paths) if the service exists and is running.
+                // If a row with this name already exists, keep its runtime state (Pid, ActiveStdoutPath, ActiveStderrPath,
+                // PreviousStopTimeout) and its credentials (RunAsLocalSystem, UserAccount, Password), whether or not it is running.
                 await UpsertAsync(
                     service,
                     preserveExistingRuntimeState: true,
