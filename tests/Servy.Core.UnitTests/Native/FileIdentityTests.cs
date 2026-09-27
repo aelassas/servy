@@ -57,6 +57,23 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
+        public void FileIdentity_ValidHandlesSameIndexDifferentDigest_PrimaryProbeWinsAndReturnsFalse()
+        {
+            // Arrange
+            // Same file object by the Win32 identity, different content prefix: the primary probe is
+            // authoritative and the digest must not be consulted. A copytruncate rotation, or a writer
+            // that truncates and restarts the same file, keeps the index and rewrites the prefix.
+            var before = new FileIdentity { IsValidHandleInfo = true, FileIndex = 12345, VolumeSerialNumber = 98765, PrefixDigest = "BEFORE" };
+            var after = new FileIdentity { IsValidHandleInfo = true, FileIndex = 12345, VolumeSerialNumber = 98765, PrefixDigest = "AFTER" };
+
+            // Act
+            bool isDifferent = before.IsDifferentFrom(after);
+
+            // Assert
+            Assert.False(isDifferent, "A valid primary probe that matches must decide the result on its own; the prefix digest is only a fallback.");
+        }
+
+        [Fact]
         public void FileIdentity_HandleValidityMismatch_ReturnsTrue()
         {
             // Arrange
