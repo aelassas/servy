@@ -3,6 +3,8 @@ using Servy.Core.Config;
 using Servy.Core.Security;
 using Servy.Testing;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Security
@@ -303,6 +305,91 @@ namespace Servy.Core.UnitTests.Security
                 // Assert
                 // Verify the error message relates to the integrity check
                 Assert.Contains("HMAC integrity check failed", ex.Message);
+            }
+        }
+
+        [Fact]
+        public void Decrypt_V2ValidHmacButInvalidPadding_WrapsAesFailureAsIntegrityException()
+        {
+            // Arrange
+            // Every other v2 tamper test flips a byte of a genuine Encrypt output, so the HMAC check
+            // rejects the payload before AES runs. This payload carries a CORRECT HMAC over a block
+            // that is not PKCS7-padded, so it reaches the decryptor and fails there.
+            // The derivation mirrors SecureData's private DeriveHkdf (HMAC-SHA256 extract + one
+            // expand block) and its HkdfSalt / "V2_AES_ENCRYPTION" / "V2_HMAC_AUTHENTICATION" inputs.
+            var salt = Encoding.UTF8.GetBytes("Servy.Core.Security.v2.Salt");
+            var encKey = DeriveHkdf(_key, salt, "V2_AES_ENCRYPTION");
+            var hmacKey = DeriveHkdf(_key, salt, "V2_HMAC_AUTHENTICATION");
+
+            var iv = new byte[16];
+            byte[] ciphertext;
+            using (var aes = Aes.Create())
+            {
+                aes.Key = encKey;
+                aes.IV = iv;
+
+                // One all-zero block, unpadded: its decrypted last byte is 0x00, never a valid PKCS7 pad.
+                aes.Padding = PaddingMode.None;
+                using (var encryptor = aes.CreateEncryptor())
+                {
+                    ciphertext = encryptor.TransformFinalBlock(new byte[16], 0, 16);
+                }
+            }
+
+            var signed = new byte[iv.Length + ciphertext.Length];
+            Buffer.BlockCopy(iv, 0, signed, 0, iv.Length);
+            Buffer.BlockCopy(ciphertext, 0, signed, iv.Length, ciphertext.Length);
+
+            byte[] hmac;
+            using (var hmacSha = new HMACSHA256(hmacKey))
+            {
+                hmac = hmacSha.ComputeHash(signed);
+            }
+
+            var combined = new byte[signed.Length + hmac.Length];
+            Buffer.BlockCopy(signed, 0, combined, 0, signed.Length);
+            Buffer.BlockCopy(hmac, 0, combined, signed.Length, hmac.Length);
+
+            var payload = "SERVY_ENC:v2:" + Convert.ToBase64String(combined);
+
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act
+                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(payload));
+
+                // Assert
+                // Assert.Throws matches the exact type, so removing the wrap (which would let the raw
+                // CryptographicException through the outer rethrow) fails here; the message prefix
+                // separates this arm from the HMAC arm.
+                Assert.StartsWith("AES decryption failed:", ex.Message);
+                Assert.IsAssignableFrom<CryptographicException>(ex.InnerException);
+            }
+        }
+
+        /// <summary>
+        /// Derives a 32-byte sub-key the same way SecureData's private DeriveHkdf does: an
+        /// HMAC-SHA256 extract over the master key, then a single expand block over the info label.
+        /// </summary>
+        /// <param name="ikm">The master key material the key provider returns.</param>
+        /// <param name="salt">The HKDF salt; SecureData uses a fixed, versioned value.</param>
+        /// <param name="info">The context label, for example "V2_AES_ENCRYPTION".</param>
+        /// <returns>The 32-byte derived sub-key.</returns>
+        private static byte[] DeriveHkdf(byte[] ikm, byte[] salt, string info)
+        {
+            byte[] prk;
+            using (var hmacExtract = new HMACSHA256(salt))
+            {
+                prk = hmacExtract.ComputeHash(ikm);
+            }
+
+            var infoBytes = Encoding.UTF8.GetBytes(info);
+            var buffer = new byte[infoBytes.Length + 1];
+            Buffer.BlockCopy(infoBytes, 0, buffer, 0, infoBytes.Length);
+            buffer[buffer.Length - 1] = 0x01;
+
+            using (var hmacExpand = new HMACSHA256(prk))
+            {
+                return hmacExpand.ComputeHash(buffer);
             }
         }
 
