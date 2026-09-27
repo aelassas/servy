@@ -626,7 +626,9 @@ namespace Servy.Core.IO
                 {
                     if (attempt < AppConfig.LogRotationMaxSyncRetries - 1)
                     {
-                        // Unlocked sleep! Writers can proceed to generate a new file.
+                        // _lock is not held here, but _rotationInProgress is still set: writers, Flush and Dispose
+                        // stay parked in WaitForRotationToSettle until the finally in WriteInternal clears it,
+                        // so each retry delay adds to their wait rather than letting them proceed.
                         Thread.Sleep(AppConfig.LogRotationSyncRetryDelayMs);
                     }
                     else
