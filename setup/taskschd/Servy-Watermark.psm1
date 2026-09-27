@@ -21,13 +21,13 @@
 $getErrorsScript = Join-Path $PSScriptRoot "Get-ServyLastErrors.ps1"
 $writeLogScript = Join-Path $PSScriptRoot "Write-ServyLog.ps1"
 
-if ((Test-Path $getErrorsScript) -and (Test-Path $writeLogScript)) {
+if ((Test-Path -LiteralPath $getErrorsScript) -and (Test-Path -LiteralPath $writeLogScript)) {
     . $getErrorsScript
     . $writeLogScript
 } else {
     $missing = @()
-    if (-not (Test-Path $getErrorsScript)) { $missing += 'Get-ServyLastErrors.ps1' }
-    if (-not (Test-Path $writeLogScript))  { $missing += 'Write-ServyLog.ps1' }
+    if (-not (Test-Path -LiteralPath $getErrorsScript)) { $missing += 'Get-ServyLastErrors.ps1' }
+    if (-not (Test-Path -LiteralPath $writeLogScript))  { $missing += 'Write-ServyLog.ps1' }
     throw "Servy-Watermark Module: Required dependency missing in '$PSScriptRoot': $($missing -join ', ')"
 }
 
@@ -102,7 +102,7 @@ function Read-Watermark {
     #>
     param([string]$TimestampFile)
     $lastProcessed = $null
-    if (Test-Path $TimestampFile) {
+    if (Test-Path -LiteralPath $TimestampFile) {
         try {
             $raw = (Get-Content $TimestampFile -Raw -ErrorAction Stop)
             $lastProcessed = ConvertFrom-WatermarkString -Value $raw
@@ -150,7 +150,7 @@ function Update-Watermark {
             $shouldWrite = $true
 
             # 1. Atomic Read/Compare Phase: Safely evaluate if the watermark needs advancing
-            if (Test-Path $TimestampFile) {
+            if (Test-Path -LiteralPath $TimestampFile) {
                 $fs = [System.IO.File]::Open($TimestampFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
                 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
                 $reader = New-Object System.IO.StreamReader($fs, $utf8NoBom, $false, 1024, $true)
@@ -191,7 +191,7 @@ function Update-Watermark {
                 $fs = $null
 
                 # Commit changes atomically.
-                if (Test-Path $tempFile) {
+                if (Test-Path -LiteralPath $tempFile) {
                     # PATH CONFORMANCE: Convert all paths to explicit absolute forms.
                     # Instead of $null, we provide a valid, conforming backup path string ($absoluteBackup)
                     # to keep the underlying Win32 subsystem happy under .NET Framework 4.8 / PS 5.1.
@@ -199,7 +199,7 @@ function Update-Watermark {
                     $absoluteTimestamp = [System.IO.Path]::GetFullPath($TimestampFile)
                     $absoluteBackup    = [System.IO.Path]::GetFullPath($backupFile)
 
-                    if (Test-Path $absoluteTimestamp) {
+                    if (Test-Path -LiteralPath $absoluteTimestamp) {
                         # Re-check target watermark state immediately before commit to prevent stale-write regressions
                         $recheckContent = [System.IO.File]::ReadAllText($absoluteTimestamp).Trim()
                         if (-not [string]::IsNullOrWhiteSpace($recheckContent)) {
@@ -207,7 +207,7 @@ function Update-Watermark {
                                 $recheckTimestamp = ConvertFrom-WatermarkString -Value $recheckContent
                                 if ($null -ne $recheckTimestamp -and $newestTimestamp -le $recheckTimestamp) {
                                     # Concurrent process advanced the watermark past us; discard staging and treat as completed
-                                    Remove-Item $absoluteTemp -Force -ErrorAction SilentlyContinue
+                                    Remove-Item -LiteralPath $absoluteTemp -Force -ErrorAction SilentlyContinue
                                     break
                                 }
                             } catch {
@@ -254,8 +254,8 @@ function Update-Watermark {
             if ($null -ne $fs)     { try { $fs.Dispose() }     catch {} }
 
             # Post-swap cleanup: Scrub both transient staging and backup assets from disk
-            if (Test-Path $tempFile)   { try { Remove-Item $tempFile -Force }   catch {} }
-            if (Test-Path $backupFile) { try { Remove-Item $backupFile -Force } catch {} }
+            if (Test-Path -LiteralPath $tempFile)   { try { Remove-Item -LiteralPath $tempFile -Force }   catch {} }
+            if (Test-Path -LiteralPath $backupFile) { try { Remove-Item -LiteralPath $backupFile -Force } catch {} }
         }
     }
 }

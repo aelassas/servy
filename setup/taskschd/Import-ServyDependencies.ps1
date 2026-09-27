@@ -11,7 +11,7 @@
 .NOTES
     Required Caller-Scope Variables:
     - $RequiredDependencies : String array of dependency filenames to import (e.g. @('Servy-Watermark.psm1')).
-    - $scriptDir           : Resolved absolute path to the directory containing script dependencies.
+    - $scriptDir            : Resolved absolute path to the directory containing script dependencies.
     - $EVENT_ID_DEPENDENCY_ERROR : Integer event ID for logging missing dependency warnings to Windows Application Event Log.
 #>
 
@@ -29,7 +29,7 @@ if (-not $EVENT_ID_DEPENDENCY_ERROR) {
 foreach ($dep in $RequiredDependencies) {
     $depPath = Join-Path $scriptDir $dep
 
-    if (-not (Test-Path $depPath)) {
+    if (-not (Test-Path -LiteralPath $depPath)) {
         $errorMsg = "Servy Notification Error: Required dependency not found at '$depPath'. Please ensure the file exists in the script directory."
 
         # 1. Attempt to log to Event Log for administrator visibility
