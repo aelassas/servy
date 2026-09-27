@@ -364,13 +364,14 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ExecuteAsync_InvalidSecondaryConfigPath_ReturnsGeneralInvalidPathFailure()
+        public async Task ExecuteAsync_InvalidStartupDirectory_ReturnsPropertySpecificFailure()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
-            // Executable path is legal, but a secondary attribute property (like WorkingDirectory) is invalid
+            // The executable path is valid, but a secondary path property (StartupDirectory) is not, so the
+            // violation resolves to that property's own [ServicePath] error resource, not to Msg_InvalidPath.
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\notepad.exe", StartupDirectory = @"Y:\Invalid\Folder" };
             MockXmlValidator(true, dto: dto);
 
