@@ -479,8 +479,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 UseShellExecute = false,
             };
 
+            const int StatusDllInitFailed = unchecked((int)0xC0000142);
             const int maxRetries = 5;
             Process? rootProcess = null;
+            int? lastDllInitExitCode = null;
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -490,8 +492,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Give the process a brief window to ensure it doesn't immediately exit due to runner DLL initialization failures (0xC0000142)
                 Thread.Sleep(100);
 
-                if (rootProcess.HasExited && (rootProcess.ExitCode == unchecked((int)0xC0000142) || rootProcess.ExitCode == -1073741502))
+                if (rootProcess.HasExited && rootProcess.ExitCode == StatusDllInitFailed)
                 {
+                    lastDllInitExitCode = rootProcess.ExitCode;
                     rootProcess.Dispose();
                     rootProcess = null;
 
@@ -505,7 +508,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 break;
             }
 
-            Assert.NotNull(rootProcess);
+            Assert.True(rootProcess != null,
+                $"Root powershell.exe exited with 0x{lastDllInitExitCode:X8} (STATUS_DLL_INIT_FAILED) on all {maxRetries} start attempts.");
             _processesToCleanup.Add(rootProcess);
 
             return rootProcess;
