@@ -76,14 +76,14 @@ function ConvertTo-HtmlSafe {
 # 3. Load Configuration
 # -------------------------------
 $configPath = Join-Path $scriptDir "smtp-config.xml"
-if (-not (Test-Path $configPath)) {
+if (-not (Test-Path -LiteralPath $configPath)) {
     $errorMsg = "ServyFailureEmail: Configuration file not found at '$configPath'. Stopping script."
     Write-FallbackError -Message $errorMsg -ScriptDir $scriptDir -FallbackFileName $fallbackLogFile
     exit 1
 }
 
 try {
-    [xml]$SmtpConfig = Get-Content $configPath -ErrorAction Stop
+    [xml]$SmtpConfig = Get-Content -LiteralPath $configPath -ErrorAction Stop
 } catch {
     $errorMsg = "ServyFailureEmail: Failed to parse XML configuration. Error: $($_.Exception.Message)"
     Write-FallbackError -Message $errorMsg -ScriptDir $scriptDir -FallbackFileName $fallbackLogFile
@@ -219,7 +219,7 @@ function Send-NotificationEmail {
         return 'PermanentFailure'
     }
 
-    if (-not (Test-Path $credPath)) {
+    if (-not (Test-Path -LiteralPath $credPath)) {
         Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
         return 'PermanentFailure'
     }
@@ -239,7 +239,7 @@ function Send-NotificationEmail {
 
     # --- EXECUTION ---
     try {
-        $cred = Import-Clixml $credPath
+        $cred = Import-Clixml -LiteralPath $credPath
 
         $smtp = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
         $smtp.EnableSsl = $useSsl
