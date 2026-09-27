@@ -951,7 +951,7 @@ function Get-ServyHelp {
     [CmdletBinding()]
     param(
         [switch] $Quiet,
-        [ValidateSet("install", "uninstall", "start", "stop", "restart", "status", "export", "import")]
+        [ValidateSet("install", "uninstall", "start", "stop", "restart", "status", "show", "export", "import")]
         [string] $Command
     )
 
