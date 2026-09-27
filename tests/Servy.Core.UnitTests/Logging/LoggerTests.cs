@@ -714,6 +714,45 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal(0, finalCounterValue);
         }
 
+        /// <summary>
+        /// Pins the "value changed and a writer is live, so recreate it" arm of EACH runtime setter
+        /// on its own. <see cref="Setters_WhenCalledWithNewValues_ReinitializesWriter"/> calls three
+        /// setters in a row against a single sentinel, so the first call already resets it and only
+        /// <see cref="Logger.SetLogRotationSize"/> is actually pinned there.
+        /// </summary>
+        [Theory]
+        [InlineData(nameof(Logger.SetLogRotationSize))]
+        [InlineData(nameof(Logger.SetMaxBackupLogFiles))]
+        [InlineData(nameof(Logger.SetDateRotationType))]
+        [InlineData(nameof(Logger.SetUseLocalTimeForRotation))]
+        public void Setter_WhenCalledAloneWithNewValue_ReinitializesWriter(string setter)
+        {
+            // Arrange
+            Logger.Initialize(
+                _testFileName,
+                logRotationSizeMB: 10,
+                maxBackupLogFiles: 10,
+                dateRotationType: DateRotationType.None,
+                useLocalTimeForRotation: false);
+            Logger.Info("Live writer");
+
+            // InternalInitialize resets this counter, so 0 afterwards means this one setter recreated the writer.
+            TestReflection.SetFieldStatic(typeof(Logger), "_initFallbackWriteCount", 99);
+
+            // Act
+            switch (setter)
+            {
+                case nameof(Logger.SetLogRotationSize): Logger.SetLogRotationSize(20); break;
+                case nameof(Logger.SetMaxBackupLogFiles): Logger.SetMaxBackupLogFiles(5); break;
+                case nameof(Logger.SetDateRotationType): Logger.SetDateRotationType(DateRotationType.Daily); break;
+                case nameof(Logger.SetUseLocalTimeForRotation): Logger.SetUseLocalTimeForRotation(true); break;
+                default: throw new ArgumentOutOfRangeException(nameof(setter), setter, "No arrangement for this setter.");
+            }
+
+            // Assert
+            Assert.Equal(0, TestReflection.GetFieldStatic<int>(typeof(Logger), "_initFallbackWriteCount"));
+        }
+
         [Fact]
         public void Setters_WhenCalledWithSameValues_SkipsReinitialization()
         {
