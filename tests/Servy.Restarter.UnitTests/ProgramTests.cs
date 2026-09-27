@@ -249,7 +249,7 @@ namespace Servy.Restarter.UnitTests
             try
             {
                 // Act
-                Program.Main(args, mockRestarter.Object);
+                Program.Run(args, mockRestarter.Object);
 
                 // Assert
                 Assert.Equal(0, Environment.ExitCode);
@@ -319,7 +319,7 @@ namespace Servy.Restarter.UnitTests
             try
             {
                 // Act
-                Program.Main(args, mockRestarter.Object);
+                Program.Run(args, mockRestarter.Object);
 
                 // Assert
                 Assert.Equal(0, Environment.ExitCode);

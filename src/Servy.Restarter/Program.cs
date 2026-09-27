@@ -27,15 +27,15 @@ namespace Servy.Restarter
         /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies custom log directory.</param>
         public static void Main(string[] args)
         {
-            Main(args, restarter: null);
+            Run(args, restarter: null);
         }
 
         /// <summary>
-        /// Internal overload for <see cref="Main(string[])"/> supporting test seam injection.
+        /// Implementation of <see cref="Main(string[])"/> with an injectable restarter, used as the test seam.
         /// </summary>
         /// <param name="args">Command line arguments.</param>
         /// <param name="restarter">Optional restarter instance for dependency injection testing.</param>
-        internal static void Main(string[] args, IServiceRestarter restarter)
+        internal static void Run(string[] args, IServiceRestarter restarter)
         {
             string customLogDir = args.Length > 1 ? args[1] : null;
             Logger.Initialize("Servy.Restarter.log", logDirectory: customLogDir);
