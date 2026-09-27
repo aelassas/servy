@@ -313,6 +313,69 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void OnStart_ValidationFails_SetsServiceSpecificExitCodeAndStopsWithoutStartingProcess()
+        {
+            // Arrange
+            var fullArgs = new[] { "servy.exe" };
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "C:\\Windows\\notepad.exe"
+            };
+            var mockScopedLogger = new Mock<IServyLogger>();
+            bool stopped = false;
+
+            _service.OnStoppedForTest += () => stopped = true;
+
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs)).Returns(options);
+            _ctx.Logger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(mockScopedLogger.Object);
+
+            // The path under test: validation reports the options as unusable.
+            _ctx.Helper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object)).Returns(false);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.True(stopped);
+            Assert.Equal(AppConfig.ServiceSpecificErrorCode, _service.ExitCode);
+
+            // The early return is what keeps an unvalidated executable from being launched.
+            _ctx.ProcessFactory.Verify(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(30, 40_000)] // above the 20 s threshold: (30 + 10 s buffer) * 1000 ms
+        [InlineData(20, null)]   // at the threshold: no request, the comparison is strictly greater-than
+        public void OnStart_StartTimeout_RequestsAdditionalScmTimeOnlyAboveThreshold(int startTimeoutSeconds, int? expectedMilliseconds)
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "C:\\Windows\\notepad.exe",
+                StartTimeoutInSeconds = startTimeoutSeconds
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            // The startup request is the only RequestAdditionalTime call that carries a logger;
+            // the heartbeat call sites all pass null, so the scoped logger identifies this one.
+            if (expectedMilliseconds.HasValue)
+            {
+                _ctx.Helper.Verify(h => h.RequestAdditionalTime(_service, expectedMilliseconds.Value, scopedLogger.Object), Times.Once);
+            }
+            else
+            {
+                _ctx.Helper.Verify(h => h.RequestAdditionalTime(_service, It.IsAny<int>(), scopedLogger.Object), Times.Never);
+            }
+        }
+
+        [Fact]
         public void SetProcessPriority_ValidPriority_SetsPriorityAndLogsInfo()
         {
             // Arrange
