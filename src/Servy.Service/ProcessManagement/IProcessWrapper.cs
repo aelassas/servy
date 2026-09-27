@@ -126,7 +126,11 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Formats the process information as a string.
         /// </summary>
-        /// <returns>A human-readable description of the process, formatted as "ProcessName (Id)".</returns>
+        /// <returns>
+        /// A human-readable description of the process, formatted as "ProcessName (Id)"; "(PID Id)" when the
+        /// name cannot be read, and "(Exited Process)" or "(Inaccessible Process)" when the ID cannot be read
+        /// either (see <see cref="ProcessExtensions.Format(System.Diagnostics.Process)"/>).
+        /// </returns>
         string Format();
 
         /// <summary>
