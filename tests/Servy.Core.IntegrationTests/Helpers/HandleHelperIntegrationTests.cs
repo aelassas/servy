@@ -87,6 +87,91 @@ namespace Servy.Core.IntegrationTests.Helpers
             return path;
         }
 
+        /// <summary>
+        /// Writes a temporary .cmd script that prints a chosen stdout/stderr and exits with a chosen
+        /// code, for use as the <c>handleExePath</c> argument. GetProcessesUsingFile starts it with
+        /// <see cref="ProcessStartInfo.UseShellExecute"/> false, and CreateProcess runs a batch file
+        /// through the command interpreter, so the script stands in for handle.exe without needing
+        /// the real tool, elevation, or a live handle table. The script ignores the arguments it is
+        /// passed, which is what lets it produce results the live tool never produces in CI.
+        /// </summary>
+        /// <param name="body">Script body, appended after <c>@echo off</c>.</param>
+        /// <returns>The path to the script, registered for deletion by <see cref="Dispose"/>.</returns>
+        private string CreateFakeHandleScript(string body)
+        {
+            string path = Path.Combine(Path.GetTempPath(), $"ServyFakeHandle_{Guid.NewGuid():N}.cmd");
+            File.WriteAllText(path, "@echo off\r\n" + body + "\r\n");
+            _tempFiles.Add(path);
+            return path;
+        }
+
+        [Fact]
+        public void GetProcessesUsingFile_NonZeroExitWithUnrecognisedOutput_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            string script = CreateFakeHandleScript("echo something went wrong\r\nexit /b 2");
+            string testFile = CreateTempFile();
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => HandleHelper.GetProcessesUsingFile(script, testFile));
+
+            // Assert
+            // The exit code is quoted into the message so an operator can tell which failure this was.
+            Assert.Contains("exit code 2", ex.Message);
+        }
+
+        [Fact]
+        public void GetProcessesUsingFile_ExitOneButAHandleWasParsed_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            // Exit code 1 only means "no handles" when nothing matched: a parsed pid: line contradicts
+            // that reading, so the fail-closed branch must still fire.
+            string script = CreateFakeHandleScript(
+                "echo holder.exe  pid: 4242  type: File  1A4: C:\\x.txt\r\nexit /b 1");
+            string testFile = CreateTempFile();
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(
+                () => HandleHelper.GetProcessesUsingFile(script, testFile));
+        }
+
+        [Fact]
+        public void GetProcessesUsingFile_ExitOneWithEmptyStdoutAndStderrText_ShouldReturnEmptyList()
+        {
+            // Arrange
+            string script = CreateFakeHandleScript("echo access problem 1>&2\r\nexit /b 1");
+            string testFile = CreateTempFile();
+
+            // Act
+            // Blank stdout is the other half of the "no matching handles" reading, so this must be
+            // classified as a clean empty result and merely warn about the stderr text.
+            var results = HandleHelper.GetProcessesUsingFile(script, testFile);
+
+            // Assert
+            Assert.Empty(results);
+        }
+
+        [Fact]
+        public void GetProcessesUsingFile_ExitZero_ShouldParseNameAndPidOfEveryLine()
+        {
+            // Arrange
+            string script = CreateFakeHandleScript(
+                "echo first.exe      pid: 101   type: File   1A4: C:\\x.txt\r\n" +
+                "echo second app.exe pid: 202   type: File   2B8: C:\\x.txt\r\n" +
+                "exit /b 0");
+            string testFile = CreateTempFile();
+
+            // Act
+            var results = HandleHelper.GetProcessesUsingFile(script, testFile);
+
+            // Assert
+            // A chosen output pins the exact name and pid the parse extracts, which the live tool
+            // cannot do: the second line also proves a name containing a space survives the lazy match.
+            Assert.Equal(new[] { 101, 202 }, results.Select(r => r.ProcessId));
+            Assert.Equal(new[] { "first.exe", "second app.exe" }, results.Select(r => r.ProcessName));
+        }
+
         [Theory]
         [InlineData(null, "C:\\temp\\file.txt")]
         [InlineData("C:\\temp\\handle.exe", null)]
