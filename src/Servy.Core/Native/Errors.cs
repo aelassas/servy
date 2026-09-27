@@ -32,9 +32,6 @@ namespace Servy.Core.Native
         /// <summary>An instance of the service is already running.</summary>
         public const int ERROR_SERVICE_ALREADY_RUNNING = 1056;
 
-        /// <summary>The service cannot be started, either because it is disabled or because it has no enabled devices associated with it.</summary>
-        public const int ERROR_SERVICE_DISABLED = 1058;
-
         /// <summary>The specified service does not exist as an installed service.</summary>
         public const int ERROR_SERVICE_DOES_NOT_EXIST = 1060;
 
@@ -43,9 +40,6 @@ namespace Servy.Core.Native
 
         /// <summary>The specified service has not been started.</summary>
         public const int ERROR_SERVICE_NOT_ACTIVE = 1062;
-
-        /// <summary>The service did not start due to a logon failure.</summary>
-        public const int ERROR_SERVICE_LOGON_FAILED = 1069;
 
         /// <summary>The specified service has been marked for deletion.</summary>
         public const int ERROR_SERVICE_MARKED_FOR_DELETE = 1072;
