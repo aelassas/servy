@@ -276,8 +276,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SeedSchemaInfo(conn, 1);
 
                 // Create table with 'EnableSizeRotation' already existing (triggers Rename skip existing branch)
-                // Lacks 'EnableRotation' (triggers Rename source missing branch)
-                // Has 'RecoveryOnCleanExit' already (triggers AddColumn skip branch)
+                // Also lacks 'EnableRotation', but RenameColumnIfExists tests the target column first,
+                // so this fixture does NOT reach the Rename source missing branch
+                // 'RecoveryOnCleanExit' is pre-seeded, but the V4 rebuild recreates every expected column
+                // before V5 runs, so V5's AddColumn skip branch is reached with or without it
                 conn.Execute($@"
                     CREATE TABLE {SqlConstants.ServicesTableName} (
                         Id INTEGER PRIMARY KEY,
