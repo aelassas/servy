@@ -140,9 +140,9 @@ namespace Servy.Core.UnitTests.Logging
         public void Initialize_WhenFileNameIsInvalid_FailsSilentlyAndWritesToFallback()
         {
             // Arrange
-            // Passing an invalid character like a null terminator character sequence
-            // forces Path.Combine to pass validation but crashes the underlying Win32
-            // CreateFile handle allocation with an ArgumentException.
+            // A NUL character passes Path.Combine, which does not validate characters, and is
+            // then rejected with an ArgumentException by the managed path check in the writer's
+            // new FileInfo(path), before any Win32 CreateFile call is made.
             string illegalFileName = "Invalid\0Char.log";
 
             // Act
@@ -249,7 +249,8 @@ namespace Servy.Core.UnitTests.Logging
             // CR or LF assertion made against one of its elements is true by construction.
             string content = File.ReadAllText(_fullLogPath);
 
-            // Locate by payload rather than by index: the file may already hold entries from earlier writes.
+            // The constructor gives every test a fresh, uniquely named log file, so this entry is the
+            // file's only content - which is what lets the whole file be treated as one entry below.
             Assert.Contains(expectedFragment, content);
 
             // The entry must occupy exactly one physical line: the only newline in the file
