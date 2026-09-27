@@ -42,7 +42,7 @@ $scriptDir = $PSScriptRoot
 
 # Load central defaults
 $configPath = Join-Path $scriptDir "build-config.ps1"
-if (Test-Path $configPath) {
+if (Test-Path -LiteralPath $configPath) {
     $buildConfig = & $configPath
     if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
     if (-not $Version) { $Version = $buildConfig.Version }
@@ -59,7 +59,7 @@ Assert-ServyVersion -Version $Version
 # Configuration
 # ========================
 # Resolve the root once at the start (this is safe as the script is running inside it)
-$rootDir    = (Resolve-Path (Join-Path $scriptDir "..")).Path
+$rootDir    = (Resolve-Path -LiteralPath (Join-Path $scriptDir "..")).Path
 $servyDir   = Join-Path $rootDir "src\Servy"
 $cliDir     = Join-Path $rootDir "src\Servy.CLI"
 $managerDir = Join-Path $rootDir "src\Servy.Manager"
@@ -106,7 +106,7 @@ foreach ($project in $projects) {
     Write-Host "--- Publishing $projectName ---" -ForegroundColor Cyan
 
     $publishScript = Join-Path $project "publish.ps1"
-    if (-not (Test-Path $publishScript)) {
+    if (-not (Test-Path -LiteralPath $publishScript)) {
         throw "Publish script not found for ${projectName}: $publishScript"
     }
 
@@ -121,13 +121,13 @@ Remove-ItemSafely -Path $installerPath
 Invoke-BuildInstaller -InnoCompiler $innoCompiler -IssFile $issFile -Version $Version -Arch $arch -BuildConfiguration $BuildConfiguration -Tfm $Tfm
 
 # Validate the installer exists before attempting to sign
-if (Test-Path $installerPath) {
+if (Test-Path -LiteralPath $installerPath) {
     # Resolve the absolute path for the signer
-    $resolvedInstaller = (Resolve-Path $installerPath).Path
+    $resolvedInstaller = (Resolve-Path -LiteralPath $installerPath).Path
 
     # Validate the signing script exists before trying to execute it
-    if (Test-Path $signPath) {
-        $resolvedSigner = (Resolve-Path $signPath).Path
+    if (Test-Path -LiteralPath $signPath) {
+        $resolvedSigner = (Resolve-Path -LiteralPath $signPath).Path
         Write-Host "--- Signing Artifacts ---" -ForegroundColor Cyan
         & $resolvedSigner -Path $resolvedInstaller
         Assert-LastExitCode "Signing artifacts failed"
@@ -157,8 +157,8 @@ try {
     }
 
     foreach ($item in $binaries.GetEnumerator()) {
-        if (Test-Path $item.Value) {
-            Copy-Item -Path $item.Value -Destination (Join-Path $packageFolder $item.Name) -Force
+        if (Test-Path -LiteralPath $item.Value) {
+            Copy-Item -LiteralPath $item.Value -Destination (Join-Path $packageFolder $item.Name) -Force
         } else {
             throw "Critical binary missing: $($item.Value)"
         }

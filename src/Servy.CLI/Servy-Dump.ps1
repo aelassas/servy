@@ -638,7 +638,7 @@ public static class ServyNativeWinSqliteRecord
             Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
         }
         catch {
-            $sidecarWriteFailed =$true
+            $sidecarWriteFailed = $true
             if (Test-Path -LiteralPath $sidecarPath) {
                 Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
             }
@@ -767,7 +767,7 @@ finally {
     if ($null -ne $createdParentPath -and (Test-Path -LiteralPath $createdParentPath) -and -not (Test-Path -LiteralPath $resolvedArchivePath)) {
         $dir = $createdParentPath
         while ($null -ne $dir -and $dir -ne $createdRootBoundary -and (Test-Path -LiteralPath $dir)) {
-            $items = Get-ChildItem -LiteralPath$dir -Force -ErrorAction SilentlyContinue
+            $items = Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue
             if ($null -ne $items -and @($items).Count -gt 0) { break }
             Remove-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue -WhatIf:$false
             $dir = [System.IO.Path]::GetDirectoryName($dir)
