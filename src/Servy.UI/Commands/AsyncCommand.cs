@@ -58,7 +58,8 @@ namespace Servy.UI.Commands
             }
             catch (Exception ex)
             {
-                // Log and surface - never let an async void exception escape into the dispatcher.
+                // Log only - never let an async void exception escape into the dispatcher. Nothing is shown
+                // to the user here; a command that needs a dialog on failure must raise it inside its delegate.
                 Logger.Error($"AsyncCommand '{_name ?? "<unnamed>"}' execution failed.", ex);
             }
         }
