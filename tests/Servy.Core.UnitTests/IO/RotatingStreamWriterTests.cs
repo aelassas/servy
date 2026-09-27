@@ -1204,6 +1204,60 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
+        [Fact]
+        public void WaitForRotationToSettle_WhenRotationCompletes_WakesBlockedWriterAndWritesLine()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "settle_wakeup.log");
+
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 1024 * 1024))
+            {
+                // Long enough that only a PulseAll, never the timeout, can release the blocked writer.
+                // The timeout arm is what WaitForRotationToSettle_WhenTimeoutExceeded_PreventsHandleAttachment
+                // above covers; this case is the other outcome of the same gate.
+                writer.RotationWaitTimeoutMs = 10_000;
+                writer.WriteLine("before_rotation");
+
+                var gate = TestReflection.GetField<object>(writer, "_lock");
+                TestReflection.SetField(writer, "_rotationInProgress", true);
+
+                // Mimic WriteInternal's finally block: clear the gate flag and pulse under the lock.
+                // The sleep only makes it likely that the writer is already inside Monitor.Wait when the
+                // pulse arrives; if the releaser wins the race the writer never waits and the assertions
+                // still hold, so the case cannot flake red.
+                var releaser = new Thread(() =>
+                {
+                    Thread.Sleep(200);
+                    lock (gate)
+                    {
+                        TestReflection.SetField(writer, "_rotationInProgress", false);
+                        Monitor.PulseAll(gate);
+                    }
+                })
+                {
+                    IsBackground = true
+                };
+                releaser.Start();
+
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                // Act
+                writer.WriteLine("after_rotation");
+                stopwatch.Stop();
+                releaser.Join();
+
+                // Assert
+                Assert.True(stopwatch.ElapsedMilliseconds < 5_000,
+                    $"Writer was released by the timeout, not by the pulse ({stopwatch.ElapsedMilliseconds} ms).");
+            }
+
+            // The line is on disk only if WaitForRotationToSettle returned true after being woken;
+            // the timeout arm returns false and WriteInternal drops the write.
+            var content = File.ReadAllText(filePath);
+            Assert.Contains("before_rotation", content);
+            Assert.Contains("after_rotation", content);
+        }
+
         #region Circuit Breaker & Permanent Failure Tests
 
         [Fact]
