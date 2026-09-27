@@ -247,6 +247,8 @@ namespace Servy.Core.Security
                     MutexRights.Synchronize | MutexRights.Modify,
                     AccessControlType.Allow);
 
+                mutexSecurity.AddAccessRule(accessRule);
+
                 // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
                 mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out bool createdNew, mutexSecurity);
 
