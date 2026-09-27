@@ -43,7 +43,7 @@ namespace Servy.UI.Bootstrapping
         private ErrorEventHandler? _availabilityErrorHandler;
         private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
         private DateTime _lastErrorDialogShown = DateTime.MinValue;
-        private string _lastErrorDialogMessage = string.Empty;
+        private string _lastErrorDialogSignature     = string.Empty;
 
         #endregion
 
@@ -176,12 +176,12 @@ namespace Servy.UI.Bootstrapping
                     var currentExceptionSignature = args.Exception.GetType().FullName + "@" + site;
 
                     // Allow the dialog if it is a new exception signature, or if the debounce window has elapsed
-                    shouldShowDialog = currentExceptionSignature != _lastErrorDialogMessage
+                    shouldShowDialog = currentExceptionSignature != _lastErrorDialogSignature
                                        || (now - _lastErrorDialogShown) > TimeSpan.FromSeconds(AppConfig.UnexpectedErrorDialogDebounceSeconds);
 
                     if (shouldShowDialog)
                     {
-                        _lastErrorDialogMessage = currentExceptionSignature;
+                        _lastErrorDialogSignature = currentExceptionSignature;
                         _lastErrorDialogShown = now;
                     }
                 }
