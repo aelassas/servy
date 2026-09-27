@@ -132,7 +132,12 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // The command fails because the service is not found in the database/SCM, returning Error (1)
+            // The command fails before it reaches the start handler: the fixture writes a relative
+            // AESKeyFilePath, and the start verb is mapped with requireDatabase: true, so
+            // AppFoldersHelper.EnsureFolders rejects the non-absolute key path and Main's catch-all
+            // returns Error (1). The fixture is deliberately left relative: absolute paths would make
+            // this unit test touch the real ProgramData folder ACLs, create the event source and
+            // extract the embedded service executable.
             Assert.Equal((int)CliExitCode.Error, result.Result);
 
             // Verify that no loading animation frames or status text fragments were written to stdout
@@ -169,6 +174,53 @@ namespace Servy.CLI.UnitTests
             // only place in the solution that text is produced, so this assertion cannot pass unless the
             // guard branch itself ran.
             Assert.Contains("Unknown command 'frobnicate'", result.StdErr);
+        }
+
+        [Fact]
+        public async Task Main_StatusOfMissingService_TakesFastPathAndPrintsNotInstalled()
+        {
+            // Arrange
+            // status is the one verb mapped with requireDatabase: false and requireBinaries: false, so it is
+            // the only one that reaches its handler through ExecuteWithRuntimeAsync's fast path - no
+            // EnsureDatabase, no EnsureServiceBinariesAsync, and therefore no ProgramData folder ACLs, no
+            // event source and no embedded-resource extraction. ServiceManager.GetServiceStatus returns null
+            // for a name the SCM does not know, and IsServiceInstalled then reports false, so the command
+            // returns Ok with the NotInstalled token.
+            string[] args = { "status", "-n", "NonExistentServiceForTestingOnly" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () =>
+            {
+                return await Program.Main(args);
+            });
+
+            // Assert
+            // Before this test no test reached any of the nine MapResult verb lambdas or the single
+            // PrintAndReturnAsync line they all return through, so a verb wired to the wrong bootstrap flags
+            // was invisible to the suite.
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
+        }
+
+        [Fact]
+        public async Task Main_KnownVerbMissingRequiredOption_ReturnsErrorExitCode()
+        {
+            // Arrange
+            // A recognized verb passes the unknown-command guard, so the missing required -n is reported by
+            // CommandLineParser as a MissingRequiredOptionError. That is neither help nor version, which is
+            // the one arm of the MapResult error lambda the suite never exercised: the empty-args and --help
+            // tests both take its IsHelp() branch.
+            string[] args = { "status" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () =>
+            {
+                return await Program.Main(args);
+            });
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.DoesNotContain("Service status for", result.StdOut);
         }
 
         #endregion
