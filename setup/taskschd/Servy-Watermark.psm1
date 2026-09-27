@@ -104,7 +104,7 @@ function Read-Watermark {
     $lastProcessed = $null
     if (Test-Path -LiteralPath $TimestampFile) {
         try {
-            $raw = (Get-Content $TimestampFile -Raw -ErrorAction Stop)
+            $raw = (Get-Content -LiteralPath $TimestampFile -Raw -ErrorAction Stop)
             $lastProcessed = ConvertFrom-WatermarkString -Value $raw
         } catch {
             Write-Warning "Could not parse timestamp file; treating as first run - will only show the most recent event."
