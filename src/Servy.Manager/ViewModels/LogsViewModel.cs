@@ -163,7 +163,7 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Gets or sets the message of the currently selected log entry.
-        /// Returns an empty string if none is selected.
+        /// Set to an empty string when the selection is cleared; <see langword="null"/> until the first entry is selected.
         /// </summary>
         public string SelectedLogMessage
         {
