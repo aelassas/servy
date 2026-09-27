@@ -7,15 +7,20 @@ using System.Diagnostics;
 namespace Servy.Service.ProcessManagement
 {
     /// <summary>
-    /// Format extensions for processes.
+    /// Process helpers for the service host: a display formatter, and Toolhelp32-based enumeration of
+    /// a process's children and descendants with PID-reuse validation.
     /// </summary>
     public static class ProcessExtensions
     {
         /// <summary>
-        /// Formats the process as "ProcessName (Id)".
+        /// Formats the process as "ProcessName (Id)" for log messages.
         /// </summary>
-        /// <param name="process">Process.</param>
-        /// <returns>Process info.</returns>
+        /// <param name="process">The process to describe.</param>
+        /// <returns>
+        /// "ProcessName (Id)"; "(PID Id)" when the name cannot be read (the process has exited or access is
+        /// denied); "(Exited Process)" or "(Inaccessible Process)" when the ID cannot be read either. Never throws
+        /// for those two causes.
+        /// </returns>
         public static string Format(this Process process)
         {
             try
