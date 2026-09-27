@@ -214,10 +214,16 @@ namespace Servy.Core.UnitTests.Helpers
 
             var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
 
-            // Act & Assert
+            // Act
             var aggEx = await Assert.ThrowsAsync<AggregateException>(() => serviceHelper.StartServicesAsync(new[] { "FailedService" }, TestContext.Current.CancellationToken));
-            Assert.Single(aggEx.InnerExceptions);
-            Assert.Contains("FailedService", aggEx.InnerExceptions[0].Message);
+
+            // Assert
+            // The rethrow arm surfaces the command's own exception as the inner one. A swallow would
+            // instead reach the start-wait fast-fail, whose "entered Stopped state" exception also
+            // carries the service name, so the name alone cannot tell the two arms apart.
+            scMock.Verify(x => x.Start(), Times.Once);
+            var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions).InnerException);
+            Assert.Equal("Access denied.", inner.Message);
         }
 
         [Fact]
@@ -683,6 +689,38 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             scMock.Verify(x => x.Stop(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_StopThrowsInvalidOperationException_RethrowsIfStillRunning()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // Running throughout: the catch's own Refresh() still sees Running, which is neither Stopped
+            // nor StopPending, so the rethrow arm must fire.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Running);
+            scMock.Setup(x => x.Stop()).Throws(new InvalidOperationException("Access denied."));
+
+            var serviceDto = new ServiceDto { Name = "FailedService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("FailedService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("FailedService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(
+                () => serviceHelper.StopServicesAsync(new[] { "FailedService" }, TestContext.Current.CancellationToken));
+
+            // Assert
+            // A swallow would reach the stop-wait fast-fail ("re-entered Running state during stop") instead,
+            // which also aggregates exactly one exception naming the service.
+            scMock.Verify(x => x.Stop(), Times.Once);
+            var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions).InnerException);
+            Assert.Equal("Access denied.", inner.Message);
         }
 
         [Fact]
