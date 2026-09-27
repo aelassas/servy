@@ -9,7 +9,9 @@ using System.ServiceProcess;
 namespace Servy.Core.UnitTests.Helpers
 {
     /// <summary>
-    /// Contains unit tests for the <see cref="ServiceHelper"/> class, focusing on timeout calculation logic.
+    /// Contains unit tests for the <see cref="ServiceHelper"/> class: the constructor guards, the
+    /// StartServicesAsync/StopServicesAsync control and wait logic, and the timeout calculation and
+    /// resolution helpers.
     /// </summary>
     public class ServiceHelperTests
     {
