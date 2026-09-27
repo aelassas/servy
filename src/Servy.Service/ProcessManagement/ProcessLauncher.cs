@@ -427,7 +427,7 @@ namespace Servy.Service.ProcessManagement
             string fileNameOnly = Path.GetFileNameWithoutExtension(psi.FileName);
 
             // Python Logic:
-            // Matches 'python', 'pythonw', 'python2', 'python3', or 'python3.x' patterns.
+            // Matches 'python', 'pythonw', 'python2', 'python3', 'python3.x', and the Windows launchers 'py' and 'pyw' (see PythonExeRegex).
             bool isPython;
             try { isPython = PythonExeRegex.IsMatch(fileNameOnly); }
             catch (RegexMatchTimeoutException ex)
