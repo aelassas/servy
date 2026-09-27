@@ -1258,6 +1258,67 @@ namespace Servy.Core.UnitTests.IO
             Assert.Contains("after_rotation", content);
         }
 
+        /// <summary>
+        /// Drives a REAL rotation and lets WriteInternal's own finally block release the parked
+        /// writer. <see cref="WaitForRotationToSettle_WhenRotationCompletes_WakesBlockedWriterAndWritesLine"/>
+        /// pulses the gate from the test thread instead, so the production
+        /// <c>Monitor.PulseAll</c> never runs there.
+        /// </summary>
+        [Fact]
+        public async Task WriteInternal_WhenRotationEnds_ProductionPulseWakesWriterParkedOnGate()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "gate_pulse.log");
+            File.WriteAllText(filePath, "initial_data");
+            var testTime = new DateTime(2026, 6, 9, 9, 5, 0, DateTimeKind.Utc);
+
+            // Signals that a writer has reached CheckRotation.
+            using (var rotationChecked = new ManualResetEventSlim(false))
+            using (var writer = new RotatingStreamWriter(
+                filePath,
+                enableSizeRotation: true,
+                rotationSizeInBytes: 5,
+                enableDateRotation: false,
+                dateRotationType: DateRotationType.Daily,
+                maxRotations: 0,
+                useLocalTimeForRotation: false,
+                timeProvider: () => { rotationChecked.Set(); return testTime; }))
+            {
+                // The constructor calls timeProvider once, so drop that Set: the next one comes from
+                // CheckRotation, which runs under _lock and therefore publishes _rotationInProgress
+                // before this thread can enter WriteInternal.
+                rotationChecked.Reset();
+
+                // Only the production PulseAll, never this timeout, can release the parked writer in time.
+                writer.RotationWaitTimeoutMs = 10_000;
+
+                long parkedWriterMs;
+
+                // A reader without FileShare.Delete makes File.Move fail, so PerformPhysicalRotation
+                // burns its LogRotationMaxSyncRetries attempts and the gate stays shut meanwhile.
+                using (new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    var rotator = Task.Run(() => writer.WriteLine("trigger_rotation"), TestContext.Current.CancellationToken);
+                    rotationChecked.Wait(2000, TestContext.Current.CancellationToken);
+
+                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                    // Act
+                    writer.WriteLine("during_rotation");
+                    parkedWriterMs = stopwatch.ElapsedMilliseconds;
+                    await rotator;
+                }
+
+                // Assert
+                Assert.True(parkedWriterMs < 5_000,
+                    $"The parked writer was released by the timeout, not by WriteInternal's PulseAll ({parkedWriterMs} ms).");
+                writer.Flush();
+            }
+
+            // A writer released by the timeout drops its line, so the line on disk is a second witness.
+            Assert.Contains("during_rotation", File.ReadAllText(filePath));
+        }
+
         #region Circuit Breaker & Permanent Failure Tests
 
         [Fact]
