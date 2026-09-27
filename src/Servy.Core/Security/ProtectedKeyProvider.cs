@@ -342,7 +342,6 @@ namespace Servy.Core.Security
                 }
 
                 // Retry with short exponential backoff
-                // Move the safety check to the loop condition
                 for (int attempt = 0; attempt < AppConfig.KeyProviderReadMaxRetries; attempt++)
                 {
                     try
@@ -354,7 +353,7 @@ namespace Servy.Core.Security
                         (ex is IOException io && !(io is FileNotFoundException) && !(io is DirectoryNotFoundException))
                         || ex is UnauthorizedAccessException)
                     {
-                        // If this was the last attempt, rethrow to be caught by BaseCommand
+                        // If this was the last attempt, log and rethrow to the caller
                         if (attempt == AppConfig.KeyProviderReadMaxRetries - 1)
                         {
                             var verb = ex is UnauthorizedAccessException ? "Access denied" : "Failed to read file";
