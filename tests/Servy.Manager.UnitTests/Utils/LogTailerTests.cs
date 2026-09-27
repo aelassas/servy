@@ -637,6 +637,74 @@ namespace Servy.Manager.UnitTests.Utils
                 }
             }
         }
+        [Fact]
+        public async Task RunFromPosition_RenameRotationWithSameCreationTimeAndLength_IsDetectedByIdentityChange()
+        {
+            // Arrange
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                string path = _tempFilePath;
+                string renamedPath = NewTempFilePath("logtailer_renamed");
+                File.WriteAllText(path, "old line\r\n");
+                var original = new FileInfo(path);
+                var originalCreation = original.CreationTimeUtc;
+                var originalLength = original.Length;
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedLines) capturedLines.AddRange(lines);
+                };
+
+                // Setup a completion tracking signal task for strict loop synchronization
+                var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
+                // Act
+                // Start tailing from the end of "old line", so the loop parks at EOF
+                var tailTask = tailer.RunFromPositionAsync(path, LogType.StdOut, originalLength, originalCreation, cts.Token);
+
+                // DETERMINISTIC WAIT 1: Ensure the loop has fully completed its first pass setup
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
+
+                // Ensure the loop has recorded the original file identity before the rename
+                await loopCompletedTcs.Task;
+
+                // Rename the tailed file away, then create a new, LONGER file at the same path carrying the
+                // SAME creation time, so neither term of LooksRotated can fire and only the EOF identity
+                // re-check can notice the swap. Both handles open with FileShare.Delete, so the rename
+                // succeeds and the tailer's own handle follows the renamed file, which never grows again.
+                File.Move(path, renamedPath);
+                File.WriteAllText(path, "NEW_FILE_AFTER_RENAME_ROTATION\r\n");
+                File.SetCreationTimeUtc(path, originalCreation);
+
+                // Premise guard: if the file system refuses either signal the scenario is not the one under
+                // test, so fail here rather than let the assertion below pass for the wrong reason.
+                var rotatedInfo = new FileInfo(path);
+                Assert.Equal(originalCreation, rotatedInfo.CreationTimeUtc);
+                Assert.True(rotatedInfo.Length >= originalLength,
+                    "The replacement file must not be shorter than the committed offset, or LooksRotated would fire on size.");
+
+                // DETERMINISTIC WAIT 2: Poll for the new file's content reaching capturedLines
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedLines)
+                    {
+                        return capturedLines.Exists(l => l.Text.Contains("NEW_FILE_AFTER_RENAME_ROTATION"));
+                    }
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerRotationWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert
+                lock (capturedLines)
+                {
+                    Assert.Contains(capturedLines, l => l.Text.Contains("NEW_FILE_AFTER_RENAME_ROTATION"));
+                }
+            }
+        }
 
         [Fact]
         public async Task RunFromPosition_InitialAttachRotationTrigger_TimestampMismatch_ResetsOffsetToZero()
