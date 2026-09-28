@@ -495,7 +495,10 @@ namespace Servy.Core.UnitTests.IO
             {
                 writer.Write(""); // force file creation
 
-                // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
+                // ---- BRANCH 2: Glob noise ----
+                // Neither noise file matches the "service.*.log" search pattern, so Directory.GetFiles
+                // never returns them and the filter lambda is not what keeps them alive. The lambda's own
+                // timestamp check is pinned by EnforceMaxRotations_GlobMatchWithoutRotationStamp_IsNeverDeleted.
                 string f1 = Path.Combine(TempDirectory, "service.20260325_000001.log");
                 string noise1 = Path.Combine(TempDirectory, "service_backup.log");
                 string noise2 = Path.Combine(TempDirectory, "service.20260325.txt");
@@ -553,6 +556,46 @@ namespace Servy.Core.UnitTests.IO
                     Assert.Null(ex); // Resilient against locks
                 }
             }
+        }
+
+        /// <summary>
+        /// A file that matches the <c>service.*.log</c> search pattern but carries no rotation timestamp must
+        /// never be deleted by retention. Only the lambda's final
+        /// <c>_rotatedTimestampRegex.IsMatch(middle)</c> check - the #603 fix - keeps it out of the retention
+        /// list, and without this case that line can be replaced with <c>return true;</c> with every test green.
+        /// </summary>
+        [Fact]
+        public void EnforceMaxRotations_GlobMatchWithoutRotationStamp_IsNeverDeleted()
+        {
+            // Arrange
+            string baseLog = Path.Combine(TempDirectory, "service.log");
+            File.WriteAllText(baseLog, "base");
+
+            // Matches the "service.*.log" search pattern but carries no rotation timestamp.
+            string unrelated = Path.Combine(TempDirectory, "service.backup.log");
+            string older = Path.Combine(TempDirectory, "service.20260325_000001.log");
+            string newer = Path.Combine(TempDirectory, "service.20260325_000002.log");
+            File.WriteAllText(unrelated, "keep me");
+            File.WriteAllText(older, "old");
+            File.WriteAllText(newer, "new");
+
+            // The unrelated file is the oldest, so it would be the first deletion if the filter let it through.
+            File.SetLastWriteTimeUtc(unrelated, DateTime.UtcNow.AddHours(-1));
+            File.SetLastWriteTimeUtc(older, DateTime.UtcNow.AddMinutes(-10));
+            File.SetLastWriteTimeUtc(newer, DateTime.UtcNow);
+
+            using (var writer = CreateWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1))
+            {
+                writer.Write(""); // force file creation
+
+                // Act
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+            }
+
+            // Assert
+            Assert.True(File.Exists(unrelated), "A file without a rotation timestamp must never be deleted by retention.");
+            Assert.True(File.Exists(newer), "The newest rotated file is within the retention limit.");
+            Assert.False(File.Exists(older), "The pass must still run and delete the expired rotated file.");
         }
 
         [Fact]
