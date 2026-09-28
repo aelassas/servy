@@ -445,13 +445,18 @@ namespace Servy.Core.UnitTests.Logging
             int cutIndex = content.IndexOf(truncationMarker, StringComparison.Ordinal);
             string truncatedHead = content.Substring(0, cutIndex);
 
-            // Validate that the very last character before the truncation marker is NOT a high surrogate.
-            // In UTF-16 (C# strings), a high surrogate must always be followed by a low surrogate.
-            // If it's at the end of the string, it is unpaired and corrupted.
+            // The log is written through a UTF8Encoding with the default replacement fallback, so an
+            // orphaned high surrogate never survives the round trip to disk: it is encoded as EF BF BD
+            // and reads back as U+FFFD. Asserting that the boundary is NOT a high surrogate therefore
+            // cannot fail, whatever the truncation does. Assert the positive shape instead - the cut must
+            // land after a complete pair, so the last character before the marker is the LOW surrogate of
+            // one - and assert that no replacement character reached the file at all.
+            Assert.DoesNotContain("\uFFFD", truncatedHead, StringComparison.Ordinal);
+
             char boundaryChar = truncatedHead[truncatedHead.Length - 1];
 
-            Assert.False(char.IsHighSurrogate(boundaryChar),
-                "Regression: Truncation logic split a UTF-16 surrogate pair, leaving an orphaned high surrogate at the boundary.");
+            Assert.True(char.IsLowSurrogate(boundaryChar),
+                "Regression: Truncation logic split a UTF-16 surrogate pair, so the character before the marker is not the end of a pair.");
 
             // Pin the guard across the whole truncated segment rather than sampling it at one position.
             for (int i = 0; i < truncatedHead.Length; i++)
