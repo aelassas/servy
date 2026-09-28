@@ -7,6 +7,8 @@ using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
+using System.Timers;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests
 {
@@ -773,6 +775,145 @@ namespace Servy.Service.UnitTests
                     try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
                 }
             }
+        }
+
+        [Fact]
+        public async Task CheckHealth_TimerElapsed_ForwardsToTheCoreCheck()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = ServiceTestContext.CreateDefaultStartOptions();
+            TestReflection.SetField(service, "_options", options);
+            TestReflection.SetField(service, "_recoveryActionEnabled", true);
+
+            var timer = new Mock<ITimer>();
+            _ctx.TimerFactory.Setup(f => f.Create(It.IsAny<double>())).Returns(timer.Object);
+            service.InvokeSetupHealthMonitoring(options);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetFailedChecks(0);
+
+            // Act
+            timer.Raise(t => t.Elapsed += null, service, (ElapsedEventArgs?)null);
+
+            // Assert
+            // CheckHealth is an async void timer handler, so the effect lands off the raising thread
+            var deadline = DateTime.UtcNow.AddMilliseconds(TestTimeouts.CiGenerousMs);
+            while (service.GetFailedChecks() == 0 && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(25, TestContext.Current.CancellationToken);
+            }
+
+            Assert.Equal(1, service.GetFailedChecks());
+        }
+
+        [Fact]
+        public async Task CheckHealth_SemaphoreDisposedBeforeWait_LogsTeardownAndSkipsTheCheck()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetFailedChecks(0);
+
+            TestReflection.GetField<SemaphoreSlim>(service, "_healthCheckSemaphore").Dispose();
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Semaphore disposed during wait. Teardown in progress.")), It.IsAny<Exception>()), Times.Once);
+            Assert.Equal(0, service.GetFailedChecks());
+        }
+
+        [Fact]
+        public async Task CheckHealth_CancelledBeforeWait_LogsTeardownAndSkipsTheCheck()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetFailedChecks(0);
+
+            var cancellationSource = new CancellationTokenSource();
+            cancellationSource.Cancel();
+            TestReflection.SetField(service, "_cancellationSource", cancellationSource);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("health check cancelled. Teardown in progress.")), It.IsAny<Exception>()), Times.Once);
+            Assert.Equal(0, service.GetFailedChecks());
+        }
+
+        [Fact]
+        public async Task CheckHealth_ChildProcessStateThrows_LogsCriticalError()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var stateFailure = new InvalidOperationException("process state unavailable");
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Throws(stateFailure);
+
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Error("Critical error in health check loop.", stateFailure), Times.Once);
+        }
+
+        [Fact]
+        public async Task CheckHealth_SemaphoreDisposedInsideTheLock_SwallowsTheReleaseFailure()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = ServiceTestContext.CreateDefaultStartOptions();
+            options.RecoveryOnCleanExit = true;
+            TestReflection.SetField(service, "_options", options);
+
+            var semaphore = TestReflection.GetField<SemaphoreSlim>(service, "_healthCheckSemaphore");
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            // Dispose only once the wait has already succeeded, so the release in the finally
+            // is the first call that meets a disposed semaphore
+            mockProcess.Setup(p => p.HasExited).Returns(() => { semaphore.Dispose(); return true; });
+            mockProcess.Setup(p => p.ExitCode).Returns(0);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            // The check ran to completion: without the catch around the release, the
+            // ObjectDisposedException would escape into the outer handler instead
+            Assert.Equal(1, service.GetFailedChecks());
+            _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         public void Dispose() => _ctx.Dispose();
