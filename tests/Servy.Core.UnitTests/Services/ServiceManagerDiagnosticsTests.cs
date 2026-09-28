@@ -19,10 +19,11 @@ using Xunit;
 namespace Servy.Core.UnitTests.Services
 {
     /// <summary>
-    /// Covers the <see cref="ServiceManager"/> arms whose only effect is a log entry: the install
-    /// rollback's two failure paths and the filtered catch of the startup-type mapper. Both return
-    /// the same value as the paths beside them, so the log line is what distinguishes them and these
-    /// tests drive the static <see cref="Logger"/> - hence the sequential logger collection.
+    /// Covers the <see cref="ServiceManager"/> arms that a log entry distinguishes: the install
+    /// rollback's two failure paths, the filtered catch of the startup-type mapper and the outer
+    /// catch-all of <see cref="ServiceManager.GetServiceStartupType"/>. Each returns the same value as
+    /// a path beside it, so the log line is what tells them apart and these tests drive the static
+    /// <see cref="Logger"/> - hence the sequential logger collection.
     /// </summary>
     [Collection(LoggerCollection.Name)]
     public class ServiceManagerDiagnosticsTests : IDisposable
