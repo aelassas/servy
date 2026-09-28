@@ -366,6 +366,16 @@ try {
                 "Allow"
             )
             $rootAcl.SetAccessRule($rootRule)
+            # Folders must not be renamable or deletable by the runner: DELETE on a folder plus add-subdirectory
+            # on its parent is a rename, which moves every hardened file inside it out of the way.
+            $noFolderDelete = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $targetNTAccount,
+                "Delete",
+                "ContainerInherit",
+                "None",
+                "Deny"
+            )
+            $rootAcl.AddAccessRule($noFolderDelete)
             Set-Acl -Path $programDataDir -AclObject $rootAcl
             Write-Host "  [Target Granted] $TargetAccount [Modify - Allow] on '$programDataDir'" -ForegroundColor Cyan
         }
