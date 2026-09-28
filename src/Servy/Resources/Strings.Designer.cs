@@ -1717,7 +1717,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If the service runs under an account other than Local System, you must grant Modify access to %ProgramData%\Servy for the account running the service and execute the mandatory hardening script: Set-ServyExePermissions.ps1 -TargetAccount &quot;domain\user&quot; to prevent unprivileged binary tampering and local privilege escalation..
+        ///   Looks up a localized string similar to If the service runs under an account other than Local System, you must run the mandatory hardening script Set-ServyExePermissions.ps1 -TargetAccount &quot;domain\user&quot;. It grants the account Modify access to %ProgramData%\Servy and locks down Servy's binaries and database to prevent unprivileged binary tampering and local privilege escalation..
         /// </summary>
         public static string Info_SecurityHardeningNotice {
             get {

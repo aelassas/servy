@@ -323,10 +323,10 @@ namespace Servy.CLI.Options
                        "Leave the --password option or " + AppConfig.PasswordEnvVarName + " environment variable empty for built-in, virtual and gMSA accounts. " +
                        "If this option is not set, the service runs under Local System. " +
                        "If the service runs under an account other than Local System, " +
-                       "you must grant Modify access to %ProgramData%\\Servy for the account running " +
-                       "the service and execute the mandatory hardening script: " +
-                       "Set-ServyExePermissions.ps1 -TargetAccount \"domain\\user\" to prevent unprivileged " +
-                       "binary tampering and local privilege escalation. See the wiki page Security, section " +
+                       "you must run the mandatory hardening script " +
+                       "Set-ServyExePermissions.ps1 -TargetAccount \"domain\\user\". It grants the account " +
+                       "Modify access to %ProgramData%\\Servy and locks down Servy's binaries and database to " +
+                       "prevent unprivileged binary tampering and local privilege escalation. See the wiki page Security, section " +
                        "\"Executable permission hardening (mandatory)\"."
         )]
         public string User { get; set; }
