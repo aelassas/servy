@@ -788,8 +788,8 @@ function Set-ServyConfig {
             Default: 600 (10 minutes).
 
         .PARAMETER MaxBufferChars
-            No longer used. The output reader introduced in 9.9 reads streams line by line
-            and does not buffer against a character cap. The parameter is accepted so that
+            No longer used. The output reader introduced in 9.9 reads both streams in 4096-byte chunks
+            and applies no character cap to what it buffers. The parameter is accepted so that
             caller scripts written against 9.8 and below continue to run unchanged.
 
         .EXAMPLE
