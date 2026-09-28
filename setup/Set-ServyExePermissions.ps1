@@ -6,7 +6,9 @@
 
 .DESCRIPTION
     Mandatory security script for hardening Servy service runner accounts. Servy requires directory-level
-    'Modify' permissions on %ProgramData%\Servy to write database logs, process state, and runtime recovery files.
+    'Modify' permissions on %ProgramData%\Servy to write database logs, process state, and runtime recovery files,
+    and this script grants them: the target account receives 'Modify' on %ProgramData%\Servy, inherited by every
+    subfolder and file, so no manual ACL edit is needed before running it (#7136).
     However, leaving binaries and application configurations with inherited 'Modify' access allows a compromised service
     process or unprivileged runner account to tamper with, replace, or hijack core executables or application settings.
 
@@ -29,15 +31,21 @@
     - appsettings.service.json
     - appsettings.restarter.json
 
+    Hardened Database File:
+    - db\Servy.db: 'Read, Write' (Modify without 'Delete'), so the runner account can read and update the shared
+      configuration database but cannot delete or replace it. Inheritance is disabled with the inherited ACEs kept as
+      explicit ones, so the access already granted to other service accounts and to the installing user is preserved.
+      SQLite's -wal/-shm side files in db\ keep the inherited 'Modify' they need.
+
     EXIT CODES:
     - 0 : Success. All target files were present and successfully hardened.
     - 1 : Privilege Error. Script is not running in an elevated PowerShell session with Administrator privileges.
-    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target executables are missing and must be extracted before hardening.
-    - 3 : Hardening Error. One or more present target files failed ACL modification due to locks, owner change failures, security exceptions, or link tampering.
+    - 2 : Directory or File Missing. Target directory (%ProgramData%\Servy) does not exist, or one or more target executables or the database are missing and must be created before hardening.
+    - 3 : Hardening Error. The 'Modify' grant on %ProgramData%\Servy failed, or one or more present target files failed ACL modification due to locks, owner change failures, security exceptions, or link tampering.
     - 4 : Account Error. -TargetAccount could not be resolved by LSA or is an invalid target.
 
 .PARAMETER TargetAccount
-    Mandatory account identifier receiving Read & Execute (for executables) or Read (for configurations) permissions. Supported formats:
+    Mandatory account identifier receiving Modify on %ProgramData%\Servy, and Read & Execute (for executables), Read (for configurations) or Read, Write (for the database) on the hardened files. Supported formats:
     - Active Directory user/group: 'DOMAIN\Username'
     - Local computer user/group: 'COMPUTERNAME\Username'
     - Local computer relative notation: '.\Username'
@@ -299,6 +307,42 @@ try {
     Write-Host "Securing Servy executable and configuration files in: $programDataDir" -ForegroundColor Cyan
     Write-Host "Target Account: $TargetAccount" -ForegroundColor Yellow
 
+    $hardened       = @()
+    $missing        = @()
+    $failed         = @()
+    $skippedConfigs = @()
+
+    # Grant the target account Modify on the %ProgramData%\Servy root vault, inherited by every subfolder and file,
+    # so the service runner can write its database, logs, process state and recovery files (#7136). The files
+    # hardened below break inheritance, so this grant does not reach them.
+    if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
+        Write-Host "Target '$TargetAccount' is a protected administrative principal; FullControl on '$programDataDir' retained, no Modify grant applied." -ForegroundColor Yellow
+    } else {
+        try {
+            $rootItem = Get-Item -LiteralPath $programDataDir -Force
+            if (($rootItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -eq [System.IO.FileAttributes]::ReparsePoint) {
+                throw "Directory is a reparse point (symlink/junction) and cannot be granted access safely."
+            }
+
+            Write-Host "Granting '$TargetAccount' Modify on '$programDataDir' (inherited by subfolders and files)..." -ForegroundColor Green
+            $rootAcl  = Get-Acl -LiteralPath $programDataDir
+            $rootRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $targetNTAccount,
+                "Modify",
+                "ContainerInherit, ObjectInherit",
+                "None",
+                "Allow"
+            )
+            $rootAcl.SetAccessRule($rootRule)
+            Set-Acl -LiteralPath $programDataDir -AclObject $rootAcl
+            Write-Host "  [Target Granted] $TargetAccount [Modify - Allow] on '$programDataDir'" -ForegroundColor Cyan
+        }
+        catch {
+            Write-Host "FAILED to grant Modify on '$programDataDir': $_" -ForegroundColor Red
+            $failed += $programDataDir
+        }
+    }
+
     $targetFiles = @()
 
     foreach ($exe in $exeNames) {
@@ -313,10 +357,9 @@ try {
         $targetFiles += @{ Name = $cfg; Rights = "Read" }
     }
 
-    $hardened       = @()
-    $missing        = @()
-    $failed         = @()
-    $skippedConfigs = @()
+    # The shared configuration database: Modify without Delete (#7136). PreserveInherited keeps the grants
+    # other service accounts and the installing user already hold on it, which the binaries do not need.
+    $targetFiles += @{ Name = 'db\Servy.db'; Rights = "Read, Write"; PreserveInherited = $true }
 
     foreach ($item in $targetFiles) {
         $fileName       = $item.Name
@@ -375,8 +418,17 @@ try {
             # Explicitly set owner to Builtin Administrators to avoid owner SID mismatch errors during Set-Acl
             $acl.SetOwner($adminSid)
 
-            # 1. Break inheritance and remove inherited permissions in 1 pass ($isProtected = $true, $preserveInheritance = $false)
-            $acl.SetAccessRuleProtection($true, $false)
+            if ($item['PreserveInherited']) {
+                # 1. Break inheritance and convert the inherited ACEs to explicit ones ($isProtected = $true,
+                # $preserveInheritance = $true). The conversion only takes effect once committed, so commit and
+                # re-read before step 2 removes the target's copy of the inherited Modify.
+                $acl.SetAccessRuleProtection($true, $true)
+                Set-Acl -LiteralPath $filePath -AclObject $acl
+                $acl = Get-Acl -LiteralPath $filePath
+            } else {
+                # 1. Break inheritance and remove inherited permissions in 1 pass ($isProtected = $true, $preserveInheritance = $false)
+                $acl.SetAccessRuleProtection($true, $false)
+            }
 
             # 2. Purge explicit grants for broad unprivileged groups (Users, Authenticated Users, Everyone)
             # and explicit rules for the target account to ensure a clean state before applying required rights.
@@ -401,7 +453,7 @@ try {
             $acl.SetAccessRule($adminRule)
             $acl.SetAccessRule($systemRule)
 
-            # 4. Grant explicit ReadAndExecute/Delete (for Restarter), ReadAndExecute (for other exes), or Read (for configs) access to target account
+            # 4. Grant explicit ReadAndExecute/Delete (for Restarter), ReadAndExecute (for other exes), Read (for configs), or Read/Write (for the database) access to target account
             if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
                 Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
             } else {
@@ -501,7 +553,7 @@ try {
         exit 2
     }
 
-    Write-Host "Executable and configuration permission hardening complete." -ForegroundColor Green
+    Write-Host "Vault access grant and executable, configuration and database permission hardening complete." -ForegroundColor Green
 
     if ($targetIsConfirmedAdminMember) {
         Write-Host "[WARNING] '$TargetAccount' is a member of BUILTIN\Administrators, which retains FullControl." -ForegroundColor Cyan
