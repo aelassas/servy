@@ -33,7 +33,8 @@
     - All *.dll files in %ProgramData%\Servy
     - db\Servy.db: 'Read, Write' (Modify without 'Delete'), so the runner account can read and update the shared
       configuration database but cannot delete or replace it. Inheritance is disabled with the inherited ACEs kept as
-      explicit ones, so the access already granted to other service accounts and to the installing user is preserved.
+      explicit ones, so the access already granted to other service accounts (and a per-user grant, if a non-elevated
+      Servy process added one) is preserved.
       SQLite's -wal/-shm side files in db\ keep the inherited 'Modify' they need.
 
     EXIT CODES:
@@ -331,7 +332,7 @@ try {
     }
 
     # The shared configuration database: Modify without Delete (#7136). PreserveInherited keeps the grants
-    # other service accounts and the installing user already hold on it, which the binaries do not need.
+    # other service accounts (or a non-elevated Servy process's user) already hold on it, which the binaries do not need.
     $targetFiles += @{ Name = 'db\Servy.db'; Rights = "Read, Write"; PreserveInherited = $true }
 
     Write-Host "Securing Servy (.NET Framework 4.8) binary, library, and configuration files in: $programDataDir" -ForegroundColor Cyan
