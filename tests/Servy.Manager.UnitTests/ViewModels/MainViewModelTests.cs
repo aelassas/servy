@@ -508,6 +508,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
                 using (var vm = CreateViewModel())
                 {
+                    // Seed one row: with an empty snapshot RefreshAllServicesAsync returns before
+                    // GetAllServices is ever called (#6492), so the arranged failure would never fire.
+                    TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")
+                        .Add(new ServiceRowViewModel(new Service { Name = "TestService" }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
                     // Setup the service manager to throw a generic exception during status refresh
                     _serviceManagerMock
                         .Setup(r => r.GetAllServices(It.IsAny<CancellationToken>()))
@@ -523,7 +528,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                         return flag == 0;
                     }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
 
-                    // Assert
+                    // Assert - the arranged failure really fired, and the flag was released after it
+                    _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
+
                     int isRefreshingFlag = TestReflection.GetField<int>(vm, "_isRefreshingFlag");
                     Assert.Equal(0, isRefreshingFlag);
                 }
@@ -608,6 +615,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var vm = CreateViewModel();
 
+                // Seed one row for BOTH acts: with an empty snapshot RefreshAllServicesAsync returns
+                // before it dereferences either dependency (#6492), so no act would reach the catch-all.
+                TestReflection.SetField(vm, "_services",
+                    new BulkObservableCollection<ServiceRowViewModel>()
+                    {
+                        new ServiceRowViewModel(new Service { Name = "TestService" }, _serviceCommandsMock.Object, _cursorServiceMock.Object)
+                    });
+
                 // Act 1: Force a NullReferenceException inside Task.Run by nulling the _serviceManager dependency field
                 TestReflection.SetField(vm, "_serviceManager", null);
                 var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
@@ -624,11 +639,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Act 2: Restore the manager but corrupt the _serviceRepository dependency field slot instead
                 TestReflection.SetField(vm, "_serviceManager", _serviceManagerMock.Object);
                 TestReflection.SetField(vm, "_serviceRepository", null);
-                TestReflection.SetField(vm, "_services",
-                    new BulkObservableCollection<ServiceRowViewModel>()
-                    {
-                        new ServiceRowViewModel(new Service { Name = "TestService" }, _serviceCommandsMock.Object, _cursorServiceMock.Object)
-                    });
 
                 var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
                 await task2;
