@@ -276,6 +276,57 @@ namespace Servy.Service.UnitTests
             Assert.Empty(GetTrackedHooks());
         }
 
+        [Theory]
+        [InlineData("Post-Launch", "Post-Launch")]
+        [InlineData("   ", "unnamed")]
+        public void Cleanup_TrackedHookStillRunning_KillsItsTreeAndLogsTheCleanup(string operationName, string expectedName)
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            _service.StartForTest();
+
+            // A real, still-running process. Only this test's own PID (and its ping child) is touched.
+            using var running = Process.Start(new ProcessStartInfo("cmd.exe", "/c ping -n 60 127.0.0.1 >nul") { UseShellExecute = false, CreateNoWindow = true })!;
+            var pid = running.Id;
+
+            try
+            {
+                Assert.False(running.HasExited, "the helper process exited before the test could track it");
+                SetTrackedHooks(new Hook { OperationName = operationName, Process = running });
+
+                // Act
+                _service.Stop();
+
+                // Assert
+                // The kill-and-wait block ran for this hook: announced with its (fallback) name and real PID...
+                scopedLogger.Verify(l => l.Info($"Cleaning up orphaned {expectedName} hook process tree (PID: {pid}).", It.IsAny<Exception>()), Times.Once);
+
+                // ...and the bounded wait saw it exit. This line is written only when HasExited is
+                // true after the kill, so it is what pins that the process is gone. The Process
+                // object cannot be queried here instead: CleanupTrackedHooks disposes the hook on
+                // the way out, and every member on a disposed Process throws.
+                scopedLogger.Verify(l => l.Info($"Tracked hook '{expectedName}' cleaned up successfully.", It.IsAny<Exception>()), Times.Once);
+
+                // ...and neither failure arm fired
+                scopedLogger.Verify(l => l.Warn(It.Is<string>(m => m.StartsWith("Failed to send Kill signal")), It.IsAny<Exception>()), Times.Never);
+                scopedLogger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("did not exit within")), It.IsAny<Exception>()), Times.Never);
+                scopedLogger.Verify(l => l.Error("Cleanup of tracked hook failed.", It.IsAny<Exception>()), Times.Never);
+                Assert.Empty(GetTrackedHooks());
+            }
+            finally
+            {
+                // Never leave the helper behind if an assertion above failed before Cleanup killed
+                // it. Go by PID: the handle above may already be disposed by CleanupTrackedHooks.
+                try
+                {
+                    using var leftover = Process.GetProcessById(pid);
+                    leftover.Kill(entireProcessTree: true);
+                }
+                catch { /* teardown is best-effort: already gone, or the PID is no longer live */ }
+            }
+        }
+
         /// <summary>
         /// Disposes the service instances the context built for this test.
         /// </summary>
