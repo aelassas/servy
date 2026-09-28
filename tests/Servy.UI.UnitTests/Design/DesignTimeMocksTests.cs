@@ -215,7 +215,10 @@ namespace Servy.UI.UnitTests.Design
             bool wasExecuted = false;
 
             // Act
-            Task task = _dispatcher.InvokeAsync(() => wasExecuted = true);
+            // A statement body has no value, so only the Action overload is applicable. The
+            // expression form '() => wasExecuted = true' binds to InvokeAsync<bool>(Func<bool>)
+            // instead, which is what left the Action overload without a test.
+            Task task = _dispatcher.InvokeAsync(() => { wasExecuted = true; });
 
             // Assert
             Assert.True(task.IsCompleted, "Task should be completed immediately.");
