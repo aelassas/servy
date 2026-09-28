@@ -272,6 +272,30 @@ namespace Servy.Core.UnitTests.Security
             }
         }
 
+        [Fact]
+        public void Harden_OneFileThrows_IsReportedAsFailedAndTheNextFileIsStillProcessed()
+        {
+            // Arrange
+            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe), "ui");
+            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceCLIExe), "cli");
+            var sut = new TestableHardener(TempDirectory)
+            {
+                IsMember = false,
+                HardLinkCount = path => Path.GetFileName(path) == AppConfig.ServyServiceUIExe
+                    ? throw new IOException("The process cannot access the file because it is being used by another process.")
+                    : 1
+            };
+
+            // Act
+            var result = sut.Harden("svc", CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
+            Assert.Contains(AppConfig.ServyServiceUIExe, result.Failed);
+            Assert.DoesNotContain(AppConfig.ServyServiceUIExe, result.Hardened);
+            Assert.Contains(AppConfig.ServyServiceCLIExe, sut.HardLinkQueries);
+        }
+
         #endregion
 
         #region GetTargetFiles
@@ -687,6 +711,29 @@ namespace Servy.Core.UnitTests.Security
             {
                 MembershipCalls++;
                 return IsMember;
+            }
+
+            /// <summary>
+            /// When set, replaces the NTFS hard link count the hardener reads for a file, so a test can make one
+            /// file throw from inside <c>HardenFile</c>'s try block without a real locked file or elevation.
+            /// </summary>
+            public Func<string, int> HardLinkCount { get; set; }
+
+            /// <summary>
+            /// The file names, in order, whose hard link count was queried. It records how far the file loop got.
+            /// </summary>
+            public List<string> HardLinkQueries { get; } = new List<string>();
+
+            /// <summary>
+            /// Records the query and returns <see cref="HardLinkCount"/>'s answer when one is set, otherwise the
+            /// real count.
+            /// </summary>
+            /// <param name="path">The full path of the file being hardened.</param>
+            /// <returns>The number of NTFS hard links to <paramref name="path"/>.</returns>
+            protected override int GetHardLinkCount(string path)
+            {
+                HardLinkQueries.Add(Path.GetFileName(path));
+                return HardLinkCount != null ? HardLinkCount(path) : base.GetHardLinkCount(path);
             }
         }
     }
