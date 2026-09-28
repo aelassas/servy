@@ -233,6 +233,106 @@ namespace Servy.Service.UnitTests
                 It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Once);
         }
 
+        [Fact]
+        public void HandleLogWriters_StdoutFactoryThrows_LogsErrorAndStillCreatesTheStderrWriter()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var ioFailure = new IOException("The network path was not found.");
+            var mockStderrWriter = new Mock<IStreamWriter>();
+
+            _ctx.StreamWriterFactory
+               .Setup(f => f.Create("valid-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
+               .Throws(ioFailure);
+
+            _ctx.StreamWriterFactory
+               .Setup(f => f.Create("error-path.log", It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
+               .Returns(mockStderrWriter.Object);
+
+            var startOptions = ServiceTestContext.CreateDefaultStartOptions();
+
+            // Act
+            service.InvokeHandleLogWriters(startOptions);
+
+            // Assert
+            // The failing stream is logged with its path and the original exception, then dropped.
+            _ctx.Logger.Verify(l => l.Error(
+                "Could not open log file 'valid-path.log'; continuing without redirection for this stream.",
+                ioFailure), Times.Once);
+            Assert.Null(TestReflection.GetField<object>(service, "_stdoutWriter"));
+
+            // A redirection failure on one stream never stops the service: stderr still gets its own writer.
+            Assert.Same(mockStderrWriter.Object, TestReflection.GetField<object>(service, "_stderrWriter"));
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnDataReceived_WriterThrowsIOException_LogsWarningAndDoesNotThrow(bool stdout)
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var mockWriter = new Mock<IStreamWriter>();
+            mockWriter.Setup(w => w.WriteLine(It.IsAny<string>())).Throws(new IOException("disk full"));
+
+            _ctx.StreamWriterFactory
+               .Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
+               .Returns(mockWriter.Object);
+
+            service.InvokeHandleLogWriters(ServiceTestContext.CreateDefaultStartOptions());
+
+            var args = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("line");
+
+            // Act
+            var ex = Record.Exception(() =>
+            {
+                if (stdout) service.InvokeOnOutputDataReceived(null, args);
+                else service.InvokeOnErrorDataReceived(null, args);
+            });
+
+            // Assert
+            // The output pump threads must never let a write failure escape; it is logged and swallowed.
+            Assert.Null(ex);
+            _ctx.Logger.Verify(l => l.Warn(
+                stdout ? "Failed to write stdout line: disk full" : "Failed to write stderr line: disk full",
+                It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnDataReceived_WriterAlreadyDisposed_IsSilent(bool stdout)
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var mockWriter = new Mock<IStreamWriter>();
+            mockWriter.Setup(w => w.WriteLine(It.IsAny<string>())).Throws(new ObjectDisposedException("writer"));
+
+            _ctx.StreamWriterFactory
+               .Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
+               .Returns(mockWriter.Object);
+
+            service.InvokeHandleLogWriters(ServiceTestContext.CreateDefaultStartOptions());
+
+            var args = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("line");
+
+            // Act
+            var ex = Record.Exception(() =>
+            {
+                if (stdout) service.InvokeOnOutputDataReceived(null, args);
+                else service.InvokeOnErrorDataReceived(null, args);
+            });
+
+            // Assert
+            // Shutting down: the dedicated ObjectDisposedException arm must not fall through to the Warn arm.
+            Assert.Null(ex);
+            mockWriter.Verify(w => w.WriteLine("line"), Times.Once);
+            _ctx.Logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
