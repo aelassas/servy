@@ -27,8 +27,10 @@ namespace Servy.Core.Enums
 
         /// <summary>
         /// Rotates the log file once per calendar week, anchored to the clock selected by
-        /// <c>useLocalTimeForRotation</c> (defaults to UTC). Determined using the
-        /// ISO week-numbering system (FirstFourDayWeek, Monday as first day).
+        /// <c>useLocalTimeForRotation</c> (defaults to UTC). Weeks are numbered by
+        /// <c>Calendar.GetWeekOfYear</c> with FirstFourDayWeek and Monday as first day. That is not
+        /// ISO 8601: late-December days that ISO puts in week 1 of the next year keep week 52 or 53,
+        /// so a week that spans 1 January can rotate again on 1 January.
         /// </summary>
         Weekly = 1,
 
