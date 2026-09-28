@@ -232,6 +232,55 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
+        [Fact]
+        public void OnProcessExited_TeardownBeginsDuringRecoveryDelay_SkipsRecoveryAndReopensTheGate()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = CreateOptionsWithMinimumRecoveryDelay(recoveryOnCleanExit: false);
+            TestReflection.SetField(service, "_options", options);
+
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts file
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(1);
+            service.SetChildProcess(mockProcess.Object);
+
+            // The failure threshold is reached synchronously, which closes the recovery gate and
+            // leaves the scheduled recovery waiting out its delay.
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+            Assert.True(TestReflection.GetField<bool>(service, "_isRecovering"),
+                "The recovery gate did not close, so the scheduled recovery was never armed.");
+
+            // Act
+            // Teardown starts before the delay elapses, so the post-delay re-check skips
+            // InitiateRecoveryAsync and the hand-off flag stays false.
+            TestReflection.SetField(service, "_isTearingDown", true);
+
+            // Assert
+            // Only the safety reset in ScheduleRecoveryAsync's own finally can reopen the gate on
+            // this path: InitiateRecoveryAsync never ran, so its finally never ran either. Without
+            // the reset the gatekeeper stays closed and every later failed check is swallowed.
+            Assert.True(SpinWait.SpinUntil(() => !TestReflection.GetField<bool>(service, "_isRecovering"), TestTimeouts.CiGenerous),
+                $"The recovery gate was not reopened within {TestTimeouts.CiGenerousSeconds}s after the scheduled recovery was skipped.");
+
+            _ctx.Helper.Verify(h => h.RestartProcess(
+                It.IsAny<IProcessWrapper?>(),
+                It.IsAny<StartProcessCallback>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<List<EnvironmentVariable>>(),
+                It.IsAny<IServyLogger?>(),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
