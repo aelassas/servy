@@ -1920,6 +1920,228 @@ namespace Servy.Service.UnitTests
             }
         }
 
+
+        [Fact]
+        public void OnCustomCommand_PreShutdownWithSlowTeardown_KeepsPulsingStopPendingUntilItCompletes()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            // A teardown that outlasts one pulse interval is what drives the wait loop round a second time.
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(() =>
+            {
+                Thread.Sleep(AppConfig.PreShutdownPulseIntervalMs + 200);
+                return true;
+            });
+
+            using (var service = BuildStatusRecordingService())
+            {
+                service.StartForTest();
+                TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+
+                // Act
+                TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN);
+
+                // Assert
+                // 1. The opening STOP_PENDING is followed by at least one pulse before STOPPED
+                var pendingCount = service.StatusStates.Count(s => s == NativeMethods.SERVICE_STOP_PENDING);
+                Assert.True(
+                    pendingCount >= 2,
+                    $"expected at least two SERVICE_STOP_PENDING updates, got [{string.Join(", ", service.StatusStates)}]");
+                Assert.Equal(NativeMethods.SERVICE_STOPPED, service.StatusStates[service.StatusStates.Count - 1]);
+
+                // 2. Every pulse carries the pre-shutdown wait hint, and the checkpoint the SCM watches advances
+                //    so the wait does not read as a hung service
+                Assert.All(
+                    service.StatusWaitHints.Take(service.StatusWaitHints.Count - 1),
+                    hint => Assert.Equal(AppConfig.PreShutdownWaitHintMs, hint));
+                Assert.True(TestReflection.GetField<uint>(service, "_checkPoint") >= 1);
+
+                // 3. The teardown still completed successfully
+                scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Pre-Shutdown handling complete")), It.IsAny<Exception>()), Times.Once);
+            }
+        }
+
+        [Fact]
+        public void OnCustomCommand_PreShutdownWithFailingTeardown_ReportsItAndSetsTheServiceSpecificExitCode()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Cleanup disposes the child process in a finally that is outside its own try/catch, so a
+            // throwing Dispose is what makes the teardown report failure rather than success.
+            _mockProcess.Setup(p => p.Dispose()).Throws(new InvalidOperationException("dispose failed"));
+
+            using (var service = BuildStatusRecordingService())
+            {
+                service.StartForTest();
+                TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+
+                // Act
+                TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN);
+
+                // Assert
+                // 1. The teardown recorded the failure and released the tearing-down flag, which is what
+                //    lets a later stop attempt the teardown again
+                scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Teardown error during PreShutdown")), It.IsAny<Exception>()), Times.Once);
+                Assert.False(TestReflection.GetField<bool>(service, "_isTearingDown"));
+
+                // 2. The SCM still reaches STOPPED, but with the service-specific exit code set so the
+                //    failure is recorded rather than reported as a clean stop
+                scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("teardown reported failure")), It.IsAny<Exception>()), Times.Once);
+                Assert.Equal(AppConfig.ServiceSpecificErrorCode, service.ExitCode);
+                Assert.Equal(NativeMethods.SERVICE_STOPPED, service.StatusStates[service.StatusStates.Count - 1]);
+            }
+        }
+
+        [Fact]
+        public void OnStop_WhenStoppingTheHealthCheckTimerThrows_WarnsAndCompletesTheTeardown()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "Test",
+                ExecutablePath = "test.exe",
+                EnableHealthMonitoring = true,
+                HeartbeatIntervalInSeconds = 1,
+                MaxFailedChecks = 1,
+                RecoveryAction = RecoveryAction.RestartService
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+            _mockTimer.Setup(t => t.Stop()).Throws(new InvalidOperationException("timer already gone"));
+            _service.StartForTest();
+
+            // Act
+            TestReflection.InvokeNonPublic(_service, "OnStop");
+
+            // Assert
+            // The timer failure is warned about and swallowed, so the rest of the teardown still runs
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Error stopping health check timer")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+        }
+
+        [Fact]
+        public void OnShutdown_TearsDownTheChildProcess()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+            _service.StartForTest();
+
+            // Act
+            TestReflection.InvokeNonPublic(_service, "OnShutdown");
+
+            // Assert
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Executing teardown for reason: Shutdown")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+        }
+
+        [Fact]
+        public void OnShutdown_WhileRebooting_SkipsTheTeardown()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+            _service.StartForTest();
+            TestReflection.SetField(_service, "_isRebooting", true);
+
+            // Act
+            TestReflection.InvokeNonPublic(_service, "OnShutdown");
+
+            // Assert
+            // The recovery logic owns the reboot, so the child is left to the OS instead of being stopped here
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Shutdown bypassed")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+            Assert.False(TestReflection.GetField<bool>(_service, "_isTearingDown"));
+        }
+
+        [Fact]
+        public void OnStart_CalledASecondTime_CancelsAndReplacesThePreviousCancellationSource()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            SetupRestartableServiceStart(options);
+            _service.StartForTest();
+            var firstSource = TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource");
+
+            // The token is captured before the second start, because the source is disposed once it is replaced
+            var firstToken = firstSource.Token;
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            // Everything the first start handed the token to is cancelled, and the field carries a fresh source
+            Assert.True(firstToken.IsCancellationRequested);
+            var secondSource = TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource");
+            Assert.NotNull(secondSource);
+            Assert.NotSame(firstSource, secondSource);
+            Assert.False(secondSource.IsCancellationRequested);
+        }
+
+        [Fact]
+        public void OnStart_WhenThePreviousCancellationSourceIsAlreadyDisposed_StartsAnyway()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            SetupRestartableServiceStart(options);
+            _service.StartForTest();
+            var firstSource = TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource");
+            firstSource.Dispose();
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            // Cancel on a disposed source raises ObjectDisposedException; swallowing it is what lets the
+            // rest of the start sequence run, so the monitored process is started a second time
+            _mockProcess.Verify(p => p.Start(), Times.Exactly(2));
+            Assert.NotSame(firstSource, TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource"));
+        }
+
+        [Fact]
+        public void OnStart_WhenAPreviousCancellationCallbackThrows_WarnsAndStartsAnyway()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupRestartableServiceStart(options);
+            _service.StartForTest();
+            var firstSource = TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource");
+            firstSource.Token.Register(() => throw new InvalidOperationException("callback failed"));
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            // Cancel wraps a throwing callback in an AggregateException; it is warned about and swallowed,
+            // so the rest of the start sequence still runs
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Exception(s) raised during CTS cancellation")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.Verify(p => p.Start(), Times.Exactly(2));
+        }
+
+        /// <summary>
+        /// Wires the fixture for a service that is started more than once.
+        /// <see cref="SetupStandardServiceStart"/> alone only survives one start: OnStart promotes the
+        /// logger with <c>_logger.CreateScoped(...)</c>, and the scoped mock it returns has no CreateScoped
+        /// of its own, so a second start would promote null and fail validation long before it reaches the
+        /// cancellation-source swap.
+        /// </summary>
+        /// <param name="options">The start options the service helper is set up to parse.</param>
+        /// <returns>The scoped logger every start of this service writes through.</returns>
+        private Mock<IServyLogger> SetupRestartableServiceStart(StartOptions options)
+        {
+            var scopedLogger = SetupStandardServiceStart(options);
+            scopedLogger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(scopedLogger.Object);
+            _ctx.Helper.Setup(h => h.ValidateAndLog(options, It.IsAny<IServyLogger>())).Returns(true);
+            return scopedLogger;
+        }
+
         /// <summary>
         /// A user-defined SCM control code (128-255) that the service does not handle.
         /// </summary>
