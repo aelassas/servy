@@ -144,10 +144,10 @@ namespace Servy.Service.UnitTests
         public void SetRecoveryActionEnabled(bool enabled) =>
             ServiceReflection.RecoveryActionEnabledField.SetValue(this, enabled);
 
-        // Expose the private InitiateRecovery method. The health-check and process-exit paths reach
-        // it through a scheduled task, so a test that targets its own arms - the abort on an
-        // unreadable counter, the recovery-execution catch - calls it directly instead of waiting
-        // out the scheduling delay.
+        // Expose the private InitiateRecovery method. The process-exit path reaches it through a
+        // scheduled task and the health-check path only after a failed check, so a test that
+        // targets its own arms - the recovery-execution catch - calls it directly instead of
+        // arranging either trigger.
         public void InvokeInitiateRecovery() =>
             ServiceReflection.InitiateRecoveryMethod.Invoke(this, null);
 
