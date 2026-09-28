@@ -305,7 +305,7 @@ namespace Servy.Core.IO
                     var thisWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
                         now, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
 
-                    // ROBUSTNESS: Ensure year-over-year transitions where both dates fall in ISO week 1
+                    // ROBUSTNESS: Ensure year-over-year transitions where both dates fall in GetWeekOfYear week 1
                     // do not bypass rotation when a full calendar year has actually passed.
                     return (now.Date - _lastRotationDate.Date).TotalDays >= 7 || thisWeek != lastWeek;
 
