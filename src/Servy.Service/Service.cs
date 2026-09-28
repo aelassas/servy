@@ -318,7 +318,7 @@ namespace Servy.Service
                                  $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
 
                     Environment.ExitCode = AppConfig.ServiceSpecificErrorCode;
-                    Environment.Exit(Environment.ExitCode);
+                    TerminateProcess(Environment.ExitCode);
                 }
 
                 // Initialize database and helpers
@@ -368,7 +368,7 @@ namespace Servy.Service
 
                 // By explicitly calling Environment.Exit here, we guarantee the SCM registers
                 // the custom exit code immediately, completely preventing the 1053 timeout hang.
-                Environment.Exit(Environment.ExitCode);
+                TerminateProcess(Environment.ExitCode);
             }
         }
 
@@ -652,7 +652,7 @@ namespace Servy.Service
                     {
                         var code = Environment.ExitCode != 0 ? Environment.ExitCode : 1;
                         FlushAndShutdownLogger();
-                        Environment.Exit(code);
+                        TerminateProcess(code);
                     }
                     return;
                 }
@@ -2989,6 +2989,23 @@ namespace Servy.Service
                 message = $"Child process '{process.Format()}' had already exited before the stop sequence ran.";
 
             _logger?.Info(message);
+        }
+
+        /// <summary>
+        /// Terminates the host process with the supplied exit code by calling <see cref="Environment.Exit(int)"/>.
+        /// </summary>
+        /// <param name="exitCode">The exit code to report to the operating system.</param>
+        /// <remarks>
+        /// This is a seam over <see cref="Environment.Exit(int)"/>; the production implementation forwards
+        /// to it unchanged, so every caller behaves exactly as it did when it called
+        /// <see cref="Environment.Exit(int)"/> directly. It is overridable so the pre-shutdown fallback in
+        /// <see cref="OnCustomCommand(int)"/>, which runs when no service handle is available, can be
+        /// observed from a test without ending the test host. Like <see cref="Environment.Exit(int)"/>,
+        /// the production implementation does not return.
+        /// </remarks>
+        protected virtual void TerminateProcess(int exitCode)
+        {
+            Environment.Exit(exitCode);
         }
 
         /// <summary>
