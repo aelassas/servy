@@ -202,6 +202,38 @@ namespace Servy.CLI.UnitTests
             Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
         }
 
+        [Theory]
+        [InlineData("install -n NonExistentServiceForTestingOnly -p C:\\NonExistent\\app.exe")]
+        [InlineData("uninstall -n NonExistentServiceForTestingOnly")]
+        [InlineData("stop -n NonExistentServiceForTestingOnly")]
+        [InlineData("restart -n NonExistentServiceForTestingOnly")]
+        [InlineData("export -n NonExistentServiceForTestingOnly -c xml -p C:\\NonExistent\\out.xml")]
+        [InlineData("import -c xml -p C:\\NonExistent\\in.xml")]
+        [InlineData("show")]
+        public async Task Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler(string commandLine)
+        {
+            // Arrange
+            // These seven verbs are the MapResult lambdas mapped with requireDatabase: true, so
+            // ExecuteWithRuntimeAsync runs EnsureDatabase before the handler. The fixture writes a
+            // relative AESKeyFilePath, so AppFoldersHelper.EnsureFolders rejects it on its
+            // absolute-path check - before any folder, ACL, event source, database or embedded
+            // resource work - and Main's catch-all reports that message on stderr. A verb remapped
+            // to requireDatabase: false would reach its handler, or EnsureServiceBinariesAsync
+            // first, and report something else. status is deliberately absent: it is the one verb
+            // mapped false, pinned by Main_StatusOfMissingService_TakesFastPathAndPrintsNotInstalled.
+            string[] args = commandLine.Split(' ');
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () =>
+            {
+                return await Program.Main(args);
+            });
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Contains("aesKeyFilePath must be an absolute path", result.StdErr);
+        }
+
         [Fact]
         public async Task Main_KnownVerbMissingRequiredOption_ReturnsErrorExitCode()
         {
