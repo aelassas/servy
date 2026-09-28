@@ -646,6 +646,45 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Enumerates the entire descendant tree of a process by calling
+        /// <see cref="ProcessExtensions.GetAllDescendants(int, DateTime)"/>.
+        /// </summary>
+        /// <param name="parentPid">The process ID of the parent whose descendants are enumerated.</param>
+        /// <param name="parentStartTime">
+        /// The start time of the parent process, used by the enumeration to reject a recycled PID.
+        /// </param>
+        /// <returns>
+        /// A flattened list of the parent's descendants. The caller owns every returned
+        /// <see cref="Process"/> and must dispose it to avoid leaking native handles.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Propagated from <see cref="ProcessExtensions.GetAllDescendants(int, DateTime)"/> when
+        /// <paramref name="parentPid"/> is not positive.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// Propagated from <see cref="ProcessExtensions.GetAllDescendants(int, DateTime)"/> when
+        /// <paramref name="parentStartTime"/> is <see cref="DateTime.MinValue"/>.
+        /// </exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">
+        /// Propagated from <see cref="ProcessExtensions.GetAllDescendants(int, DateTime)"/> when the
+        /// Toolhelp32 snapshot cannot be created.
+        /// </exception>
+        /// <remarks>
+        /// This is a seam over <see cref="ProcessExtensions.GetAllDescendants(int, DateTime)"/>; the
+        /// production implementation forwards to it unchanged, so the pre-stop scan in
+        /// <see cref="SafeKillProcess(IProcessWrapper, int)"/> behaves exactly as it did when it called
+        /// the static method directly. It is overridable because that scan walks the real process table:
+        /// with the mocked process wrappers the tests use, the lineage matches nothing live, so the scan
+        /// always ended in its own catch and neither the found arm, the empty arm nor the per-child
+        /// disposal was ever executed under test. The count the scan returns also feeds the stop safety
+        /// budget, so it is behaviour and not only logging.
+        /// </remarks>
+        protected virtual List<Process> GetProcessDescendants(int parentPid, DateTime parentStartTime)
+        {
+            return ProcessExtensions.GetAllDescendants(parentPid, parentStartTime);
+        }
+
+        /// <summary>
         /// Terminates the host process with the supplied exit code by calling <see cref="Environment.Exit(int)"/>.
         /// </summary>
         /// <param name="exitCode">The exit code to report to the operating system.</param>
@@ -2781,7 +2820,7 @@ namespace Servy.Service
                 try
                 {
                     // Use GetAllDescendants to scan the entire deep tree instead of just Level 1
-                    var initialChildren = ProcessExtensions.GetAllDescendants(parentPid, parentStartTime);
+                    var initialChildren = GetProcessDescendants(parentPid, parentStartTime);
                     childCount = initialChildren.Count;
 
                     if (childCount > 0)
