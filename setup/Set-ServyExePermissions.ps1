@@ -129,7 +129,7 @@ function Test-ServyAdminGroupMember {
     # check that correctly follows nested domain/global group membership, but it requires the account to have
     # a userPrincipalName, the "Act as part of the operating system" privilege, and S4U logon support.
     $upn = $null
-    if ($Sid.IsAccountSid() -and $Sid.AccountDomainSid -ne $null) {
+    if ($Sid.IsAccountSid() -and $null -ne $Sid.AccountDomainSid) {
         try {
             $entry = [ADSI]"LDAP://<SID=$($Sid.Value)>"
             $upn = [string]$entry.Properties['userPrincipalName'].Value
