@@ -42,10 +42,6 @@ namespace Servy.Services
         private readonly IJsonServiceValidator _jsonServiceValidator;
         private readonly IAppConfiguration _appConfig;
         private readonly ICursorService _cursorService;
-        // Kept for the constructor contract: the import pipeline now gets its DTO from the validator's
-        // single parse, so these are no longer read. Dropping the parameters would change a public signature.
-        private readonly IXmlServiceSerializer _xmlServiceSerializer;
-        private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IProcessHelper _processHelper;
 
         #endregion
@@ -65,8 +61,6 @@ namespace Servy.Services
         /// <param name="jsonServiceValidator">JSON service validator.</param>
         /// <param name="appConfig">Application configuration.</param>
         /// <param name="cursorService">Cursor service for managing cursor state during operations.</param>
-        /// <param name="xmlServiceSerializer">XML service serializer.</param>
-        /// <param name="jsonServiceSerializer">JSON service serializer.</param>
         /// <param name="processHelper">The process helper used to start processes.</param>
         /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
         public ServiceCommands(
@@ -80,8 +74,6 @@ namespace Servy.Services
             IJsonServiceValidator jsonServiceValidator,
             IAppConfiguration appConfig,
             ICursorService cursorService,
-            IXmlServiceSerializer xmlServiceSerializer,
-            IJsonServiceSerializer jsonServiceSerializer,
             IProcessHelper processHelper
             )
         {
@@ -95,8 +87,6 @@ namespace Servy.Services
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
-            _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
-            _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
 

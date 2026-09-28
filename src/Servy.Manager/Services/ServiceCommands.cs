@@ -47,10 +47,6 @@ namespace Servy.Manager.Services
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
-        // Kept for the constructor contract: the import pipeline now gets its DTO from the validator's
-        // single parse, so these are no longer read. Dropping the parameters would change a public signature.
-        private readonly IXmlServiceSerializer _xmlServiceSerializer;
-        private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
         private readonly IUiDispatcher _dispatcher;
@@ -71,8 +67,6 @@ namespace Servy.Manager.Services
         /// <param name="serviceConfigurationValidator">The service configuration validator.</param>
         /// <param name="xmlServiceValidator">XML service validator.</param>
         /// <param name="jsonServiceValidator">JSON service validator.</param>
-        /// <param name="xmlServiceSerializer">XML service serializer.</param>
-        /// <param name="jsonServiceSerializer">JSON service serializer.</param>
         /// <param name="appConfig">The application configuration interface.</param>
         /// <param name="processHelper">The process helper used to format process commands and start processes.</param>
         /// <param name="dispatcher">The UI dispatcher used for STA operations like Clipboard access.</param>
@@ -87,8 +81,6 @@ namespace Servy.Manager.Services
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
-            IXmlServiceSerializer xmlServiceSerializer,
-            IJsonServiceSerializer jsonServiceSerializer,
             IAppConfiguration appConfig,
             IProcessHelper processHelper,
             IUiDispatcher dispatcher
@@ -103,8 +95,6 @@ namespace Servy.Manager.Services
             _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
-            _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
-            _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));

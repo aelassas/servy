@@ -12,13 +12,13 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Services;
+using Servy.UI.Validation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Servy.UI.Validation;
 using Xunit;
 using TempFile = Servy.Testing.TempFile;
 
@@ -33,8 +33,6 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidatorMock;
         private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
-        private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializerMock;
-        private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<IProcessHelper> _processHelperMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
@@ -54,8 +52,6 @@ namespace Servy.Manager.UnitTests.Services
             _serviceConfigurationValidatorMock = new Mock<IServiceConfigurationValidator>();
             _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
-            _xmlServiceSerializerMock = new Mock<IXmlServiceSerializer>();
-            _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
             _appConfigMock = new Mock<IAppConfiguration>();
             _processHelperMock = new Mock<IProcessHelper>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
@@ -87,8 +83,6 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceConfigurationValidatorMock.Object,
                 _xmlServiceValidatorMock.Object,
                 _jsonServiceValidatorMock.Object,
-                _xmlServiceSerializerMock.Object,
-                _jsonServiceSerializerMock.Object,
                 _appConfigMock.Object,
                 _processHelperMock.Object,
                 _uiDispatcherMock.Object
@@ -130,9 +124,6 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
                 _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
-                // The single-parse invariant: the validator handed the DTO back, so the
-                // deserializer is never asked to parse the same payload a second time.
-                _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportJson_Success, UiAppConfig.Caption), Times.Once);
                 Assert.True(_refreshCalled);
             }
@@ -198,9 +189,6 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
-                // The single-parse invariant: the validator handed the DTO back, so the
-                // deserializer is never asked to parse the same payload a second time.
-                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportXml_Success, UiAppConfig.Caption), Times.Once);
                 Assert.True(_refreshCalled);
             }
@@ -265,8 +253,6 @@ namespace Servy.Manager.UnitTests.Services
 
             // Nothing after the guard runs on a refused path
             _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Never);
-            // Nor the deserializer: the guard refused the path before any payload was read.
-            _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             Assert.False(_refreshCalled);
         }
@@ -350,9 +336,6 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()), Times.Once);
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
-                // The single-parse invariant: the validator handed the DTO back, so the
-                // deserializer is never asked to parse the same payload a second time.
-                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
                 Assert.True(_refreshCalled);
@@ -391,9 +374,6 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()), Times.Once);
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
-                // The single-parse invariant: the validator handed the DTO back, so the
-                // deserializer is never asked to parse the same payload a second time.
-                _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Never);
                 _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
