@@ -676,9 +676,17 @@ namespace Servy.Core.UnitTests.Logging
             int innerBracketCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
             int closingBracketCount = CountStructuralClosingBrackets(exceptionSegment);
 
-            // The formatted string should never unroll more blocks than the max depth allowed
-            Assert.True(innerBracketCount <= AppConfig.LoggerMaxInnerExceptionDepth,
-                $"Exception unroller processed more inner loops than allowed. Counted: {innerBracketCount}");
+            // Exactly the configured number of levels is unrolled: MaxDepth - 1 real inner contexts plus
+            // the single depth-limit marker, which also opens an "[Inner -> " token. An upper bound alone
+            // would also accept a cap that fires too early and silently drops levels the limit promises.
+            Assert.Equal(AppConfig.LoggerMaxInnerExceptionDepth, innerBracketCount);
+
+            // The deepest level kept is MaxDepth - 1 below the outermost wrapper, and the next one down is
+            // the first dropped. "Depth level 5 wrapper" is not a substring of "Depth level 15 wrapper",
+            // because the character after "level " differs, so the negative check cannot match a kept level.
+            int deepestKept = targetOverflow - (AppConfig.LoggerMaxInnerExceptionDepth - 1);
+            Assert.Contains($"Exception: Depth level {deepestKept} wrapper", exceptionSegment);
+            Assert.DoesNotContain($"Depth level {deepestKept - 1} wrapper", exceptionSegment);
 
             // The closing brackets will be exactly innerBracketCount because the
             // structural depth 0 root exception correctly skips closing tags.
