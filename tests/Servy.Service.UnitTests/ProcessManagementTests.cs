@@ -465,6 +465,183 @@ namespace Servy.Service.UnitTests
             mockProcess.Verify(p => p.BeginOutputReadLine(), Times.Never);
         }
 
+        /// <summary>
+        /// The parent PID the pre-stop scan tests report. It is only ever echoed into the scan's log
+        /// lines: the scan itself is served by the overridden seam, so nothing resolves it.
+        /// </summary>
+        private const int ScannedParentPid = 4321;
+
+        [Fact]
+        public void SafeKillProcess_PreStopScanFindsDescendants_LogsEachOneAndDisposesItImmediately()
+        {
+            // Arrange
+            using var child = new DisposeRecordingProcess();
+            using var service = BuildScanningService((pid, startTime) => new List<Process> { child });
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Format()).Returns("app.exe (4321)");
+            mockProcess.Setup(p => p.Id).Returns(ScannedParentPid);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Act
+            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+            // Assert: the found arm reports the count it will charge the stop budget for
+            _ctx.Logger.Verify(l => l.Info(
+                $"Pre-stop scan found 1 active descendants for PID {ScannedParentPid}:", It.IsAny<Exception>()), Times.Once);
+
+            // ... and each descendant is listed
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.StartsWith("  - ")), It.IsAny<Exception>()), Times.Once);
+
+            // ... and its handle is released right after logging, which is what the loop promises
+            Assert.Equal(1, child.DisposeCount);
+
+            // ... and the empty arm did not also run
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.Contains("found no active descendants")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void SafeKillProcess_PreStopScanFindsNothing_LogsTheEmptyScanLine()
+        {
+            // Arrange
+            using var service = BuildScanningService((pid, startTime) => new List<Process>());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Format()).Returns("app.exe (4321)");
+            mockProcess.Setup(p => p.Id).Returns(ScannedParentPid);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Act
+            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Info(
+                $"Pre-stop scan found no active descendants for PID {ScannedParentPid}.", It.IsAny<Exception>()), Times.Once);
+
+            // ... and nothing was listed, so the found arm stayed out of it
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.StartsWith("  - ")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void SafeKillProcess_PreStopScanThrows_WarnsAndStillRunsTheStop()
+        {
+            // Arrange
+            using var service = BuildScanningService(
+                (pid, startTime) => throw new Win32Exception(5, "snapshot refused"));
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Format()).Returns("app.exe (4321)");
+            mockProcess.Setup(p => p.Id).Returns(ScannedParentPid);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Act
+            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+            // Assert: a failed scan is a warning, not a failure
+            _ctx.Logger.Verify(l => l.Warn(
+                "Could not complete pre-stop scan: snapshot refused", It.IsAny<Exception>()), Times.Once);
+
+            // ... and the stop sequence still ran, with the budget charged for zero descendants
+            mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        /// <summary>
+        /// Builds a service wired to this fixture's mocks whose pre-stop descendant scan is served by
+        /// <paramref name="scan"/> instead of walking the real process table.
+        /// </summary>
+        /// <param name="scan">The stand-in for the descendant enumeration, called with the parent PID and start time.</param>
+        /// <returns>A service whose <c>GetProcessDescendants</c> seam is served by <paramref name="scan"/>.</returns>
+        private ScanningService BuildScanningService(Func<int, DateTime, List<Process>> scan) =>
+            new ScanningService(
+                scan,
+                _ctx.Helper.Object,
+                _ctx.Logger.Object,
+                _ctx.StreamWriterFactory.Object,
+                _ctx.TimerFactory.Object,
+                _ctx.ProcessFactory.Object,
+                _ctx.PathValidator.Object,
+                _ctx.ServiceRepository.Object);
+
+        /// <summary>
+        /// Serves the pre-stop descendant scan from a supplied delegate. The real scan walks the live
+        /// process table, so with the mocked process wrappers these tests use it matches nothing and
+        /// always ends in its own catch, leaving the found arm, the empty arm and the per-child
+        /// disposal unexecuted.
+        /// </summary>
+        private sealed class ScanningService : TestableService
+        {
+            private readonly Func<int, DateTime, List<Process>> _scan;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ScanningService"/> class.
+            /// </summary>
+            /// <param name="scan">The stand-in for the descendant enumeration.</param>
+            /// <param name="serviceHelper">The SCM helper the base service reports through.</param>
+            /// <param name="logger">The logger the base service writes to.</param>
+            /// <param name="streamWriterFactory">The factory for the redirected output writers.</param>
+            /// <param name="timerFactory">The factory for the health-check and rotation timers.</param>
+            /// <param name="processFactory">The factory for the child process wrappers.</param>
+            /// <param name="pathValidator">The validator the base service checks configured paths with.</param>
+            /// <param name="serviceRepository">The repository the base service reads its configuration from.</param>
+            public ScanningService(
+                Func<int, DateTime, List<Process>> scan,
+                Servy.Service.Helpers.IServiceHelper serviceHelper,
+                IServyLogger logger,
+                Servy.Service.StreamWriters.IStreamWriterFactory streamWriterFactory,
+                Servy.Service.Timers.ITimerFactory timerFactory,
+                IProcessFactory processFactory,
+                Servy.Service.Validation.IPathValidator pathValidator,
+                Servy.Core.Data.IServiceRepository serviceRepository)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
+            {
+                _scan = scan;
+            }
+
+            /// <summary>
+            /// Serves the scan from the supplied delegate instead of the real process table.
+            /// </summary>
+            /// <param name="parentPid">The process ID of the parent whose descendants are enumerated.</param>
+            /// <param name="parentStartTime">The start time of the parent process.</param>
+            /// <returns>Whatever the supplied delegate returns.</returns>
+            protected override List<Process> GetProcessDescendants(int parentPid, DateTime parentStartTime) =>
+                _scan(parentPid, parentStartTime);
+        }
+
+        /// <summary>
+        /// A process object that records how often it was disposed. The pre-stop scan's contract is that
+        /// the caller owns every returned process and disposes it, and a real <see cref="Process"/> gives
+        /// a test no way to observe that.
+        /// </summary>
+        private sealed class DisposeRecordingProcess : Process
+        {
+            /// <summary>Gets the number of times this process was disposed.</summary>
+            public int DisposeCount { get; private set; }
+
+            /// <summary>
+            /// Records the disposal and then disposes as the base class does.
+            /// </summary>
+            /// <param name="disposing">
+            /// <see langword="true"/> when called from <see cref="Component.Dispose()"/>;
+            /// <see langword="false"/> when called from the finalizer.
+            /// </param>
+            protected override void Dispose(bool disposing)
+            {
+                DisposeCount++;
+                base.Dispose(disposing);
+            }
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
