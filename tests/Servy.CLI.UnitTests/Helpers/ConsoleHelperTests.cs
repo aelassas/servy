@@ -61,8 +61,8 @@ namespace Servy.CLI.UnitTests.Helpers
                     Assert.True(actionExecuted);
 
                     // The redirected path writes nothing at all: the spinner task returns before its
-                    // first frame (ConsoleHelper.cs:41) and the clearing block is skipped
-                    // (ConsoleHelper.cs:74), while the action above is silent by construction.
+                    // first frame (ConsoleHelper.cs:51) and the clearing block is skipped
+                    // (ConsoleHelper.cs:84), while the action above is silent by construction.
                     // SequentialConsoleTests is declared with DisableParallelization = true, so no
                     // other console-mutating test runs alongside this one and can bleed into the
                     // writer. Assert the whole capture is empty rather than only that the animation
@@ -209,9 +209,9 @@ namespace Servy.CLI.UnitTests.Helpers
             public override void Write(string value)
             {
                 // Simulate an unexpected programmatic TTY drop on the clearing write only.
-                // That write is the one whose IOException reaches the catch at ConsoleHelper.cs:84
-                // and produces the fallback newline; the spinner frame at ConsoleHelper.cs:45 also
-                // begins with "\r" and contains spaces, but its exception is swallowed at :68 and
+                // That write is the one whose IOException reaches the catch at ConsoleHelper.cs:94
+                // and produces the fallback newline; the spinner frame at ConsoleHelper.cs:55 also
+                // begins with "\r" and contains spaces, but its exception is swallowed at :78 and
                 // proves nothing. The clearing write is the only one of the two that also ends
                 // with "\r", so match on that and leave the spinner alone.
                 if (value != null && value.StartsWith("\r") && value.EndsWith("\r") && value.Contains(" "))
