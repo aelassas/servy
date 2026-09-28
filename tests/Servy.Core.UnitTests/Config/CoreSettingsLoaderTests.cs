@@ -1,235 +1,78 @@
 using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
+using System.Reflection;
 
 namespace Servy.Core.UnitTests.Config
 {
     public class CoreSettingsLoaderTests
     {
-        private const string SettingsFileName = "appsettings.service.json";
-
-        private static IConfiguration BuildConfig(Dictionary<string, string?>? settings = null)
+        [Fact]
+        public void Load_ReturnsTheAppConfigDefaults()
         {
-            var builder = new ConfigurationBuilder();
-            if (settings != null)
+            // Act
+            var result = CoreSettingsLoader.Load();
+
+            // Assert
+            Assert.Equal(AppConfig.DefaultConnectionString, result.ConnectionString);
+            Assert.Equal(AppConfig.DefaultAESKeyPath, result.AESKeyFilePath);
+            Assert.Equal(AppConfig.DefaultAESIVPath, result.AESIVFilePath);
+        }
+
+        [Fact]
+        public void Load_DatabaseAndKeyLiveInTheHardenedVault()
+        {
+            // Act
+            var result = CoreSettingsLoader.Load();
+
+            // Assert
+            // ServyExePermissionsHardener only hardens the vault, so neither may point elsewhere.
+            Assert.Contains($"Data Source={Path.Combine(AppConfig.DbFolderPath, AppConfig.DatabaseFileName)};", result.ConnectionString);
+            Assert.Equal(Path.Combine(AppConfig.SecurityFolderPath, AppConfig.AESKeyFileName), result.AESKeyFilePath);
+            Assert.Equal(AppConfig.SecurityFolderPath, Path.GetDirectoryName(result.AESIVFilePath));
+            Assert.StartsWith(AppConfig.ProgramDataPath, AppConfig.DbFolderPath);
+            Assert.StartsWith(AppConfig.ProgramDataPath, AppConfig.SecurityFolderPath);
+        }
+
+        [Fact]
+        public void CoreSettingsLoader_HasNoEntryPointThatTakesTheApplicationSettings()
+        {
+            // Arrange
+            // The settings are read-only: no public member may accept an IConfiguration (or any
+            // other source) that could relocate the database or the key.
+            var methods = typeof(CoreSettingsLoader).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+
+            // Assert
+            var load = Assert.Single(methods);
+            Assert.Equal(nameof(CoreSettingsLoader.Load), load.Name);
+            Assert.Empty(load.GetParameters());
+            Assert.DoesNotContain(methods, m => m.GetParameters().Any(p => typeof(IConfiguration).IsAssignableFrom(p.ParameterType)));
+        }
+
+        [Fact]
+        public void Load_TestOverride_IsReturnedUntilCleared()
+        {
+            // Arrange
+            var custom = new CoreSettingsLoader.CoreSettings("Data Source=custom.db", @"C:\custom\key.dat", @"C:\custom\iv.dat");
+
+            try
             {
-                builder.AddInMemoryCollection(settings);
+                // Act
+                CoreSettingsLoader.TestOverride = custom;
+                var overridden = CoreSettingsLoader.Load();
+
+                CoreSettingsLoader.TestOverride = null;
+                var restored = CoreSettingsLoader.Load();
+
+                // Assert
+                Assert.Same(custom, overridden);
+                Assert.Equal(AppConfig.DefaultConnectionString, restored.ConnectionString);
+                Assert.Equal(AppConfig.DefaultAESKeyPath, restored.AESKeyFilePath);
+                Assert.Equal(AppConfig.DefaultAESIVPath, restored.AESIVFilePath);
             }
-            else
+            finally
             {
-                builder.AddInMemoryCollection();
+                CoreSettingsLoader.TestOverride = null;
             }
-            return builder.Build();
         }
-
-        #region Load Tests
-
-        [Fact]
-        public void Load_AllValuesPresent_ReturnsConfiguredValues()
-        {
-            // Arrange
-            var settings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:DefaultConnection", "Data Source=custom.db" },
-                { "Security:AESKeyFilePath", @"C:\custom\key.dat" },
-                { "Security:AESIVFilePath", @"C:\custom\iv.dat" },
-            };
-            var config = BuildConfig(settings);
-
-            // Act
-            var result = CoreSettingsLoader.Load(config);
-
-            // Assert
-            Assert.Equal("Data Source=custom.db", result.ConnectionString);
-            Assert.Equal(@"C:\custom\key.dat", result.AESKeyFilePath);
-            Assert.Equal(@"C:\custom\iv.dat", result.AESIVFilePath);
-        }
-
-        [Fact]
-        public void Load_MissingKeys_FallsBackToAppConfigDefaults()
-        {
-            // Arrange
-            var config = BuildConfig();
-
-            // Act
-            var result = CoreSettingsLoader.Load(config);
-
-            // Assert
-            Assert.Equal(AppConfig.DefaultConnectionString, result.ConnectionString);
-            Assert.Equal(AppConfig.DefaultAESKeyPath, result.AESKeyFilePath);
-            Assert.Equal(AppConfig.DefaultAESIVPath, result.AESIVFilePath);
-        }
-
-        [Fact]
-        public void Load_EmptyStringValues_FallsBackToAppConfigDefaults()
-        {
-            // Arrange
-            // IConfiguration returns "" (not null) for a key present with an empty value, so `??`
-            // alone would not fall back here; Load must treat "" as absent too.
-            var settings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:DefaultConnection", "" },
-                { "Security:AESKeyFilePath", "" },
-                { "Security:AESIVFilePath", "" },
-            };
-            var config = BuildConfig(settings);
-
-            // Act
-            var result = CoreSettingsLoader.Load(config);
-
-            // Assert
-            Assert.Equal(AppConfig.DefaultConnectionString, result.ConnectionString);
-            Assert.Equal(AppConfig.DefaultAESKeyPath, result.AESKeyFilePath);
-            Assert.Equal(AppConfig.DefaultAESIVPath, result.AESIVFilePath);
-        }
-
-        [Fact]
-        public void Load_WhitespaceOnlyValues_FallsBackToAppConfigDefaults()
-        {
-            // Arrange
-            var settings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:DefaultConnection", "   " },
-                { "Security:AESKeyFilePath", "   " },
-                { "Security:AESIVFilePath", "   " },
-            };
-            var config = BuildConfig(settings);
-
-            // Act
-            var result = CoreSettingsLoader.Load(config);
-
-            // Assert
-            Assert.Equal(AppConfig.DefaultConnectionString, result.ConnectionString);
-            Assert.Equal(AppConfig.DefaultAESKeyPath, result.AESKeyFilePath);
-            Assert.Equal(AppConfig.DefaultAESIVPath, result.AESIVFilePath);
-        }
-
-        [Fact]
-        public void Load_PartialOverride_MixesConfiguredAndDefaultValues()
-        {
-            // Arrange
-            var settings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:DefaultConnection", "Data Source=custom.db" },
-            };
-            var config = BuildConfig(settings);
-
-            // Act
-            var result = CoreSettingsLoader.Load(config);
-
-            // Assert
-            Assert.Equal("Data Source=custom.db", result.ConnectionString);
-            Assert.Equal(AppConfig.DefaultAESKeyPath, result.AESKeyFilePath);
-            Assert.Equal(AppConfig.DefaultAESIVPath, result.AESIVFilePath);
-        }
-
-        #endregion
-
-        #region Validate Tests
-
-        [Fact]
-        public void Validate_AllValuesPresent_DoesNotThrow()
-        {
-            // Arrange
-            var settings = new CoreSettingsLoader.CoreSettings("Data Source=custom.db", @"C:\key.dat", @"C:\iv.dat");
-
-            // Act & Assert
-            var exception = Record.Exception(() => CoreSettingsLoader.Validate(settings, SettingsFileName));
-            Assert.Null(exception);
-        }
-
-        [Fact]
-        public void Validate_EmptyConnectionString_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var settings = new CoreSettingsLoader.CoreSettings("", @"C:\key.dat", @"C:\iv.dat");
-
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => CoreSettingsLoader.Validate(settings, SettingsFileName));
-            Assert.Contains(SettingsFileName, exception.Message);
-        }
-
-        [Fact]
-        public void Validate_EmptyAESKeyFilePath_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var settings = new CoreSettingsLoader.CoreSettings("Data Source=custom.db", "", @"C:\iv.dat");
-
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => CoreSettingsLoader.Validate(settings, SettingsFileName));
-            Assert.Contains(SettingsFileName, exception.Message);
-        }
-
-        [Fact]
-        public void Validate_EmptyAESIVFilePath_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var settings = new CoreSettingsLoader.CoreSettings("Data Source=custom.db", @"C:\key.dat", "");
-
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => CoreSettingsLoader.Validate(settings, SettingsFileName));
-            Assert.Contains(SettingsFileName, exception.Message);
-        }
-
-        [Fact]
-        public void Validate_WhitespaceOnlyValue_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var settings = new CoreSettingsLoader.CoreSettings("   ", @"C:\key.dat", @"C:\iv.dat");
-
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => CoreSettingsLoader.Validate(settings, SettingsFileName));
-        }
-
-        [Fact]
-        public void Validate_AllValuesEmpty_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var settings = new CoreSettingsLoader.CoreSettings("", "", "");
-
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => CoreSettingsLoader.Validate(settings, SettingsFileName));
-        }
-
-        #endregion
-
-        #region LoadAndValidate Tests
-
-        [Fact]
-        public void LoadAndValidate_ValidConfiguration_ReturnsSettings()
-        {
-            // Arrange
-            var settings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:DefaultConnection", "Data Source=custom.db" },
-                { "Security:AESKeyFilePath", @"C:\custom\key.dat" },
-                { "Security:AESIVFilePath", @"C:\custom\iv.dat" },
-            };
-            var config = BuildConfig(settings);
-
-            // Act
-            var result = CoreSettingsLoader.LoadAndValidate(config, SettingsFileName);
-
-            // Assert
-            Assert.Equal("Data Source=custom.db", result.ConnectionString);
-            Assert.Equal(@"C:\custom\key.dat", result.AESKeyFilePath);
-            Assert.Equal(@"C:\custom\iv.dat", result.AESIVFilePath);
-        }
-
-        [Fact]
-        public void LoadAndValidate_MissingConfiguration_FallsBackAndDoesNotThrow()
-        {
-            // Arrange
-            var config = BuildConfig();
-
-            // Act
-            var result = CoreSettingsLoader.LoadAndValidate(config, SettingsFileName);
-
-            // Assert
-            Assert.Equal(AppConfig.DefaultConnectionString, result.ConnectionString);
-            Assert.Equal(AppConfig.DefaultAESKeyPath, result.AESKeyFilePath);
-            Assert.Equal(AppConfig.DefaultAESIVPath, result.AESIVFilePath);
-        }
-
-        #endregion
     }
 }

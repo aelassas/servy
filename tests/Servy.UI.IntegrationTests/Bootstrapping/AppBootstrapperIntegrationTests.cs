@@ -35,17 +35,11 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
             _mockProcessKiller = new Mock<IProcessKiller>();
 
-            // Scaffold appsettings configurations
-            var jsonConfig = $@"{{
-                ""ConnectionStrings"": {{
-                    ""DefaultConnection"": ""Data Source={_dbFile.Replace("\\", "\\\\")}""
-                }},
-                ""Security"": {{
-                    ""AESKeyFilePath"": ""{_keyFile.Replace("\\", "\\\\")}"",
-                    ""AESIVFilePath"": ""{_ivFile.Replace("\\", "\\\\")}""
-                }}
-            }}";
-            File.WriteAllText(_appSettingsFile, jsonConfig);
+            // The core settings are read-only in production (always the vault under ProgramData),
+            // so the temporary database and key are injected through the test-only override; the
+            // settings file itself carries nothing the bootstrapper needs.
+            File.WriteAllText(_appSettingsFile, "{}");
+            CoreSettingsLoader.TestOverride = new CoreSettingsLoader.CoreSettings($"Data Source={_dbFile}", _keyFile, _ivFile);
 
             // Seed raw cryptographic assets to avoid runtime validation errors
             File.WriteAllBytes(_keyFile, new byte[32]);
@@ -62,6 +56,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         public override void Dispose()
         {
             Logger.Shutdown();
+            CoreSettingsLoader.TestOverride = null;
 
             // Clear SQLite connection pools so any open DB locks are released
             SQLiteConnection.ClearAllPools();

@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
@@ -50,6 +51,11 @@ namespace Servy.Restarter.UnitTests
 
             File.WriteAllText(_tempConfigPath, BuildConfigJson("30"));
 
+            // The core settings are read-only in production (always the vault under ProgramData),
+            // so the shared in-memory database and local key files are injected through the
+            // test-only override rather than appsettings.restarter.json.
+            CoreSettingsLoader.TestOverride = new CoreSettingsLoader.CoreSettings(SharedInMemoryConnectionString, KeyFileName, IvFileName);
+
             // Open the persistent handle to anchor the shared memory segment lifecycle
             _dbKeepAliveConnection = new SQLiteConnection(SharedInMemoryConnectionString);
             _dbKeepAliveConnection.Open();
@@ -60,13 +66,6 @@ namespace Servy.Restarter.UnitTests
 
         private static string BuildConfigJson(string restartTimeoutSeconds) =>
             "{\r\n" +
-            "  \"ConnectionStrings\": {\r\n" +
-            "    \"DefaultConnection\": \"" + SharedInMemoryConnectionString + "\"\r\n" +
-            "  },\r\n" +
-            "  \"Security\": {\r\n" +
-            "    \"AESKeyFilePath\": \"" + KeyFileName + "\",\r\n" +
-            "    \"AESIVFilePath\": \"" + IvFileName + "\"\r\n" +
-            "  },\r\n" +
             "  \"RestartTimeoutSeconds\": \"" + restartTimeoutSeconds + "\"\r\n" +
             "}";
 
@@ -317,20 +316,11 @@ namespace Servy.Restarter.UnitTests
         public void Main_BrokenConnectionString_HitsCatchAllViaScopedLogger()
         {
             // Arrange
-            // Provide a malformed layout containing an unparseable connection string.
+            // Override the core settings with an unparseable connection string.
             // This safely simulates database driver crashes while remaining completely isolated.
-            string brokenConnectionConfigJson = "{\r\n" +
-                "  \"ConnectionStrings\": {\r\n" +
-                "    \"DefaultConnection\": \"Data Source=||InvalidPath||:?\"\r\n" +
-                "  },\r\n" +
-                "  \"Security\": {\r\n" +
-                "    \"AESKeyFilePath\": \"" + KeyFileName + "\",\r\n" +
-                "    \"AESIVFilePath\": \"" + IvFileName + "\"\r\n" +
-                "  }\r\n" +
-                "}";
-            File.WriteAllText(_tempConfigPath, brokenConnectionConfigJson);
+            CoreSettingsLoader.TestOverride = new CoreSettingsLoader.CoreSettings("Data Source=||InvalidPath||:?", KeyFileName, IvFileName);
 
-            // Pass a target service name argument. The broken DefaultConnection string makes
+            // Pass a target service name argument. The broken connection string makes
             // the SQLite open fail inside GetByName, after the scoped logger exists - exercising
             // the scoped-logger arm of the catch-all block.
             string[] args = new string[] { "Invalid\\Service/Path:Characters", TempDirectory };
@@ -386,6 +376,8 @@ namespace Servy.Restarter.UnitTests
 
             // Explicitly unlock and drop the keep-alive memory connection reference
             _dbKeepAliveConnection?.Dispose();
+
+            CoreSettingsLoader.TestOverride = null;
 
             // Clean dynamic runtime artifacts cleanly
             try

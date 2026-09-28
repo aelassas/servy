@@ -82,7 +82,7 @@ namespace Servy.Restarter
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: false)
                     .Build();
 
-                var coreSettings = CoreSettingsLoader.LoadAndValidate(config, "appsettings.restarter.json");
+                var coreSettings = CoreSettingsLoader.Load();
                 var connectionString = coreSettings.ConnectionString;
                 var aesKeyFilePath = coreSettings.AESKeyFilePath;
                 var aesIVFilePath = coreSettings.AESIVFilePath;

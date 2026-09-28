@@ -249,7 +249,7 @@ namespace Servy.UI.Bootstrapping
 #endif
             _configuration = builder.Build();
 
-            var coreSettings = CoreSettingsLoader.Load(_configuration);
+            var coreSettings = CoreSettingsLoader.Load();
             ConnectionString = coreSettings.ConnectionString;
             AESKeyFilePath = coreSettings.AESKeyFilePath;
             AESIVFilePath = coreSettings.AESIVFilePath;
@@ -353,10 +353,6 @@ namespace Servy.UI.Bootstrapping
                     // Registry-backed and unbounded; must not run on the UI thread, and must be
                     // inside the measured window so the splash floor reflects real elapsed time.
                     Helper.EnsureEventSourceExists();
-
-                    CoreSettingsLoader.Validate(
-                        new CoreSettingsLoader.CoreSettings(ConnectionString!, AESKeyFilePath!, AESIVFilePath!),
-                        _options.AppSettingsFileName!);
 
                     AppFoldersHelper.EnsureFolders(ConnectionString!, AESKeyFilePath!, AESIVFilePath!);
 

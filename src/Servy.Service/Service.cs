@@ -262,7 +262,7 @@ namespace Servy.Service
                     .AddJsonFile("appsettings.service.json", optional: true, reloadOnChange: false)
                     .Build();
 
-                var coreSettings = CoreSettingsLoader.LoadAndValidate(config, "appsettings.service.json");
+                var coreSettings = CoreSettingsLoader.Load();
                 var connectionString = coreSettings.ConnectionString;
                 var aesKeyFilePath = coreSettings.AESKeyFilePath;
                 var aesIVFilePath = coreSettings.AESIVFilePath;

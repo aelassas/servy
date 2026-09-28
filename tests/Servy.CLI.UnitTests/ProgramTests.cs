@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Testing;
 
 namespace Servy.CLI.UnitTests
@@ -5,44 +6,26 @@ namespace Servy.CLI.UnitTests
     [Collection(ConsoleTestCollection.Name)]
     public class ProgramTests : IDisposable
     {
-        private const string AppSettingsFileName = "appsettings.cli.json";
         private const string AesKeyFileName = "test_aes.key";
         private const string AesIvFileName = "test_aes.iv";
         private const string DatabaseFileName = "Test_Servy.db";
 
-        // Resolves onto the appsettings.cli.json that Servy.CLI.csproj copies to the output
-        // directory, not onto a file this suite owns, so its previous contents are saved and
-        // restored the same way the Console streams are.
-        private readonly string _cliConfigPath;
-        private readonly string? _originalCliConfigJson;
         private readonly TextWriter _originalConsoleOut;
         private readonly TextWriter _originalConsoleError;
 
         public ProgramTests()
         {
             // Arrange
-            // Establish isolated files environment for execution runs
-            _cliConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
-            _originalCliConfigJson = File.Exists(_cliConfigPath) ? File.ReadAllText(_cliConfigPath) : null;
-
             _originalConsoleOut = Console.Out;
             _originalConsoleError = Console.Error;
 
-            // Generate a valid mock configuration structure to bypass missing setting errors
+            // The core settings are read-only in production (always the vault under ProgramData),
+            // so the fixture points Program.Main at an isolated database and a RELATIVE key path
+            // through the test-only override instead of appsettings.cli.json.
             string fallbackDatabaseFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DatabaseFileName);
             string testConnection = string.Format("Data Source={0};Version=3;", fallbackDatabaseFile);
 
-            string mockConfigJson = "{\r\n" +
-                "  \"ConnectionStrings\": {\r\n" +
-                "    \"DefaultConnection\": \"" + testConnection.Replace("\\", "\\\\") + "\"\r\n" +
-                "  },\r\n" +
-                "  \"Security\": {\r\n" +
-                "    \"AESKeyFilePath\": \"" + AesKeyFileName + "\",\r\n" +
-                "    \"AESIVFilePath\": \"" + AesIvFileName + "\"\r\n" +
-                "  }\r\n" +
-                "}";
-
-            File.WriteAllText(_cliConfigPath, mockConfigJson);
+            CoreSettingsLoader.TestOverride = new CoreSettingsLoader.CoreSettings(testConnection, AesKeyFileName, AesIvFileName);
         }
 
         #region Console Validation Logic Branches
@@ -132,8 +115,8 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // The command fails before it reaches the start handler: the fixture writes a relative
-            // AESKeyFilePath, and the start verb is mapped with requireDatabase: true, so
+            // The command fails before it reaches the start handler: the fixture overrides the key with a
+            // relative AESKeyFilePath, and the start verb is mapped with requireDatabase: true, so
             // AppFoldersHelper.EnsureFolders rejects the non-absolute key path and Main's catch-all
             // returns Error (1). The fixture is deliberately left relative: absolute paths would make
             // this unit test touch the real ProgramData folder ACLs, create the event source and
@@ -215,8 +198,8 @@ namespace Servy.CLI.UnitTests
         {
             // Arrange
             // These seven verbs are the MapResult lambdas mapped with requireDatabase: true, so
-            // ExecuteWithRuntimeAsync runs EnsureDatabase before the handler. The fixture writes a
-            // relative AESKeyFilePath, so AppFoldersHelper.EnsureFolders rejects it on its
+            // ExecuteWithRuntimeAsync runs EnsureDatabase before the handler. The fixture overrides the
+            // key with a relative AESKeyFilePath, so AppFoldersHelper.EnsureFolders rejects it on its
             // absolute-path check - before any folder, ACL, event source, database or embedded
             // resource work - and Main's catch-all reports that message on stderr. A verb remapped
             // to requireDatabase: false would reach its handler, or EnsureServiceBinariesAsync
@@ -264,21 +247,11 @@ namespace Servy.CLI.UnitTests
             Console.SetOut(_originalConsoleOut);
             Console.SetError(_originalConsoleError);
 
+            CoreSettingsLoader.TestOverride = null;
+
             // Clean environment layout files using consistent BaseDirectory resolution
             try
             {
-                // appsettings.cli.json is a build output, so put back what was found rather
-                // than leaving the output directory without it: a --no-build re-run would
-                // otherwise fall back to the optional-config path silently.
-                if (_originalCliConfigJson != null)
-                {
-                    File.WriteAllText(_cliConfigPath, _originalCliConfigJson);
-                }
-                else if (File.Exists(_cliConfigPath))
-                {
-                    File.Delete(_cliConfigPath);
-                }
-
                 string keyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AesKeyFileName);
                 if (File.Exists(keyPath)) File.Delete(keyPath);
 
