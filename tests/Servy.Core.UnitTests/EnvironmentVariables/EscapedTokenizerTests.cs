@@ -100,9 +100,9 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("a=b=c", new[] { '=' }, new[] { "a", "b", "c" })]
         // Trailing delimiter
         [InlineData("a=", new[] { '=' }, new[] { "a", "" })]
-        // Delimiter at index 0 (j < 0 loop path check)
+        // Delimiter at index 0 -> empty first segment
         [InlineData("=a", new[] { '=' }, new[] { "", "a" })]
-        // Loop runs multiple times (triple backslashes)
+        // Odd run of three backslashes -> escaped delimiter
         [InlineData(@"a\\\=b", new[] { '=' }, new[] { @"a\\\=b" })]
         // Multiple variations of delimiters mixed together
         [InlineData(@"a=b\;c;d", new[] { '=', ';' }, new[] { "a", @"b\;c", "d" })]
