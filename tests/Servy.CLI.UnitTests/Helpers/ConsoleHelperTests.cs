@@ -154,8 +154,8 @@ namespace Servy.CLI.UnitTests.Helpers
 
         /// <summary>
         /// Covers the non-redirected branch where the animation runs and line clearing write fails with an IOException.
-        /// Uses a custom TextWriter wrapper that simulates an IOException on property write access, and mocks
-        /// Console.WindowWidth via test seam to force execution into the clearing Console.Write branch.
+        /// Uses a custom TextWriter wrapper that throws an IOException on the line-clearing Write only, and sets
+        /// the window-width test seam to force execution into the clearing Console.Write branch.
         /// </summary>
         [Fact]
         public async Task RunWithLoadingAnimation_WhenLineClearingHitsIOException_ExecutesFallbackNewline()
@@ -169,8 +169,8 @@ namespace Servy.CLI.UnitTests.Helpers
 
             try
             {
-                // Instantiating a TextWriter that forces an IOException upon attempting to check Console settings
-                // or write operations, simulating terminal detachment during cleanup execution.
+                // A TextWriter that throws an IOException on the line-clearing write (and on no other write),
+                // simulating terminal detachment during cleanup execution.
                 using (var faultingWriter = new FaultingStringWriter())
                 {
                     var originalOut = Console.Out;
@@ -187,7 +187,7 @@ namespace Servy.CLI.UnitTests.Helpers
                     }
 
                     // Assert
-                    // If Console.IsOutputRedirected is false in the runtime context but clearing Write drops an IOException,
+                    // With the redirection seam forced to false and the width seam at 80, the clearing Write throws an IOException;
                     // the catch block handles it by calling Console.WriteLine(), appending the Environment.NewLine sequence.
                     Assert.True(faultingWriter.IsFallbackWriteLineCalled);
                 }
