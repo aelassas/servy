@@ -12,7 +12,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Xunit;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests
 {
@@ -779,6 +781,42 @@ namespace Servy.Service.UnitTests
                     try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
                 }
             }
+        }
+
+        [Fact]
+        public async Task CheckHealth_TimerElapsed_ForwardsToTheCoreCheck()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = ServiceTestContext.CreateDefaultStartOptions();
+            TestReflection.SetField(service, "_options", options);
+            TestReflection.SetField(service, "_recoveryActionEnabled", true);
+
+            var timer = new Mock<ITimer>();
+            _ctx.TimerFactory.Setup(f => f.Create(It.IsAny<double>())).Returns(timer.Object);
+            service.InvokeSetupHealthMonitoring(options);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetFailedChecks(0);
+
+            // Act
+            timer.Raise(t => t.Elapsed += null, service, (ElapsedEventArgs)null);
+
+            // Assert
+            // CheckHealth is an async void timer handler, so the effect lands off the raising thread
+            var deadline = DateTime.UtcNow.AddMilliseconds(TestTimeouts.CiGenerousMs);
+            while (service.GetFailedChecks() == 0 && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(25, CancellationToken.None);
+            }
+
+            Assert.Equal(1, service.GetFailedChecks());
         }
 
         public void Dispose() => _ctx.Dispose();

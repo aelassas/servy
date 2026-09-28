@@ -413,6 +413,69 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
         }
 
+        [Fact]
+        public void SetProcessCpuAffinity_ValidMask_SetsAffinityAndLogsInfo()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            service.SetChildProcess(_mockProcess.Object);
+            _mockProcess.SetupProperty(p => p.ProcessorAffinity);
+
+            // Act
+            // Core 0 alone, so the mask is valid on a single-core runner too
+            service.SetProcessCpuAffinity("0");
+
+            // Assert
+            _mockProcess.VerifySet(p => p.ProcessorAffinity = new IntPtr(0x1), Times.Once);
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process CPU affinity to 0x1 (0).")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void SetProcessCpuAffinity_ExceptionThrown_LogsWarning()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            service.SetChildProcess(_mockProcess.Object);
+            _mockProcess.SetupSet(p => p.ProcessorAffinity = It.IsAny<IntPtr>())
+                       .Throws(new Exception("Affinity error"));
+
+            // Act
+            service.SetProcessCpuAffinity("0");
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set CPU affinity ('0')") && msg.Contains("Affinity error")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void SetProcessCpuAffinity_BeforeChildProcessStarted_WarnsAndSetsNothing()
+        {
+            // Arrange
+            // No SetChildProcess: the affinity call arrives before the child has been started
+            var service = _ctx.Build();
+
+            // Act
+            service.SetProcessCpuAffinity("0");
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("SetProcessCpuAffinity called before child process was started")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.VerifySet(p => p.ProcessorAffinity = It.IsAny<IntPtr>(), Times.Never);
+        }
+
+        [Fact]
+        public void SetProcessPriority_BeforeChildProcessStarted_WarnsAndSetsNothing()
+        {
+            // Arrange
+            // No SetChildProcess: the priority call arrives before the child has been started
+            var service = _ctx.Build();
+
+            // Act
+            service.SetProcessPriority(ProcessPriorityClass.High);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("SetProcessPriority called before child process was started")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.VerifySet(p => p.PriorityClass = It.IsAny<ProcessPriorityClass>(), Times.Never);
+        }
+
         // One row per rotation flag, each turning exactly one of the three on, so every
         // transposition of the two bool arguments differs in at least one row. The previous
         // single-fixture form left EnableSizeRotation and EnableDateRotation at their shared
@@ -993,6 +1056,65 @@ namespace Servy.Service.UnitTests
 
                 // Assert
                 loggerMock.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task EmitHeartbeatPing_NonSuccessStatusCode_LogsMaskedStatusAtDebug()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+
+            var debugTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _ctx.Logger.Setup(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception>((message, _) =>
+                {
+                    if (message.Contains("returned unexpected status code"))
+                    {
+                        debugTcs.TrySetResult(message);
+                    }
+                });
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var context = await listener.GetContextAsync();
+                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    context.Response.Close();
+                }
+                catch
+                {
+                    // Listener stopped or disposed during test cleanup
+                }
+            }, CancellationToken.None);
+
+            try
+            {
+                TestReflection.SetField(service, "_options", new StartOptions
+                {
+                    EnableHealthMonitoring = true // Required to pass the first guard check
+                });
+
+                // The secret sits in the path, which is the part MaskUrl exists to hide
+                object[] parameters = new object[] { $"{baseAddress}secret-uuid-value", string.Empty, 2 };
+
+                // Act
+                TestReflection.InvokeNonPublic(service, "EmitHeartbeatPing", parameters);
+
+                // Assert
+                var completed = await Task.WhenAny(debugTcs.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
+                Assert.True(completed == debugTcs.Task, "Heartbeat non-success debug line was never logged");
+
+                var logged = await debugTcs.Task;
+                Assert.Contains("returned unexpected status code: 500 (InternalServerError)", logged, StringComparison.Ordinal);
+                Assert.Contains("[MASKED]", logged, StringComparison.Ordinal);
+                Assert.DoesNotContain("secret-uuid-value", logged, StringComparison.Ordinal);
+            }
+            finally
+            {
+                listener.Close();
             }
         }
 

@@ -447,6 +447,30 @@ namespace Servy.Service.UnitTests
             }
         }
 
+        [Fact]
+        public void StartProcess_ConsoleUIEnabled_LogsNoticeAndSkipsRedirection()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", new StartOptions { EnableConsoleUI = true });
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(mockProcess.Object);
+
+            // Act
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), CancellationToken.None);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Console UI support enabled")), It.IsAny<Exception>()), Times.Once);
+
+            // The same flag bypasses stdout/stderr redirection, which is what the notice announces
+            mockProcess.VerifyAdd(p => p.OutputDataReceived += It.IsAny<DataReceivedEventHandler>(), Times.Never);
+            mockProcess.Verify(p => p.BeginOutputReadLine(), Times.Never);
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
