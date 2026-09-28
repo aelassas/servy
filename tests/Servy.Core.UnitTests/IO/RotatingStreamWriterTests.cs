@@ -1913,5 +1913,74 @@ namespace Servy.Core.UnitTests.IO
                 expectError,
                 log.IndexOf("Persistent failure to enforce log rotation limit", StringComparison.Ordinal) >= 0);
         }
+
+        /// <summary>
+        /// The enumeration-failure arm of <c>EnforceMaxRotations</c> - the #1315 catch around
+        /// <c>Directory.GetFiles</c> - must count towards the same consecutive-failure counter as a failed
+        /// deletion, warn every time, and escalate to the "Persistent failure to enumerate" error once
+        /// <see cref="AppConfig.LogRotationDeletionFailureEscalationThreshold"/> is reached. It is the twin of
+        /// the deletion-failure escalation pinned above (#7092): without this case the Interlocked.Increment
+        /// can be dropped, the catch deleted, or its error block removed, with every test green.
+        /// </summary>
+        /// <param name="priorFailures">Consecutive failures already recorded before this pass.</param>
+        /// <param name="expectError">Whether this pass is expected to escalate to an error.</param>
+        [Theory]
+        [InlineData(AppConfig.LogRotationDeletionFailureEscalationThreshold - 2, false)]
+        [InlineData(AppConfig.LogRotationDeletionFailureEscalationThreshold - 1, true)]
+        public void EnforceMaxRotations_EnumerationFailureReachingThreshold_LogsPersistentFailureError(
+            int priorFailures,
+            bool expectError)
+        {
+            // Arrange
+            string logDir = Path.Combine(TempDirectory, "enum-fail");
+            Directory.CreateDirectory(logDir);
+            string baseLog = Path.Combine(logDir, "enum.log");
+
+            string logName = "RetentionEnumTestLog_" + Guid.NewGuid().ToString("N") + ".log";
+            string logPath = Path.Combine(AppConfig.LogsFolderPath, logName);
+            string log;
+            int failuresAfterPass;
+
+            try
+            {
+                var writer = new RotatingStreamWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1, false);
+                writer.Write(string.Empty); // trigger lazy init, as the sibling retention tests do
+                writer.Dispose();           // release the handle so the directory can be removed
+
+                // EnforceMaxRotations resolves the directory from _file and does not check _disposed, so with
+                // the directory gone Directory.GetFiles throws DirectoryNotFoundException on net10.0 and net48
+                // alike - no production seam needed.
+                Directory.Delete(logDir, true);
+
+                TestReflection.SetField(writer, "_consecutiveDeletionFailures", priorFailures);
+                Logger.Shutdown();
+                Logger.Initialize(logName);
+
+                // Act
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+                Logger.Shutdown();
+                failuresAfterPass = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
+
+                log = File.Exists(logPath) ? File.ReadAllText(logPath) : string.Empty;
+            }
+            finally
+            {
+                Logger.Shutdown();
+                try { if (File.Exists(logPath)) File.Delete(logPath); } catch { /* best effort cleanup */ }
+            }
+
+            // Assert
+            Assert.Equal(priorFailures + 1, failuresAfterPass);
+
+            // Pins that the capture really received this pass's output, so the no-escalation row
+            // cannot pass on an empty log.
+            Assert.True(
+                log.IndexOf("Failed to enumerate rotated log files", StringComparison.Ordinal) >= 0,
+                "The enumeration-failure warning should have been captured.");
+            Assert.Equal(
+                expectError,
+                log.IndexOf("Persistent failure to enumerate rotated log files", StringComparison.Ordinal) >= 0);
+        }
     }
 }
