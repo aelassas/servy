@@ -447,7 +447,7 @@ namespace Servy.Core.UnitTests.Logging
             // cannot fail, whatever the truncation does. Assert the positive shape instead - the cut must
             // land after a complete pair, so the last character before the marker is the LOW surrogate of
             // one - and assert that no replacement character reached the file at all.
-            Assert.DoesNotContain("\uFFFD", truncatedHead);
+            Assert.DoesNotContain("\uFFFD", truncatedHead, StringComparison.Ordinal);
 
             char boundaryChar = truncatedHead[truncatedHead.Length - 1];
 
