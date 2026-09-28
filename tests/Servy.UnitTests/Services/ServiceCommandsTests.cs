@@ -28,8 +28,6 @@ namespace Servy.UnitTests.Services
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<Func<ServiceDto?>> _modelToServiceDtoMock;
-        private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializerMock;
-        private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
         private readonly Mock<IProcessHelper> _processHelperMock;
 
         public ServiceCommandsTests()
@@ -42,8 +40,6 @@ namespace Servy.UnitTests.Services
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
             _appConfigMock = new Mock<IAppConfiguration>();
             _cursorServiceMock = new Mock<ICursorService>();
-            _xmlServiceSerializerMock = new Mock<IXmlServiceSerializer>();
-            _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
             _modelToServiceDtoMock = new Mock<Func<ServiceDto?>>();
             _processHelperMock = new Mock<IProcessHelper>();
 
@@ -83,8 +79,6 @@ namespace Servy.UnitTests.Services
                 jsonServiceValidator: _jsonServiceValidatorMock.Object,
                 appConfig: _appConfigMock.Object,
                 cursorService: _cursorServiceMock.Object,
-                xmlServiceSerializer: _xmlServiceSerializerMock.Object,
-                jsonServiceSerializer: _jsonServiceSerializerMock.Object,
                 processHelper: _processHelperMock.Object
             );
         }
@@ -132,8 +126,6 @@ namespace Servy.UnitTests.Services
         [InlineData("jsonServiceValidator")]
         [InlineData("appConfig")]
         [InlineData("cursorService")]
-        [InlineData("xmlServiceSerializer")]
-        [InlineData("jsonServiceSerializer")]
         [InlineData("processHelper")]
         public void Constructor_NullDependency_ThrowsArgumentNullExceptionNamingThatParameter(string paramName)
         {
@@ -150,8 +142,6 @@ namespace Servy.UnitTests.Services
             IJsonServiceValidator jsonServiceValidator = _jsonServiceValidatorMock.Object;
             IAppConfiguration appConfig = _appConfigMock.Object;
             ICursorService cursorService = _cursorServiceMock.Object;
-            IXmlServiceSerializer xmlServiceSerializer = _xmlServiceSerializerMock.Object;
-            IJsonServiceSerializer jsonServiceSerializer = _jsonServiceSerializerMock.Object;
             IProcessHelper processHelper = _processHelperMock.Object;
 
             switch (paramName)
@@ -166,8 +156,6 @@ namespace Servy.UnitTests.Services
                 case "jsonServiceValidator": jsonServiceValidator = null!; break;
                 case "appConfig": appConfig = null!; break;
                 case "cursorService": cursorService = null!; break;
-                case "xmlServiceSerializer": xmlServiceSerializer = null!; break;
-                case "jsonServiceSerializer": jsonServiceSerializer = null!; break;
                 case "processHelper": processHelper = null!; break;
                 default: throw new InvalidOperationException($"Unknown constructor parameter '{paramName}'.");
             }
@@ -184,8 +172,6 @@ namespace Servy.UnitTests.Services
                 jsonServiceValidator,
                 appConfig,
                 cursorService,
-                xmlServiceSerializer,
-                jsonServiceSerializer,
                 processHelper));
 
             Assert.Equal(paramName, ex.ParamName);

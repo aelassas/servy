@@ -192,8 +192,6 @@ namespace Servy
                         new JsonServiceValidator(serviceValidationRules),
                         this,
                         new CursorService(),
-                        new XmlServiceSerializer(),
-                        new JsonServiceSerializer(),
                         processHelper
                     );
 

@@ -222,8 +222,6 @@ namespace Servy.Manager
                         serviceConfigurationValidator,
                         new XmlServiceValidator(serviceValidationRules),
                         new JsonServiceValidator(serviceValidationRules),
-                        new XmlServiceSerializer(),
-                        new JsonServiceSerializer(),
                         this, // IAppConfiguration
                         processHelper,
                         uiDispatcher // Pass the UI Dispatcher
