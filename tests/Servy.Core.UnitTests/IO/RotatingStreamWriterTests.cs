@@ -1767,7 +1767,9 @@ namespace Servy.Core.UnitTests.IO
                 try
                 {
                     // This will throw an ArgumentException ("Cannot determine directory from path...")
-                    // which is caught by the broad `catch (Exception)` block in PerformPhysicalRotation.
+                    // which is caught by the catch around GenerateUniqueFileName, so the breaker trips
+                    // before the move loop runs. The move loop's own catch-all is covered by
+                    // PerformPhysicalRotation_MoveThrowsNonIOException_TripsCircuitBreaker.
                     TestReflection.InvokeNonPublic(writer, "PerformPhysicalRotation", new object[] { filePath, badRotatedPath });
                 }
                 finally
@@ -1781,6 +1783,38 @@ namespace Servy.Core.UnitTests.IO
 
                 Assert.True(isDisabled, "A non-IOException should successfully trip the circuit breaker.");
                 Assert.True(cooldown > DateTime.UtcNow, "Circuit breaker cooldown should be set to the future.");
+            }
+        }
+
+        /// <summary>
+        /// A non-transient <c>File.Move</c> failure must reach the move loop's own catch-all and trip the
+        /// circuit breaker, rather than escaping onto the writing thread or breaking out of the loop
+        /// silently. This is the arm that separates a permanent failure from the
+        /// IOException/UnauthorizedAccessException retry-and-defer path of #1469.
+        /// </summary>
+        [Fact]
+        public void PerformPhysicalRotation_MoveThrowsNonIOException_TripsCircuitBreaker()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "move_arg.log");
+
+            // Does not exist, so GenerateUniqueFileName returns it unchanged and the move loop is reached.
+            var rotatedPath = Path.Combine(TempDirectory, "move_arg.20260101_120000.log");
+
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
+            {
+                writer.Write("init");
+                writer.Flush();
+
+                // Act: an empty source path makes File.Move throw ArgumentException, which is neither
+                // IOException nor UnauthorizedAccessException, so it reaches the loop's catch-all rather
+                // than the retry filter.
+                TestReflection.InvokeNonPublic(writer, "PerformPhysicalRotation", new object[] { string.Empty, rotatedPath });
+
+                // Assert
+                Assert.True(TestReflection.GetField<bool>(writer, "_rotationDisabled"), "A non-IO move failure must trip the circuit breaker.");
+                Assert.True(TestReflection.GetField<DateTime>(writer, "_disabledCooldownUntil") > DateTime.UtcNow, "The breaker cooldown should be set to the future.");
+                Assert.False(File.Exists(rotatedPath), "No rotated file may be produced by a failed move.");
             }
         }
 
