@@ -1280,6 +1280,254 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Start(), Times.Once); // Main process starts after the retried pre-launch succeeds
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnStart_PreLaunchFireAndForgetFailsToLaunch_LogsPerIgnoreFailureAndGatesTheMainProcess(bool ignoreFailure)
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 0, // 0 means Fire and Forget
+                PreLaunchIgnoreFailure = ignoreFailure
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            // The launch itself fails, which is the arm the exit-code tests above cannot reach.
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Throws(new InvalidOperationException("the hook executable could not be launched"));
+
+            // Act
+            _service.StartForTest();
+
+            // Assert: the severity follows PreLaunchIgnoreFailure, and so does whether the service starts at all
+            scopedLogger.Verify(l => l.Warn(FireAndForgetPreLaunchFailure, It.IsAny<Exception>()),
+                ignoreFailure ? Times.Once() : Times.Never());
+            scopedLogger.Verify(l => l.Error(FireAndForgetPreLaunchFailure, It.IsAny<Exception>()),
+                ignoreFailure ? Times.Never() : Times.Once());
+            _mockProcess.Verify(p => p.Start(), ignoreFailure ? Times.Once() : Times.Never());
+        }
+
+        [Fact]
+        public void OnStart_PreLaunchSynchronousTornDownDuringBackOff_AbortsWithoutASecondAttempt()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 10,
+                PreLaunchIgnoreFailure = false,
+                PreLaunchRetryAttempts = 1 // maxAttempts = 2, so a failed attempt 1 reaches the back-off wait
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            var mockFailedPreLaunch = new Mock<IProcessWrapper>();
+            mockFailedPreLaunch.Setup(p => p.Start()).Returns(true);
+            mockFailedPreLaunch.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            mockFailedPreLaunch.Setup(p => p.ExitCode).Returns(1); // the attempt fails, so the back-off runs
+
+            // Teardown is signalled while attempt 1 is in flight: the loop's top-of-attempt check has
+            // already passed, so the abort can only be observed by the check inside the back-off wait.
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Callback(() => TestReflection.SetField(_service, "_isTearingDown", true))
+                .Returns(mockFailedPreLaunch.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            scopedLogger.Verify(l => l.Error("Pre-launch process aborted during back-off wait due to service teardown.", null), Times.Once);
+
+            // ... and the abort returned instead of sleeping out the back-off and retrying
+            _ctx.ProcessFactory.Verify(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()), Times.Once);
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Never);
+            scopedLogger.Verify(l => l.Error("Pre-launch process failed after all retry attempts.", null), Times.Never);
+            _mockProcess.Verify(p => p.Start(), Times.Never);
+        }
+
+        #endregion
+
+        #region Post-Launch Hook Tests
+
+        private const string PostLaunchExe = @"C:\hooks\post.exe";
+        private const string FireAndForgetPreLaunchFailure = "Failed to launch fire-and-forget pre-launch process.";
+        private const string PostLaunchCancelled = "Post-launch action cancelled because service is stopping.";
+
+        /// <summary>
+        /// Builds the options a post-launch test needs: a configured hook, and a start timeout short
+        /// enough that the confirmation wait is never the reason a test is slow.
+        /// </summary>
+        /// <param name="postLaunchExePath">The post-launch executable to configure, or <see langword="null"/> for no hook.</param>
+        /// <returns>The start options to hand to <see cref="SetupStandardServiceStart"/>.</returns>
+        private static StartOptions CreatePostLaunchOptions(string postLaunchExePath)
+        {
+            return new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PostLaunchExecutablePath = postLaunchExePath,
+                StartTimeoutInSeconds = 1
+            };
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnStart_PostLaunchHook_RunsOnlyOnceTheChildIsConfirmedStillRunning(bool stillRunning)
+        {
+            // Arrange
+            var options = CreatePostLaunchOptions(PostLaunchExe);
+            SetupStandardServiceStart(options);
+
+            using (var postLaunchStarted = new ManualResetEventSlim(false))
+            {
+                var mockPostLaunchProcess = new Mock<IProcessWrapper>();
+                mockPostLaunchProcess.Setup(p => p.Start()).Returns(true);
+                _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == PostLaunchExe), It.IsAny<IServyLogger>()))
+                    .Callback(() => postLaunchStarted.Set())
+                    .Returns(mockPostLaunchProcess.Object);
+
+                _mockProcess.Setup(p => p.WaitAndCheckStillRunningAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(stillRunning);
+
+                // Act
+                _service.StartForTest();
+
+                // Assert: a confirmed child runs the hook; an unconfirmed one must not, even after the
+                // observation window a fire-and-forget body needs to be scheduled at all
+                Assert.Equal(stillRunning, postLaunchStarted.Wait(
+                    stillRunning ? TestTimeouts.CiGenerous : TestTimeouts.NegativeObservationWindow));
+                _ctx.ProcessFactory.Verify(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == PostLaunchExe), It.IsAny<IServyLogger>()),
+                    stillRunning ? Times.Once() : Times.Never());
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnStart_PostLaunchWaitCancelled_LogsTheCancellationOnlyWhenAHookIsConfigured(bool hookConfigured)
+        {
+            // Arrange
+            var options = CreatePostLaunchOptions(hookConfigured ? PostLaunchExe : null);
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            using (var cancellationLogged = new ManualResetEventSlim(false))
+            {
+                scopedLogger.Setup(l => l.Info(PostLaunchCancelled, It.IsAny<Exception>()))
+                    .Callback(() => cancellationLogged.Set());
+
+                _mockProcess.Setup(p => p.WaitAndCheckStillRunningAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new OperationCanceledException());
+
+                // Act
+                _service.StartForTest();
+
+                // Assert: the line is about a hook that will now not run, so with no hook configured it is noise
+                Assert.Equal(hookConfigured, cancellationLogged.Wait(
+                    hookConfigured ? TestTimeouts.CiGenerous : TestTimeouts.NegativeObservationWindow));
+                scopedLogger.Verify(l => l.Info(PostLaunchCancelled, It.IsAny<Exception>()),
+                    hookConfigured ? Times.Once() : Times.Never());
+
+                // ... and a cancelled wait is not an unexpected error
+                scopedLogger.Verify(l => l.Error("Unexpected error in post-launch action.", It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnStart_PostLaunchHook_IsTrackedOnlyWhenItOwnsANativeProcess(bool ownsNativeProcess)
+        {
+            // Arrange
+            var options = CreatePostLaunchOptions(PostLaunchExe);
+            SetupStandardServiceStart(options);
+
+            using (var hookDisposed = new ManualResetEventSlim(false))
+            using (var nativeProcess = new Process())
+            {
+                var mockPostLaunchProcess = new Mock<IProcessWrapper>();
+                mockPostLaunchProcess.Setup(p => p.Start()).Returns(true);
+                mockPostLaunchProcess.Setup(p => p.Dispose()).Callback(() => hookDisposed.Set());
+                if (ownsNativeProcess)
+                    mockPostLaunchProcess.Setup(p => p.UnderlyingProcess).Returns(nativeProcess);
+
+                _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == PostLaunchExe), It.IsAny<IServyLogger>()))
+                    .Returns(mockPostLaunchProcess.Object);
+
+                _mockProcess.Setup(p => p.WaitAndCheckStillRunningAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(true);
+
+                var tracked = TestReflection.GetField<List<Hook>>(_service, "_trackedHooks");
+
+                // Act
+                _service.StartForTest();
+
+                // Assert
+                if (ownsNativeProcess)
+                {
+                    // A hook with a native handle is kept so teardown can kill the orphan
+                    Assert.True(SpinWait.SpinUntil(() => { lock (tracked) return tracked.Count == 1; }, TestTimeouts.CiGenerous),
+                        "the post-launch hook was never tracked");
+                    lock (tracked) Assert.Equal("Post-Launch", tracked[0].OperationName);
+                    mockPostLaunchProcess.Verify(p => p.Dispose(), Times.Never);
+                }
+                else
+                {
+                    // Nothing to kill later, so the wrapper is released immediately instead of being tracked
+                    Assert.True(hookDisposed.Wait(TestTimeouts.CiGenerous),
+                        "the untracked post-launch hook was never disposed");
+                    lock (tracked) Assert.Empty(tracked);
+                }
+            }
+        }
+
+        [Fact]
+        public void CleanupTrackedHooks_WhenOneHookThrowsOnDispose_LogsItAndStillClearsTheList()
+        {
+            // Arrange
+            var tracked = TestReflection.GetField<List<Hook>>(_service, "_trackedHooks");
+            tracked.Add(new ThrowingHook { OperationName = "Post-Launch" });
+            tracked.Add(new Hook { OperationName = "Pre-Launch" });
+
+            // Act
+            TestReflection.InvokeNonPublic(_service, "CleanupTrackedHooks");
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn($"Failed to dispose tracked hook: {ThrowingHook.FailureMessage}", It.IsAny<Exception>()), Times.Once);
+
+            // ... and the throw did not abort the loop, so the surviving hook was still released
+            Assert.Empty(tracked);
+        }
+
+        /// <summary>
+        /// A <see cref="Hook"/> whose disposal always fails, so a test can drive the catch arm of
+        /// <c>CleanupTrackedHooks</c> without depending on a real process handle being in a state
+        /// that makes <see cref="Process.Dispose()"/> throw.
+        /// </summary>
+        private sealed class ThrowingHook : Hook
+        {
+            /// <summary>
+            /// The message carried by the exception this hook throws, so an assertion can match the
+            /// logged line character for character.
+            /// </summary>
+            public const string FailureMessage = "the process handle is already closed";
+
+            /// <summary>
+            /// Throws instead of releasing anything.
+            /// </summary>
+            /// <param name="disposing">Ignored; this override fails on every disposal path.</param>
+            /// <exception cref="InvalidOperationException">Always thrown, carrying <see cref="FailureMessage"/>.</exception>
+            protected override void Dispose(bool disposing)
+            {
+                throw new InvalidOperationException(FailureMessage);
+            }
+        }
+
         #endregion
 
         #region Stream Redirection Tests
