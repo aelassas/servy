@@ -13,8 +13,9 @@ namespace Servy.Core.IntegrationTests.Security
     /// <summary>
     /// Runs <see cref="ServyExePermissionsHardener"/> against a real, temporary vault and reads the resulting ACLs back.
     /// The target account is <c>NT AUTHORITY\LocalService</c>; <c>NT AUTHORITY\NetworkService</c> plays another
-    /// service account. Rewriting owners and DACLs needs an elevated process, as the product does, so every test is
-    /// skipped when the run is not elevated (CI runners are).
+    /// service account. Rewriting owners and DACLs needs an elevated process, as the product does, so every test that
+    /// hardens a vault or creates a link is skipped when the run is not elevated (CI runners are). The account-resolution
+    /// and LocalService membership probes only read the system, and run either way.
     /// </summary>
     [Collection(CoreOsIntegrationCollection.Name)]
     public class ServyExePermissionsHardenerIntegrationTests : TempDirectoryTestBase
