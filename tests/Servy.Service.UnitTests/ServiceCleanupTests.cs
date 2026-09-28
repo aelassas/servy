@@ -274,8 +274,8 @@ namespace Servy.Service.UnitTests
                 _service.Stop();
 
             // Assert
-            // HasExited is true, so the kill-and-wait block is skipped. Killing an exited process
-            // would throw and be reported, so the absence of that warning is what pins the guard.
+            // HasExited is true, so the kill-and-wait block is skipped. That block logs "Cleaning up
+            // orphaned ..." before it attempts the kill, so the absence of that line is what pins the guard.
                 scopedLogger.Verify(l => l.Warn(It.Is<string>(m => m.StartsWith("Failed to send Kill signal")), It.IsAny<Exception>()), Times.Never);
                 scopedLogger.Verify(l => l.Info(It.Is<string>(m => m.StartsWith("Cleaning up orphaned")), It.IsAny<Exception>()), Times.Never);
                 scopedLogger.Verify(l => l.Error("Cleanup of tracked hook failed.", It.IsAny<Exception>()), Times.Never);
