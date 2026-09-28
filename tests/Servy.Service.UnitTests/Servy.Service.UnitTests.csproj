@@ -130,6 +130,7 @@
     <Compile Include="Helpers\SequentialEnvTestsCollection.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="ProcessManagementTests.cs" />
+    <Compile Include="ProcessExitOutcomeTests.cs" />
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="ProcessManagement\HookTests.cs" />
     <Compile Include="ServiceCleanupTests.cs" />
