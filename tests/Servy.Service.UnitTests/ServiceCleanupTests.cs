@@ -217,7 +217,9 @@ namespace Servy.Service.UnitTests
             scopedLogger.Verify(l => l.Warn("Failed to dispose stdout writer: stdout handle is gone", It.IsAny<Exception>()), Times.Once);
             scopedLogger.Verify(l => l.Warn("Failed to dispose stderr writer: stderr handle is gone", It.IsAny<Exception>()), Times.Once);
 
-            // Each dispose failure is caught individually, so the finally still reaches the child.
+            // The two warnings above are what pin the per-writer catches. The child is disposed by
+            // Cleanup's finally whatever the writers do, so this last check only confirms the
+            // teardown still completed; it would pass without either catch.
             _mockProcess.Verify(p => p.Dispose(), Times.AtLeastOnce);
         }
 
