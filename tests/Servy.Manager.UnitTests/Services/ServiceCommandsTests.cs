@@ -259,8 +259,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Nothing after the guard runs on a refused path
             _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out It.Ref<ServiceDto?>.IsAny), Times.Never);
-            // The single-parse invariant: the validator handed the DTO back, so the
-            // deserializer is never asked to parse the same payload a second time.
+            // Nor the deserializer: the guard refused the path before any payload was read.
             _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string?>()), Times.Never);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             Assert.False(_refreshCalled);
