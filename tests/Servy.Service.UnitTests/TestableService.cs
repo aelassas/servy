@@ -47,6 +47,8 @@ namespace Servy.Service.UnitTests
             public static readonly MethodInfo StartProcessMethod = GetMethod("StartProcess");
             public static readonly MethodInfo SafeKillProcessMethod = GetMethod("SafeKillProcess");
             public static readonly MethodInfo StartPreStopProcessMethod = GetMethod("StartPreStopProcess");
+            public static readonly MethodInfo InitiateRecoveryAsyncMethod = GetMethod("InitiateRecoveryAsync");
+            public static readonly MethodInfo ExecuteRecoveryActionMethod = GetMethod("ExecuteRecoveryAction");
 
             private static FieldInfo GetField(string name) =>
                 typeof(Service).GetField(name, Flags)
@@ -137,5 +139,18 @@ namespace Servy.Service.UnitTests
         // Forces the state of the private backer field '_recoveryActionEnabled' via reflection.
         public void SetRecoveryActionEnabled(bool enabled) =>
             ServiceReflection.RecoveryActionEnabledField.SetValue(this, enabled);
+
+        // Expose the private InitiateRecoveryAsync method. The health-check and process-exit paths
+        // reach it through a scheduled task, so a test that targets its own arms - the semaphore
+        // teardown races, the abort on an unreadable counter, the recovery-execution catch - awaits
+        // it directly instead of waiting out the scheduling delay.
+        public Task InvokeInitiateRecoveryAsync() =>
+            (Task)ServiceReflection.InitiateRecoveryAsyncMethod.Invoke(this, null)!;
+
+        // Expose the private ExecuteRecoveryAction method, including the attempt count it formats
+        // into its "Performing recovery action" line. Invoking it directly is what lets a test
+        // observe the tracked-hook pruning without first driving a whole recovery.
+        public void InvokeExecuteRecoveryAction(int attemptCount) =>
+            ServiceReflection.ExecuteRecoveryActionMethod.Invoke(this, new object?[] { attemptCount });
     }
 }
