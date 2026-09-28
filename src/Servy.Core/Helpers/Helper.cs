@@ -780,14 +780,26 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Determines whether a directory is an NTFS volume mount point (\??\Volume{GUID}\).
+        /// Determines whether a directory is an NTFS volume mount point, whose link target names a
+        /// volume GUID rather than another directory.
         /// </summary>
         /// <param name="dir">The directory info instance to check.</param>
         /// <returns><c>true</c> if the directory is a volume mount point; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// The same volume GUID path reaches <see cref="FileSystemInfo.LinkTarget"/> in more than one
+        /// spelling: the NT substitute name <c>\??\Volume{GUID}\</c>, the Win32 device form
+        /// <c>\\?\Volume{GUID}\</c> that <c>mountvol</c> prints, and the bare print name
+        /// <c>Volume{GUID}\</c>, which is what .NET reports for a mount point created with
+        /// <c>mountvol</c>. All three are accepted, so the exemption added by #6635 fires for a real
+        /// mount point instead of only for the substitute-name form.
+        /// </remarks>
         private static bool IsVolumeMountPoint(DirectoryInfo dir)
         {
             var target = dir.LinkTarget;
-            return target != null && target.StartsWith(@"\??\Volume{", StringComparison.OrdinalIgnoreCase);
+            return target != null
+                && (target.StartsWith(@"\??\Volume{", StringComparison.OrdinalIgnoreCase)
+                    || target.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase)
+                    || target.StartsWith("Volume{", StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

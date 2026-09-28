@@ -1330,14 +1330,55 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HasAncestorReparsePoint_WhenAncestorIsVolumeMountPoint_ReturnsFalse()
         {
-            // Arrange
-            string fakeMountPoint = Path.Combine(_testRoot, "VolumeMountPoint");
-            Directory.CreateDirectory(fakeMountPoint);
+            // Arrange: mount the temp directory's own volume on an empty folder under _testRoot, so
+            // the ancestor really is a reparse point. A plain directory has a null LinkTarget and
+            // would take the ordinary walk, which is the same case as
+            // HasAncestorReparsePoint_WhenStandardLocalPath_ReturnsFalse and never reaches the
+            // IsVolumeMountPoint exemption this test is named for.
+            string mountDir = Path.Combine(_testRoot, "VolumeMountPoint");
+            Directory.CreateDirectory(mountDir);
 
-            // Act & Assert
-            // Standard directory without reparse point attributes returns false
-            string targetPath = Path.Combine(fakeMountPoint, "sub", "test.log");
-            Assert.False(Helper.HasAncestorReparsePoint(targetPath));
+            string volumeRoot = Path.GetPathRoot(_testRoot)!;
+            string volumeName = RunMountvol($"{volumeRoot} /L").Trim();
+            if (!volumeName.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
+            {
+                Assert.Skip($"mountvol did not report a volume GUID path for '{volumeRoot}': '{volumeName}'.");
+            }
+
+            RunMountvol($"\"{mountDir}\" {volumeName}");
+            try
+            {
+                if ((new DirectoryInfo(mountDir).Attributes & FileAttributes.ReparsePoint) == 0)
+                {
+                    Assert.Skip("mountvol could not mount the volume on this runner (not elevated?).");
+                }
+
+                // The fixture is only meaningful while LinkTarget names the volume in one of the
+                // spellings IsVolumeMountPoint accepts. .NET reports the bare print name
+                // "Volume{GUID}\" here, not the substitute name "\??\Volume{GUID}\"; pinning the
+                // accepted set means a fourth spelling fails loudly instead of passing this test for
+                // the wrong reason.
+                string? linkTarget = new DirectoryInfo(mountDir).LinkTarget;
+                Assert.NotNull(linkTarget);
+                Assert.True(
+                    linkTarget!.StartsWith(@"\??\Volume{", StringComparison.OrdinalIgnoreCase)
+                    || linkTarget.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase)
+                    || linkTarget.StartsWith("Volume{", StringComparison.OrdinalIgnoreCase),
+                    $"LinkTarget '{linkTarget}' is not a volume GUID path in any form IsVolumeMountPoint accepts.");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(Path.Combine(mountDir, "sub", "test.log"));
+
+                // Assert
+                // Branch Covered: the IsVolumeMountPoint exemption added by #6635 skips the reparse
+                // check for the mounted volume, so the walk reaches the plain ancestors and returns
+                // false. Without the exemption the non-null LinkTarget would make it return true.
+                Assert.False(result);
+            }
+            finally
+            {
+                RunMountvol($"\"{mountDir}\" /D");
+            }
         }
 
         [Fact]
@@ -1360,6 +1401,34 @@ namespace Servy.Core.UnitTests.Helpers
         #endregion
 
         #region Reparse Points Management Helpers
+
+        /// <summary>
+        /// Runs <c>mountvol.exe</c> with the supplied arguments and returns what it wrote to standard
+        /// output, so a volume mount point can be created, inspected and removed from a test.
+        /// </summary>
+        /// <param name="arguments">The arguments to pass to <c>mountvol.exe</c>.</param>
+        /// <returns>The tool's standard output.</returns>
+        /// <remarks>
+        /// The executable is resolved from <see cref="Environment.SystemDirectory"/> rather than by
+        /// bare name, so the test never picks up a <c>mountvol</c> that happens to sit earlier on PATH.
+        /// </remarks>
+        private static string RunMountvol(string arguments)
+        {
+            var psi = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "mountvol.exe"), arguments)
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var process = Process.Start(psi)!)
+            {
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                return output;
+            }
+        }
 
         /// <summary>
         /// Centralized factory method to create symbolic links with backoff retry routines.
