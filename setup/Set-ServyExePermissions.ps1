@@ -9,6 +9,8 @@
     directory-level 'Modify' permissions on %ProgramData%\Servy to write database logs, process state, and runtime
     recovery files, and this script grants them: the target account receives 'Modify' on %ProgramData%\Servy, inherited
     by every subfolder and file, so no manual ACL edit is needed before running it (#7136).
+    The target is also denied 'Delete' on %ProgramData%\Servy and every subfolder (not on files), so it cannot
+    rename a folder and move the hardened files inside it out of the way (#7140).
     However, leaving binaries, loaded assemblies, and configuration files with inherited 'Modify' access
     allows a compromised service process or unprivileged runner account to tamper with, replace, or hijack core executables, DLLs, or app settings.
 
@@ -378,6 +380,7 @@ try {
             $rootAcl.AddAccessRule($noFolderDelete)
             Set-Acl -Path $programDataDir -AclObject $rootAcl
             Write-Host "  [Target Granted] $TargetAccount [Modify - Allow] on '$programDataDir'" -ForegroundColor Cyan
+            Write-Host "  [Target Denied] $TargetAccount [Delete - Deny] on '$programDataDir' and its subfolders" -ForegroundColor Cyan
         }
         catch {
             Write-Host "FAILED to grant Modify on '$programDataDir': $_" -ForegroundColor Red
