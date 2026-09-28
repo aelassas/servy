@@ -966,8 +966,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Kill_CatchBranch_AccessViolationOrInvalidTargetState_LogsWarningSafely()
         {
             // Arrange
-            // Test exception handling when _process.Kill() throws by exercising the catch block directly
-            // or by attempting to kill a process instance state where _process.HasExited is false but Kill() fails.
+            // Closing the handle detaches the Process object while the OS process keeps running, so Kill's
+            // HasExited read throws InvalidOperationException into the catch before the kill call is reached.
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 wrapper.Start();
@@ -979,7 +979,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 try
                 {
-                    // Close underlying process handles to induce an exception when Kill executes while HasExited is false
+                    // Detach the Process object so that Kill's HasExited read throws
                     wrapper.UnderlyingProcess.Close();
 
                     // Act
