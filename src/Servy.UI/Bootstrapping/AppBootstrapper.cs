@@ -446,8 +446,8 @@ namespace Servy.UI.Bootstrapping
                     }
 
 #if !DEBUG
-                    // A file newly extracted into the vault inherits its Modify grant, so lock Servy's files down again
-                    // for every account a service runs under. Debug builds extract next to the executable instead.
+                    // A file newly extracted into the vault carries no grant for the service accounts, so grant them
+                    // their access to it again. Debug builds extract next to the executable instead.
                     if (resourceHelper.HasCopiedResources)
                     {
                         await new ServyExePermissionsHardener().HardenServiceAccountsAsync(ServiceRepository, ct);

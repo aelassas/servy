@@ -16,25 +16,34 @@ using static Servy.Core.Native.NativeMethods;
 namespace Servy.Core.Security
 {
     /// <summary>
-    /// Hardens Servy's vault for a service account: the account gets Modify on <c>%ProgramData%\Servy</c> (inherited
-    /// by every subfolder and file, with Delete denied on the folders), while Servy's binaries are locked down to
-    /// Read &amp; Execute, its configuration files and encryption key to Read, and its configuration database to
-    /// Read, Write without Delete.
+    /// Hardens Servy's vault for a service account with the least privilege the service needs: Read &amp; Execute on
+    /// Servy's binaries, Read on its configuration files and encryption key, Read, Write on its configuration database,
+    /// and Read, Write, Delete on the files it creates in <c>db\</c>, <c>logs\</c> and <c>recovery\</c>. The account
+    /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself.
     /// </summary>
     /// <remarks>
     /// <para>
     /// This is the C# port of the former <c>Set-ServyExePermissions.ps1</c>, so Servy applies the hardening itself
     /// wherever its executables run. It is run when a service is installed under an account other than Local System
     /// (<see cref="Services.ServiceManager"/>), and again for every such account after the desktop app, the Manager or
-    /// the CLI has extracted a binary into the vault, because a newly written file inherits the vault's Modify grant.
+    /// the CLI has extracted a binary into the vault, because a newly written file carries no grant for the service
+    /// accounts and would be unreadable to them.
     /// </para>
     /// <para>
     /// Each hardened file stops inheriting from the vault, is owned by Builtin Administrators, and keeps Full Control
     /// for SYSTEM and Administrators (well-known SIDs, so the result is language-agnostic). Explicit grants for
     /// Users, Authenticated Users and Everyone are purged; explicit entries for other principals are kept, so
-    /// hardening one account never removes another's access. The database and the key keep their inherited entries
-    /// as explicit ones for the same reason. A file that is a reparse point or has more than one hard link is not
-    /// touched and is reported as failed.
+    /// hardening one account never removes another's access. A file that is a reparse point or has more than one hard
+    /// link is not touched and is reported as failed.
+    /// </para>
+    /// <para>
+    /// The service writes in three folders only: SQLite creates and deletes the <c>-wal</c>/<c>-shm</c> files next to
+    /// <c>db\Servy.db</c>, the logger writes and rotates <c>logs\</c>, and the recovery state in <c>recovery\</c> is
+    /// replaced through a temporary file on every save. Each of those folders gives the account List and Create Files on
+    /// the folder and Modify on the files in it (except <c>Servy.db</c>, which is hardened on its own), never Delete on
+    /// the folder: it can neither rename nor delete a folder, and outside those three folders it can write or delete
+    /// nothing. An account that a previous version granted Modify on the vault root loses that grant when it is
+    /// hardened again.
     /// </para>
     /// <para>
     /// The process must be elevated, as every Servy process that installs a service already is.
@@ -205,7 +214,20 @@ namespace Servy.Core.Security
                     "if it is, its effective access stays Full Control whatever the hardening writes.");
             }
 
-            GrantVaultAccess(targetSid, result);
+            // Everything under a linked vault would be written somewhere else
+            if ((new DirectoryInfo(VaultDirectory).Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+            {
+                result.AddFailed(VaultDirectory);
+                return result.Complete(ExePermissionsHardeningStatus.Failed, "the vault directory is a reparse point (symlink/junction)");
+            }
+
+            RevokeVaultRootAccess(targetSid, result);
+
+            foreach (var folder in GetWritableFolders())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                GrantFolderAccess(folder, targetSid, result);
+            }
 
             foreach (var target in GetTargetFiles())
             {
@@ -253,59 +275,100 @@ namespace Servy.Core.Security
         /// <param name="targets">The list to add to.</param>
         private static void AddDataTargets(List<ExePermissionsTarget> targets)
         {
-            // The shared configuration database: Modify without Delete (#7136). Its inherited entries are kept as
-            // explicit ones, so other service accounts keep the access they already have.
+            // The shared configuration database: Read, Write without Delete (#7136). Its inherited entries are dropped
+            // like every other hardened file's: they would carry the db\ folder's file grant, which includes Delete.
             targets.Add(new ExePermissionsTarget(
                 Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName),
-                FileSystemRights.Read | FileSystemRights.Write,
-                preserveInherited: true));
+                FileSystemRights.Read | FileSystemRights.Write));
 
             // The encryption key: read-only, so the service account can decrypt but can neither replace nor delete
             // the key every Servy process trusts.
             targets.Add(new ExePermissionsTarget(
                 Path.Combine(AppConfig.SecurityFolderName, AppConfig.AESKeyFileName),
-                FileSystemRights.Read,
-                preserveInherited: true));
+                FileSystemRights.Read));
         }
 
         /// <summary>
-        /// Grants the target Modify on the vault, inherited by subfolders and files, and denies it Delete on the
-        /// vault and its subfolders.
+        /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the service creates, rewrites and deletes
+        /// files: the database folder (SQLite's <c>-wal</c>/<c>-shm</c> files), the logs and the recovery state.
+        /// </summary>
+        /// <returns>The writable folders.</returns>
+        internal static IReadOnlyList<string> GetWritableFolders()
+            => new[] { AppConfig.DbFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName };
+
+        /// <summary>
+        /// Removes every explicit entry the target holds on the vault root, such as the Modify grant and the Delete
+        /// denial a previous version wrote there.
         /// </summary>
         /// <param name="targetSid">The target account.</param>
-        /// <param name="result">Receives the vault as failed when the grant cannot be written.</param>
-        private void GrantVaultAccess(SecurityIdentifier targetSid, ExePermissionsHardeningResult result)
+        /// <param name="result">Receives the vault as failed when its ACL cannot be rewritten.</param>
+        private void RevokeVaultRootAccess(SecurityIdentifier targetSid, ExePermissionsHardeningResult result)
         {
             try
             {
                 var vault = new DirectoryInfo(VaultDirectory);
-                if ((vault.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-                    throw new IOException("The directory is a reparse point (symlink/junction) and cannot be granted access safely.");
-
                 var acl = vault.GetAccessControl(AccessControlSections.Access);
-                acl.SetAccessRule(new FileSystemAccessRule(
-                    targetSid,
-                    FileSystemRights.Modify,
-                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                    PropagationFlags.None,
-                    AccessControlType.Allow));
-
-                // Folders must not be renamable or deletable by the service account: Delete on a folder plus
-                // add-subdirectory on its parent is a rename, which moves every hardened file inside it out of the way (#7140).
-                acl.AddAccessRule(new FileSystemAccessRule(
-                    targetSid,
-                    FileSystemRights.Delete,
-                    InheritanceFlags.ContainerInherit,
-                    PropagationFlags.None,
-                    AccessControlType.Deny));
-
+                acl.PurgeAccessRules(targetSid);
                 vault.SetAccessControl(acl);
-                result.VaultAccessGranted = true;
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to grant '{result.Account}' Modify on '{VaultDirectory}'.", ex);
+                Logger.Error($"Failed to revoke the access of '{result.Account}' to '{VaultDirectory}'.", ex);
                 result.AddFailed(VaultDirectory);
+            }
+        }
+
+        /// <summary>
+        /// Lets the target create files in a writable folder and read, write and delete the files created there,
+        /// creating the folder first when it does not exist yet.
+        /// </summary>
+        /// <param name="relativePath">The folder, relative to <see cref="VaultDirectory"/>.</param>
+        /// <param name="targetSid">The target account.</param>
+        /// <param name="result">Receives the folder as failed when it cannot be created or granted.</param>
+        private void GrantFolderAccess(string relativePath, SecurityIdentifier targetSid, ExePermissionsHardeningResult result)
+        {
+            var path = Path.Combine(VaultDirectory, relativePath);
+            try
+            {
+                // The service account cannot create folders in the vault root, so create it now, secured the way
+                // AppFoldersHelper secures the vault's subfolders
+                if (!Directory.Exists(path))
+                    SecurityHelper.CreateSecureDirectory(path, breakInheritance: false);
+
+                var folder = new DirectoryInfo(path);
+                if ((folder.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    Logger.Error($"Cannot grant '{result.Account}' access to '{relativePath}': it is a reparse point (symlink/junction).");
+                    result.AddFailed(relativePath);
+                    return;
+                }
+
+                var acl = folder.GetAccessControl(AccessControlSections.Access);
+                acl.PurgeAccessRules(targetSid);
+
+                // The folder itself: list it and create files in it, but never delete or rename it
+                acl.AddAccessRule(new FileSystemAccessRule(
+                    targetSid,
+                    FileSystemRights.ReadAndExecute | FileSystemRights.CreateFiles,
+                    InheritanceFlags.None,
+                    PropagationFlags.None,
+                    AccessControlType.Allow));
+
+                // The files in it: read, write and delete (log rotation, atomic replacement, SQLite side files)
+                acl.AddAccessRule(new FileSystemAccessRule(
+                    targetSid,
+                    FileSystemRights.Modify,
+                    InheritanceFlags.ObjectInherit,
+                    PropagationFlags.InheritOnly,
+                    AccessControlType.Allow));
+
+                folder.SetAccessControl(acl);
+                result.AddGrantedFolder(relativePath);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to grant '{result.Account}' access to '{relativePath}'.", ex);
+                result.AddFailed(relativePath);
             }
         }
 
@@ -354,19 +417,8 @@ namespace Servy.Core.Security
                 var previousOwner = acl.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
                 acl.SetOwner(AdministratorsSid);
 
-                if (target.PreserveInherited)
-                {
-                    // Break inheritance and keep the inherited entries as explicit ones. The conversion only takes effect
-                    // once committed, so commit and re-read before the target's copy of the inherited Modify is removed.
-                    acl.SetAccessRuleProtection(true, true);
-                    file.SetAccessControl(acl);
-                    acl = file.GetAccessControl();
-                }
-                else
-                {
-                    // Break inheritance and drop the inherited entries in one pass
-                    acl.SetAccessRuleProtection(true, false);
-                }
+                // Break inheritance and drop the inherited entries in one pass
+                acl.SetAccessRuleProtection(true, false);
 
                 // Purge the target's explicit entries and any explicit grant to a broad group; keep everyone else's
                 foreach (FileSystemAccessRule rule in acl.GetAccessRules(true, false, typeof(SecurityIdentifier)))
@@ -570,13 +622,11 @@ namespace Servy.Core.Security
         /// <param name="relativePath">The file's path relative to the vault.</param>
         /// <param name="rights">The rights the target account keeps on the file.</param>
         /// <param name="optional">Whether a missing file is skipped rather than reported as missing.</param>
-        /// <param name="preserveInherited">Whether the file's inherited entries are kept as explicit ones.</param>
-        public ExePermissionsTarget(string relativePath, FileSystemRights rights, bool optional = false, bool preserveInherited = false)
+        public ExePermissionsTarget(string relativePath, FileSystemRights rights, bool optional = false)
         {
             RelativePath = relativePath;
             Rights = rights;
             Optional = optional;
-            PreserveInherited = preserveInherited;
         }
 
         /// <summary>Gets the file's path relative to the vault.</summary>
@@ -587,8 +637,5 @@ namespace Servy.Core.Security
 
         /// <summary>Gets whether a missing file is skipped rather than reported as missing.</summary>
         public bool Optional { get; }
-
-        /// <summary>Gets whether the file's inherited entries are kept as explicit ones.</summary>
-        public bool PreserveInherited { get; }
     }
 }

@@ -5,13 +5,14 @@ using System.Threading.Tasks;
 namespace Servy.Core.Security
 {
     /// <summary>
-    /// Hardens the permissions Servy's vault (<c>%ProgramData%\Servy</c>), binaries, configuration files, database and
-    /// encryption key grant to a service account.
+    /// Hardens the permissions Servy's vault (<c>%ProgramData%\Servy</c>), binaries, configuration files, database,
+    /// encryption key, logs and recovery state grant to a service account.
     /// </summary>
     public interface IServyExePermissionsHardener
     {
         /// <summary>
-        /// Grants <paramref name="targetAccount"/> Modify on the vault and locks Servy's files down for it.
+        /// Grants <paramref name="targetAccount"/> the least privilege a Servy service needs in the vault and locks
+        /// Servy's files down for it.
         /// </summary>
         /// <param name="targetAccount">The account the service runs under (e.g. <c>DOMAIN\svc-servy</c>, <c>.\user</c>, <c>DOMAIN\gMSA$</c>).</param>
         /// <param name="cancellationToken">A token that stops the hardening between two files.</param>

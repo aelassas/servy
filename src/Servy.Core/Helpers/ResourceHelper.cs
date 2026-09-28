@@ -38,8 +38,8 @@ namespace Servy.Core.Helpers
         /// Gets whether this instance has written at least one embedded resource to disk.
         /// </summary>
         /// <remarks>
-        /// A file newly written to the vault inherits the vault's Modify grant, so a caller that sees this flag set
-        /// re-applies the executable permission hardening for the service accounts.
+        /// A file newly written to the vault carries no grant for the service accounts, so a caller that sees this flag
+        /// set re-applies the executable permission hardening for them.
         /// </remarks>
         public bool HasCopiedResources { get; private set; }
 
