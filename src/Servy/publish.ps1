@@ -6,7 +6,8 @@
 
 .DESCRIPTION
     This script performs the following steps:
-      1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration).
+      1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration),
+         which builds Servy.Service.exe and Servy.Restarter.exe into Resources to be embedded.
       2. Builds and publishes `Servy.csproj` as a self-contained executable for the specified runtime.
       3. Signs the published executable with SignPath when -BuildConfiguration is Release
          and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.

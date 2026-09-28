@@ -10,6 +10,9 @@
     signs the published executable with SignPath when -BuildConfiguration is Release
     and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
 
+    Servy.Service embeds no resources: Servy.Restarter.exe is embedded by the desktop app,
+    the Manager and the CLI, which extract it next to the service executable.
+
 .PARAMETER Tfm
     Target framework for the build. Defaults to the value in build-config.ps1.
 

@@ -386,6 +386,14 @@ namespace Servy.UI.Bootstrapping
                             "The application cannot start safely - see file log for details.");
                     }
 
+                    // The service wrapper launches the restarter from its own folder, so it is extracted next to it.
+                    // No running service holds it open, so there is nothing to stop before overwriting it.
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyRestarterFileName, "exe", false, cancellationToken: ct))
+                    {
+                        throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyRestarterExe}'. " +
+                            "The application cannot start safely - see file log for details.");
+                    }
+
                     var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
                         ? AppConfig.HandleExeARM64FileName
                         : AppConfig.HandleExeX64FileName;
@@ -408,6 +416,16 @@ namespace Servy.UI.Bootstrapping
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                             splash ?? (Window?)app.MainWindow,
                             string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyServiceUIFileName}.pdb"),
+                            _options.ResourceExtractionWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
+                    }
+
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: ct))
+                    {
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window?)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyRestarterFileName}.pdb"),
                             _options.ResourceExtractionWarningTitle,
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning));

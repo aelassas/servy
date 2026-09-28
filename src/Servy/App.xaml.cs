@@ -4,6 +4,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
 using Servy.Resources;
@@ -165,7 +166,8 @@ namespace Servy
                         new ServiceControllerProvider(controllerFactory),
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
-                        ServiceRepository!
+                        ServiceRepository!,
+                        new ServyExePermissionsHardener()
                     );
 
                     // 2. Initialize UI Services

@@ -29,6 +29,8 @@
     <None Remove="Resources\handle64a.exe" />
     <None Remove="Resources\Servy.Service.exe" />
     <None Remove="Resources\Servy.Service.pdb" />
+    <None Remove="Resources\Servy.Restarter.exe" />
+    <None Remove="Resources\Servy.Restarter.pdb" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,6 +45,8 @@
     <EmbeddedResource Include="Resources\handle64a.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.pdb" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.exe" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.pdb" />
   </ItemGroup>
 
   <ItemGroup>

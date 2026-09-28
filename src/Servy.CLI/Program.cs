@@ -149,7 +149,8 @@ namespace Servy.CLI
                         new ServiceControllerProvider(controllerFactory),
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
-                        serviceRepository
+                        serviceRepository,
+                        new ServyExePermissionsHardener()
                         );
 
                     var processHelper = new ProcessHelper();
@@ -202,6 +203,14 @@ namespace Servy.CLI
                                 "CLI cannot start safely - see file log for details.");
                         }
 
+                        // Copy the restarter next to the service wrapper, which launches it from its own folder.
+                        // No running service holds it open, so there is nothing to stop before overwriting it.
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "exe", false, cancellationToken: cts.Token))
+                        {
+                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyRestarterExe}'. " +
+                                "CLI cannot start safely - see file log for details.");
+                        }
+
                         // Copy Sysinternals from embedded resources
                         var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
                             ? AppConfig.HandleExeARM64FileName
@@ -216,6 +225,11 @@ namespace Servy.CLI
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false, cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
+                        }
+
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: cts.Token))
+                        {
+                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
                         }
 #endif
                     }

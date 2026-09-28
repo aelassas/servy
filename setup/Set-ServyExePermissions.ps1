@@ -15,8 +15,7 @@
     process or unprivileged runner account to tamper with, replace, or hijack core executables or application settings.
 
     This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
-    executable and configuration files and restricting the target runner account to strict 'Read & Execute' (for executables,
-    with explicit 'Delete' rights granted strictly to Servy.Restarter.exe to permit atomic update extraction)
+    executable and configuration files and restricting the target runner account to strict 'Read & Execute' (for executables)
     or 'Read' (for configuration files) rights. This ensures the service runner can execute required binaries and read
     configuration settings without being able to overwrite or replace them, protecting against unprivileged binary/config
     replacement and local privilege escalation vectors. Full Control is explicitly preserved for SYSTEM and Administrators
@@ -26,7 +25,7 @@
     Hardened Executable Files:
     - Servy.Service.exe
     - Servy.Service.CLI.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.exe gets copied to %ProgramData%\Servy)
-    - Servy.Restarter.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.exe gets copied to %ProgramData%\Servy)
+    - Servy.Restarter.exe
     - handle64.exe / handle64a.exe
 
     Hardened Configuration Files:
@@ -63,6 +62,9 @@
 .NOTES
     - Execution Requires Administrator Privileges: Modifying ACLs and breaking permission inheritance in %ProgramData%\Servy
       requires an elevated PowerShell session.
+    - Run Automatically: Since v10.2, the desktop app, the Manager, the CLI and the PowerShell module run this script
+      for the service account whenever they install a service under an account other than Local System, so running it
+      by hand is only needed to re-apply the hardening (e.g. after restoring %ProgramData%\Servy from a backup).
 #>
 [CmdletBinding()]
 param(
@@ -359,11 +361,7 @@ try {
     $targetFiles = @()
 
     foreach ($exe in $exeNames) {
-        if ($exe -eq 'Servy.Restarter.exe') {
-            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute, Delete" }
-        } else {
-            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
-        }
+        $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
     }
 
     foreach ($cfg in $configNames) {
@@ -466,7 +464,7 @@ try {
             $acl.SetAccessRule($adminRule)
             $acl.SetAccessRule($systemRule)
 
-            # 4. Grant explicit ReadAndExecute/Delete (for Restarter), ReadAndExecute (for other exes), Read (for configs), or Read/Write (for the database) access to target account
+            # 4. Grant explicit ReadAndExecute (for exes), Read (for configs), or Read/Write (for the database) access to target account
             if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
                 Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
             } else {

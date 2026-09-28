@@ -28,7 +28,6 @@ namespace Servy.Service.UnitTests
         public Mock<IProcessFactory> ProcessFactory { get; } = new Mock<IProcessFactory>();
         public Mock<IPathValidator> PathValidator { get; } = new Mock<IPathValidator>();
         public Mock<IServiceRepository> ServiceRepository { get; } = new Mock<IServiceRepository>();
-        public Mock<Core.Helpers.IProcessKiller> ProcessKiller { get; } = new Mock<Core.Helpers.IProcessKiller>();
 
         public ServiceTestContext()
         {
@@ -48,8 +47,7 @@ namespace Servy.Service.UnitTests
                 TimerFactory.Object,
                 ProcessFactory.Object,
                 PathValidator.Object,
-                ServiceRepository.Object,
-                ProcessKiller.Object
+                ServiceRepository.Object
             );
 
             _builtServices.Add(service);
@@ -68,8 +66,7 @@ namespace Servy.Service.UnitTests
                 TimerFactory.Object,
                 ProcessFactory.Object,
                 PathValidator.Object,
-                serviceRepository ?? ServiceRepository.Object,
-                ProcessKiller.Object
+                serviceRepository ?? ServiceRepository.Object
             );
 
             _builtServices.Add(service);

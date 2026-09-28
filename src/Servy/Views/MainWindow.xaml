@@ -840,7 +840,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
@@ -899,15 +898,6 @@
                            AutomationProperties.Name="{x:Static resx:Strings.Label_ConfirmPassword}"
                            AutomationProperties.AutomationId="PasswordBoxConfirm"
                            AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PasswordBoxConfirm_HelpText}" />
-
-              <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
-                         Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                         TextWrapping="Wrap" Margin="0,5,0,10">
-                <Run Text="{x:Static resx:Strings.Info_SecurityHardeningNotice}" />
-                <Hyperlink Command="{Binding OpenSecurityHardeningGuideCommand}">
-                  <Run Text="{x:Static resx:Strings.Link_SecurityHardeningGuide}" />
-                </Hyperlink>
-              </TextBlock>
             </Grid>
           </ScrollViewer>
         </TabItem>

@@ -42,11 +42,6 @@ namespace Servy.Core.Config
         public const string DocumentationLink = "https://github.com/aelassas/servy/wiki";
 
         /// <summary>
-        /// Servy's security hardening guide link.
-        /// </summary>
-        public const string SecurityHardeningGuideLink = "https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory";
-
-        /// <summary>
         /// Latest GitHub release link.
         /// </summary>
         public const string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
@@ -790,6 +785,21 @@ namespace Servy.Core.Config
         /// Timeout in milliseconds for external handle-utility execution (e.g., handle.exe).
         /// </summary>
         public const int HandleExeTimeoutMs = 10_000;
+
+        /// <summary>
+        /// The file name of the script that hardens Servy's binaries, configuration files and database for a
+        /// service account, run by <see cref="Security.ServyExePermissionsHardener"/> after a service is installed.
+        /// </summary>
+        public const string SetServyExePermissionsScriptFileName = "Set-ServyExePermissions.ps1";
+
+        /// <summary>
+        /// Timeout in milliseconds for one run of <see cref="SetServyExePermissionsScriptFileName"/>.
+        /// </summary>
+        /// <remarks>
+        /// The script resolves the account (which can mean a domain controller round trip) and rewrites a handful
+        /// of ACLs, which takes seconds; two minutes leaves room for a slow domain without hanging an install.
+        /// </remarks>
+        public const int SetServyExePermissionsTimeoutMs = 120_000;
 
         /// <summary>
         /// The maximum character length for a Windows Service display name.

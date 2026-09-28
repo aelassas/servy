@@ -726,8 +726,8 @@ namespace Servy.UnitTests.Services
                 // Act
                 await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-                // Assert: unlike the browser hand-off in OpenSecurityHardeningGuide, a null process
-                // here means the Manager app did not launch and must be reported to the user
+                // Assert: unlike a browser hand-off, a null process here means the Manager app
+                // did not launch and must be reported to the user
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(
                     Resources.Strings.Msg_ManagerAppLaunchFailed,
                     UiAppConfig.Caption),
@@ -776,69 +776,6 @@ namespace Servy.UnitTests.Services
                     try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
                 }
             }
-        }
-
-        #endregion
-
-        #region OpenSecurityHardeningGuide Method Tests
-
-        [Fact]
-        public async Task OpenSecurityHardeningGuide_ProcessStartsSuccessfully_StartsProcessWithCorrectUri()
-        {
-            // Arrange
-            using (var currentProcess = Process.GetCurrentProcess())
-            {
-                _processHelperMock
-                    .Setup(h => h.Start(It.Is<ProcessStartInfo>(psi =>
-                        psi.FileName == Core.Config.AppConfig.SecurityHardeningGuideLink &&
-                        psi.UseShellExecute)))
-                    .Returns(currentProcess);
-
-                var sut = CreateSut();
-
-                // Act
-                await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
-
-                // Assert
-                _processHelperMock.Verify(h => h.Start(It.Is<ProcessStartInfo>(psi =>
-                    psi.FileName == Core.Config.AppConfig.SecurityHardeningGuideLink &&
-                    psi.UseShellExecute)), Times.Once);
-                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            }
-        }
-
-        [Fact]
-        public async Task OpenSecurityHardeningGuide_ProcessReturnsNull_SucceedsWithoutError()
-        {
-            // Arrange
-            _processHelperMock
-                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
-                .Returns((Process?)null);
-
-            var sut = CreateSut();
-
-            // Act
-            await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
-
-            // Assert: Handing off to an existing browser instance (returning null) should NOT trigger an error popup
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task OpenSecurityHardeningGuide_ProcessStartThrowsException_DisplaysError()
-        {
-            // Arrange
-            _processHelperMock
-                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
-                .Throws(new System.ComponentModel.Win32Exception("Failed to open browser"));
-
-            var sut = CreateSut();
-
-            // Act
-            await sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken);
-
-            // Assert
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -1783,23 +1720,6 @@ namespace Servy.UnitTests.Services
             finally { File.Delete(outside); }
         }
 #endif
-
-        [Fact]
-        public async Task OpenSecurityHardeningGuide_OperationCanceled_PropagatesInsteadOfMasking()
-        {
-            // Arrange
-            _processHelperMock
-                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
-                .Throws(new OperationCanceledException());
-
-            var sut = CreateSut();
-
-            // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(
-                () => sut.OpenSecurityHardeningGuideAsync(TestContext.Current.CancellationToken));
-
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
-        }
 
         [Fact]
         public async Task ExportConfig_OperationCanceled_PropagatesInsteadOfMasking()

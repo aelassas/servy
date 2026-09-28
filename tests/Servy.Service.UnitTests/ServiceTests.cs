@@ -63,14 +63,13 @@ namespace Servy.Service.UnitTests
         }
 
         [Theory]
-        [InlineData(false, true, true, true, true, true, true, true, "serviceHelper")]
-        [InlineData(true, false, true, true, true, true, true, true, "logger")]
-        [InlineData(true, true, false, true, true, true, true, true, "streamWriterFactory")]
-        [InlineData(true, true, true, false, true, true, true, true, "timerFactory")]
-        [InlineData(true, true, true, true, false, true, true, true, "processFactory")]
-        [InlineData(true, true, true, true, true, false, true, true, "pathValidator")]
-        [InlineData(true, true, true, true, true, true, false, true, "serviceRepository")]
-        [InlineData(true, true, true, true, true, true, true, false, "processKiller")]
+        [InlineData(false, true, true, true, true, true, true, "serviceHelper")]
+        [InlineData(true, false, true, true, true, true, true, "logger")]
+        [InlineData(true, true, false, true, true, true, true, "streamWriterFactory")]
+        [InlineData(true, true, true, false, true, true, true, "timerFactory")]
+        [InlineData(true, true, true, true, false, true, true, "processFactory")]
+        [InlineData(true, true, true, true, true, false, true, "pathValidator")]
+        [InlineData(true, true, true, true, true, true, false, "serviceRepository")]
         public void Constructor_WhenDependencyIsNull_ThrowsArgumentNullException(
             bool useServiceHelper,
             bool useLogger,
@@ -79,7 +78,6 @@ namespace Servy.Service.UnitTests
             bool useProcessFactory,
             bool usePathValidator,
             bool useServiceRepository,
-            bool useProcessKiller,
             string expectedParamName)
         {
             // Arrange
@@ -90,7 +88,6 @@ namespace Servy.Service.UnitTests
             var processFactory = useProcessFactory ? new Mock<IProcessFactory>().Object : null!;
             var pathValidator = usePathValidator ? new Mock<IPathValidator>().Object : null!;
             var serviceRepository = useServiceRepository ? new Mock<IServiceRepository>().Object : null!;
-            var processKiller = useProcessKiller ? new Mock<IProcessKiller>().Object : null!;
 
             // Act
             var exception = Record.Exception(() => new Service(
@@ -100,8 +97,7 @@ namespace Servy.Service.UnitTests
                 timerFactory,
                 processFactory,
                 pathValidator,
-                serviceRepository,
-                processKiller
+                serviceRepository
             ));
 
             // Assert
@@ -112,13 +108,12 @@ namespace Servy.Service.UnitTests
         #region Production Constructor Guard Clauses
 
         [Theory]
-        [InlineData(false, true, true, true, true, true, true, "serviceHelper")]
-        [InlineData(true, false, true, true, true, true, true, "logger")]
-        [InlineData(true, true, false, true, true, true, true, "streamWriterFactory")]
-        [InlineData(true, true, true, false, true, true, true, "timerFactory")]
-        [InlineData(true, true, true, true, false, true, true, "processFactory")]
-        [InlineData(true, true, true, true, true, false, true, "pathValidator")]
-        [InlineData(true, true, true, true, true, true, false, "processKiller")]
+        [InlineData(false, true, true, true, true, true, "serviceHelper")]
+        [InlineData(true, false, true, true, true, true, "logger")]
+        [InlineData(true, true, false, true, true, true, "streamWriterFactory")]
+        [InlineData(true, true, true, false, true, true, "timerFactory")]
+        [InlineData(true, true, true, true, false, true, "processFactory")]
+        [InlineData(true, true, true, true, true, false, "pathValidator")]
         public void ProductionConstructor_WhenDependencyIsNull_ThrowsArgumentNullException(
             bool useServiceHelper,
             bool useLogger,
@@ -126,7 +121,6 @@ namespace Servy.Service.UnitTests
             bool useTimerFactory,
             bool useProcessFactory,
             bool usePathValidator,
-            bool useProcessKiller,
             string expectedParamName)
         {
             // Arrange
@@ -136,7 +130,6 @@ namespace Servy.Service.UnitTests
             var timerFactory = useTimerFactory ? new Mock<ITimerFactory>().Object : null!;
             var processFactory = useProcessFactory ? new Mock<IProcessFactory>().Object : null!;
             var pathValidator = usePathValidator ? new Mock<IPathValidator>().Object : null!;
-            var processKiller = useProcessKiller ? new Mock<IProcessKiller>().Object : null!;
 
             // Act
             var exception = Record.Exception(() => new Service(
@@ -145,8 +138,7 @@ namespace Servy.Service.UnitTests
                 streamWriterFactory,
                 timerFactory,
                 processFactory,
-                pathValidator,
-                processKiller
+                pathValidator
             ));
 
             // Assert
@@ -1693,8 +1685,7 @@ namespace Servy.Service.UnitTests
                 _ctx.TimerFactory.Object,
                 _ctx.ProcessFactory.Object,
                 _ctx.PathValidator.Object,
-                _ctx.ServiceRepository.Object,
-                _ctx.ProcessKiller.Object);
+                _ctx.ServiceRepository.Object);
 
         /// <summary>
         /// Records the SCM status transitions the service requests. The real UpdateServiceStatus
@@ -1710,9 +1701,8 @@ namespace Servy.Service.UnitTests
                 ITimerFactory timerFactory,
                 IProcessFactory processFactory,
                 IPathValidator pathValidator,
-                IServiceRepository serviceRepository,
-                IProcessKiller processKiller)
-                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, processKiller)
+                IServiceRepository serviceRepository)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
             {
             }
 

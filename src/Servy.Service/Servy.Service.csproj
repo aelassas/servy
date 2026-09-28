@@ -34,19 +34,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\Servy.Restarter.exe" />
-    <None Remove="Resources\Servy.Restarter.pdb" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="appsettings.service.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Restarter.exe" />
-    <EmbeddedResource Include="Resources\Servy.Restarter.pdb" />
   </ItemGroup>
 
   <ItemGroup>

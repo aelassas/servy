@@ -7,6 +7,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Resources;
+using Servy.Core.Security;
 using Servy.Core.ServiceDependencies;
 using System.Collections.Concurrent;
 using System.ComponentModel;
@@ -58,6 +59,7 @@ namespace Servy.Core.Services
         private readonly IWindowsServiceApi _windowsServiceApi;
         private readonly IWin32ErrorProvider _win32ErrorProvider;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IServyExePermissionsHardener? _exePermissionsHardener;
 
         #endregion
 
@@ -87,12 +89,17 @@ namespace Servy.Core.Services
         /// <param name="windowsServiceApi">An abstraction over the native Windows Service APIs.</param>
         /// <param name="win32ErrorProvider">A provider to retrieve the last Win32 error code.</param>
         /// <param name="serviceRepository">The repository to store and read service configuration entities.</param>
+        /// <param name="exePermissionsHardener">
+        /// Hardens Servy's file permissions for the account of a service installed under an account other than
+        /// Local System. <see langword="null"/> skips the hardening, which only tests should do.
+        /// </param>
         public ServiceManager(
             Func<string, IServiceControllerWrapper> controllerFactory,
             IServiceControllerProvider serviceControllerProvider,
             IWindowsServiceApi windowsServiceApi,
             IWin32ErrorProvider win32ErrorProvider,
-            IServiceRepository serviceRepository
+            IServiceRepository serviceRepository,
+            IServyExePermissionsHardener? exePermissionsHardener = null
             )
         {
             _controllerFactory = controllerFactory ?? throw new ArgumentNullException(nameof(controllerFactory));
@@ -100,6 +107,7 @@ namespace Servy.Core.Services
             _windowsServiceApi = windowsServiceApi ?? throw new ArgumentNullException(nameof(windowsServiceApi));
             _win32ErrorProvider = win32ErrorProvider ?? throw new ArgumentNullException(nameof(win32ErrorProvider));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _exePermissionsHardener = exePermissionsHardener;
         }
 
         #endregion
@@ -620,6 +628,7 @@ namespace Servy.Core.Services
                                     preserveExistingCredentials: false,
                                     cancellationToken);
                                 Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
+                                await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
                                 return OperationResult.Success();
                             }
 
@@ -637,6 +646,7 @@ namespace Servy.Core.Services
                                                               cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
 
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
+                        await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
                         return OperationResult.Success();
                     }
                     catch
@@ -684,6 +694,37 @@ namespace Servy.Core.Services
             finally
             {
                 scmHandle?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Runs <c>Set-ServyExePermissions.ps1</c> for the account a service was just installed under, unless it is
+        /// Local System, which already has Full Control and needs no hardening.
+        /// </summary>
+        /// <param name="serviceName">The service that was installed, for the log.</param>
+        /// <param name="account">The account the service runs under, as passed to the Service Control Manager.</param>
+        /// <param name="cancellationToken">A token that stops the script if it is still running.</param>
+        /// <returns>A task that completes when the hardening has finished or failed.</returns>
+        /// <remarks>
+        /// The service is already installed when this runs, so a failure here is logged and never turned into a
+        /// failed (and rolled back) installation.
+        /// </remarks>
+        private async Task HardenExePermissionsAsync(string serviceName, string account, CancellationToken cancellationToken)
+        {
+            if (_exePermissionsHardener == null || ServiceAccounts.LocalSystemAliases.Contains(account))
+                return;
+
+            try
+            {
+                if (!await _exePermissionsHardener.HardenAsync(account, cancellationToken))
+                {
+                    Logger.Warn($"Servy's file permissions were not fully hardened for '{account}' (service '{serviceName}'). " +
+                        $"See the log above, then run {AppConfig.SetServyExePermissionsScriptFileName} -TargetAccount \"{account}\" from an elevated PowerShell session.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Hardening Servy's file permissions for '{account}' (service '{serviceName}') failed.", ex);
             }
         }
 

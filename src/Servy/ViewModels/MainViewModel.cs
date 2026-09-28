@@ -793,11 +793,6 @@ namespace Servy.ViewModels
         public IAsyncCommand OpenDocumentationCommand { get; }
 
         /// <summary>
-        /// Command to open security hardening guide.
-        /// </summary>
-        public IAsyncCommand OpenSecurityHardeningGuideCommand { get; }
-
-        /// <summary>
         /// Command to check for updates.
         /// </summary>
         public IAsyncCommand CheckUpdatesCommand { get; }
@@ -916,7 +911,6 @@ namespace Servy.ViewModels
             BrowsePostStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostStopStartupDirectory());
 
             OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
-            OpenSecurityHardeningGuideCommand = new AsyncCommand(OpenSecurityHardeningGuideAsync, name: nameof(OpenSecurityHardeningGuideCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
 
@@ -1280,14 +1274,6 @@ namespace Servy.ViewModels
         private async Task OpenDocumentationAsync(object? parameter)
         {
             await _helpService.OpenDocumentationAsync(UiAppConfig.Caption);
-        }
-
-        /// <summary>
-        /// Opens the security hardening guide in the default web browser.
-        /// </summary>
-        private async Task OpenSecurityHardeningGuideAsync(object? parameter)
-        {
-            await ServiceCommands.OpenSecurityHardeningGuideAsync();
         }
 
         /// <summary>

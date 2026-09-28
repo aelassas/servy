@@ -398,39 +398,6 @@ namespace Servy.Services
             }
         }
 
-        /// <inheritdoc />
-        public async Task OpenSecurityHardeningGuideAsync(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = AppConfig.SecurityHardeningGuideLink,
-                    UseShellExecute = true
-                };
-
-                using (var process = _processHelper.Start(psi))
-                {
-                    if (process == null)
-                    {
-                        // ShellExecute hands a URL to an already-running browser and returns no Process.
-                        Logger.Debug($"Security hardening guide link handed off to an existing browser process: '{AppConfig.SecurityHardeningGuideLink}'.");
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error opening security hardening guide link '{AppConfig.SecurityHardeningGuideLink}'", ex);
-                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, Caption);
-            }
-        }
-
         #endregion
 
         #region Private Helpers
