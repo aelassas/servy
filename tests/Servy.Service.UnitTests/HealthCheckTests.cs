@@ -878,6 +878,67 @@ namespace Servy.Service.UnitTests
             Assert.Equal(1, service.GetFailedChecks());
         }
 
+        [Theory]
+        [InlineData("_isTearingDown")]
+        [InlineData("_isRebooting")]
+        [InlineData("_isRecovering")]
+        public async Task CheckHealth_BusyFlagSet_ReturnsBeforeTakingTheLock(string flag)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetFailedChecks(0);
+            TestReflection.SetField(service, flag, true);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            // Only the _isRebooting row discriminates the outer guard here: the double-check
+            // inside lock (_healthCheckLock) also returns for _isTearingDown and _isRecovering,
+            // and a monitor lock offers no witness that it was entered.
+            mockProcess.VerifyGet(p => p.HasExited, Times.Never);
+            Assert.Equal(0, service.GetFailedChecks());
+        }
+
+        [Fact]
+        public async Task CheckHealth_ExitCodeThrows_WarnsAndCountsTheFailureAsUnavailable()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+                s.Contains("Health check could not read ExitCode") && s.Contains("boom")), It.IsAny<Exception>()),
+                Times.Once);
+            // The unreadable exit code reaches EvaluateExitOutcome as null and is rendered
+            // "unavailable", never as "(0x)" (#6047)
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+                s.Contains("[CheckHealth]") && s.Contains("code unavailable")), It.IsAny<Exception>()),
+                Times.Once);
+            Assert.Equal(1, service.GetFailedChecks());
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
