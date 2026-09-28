@@ -170,8 +170,6 @@ namespace Servy.CLI
                     var jsonServiceValidator = new JsonServiceValidator(serviceValidationRules);
                     var importCommand = new ImportServiceCommand(
                         serviceRepository,
-                        xmlSerializer,
-                        jsonSerializer,
                         serviceManager,
                         xmlServiceValidator,
                         jsonServiceValidator,

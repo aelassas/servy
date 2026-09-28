@@ -21,10 +21,6 @@ namespace Servy.CLI.Commands
     public class ImportServiceCommand : BaseCommand
     {
         private readonly IServiceRepository _serviceRepository;
-        // Kept for the constructor contract: the import pipeline now gets its DTO from the validator's
-        // single parse, so these are no longer read. Dropping the parameters would change a public signature.
-        private readonly IXmlServiceSerializer _xmlServiceSerializer;
-        private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IServiceManager _serviceManager;
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
@@ -34,22 +30,17 @@ namespace Servy.CLI.Commands
         /// Initializes a new instance of the <see cref="ImportServiceCommand"/> class.
         /// </summary>
         /// <param name="serviceRepository">The service repository for persisting configurations.</param>
-        /// <param name="xmlServiceSerializer">Serializer for XML service configurations.</param>
-        /// <param name="jsonServiceSerializer">Serializer for JSON service configurations.</param>
         /// <param name="serviceManager">Manager to control Windows services.</param>
         /// <param name="xmlServiceValidator">Validator for XML service configurations.</param>
         /// <param name="jsonServiceValidator">Validator for JSON service configurations.</param>
         /// <param name="processHelper">Helper for process related formatting and parsing.</param>
         /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="serviceRepository"/>, <paramref name="xmlServiceSerializer"/>,
-        /// <paramref name="jsonServiceSerializer"/>, <paramref name="serviceManager"/>,
+        /// Thrown when <paramref name="serviceRepository"/>, <paramref name="serviceManager"/>,
         /// <paramref name="xmlServiceValidator"/>, <paramref name="jsonServiceValidator"/>, or
         /// <paramref name="processHelper"/> is <c>null</c>.
         /// </exception>
         public ImportServiceCommand(
             IServiceRepository serviceRepository,
-            IXmlServiceSerializer xmlServiceSerializer,
-            IJsonServiceSerializer jsonServiceSerializer,
             IServiceManager serviceManager,
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
@@ -59,8 +50,6 @@ namespace Servy.CLI.Commands
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
-            _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
-            _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
 

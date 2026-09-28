@@ -15,8 +15,6 @@ namespace Servy.CLI.UnitTests.Commands
     public class ImportServiceCommandTests : TempDirectoryTestBase
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
-        private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializer;
-        private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializer;
         private readonly Mock<IServiceManager> _serviceManager;
         private readonly Mock<IXmlServiceValidator> _xmlValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonValidatorMock;
@@ -35,8 +33,6 @@ namespace Servy.CLI.UnitTests.Commands
             BaseCommand.BypassElevationCheck = true;
 
             _serviceRepoMock = new Mock<IServiceRepository>();
-            _xmlServiceSerializer = new Mock<IXmlServiceSerializer>();
-            _jsonServiceSerializer = new Mock<IJsonServiceSerializer>();
             _serviceManager = new Mock<IServiceManager>();
             _xmlValidatorMock = new Mock<IXmlServiceValidator>();
             _jsonValidatorMock = new Mock<IJsonServiceValidator>();
@@ -44,8 +40,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             _command = new ImportServiceCommand(
                 _serviceRepoMock.Object,
-                _xmlServiceSerializer.Object,
-                _jsonServiceSerializer.Object,
                 _serviceManager.Object,
                 _xmlValidatorMock.Object,
                 _jsonValidatorMock.Object,
@@ -70,13 +64,11 @@ namespace Servy.CLI.UnitTests.Commands
         public void Constructor_NullDependencies_ThrowsArgumentNullException()
         {
             // Arrange / Act / Assert
-            Assert.Throws<ArgumentNullException>("serviceRepository", () => new ImportServiceCommand(null!, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object, _xmlValidatorMock.Object, _jsonValidatorMock.Object, _processHelper.Object));
-            Assert.Throws<ArgumentNullException>("xmlServiceValidator", () => new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object, null!, _jsonValidatorMock.Object, _processHelper.Object));
-            Assert.Throws<ArgumentNullException>("jsonServiceValidator", () => new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object, _xmlValidatorMock.Object, null!, _processHelper.Object));
-            Assert.Throws<ArgumentNullException>("serviceManager", () => new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, null!, _xmlValidatorMock.Object, _jsonValidatorMock.Object, _processHelper.Object));
-            Assert.Throws<ArgumentNullException>("xmlServiceSerializer", () => new ImportServiceCommand(_serviceRepoMock.Object, null!, _jsonServiceSerializer.Object, _serviceManager.Object, _xmlValidatorMock.Object, _jsonValidatorMock.Object, _processHelper.Object));
-            Assert.Throws<ArgumentNullException>("jsonServiceSerializer", () => new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, null!, _serviceManager.Object, _xmlValidatorMock.Object, _jsonValidatorMock.Object, _processHelper.Object));
-            Assert.Throws<ArgumentNullException>("processHelper", () => new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object, _xmlValidatorMock.Object, _jsonValidatorMock.Object, null!));
+            Assert.Throws<ArgumentNullException>("serviceRepository", () => new ImportServiceCommand(null!,  _serviceManager.Object, _xmlValidatorMock.Object, _jsonValidatorMock.Object, _processHelper.Object));
+            Assert.Throws<ArgumentNullException>("xmlServiceValidator", () => new ImportServiceCommand(_serviceRepoMock.Object,  _serviceManager.Object, null!, _jsonValidatorMock.Object, _processHelper.Object));
+            Assert.Throws<ArgumentNullException>("jsonServiceValidator", () => new ImportServiceCommand(_serviceRepoMock.Object,  _serviceManager.Object, _xmlValidatorMock.Object, null!, _processHelper.Object));
+            Assert.Throws<ArgumentNullException>("serviceManager", () => new ImportServiceCommand(_serviceRepoMock.Object,  null!, _xmlValidatorMock.Object, _jsonValidatorMock.Object, _processHelper.Object));
+            Assert.Throws<ArgumentNullException>("processHelper", () => new ImportServiceCommand(_serviceRepoMock.Object,  _serviceManager.Object, _xmlValidatorMock.Object, _jsonValidatorMock.Object, null!));
         }
 
         #endregion
