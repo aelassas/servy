@@ -1352,7 +1352,8 @@ namespace Servy.Core.Services
             }
             catch (Exception ex)
             {
-                // Catch-all for unexpected failures (e.g. ObjectDisposedException)
+                // Catch-all for unexpected failures (e.g. NullReferenceException). ObjectDisposedException
+                // derives from InvalidOperationException, so the filtered catch above takes it, not this one.
                 Logger.Error($"Unexpected error mapping startup type for '{service.ServiceName}'.", ex);
                 return ServiceStartType.Unknown;
             }
