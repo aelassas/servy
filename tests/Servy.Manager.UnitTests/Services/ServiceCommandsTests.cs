@@ -1718,6 +1718,63 @@ namespace Servy.Manager.UnitTests.Services
             Assert.Null(doubleDisposeException); // Second dispose should be a clean early return
         }
 
+        [Fact]
+        public async Task InstallServiceAsync_AfterDispose_ThrowsObjectDisposedException()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            sut.Dispose();
+
+            // Act & Assert
+            // ExecuteLockedAsync's entry guard rejects the call before any work starts, so the command
+            // never runs and no fresh semaphore is added to the dictionary Dispose() has just cleared.
+            await Assert.ThrowsAsync<ObjectDisposedException>(
+                () => sut.InstallServiceAsync(new Service { Name = "AfterDispose" }, CancellationToken.None));
+            _serviceManagerMock.Verify(m => m.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallServiceAsync_DisposedWhileInFlight_DoesNotSurfaceObjectDisposedException()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "InFlightService" };
+
+            using (var entered = new ManualResetEventSlim(false))
+            using (var gate = new ManualResetEventSlim(false))
+            {
+                // Hold the command inside the per-service lock until the test opens the gate.
+                _serviceManagerMock
+                    .Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>()))
+                    .Returns(() =>
+                    {
+                        entered.Set();
+                        gate.Wait(TimeSpan.FromSeconds(10));
+                        return false;
+                    });
+
+                // No repository row, so once the gate opens the command takes the short
+                // "service not found" path and returns false deterministically.
+                _serviceRepositoryMock
+                    .Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((ServiceDto)null);
+
+                var install = sut.InstallServiceAsync(service, CancellationToken.None);
+                Assert.True(entered.Wait(TimeSpan.FromSeconds(10)), "the install never reached IsServiceInstalled");
+
+                // Act - dispose while the action still holds the per-service semaphore, then let it finish
+                sut.Dispose();
+                gate.Set();
+                var inFlightException = await Record.ExceptionAsync(() => install);
+
+                // Assert
+                // The finally's Release() runs against a semaphore Dispose() has already disposed;
+                // its ObjectDisposedException must not reach the caller after the work has finished.
+                Assert.Null(inFlightException);
+                Assert.False(await install);
+            }
+        }
+
         #endregion
     }
 }
