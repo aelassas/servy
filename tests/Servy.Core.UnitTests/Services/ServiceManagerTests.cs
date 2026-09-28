@@ -3347,7 +3347,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetServiceStartupType_ShouldLogAndReturnUnknown_WhenControllerThrows()
+        public void GetServiceStartupType_ShouldReturnUnknown_WhenStartTypeThrowsUnexpectedException()
         {
             // Arrange
             string serviceName = "FaultyService";
