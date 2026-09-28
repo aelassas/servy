@@ -962,21 +962,47 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Kill_CatchBranch_AccessViolationOrInvalidTargetState_LogsWarningSafely()
         {
-            // Arrange & Act
+            // Arrange
             // Test exception handling when _process.Kill() throws by exercising the catch block directly
             // or by attempting to kill a process instance state where _process.HasExited is false but Kill() fails.
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 wrapper.Start();
 
-                // Close underlying process handles to induce an exception when Kill executes while HasExited is false
-                wrapper.UnderlyingProcess.Close();
+                // Read the PID while the wrapper can still answer for it: the Close() below detaches the
+                // Process object, after which neither Id, nor Kill, nor the class-level teardown can reach
+                // the OS process any more.
+                int pid = wrapper.Id;
 
-                var exception = Record.Exception(() => wrapper.Kill());
+                try
+                {
+                    // Close underlying process handles to induce an exception when Kill executes while HasExited is false
+                    wrapper.UnderlyingProcess.Close();
 
-                // Assert
-                Assert.Null(exception); // Exception should be caught internally by the Try/Catch block
-                Assert.Contains(_logger.Warnings, m => m.Contains("Kill failed for"));
+                    // Act
+                    bool? result = null;
+                    var exception = Record.Exception(() => result = wrapper.Kill());
+
+                    // Assert
+                    Assert.Null(exception); // Exception should be caught internally by the Try/Catch block
+                    Assert.False(result); // The catch branch publishes its failure as false, like the other Kill_* tests assert
+                    Assert.Contains(_logger.Warnings, m => m.Contains("Kill failed for"));
+                }
+                finally
+                {
+                    // The detached process is out of reach of both Kill and the class-level teardown, so end
+                    // it by PID instead of leaving it to sleep out its 10 seconds as an orphan alongside the
+                    // rest of this non-parallel collection. KillAndDispose kills the tree and disposes the
+                    // handle; ArgumentException means the process had already gone on its own.
+                    try
+                    {
+                        Testing.TestProcessCleanup.KillAndDispose(Process.GetProcessById(pid));
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Already gone.
+                    }
+                }
             }
         }
 
