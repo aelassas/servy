@@ -16,10 +16,10 @@ namespace Servy.Core.UnitTests.Services
 {
     /// <summary>
     /// Covers the <see cref="ServiceManager"/> arms that a log entry distinguishes: the install
-    /// rollback's two failure paths, the filtered catch of the startup-type mapper and the outer
-    /// catch-all of <see cref="ServiceManager.GetServiceStartupType"/>. Each returns the same value as
-    /// a path beside it, so the log line is what tells them apart and these tests drive the static
-    /// <see cref="Logger"/> - hence the sequential logger collection.
+    /// rollback's two failure paths, the startup-type mapper's filtered catch and its catch-all,
+    /// and the outer catch-all of <see cref="ServiceManager.GetServiceStartupType"/>. Each returns
+    /// the same value as a path beside it, so the log line is what tells them apart and these tests
+    /// drive the static <see cref="Logger"/> - hence the sequential logger collection.
     /// </summary>
     [Collection(LoggerCollection.Name)]
     public class ServiceManagerDiagnosticsTests : IDisposable
@@ -70,7 +70,7 @@ namespace Servy.Core.UnitTests.Services
 
         #endregion
 
-        #region MapStartupType filtered catch
+        #region MapStartupType filtered catch and catch-all
 
         [Theory]
         [InlineData(typeof(InvalidOperationException))]
@@ -81,8 +81,8 @@ namespace Servy.Core.UnitTests.Services
             const string serviceName = "ProtectedService";
 
             // The two exception types the filter names are what ServiceController.StartType raises for
-            // a service this process cannot open; a plain Exception falls to the catch-all below it,
-            // which logs at Error level and is what the existing sibling test already covers.
+            // a service this process cannot open; a type outside the filter falls to the catch-all
+            // below it, which logs at Error level and is covered by the next test in this region.
             var thrown = exceptionType == typeof(Win32Exception)
                 ? (Exception)new Win32Exception(5)
                 : new InvalidOperationException("Access is denied");
@@ -109,6 +109,40 @@ namespace Servy.Core.UnitTests.Services
             // difference: a filter narrowed back to Win32Exception would land in the catch-all.
             Assert.Contains($"Access denied or Win32 error reading StartType for '{serviceName}'", capture.Log);
             Assert.DoesNotContain("Unexpected error mapping startup type", capture.Log);
+        }
+
+        [Fact]
+        public async Task GetServiceStartupType_ShouldLogErrorAndReturnUnknown_WhenStartTypeThrowsUnexpectedException()
+        {
+            // Arrange
+            // A type outside the filter (InvalidOperationException, Win32Exception) lands in MapStartupType's
+            // catch-all. It returns Unknown like its neighbours, so the Error-level line is its only mark,
+            // and the three Assert.DoesNotContain guards in this file rely on that text being emitted here.
+            const string serviceName = "UnexpectedFailure";
+
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.Setup(c => c.ServiceName).Returns(serviceName);
+            mockController.Setup(c => c.StartType).Throws(new NullReferenceException("unexpected"));
+
+            var manager = new ServiceManager(
+                _ => mockController.Object,
+                new Mock<IServiceControllerProvider>().Object,
+                new Mock<IWindowsServiceApi>().Object,
+                new Mock<IWin32ErrorProvider>().Object,
+                new Mock<IServiceRepository>().Object);
+
+            // Act
+            var capture = await LogCapture.RunAsync(() =>
+                Task.FromResult(manager.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken)), LogLevel.Debug);
+
+            // Assert
+            Assert.Equal(ServiceStartType.Unknown, capture.Result);
+
+            // The [ERROR] | prefix pins the level as well as the wording; Logger writes
+            // "[<timestamp>] [<LEVEL>] | <message>".
+            Assert.Contains($"[ERROR] | Unexpected error mapping startup type for '{serviceName}'", capture.Log);
+            Assert.DoesNotContain("Access denied or Win32 error reading StartType", capture.Log);
+            Assert.DoesNotContain("Error getting service startup type", capture.Log);
         }
 
         #endregion
