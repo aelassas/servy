@@ -112,6 +112,72 @@ namespace Servy.Core.UnitTests.Services
 
         #endregion
 
+        #region GetServiceStartupType outer catch-all
+
+        [Fact]
+        public async Task GetServiceStartupType_ShouldLogErrorAndReturnUnknown_WhenControllerFactoryThrows()
+        {
+            // Arrange
+            // Since the StartType switch moved into MapStartupType, a throwing StartType is caught
+            // there and never reaches GetServiceStartupType's own catch-all. The controller factory
+            // throwing before there is a controller to map is one of the two ways left in.
+            const string serviceName = "FactoryFails";
+
+            var manager = new ServiceManager(
+                _ => throw new InvalidOperationException("factory failed"),
+                new Mock<IServiceControllerProvider>().Object,
+                new Mock<IWindowsServiceApi>().Object,
+                new Mock<IWin32ErrorProvider>().Object,
+                new Mock<IServiceRepository>().Object);
+
+            // Act
+            var capture = await LogCapture.RunAsync(() =>
+                Task.FromResult(manager.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken)), LogLevel.Debug);
+
+            // Assert
+            Assert.Equal(ServiceStartType.Unknown, capture.Result);
+
+            // The wording is what separates this arm from MapStartupType's own catch-all, which
+            // would have logged "Unexpected error mapping startup type" instead.
+            Assert.Contains($"Error getting service startup type for '{serviceName}'", capture.Log);
+            Assert.DoesNotContain("Unexpected error mapping startup type", capture.Log);
+        }
+
+        [Fact]
+        public async Task GetServiceStartupType_ShouldLogErrorAndReturnUnknown_WhenControllerDisposeThrowsAfterMapping()
+        {
+            // Arrange
+            // The other way into the outer catch: the using block's Dispose throws after the start
+            // type was already resolved. The return inside the using is abandoned, so the caller sees
+            // Unknown rather than the Manual the mapper had produced. Manual is deliberate - it keeps
+            // the delayed-auto-start probe (an Automatic-only refinement) out of this path.
+            const string serviceName = "DisposeFails";
+
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.Setup(c => c.ServiceName).Returns(serviceName);
+            mockController.Setup(c => c.StartType).Returns(ServiceStartMode.Manual);
+            mockController.Setup(c => c.Dispose()).Throws(new InvalidOperationException("handle already closed"));
+
+            var manager = new ServiceManager(
+                _ => mockController.Object,
+                new Mock<IServiceControllerProvider>().Object,
+                new Mock<IWindowsServiceApi>().Object,
+                new Mock<IWin32ErrorProvider>().Object,
+                new Mock<IServiceRepository>().Object);
+
+            // Act
+            var capture = await LogCapture.RunAsync(() =>
+                Task.FromResult(manager.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken)), LogLevel.Debug);
+
+            // Assert
+            Assert.Equal(ServiceStartType.Unknown, capture.Result);
+            Assert.NotEqual(ServiceStartType.Manual, capture.Result);
+            Assert.Contains($"Error getting service startup type for '{serviceName}'", capture.Log);
+            Assert.DoesNotContain("Unexpected error mapping startup type", capture.Log);
+        }
+
+        #endregion
+
         #region Test Helpers
 
         /// <summary>
