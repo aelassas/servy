@@ -604,7 +604,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="getFilePath">A delegate that triggers a file open dialog and returns the selected source path.</param>
         /// <param name="validateContent">A delegate that performs raw content validation (e.g., schema or syntax checks)
-        /// and returns a tuple indicating success and any associated error message.</param>
+        /// and returns a tuple indicating success, any associated error message, and the materialized DTO.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging.</param>
         /// <param name="loadErrorMessage">The localized message to display if the file content cannot be mapped to the DTO.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
