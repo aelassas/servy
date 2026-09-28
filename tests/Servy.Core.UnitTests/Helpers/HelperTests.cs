@@ -3,6 +3,7 @@ using Servy.Core.Resources;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using System.Text;
 using Helper = Servy.Core.Helpers.Helper;
 
@@ -1328,6 +1329,36 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void HasAncestorReparsePoint_WhenJunctionPrintNameIsSpoofedVolumeGuid_ReturnsTrue()
+        {
+            // Arrange
+            string realDir = Path.Combine(_testRoot, "RealDirForSpoof");
+            Directory.CreateDirectory(realDir);
+            string spoofedJunction = Path.Combine(_testRoot, "SpoofedJunction");
+
+            // Create a junction where the substitute name points to realDir,
+            // but the print name is artificially spoofed as a Volume GUID.
+            CreateJunctionWithSpoofedPrintName(spoofedJunction, realDir, @"Volume{00000000-0000-0000-0000-000000000000}\");
+
+            try
+            {
+                string targetPath = Path.Combine(spoofedJunction, "test.log");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetPath);
+
+                // Assert
+                // GetVolumeNameForVolumeMountPoint resolves via substitute name, refusing
+                // the spoofed print name and returning true for reparse point detection.
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(spoofedJunction, realDir);
+            }
+        }
+
+        [Fact]
         public void HasAncestorReparsePoint_WhenAncestorIsVolumeMountPoint_ReturnsFalse()
         {
             // Arrange: mount the temp directory's own volume on an empty folder under _testRoot, so
@@ -1353,26 +1384,13 @@ namespace Servy.Core.UnitTests.Helpers
                     Assert.Skip("mountvol could not mount the volume on this runner (not elevated?).");
                 }
 
-                // The fixture is only meaningful while LinkTarget names the volume in one of the
-                // spellings IsVolumeMountPoint accepts. .NET reports the bare print name
-                // "Volume{GUID}\" here, not the substitute name "\??\Volume{GUID}\"; pinning the
-                // accepted set means a fourth spelling fails loudly instead of passing this test for
-                // the wrong reason.
-                string? linkTarget = new DirectoryInfo(mountDir).LinkTarget;
-                Assert.NotNull(linkTarget);
-                Assert.True(
-                    linkTarget!.StartsWith(@"\??\Volume{", StringComparison.OrdinalIgnoreCase)
-                    || linkTarget.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase)
-                    || linkTarget.StartsWith("Volume{", StringComparison.OrdinalIgnoreCase),
-                    $"LinkTarget '{linkTarget}' is not a volume GUID path in any form IsVolumeMountPoint accepts.");
-
                 // Act
                 bool result = Helper.HasAncestorReparsePoint(Path.Combine(mountDir, "sub", "test.log"));
 
                 // Assert
-                // Branch Covered: the IsVolumeMountPoint exemption added by #6635 skips the reparse
+                // Branch Covered: the IsVolumeMountPoint exemption skips the reparse
                 // check for the mounted volume, so the walk reaches the plain ancestors and returns
-                // false. Without the exemption the non-null LinkTarget would make it return true.
+                // false.
                 Assert.False(result);
             }
             finally
@@ -1401,6 +1419,218 @@ namespace Servy.Core.UnitTests.Helpers
         #endregion
 
         #region Reparse Points Management Helpers
+
+        /// <summary>
+        /// Represents the layout of a mount point or junction reparse data buffer for NTFS reparse point operations.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct REPARSE_DATA_BUFFER
+        {
+            /// <summary>
+            /// Reparse point tag indicating the reparse point type (e.g., <see cref="IO_REPARSE_TAG_MOUNT_POINT"/>).
+            /// </summary>
+            public uint ReparseTag;
+
+            /// <summary>
+            /// Size, in bytes, of the reparse data that follows the common header fields.
+            /// </summary>
+            public ushort ReparseDataLength;
+
+            /// <summary>
+            /// Reserved field; unused.
+            /// </summary>
+            public ushort Reserved;
+
+            /// <summary>
+            /// Byte offset within the PathBuffer where the substitute name string begins.
+            /// </summary>
+            public ushort SubstituteNameOffset;
+
+            /// <summary>
+            /// Length, in bytes, of the substitute name string.
+            /// </summary>
+            public ushort SubstituteNameLength;
+
+            /// <summary>
+            /// Byte offset within the PathBuffer where the user-friendly print name string begins.
+            /// </summary>
+            public ushort PrintNameOffset;
+
+            /// <summary>
+            /// Length, in bytes, of the print name string.
+            /// </summary>
+            public ushort PrintNameLength;
+        }
+
+        /// <summary>
+        /// Creates or opens a file or I/O device.
+        /// </summary>
+        /// <param name="lpFileName">The name of the file or device to be created or opened.</param>
+        /// <param name="dwDesiredAccess">The requested access to the file or device.</param>
+        /// <param name="dwShareMode">The requested sharing mode of the file or device.</param>
+        /// <param name="lpSecurityAttributes">A pointer to a SECURITY_ATTRIBUTES structure, or <see cref="IntPtr.Zero"/>.</param>
+        /// <param name="dwCreationDisposition">An action to take on a file or device that exists or does not exist.</param>
+        /// <param name="dwFlagsAndAttributes">The file or device attributes and flags.</param>
+        /// <param name="hTemplateFile">A valid handle to a template file with the GENERIC_READ access right, or <see cref="IntPtr.Zero"/>.</param>
+        /// <returns>An open handle to the specified file or device if successful; otherwise, <see cref="NativeMethods.INVALID_HANDLE_VALUE"/>.</returns>
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern IntPtr CreateFile(
+            string lpFileName,
+            uint dwDesiredAccess,
+            uint dwShareMode,
+            IntPtr lpSecurityAttributes,
+            uint dwCreationDisposition,
+            uint dwFlagsAndAttributes,
+            IntPtr hTemplateFile);
+
+        /// <summary>
+        /// Sends a control code directly to a specified device driver, causing the corresponding device to perform the corresponding operation.
+        /// </summary>
+        /// <param name="hDevice">A handle to the device on which the operation is to be performed.</param>
+        /// <param name="dwIoControlCode">The control code for the operation.</param>
+        /// <param name="inBuffer">A pointer to the input buffer that contains the data required to perform the operation.</param>
+        /// <param name="nInBufferSize">The size of the input buffer, in bytes.</param>
+        /// <param name="outBuffer">A pointer to the output buffer that is to receive the data returned by the operation.</param>
+        /// <param name="nOutBufferSize">The size of the output buffer, in bytes.</param>
+        /// <param name="lpBytesReturned">A variable that receives the size of the data stored in the output buffer, in bytes.</param>
+        /// <param name="lpOverlapped">A pointer to an OVERLAPPED structure, or <see cref="IntPtr.Zero"/>.</param>
+        /// <returns><see langword="true"/> if the operation succeeds; otherwise, <see langword="false"/>.</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool DeviceIoControl(
+            IntPtr hDevice,
+            uint dwIoControlCode,
+            byte[] inBuffer,
+            uint nInBufferSize,
+            IntPtr outBuffer,
+            uint nOutBufferSize,
+            out uint lpBytesReturned,
+            IntPtr lpOverlapped);
+
+        /// <summary>
+        /// Closes an open object handle.
+        /// </summary>
+        /// <param name="hObject">A valid handle to an open object.</param>
+        /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        /// <summary>
+        /// Requests write access to an object.
+        /// </summary>
+        private const uint GENERIC_WRITE = 0x40000000;
+
+        /// <summary>
+        /// Enables subsequent open operations on an object to request read access.
+        /// </summary>
+        private const uint FILE_SHARE_READ = 0x00000001;
+
+        /// <summary>
+        /// Enables subsequent open operations on an object to request write access.
+        /// </summary>
+        private const uint FILE_SHARE_WRITE = 0x00000002;
+
+        /// <summary>
+        /// Opens a file or device only if it exists.
+        /// </summary>
+        private const uint OPEN_EXISTING = 3;
+
+        /// <summary>
+        /// Flag indicating that file opening should operate on the reparse point itself rather than its target.
+        /// </summary>
+        private const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+
+        /// <summary>
+        /// Flag required to open a handle to a directory for backup/restore operations or reparse point modification.
+        /// </summary>
+        private const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+
+        /// <summary>
+        /// File system control code used to set a reparse point on a file or directory.
+        /// </summary>
+        private const uint FSCTL_SET_REPARSE_POINT = 0x000900A4;
+
+        /// <summary>
+        /// Reparse tag identifying mount points and directory junctions.
+        /// </summary>
+        private const uint IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003;
+
+        /// <summary>
+        /// Creates a junction point on disk with an arbitrary, spoofed print name to test reparse point spoofing mitigations.
+        /// </summary>
+        /// <param name="junctionPath">The directory path where the junction point should be established.</param>
+        /// <param name="targetDirectory">The actual target directory path the junction should resolve to via its substitute name.</param>
+        /// <param name="spoofedPrintName">An arbitrary, artificially assigned print name payload used to test resolution guards.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when opening the junction handle or invoking <c>DeviceIoControl</c> with <c>FSCTL_SET_REPARSE_POINT</c> fails.
+        /// </exception>
+        private static void CreateJunctionWithSpoofedPrintName(string junctionPath, string targetDirectory, string spoofedPrintName)
+        {
+            Directory.CreateDirectory(junctionPath);
+            Directory.CreateDirectory(targetDirectory);
+
+            string substituteName = @"\??\" + Path.GetFullPath(targetDirectory);
+
+            byte[] subBytes = Encoding.Unicode.GetBytes(substituteName);
+            byte[] printBytes = Encoding.Unicode.GetBytes(spoofedPrintName);
+
+            ushort subLen = (ushort)subBytes.Length;
+            ushort printLen = (ushort)printBytes.Length;
+
+            // Header (8) + Offsets (8) + SubName (subLen + 2 NUL) + PrintName (printLen + 2 NUL)
+            ushort dataLength = (ushort)(8 + subLen + 2 + printLen + 2);
+            byte[] buffer = new byte[8 + dataLength];
+
+            // IO_REPARSE_TAG_MOUNT_POINT
+            BitConverter.GetBytes(IO_REPARSE_TAG_MOUNT_POINT).CopyTo(buffer, 0);
+            BitConverter.GetBytes(dataLength).CopyTo(buffer, 4);
+
+            ushort subOffset = 0;
+            ushort printOffset = (ushort)(subLen + 2);
+
+            BitConverter.GetBytes(subOffset).CopyTo(buffer, 8);
+            BitConverter.GetBytes(subLen).CopyTo(buffer, 10);
+            BitConverter.GetBytes(printOffset).CopyTo(buffer, 12);
+            BitConverter.GetBytes(printLen).CopyTo(buffer, 14);
+
+            Array.Copy(subBytes, 0, buffer, 16 + subOffset, subLen);
+            Array.Copy(printBytes, 0, buffer, 16 + printOffset, printLen);
+
+            IntPtr handle = CreateFile(
+                junctionPath,
+                GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                IntPtr.Zero,
+                OPEN_EXISTING,
+                FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                IntPtr.Zero);
+
+            if (handle == new IntPtr(-1))
+            {
+                throw new InvalidOperationException($"CreateFile failed for junction path '{junctionPath}': {Marshal.GetLastWin32Error()}");
+            }
+
+            try
+            {
+                bool success = DeviceIoControl(
+                    handle,
+                    FSCTL_SET_REPARSE_POINT,
+                    buffer,
+                    (uint)buffer.Length,
+                    IntPtr.Zero,
+                    0,
+                    out _,
+                    IntPtr.Zero);
+
+                if (!success)
+                {
+                    throw new InvalidOperationException($"DeviceIoControl FSCTL_SET_REPARSE_POINT failed: {Marshal.GetLastWin32Error()}");
+                }
+            }
+            finally
+            {
+                CloseHandle(handle);
+            }
+        }
 
         /// <summary>
         /// Runs <c>mountvol.exe</c> with the supplied arguments and returns what it wrote to standard

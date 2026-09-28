@@ -547,6 +547,13 @@ namespace Servy.Core.Native
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetFileInformationByHandle(SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
 
+        /// <summary>Retrieves a Volume GUID path for a volume mount point.</summary>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern bool GetVolumeNameForVolumeMountPoint(
+            string lpszVolumeMountPoint,
+            [Out] StringBuilder lpszVolumeName,
+            uint cchBufferLength);
+
         #endregion
 
         #region LogonAsServiceGrant Interop

@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using Servy.Core.Resources;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -780,26 +781,20 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Determines whether a directory is an NTFS volume mount point, whose link target names a
-        /// volume GUID rather than another directory.
+        /// Determines whether a directory is an NTFS volume mount point.
         /// </summary>
         /// <param name="dir">The directory info instance to check.</param>
         /// <returns><c>true</c> if the directory is a volume mount point; otherwise, <c>false</c>.</returns>
         /// <remarks>
-        /// The same volume GUID path reaches <see cref="FileSystemInfo.LinkTarget"/> in more than one
-        /// spelling: the NT substitute name <c>\??\Volume{GUID}\</c>, the Win32 device form
-        /// <c>\\?\Volume{GUID}\</c> that <c>mountvol</c> prints, and the bare print name
-        /// <c>Volume{GUID}\</c>, which is what .NET reports for a mount point created with
-        /// <c>mountvol</c>. All three are accepted, so the exemption added by #6635 fires for a real
-        /// mount point instead of only for the substitute-name form.
+        /// DirectoryInfo.LinkTarget returns the print name of a junction/reparse point, which can be
+        /// crafted freely by unprivileged creators. To ensure security, this check delegates verification
+        /// directly to the Windows Mount Manager via <see cref="NativeMethods.GetVolumeNameForVolumeMountPoint"/>.
         /// </remarks>
         private static bool IsVolumeMountPoint(DirectoryInfo dir)
         {
-            var target = dir.LinkTarget;
-            return target != null
-                && (target.StartsWith(@"\??\Volume{", StringComparison.OrdinalIgnoreCase)
-                    || target.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase)
-                    || target.StartsWith("Volume{", StringComparison.OrdinalIgnoreCase));
+            var sb = new StringBuilder(50);
+            string mountPoint = dir.FullName.TrimEnd('\\') + "\\";
+            return NativeMethods.GetVolumeNameForVolumeMountPoint(mountPoint, sb, (uint)sb.Capacity);
         }
 
         /// <summary>
