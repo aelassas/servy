@@ -764,7 +764,8 @@ namespace Servy.Manager.Services
         /// before persisting the configuration to the repository and refreshing the UI.
         /// </summary>
         /// <param name="getFilePath">A delegate that opens an open file dialog and returns the source path.</param>
-        /// <param name="validateContent">A delegate that performs raw format validation (e.g., schema or syntax checks).</param>
+        /// <param name="validateContent">A delegate that performs raw format validation (e.g., schema or syntax checks)
+        /// and returns a tuple indicating success, any associated error message, and the materialized DTO.</param>
         /// <param name="formatName">The name of the format (e.g., "XML", "JSON") for logging purposes.</param>
         /// <param name="loadErrorMessage">The message to display if the file content is incompatible with the DTO structure.</param>
         /// <param name="successMessage">The message to display upon successful repository persistence.</param>
