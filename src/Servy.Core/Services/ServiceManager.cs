@@ -703,12 +703,12 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Runs <c>Set-ServyExePermissions.ps1</c> for the account a service was just installed under, unless it is
-        /// Local System, which already has Full Control and needs no hardening.
+        /// Hardens Servy's vault for the account a service was just installed under, unless it is Local System,
+        /// which already has Full Control and needs no hardening.
         /// </summary>
         /// <param name="serviceName">The service that was installed, for the log.</param>
         /// <param name="account">The account the service runs under, as passed to the Service Control Manager.</param>
-        /// <param name="cancellationToken">A token that stops the script if it is still running.</param>
+        /// <param name="cancellationToken">A token that stops the hardening between two files.</param>
         /// <returns>A task that completes when the hardening has finished or failed.</returns>
         /// <remarks>
         /// The service is already installed when this runs, so a failure here is logged and never turned into a
@@ -716,7 +716,7 @@ namespace Servy.Core.Services
         /// </remarks>
         private async Task HardenExePermissionsAsync(string serviceName, string account, CancellationToken cancellationToken)
         {
-            if (_exePermissionsHardener == null || ServiceAccounts.LocalSystemAliases.Contains(account))
+            if (_exePermissionsHardener == null || !ServyExePermissionsHardener.IsHardeningCandidate(account))
                 return;
 
             try
@@ -724,7 +724,7 @@ namespace Servy.Core.Services
                 if (!await _exePermissionsHardener.HardenAsync(account, cancellationToken))
                 {
                     Logger.Warn($"Servy's file permissions were not fully hardened for '{account}' (service '{serviceName}'). " +
-                        $"See the log above, then run {AppConfig.SetServyExePermissionsScriptFileName} -TargetAccount \"{account}\" from an elevated PowerShell session.");
+                        "See the log above; installing the service again re-applies the hardening.");
                 }
             }
             catch (Exception ex)

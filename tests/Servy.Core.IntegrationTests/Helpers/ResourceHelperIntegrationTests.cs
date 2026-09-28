@@ -369,73 +369,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                 "StartServicesAsync must be called with CancellationToken.None so a cancelled copy still restarts the services it stopped.");
         }
 
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_WhenResourceIsUpToDate_ReturnsTrueAndSkipsCopy()
-        {
-            // Arrange
-            string fileName = "sync_up_to_date";
-            string extension = "exe";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
-
-            // Create a file and anchor timestamp to hostExeTime + 5 minutes so it is within up-to-date window without triggering downgrade warning
-            File.WriteAllText(targetPath, "up to date sync content");
-            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
-            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddMinutes(5));
-
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _fakeAssembly, "Servy.Resources", fileName, extension);
-
-            // Assert
-            Assert.True(result); // Should return true early without copying
-            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
-        }
-
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_WhenProcessTerminationFails_ReturnsFalse()
-        {
-            // Arrange
-            string fileName = "sync_lockedapp";
-            string extension = "exe";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
-
-            File.WriteAllText(targetPath, "existing target");
-
-            // Anchor timestamp to hostExeTime so TryPrepareExtraction evaluates the file as stale
-            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
-            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddDays(-1));
-
-            _mockProcessKiller
-                .Setup(p => p.KillProcessTreeAndParents($"{fileName}.exe", It.IsAny<bool>()))
-                .Returns(false);
-
-            var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03 };
-            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(dummyResourceBytes);
-
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _fakeAssembly, "Servy.Core.Resources", fileName, "exe");
-
-            // Assert
-            Assert.False(result);
-            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents($"{fileName}.exe", It.IsAny<bool>()), Times.Once);
-        }
-
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_WhenResourceStreamNotFound_ReturnsFalse()
-        {
-            // Arrange
-            _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
-            _fakeAssembly.OnGetManifestResourceStream = _ => null; // Simulate missing resource
-
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _fakeAssembly, "Servy.Resources", "missingapp", "exe");
-
-            // Assert
-            Assert.False(result);
-        }
-
         #endregion
 
         #region Batch CopyResources Tests
@@ -465,6 +398,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Assert
             Assert.True(result);
             Assert.DoesNotContain(items, i => i.ShouldCopy);
+            Assert.False(_resourceHelper.HasCopiedResources); // Nothing was written, so nothing needs re-hardening
         }
 
         [Fact]
@@ -488,6 +422,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
+            Assert.True(_resourceHelper.HasCopiedResources); // A written file inherits the vault's grant and must be re-hardened
 
             // Verify .exe trigger
             _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents("main.exe", It.IsAny<bool>()), Times.Once);

@@ -1106,10 +1106,6 @@ function Install-ServyService {
 
         .PARAMETER User
             Service account username (e.g., .\username or DOMAIN\username). Optional.
-            If the service runs under an account other than Local System, you must run the mandatory hardening
-            script Set-ServyExePermissions.ps1 -TargetAccount "domain\user". It grants the account Modify access to
-            %ProgramData%\Servy and locks down Servy's binaries and database to prevent unprivileged binary tampering
-            and local privilege escalation. See the wiki page Security, section "Executable permission hardening (mandatory)".
 
         .PARAMETER Password
             Password for the service account. Optional.

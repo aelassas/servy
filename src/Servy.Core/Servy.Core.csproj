@@ -200,7 +200,7 @@
     <Compile Include="Security\IProtectedKeyProvider.cs" />
     <Compile Include="Security\ProtectedKeyProvider.cs" />
     <Compile Include="Security\SecurityHelper.cs" />
-    <Compile Include="Security\ExePermissionsScriptResult.cs" />
+    <Compile Include="Security\ExePermissionsHardeningResult.cs" />
     <Compile Include="Security\IServyExePermissionsHardener.cs" />
     <Compile Include="Security\ServyExePermissionsHardener.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesParser.cs" />

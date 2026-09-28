@@ -165,10 +165,7 @@ try {
             }
         }
 
-        # 3. Copy scripts
-        Copy-Item (Join-Path $scriptDir "Set-ServyExePermissions.ps1") -Destination "$packageFolder" -Force
-
-        # 4. Securely include Task Scheduler hooks
+        # 3. Securely include Task Scheduler hooks
         $taskSchdSource = Join-Path $scriptDir "taskschd"
         if (Test-Path $taskSchdSource) {
             $taskSchdDest = Join-Path $packageFolder "taskschd"
@@ -184,7 +181,7 @@ try {
             }
         }
 
-        # 5. Include PowerShell Module and Dump/Restore artifacts
+        # 4. Include PowerShell Module and Dump/Restore artifacts
         $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1", "Servy-Dump.ps1", "Servy-Restore.ps1")
         foreach ($art in $cliArtifacts) {
             $artPath = Join-Path $cliDir $art

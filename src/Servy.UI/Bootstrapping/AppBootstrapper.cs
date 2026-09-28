@@ -445,6 +445,15 @@ namespace Servy.UI.Bootstrapping
                         throw new InvalidOperationException($"Failed to extract embedded resources. The application cannot start safely - see file log for details.");
                     }
 
+#if !DEBUG
+                    // A file newly extracted into the vault inherits its Modify grant, so lock Servy's files down again
+                    // for every account a service runs under. Debug builds extract next to the executable instead.
+                    if (resourceHelper.HasCopiedResources)
+                    {
+                        await new ServyExePermissionsHardener().HardenServiceAccountsAsync(ServiceRepository, ct);
+                    }
+#endif
+
                     stopwatch.Stop();
 
                     // Prevent "splash screen flicker" by ensuring it stays visible for a minimum duration

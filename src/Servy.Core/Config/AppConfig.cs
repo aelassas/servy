@@ -172,14 +172,34 @@ namespace Servy.Core.Config
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppFolderName);
 
         /// <summary>
+        /// The name of the database folder under <see cref="ProgramDataPath"/>.
+        /// </summary>
+        public const string DbFolderName = "db";
+
+        /// <summary>
+        /// The file name of the SQLite configuration database in <see cref="DbFolderPath"/>.
+        /// </summary>
+        public const string DatabaseFileName = "Servy.db";
+
+        /// <summary>
+        /// The name of the security folder under <see cref="ProgramDataPath"/>.
+        /// </summary>
+        public const string SecurityFolderName = "security";
+
+        /// <summary>
+        /// The file name of the AES encryption key in <see cref="SecurityFolderPath"/>.
+        /// </summary>
+        public const string AESKeyFileName = "aes_key.dat";
+
+        /// <summary>
         /// Path to the database folder.
         /// </summary>
-        public static readonly string DbFolderPath = Path.Combine(ProgramDataPath, "db");
+        public static readonly string DbFolderPath = Path.Combine(ProgramDataPath, DbFolderName);
 
         /// <summary>
         /// Path to the security folder containing AES key/IV files.
         /// </summary>
-        public static readonly string SecurityFolderPath = Path.Combine(ProgramDataPath, "security");
+        public static readonly string SecurityFolderPath = Path.Combine(ProgramDataPath, SecurityFolderName);
 
         /// <summary>
         /// The folder name for storing service recovery and restart attempt files.
@@ -209,7 +229,7 @@ namespace Servy.Core.Config
         /// It includes performance and resilience settings such as <c>Journal Mode=WAL</c> and a 5000ms busy timeout.
         /// This value serves as the hardcoded fallback if no override is provided in the <c>DefaultConnection</c> configuration of the application settings.
         /// </remarks>
-        public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, "Servy.db")};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
+        public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, DatabaseFileName)};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
 
         /// <summary>
         /// The default file path for the AES encryption key.
@@ -219,7 +239,7 @@ namespace Servy.Core.Config
         /// This path is used by all Servy components (UI, CLI, and Service) to locate the master encryption key.
         /// This value serves as the hardcoded fallback if no override is provided in the <c>Security:AESKeyFilePath</c> configuration of the application settings.
         /// </remarks>
-        public static readonly string DefaultAESKeyPath = Path.Combine(SecurityFolderPath, "aes_key.dat");
+        public static readonly string DefaultAESKeyPath = Path.Combine(SecurityFolderPath, AESKeyFileName);
 
         /// <summary>
         /// The default file path for the AES initialization vector (IV).
@@ -758,21 +778,6 @@ namespace Servy.Core.Config
         /// Timeout in milliseconds for external handle-utility execution (e.g., handle.exe).
         /// </summary>
         public const int HandleExeTimeoutMs = 10_000;
-
-        /// <summary>
-        /// The file name of the script that hardens Servy's binaries, configuration files and database for a
-        /// service account, run by <see cref="Security.ServyExePermissionsHardener"/> after a service is installed.
-        /// </summary>
-        public const string SetServyExePermissionsScriptFileName = "Set-ServyExePermissions.ps1";
-
-        /// <summary>
-        /// Timeout in milliseconds for one run of <see cref="SetServyExePermissionsScriptFileName"/>.
-        /// </summary>
-        /// <remarks>
-        /// The script resolves the account (which can mean a domain controller round trip) and rewrites a handful
-        /// of ACLs, which takes seconds; two minutes leaves room for a slow domain without hanging an install.
-        /// </remarks>
-        public const int SetServyExePermissionsTimeoutMs = 120_000;
 
         /// <summary>
         /// The maximum character length for a Windows Service display name.
