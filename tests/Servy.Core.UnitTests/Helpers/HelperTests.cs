@@ -1576,7 +1576,7 @@ namespace Servy.Core.UnitTests.Helpers
             ushort subLen = (ushort)subBytes.Length;
             ushort printLen = (ushort)printBytes.Length;
 
-            // Header (8) + Offsets (8) + SubName (subLen + 2 NUL) + PrintName (printLen + 2 NUL)
+            // ReparseDataLength excludes the 8-byte header (added to the buffer size below): Offsets (8) + SubName (subLen + 2 NUL) + PrintName (printLen + 2 NUL)
             ushort dataLength = (ushort)(8 + subLen + 2 + printLen + 2);
             byte[] buffer = new byte[8 + dataLength];
 
