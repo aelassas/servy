@@ -2111,6 +2111,36 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Start(), Times.Exactly(2));
         }
 
+        [Fact]
+        public async Task FlushAndShutdownLogger_WhenTheLoggerDisposeHangs_ReturnsAfterTheFlushBudget()
+        {
+            // Arrange
+            using var release = new ManualResetEventSlim(false);
+            var hangingLogger = new Mock<IServyLogger>();
+            hangingLogger.Setup(l => l.Dispose()).Callback(() => release.Wait(HangingDisposeRelease));
+            TestReflection.SetField(_service, "_logger", hangingLogger.Object);
+
+            try
+            {
+                // Act
+                var flush = Task.Run(() => TestReflection.InvokeNonPublic(_service, "FlushAndShutdownLogger"));
+                var winner = await Task.WhenAny(
+                    flush,
+                    Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+
+                // Assert
+                // The flush gives up after AppConfig.LoggerFlushTimeoutMs instead of waiting for the hung
+                // Dispose, so a stuck logger can never hold a stop past the SCM's patience
+                Assert.Same(flush, winner);
+                Assert.Null(TestReflection.GetField<IServyLogger>(_service, "_logger"));
+                hangingLogger.Verify(l => l.Dispose(), Times.Once);
+            }
+            finally
+            {
+                release.Set();
+            }
+        }
+
         /// <summary>
         /// Wires the fixture for a service that is started more than once.
         /// <see cref="SetupStandardServiceStart"/> alone only survives one start: OnStart promotes the
@@ -2132,6 +2162,13 @@ namespace Servy.Service.UnitTests
         /// A user-defined SCM control code (128-255) that the service does not handle.
         /// </summary>
         private const int UnrelatedControlCode = 200;
+
+        /// <summary>
+        /// How long a deliberately hung <see cref="IServyLogger.Dispose"/> stays blocked. It outlasts
+        /// <see cref="TestTimeouts.CiGenerous"/> so the hang cannot end by itself while a test is still
+        /// observing it; the test releases it in its own finally.
+        /// </summary>
+        private static readonly TimeSpan HangingDisposeRelease = TestTimeouts.CiGenerous + TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Builds a service wired to this fixture's mocks whose SCM status updates are recorded
