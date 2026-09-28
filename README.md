@@ -27,26 +27,26 @@ See [NOTES.md](NOTES.md) for details.
 
 Download the latest release from [GitHub](https://github.com/aelassas/servy/releases/latest) or install via a package manager:
 
-**WinGet**
+[![WinGet Package Version](https://img.shields.io/winget/v/aelassas.Servy?color=brightgreen)](https://github.com/microsoft/winget-pkgs/tree/master/manifests/a/aelassas/Servy)
 
 ```powershell
 winget install servy
 ```
 
-**Chocolatey**
+[![Chocolatey Version](https://img.shields.io/chocolatey/v/servy?color=brightgreen)](https://community.chocolatey.org/packages/servy)
 
 ```powershell
 choco install -y servy
 ```
 
-**Scoop**
+[![Scoop Version](https://img.shields.io/scoop/v/servy?bucket=extras&color=brightgreen)](https://scoop.sh/#/apps?q=servy&p=1)
 
 ```powershell
 scoop bucket add extras
 scoop install servy
 ```
 
-**Patch My PC**
+[![Patch My PC](https://img.shields.io/badge/Patch_My_PC-catalog-brightgreen)](https://patchmypc.com/supported-products/)
 
 Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
 
