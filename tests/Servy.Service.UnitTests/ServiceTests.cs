@@ -1632,6 +1632,54 @@ namespace Servy.Service.UnitTests
             }
         }
 
+        [Theory]
+        [InlineData(0, 1)]
+        [InlineData(5, 5)]
+        public void OnCustomCommand_PreShutdownWithoutServiceHandle_RunsTeardownThenTerminates(int ambientExitCode, int expectedTerminationCode)
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Environment.ExitCode is process-global, so it is restored however this test ends.
+            var originalExitCode = Environment.ExitCode;
+
+            try
+            {
+                using (var service = BuildStatusRecordingService())
+                {
+                    service.StartForTest();
+
+                    // _serviceHandle is deliberately left at IntPtr.Zero: that is what routes
+                    // OnCustomCommand into the synchronous fallback instead of the SCM-pulsed path.
+                    Environment.ExitCode = ambientExitCode;
+
+                    // Act
+                    var thrown = Record.Exception(() =>
+                        TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN));
+
+                    // Assert
+                    // 1. The fallback was entered, and no SCM status transition was attempted
+                    scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Service handle is null!")), It.IsAny<Exception>()), Times.Once);
+                    Assert.Empty(service.StatusStates);
+
+                    // 2. The teardown ran synchronously before the host process was terminated
+                    _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+
+                    // 3. The ambient exit code is preserved when non-zero, and replaced by 1 otherwise
+                    Assert.Equal(new[] { expectedTerminationCode }, service.TerminatedWith.ToArray());
+
+                    // 4. The real TerminateProcess never returns; the recording override models that by throwing
+                    Assert.IsType<ProcessTerminatedException>(thrown);
+                }
+            }
+            finally
+            {
+                Environment.ExitCode = originalExitCode;
+            }
+        }
+
         /// <summary>
         /// A user-defined SCM control code (128-255) that the service does not handle.
         /// </summary>
@@ -1678,10 +1726,40 @@ namespace Servy.Service.UnitTests
             /// <summary>Gets the wait hints passed to UpdateServiceStatus, in call order.</summary>
             public List<int> StatusWaitHints { get; } = new List<int>();
 
+            /// <summary>Gets the exit codes passed to TerminateProcess, in call order.</summary>
+            public List<int> TerminatedWith { get; } = new List<int>();
+
             protected override void UpdateServiceStatus(int state, int waitHint)
             {
                 StatusStates.Add(state);
                 StatusWaitHints.Add(waitHint);
+            }
+
+            protected override void TerminateProcess(int exitCode)
+            {
+                TerminatedWith.Add(exitCode);
+
+                // The production TerminateProcess forwards to Environment.Exit, which does not return.
+                // Throwing keeps everything after the call unreachable here too, so a test cannot
+                // accidentally assert on statements the real service would never reach.
+                throw new ProcessTerminatedException(exitCode);
+            }
+        }
+
+        /// <summary>
+        /// Sentinel thrown by <see cref="StatusRecordingService.TerminateProcess(int)"/> in place of the
+        /// process termination the production seam performs. It exists only to unwind the call the way
+        /// Environment.Exit would, so it carries no behaviour of its own.
+        /// </summary>
+        private sealed class ProcessTerminatedException : Exception
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ProcessTerminatedException"/> class.
+            /// </summary>
+            /// <param name="exitCode">The exit code the service asked the host process to terminate with.</param>
+            public ProcessTerminatedException(int exitCode)
+                : base($"Service requested process termination with exit code {exitCode}.")
+            {
             }
         }
 
