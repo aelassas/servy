@@ -119,7 +119,7 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.NotElevated, result.Status);
             Assert.Equal(0, sut.ResolveCalls);
-            Assert.False(result.VaultAccessGranted);
+            Assert.Empty(result.GrantedFolders);
         }
 
         [Fact]
@@ -187,7 +187,7 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(ExePermissionsHardeningStatus.Skipped, result.Status);
             Assert.Contains("protected administrative principal", result.Reason);
             Assert.Equal(0, sut.MembershipCalls);
-            Assert.False(result.VaultAccessGranted);
+            Assert.Empty(result.GrantedFolders);
         }
 
         [Fact]
@@ -202,12 +202,12 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Skipped, result.Status);
             Assert.Contains("member of Administrators", result.Reason);
-            Assert.False(result.VaultAccessGranted);
+            Assert.Empty(result.GrantedFolders);
             Assert.False(TargetHasVaultAce(LocalServiceSid));
         }
 
         [Fact]
-        public void Harden_NotAMember_GrantsTheVaultAndReportsEveryRequiredFileMissing()
+        public void Harden_NotAMember_GrantsTheWritableFoldersAndReportsEveryRequiredFileMissing()
         {
             // Arrange
             var sut = new TestableHardener(TempDirectory) { IsMember = false };
@@ -217,8 +217,13 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, result.Status);
-            Assert.True(result.VaultAccessGranted);
-            Assert.True(TargetHasVaultAce(LocalServiceSid));
+            Assert.Equal(new[] { AppConfig.DbFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName }, result.GrantedFolders);
+            Assert.False(TargetHasVaultAce(LocalServiceSid));
+            foreach (var folder in result.GrantedFolders)
+            {
+                Assert.True(Directory.Exists(Path.Combine(TempDirectory, folder)), $"{folder} was created");
+                Assert.True(TargetHasAce(Path.Combine(TempDirectory, folder), LocalServiceSid), $"{folder} was granted");
+            }
             Assert.Empty(result.Hardened);
             Assert.Empty(result.Failed);
             Assert.Contains(AppConfig.ServyServiceUIExe, result.Missing);
@@ -240,7 +245,7 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, capture.Result.Status);
-            Assert.True(capture.Result.VaultAccessGranted);
+            Assert.Equal(3, capture.Result.GrantedFolders.Count);
             Assert.Contains("Could not rule out that 'svc' is a member of Administrators", capture.Log);
         }
 
@@ -266,6 +271,16 @@ namespace Servy.Core.UnitTests.Security
         #region GetTargetFiles
 
         [Fact]
+        public void GetWritableFolders_AreTheDatabaseTheLogsAndTheRecoveryState()
+        {
+            // Act
+            var folders = ServyExePermissionsHardener.GetWritableFolders();
+
+            // Assert: the security folder and the vault root are deliberately absent
+            Assert.Equal(new[] { "db", "logs", "recovery" }, folders);
+        }
+
+        [Fact]
         public void GetTargetFiles_ListsEveryFileWithItsRights()
         {
             // Arrange
@@ -279,24 +294,20 @@ namespace Servy.Core.UnitTests.Security
             {
                 Assert.Equal(FileSystemRights.ReadAndExecute, targets[exe].Rights);
                 Assert.False(targets[exe].Optional);
-                Assert.False(targets[exe].PreserveInherited);
             }
 
             foreach (var settings in new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName })
             {
                 Assert.Equal(FileSystemRights.Read, targets[settings].Rights);
                 Assert.True(targets[settings].Optional);
-                Assert.False(targets[settings].PreserveInherited);
             }
 
             var db = targets[Path.Combine("db", "Servy.db")];
             Assert.Equal(FileSystemRights.Read | FileSystemRights.Write, db.Rights);
-            Assert.True(db.PreserveInherited);
             Assert.False(db.Optional);
 
             var key = targets[Path.Combine("security", "aes_key.dat")];
             Assert.Equal(FileSystemRights.Read, key.Rights);
-            Assert.True(key.PreserveInherited);
             Assert.False(key.Optional);
             Assert.Equal(0, (int)(key.Rights & (FileSystemRights.WriteData | FileSystemRights.AppendData | FileSystemRights.Delete)));
         }
@@ -613,9 +624,14 @@ namespace Servy.Core.UnitTests.Security
         /// <summary>
         /// Whether the vault directory carries an explicit entry for <paramref name="sid"/>.
         /// </summary>
-        private bool TargetHasVaultAce(SecurityIdentifier sid)
+        private bool TargetHasVaultAce(SecurityIdentifier sid) => TargetHasAce(TempDirectory, sid);
+
+        /// <summary>
+        /// Whether a directory carries an explicit entry for <paramref name="sid"/>.
+        /// </summary>
+        private static bool TargetHasAce(string directory, SecurityIdentifier sid)
         {
-            var acl = new DirectoryInfo(TempDirectory).GetAccessControl(AccessControlSections.Access);
+            var acl = new DirectoryInfo(directory).GetAccessControl(AccessControlSections.Access);
             return acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
                 .Cast<FileSystemAccessRule>()
                 .Any(r => sid.Equals(r.IdentityReference));
