@@ -1,6 +1,8 @@
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.IO;
+using Servy.Core.Logging;
+using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
 using System.Globalization;
 
@@ -1740,5 +1742,92 @@ namespace Servy.Core.UnitTests.IO
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Covers <c>EnforceMaxRotations</c>'s "Persistent failure" escalation, which is only observable
+    /// through the static <c>Logger</c>. Asserting on that writer requires
+    /// <see cref="LoggerCollection"/>, so this case lives in a class of its own rather than taking
+    /// the whole of <see cref="RotatingStreamWriterTests"/> out of parallel execution.
+    /// </summary>
+    [Collection(LoggerCollection.Name)] // the escalation is asserted through the static Logger
+    public class RotatingStreamWriterRetentionAlarmTests : TempDirectoryTestBase
+    {
+        /// <summary>
+        /// The incomplete retention pass that reaches
+        /// <see cref="AppConfig.LogRotationDeletionFailureEscalationThreshold"/> must log the
+        /// "Persistent failure" error, and the pass before it must not. Without this case the
+        /// <c>Logger.Error</c> block can be deleted, or its <c>&gt;=</c> turned into <c>&gt;</c>,
+        /// with every test green - which is how the defect fixed in #5944 could return unnoticed.
+        /// </summary>
+        /// <param name="priorFailures">Consecutive incomplete passes already recorded before this pass.</param>
+        /// <param name="expectError">Whether this pass is expected to escalate to an error.</param>
+        [Theory]
+        [InlineData(AppConfig.LogRotationDeletionFailureEscalationThreshold - 2, false)]
+        [InlineData(AppConfig.LogRotationDeletionFailureEscalationThreshold - 1, true)]
+        public void EnforceMaxRotations_IncompletePassReachingThreshold_LogsPersistentFailureError(
+            int priorFailures,
+            bool expectError)
+        {
+            // Arrange
+            string baseLog = Path.Combine(TempDirectory, "alarm.log");
+            File.WriteAllText(baseLog, "base");
+
+            string expired = Path.Combine(TempDirectory, "alarm.20260325_000001.log");
+            string kept = Path.Combine(TempDirectory, "alarm.20260325_000002.log");
+            File.WriteAllText(expired, "old");
+            File.WriteAllText(kept, "new");
+            File.SetLastWriteTimeUtc(expired, DateTime.UtcNow.AddMinutes(-10));
+            File.SetLastWriteTimeUtc(kept, DateTime.UtcNow);
+
+            string logName = "RetentionAlarmTestLog_" + Guid.NewGuid().ToString("N") + ".log";
+            string logPath = Path.Combine(AppConfig.LogsFolderPath, logName);
+            string log;
+            int failuresAfterPass;
+
+            try
+            {
+                using (var writer = new RotatingStreamWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1, false))
+                {
+                    writer.Write(string.Empty); // trigger lazy init, as the sibling retention tests do
+
+                    // maxRotations is 1, so the pass targets the oldest rotated file only. Holding it
+                    // open with FileShare.None is what makes that single deletion fail.
+                    using (new FileStream(expired, FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        TestReflection.SetField(writer, "_consecutiveDeletionFailures", priorFailures);
+                        Logger.Shutdown();
+                        Logger.Initialize(logName);
+
+                        // Act
+                        TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
+
+                        Logger.Shutdown();
+                        failuresAfterPass = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
+                    }
+                }
+
+                log = File.Exists(logPath) ? File.ReadAllText(logPath) : string.Empty;
+            }
+            finally
+            {
+                Logger.Shutdown();
+                try { if (File.Exists(logPath)) File.Delete(logPath); } catch { /* best effort cleanup */ }
+            }
+
+            // Assert
+            Assert.Equal(priorFailures + 1, failuresAfterPass);
+            Assert.True(File.Exists(expired), "The locked expired file should survive the incomplete pass.");
+            Assert.True(File.Exists(kept), "The newest rotated file is within the retention limit.");
+
+            // Pins that the capture really received this pass's output, so the no-escalation row
+            // cannot pass on an empty log.
+            Assert.True(
+                log.IndexOf("Consecutive incomplete passes", StringComparison.Ordinal) >= 0,
+                "The incomplete-pass warning should have been captured.");
+            Assert.Equal(
+                expectError,
+                log.IndexOf("Persistent failure to enforce log rotation limit", StringComparison.Ordinal) >= 0);
+        }
     }
 }
