@@ -315,6 +315,35 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
+        [Fact]
+        public void Initialize_Version1DatabaseWithLegacyEnableRotation_RenamesColumnAndKeepsValue()
+        {
+            // Arrange: a database already cleanly tracking schema Version 1 that still carries the
+            // pre-V2 column name, which is the only fixture that reaches ApplyVersion2's rename arm
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 1);
+                // ExecutablePath is seeded because it and Name are the two NOT NULL columns the V4
+                // rebuild recreates, and the row has to survive that copy for the assertions below
+                conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} (Id INTEGER PRIMARY KEY, Name TEXT NOT NULL, ExecutablePath TEXT NOT NULL, EnableRotation INTEGER);");
+                conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Id, Name, ExecutablePath, EnableRotation) VALUES (1, 'LegacyV1', 'C:\\LegacyV1.exe', 1);");
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert: V2 renamed the column in place, so the V1 user's setting survived the chain
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
+                Assert.DoesNotContain("EnableRotation", columns);
+                Assert.Contains("EnableSizeRotation", columns);
+                Assert.Equal(1L, conn.QuerySingle<long>($"SELECT EnableSizeRotation FROM {SqlConstants.ServicesTableName} WHERE Id = 1;"));
+
+                // Without the V2 rename, EnableRotation would be an orphan column by the time
+                // ApplyVersion4 rebuilds the table, and the setting would be reset to its default
+                var tables = conn.Query<string>("SELECT name FROM sqlite_master WHERE type='table';").ToList();
+                Assert.DoesNotContain("Services_orphans_v4", tables);
+            }
+        }
+
         #endregion
 
         #region V6 Explicit collation index (Name COLLATE UNICODE_NOCASE)
