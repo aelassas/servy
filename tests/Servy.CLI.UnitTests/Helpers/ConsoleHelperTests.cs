@@ -200,6 +200,103 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
+        /// A write failure on the spinner frame faults the background spinner task, and the catch around
+        /// "await spinnerTask" in RunWithLoadingAnimation's finally is the only thing that keeps that fault
+        /// from replacing the result of the caller's action. Without this case the catch can be deleted, or
+        /// narrowed to OperationCanceledException, with every test green - and a command whose work
+        /// succeeded would then report an IOException raised by a cosmetic spinner frame.
+        /// </summary>
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenSpinnerFrameWriteThrows_SwallowsFaultAndStillClearsLine()
+        {
+            // Arrange
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 80);
+
+            try
+            {
+                using (var writer = new SpinnerFaultingStringWriter())
+                {
+                    var actionExecuted = false;
+                    Func<Task> action = () => Task.Run(() =>
+                    {
+                        // Hold the action open until the spinner has attempted (and failed) its first frame,
+                        // so the case cannot pass because the spinner never started.
+                        Assert.True(
+                            writer.SpinnerFrameAttempted.Task.Wait(TimeSpan.FromSeconds(5)),
+                            "The spinner never wrote a frame.");
+                        actionExecuted = true;
+                    });
+
+                    var originalOut = Console.Out;
+                    Console.SetOut(writer);
+                    Exception exception;
+                    try
+                    {
+                        // Act
+                        exception = await Record.ExceptionAsync(
+                            () => ConsoleHelper.RunWithLoadingAnimation(action, "Spinner fault..."));
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    Assert.Null(exception);
+                    Assert.True(actionExecuted, "The caller's action must still run to completion.");
+                    Assert.True(
+                        writer.ClearingWriteSeen,
+                        "The clearing write must still run after the spinner task faulted.");
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+            }
+        }
+
+        /// <summary>
+        /// Throws on the spinner frame (which starts with "\r" but does not end with it) and records the
+        /// clearing write (which starts and ends with "\r"), so the background-fault catch is the only thing
+        /// between the spinner's IOException and the caller. The inverse of
+        /// <see cref="FaultingStringWriter"/>, which faults the clearing write and leaves the spinner alone.
+        /// </summary>
+        private sealed class SpinnerFaultingStringWriter : StringWriter
+        {
+            /// <summary>
+            /// Completes as soon as the spinner has attempted its first frame.
+            /// </summary>
+            public TaskCompletionSource<bool> SpinnerFrameAttempted { get; } = new TaskCompletionSource<bool>();
+
+            /// <summary>
+            /// Whether the clearing write ran, which it can only do after the faulted spinner task was awaited.
+            /// </summary>
+            public bool ClearingWriteSeen { get; private set; }
+
+            /// <summary>
+            /// Records the clearing write and faults the spinner frame.
+            /// </summary>
+            /// <param name="value">The text being written to the console.</param>
+            /// <exception cref="IOException">Thrown on a spinner frame, simulating a detached console.</exception>
+            public override void Write(string value)
+            {
+                if (value != null && value.StartsWith("\r") && value.EndsWith("\r"))
+                {
+                    ClearingWriteSeen = true;
+                }
+                else if (value != null && value.StartsWith("\r"))
+                {
+                    SpinnerFrameAttempted.TrySetResult(true);
+                    throw new IOException("Simulated console detach on the spinner frame.");
+                }
+
+                base.Write(value);
+            }
+        }
+
+        /// <summary>
         /// Dedicated TextWriter mock wrapper subclass targeting the final exception mitigation branch.
         /// </summary>
         private class FaultingStringWriter : StringWriter
