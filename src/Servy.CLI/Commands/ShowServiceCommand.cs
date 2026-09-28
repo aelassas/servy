@@ -513,7 +513,11 @@ namespace Servy.CLI.Commands
 
         /// <summary>
         /// A category of the single-service report. A section with no rows is dropped by
-        /// <see cref="Render"/>, so an unused feature contributes no empty heading.
+        /// <see cref="Render"/>, so a category whose columns are all empty contributes no empty
+        /// heading. That is narrower than "an unused feature is not shown": every flag and timeout
+        /// is stored with an <c>AppConfig</c> default at install time, so a category built from
+        /// non-nullable columns - Recovery, Pre-Launch, Pre-Stop - is always rendered, with those
+        /// defaults, however the feature is configured.
         /// </summary>
         private sealed class Section
         {
