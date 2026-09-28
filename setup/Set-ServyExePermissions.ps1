@@ -16,8 +16,7 @@
 
     This script enforces Servy's Single Trust Boundary security model by breaking permission inheritance on core
     executable files, DLL assemblies, and configuration files (*.exe.config), restricting the target runner account to strict 'Read & Execute'
-    rights for executables/DLLs (with explicit 'Delete' rights granted strictly to Servy.Restarter.Net48.exe to permit atomic update extraction)
-    and 'Read' rights for configuration files.
+    rights for executables/DLLs and 'Read' rights for configuration files.
     This ensures the service runner can execute required binaries and read settings without being able to overwrite or
     DLL-hijack them, protecting against unprivileged binary replacement and local privilege escalation vectors. Full Control is
     explicitly preserved for SYSTEM and Administrators using language-agnostic Well-Known SIDs. The owner of each hardened
@@ -26,7 +25,7 @@
     Hardened Target Files:
     - Servy.Service.Net48.exe
     - Servy.Service.CLI.Net48.exe (Note: May not be present on a fresh install; start the service with the CLI once so Servy.Service.CLI.Net48.exe gets copied to %ProgramData%\Servy)
-    - Servy.Restarter.Net48.exe (Note: May not be present on a fresh install; start the service once so Servy.Restarter.Net48.exe gets copied to %ProgramData%\Servy)
+    - Servy.Restarter.Net48.exe
     - handle64.exe
     - Servy.Service.Net48.exe.config
     - Servy.Service.CLI.Net48.exe.config
@@ -61,6 +60,9 @@
 .NOTES
     - Execution Requires Administrator Privileges: Modifying ACLs and breaking permission inheritance in %ProgramData%\Servy
       requires an elevated PowerShell session.
+    - Run Automatically: Since v10.2, the desktop app, the Manager, the CLI and the PowerShell module run this script
+      for the service account whenever they install a service under an account other than Local System, so running it
+      by hand is only needed to re-apply the hardening (e.g. after restoring %ProgramData%\Servy from a backup).
 #>
 [CmdletBinding()]
 param(
@@ -312,16 +314,10 @@ try {
         Select-Object -ExpandProperty Name
 
     # Build unified target map with respective permissions.
-    # Exclusively grant ReadAndExecute, Delete to Servy.Restarter.Net48.exe so atomic updates can remove/replace
-    # that specific helper binary without granting Write/Modify access or adding Delete permissions to other binaries/DLLs.
     $targetFiles = @()
 
     foreach ($exe in $staticExeNames) {
-        if ($exe -eq 'Servy.Restarter.Net48.exe') {
-            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute, Delete" }
-        } else {
-            $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
-        }
+        $targetFiles += @{ Name = $exe; Rights = "ReadAndExecute" }
     }
 
     foreach ($dll in $dllFiles) {
@@ -483,7 +479,7 @@ try {
             $acl.SetAccessRule($adminRule)
             $acl.SetAccessRule($systemRule)
 
-            # 4. Grant explicit rights (ReadAndExecute, Delete for Restarter; ReadAndExecute for other binaries; Read for configs; Read, Write for the database) to target account
+            # 4. Grant explicit rights (ReadAndExecute for binaries; Read for configs; Read, Write for the database) to target account
             if ($targetSid.Equals($adminSid) -or $targetSid.Equals($systemSid)) {
                 Write-Host "  Target '$TargetAccount' is a protected administrative principal; FullControl retained, no $requiredRights downgrade applied." -ForegroundColor Yellow
             } else {

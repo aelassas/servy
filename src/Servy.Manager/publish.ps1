@@ -6,7 +6,8 @@ Builds and publishes the Servy WPF application and optionally signs the output e
 
 .DESCRIPTION
 This script performs the following steps:
-1. Runs the resource publishing script (publish-res-release.ps1 or publish-res-debug.ps1 depending on configuration).
+1. Runs the resource publishing script (publish-res-release.ps1 or publish-res-debug.ps1 depending on configuration),
+   which builds Servy.Service.Net48.exe and Servy.Restarter.Net48.exe into Resources to be embedded.
 2. Builds the Servy.Manager project using MSBuild in the specified configuration and platform.
 3. Signs the resulting executable using SignPath if signing is enabled.
 

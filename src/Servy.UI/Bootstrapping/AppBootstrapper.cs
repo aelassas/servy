@@ -389,7 +389,9 @@ namespace Servy.UI.Bootstrapping
 
                     var resourceItems = new List<ResourceItem>
                     {
-                        new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceUIFileName, Extension= "exe"}
+                        new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceUIFileName, Extension= "exe"},
+                        // The service wrapper launches the restarter from its own folder, so it is extracted next to it
+                        new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyRestarterFileName, Extension= "exe"}
                     };
 
 #if DEBUG
@@ -397,6 +399,18 @@ namespace Servy.UI.Bootstrapping
                     {
                         string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
+                            _options.ResourceExtractionWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
+                    }
+
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: ct))
+                    {
+                        string resourceName = $"{AppConfig.ServyRestarterFileName}.pdb";
+                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'.");
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                             splash ?? (Window)app.MainWindow,
                             string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),

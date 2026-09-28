@@ -70,10 +70,9 @@ namespace Servy.Service.UnitTests
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
-            IServiceRepository serviceRepository,
-            IProcessKiller processKiller
+            IServiceRepository serviceRepository
             )
-            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, processKiller)
+            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
         {
         }
 

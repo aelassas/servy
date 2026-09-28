@@ -162,6 +162,8 @@
     <EmbeddedResource Include="Resources\handle64.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.CLI.Net48.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.CLI.Net48.pdb" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.exe" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.pdb" />
     <None Include="packages.config" />
     <None Include="publish-res-debug.ps1" />
     <None Include="publish-res-release.ps1" />

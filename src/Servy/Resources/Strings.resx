@@ -355,12 +355,6 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Label_ConfirmPassword" xml:space="preserve">
     <value>Confirm Password</value>
   </data>
-  <data name="Info_SecurityHardeningNotice" xml:space="preserve">
-    <value>If the service runs under an account other than Local System, you must run the mandatory hardening script Set-ServyExePermissions.ps1 -TargetAccount "domain\user". It grants the account Modify access to %ProgramData%\Servy and locks down Servy's binaries and database to prevent unprivileged binary tampering and local privilege escalation.</value>
-  </data>
-  <data name="Link_SecurityHardeningGuide" xml:space="preserve">
-    <value>Learn script location and execution usage.</value>
-  </data>
 
   <!-- Pre-Launch -->
   <data name="Info_PreLaunch" xml:space="preserve">

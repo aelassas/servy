@@ -7,7 +7,8 @@ Builds the Servy WPF application in Release or Debug mode and signs the output.
 .DESCRIPTION
 This script prepares the Servy WPF application for publishing by:
 1. Running either publish-res-release.ps1 or publish-res-debug.ps1 depending
-   on the selected build configuration.
+   on the selected build configuration, which builds Servy.Service.Net48.exe
+   and Servy.Restarter.Net48.exe into Resources to be embedded.
 2. Building the Servy WPF project using MSBuild.
 3. Signing the produced Servy.exe binary using the SignPath signing script.
 

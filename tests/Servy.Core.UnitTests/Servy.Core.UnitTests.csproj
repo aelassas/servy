@@ -157,6 +157,7 @@
     <Compile Include="Native\NativeMethodsHelpersTests.cs" />
     <Compile Include="Security\SecureDataStressTests.cs" />
     <Compile Include="Security\SecurityHelperTests.cs" />
+    <Compile Include="Security\ServyExePermissionsHardenerTests.cs" />
     <Compile Include="Services\EventLogServiceTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Services\JsonServiceSerializerTests.cs" />
@@ -173,6 +174,7 @@
     <Compile Include="Services\FakeServiceHandles.cs" />
     <Compile Include="Services\ServiceManagerTests.cs" />
     <Compile Include="Services\ServiceManagerDiagnosticsTests.cs" />
+    <Compile Include="Services\ServiceManagerHardeningTests.cs" />
     <Compile Include="Services\ServiceManagerStartTimeoutTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />

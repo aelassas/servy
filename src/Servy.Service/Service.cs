@@ -21,7 +21,6 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.ServiceProcess;
@@ -71,20 +70,6 @@ namespace Servy.Service
         /// initializations (like Win32 handle reflection) are bypassed.
         /// </summary>
         public const string TestModeFlag = "servy_test";
-
-        /// <summary>
-        /// The namespace in the assembly where the embedded service resources are located.
-        /// </summary>
-        private const string ResourcesNamespace = "Servy.Service.Resources";
-
-        /// <summary>
-        /// The base file name (without extension) of the embedded Servy Restarter executable.
-        /// </summary>
-        /// <remarks>
-        /// Aliases <see cref="AppConfig.ServyRestarterFileName"/> so the extraction here and the
-        /// lookup in <see cref="AppConfig.GetServyRestarterPath"/> cannot disagree on the name.
-        /// </remarks>
-        private const string ServyRestarterExeFileName = AppConfig.ServyRestarterFileName;
 
         #endregion
 
@@ -137,7 +122,6 @@ namespace Servy.Service
         private volatile bool _disposed = false; // Tracks whether teardown has completed; ExecuteTeardown sets it, so it is true after a plain SCM stop as well as after Dispose
         private volatile bool _isTearingDown = false;
         private volatile bool _isRebooting = false;
-        private readonly IProcessKiller _processKiller;
         private readonly IAppDbContext _dbContext;
         private readonly ProtectedKeyProvider _protectedKeyProvider;
 
@@ -169,8 +153,7 @@ namespace Servy.Service
             new StreamWriterFactory(),
             new TimerFactory(),
             new ProcessFactory(),
-            new PathValidator(),
-            new ProcessKiller()
+            new PathValidator()
           )
         {
         }
@@ -185,7 +168,6 @@ namespace Servy.Service
         /// <param name="processFactory">The process factory.</param>
         /// <param name="pathValidator">The path validator.</param>
         /// <param name="serviceRepository">The service repository.</param>
-        /// <param name="processKiller">The process killer.</param>
         /// <remarks>
         /// <b>NOTE:</b> This constructor is primarily intended for <b>Unit Testing</b> and <b>Inversion of Control (IoC)</b> containers.
         /// <para>
@@ -193,7 +175,7 @@ namespace Servy.Service
         /// <list type="bullet">
         /// <item><description>Initialize the global <see cref="Logger"/> utility.</description></item>
         /// <item><description>Setup the <see cref="SecureData"/> cryptographic subsystem.</description></item>
-        /// <item><description>Initialize the database schema or embedded resources.</description></item>
+        /// <item><description>Initialize the database schema.</description></item>
         /// </list>
         /// The caller is responsible for ensuring any required global state is initialized prior to use.
         /// </para>
@@ -205,8 +187,7 @@ namespace Servy.Service
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
-            IServiceRepository serviceRepository,
-            IProcessKiller processKiller
+            IServiceRepository serviceRepository
             ) // allow injection
         {
             ServiceName = AppConfig.EventSource;
@@ -219,7 +200,6 @@ namespace Servy.Service
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
-            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
             _options = null;
         }
 
@@ -232,7 +212,6 @@ namespace Servy.Service
         /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
         /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
         /// <param name="pathValidator">Path Validator.</param>
-        /// <param name="processKiller">Helper used to terminate processes (and process trees) during teardown.</param>
         /// <remarks>
         /// This is the primary <b>Production Constructor</b>. It automatically initializes the
         /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from
@@ -244,8 +223,7 @@ namespace Servy.Service
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
-            IPathValidator pathValidator,
-            IProcessKiller processKiller
+            IPathValidator pathValidator
             )
         {
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
@@ -254,7 +232,6 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
-            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
             _options = null;
 
             Logger.Initialize("Servy.Service.log");
@@ -316,24 +293,6 @@ namespace Servy.Service
                 var jsonSerializer = new JsonServiceSerializer();
 
                 _serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
-
-                // Copy service executable from embedded resources
-                var asm = Assembly.GetExecutingAssembly();
-                var sh = new ServiceHelper(_serviceRepository);
-                var resourceHelper = new ResourceHelper(sh, _processKiller);
-
-                if (!resourceHelper.CopyEmbeddedResourceForceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
-                {
-                    _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
-                }
-
-#if DEBUG
-                // Copy debug symbols from embedded resources (only in debug builds)
-                if (!resourceHelper.CopyEmbeddedResourceForceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
-                {
-                    _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
-                }
-#endif
 
                 // Enable Shutdown Notifications
                 CanShutdown = true;

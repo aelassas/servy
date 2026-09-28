@@ -196,7 +196,8 @@ namespace Servy.Manager
                         new ServiceControllerProvider(controllerFactory),
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
-                        ServiceRepository
+                        ServiceRepository,
+                        new ServyExePermissionsHardener()
                     );
 
                     var fileDialogService = new FileDialogService();

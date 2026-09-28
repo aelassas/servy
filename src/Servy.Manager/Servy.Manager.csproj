@@ -274,6 +274,8 @@
     <EmbeddedResource Include="Resources\handle64.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.Net48.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.exe" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.pdb" />
     <Resource Include="Resources\Icons\Error.png" />
     <Resource Include="Resources\Icons\Info.png" />
     <Resource Include="Resources\Icons\Warning.png" />

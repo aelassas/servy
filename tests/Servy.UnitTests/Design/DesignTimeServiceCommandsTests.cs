@@ -31,7 +31,6 @@ namespace Servy.UnitTests.Design
                 await commands.ImportXmlConfigAsync(cancellationToken: ct);
                 await commands.ImportJsonConfigAsync(cancellationToken: ct);
                 await commands.OpenManagerAsync(cancellationToken: ct);
-                await commands.OpenSecurityHardeningGuideAsync(cancellationToken: ct);
             });
 
             Assert.Null(exception);

@@ -124,8 +124,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="publish-res-debug.ps1" />
-    <None Include="publish-res-release.ps1" />
     <None Include="publish.ps1" />
   </ItemGroup>
   <ItemGroup>
@@ -137,12 +135,6 @@
       <Project>{2ed3b3e9-1132-4aa4-a487-85848abccc1a}</Project>
       <Name>Servy.Infrastructure</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.exe" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.pdb" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -312,13 +312,26 @@ jobs:
       - name: Inject signed Servy.Restarter.exe
         shell: pwsh
         run: |
-          $file = "signed/Servy.Restarter/Servy.Restarter.exe"
-          if (-not (Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
-          Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.Net48.exe -Force
+          $signed = "signed/Servy.Restarter/Servy.Restarter.exe"
+          if (-not (Test-Path $signed)) { throw "Signed Servy.Restarter.exe not found!" }
 
           $pdb = "src/Servy.Restarter/bin/$env:PLATFORM/$env:BUILD_CONFIG/Servy.Restarter.pdb"
           if (-not (Test-Path $pdb)) { throw "Servy.Restarter.pdb not found!" }
-          Copy-Item $pdb src/Servy.Service/Resources/Servy.Restarter.Net48.pdb -Force
+
+          # The desktop app, the Manager and the CLI each embed the restarter and extract it next to the service wrapper
+          $targets = @(
+              "src/Servy/Resources",
+              "src/Servy.Manager/Resources",
+              "src/Servy.CLI/Resources"
+          )
+
+          # Inject the signed EXE and matching PDB into each resource folder
+          foreach ($target in $targets) {
+              Write-Host "Injecting SIGNED Servy.Restarter.exe into $target"
+              Copy-Item $signed (Join-Path $target "Servy.Restarter.Net48.exe") -Force
+              Write-Host "Injecting matching Servy.Restarter.pdb into $target"
+              Copy-Item $pdb (Join-Path $target "Servy.Restarter.Net48.pdb") -Force
+          }
 
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Service.exe

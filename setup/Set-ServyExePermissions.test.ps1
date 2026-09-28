@@ -115,6 +115,11 @@ try {
     # 4. The binaries and configuration files stay hardened.
     $exeRights = Get-AllowedRights (Join-Path $servyDir 'Servy.Service.Net48.exe') $targetSid
     Assert-True ((Test-Rights $exeRights $FSR::ReadAndExecute) -and -not (Test-Rights $exeRights $FSR::WriteData)) "Servy.Service.Net48.exe stays Read & Execute for the target"
+    # The restarter is extracted by the desktop app, the Manager and the CLI, never by the service account,
+    # so like every other binary it is Read & Execute only: no Delete that would let the runner replace it.
+    $restarterRights = Get-AllowedRights (Join-Path $servyDir 'Servy.Restarter.Net48.exe') $targetSid
+    Assert-True ((Test-Rights $restarterRights $FSR::ReadAndExecute) -and -not (Test-Rights $restarterRights $FSR::WriteData)) "Servy.Restarter.Net48.exe is Read & Execute for the target"
+    Assert-True (-not (Test-Rights $restarterRights $FSR::Delete)) "the target has no Delete on Servy.Restarter.Net48.exe"
     $cfgRights = Get-AllowedRights (Join-Path $servyDir 'Servy.Service.Net48.exe.config') $targetSid
     Assert-True ((Test-Rights $cfgRights $FSR::Read) -and -not (Test-Rights $cfgRights $FSR::WriteData)) "Servy.Service.Net48.exe.config stays Read for the target"
 }

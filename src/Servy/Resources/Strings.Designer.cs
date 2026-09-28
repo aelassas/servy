@@ -1717,15 +1717,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If the service runs under an account other than Local System, you must run the mandatory hardening script Set-ServyExePermissions.ps1 -TargetAccount &quot;domain\user&quot;. It grants the account Modify access to %ProgramData%\Servy and locks down Servy's binaries and database to prevent unprivileged binary tampering and local privilege escalation..
-        /// </summary>
-        public static string Info_SecurityHardeningNotice {
-            get {
-                return ResourceManager.GetString("Info_SecurityHardeningNotice", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Each service name must contain only letters, digits, hyphens, underscores, periods, spaces, and dollar signs ($), optionally preceded by &apos;+&apos; to reference a load-order group, and must not exceed 256 characters. Windows starts stopped dependencies automatically when this service starts; if a dependency is disabled or fails to start, this servic [rest of string was truncated]&quot;;.
         /// </summary>
         public static string Info_ServiceDependencies {
@@ -2271,15 +2262,6 @@ namespace Servy.Resources {
         public static string Label_UserAccount {
             get {
                 return ResourceManager.GetString("Label_UserAccount", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Learn script location and execution usage..
-        /// </summary>
-        public static string Link_SecurityHardeningGuide {
-            get {
-                return ResourceManager.GetString("Link_SecurityHardeningGuide", resourceCulture);
             }
         }
         

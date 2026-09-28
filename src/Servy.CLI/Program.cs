@@ -146,7 +146,8 @@ namespace Servy.CLI
                         new ServiceControllerProvider(controllerFactory),
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
-                        serviceRepository
+                        serviceRepository,
+                        new ServyExePermissionsHardener()
                         );
 
                     var processHelper = new ProcessHelper();
@@ -202,6 +203,8 @@ namespace Servy.CLI
                         var resourceItems = new List<ResourceItem>
                         {
                             new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceCLIFileName, Extension= "exe"},
+                            // The service wrapper launches the restarter from its own folder, so it is extracted next to it
+                            new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyRestarterFileName, Extension= "exe"},
                         };
 
 #if DEBUG
@@ -209,6 +212,11 @@ namespace Servy.CLI
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false, cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
+                        }
+
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: cts.Token))
+                        {
+                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
                         }
 #else
                         // Copy *.dll from embedded resources

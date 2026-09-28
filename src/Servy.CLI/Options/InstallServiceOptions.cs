@@ -321,13 +321,7 @@ namespace Servy.CLI.Options
             "user",
             HelpText = "The service account username (e.g., .\\username, DOMAIN\\username, DOMAIN\\gMSA$, or a built-in identity such as NT AUTHORITY\\LocalService, NT AUTHORITY\\NetworkService, NT SERVICE\\MyService or IIS APPPOOL\\MyPool). " +
                        "Leave the --password option or " + AppConfig.PasswordEnvVarName + " environment variable empty for built-in, virtual and gMSA accounts. " +
-                       "If this option is not set, the service runs under Local System. " +
-                       "If the service runs under an account other than Local System, " +
-                       "you must run the mandatory hardening script " +
-                       "Set-ServyExePermissions.ps1 -TargetAccount \"domain\\user\". It grants the account " +
-                       "Modify access to %ProgramData%\\Servy and locks down Servy's binaries and database to " +
-                       "prevent unprivileged binary tampering and local privilege escalation. See the wiki page Security, section " +
-                       "\"Executable permission hardening (mandatory)\"."
+                       "If this option is not set, the service runs under Local System."
         )]
         public string User { get; set; }
 

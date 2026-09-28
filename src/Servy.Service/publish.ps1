@@ -11,6 +11,9 @@
          build configuration is Release.
       3. Supports optional pause for manual inspection.
 
+    Servy.Service embeds no resources: Servy.Restarter.Net48.exe is embedded by the
+    desktop app, the Manager and the CLI, which extract it next to the service executable.
+
 .PARAMETER BuildConfiguration
     The build configuration to use (Debug or Release).
     Default: Release.
@@ -69,31 +72,15 @@ if (-not (Test-Path $serviceProject)) {
     exit 1
 }
 
-# ---------------------------------------------------------------------------------
-# Step 1: Publish resources first
-# ---------------------------------------------------------------------------------
-$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$publishResScript = Join-Path $scriptDir $publishResScriptName
-
-if (-not (Test-Path $publishResScript)) {
-    Write-Error "Required script not found: $publishResScript"
-    exit 1
-}
-
-Write-Host "=== Running $publishResScriptName ==="
-& $publishResScript
-Assert-LastExitCode "$publishResScriptName failed"
-Write-Host "=== Completed $publishResScriptName ===`n"
-
 # ----------------------------------------------------------------------
-# Step 2: Build Servy.Service
+# Step 1: Build Servy.Service
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $BuildConfiguration mode..."
 & msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
 Assert-LastExitCode "MSBuild failed"
 
 # ----------------------------------------------------------------------
-# Step 3: Sign the executable only in Release mode
+# Step 2: Sign the executable only in Release mode
 # ----------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
     $exePath = Join-Path $buildOutput "Servy.Service.exe" | Resolve-Path
