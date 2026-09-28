@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Specialized;
-
 namespace Servy.Core.Config
 {
     /// <summary>
-    /// Immutable result of <see cref="CoreSettingsLoader.Load(NameValueCollection)"/>: the connection
+    /// Immutable result of <see cref="CoreSettingsLoader.Load"/>: the connection
     /// string and AES key/IV file paths shared by every Servy composition root (UI, Manager, Service,
     /// Restarter, CLI).
     /// </summary>
@@ -34,67 +31,34 @@ namespace Servy.Core.Config
     }
 
     /// <summary>
-    /// Single source of truth for reading the connection string and AES key/IV file paths from
-    /// application settings. Every Servy composition root (UI, Manager, Service, Restarter, CLI)
-    /// resolves these same three values and must use this loader instead of re-implementing the read.
+    /// Single source of truth for the connection string and AES key/IV file paths shared by every
+    /// Servy composition root (UI, Manager, Service, Restarter, CLI).
     /// </summary>
+    /// <remarks>
+    /// These settings are read-only: they are always the <see cref="AppConfig"/> defaults under
+    /// <see cref="AppConfig.ProgramDataPath"/>, and the <c>DefaultConnection</c>,
+    /// <c>Security:AESKeyFilePath</c> and <c>Security:AESIVFilePath</c> keys of an application
+    /// <c>.exe.config</c> file are ignored. The database and the key must live in the vault that
+    /// <see cref="Servy.Core.Security.ServyExePermissionsHardener"/> hardens; a relocated database or key
+    /// would sit outside those ACLs, and every Servy process must agree on the same location.
+    /// </remarks>
     public static class CoreSettingsLoader
     {
         /// <summary>
-        /// Reads <c>DefaultConnection</c>, <c>Security:AESKeyFilePath</c> and <c>Security:AESIVFilePath</c>
-        /// from <paramref name="config"/>, falling back to the hardcoded <see cref="AppConfig"/> defaults
-        /// when a key is absent, null, empty, or whitespace-only.
+        /// Test-only replacement for the settings <see cref="Load"/> returns, so tests can point a
+        /// Servy process at a temporary database and key instead of the machine's vault.
+        /// <see langword="null"/> (the default) means the <see cref="AppConfig"/> defaults.
+        /// Not reachable from any configuration file.
         /// </summary>
-        /// <param name="config">
-        /// The application settings collection (e.g. <see cref="System.Configuration.ConfigurationManager.AppSettings"/>).
-        /// </param>
-        /// <remarks>
-        /// Unlike a plain <c>??</c> fallback, an empty string configured for a key (e.g. <c>DefaultConnection=""</c>)
-        /// is treated as absent and falls back to the default, rather than being used as-is.
-        /// </remarks>
-        public static CoreSettings Load(NameValueCollection config)
-        {
-            var connectionString = Coalesce(config?["DefaultConnection"], AppConfig.DefaultConnectionString);
-            var aesKeyFilePath = Coalesce(config?["Security:AESKeyFilePath"], AppConfig.DefaultAESKeyPath);
-            var aesIVFilePath = Coalesce(config?["Security:AESIVFilePath"], AppConfig.DefaultAESIVPath);
-
-            return new CoreSettings(connectionString, aesKeyFilePath, aesIVFilePath);
-        }
+        internal static CoreSettings TestOverride { get; set; }
 
         /// <summary>
-        /// Throws if any value in <paramref name="settings"/> is null, empty, or whitespace-only.
+        /// Returns the core data-layer settings: always the <see cref="AppConfig"/> defaults
+        /// (<see cref="AppConfig.DefaultConnectionString"/>, <see cref="AppConfig.DefaultAESKeyPath"/> and
+        /// <see cref="AppConfig.DefaultAESIVPath"/>).
         /// </summary>
-        /// <param name="settings">The settings previously produced by <see cref="Load(NameValueCollection)"/>.</param>
-        /// <param name="settingsFileName">The settings file name to mention in the exception message.</param>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown when the connection string or AES key/IV paths are missing or empty.
-        /// </exception>
-        public static void Validate(CoreSettings settings, string settingsFileName)
-        {
-            if (settings == null ||
-                string.IsNullOrWhiteSpace(settings.ConnectionString) ||
-                string.IsNullOrWhiteSpace(settings.AESKeyFilePath) ||
-                string.IsNullOrWhiteSpace(settings.AESIVFilePath))
-            {
-                throw new InvalidOperationException(
-                    $"Critical configuration values are missing. Ensure that the {settingsFileName} file is present and correctly configured.");
-            }
-        }
-
-        /// <summary>
-        /// Returns the specified string value if it is not <see langword="null"/>, empty, or consists only of white-space characters;
-        /// otherwise, returns the provided fallback value.
-        /// </summary>
-        /// <param name="value">The string value to evaluate.</param>
-        /// <param name="fallback">The default fallback string to return when <paramref name="value"/> is absent or whitespace.</param>
-        /// <returns>
-        /// <paramref name="value"/> if it contains non-whitespace content; otherwise, <paramref name="fallback"/>.
-        /// </returns>
-        /// <remarks>
-        /// Unlike the standard null-coalescing operator (<c>??</c>), this method treats empty (<c>""</c>)
-        /// and whitespace-only strings as absent values.
-        /// </remarks>
-        private static string Coalesce(string value, string fallback)
-            => string.IsNullOrWhiteSpace(value) ? fallback : value;
+        /// <returns>The resolved <see cref="CoreSettings"/>.</returns>
+        public static CoreSettings Load()
+            => TestOverride ?? new CoreSettings(AppConfig.DefaultConnectionString, AppConfig.DefaultAESKeyPath, AppConfig.DefaultAESIVPath);
     }
 }

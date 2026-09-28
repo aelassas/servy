@@ -246,7 +246,7 @@ namespace Servy.Service
                 // Load configuration
                 var config = ConfigurationManager.AppSettings;
 
-                var coreSettings = CoreSettingsLoader.Load(config);
+                var coreSettings = CoreSettingsLoader.Load();
                 var connectionString = coreSettings.ConnectionString;
                 var aesKeyFilePath = coreSettings.AESKeyFilePath;
                 var aesIVFilePath = coreSettings.AESIVFilePath;

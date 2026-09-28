@@ -39,6 +39,10 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             File.WriteAllBytes(_keyFile, new byte[32]);
             File.WriteAllBytes(_ivFile, new byte[16]);
 
+            // The core settings are read-only in production (always the vault under ProgramData), so
+            // the values the test app.config used to supply are injected through the test-only override.
+            CoreSettingsLoader.TestOverride = new CoreSettings("Data Source=test.db", "test.key", "test.iv");
+
             _options = CreateValidOptions();
             _options.LogFileName = _logFile;
 
@@ -48,6 +52,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         public override void Dispose()
         {
             Logger.Shutdown();
+            CoreSettingsLoader.TestOverride = null;
 
             // Clear SQLite connection pools so any open DB locks are released
             SQLiteConnection.ClearAllPools();

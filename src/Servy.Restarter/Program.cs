@@ -80,8 +80,7 @@ namespace Servy.Restarter
                 // 2. Load configuration
                 var config = ConfigurationManager.AppSettings;
 
-                var coreSettings = CoreSettingsLoader.Load(config);
-                CoreSettingsLoader.Validate(coreSettings, "Servy.Restarter.Net48.exe.config");
+                var coreSettings = CoreSettingsLoader.Load();
                 var connectionString = coreSettings.ConnectionString;
                 var aesKeyFilePath = coreSettings.AESKeyFilePath;
                 var aesIVFilePath = coreSettings.AESIVFilePath;

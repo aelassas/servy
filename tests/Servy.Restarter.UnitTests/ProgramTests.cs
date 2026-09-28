@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -24,10 +25,7 @@ namespace Servy.Restarter.UnitTests
 
         private readonly string _expectedLogFilePath;
         private readonly SQLiteConnection _dbKeepAliveConnection;
-        private readonly string _defaultConnection;
         private readonly string _restartTimeoutSeconds;
-        private readonly string _aesKeyFilePath;
-        private readonly string _aesIvFilePath;
 
         public ProgramTests()
         {
@@ -40,19 +38,19 @@ namespace Servy.Restarter.UnitTests
             // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
             Logger.Initialize(LogFileName, logDirectory: TempDirectory);
 
-            // Capture the baseline configuration states to allow perfect recovery state rollback during Dispose
-            _defaultConnection = ConfigurationManager.AppSettings["DefaultConnection"];
+            // Capture the baseline restart timeout to allow perfect recovery state rollback during Dispose
             _restartTimeoutSeconds = ConfigurationManager.AppSettings["RestartTimeoutSeconds"];
-            _aesKeyFilePath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
-            _aesIvFilePath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
 
             // Supply an absolute file-backed SQLite database path and key paths in TempDirectory to satisfy AppFoldersHelper
             string fileDbPath = Path.Combine(TempDirectory, "RestarterTestDbNet48.db");
             string fileConnString = $"Data Source={fileDbPath};Version=3;";
 
-            ConfigurationManager.AppSettings["DefaultConnection"] = fileConnString;
-            ConfigurationManager.AppSettings["Security:AESKeyFilePath"] = Path.Combine(TempDirectory, "test_restarter.key");
-            ConfigurationManager.AppSettings["Security:AESIVFilePath"] = Path.Combine(TempDirectory, "test_restarter.iv");
+            // The core settings are read-only in production (always the vault under ProgramData), so
+            // the database and key are injected through the test-only override instead of AppSettings.
+            CoreSettingsLoader.TestOverride = new CoreSettings(
+                fileConnString,
+                Path.Combine(TempDirectory, "test_restarter.key"),
+                Path.Combine(TempDirectory, "test_restarter.iv"));
 
             // Open the persistent handle and initialize database schema
             _dbKeepAliveConnection = new SQLiteConnection(fileConnString);
@@ -149,9 +147,9 @@ namespace Servy.Restarter.UnitTests
             // Inject an unparseable non-integer token directly into the runtime configuration matrix
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "NotAnInteger";
 
-            string connString = ConfigurationManager.AppSettings["DefaultConnection"];
-            string keyPath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
-            string ivPath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
+            string connString = CoreSettingsLoader.TestOverride.ConnectionString;
+            string keyPath = CoreSettingsLoader.TestOverride.AESKeyFilePath;
+            string ivPath = CoreSettingsLoader.TestOverride.AESIVFilePath;
 
             string serviceName = "UnmanagedNet48Service";
             string[] args = new string[] { serviceName, TempDirectory };
@@ -215,9 +213,9 @@ namespace Servy.Restarter.UnitTests
         public async Task Main_ServiceRestarted_SetsExitCodeTo0AndLogsSuccess()
         {
             // Arrange
-            string connString = ConfigurationManager.AppSettings["DefaultConnection"];
-            string keyPath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
-            string ivPath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
+            string connString = CoreSettingsLoader.TestOverride.ConnectionString;
+            string keyPath = CoreSettingsLoader.TestOverride.AESKeyFilePath;
+            string ivPath = CoreSettingsLoader.TestOverride.AESIVFilePath;
 
             string serviceName = "ManagedNet48ServiceForSuccessfulRestart";
             string[] args = new string[] { serviceName, TempDirectory };
@@ -285,9 +283,9 @@ namespace Servy.Restarter.UnitTests
             // unclamped and the over-budget warning branch is taken.
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "300";
 
-            string connString = ConfigurationManager.AppSettings["DefaultConnection"];
-            string keyPath = ConfigurationManager.AppSettings["Security:AESKeyFilePath"];
-            string ivPath = ConfigurationManager.AppSettings["Security:AESIVFilePath"];
+            string connString = CoreSettingsLoader.TestOverride.ConnectionString;
+            string keyPath = CoreSettingsLoader.TestOverride.AESKeyFilePath;
+            string ivPath = CoreSettingsLoader.TestOverride.AESIVFilePath;
 
             string serviceName = "ManagedNet48ServiceForTimeoutWarning";
             string[] args = new string[] { serviceName, TempDirectory };
@@ -389,10 +387,8 @@ namespace Servy.Restarter.UnitTests
             _dbKeepAliveConnection?.Dispose();
 
             // Rollback AppSettings matrix states to maintain complete isolation integrity across sibling execution tracks
-            ConfigurationManager.AppSettings["DefaultConnection"] = _defaultConnection;
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = _restartTimeoutSeconds;
-            ConfigurationManager.AppSettings["Security:AESKeyFilePath"] = _aesKeyFilePath;
-            ConfigurationManager.AppSettings["Security:AESIVFilePath"] = _aesIvFilePath;
+            CoreSettingsLoader.TestOverride = null;
 
             // Clean up temporary local workspace state file markers if generated
             try

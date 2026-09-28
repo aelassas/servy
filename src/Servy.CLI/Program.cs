@@ -109,8 +109,7 @@ namespace Servy.CLI
 
                     var config = ConfigurationManager.AppSettings;
 
-                    var coreSettings = CoreSettingsLoader.Load(config);
-                    CoreSettingsLoader.Validate(coreSettings, "Servy.CLI.exe.config");
+                    var coreSettings = CoreSettingsLoader.Load();
                     var connectionString = coreSettings.ConnectionString;
                     var aesKeyFilePath = coreSettings.AESKeyFilePath;
                     var aesIVFilePath = coreSettings.AESIVFilePath;
