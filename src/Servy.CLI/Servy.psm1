@@ -862,7 +862,8 @@ function Set-ServyHardenedFileAcl {
     # 2. Explicitly set owner to Builtin Administrators group to neutralize pre-existing non-admin ownership (#6692)
     $acl.SetOwner($adminSid)
 
-    # 3. Break inheritance and purge all inherited/explicit rules ($isProtected = $true, $preserveInheritance = $false)
+    # 3. Break inheritance and discard the inherited rules ($isProtected = $true, $preserveInheritance = $false);
+    #    explicit rules are not touched here, step 4 removes them
     $acl.SetAccessRuleProtection($true, $false)
 
     # 4. Remove all existing explicit rules to ensure a clean, deterministic ACL canvas
