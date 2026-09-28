@@ -28,7 +28,9 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="serviceRepository">The repository the service accounts are read from.</param>
         /// <param name="cancellationToken">A token that stops the hardening between two accounts or two files.</param>
-        /// <returns>A task that completes when every account has been processed. It does not throw.</returns>
+        /// <returns>A task that completes when every account has been processed. Apart from a null
+        /// <paramref name="serviceRepository"/>, it does not throw.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="serviceRepository"/> is null.</exception>
         Task HardenServiceAccountsAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken);
     }
 }
