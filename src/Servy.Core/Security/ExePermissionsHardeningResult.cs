@@ -7,13 +7,13 @@ namespace Servy.Core.Security
     /// </summary>
     public enum ExePermissionsHardeningStatus
     {
-        /// <summary>The vault access was granted and every file was hardened.</summary>
+        /// <summary>Every writable folder was granted, the vault root access was revoked and every file was hardened.</summary>
         Hardened,
 
         /// <summary>Every file that exists was hardened; some required files are not present yet.</summary>
         Incomplete,
 
-        /// <summary>The vault is a link, or a writable folder or at least one present file could not be hardened.</summary>
+        /// <summary>The vault is a link or its access could not be revoked, or a writable folder or at least one present file could not be hardened.</summary>
         Failed,
 
         /// <summary>
