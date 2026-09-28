@@ -196,8 +196,9 @@ namespace Servy.CLI.UnitTests
 
             // Assert
             // This is the only test that reaches the single PrintAndReturnAsync line the nine MapResult verb
-            // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath enters the start
-            // lambda too, but it throws in the bootstrap before it gets there.
+            // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath and the
+            // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler theory enter the other
+            // eight lambdas too, but they throw in the bootstrap before they get there.
             Assert.Equal((int)CliExitCode.Success, result.Result);
             Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
         }
