@@ -180,6 +180,65 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task CheckHealth_RestartAttemptsFileMissing_InitializesCounterAndRecovers()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            Assert.False(File.Exists(attemptsFile));
+
+            try
+            {
+                TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(true);
+                mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);   // path only - the file is deliberately absent
+                service.SetMaxFailedChecks(1);
+                service.SetMaxRestartAttempts(3);
+                service.SetRecoveryAction(RecoveryAction.RestartProcess);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                _ctx.Logger.Verify(l => l.Warn(
+                    It.Is<string>(s => s.Contains("Restart attempts file not found. Initializing counter to 0.")), It.IsAny<Exception>()),
+                    Times.Once);
+
+                // A missing counter is a fresh start, not a failure: recovery runs as attempt 1 of 3
+                _ctx.Logger.Verify(l => l.Warn(
+                    It.Is<string>(s => s.Contains($"Performing recovery action '{RecoveryAction.RestartProcess}' (1/3)")), It.IsAny<Exception>()),
+                    Times.Once);
+                _ctx.Helper.Verify(h => h.RestartProcess(
+                    It.IsAny<IProcessWrapper>(),
+                    It.IsAny<StartProcessCallback>(),
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+
+                // The file now exists and holds the incremented counter (initialized to 0, then saved as 1)
+                Assert.Equal("1", (await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken)).Trim());
+
+                // The unreadable arm was not taken
+                _ctx.Logger.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("is unreadable")), It.IsAny<Exception>()),
+                    Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
         public async Task CheckHealth_UnlimitedRestartAttempts_RecoversWithoutConsultingTheCounter()
         {
             // Arrange
