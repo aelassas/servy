@@ -975,6 +975,72 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
+        [Theory]
+        [InlineData("_isTearingDown")]
+        [InlineData("_isRebooting")]
+        [InlineData("_isRecovering")]
+        public async Task CheckHealth_BusyFlagSet_ReturnsBeforeTakingTheLock(string flag)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetFailedChecks(0);
+            TestReflection.SetField(service, flag, true);
+
+            // Disposing the semaphore is what makes the fast-fail guard observable on its own: the
+            // double-check inside the lock also returns for _isTearingDown and _isRecovering, so
+            // "the process is never read" would stay green without the outer guard. Reaching the
+            // wait at all now logs, and only the outer guard prevents that.
+            TestReflection.GetField<SemaphoreSlim>(service, "_healthCheckSemaphore").Dispose();
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(s =>
+                s.Contains("Semaphore disposed during wait")), It.IsAny<Exception>()), Times.Never);
+            mockProcess.VerifyGet(p => p.HasExited, Times.Never);
+            Assert.Equal(0, service.GetFailedChecks());
+        }
+
+        [Fact]
+        public async Task CheckHealth_ExitCodeThrows_WarnsAndCountsTheFailureAsUnavailable()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+                s.Contains("Health check could not read ExitCode") && s.Contains("boom")), It.IsAny<Exception>()),
+                Times.Once);
+            // The unreadable exit code reaches EvaluateExitOutcome as null and is rendered
+            // "unavailable", never as "(0x)" (#6047)
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+                s.Contains("[CheckHealth]") && s.Contains("code unavailable")), It.IsAny<Exception>()),
+                Times.Once);
+            Assert.Equal(1, service.GetFailedChecks());
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
