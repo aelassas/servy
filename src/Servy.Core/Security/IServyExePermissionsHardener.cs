@@ -17,9 +17,11 @@ namespace Servy.Core.Security
         /// <param name="targetAccount">The account the service runs under (e.g. <c>DOMAIN\svc-servy</c>, <c>.\user</c>, <c>DOMAIN\gMSA$</c>).</param>
         /// <param name="cancellationToken">A token that stops the hardening between two files.</param>
         /// <returns>
-        /// <see langword="false"/> when the hardening could not be applied (not elevated, the vault is missing, the account
-        /// cannot be resolved, or a file could not be hardened); otherwise <see langword="true"/>, including when there
-        /// was nothing to do. Every outcome is logged, and the method does not throw.
+        /// <see langword="false"/> when the hardening could not be applied (no account was given, the process is not
+        /// elevated, the vault is missing or is a link, the account cannot be resolved or is a broad group such as
+        /// Everyone, the run was cancelled, or the vault root, a writable folder or a file could not be hardened);
+        /// otherwise <see langword="true"/>, including when there was nothing to do. Every outcome is logged, and the
+        /// method does not throw.
         /// </returns>
         Task<bool> HardenAsync(string targetAccount, CancellationToken cancellationToken);
 
