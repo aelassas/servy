@@ -803,7 +803,8 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="fullPath">The fully canonicalized absolute path to evaluate.</param>
         /// <returns>
-        /// <c>true</c> if any ancestor directory in the path hierarchy is a reparse point;
+        /// <c>true</c> if any ancestor directory in the path hierarchy is a reparse point other than
+        /// a volume mount point (see <see cref="IsVolumeMountPoint(DirectoryInfo)"/>);
         /// otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
