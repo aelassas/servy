@@ -1,6 +1,7 @@
 using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -49,10 +50,83 @@ namespace Servy.CLI.UnitTests.Commands
 
         #region Helpers
 
-        /// <summary>Builds a DTO carrying only the fields the core block always renders.</summary>
+        /// <summary>
+        /// Builds a DTO shaped like the record an install actually persists: the identity and path
+        /// columns a caller supplies, plus every boolean and numeric column
+        /// <see cref="Servy.Core.Services.ServiceManager.InstallServiceAsync"/> fills from its
+        /// <c>AppConfig</c> default.
+        /// </summary>
         /// <param name="name">The service name.</param>
-        /// <returns>A minimally populated DTO.</returns>
+        /// <returns>A DTO no column of which is NULL unless an install leaves it NULL.</returns>
+        /// <remarks>
+        /// The fixture used to leave every flag and timeout NULL, which no install produces, so tests
+        /// built on it asserted omissions a user never sees: <c>ServiceManager.InstallServiceAsync</c>
+        /// maps each of these from a non-nullable <c>InstallServiceOptions</c> member that carries an
+        /// <c>AppConfig</c> default, so the Recovery, Pre-Launch and Pre-Stop categories are always
+        /// populated for a service Servy created. The defaults are referenced rather than copied, so a
+        /// change to one moves the fixture with it - and fails the sample test below, which is the
+        /// signal that the documented output needs regenerating too.
+        /// </remarks>
         private static ServiceDto MinimalDto(string name = ServiceName)
+        {
+            return new ServiceDto
+            {
+                Name = name,
+                DisplayName = "Test Service",
+                Description = "A test service",
+                ExecutablePath = @"C:\apps\test.exe",
+                StartupDirectory = @"C:\apps",
+                Parameters = "--flag",
+                StartupType = (int)ServiceStartType.AutomaticDelayedStart,
+                Priority = (int)ProcessPriority.Normal,
+
+                // No username was supplied, so an install stores this as true and leaves UserAccount null.
+                RunAsLocalSystem = true,
+
+                EnableSizeRotation = AppConfig.DefaultEnableSizeRotation,
+                RotationSize = AppConfig.DefaultRotationSizeMB,
+                EnableDateRotation = AppConfig.DefaultEnableDateRotation,
+                DateRotationType = (int)AppConfig.DefaultDateRotationType,
+                MaxRotations = AppConfig.DefaultMaxRotations,
+                UseLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
+
+                StartTimeout = AppConfig.DefaultStartTimeout,
+                StopTimeout = AppConfig.DefaultStopTimeout,
+
+                EnableHealthMonitoring = AppConfig.DefaultEnableHealthMonitoring,
+                HeartbeatInterval = AppConfig.DefaultHeartbeatInterval,
+                MaxFailedChecks = AppConfig.DefaultMaxFailedChecks,
+                RecoveryAction = (int)AppConfig.DefaultRecoveryAction,
+                RecoveryOnCleanExit = AppConfig.DefaultRecoveryOnCleanExit,
+                MaxRestartAttempts = AppConfig.DefaultMaxRestartAttempts,
+                HeartbeatUrlTimeoutSeconds = AppConfig.DefaultHeartbeatUrlTimeoutSeconds,
+                EnableHeartbeatUrlFlags = AppConfig.DefaultEnableHeartbeatUrlFlags,
+
+                PreLaunchTimeoutSeconds = AppConfig.DefaultPreLaunchTimeoutSeconds,
+                PreLaunchRetryAttempts = AppConfig.DefaultPreLaunchRetryAttempts,
+                PreLaunchIgnoreFailure = AppConfig.DefaultPreLaunchIgnoreFailure,
+
+                PreStopTimeoutSeconds = AppConfig.DefaultPreStopTimeoutSeconds,
+                PreStopLogAsError = AppConfig.DefaultPreStopLogAsError,
+
+                EnableConsoleUI = AppConfig.DefaultEnableConsoleUI,
+                EnableDebugLogs = AppConfig.DefaultEnableDebugLogs
+            };
+        }
+
+        /// <summary>
+        /// Builds a DTO with nothing but the columns the leading ungrouped block renders, so every
+        /// label is short enough for the label column to sit on its <c>MinLabelColumnWidth</c> floor.
+        /// </summary>
+        /// <param name="name">The service name.</param>
+        /// <returns>A DTO carrying only core-block columns.</returns>
+        /// <remarks>
+        /// Deliberately NOT the record an install produces - <see cref="MinimalDto"/> is that, and it
+        /// fills the grouped categories, whose indented labels push the column past the floor. This
+        /// fixture exists only so the floor itself stays observable to the alignment test; no other
+        /// test should use it, because no user has a service shaped like this.
+        /// </remarks>
+        private static ServiceDto CoreOnlyDto(string name = ServiceName)
         {
             return new ServiceDto
             {
@@ -290,7 +364,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ExecuteAsync_UnconfiguredCategory_IsOmittedEntirely()
+        public async Task ExecuteAsync_CategoryWithOnlyNullColumns_IsOmittedEntirely()
         {
             // Arrange
             GivenService(MinimalDto());
@@ -301,11 +375,145 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            // Nothing pre-launch, post-stop or failure-program is configured, so those headings must
-            // not appear at all rather than appear above a run of placeholders.
-            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PreLaunch, result.Message);
+            // A section is dropped when every one of its columns is NULL. Post-Launch, Post-Stop,
+            // Failure Program and Environment are the categories built entirely from nullable string
+            // columns, so an install that configures none of them leaves all four out.
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PostLaunch, result.Message);
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_PostStop, result.Message);
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_FailureProgram, result.Message);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_Environment, result.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_CategoryCarryingAStoredDefault_IsShownEvenWhenTheFeatureIsOff()
+        {
+            // Arrange
+            GivenService(MinimalDto());
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            // The counterpart of the test above, and the one that pins what a user actually sees.
+            // Recovery, Pre-Launch and Pre-Stop are built from non-nullable columns, so an install
+            // stores a default for each and the heading is present even with the feature switched off
+            // and no hook configured. Rendering keys on "the column is NULL", not on "the feature is
+            // enabled", which is the contract the wiki now states.
+            Assert.Contains(CliStrings.Msg_Show_Group_Recovery, result.Message);
+            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_HealthCheck));
+            Assert.Equal(
+                string.Format(CliStrings.Msg_Show_Seconds, AppConfig.DefaultHeartbeatInterval),
+                RowValue(result.Message, CliStrings.Msg_Show_Label_Heartbeat));
+
+            Assert.Contains(CliStrings.Msg_Show_Group_PreLaunch, result.Message);
+            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_IgnoreFailure));
+
+            Assert.Contains(CliStrings.Msg_Show_Group_PreStop, result.Message);
+            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_LogAsError));
+
+            // And the Account section: no username means an install stores Local System true, so the
+            // row is there rather than the section being dropped.
+            Assert.Contains(CliStrings.Msg_Show_Group_Account, result.Message);
+            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_RunAsLocalSystem));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_RecordAnInstallProduces_RendersTheDocumentedSample()
+        {
+            // Arrange
+            // The record behind the two sample outputs on the Servy-CLI wiki page: a user-account
+            // service with log rotation configured and nothing else, carrying the same stored defaults
+            // ServiceManager.InstallServiceAsync writes. This test exists so the published sample is
+            // generated output rather than a hand-drawn sketch - if the renderer, a label or a default
+            // changes, this fails and the wiki page has to be regenerated with it. The page carries one
+            // sample for both branches, and every AppConfig default it depends on is identical here.
+            var dto = MinimalDto("telegraf");
+            dto.Pid = 7312;
+            dto.DisplayName = "Telegraf Agent";
+            dto.Description = "Metrics collection agent";
+            dto.ExecutablePath = @"C:\Program Files\telegraf\telegraf.exe";
+            dto.StartupDirectory = @"C:\Program Files\telegraf";
+            dto.Parameters = "--config telegraf.conf --config-directory telegraf.d";
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = @".\telegraf-svc";
+            dto.Password = "SuperSecret123!";
+            dto.StdoutPath = @"C:\Program Files\telegraf\log\out.log";
+            dto.StderrPath = @"C:\Program Files\telegraf\log\err.log";
+            dto.EnableSizeRotation = true;
+            dto.EnableDateRotation = true;
+            dto.MaxRotations = 7;
+            dto.EnvironmentVariables = "API_TOKEN=9f3c1a; API_HOST=example.internal";
+
+            GivenService(dto, "telegraf");
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = "telegraf" };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                @"Name                    : telegraf",
+                @"Status                  : Running",
+                @"Pid                     : 7312",
+                @"Display Name            : Telegraf Agent",
+                @"Description             : Metrics collection agent",
+                @"Startup Type            : AutomaticDelayedStart",
+                @"Priority                : Normal",
+                @"Executable              : C:\Program Files\telegraf\telegraf.exe",
+                @"Startup Dir             : C:\Program Files\telegraf",
+                @"Parameters              : ********",
+                string.Empty,
+                @"Account",
+                @"  Local System          : No",
+                @"  User Account          : .\telegraf-svc",
+                @"  Password              : ********",
+                string.Empty,
+                @"Logs",
+                @"  Stdout                : C:\Program Files\telegraf\log\out.log",
+                @"  Stderr                : C:\Program Files\telegraf\log\err.log",
+                @"  Size Rotation         : Yes",
+                @"  Rotation Size         : 10 MB",
+                @"  Date Rotation         : Yes",
+                @"  Rotation Period       : Daily",
+                @"  Max Files             : 7",
+                @"  Local Time            : No",
+                string.Empty,
+                @"Timeouts",
+                @"  Start                 : 10s",
+                @"  Stop                  : 5s",
+                string.Empty,
+                @"Recovery",
+                @"  Health Check          : No",
+                @"  Heartbeat             : 30s",
+                @"  Max Failed Checks     : 3",
+                @"  Recovery              : RestartService",
+                @"  On Clean Exit         : No",
+                @"  Max Attempts          : 3",
+                @"  URL Timeout           : 10s",
+                @"  URL Flags             : No",
+                string.Empty,
+                @"Environment",
+                @"  Environment Variables : ********",
+                string.Empty,
+                @"Pre-Launch",
+                @"  Timeout               : 30s",
+                @"  Retry Attempts        : 0",
+                @"  Ignore Failure        : No",
+                string.Empty,
+                @"Pre-Stop",
+                @"  Timeout               : 5s",
+                @"  Log As Error          : No",
+                string.Empty,
+                @"Other",
+                @"  Console UI            : No",
+                @"  Debug Logs            : No"
+            });
+
+            Assert.Equal(expected, result.Message);
         }
 
         [Fact]
@@ -314,6 +522,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var dto = MinimalDto();
             dto.UserAccount = @".\svcuser";
+            dto.RunAsLocalSystem = false; // what an install stores when a username is supplied
             dto.Password = "SuperSecret123!";
             GivenService(dto);
             GivenStatus(ServiceControllerStatus.Running);
@@ -440,6 +649,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var dto = DtoWithEveryEncryptedField();
             dto.UserAccount = @".\svcuser";
+            dto.RunAsLocalSystem = false; // what an install stores when a username is supplied
             GivenService(dto);
             GivenStatus(ServiceControllerStatus.Running);
             var opts = new ShowServiceOptions { ServiceName = ServiceName, Decrypt = true };
@@ -539,7 +749,11 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_CoreBlockOnly_AlignsEveryValueInOneColumn()
         {
             // Arrange
-            GivenService(MinimalDto());
+            // CoreOnlyDto, not MinimalDto: the 16-column floor is only observable while every
+            // label is short, and a record an install produces fills the grouped categories, whose
+            // indented labels widen the column. The realistic layout is pinned by
+            // ExecuteAsync_RecordAnInstallProduces_RendersTheDocumentedSample instead.
+            GivenService(CoreOnlyDto());
             GivenStatus(ServiceControllerStatus.Running);
             var opts = new ShowServiceOptions { ServiceName = ServiceName };
 
