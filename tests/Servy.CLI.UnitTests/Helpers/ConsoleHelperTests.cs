@@ -111,17 +111,42 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers the non-redirected branch where Console.WindowWidth throws an IOException upon access.
+        /// Covers the non-redirected branch where reading Console.WindowWidth throws and the clearing
+        /// catch writes the fallback newline. The premise is environmental and the test cannot force it:
+        /// ConsoleHelper reads Console.WindowWidth, which talks to the real console handle and is not
+        /// redirected by Console.SetOut, while the window-width override seam is an int? that cannot throw.
+        /// The premise is therefore probed in the arrange step instead of being assumed.
         /// </summary>
         [Fact]
         public async Task RunWithLoadingAnimation_WhenWindowWidthThrowsIOException_ExecutesFallbackNewline()
         {
             // Arrange
+            // Probe the premise with the same exception filter the production clearing catch uses, so a
+            // host that does have a console is handled explicitly rather than running an assertion whose
+            // premise never held.
+            bool windowWidthThrows = false;
+            try
+            {
+                _ = Console.WindowWidth;
+            }
+            catch (Exception ex) when (ex is IOException || ex is ArgumentException || ex is InvalidOperationException)
+            {
+                windowWidthThrows = true;
+            }
+
+            // xunit 2.9.3 on this branch has no dynamic skip API, so the premise is asserted rather than
+            // skipped on: a console-attached host fails here naming the premise instead of failing deeper
+            // on an assertion that cannot hold.
+            Assert.True(
+                windowWidthThrows,
+                "Console.WindowWidth does not throw in this host, so the fallback newline path cannot be "
+                + "reached without a production seam.");
+
             Func<Task> dummyAction = () => Task.Delay(50);
 
             // Force output redirection to false to ensure the clear-line code path runs
             TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
-            // Ensure window width override is cleared so accessing Console.WindowWidth directly throws in unattached TTY / CI environments
+            // Leave the window-width override cleared so the production property reads the real console handle
             TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
 
             try
@@ -142,7 +167,12 @@ namespace Servy.CLI.UnitTests.Helpers
                     }
 
                     // Assert
-                    Assert.Equal(Environment.NewLine, sw.ToString().Substring(sw.ToString().LastIndexOf(Environment.NewLine, StringComparison.Ordinal)));
+                    // Neither the spinner frames nor the clearing write carries a newline, so a trailing
+                    // newline can only come from the fallback Console.WriteLine() in the clearing catch.
+                    // EndsWith reports the captured output when it is missing, where the previous
+                    // LastIndexOf/Substring pair threw ArgumentOutOfRangeException and said nothing about
+                    // the console.
+                    Assert.EndsWith(Environment.NewLine, sw.ToString());
                 }
             }
             finally
