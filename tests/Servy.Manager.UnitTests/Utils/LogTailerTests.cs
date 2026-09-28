@@ -240,6 +240,47 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task RunFromPosition_FileCreatedAfterStart_IsTailedOnceItAppears()
+        {
+            // Arrange
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                // The file does not exist yet, so the loop can only reach the missing-file wait.
+                string latePath = NewTempFilePath("logtailer_late");
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedLines) capturedLines.AddRange(lines);
+                };
+
+                var tailTask = tailer.RunFromPositionAsync(latePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+
+                // Give the loop time to take the missing-file arm at least twice before the file appears.
+                await Task.Delay(AppConfig.LogTailerFileNotFoundRetryDelayMs * 2, TestContext.Current.CancellationToken);
+                Assert.False(tailTask.IsCompleted, "The loop must keep waiting while the file does not exist.");
+
+                // Act
+                File.WriteAllText(latePath, "LATE_FILE_LINE\n");
+
+                // Assert
+                await Helper.WaitUntilAsync(
+                    () => { lock (capturedLines) return capturedLines.Count > 0; },
+                    TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds),
+                    cancellationToken: TestContext.Current.CancellationToken);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                lock (capturedLines)
+                {
+                    Assert.Contains(capturedLines, l => l.Text == "LATE_FILE_LINE");
+                }
+            }
+        }
+
+        [Fact]
         public async Task RunFromPosition_FileLockedWithIOException_TriggersIoExceptionCatchBlockAndRetries()
         {
             // Arrange
