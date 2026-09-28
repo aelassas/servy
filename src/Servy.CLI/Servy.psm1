@@ -852,8 +852,6 @@ function Set-ServyHardenedFileAcl {
     else {
         # PowerShell 2.0 fallback: Use native .NET Security objects to bypass Get-Acl wildcard expansion
         if ($IsDirectory.IsPresent) {
-            $acl = New-Object System.Security.AccessControl.DirectorySecurity
-            $acl.GetSecurityDescriptorBinaryForm() | Out-Null
             $acl = [System.IO.Directory]::GetAccessControl($Path)
         }
         else {
