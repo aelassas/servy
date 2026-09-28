@@ -266,6 +266,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result); // Should return true early
+            Assert.False(_resourceHelper.HasCopiedResources); // Nothing was written, so nothing needs re-hardening
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
         }
 
@@ -346,6 +347,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.False(result);
+            Assert.False(_resourceHelper.HasCopiedResources);
         }
 
         [Fact]
@@ -367,6 +369,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
+            Assert.True(_resourceHelper.HasCopiedResources); // A written file inherits the vault's grant and must be re-hardened
             Assert.True(File.Exists(targetPath));
             var writtenBytes = File.ReadAllBytes(targetPath);
             Assert.Equal(dummyData, writtenBytes);
@@ -458,110 +461,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.False(result); // Caught successfully
-        }
-
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_WhenResourceIsUpToDate_ReturnsTrueAndSkipsCopy()
-        {
-            // Arrange
-            string fileName = "sync_up_to_date";
-            string extension = "exe";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
-
-            // Create a file and artificially push its LastWriteTime into the future to bypass the staleness threshold
-            File.WriteAllText(targetPath, "up to date sync content");
-            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
-
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension);
-
-            // Assert
-            Assert.True(result); // Should return true early
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_WhenProcessTerminationFails_ReturnsFalse()
-        {
-            // Arrange
-            string fileName = "sync_lockedapp";
-            string extension = "exe";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
-
-            File.WriteAllText(targetPath, "existing target");
-            DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
-            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddDays(-1));
-
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(false);
-
-            var dummyResourceBytes = new byte[] { 0x05, 0x06, 0x07 };
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(dummyResourceBytes));
-
-            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-            {
-                // Act
-                bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                    _mockAssembly.Object, "Servy.Resources", fileName, extension);
-
-                // Assert
-                Assert.False(result);
-                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Once);
-            }
-        }
-
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_WhenResourceStreamNotFound_ReturnsFalse()
-        {
-            // Arrange
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns((Stream?)null); // Simulate missing resource
-
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _mockAssembly.Object, "Servy.Resources", "sync_missingapp", "exe");
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_Success_WritesFileToDisk()
-        {
-            // Arrange
-            string fileName = "syncapp";
-            string extension = "exe";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
-
-            var dummyData = new byte[] { 0x0A, 0x0B, 0x0C };
-            var memoryStream = new MemoryStream(dummyData);
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(memoryStream);
-
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension);
-
-            // Assert
-            Assert.True(result);
-            Assert.True(File.Exists(targetPath));
-            Assert.Equal(dummyData, File.ReadAllBytes(targetPath));
-            // The target file does not exist before the Act, so the lock probe short-circuits
-            // and ProcessKiller is never invoked
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public void CopyEmbeddedResourceForceSync_ThrowsException_CaughtByOuterCatch_ReturnsFalse()
-        {
-            // Arrange - Force null ref to hit the catch block
-            Assembly nullAssembly = null!;
-
-            // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
-                nullAssembly, "Servy.Resources", "crashapp", "exe");
-
-            // Assert
-            Assert.False(result);
         }
 
         [Fact]

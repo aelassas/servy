@@ -149,14 +149,7 @@ function Copy-CommonArtifacts {
         [Parameter(Mandatory=$true)][string]$DestFolder
     )
 
-    # 1. Copy scripts
-    $permissionsScript = Join-Path $ScriptDir "Set-ServyExePermissions.ps1"
-    if (-not (Test-Path $permissionsScript)) {
-        throw "Required setup script missing: $permissionsScript"
-    }
-    Copy-Item -Path $permissionsScript -Destination $DestFolder -Force
-
-    # 2. Include Task Scheduler hooks
+    # 1. Include Task Scheduler hooks
     $taskSchdSource = Join-Path $ScriptDir "taskschd"
     if (Test-Path $taskSchdSource) {
         $taskSchdDest = Join-Path $DestFolder "taskschd"
@@ -171,7 +164,7 @@ function Copy-CommonArtifacts {
         }
     }
 
-    # 3. Include PowerShell Module and Dump/Restore artifacts with Test-Path guards
+    # 2. Include PowerShell Module and Dump/Restore artifacts with Test-Path guards
     $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1", "Servy-Dump.ps1", "Servy-Restore.ps1")
     foreach ($art in $cliArtifacts) {
         $sourcePath = Join-Path $CliDir $art

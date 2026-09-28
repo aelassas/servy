@@ -547,6 +547,52 @@ namespace Servy.Core.Native
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetFileInformationByHandle(SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
 
+        /// <summary>
+        /// Requests all entries of <c>NetLocalGroupGetMembers</c> in one buffer.
+        /// </summary>
+        public const int MAX_PREFERRED_LENGTH = -1;
+
+        /// <summary>
+        /// One member of a local group, as returned by <c>NetLocalGroupGetMembers</c> at information level 1.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct LOCALGROUP_MEMBERS_INFO_1
+        {
+            /// <summary>Pointer to the member's security identifier.</summary>
+            public IntPtr lgrmi1_sid;
+
+            /// <summary>The account type of the member (a <c>SID_NAME_USE</c> value).</summary>
+            public int lgrmi1_sidusage;
+
+            /// <summary>Pointer to the member's account name.</summary>
+            public IntPtr lgrmi1_name;
+        }
+
+        /// <summary><c>SID_NAME_USE</c>: a group account.</summary>
+        public const int SidTypeGroup = 2;
+
+        /// <summary><c>SID_NAME_USE</c>: an alias (local group) account.</summary>
+        public const int SidTypeAlias = 4;
+
+        /// <summary><c>SID_NAME_USE</c>: a well-known group account.</summary>
+        public const int SidTypeWellKnownGroup = 5;
+
+        /// <summary>Retrieves the members of a local group.</summary>
+        [DllImport("netapi32.dll", CharSet = CharSet.Unicode)]
+        public static extern int NetLocalGroupGetMembers(
+            string? servername,
+            string localgroupname,
+            int level,
+            out IntPtr bufptr,
+            int prefmaxlen,
+            out int entriesread,
+            out int totalentries,
+            IntPtr resumehandle);
+
+        /// <summary>Frees a buffer allocated by a <c>Net*</c> function.</summary>
+        [DllImport("netapi32.dll")]
+        public static extern int NetApiBufferFree(IntPtr buffer);
+
         /// <summary>Retrieves a Volume GUID path for a volume mount point.</summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool GetVolumeNameForVolumeMountPoint(

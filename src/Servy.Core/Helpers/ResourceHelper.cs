@@ -27,6 +27,15 @@ namespace Servy.Core.Helpers
 #endif
 
         /// <summary>
+        /// Gets whether this instance has written at least one embedded resource to disk.
+        /// </summary>
+        /// <remarks>
+        /// A file newly written to the vault inherits the vault's Modify grant, so a caller that sees this flag set
+        /// re-applies the executable permission hardening for the service accounts.
+        /// </remarks>
+        public bool HasCopiedResources { get; private set; }
+
+        /// <summary>
         /// Initializes a new instance of the ResourceHelper class using the specified service helper and process killer.
         /// </summary>
         /// <param name="serviceHelper">The service helper used to access and manage service states. Cannot be null.</param>
@@ -116,6 +125,7 @@ namespace Servy.Core.Helpers
                         RestoreFileSecurity(targetPath, existingAcl);
 
                         copyDone = true; // File write succeeded natively within the execution path
+                        HasCopiedResources = true;
                     }
                     finally
                     {
@@ -161,71 +171,6 @@ namespace Servy.Core.Helpers
             catch (Exception ex)
             {
                 Logger.Error($"Failed to copy embedded resource '{fileName}'.", ex);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Copies an embedded resource from the assembly to disk synchronously.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// <b>DANGER:</b> Unlike its asynchronous counterpart, this method forcefully terminates
-        /// any processes holding a lock on the target file WITHOUT performing a graceful service
-        /// shutdown or restart. It completely circumvents the standard service lifecycle.
-        /// </para>
-        /// <para>
-        /// This should <b>only</b> be called by external bootstrapping utilities or during
-        /// installation phases when it is guaranteed that no Servy services are actively running.
-        /// </para>
-        /// </remarks>
-        /// <param name="assembly">The assembly containing the resource.</param>
-        /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
-        /// <param name="fileName">The filename of the resource without extension.</param>
-        /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
-        /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public bool CopyEmbeddedResourceForceSync(
-            Assembly assembly,
-            string resourceNamespace,
-            string fileName,
-            string extension)
-        {
-            try
-            {
-                if (!TryPrepareExtraction(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
-                    return true;
-
-                // Capture pre-existing explicit ACLs BEFORE killing processes or executing atomic writes
-                FileSecurity? existingAcl = GetExistingFileSecurity(targetPath);
-
-                // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
-                Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
-                if (resourceStream == null)
-                {
-                    Logger.Error($"Embedded resource not found: {resourceName}");
-                    return false;
-                }
-
-                using (resourceStream)
-                {
-                    // Log a warning so operators auditing the logs know a brute-force termination might occur
-                    Logger.Warn($"Executing synchronous force-copy for '{resourceName}'. Any processes locking this file will be killed without graceful shutdown.");
-
-                    if (!TerminateBlockingProcesses(targetPath))
-                        return false;
-
-                    Helper.WriteFileAtomic(targetPath, resourceStream.CopyTo);
-
-                    // Restore pre-existing ACLs on the newly written file
-                    RestoreFileSecurity(targetPath, existingAcl);
-                }
-
-                Logger.Info($"Successfully forcefully copied embedded resource '{resourceName}' to '{targetPath}'.");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to forcefully copy embedded resource '{fileName}'.", ex);
                 return false;
             }
         }
