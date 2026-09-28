@@ -1052,7 +1052,8 @@ namespace Servy.Service
             int cap = AppConfig.ConditionalResetMaxThresholdSeconds;
 
             // If the detection window itself already exceeds the cap, the cap is meaningless -
-            // the contract is broken at configuration time and should be logged once.
+            // the contract is broken at configuration time. The warning repeats on every evaluation that
+            // gets this far (a non-zero counter, still inside the current session), not once per service.
             if (detectionWindowSeconds > cap)
             {
                 _logger?.Warn(
