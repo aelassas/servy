@@ -994,7 +994,8 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// The maximum time, in milliseconds, the service will wait for a tracked hook process tree
-        /// (pre-launch, post-launch, or pre-stop) to exit after a kill signal has been issued.
+        /// (a fire-and-forget pre-launch hook or the post-launch hook) to exit after a kill signal
+        /// has been issued.
         /// </summary>
         /// <remarks>
         /// This timeout prevents the service teardown sequence from hanging indefinitely if an auxiliary
