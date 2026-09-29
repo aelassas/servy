@@ -1,7 +1,6 @@
 using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
-using Servy.CLI.Resources;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -158,22 +157,50 @@ namespace Servy.CLI.UnitTests.Commands
                 .Returns(status);
         }
 
-        /// <summary>Returns the rendered value of a labelled row, with its padding removed.</summary>
+        /// <summary>Returns the rendered value of a labelled row across the entire report.</summary>
         /// <param name="report">The rendered report.</param>
         /// <param name="label">The row label to find.</param>
         /// <returns>The trimmed value, or <c>null</c> when the row is absent.</returns>
-        private static string? RowValue(string? report, string label)
+        private static string? RowValue(string? report, string label) => SectionRowValue(report, null, label);
+
+        /// <summary>Returns the rendered value of a labelled row scoped to a specific section title.</summary>
+        /// <param name="report">The rendered report.</param>
+        /// <param name="sectionTitle">The section heading to scope the lookup to, or <c>null</c> for global.</param>
+        /// <param name="label">The row label to find.</param>
+        /// <returns>The trimmed value, or <c>null</c> when the row is absent.</returns>
+        private static string? SectionRowValue(string? report, string? sectionTitle, string label)
         {
-            var line = (report ?? string.Empty)
-                .Split('\n')
-                .Select(l => l.TrimEnd('\r'))
-                .FirstOrDefault(l => l.TrimStart().StartsWith(label + " ", StringComparison.Ordinal)
-                                  || l.TrimStart().StartsWith(label + ":", StringComparison.Ordinal));
+            if (string.IsNullOrEmpty(report)) return null;
 
-            if (line == null) return null;
+            var lines = report.Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
+            bool inSection = sectionTitle == null;
 
-            var idx = line.IndexOf(": ", StringComparison.Ordinal);
-            return idx < 0 ? string.Empty : line.Substring(idx + 2);
+            foreach (var line in lines)
+            {
+                if (sectionTitle != null && line.Equals(sectionTitle, StringComparison.Ordinal))
+                {
+                    inSection = true;
+                    continue;
+                }
+
+                if (sectionTitle != null && inSection && line.Length > 0 && !line.StartsWith("  ", StringComparison.Ordinal))
+                {
+                    // Hit another top-level section heading
+                    break;
+                }
+
+                if (inSection)
+                {
+                    var trimmed = line.TrimStart();
+                    if (trimmed.StartsWith(label + " ", StringComparison.Ordinal) || trimmed.StartsWith(label + ":", StringComparison.Ordinal))
+                    {
+                        var idx = line.IndexOf(": ", StringComparison.Ordinal);
+                        return idx < 0 ? string.Empty : line.Substring(idx + 2);
+                    }
+                }
+            }
+
+            return null;
         }
 
         #endregion
@@ -278,6 +305,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var dto = MinimalDto();
+            dto.EnableHealthMonitoring = true;
             dto.RecoveryAction = (int)RecoveryAction.RestartService;
             GivenService(dto);
             GivenStatus(ServiceControllerStatus.Running);
@@ -290,7 +318,7 @@ namespace Servy.CLI.UnitTests.Commands
             // ServiceStartType is backed by uint, so this also pins the underlying-type conversion.
             Assert.Equal(nameof(ServiceStartType.AutomaticDelayedStart), RowValue(result.Message, CliStrings.Msg_Show_Label_StartupType));
             Assert.Equal(nameof(ProcessPriority.Normal), RowValue(result.Message, CliStrings.Msg_Show_Label_Priority));
-            Assert.Equal(nameof(RecoveryAction.RestartService), RowValue(result.Message, CliStrings.Msg_Show_Label_Recovery));
+            Assert.Equal(nameof(RecoveryAction.RestartService), SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Recovery));
         }
 
         [Fact]
@@ -347,9 +375,9 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_Logs, result.Message);
-            Assert.Equal(@"C:\logs\out.log", RowValue(result.Message, CliStrings.Msg_Show_Label_Stdout));
-            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_SizeRotation));
-            Assert.Equal(string.Format(CliStrings.Msg_Show_Megabytes, 10), RowValue(result.Message, CliStrings.Msg_Show_Label_RotationSize));
+            Assert.Equal(@"C:\logs\out.log", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stdout));
+            Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_SizeRotation));
+            Assert.Equal(string.Format(CliStrings.Msg_Show_Megabytes, 10), SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationSize));
         }
 
         [Fact]
@@ -364,20 +392,28 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            // A section is dropped when every one of its columns is NULL. Post-Launch, Post-Stop,
-            // Failure Program and Environment are the categories built entirely from nullable string
-            // columns, so an install that configures none of them leaves all four out.
-            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PostLaunch, result.Message);
-            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PostStop, result.Message);
-            Assert.DoesNotContain(CliStrings.Msg_Show_Group_FailureProgram, result.Message);
-            Assert.DoesNotContain(CliStrings.Msg_Show_Group_Environment, result.Message);
+            var lines = (result.Message ?? string.Empty).Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+
+            // A section is dropped when every one of its columns is NULL or explicitly disabled.
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_Logs, lines);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_Recovery, lines);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PreLaunch, lines);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PostLaunch, lines);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PreStop, lines);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_PostStop, lines);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_FailureProgram, lines);
+            Assert.DoesNotContain(CliStrings.Msg_Show_Group_Environment, lines);
         }
 
         [Fact]
-        public async Task ExecuteAsync_CategoryCarryingAStoredDefault_IsShownEvenWhenTheFeatureIsOff()
+        public async Task ExecuteAsync_CategoryCarryingAStoredDefault_IsShownWhenFeatureIsActive()
         {
             // Arrange
-            GivenService(MinimalDto());
+            var dto = MinimalDto();
+            dto.EnableHealthMonitoring = true;
+            dto.PreLaunchExecutablePath = @"C:\apps\prelaunch.exe";
+            dto.PreStopExecutablePath = @"C:\apps\prestop.exe";
+            GivenService(dto);
             GivenStatus(ServiceControllerStatus.Running);
             var opts = new ShowServiceOptions { ServiceName = ServiceName };
 
@@ -385,27 +421,202 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            // The counterpart of the test above, and the one that pins what a user actually sees.
-            // Recovery, Pre-Launch and Pre-Stop are built from non-nullable columns, so an install
-            // stores a default for each and the heading is present even with the feature switched off
-            // and no hook configured. Rendering keys on "the column is NULL", not on "the feature is
-            // enabled", which is the contract the wiki now states.
             Assert.Contains(CliStrings.Msg_Show_Group_Recovery, result.Message);
-            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_HealthCheck));
+            Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HealthCheck));
             Assert.Equal(
                 string.Format(CliStrings.Msg_Show_Seconds, AppConfig.DefaultHeartbeatInterval),
-                RowValue(result.Message, CliStrings.Msg_Show_Label_Heartbeat));
+                SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Heartbeat));
 
             Assert.Contains(CliStrings.Msg_Show_Group_PreLaunch, result.Message);
-            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_IgnoreFailure));
+            Assert.Equal(CliStrings.Msg_Show_No, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_IgnoreFailure));
 
             Assert.Contains(CliStrings.Msg_Show_Group_PreStop, result.Message);
-            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_LogAsError));
+            Assert.Equal(CliStrings.Msg_Show_No, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_LogAsError));
 
             // And the Account section: no username means an install stores Local System true, so the
             // row is there rather than the section being dropped.
             Assert.Contains(CliStrings.Msg_Show_Group_Account, result.Message);
-            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_RunAsLocalSystem));
+            Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_RunAsLocalSystem));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_LogsSection_ShowsDashForEmptyValuesWhenActive()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.StdoutPath = @"C:\logs\out.log";
+            dto.StderrPath = null;
+            dto.ActiveStdoutPath = null;
+            dto.ActiveStderrPath = null;
+            dto.EnableSizeRotation = null;
+            dto.RotationSize = null;
+            dto.EnableDateRotation = null;
+            dto.DateRotationType = null;
+            dto.MaxRotations = null;
+            dto.UseLocalTimeForRotation = null;
+
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains(CliStrings.Msg_Show_Group_Logs, result.Message);
+            Assert.Equal(@"C:\logs\out.log", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stdout));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stderr));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_ActiveStdout));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_ActiveStderr));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_SizeRotation));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationSize));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_DateRotation));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationPeriod));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_MaxFiles));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_LocalTimeRotation));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_RecoverySection_ShowsDashForEmptyValuesWhenActive()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.EnableHealthMonitoring = true;
+            dto.HeartbeatInterval = null;
+            dto.MaxFailedChecks = null;
+            dto.RecoveryAction = null;
+            dto.RecoveryOnCleanExit = null;
+            dto.MaxRestartAttempts = null;
+            dto.HeartbeatUrl = null;
+            dto.HeartbeatUrlTimeoutSeconds = null;
+            dto.EnableHeartbeatUrlFlags = null;
+
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains(CliStrings.Msg_Show_Group_Recovery, result.Message);
+            Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HealthCheck));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Heartbeat));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_MaxFailedChecks));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Recovery));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_OnCleanExit));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_MaxAttempts));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HeartbeatUrl));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_UrlTimeout));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_UrlFlags));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_PreLaunchSection_ShowsDashForEmptyValuesWhenActive()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.PreLaunchExecutablePath = @"C:\apps\prelaunch.exe";
+            dto.PreLaunchStartupDirectory = null;
+            dto.PreLaunchParameters = null;
+            dto.PreLaunchEnvironmentVariables = null;
+            dto.PreLaunchStdoutPath = null;
+            dto.PreLaunchStderrPath = null;
+            dto.PreLaunchTimeoutSeconds = null;
+            dto.PreLaunchRetryAttempts = null;
+            dto.PreLaunchIgnoreFailure = null;
+
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains(CliStrings.Msg_Show_Group_PreLaunch, result.Message);
+            Assert.Equal(@"C:\apps\prelaunch.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Executable));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_EnvironmentVariables));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Stdout));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Stderr));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Timeout));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_RetryAttempts));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_IgnoreFailure));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_PostLaunchSection_ShowsDashForEmptyValuesWhenActive()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.PostLaunchExecutablePath = @"C:\apps\postlaunch.exe";
+            dto.PostLaunchStartupDirectory = null;
+            dto.PostLaunchParameters = null;
+
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains(CliStrings.Msg_Show_Group_PostLaunch, result.Message);
+            Assert.Equal(@"C:\apps\postlaunch.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_Executable));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_Parameters));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_PreStopSection_ShowsDashForEmptyValuesWhenActive()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.PreStopExecutablePath = @"C:\apps\prestop.exe";
+            dto.PreStopStartupDirectory = null;
+            dto.PreStopParameters = null;
+            dto.PreStopTimeoutSeconds = null;
+            dto.PreStopLogAsError = null;
+
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains(CliStrings.Msg_Show_Group_PreStop, result.Message);
+            Assert.Equal(@"C:\apps\prestop.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Executable));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Timeout));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_LogAsError));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_PostStopSection_ShowsDashForEmptyValuesWhenActive()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.PostStopExecutablePath = @"C:\apps\poststop.exe";
+            dto.PostStopStartupDirectory = null;
+            dto.PostStopParameters = null;
+
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains(CliStrings.Msg_Show_Group_PostStop, result.Message);
+            Assert.Equal(@"C:\apps\poststop.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_Executable));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_Parameters));
         }
 
         [Fact]
@@ -463,6 +674,8 @@ namespace Servy.CLI.UnitTests.Commands
                 @"Logs",
                 @"  Stdout                : C:\Program Files\telegraf\log\out.log",
                 @"  Stderr                : C:\Program Files\telegraf\log\err.log",
+                @"  Active Stdout         : -",
+                @"  Active Stderr         : -",
                 @"  Size Rotation         : Yes",
                 @"  Rotation Size         : 10 MB",
                 @"  Date Rotation         : Yes",
@@ -474,27 +687,8 @@ namespace Servy.CLI.UnitTests.Commands
                 @"  Start                 : 10s",
                 @"  Stop                  : 5s",
                 string.Empty,
-                @"Recovery",
-                @"  Health Check          : No",
-                @"  Heartbeat             : 30s",
-                @"  Max Failed Checks     : 3",
-                @"  Recovery              : RestartService",
-                @"  On Clean Exit         : No",
-                @"  Max Attempts          : 3",
-                @"  URL Timeout           : 10s",
-                @"  URL Flags             : No",
-                string.Empty,
                 @"Environment",
                 @"  Environment Variables : ********",
-                string.Empty,
-                @"Pre-Launch",
-                @"  Timeout               : 30s",
-                @"  Retry Attempts        : 0",
-                @"  Ignore Failure        : No",
-                string.Empty,
-                @"Pre-Stop",
-                @"  Timeout               : 5s",
-                @"  Log As Error          : No",
                 string.Empty,
                 @"Other",
                 @"  Console UI            : No",
@@ -522,8 +716,8 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             // The account is shown; the credential never is. This is the contract the service already
             // documents for debug logging - sensitive data is never shown by the CLI or the module.
-            Assert.Equal(@".\svcuser", RowValue(result.Message, CliStrings.Msg_Show_Label_UserAccount));
-            Assert.Equal(CliStrings.Msg_Show_Masked, RowValue(result.Message, CliStrings.Msg_Show_Label_Password));
+            Assert.Equal(@".\svcuser", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_UserAccount));
+            Assert.Equal(CliStrings.Msg_Show_Masked, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_Password));
             Assert.DoesNotContain("SuperSecret123!", result.Message);
         }
 
@@ -647,7 +841,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             // --decrypt reveals the other eight; the password is the one column it must not unmask.
-            Assert.Equal(CliStrings.Msg_Show_Masked, RowValue(result.Message, CliStrings.Msg_Show_Label_Password));
+            Assert.Equal(CliStrings.Msg_Show_Masked, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_Password));
             Assert.DoesNotContain("SuperSecret123!", result.Message);
         }
 
@@ -666,7 +860,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_Environment, result.Message);
-            Assert.Null(RowValue(result.Message, CliStrings.Msg_Show_Label_Password));
+            Assert.Null(SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_Password));
         }
 
         [Fact]
@@ -767,6 +961,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Two "feature" flags and two predicates, which an earlier version rendered with two
             // different word pairs on the same screen.
             var dto = MinimalDto();
+            dto.StdoutPath = @"C:\logs\stdout.log";
             dto.EnableSizeRotation = true;
             dto.EnableConsoleUI = false;
             dto.UseLocalTimeForRotation = true;
@@ -780,10 +975,10 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_SizeRotation));
-            Assert.Equal(CliStrings.Msg_Show_Yes, RowValue(result.Message, CliStrings.Msg_Show_Label_LocalTimeRotation));
-            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_ConsoleUI));
-            Assert.Equal(CliStrings.Msg_Show_No, RowValue(result.Message, CliStrings.Msg_Show_Label_LogAsError));
+            Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_SizeRotation));
+            Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_LocalTimeRotation));
+            Assert.Equal(CliStrings.Msg_Show_No, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Other, CliStrings.Msg_Show_Label_ConsoleUI));
+            Assert.Equal(CliStrings.Msg_Show_No, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_LogAsError));
             Assert.DoesNotContain("Enabled", result.Message);
             Assert.DoesNotContain("Disabled", result.Message);
         }

@@ -185,35 +185,41 @@ namespace Servy.CLI.Commands
             account.IfSet(Strings.Msg_Show_Label_Password, Secret(dto.Password, decrypted: false));
             sections.Add(account);
 
-            var logs = new Section(Strings.Msg_Show_Group_Logs);
-            logs.IfSet(Strings.Msg_Show_Label_Stdout, dto.StdoutPath);
-            logs.IfSet(Strings.Msg_Show_Label_Stderr, dto.StderrPath);
-            logs.IfSet(Strings.Msg_Show_Label_ActiveStdout, dto.ActiveStdoutPath);
-            logs.IfSet(Strings.Msg_Show_Label_ActiveStderr, dto.ActiveStderrPath);
-            logs.IfSet(Strings.Msg_Show_Label_SizeRotation, FormatBoolean(dto.EnableSizeRotation));
-            logs.IfSet(Strings.Msg_Show_Label_RotationSize, FormatMegabytes(dto.RotationSize));
-            logs.IfSet(Strings.Msg_Show_Label_DateRotation, FormatBoolean(dto.EnableDateRotation));
-            logs.IfSet(Strings.Msg_Show_Label_RotationPeriod, FormatEnum(typeof(DateRotationType), dto.DateRotationType));
-            logs.IfSet(Strings.Msg_Show_Label_MaxFiles, dto.MaxRotations?.ToString(CultureInfo.InvariantCulture));
-            logs.IfSet(Strings.Msg_Show_Label_LocalTimeRotation, FormatBoolean(dto.UseLocalTimeForRotation));
-            sections.Add(logs);
+            if (!string.IsNullOrWhiteSpace(dto.StdoutPath) || !string.IsNullOrWhiteSpace(dto.StderrPath))
+            {
+                var logs = new Section(Strings.Msg_Show_Group_Logs);
+                logs.Always(Strings.Msg_Show_Label_Stdout, dto.StdoutPath, "-");
+                logs.Always(Strings.Msg_Show_Label_Stderr, dto.StderrPath, "-");
+                logs.Always(Strings.Msg_Show_Label_ActiveStdout, dto.ActiveStdoutPath, "-");
+                logs.Always(Strings.Msg_Show_Label_ActiveStderr, dto.ActiveStderrPath, "-");
+                logs.Always(Strings.Msg_Show_Label_SizeRotation, FormatBoolean(dto.EnableSizeRotation), "-");
+                logs.Always(Strings.Msg_Show_Label_RotationSize, FormatMegabytes(dto.RotationSize), "-");
+                logs.Always(Strings.Msg_Show_Label_DateRotation, FormatBoolean(dto.EnableDateRotation), "-");
+                logs.Always(Strings.Msg_Show_Label_RotationPeriod, FormatEnum(typeof(DateRotationType), dto.DateRotationType), "-");
+                logs.Always(Strings.Msg_Show_Label_MaxFiles, dto.MaxRotations?.ToString(CultureInfo.InvariantCulture), "-");
+                logs.Always(Strings.Msg_Show_Label_LocalTimeRotation, FormatBoolean(dto.UseLocalTimeForRotation), "-");
+                sections.Add(logs);
+            }
 
             var timeouts = new Section(Strings.Msg_Show_Group_Timeouts);
             timeouts.IfSet(Strings.Msg_Show_Label_Start, FormatSeconds(dto.StartTimeout));
             timeouts.IfSet(Strings.Msg_Show_Label_Stop, FormatSeconds(dto.StopTimeout));
             sections.Add(timeouts);
 
-            var recovery = new Section(Strings.Msg_Show_Group_Recovery);
-            recovery.IfSet(Strings.Msg_Show_Label_HealthCheck, FormatBoolean(dto.EnableHealthMonitoring));
-            recovery.IfSet(Strings.Msg_Show_Label_Heartbeat, FormatSeconds(dto.HeartbeatInterval));
-            recovery.IfSet(Strings.Msg_Show_Label_MaxFailedChecks, dto.MaxFailedChecks?.ToString(CultureInfo.InvariantCulture));
-            recovery.IfSet(Strings.Msg_Show_Label_Recovery, FormatEnum(typeof(RecoveryAction), dto.RecoveryAction));
-            recovery.IfSet(Strings.Msg_Show_Label_OnCleanExit, FormatBoolean(dto.RecoveryOnCleanExit));
-            recovery.IfSet(Strings.Msg_Show_Label_MaxAttempts, dto.MaxRestartAttempts?.ToString(CultureInfo.InvariantCulture));
-            recovery.IfSet(Strings.Msg_Show_Label_HeartbeatUrl, dto.HeartbeatUrl);
-            recovery.IfSet(Strings.Msg_Show_Label_UrlTimeout, FormatSeconds(dto.HeartbeatUrlTimeoutSeconds));
-            recovery.IfSet(Strings.Msg_Show_Label_UrlFlags, FormatBoolean(dto.EnableHeartbeatUrlFlags));
-            sections.Add(recovery);
+            if (dto.EnableHealthMonitoring == true)
+            {
+                var recovery = new Section(Strings.Msg_Show_Group_Recovery);
+                recovery.Always(Strings.Msg_Show_Label_HealthCheck, FormatBoolean(dto.EnableHealthMonitoring), "-");
+                recovery.Always(Strings.Msg_Show_Label_Heartbeat, FormatSeconds(dto.HeartbeatInterval), "-");
+                recovery.Always(Strings.Msg_Show_Label_MaxFailedChecks, dto.MaxFailedChecks?.ToString(CultureInfo.InvariantCulture), "-");
+                recovery.Always(Strings.Msg_Show_Label_Recovery, FormatEnum(typeof(RecoveryAction), dto.RecoveryAction), "-");
+                recovery.Always(Strings.Msg_Show_Label_OnCleanExit, FormatBoolean(dto.RecoveryOnCleanExit), "-");
+                recovery.Always(Strings.Msg_Show_Label_MaxAttempts, dto.MaxRestartAttempts?.ToString(CultureInfo.InvariantCulture), "-");
+                recovery.Always(Strings.Msg_Show_Label_HeartbeatUrl, dto.HeartbeatUrl, "-");
+                recovery.Always(Strings.Msg_Show_Label_UrlTimeout, FormatSeconds(dto.HeartbeatUrlTimeoutSeconds), "-");
+                recovery.Always(Strings.Msg_Show_Label_UrlFlags, FormatBoolean(dto.EnableHeartbeatUrlFlags), "-");
+                sections.Add(recovery);
+            }
 
             var failure = new Section(Strings.Msg_Show_Group_FailureProgram);
             failure.IfSet(Strings.Msg_Show_Label_Executable, dto.FailureProgramPath);
@@ -226,37 +232,49 @@ namespace Servy.CLI.Commands
             environment.IfSet(Strings.Msg_Show_Label_Dependencies, dto.ServiceDependencies);
             sections.Add(environment);
 
-            var preLaunch = new Section(Strings.Msg_Show_Group_PreLaunch);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Executable, dto.PreLaunchExecutablePath);
-            preLaunch.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PreLaunchStartupDirectory);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PreLaunchParameters, decrypted));
-            preLaunch.IfSet(Strings.Msg_Show_Label_EnvironmentVariables, Secret(dto.PreLaunchEnvironmentVariables, decrypted));
-            preLaunch.IfSet(Strings.Msg_Show_Label_Stdout, dto.PreLaunchStdoutPath);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Stderr, dto.PreLaunchStderrPath);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreLaunchTimeoutSeconds));
-            preLaunch.IfSet(Strings.Msg_Show_Label_RetryAttempts, dto.PreLaunchRetryAttempts?.ToString(CultureInfo.InvariantCulture));
-            preLaunch.IfSet(Strings.Msg_Show_Label_IgnoreFailure, FormatBoolean(dto.PreLaunchIgnoreFailure));
-            sections.Add(preLaunch);
+            if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath))
+            {
+                var preLaunch = new Section(Strings.Msg_Show_Group_PreLaunch);
+                preLaunch.Always(Strings.Msg_Show_Label_Executable, dto.PreLaunchExecutablePath, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_StartupDir, dto.PreLaunchStartupDirectory, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PreLaunchParameters, decrypted), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_EnvironmentVariables, Secret(dto.PreLaunchEnvironmentVariables, decrypted), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Stdout, dto.PreLaunchStdoutPath, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Stderr, dto.PreLaunchStderrPath, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreLaunchTimeoutSeconds), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_RetryAttempts, dto.PreLaunchRetryAttempts?.ToString(CultureInfo.InvariantCulture), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_IgnoreFailure, FormatBoolean(dto.PreLaunchIgnoreFailure), "-");
+                sections.Add(preLaunch);
+            }
 
-            var postLaunch = new Section(Strings.Msg_Show_Group_PostLaunch);
-            postLaunch.IfSet(Strings.Msg_Show_Label_Executable, dto.PostLaunchExecutablePath);
-            postLaunch.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PostLaunchStartupDirectory);
-            postLaunch.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PostLaunchParameters, decrypted));
-            sections.Add(postLaunch);
+            if (!string.IsNullOrWhiteSpace(dto.PostLaunchExecutablePath))
+            {
+                var postLaunch = new Section(Strings.Msg_Show_Group_PostLaunch);
+                postLaunch.Always(Strings.Msg_Show_Label_Executable, dto.PostLaunchExecutablePath, "-");
+                postLaunch.Always(Strings.Msg_Show_Label_StartupDir, dto.PostLaunchStartupDirectory, "-");
+                postLaunch.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PostLaunchParameters, decrypted), "-");
+                sections.Add(postLaunch);
+            }
 
-            var preStop = new Section(Strings.Msg_Show_Group_PreStop);
-            preStop.IfSet(Strings.Msg_Show_Label_Executable, dto.PreStopExecutablePath);
-            preStop.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PreStopStartupDirectory);
-            preStop.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PreStopParameters, decrypted));
-            preStop.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreStopTimeoutSeconds));
-            preStop.IfSet(Strings.Msg_Show_Label_LogAsError, FormatBoolean(dto.PreStopLogAsError));
-            sections.Add(preStop);
+            if (!string.IsNullOrWhiteSpace(dto.PreStopExecutablePath))
+            {
+                var preStop = new Section(Strings.Msg_Show_Group_PreStop);
+                preStop.Always(Strings.Msg_Show_Label_Executable, dto.PreStopExecutablePath, "-");
+                preStop.Always(Strings.Msg_Show_Label_StartupDir, dto.PreStopStartupDirectory, "-");
+                preStop.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PreStopParameters, decrypted), "-");
+                preStop.Always(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreStopTimeoutSeconds), "-");
+                preStop.Always(Strings.Msg_Show_Label_LogAsError, FormatBoolean(dto.PreStopLogAsError), "-");
+                sections.Add(preStop);
+            }
 
-            var postStop = new Section(Strings.Msg_Show_Group_PostStop);
-            postStop.IfSet(Strings.Msg_Show_Label_Executable, dto.PostStopExecutablePath);
-            postStop.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PostStopStartupDirectory);
-            postStop.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PostStopParameters, decrypted));
-            sections.Add(postStop);
+            if (!string.IsNullOrWhiteSpace(dto.PostStopExecutablePath))
+            {
+                var postStop = new Section(Strings.Msg_Show_Group_PostStop);
+                postStop.Always(Strings.Msg_Show_Label_Executable, dto.PostStopExecutablePath, "-");
+                postStop.Always(Strings.Msg_Show_Label_StartupDir, dto.PostStopStartupDirectory, "-");
+                postStop.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PostStopParameters, decrypted), "-");
+                sections.Add(postStop);
+            }
 
             var other = new Section(Strings.Msg_Show_Group_Other);
             other.IfSet(Strings.Msg_Show_Label_ConsoleUI, FormatBoolean(dto.EnableConsoleUI));
@@ -544,8 +562,9 @@ namespace Servy.CLI.Commands
             /// </summary>
             /// <param name="label">The row label.</param>
             /// <param name="value">The value to render.</param>
-            public void Always(string label, string? value) =>
-                Rows.Add(new DetailRow(Prefix(label), Display(value, Strings.Msg_Show_ValueNotSet)));
+            /// <param name="notSet">The placeholder string to render when the value is blank.</param>
+            public void Always(string label, string? value, string? notSet = null) =>
+                Rows.Add(new DetailRow(Prefix(label), Display(value, notSet ?? Strings.Msg_Show_ValueNotSet)));
 
             /// <summary>
             /// Adds a row only when the value is present, so an unconfigured field takes no line.
