@@ -119,7 +119,7 @@ namespace Servy.Core.UnitTests.Services
         public void Deserialize_WellFormedXmlWithUnconvertibleValue_ReturnsNull()
         {
             // Arrange: FormatException (not XmlException) path: no line info available,
-            // exercises the generic error-log branch of ServiceDtoSerializer.Deserialize.
+            // so FormatLineInfo returns string.Empty and the log entry carries no coordinates.
             string xml = "<ServiceDto><Name>S</Name><StartTimeout>abc</StartTimeout></ServiceDto>";
 
             // Assert
