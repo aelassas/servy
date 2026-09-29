@@ -56,7 +56,7 @@ namespace Servy.CLI.UnitTests.Commands
         /// The fixture used to leave every flag and timeout NULL, which no install produces, so tests
         /// built on it asserted omissions a user never sees: <c>ServiceManager.InstallServiceAsync</c>
         /// maps each of these from a non-nullable <c>InstallServiceOptions</c> member that carries an
-        /// <c>AppConfig</c> default, so the Recovery, Pre-Launch and Pre-Stop categories are always
+        /// <c>AppConfig</c> default, so the Account, Timeouts and Other categories are always
         /// populated for a service Servy created. The defaults are referenced rather than copied, so a
         /// change to one moves the fixture with it - and fails the sample test below, which is the
         /// signal that the documented output needs regenerating too.
@@ -112,8 +112,9 @@ namespace Servy.CLI.UnitTests.Commands
         /// <param name="name">The service name.</param>
         /// <returns>A DTO carrying only core-block columns.</returns>
         /// <remarks>
-        /// Deliberately NOT the record an install produces - <see cref="MinimalDto"/> is that, and it
-        /// fills the grouped categories, whose indented labels push the column past the floor. This
+        /// Deliberately NOT the record an install produces - <see cref="MinimalDto"/> is that. Its
+        /// widest label today (the indented Local System row) happens to leave the column on the floor
+        /// too, but that changes whenever an always-rendered category gains a longer label. This
         /// fixture exists only so the floor itself stays observable to the alignment test; no other
         /// test should use it, because no user has a service shaped like this.
         /// </remarks>
@@ -932,8 +933,8 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             // CoreOnlyDto, not MinimalDto: the 16-column floor is only observable while every
-            // label is short, and a record an install produces fills the grouped categories, whose
-            // indented labels widen the column. The realistic layout is pinned by
+            // label is short, and the grouped categories a record an install produces renders can
+            // gain a longer indented label at any time. The realistic layout is pinned by
             // ExecuteAsync_RecordAnInstallProduces_RendersTheDocumentedSample instead.
             GivenService(CoreOnlyDto());
             GivenStatus(ServiceControllerStatus.Running);
