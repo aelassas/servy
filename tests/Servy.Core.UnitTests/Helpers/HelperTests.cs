@@ -963,6 +963,43 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Contains("exceeds the Windows MAX_PATH limit", ex.Message);
         }
 
+        [Fact]
+        public void WriteFileAtomic_HardenedTargetFallback_PreservesOriginalFileOnMoveFailure()
+        {
+            // Arrange
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+
+            // Create a locked file that will cause File.Move(tmp, path) to fail
+            string lockPath = Path.Combine(tempDir, "lock.txt");
+            File.WriteAllText(lockPath, "lock");
+
+            // Verify moving aside preserves original content if subsequent move fails
+            try
+            {
+                using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    Assert.ThrowsAny<Exception>(() =>
+                    {
+                        Helper.WriteFileAtomic(targetPath, stream =>
+                        {
+                            using var writer = new StreamWriter(stream, Encoding.UTF8, 1024, true);
+                            writer.Write("new-content");
+                        }, TestContext.Current.CancellationToken);
+                    });
+                }
+
+                Assert.True(File.Exists(targetPath));
+                Assert.Equal("original-content", File.ReadAllText(targetPath));
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+            }
+        }
+
         #endregion
 
         #region WriteFileAtomicAsync Tests
@@ -1213,6 +1250,38 @@ namespace Servy.Core.UnitTests.Helpers
             // failure raised by the filesystem itself.
             Assert.Equal(AppConfig.WriteFileAtomicMaxPathLength, targetPath.Length);
             Assert.Contains("exceeds the Windows MAX_PATH limit", ex.Message);
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicAsync_HardenedTargetFallback_PreservesOriginalFileOnMoveFailure()
+        {
+            // Arrange
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+
+            try
+            {
+                using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    await Assert.ThrowsAnyAsync<Exception>(async () =>
+                    {
+                        await Helper.WriteFileAtomicAsync(targetPath, async (stream, ct) =>
+                        {
+                            byte[] data = Encoding.UTF8.GetBytes("new-async-content");
+                            await stream.WriteAsync(data, 0, data.Length, ct);
+                        }, TestContext.Current.CancellationToken);
+                    });
+                }
+
+                Assert.True(File.Exists(targetPath));
+                Assert.Equal("original-content", File.ReadAllText(targetPath));
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+            }
         }
 
         #endregion
