@@ -753,15 +753,17 @@ namespace Servy.Core.Helpers
             if (!IsValidServiceNameCharset(serviceName))
                 return (false, Strings.Msg_InvalidServiceName);
 
-            // 5. Reserved Windows device names (case-insensitive across all segments)
+            // 5. Leading or trailing dots
             // Prevent leading or trailing dots, which cause severe filesystem/registry volatility.
             if (serviceName.StartsWith(".", StringComparison.Ordinal) || serviceName.EndsWith(".", StringComparison.Ordinal))
             {
                 return (false, Strings.Msg_ServiceNameLeadingTrailingDot);
             }
 
+            // 6. Reserved Windows device names (case-insensitive across all segments)
             // Tokenize the name by dots to scan every structural segment.
-            // This catches (.CON, .CON.txt, ..PRN, AUX.log, or service.LPT1) uniformly.
+            // This catches (CON.txt, AUX.log, or service.LPT1) uniformly. A leading-dot form (.CON, ..PRN)
+            // never reaches this loop: step 5 has already rejected it.
             string[] segments = serviceName.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var segment in segments)
