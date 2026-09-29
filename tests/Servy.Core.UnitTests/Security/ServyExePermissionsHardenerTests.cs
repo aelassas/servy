@@ -290,6 +290,23 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains(AppConfig.ServyServiceCLIExe, sut.HardLinkQueries);
         }
 
+        [Fact]
+        public async Task Harden_OneFolderCannotBeCreated_IsReportedAsFailedAndTheOtherFoldersAreStillGranted()
+        {
+            // Arrange: a regular file sits where the logs folder belongs, so creating that folder throws
+            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.LogsFolderName), "not a folder");
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+
+            // Act
+            var capture = await LogCapture.RunAsync(() => Task.FromResult(sut.Harden("svc", CancellationToken.None)));
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
+            Assert.Contains(AppConfig.LogsFolderName, capture.Result.Failed);
+            Assert.Equal(new[] { AppConfig.DbFolderName, AppConfig.RecoveryFolderName }, capture.Result.GrantedFolders);
+            Assert.Contains($"Failed to grant 'svc' access to '{AppConfig.LogsFolderName}'", capture.Log);
+        }
+
         #endregion
 
         #region GetTargetFiles
@@ -606,7 +623,7 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
-        public async Task HardenServiceAccountsAsync_RepositoryCancelled_Returns()
+        public async Task HardenServiceAccountsAsync_RepositoryCancelled_WarnsInsteadOfReportingAReadFailure()
         {
             // Arrange
             var repository = new Mock<IServiceRepository>();
@@ -614,11 +631,12 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
 
             // Act
-            var ex = await Record.ExceptionAsync(() => sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken));
+            var log = await LogCapture.RunAsync(() => sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken));
 
             // Assert
-            Assert.Null(ex);
             Assert.Empty(sut.HardenedAccounts);
+            Assert.Contains("Executable permission hardening of the service accounts was cancelled.", log);
+            Assert.DoesNotContain("Failed to read the service accounts", log);
         }
 
         [Fact]
