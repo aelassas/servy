@@ -31,6 +31,12 @@ namespace Servy.Core.Security
     /// link is not touched and is reported as failed.
     /// </para>
     /// <para>
+    /// The grants are taken back when the last service using an account goes away: after an uninstall, and after an
+    /// install moves a service to another account, <see cref="Services.ServiceManager"/> calls
+    /// <see cref="RevokeIfUnusedAsync"/>, which removes the account's explicit entries from the vault root, the
+    /// writable folders and every hardened file unless a remaining service still runs under it (#7161).
+    /// </para>
+    /// <para>
     /// The service writes in three folders only: SQLite creates and deletes the <c>-wal</c>/<c>-shm</c> files next to
     /// <c>db\Servy.db</c>, the logger writes and rotates <c>logs\</c>, and the recovery state in <c>recovery\</c> is
     /// replaced through a temporary file on every save. Each of those folders gives the account List and Create Files on
@@ -161,6 +167,99 @@ namespace Servy.Core.Security
 
                 await HardenAsync(account, cancellationToken);
             }
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<bool> RevokeIfUnusedAsync(string targetAccount, IServiceRepository serviceRepository, CancellationToken cancellationToken)
+        {
+            if (serviceRepository == null)
+                throw new ArgumentNullException(nameof(serviceRepository));
+
+            if (!IsHardeningCandidate(targetAccount))
+            {
+                Logger.Debug($"Vault access revocation skipped for '{targetAccount}': Local System was never granted anything.");
+                return true;
+            }
+
+            var account = targetAccount.Trim();
+            ExePermissionsHardeningResult result;
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var remaining = GetServiceAccounts(await serviceRepository.GetAllAsync(decrypt: false, cancellationToken));
+                result = await Task.Run(() => RevokeIfUnused(account, remaining, cancellationToken), cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Warn($"Revoking the vault access of '{account}' was cancelled before it completed.");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Revoking the vault access of '{account}' failed.", ex);
+                return false;
+            }
+
+            return ReportRevokeResult(result);
+        }
+
+        /// <summary>
+        /// Removes <paramref name="account"/>'s explicit entries from the vault root, the writable folders and every
+        /// hardened file, unless one of <paramref name="remainingAccounts"/> is the same account.
+        /// </summary>
+        /// <param name="account">The trimmed account whose access is revoked.</param>
+        /// <param name="remainingAccounts">The accounts the remaining services run under.</param>
+        /// <param name="cancellationToken">A token checked before each item.</param>
+        /// <returns>The outcome, with the items the entries were removed from and those that could not be rewritten.</returns>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+        internal ExePermissionsHardeningResult RevokeIfUnused(string account, IReadOnlyCollection<string> remainingAccounts, CancellationToken cancellationToken)
+        {
+            var result = new ExePermissionsHardeningResult(account);
+
+            var targetSid = ResolveAccount(account);
+            if (targetSid == null)
+                return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "the account could not be resolved on this machine or domain");
+
+            if (IsBroadGroup(targetSid))
+                return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "it is a broad group (Everyone, Users or Authenticated Users)");
+
+            if (targetSid.Equals(AdministratorsSid) || targetSid.Equals(LocalSystemSid))
+                return result.Complete(ExePermissionsHardeningStatus.Skipped, "it is a protected administrative principal that keeps Full Control");
+
+            // The same account can be written two ways (.\user and MACHINE\user), so the SIDs decide
+            foreach (var other in remainingAccounts ?? (IReadOnlyCollection<string>)Array.Empty<string>())
+            {
+                if (string.Equals(other, account, StringComparison.OrdinalIgnoreCase) || targetSid.Equals(ResolveAccount(other)))
+                    return result.Complete(ExePermissionsHardeningStatus.InUse, $"another service still runs under it (as '{other}')");
+            }
+
+            if (!IsProcessElevated())
+                return result.Complete(ExePermissionsHardeningStatus.NotElevated, "the process is not elevated");
+
+            if (!Directory.Exists(VaultDirectory))
+                return result.Complete(ExePermissionsHardeningStatus.VaultNotFound, $"'{VaultDirectory}' does not exist");
+
+            if ((new DirectoryInfo(VaultDirectory).Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+            {
+                result.AddFailed(VaultDirectory);
+                return result.Complete(ExePermissionsHardeningStatus.Failed, "the vault directory is a reparse point (symlink/junction)");
+            }
+
+            RevokeEntries(string.Empty, targetSid, result);
+
+            foreach (var folder in GetWritableFolders())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                RevokeEntries(folder, targetSid, result);
+            }
+
+            foreach (var target in GetTargetFiles())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                RevokeEntries(target.RelativePath, targetSid, result);
+            }
+
+            return result.Complete(result.Failed.Count > 0 ? ExePermissionsHardeningStatus.Failed : ExePermissionsHardeningStatus.Revoked);
         }
 
         /// <summary>
@@ -327,6 +426,90 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
+        /// Removes every explicit entry the target holds on one vault item. A missing item is ignored, and a link is
+        /// refused the way the hardening refuses it, because the ACL write would land outside the vault.
+        /// </summary>
+        /// <param name="relativePath">The item, relative to <see cref="VaultDirectory"/>; empty for the vault itself.</param>
+        /// <param name="targetSid">The account whose entries are removed.</param>
+        /// <param name="result">Receives the item as revoked when it held an entry, or as failed.</param>
+        private void RevokeEntries(string relativePath, SecurityIdentifier targetSid, ExePermissionsHardeningResult result)
+        {
+            var isVault = relativePath.Length == 0;
+            var path = isVault ? VaultDirectory : Path.Combine(VaultDirectory, relativePath);
+            var name = isVault ? VaultDirectory : relativePath;
+            try
+            {
+                var isDirectory = Directory.Exists(path);
+                if (!isDirectory && !File.Exists(path))
+                    return;
+
+                if (!isVault && (File.GetAttributes(path) & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    Logger.Error($"Cannot revoke the access of '{result.Account}' to '{name}': it is a reparse point (symlink/junction).");
+                    result.AddFailed(name);
+                    return;
+                }
+
+                if (!isDirectory)
+                {
+                    var links = GetHardLinkCount(path);
+                    if (links != 1)
+                    {
+                        Logger.Error(links < 1
+                            ? $"Cannot revoke the access of '{result.Account}' to '{name}': its hard link count could not be verified."
+                            : $"Cannot revoke the access of '{result.Account}' to '{name}': it has {links} NTFS hard links.");
+                        result.AddFailed(name);
+                        return;
+                    }
+                }
+
+                if (isDirectory)
+                {
+                    var directory = new DirectoryInfo(path);
+                    var acl = directory.GetAccessControl(AccessControlSections.Access);
+                    if (!HoldsExplicitEntry(acl, targetSid))
+                        return;
+                    acl.PurgeAccessRules(targetSid);
+                    directory.SetAccessControl(acl);
+                }
+                else
+                {
+                    var file = new FileInfo(path);
+                    var acl = file.GetAccessControl(AccessControlSections.Access);
+                    if (!HoldsExplicitEntry(acl, targetSid))
+                        return;
+                    acl.PurgeAccessRules(targetSid);
+                    file.SetAccessControl(acl);
+                }
+
+                Logger.Debug($"Revoked the access of '{result.Account}' to '{name}'.");
+                result.AddRevoked(name);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to revoke the access of '{result.Account}' to '{name}'.", ex);
+                result.AddFailed(name);
+            }
+        }
+
+        /// <summary>
+        /// Determines whether an ACL carries an explicit entry for <paramref name="sid"/>.
+        /// </summary>
+        /// <param name="acl">The ACL to inspect.</param>
+        /// <param name="sid">The account.</param>
+        /// <returns><see langword="true"/> when at least one explicit allow or deny entry names the account.</returns>
+        private static bool HoldsExplicitEntry(FileSystemSecurity acl, SecurityIdentifier sid)
+        {
+            foreach (FileSystemAccessRule rule in acl.GetAccessRules(true, false, typeof(SecurityIdentifier)))
+            {
+                if (sid.Equals(rule.IdentityReference))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Lets the target create files in a writable folder and read, write and delete the files created there,
         /// creating the folder first when it does not exist yet.
         /// </summary>
@@ -483,6 +666,38 @@ namespace Servy.Core.Security
                     return false;
                 default:
                     Logger.Error($"Executable permission hardening for '{account}' was not applied: {result.Reason}.");
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Logs the outcome of a revocation at the level it calls for.
+        /// </summary>
+        /// <param name="result">The outcome of one revocation.</param>
+        /// <returns><see langword="true"/> for <see cref="ExePermissionsHardeningStatus.Revoked"/>,
+        /// <see cref="ExePermissionsHardeningStatus.InUse"/> and <see cref="ExePermissionsHardeningStatus.Skipped"/>.</returns>
+        internal static bool ReportRevokeResult(ExePermissionsHardeningResult result)
+        {
+            var account = result.Account;
+            switch (result.Status)
+            {
+                case ExePermissionsHardeningStatus.Revoked:
+                    Logger.Info(result.Revoked.Count == 0
+                        ? $"'{account}' held no entry in Servy's vault; nothing to revoke."
+                        : $"Revoked the access of '{account}' to Servy's vault: {string.Join(", ", result.Revoked)}.");
+                    return true;
+                case ExePermissionsHardeningStatus.InUse:
+                    Logger.Info($"Kept the access of '{account}' to Servy's vault: {result.Reason}.");
+                    return true;
+                case ExePermissionsHardeningStatus.Skipped:
+                    Logger.Info($"Vault access revocation skipped for '{account}': {result.Reason}.");
+                    return true;
+                case ExePermissionsHardeningStatus.Failed:
+                    Logger.Error($"Revoking the access of '{account}' to Servy's vault failed on: {string.Join(", ", result.Failed)}. " +
+                        "Its entries on those items stay until they are removed by hand.");
+                    return false;
+                default:
+                    Logger.Error($"The access of '{account}' to Servy's vault was not revoked: {result.Reason}.");
                     return false;
             }
         }

@@ -30,6 +30,12 @@ namespace Servy.Core.Security
 
         /// <summary>Nothing was changed: the account cannot be resolved, or is a broad group such as Everyone.</summary>
         InvalidAccount,
+
+        /// <summary>Every explicit entry the account held in the vault was removed (revocation only).</summary>
+        Revoked,
+
+        /// <summary>Nothing was changed: another service still runs under the account (revocation only).</summary>
+        InUse,
     }
 
     /// <summary>
@@ -42,6 +48,7 @@ namespace Servy.Core.Security
         private readonly List<string> _failed = new List<string>();
         private readonly List<string> _skipped = new List<string>();
         private readonly List<string> _grantedFolders = new List<string>();
+        private readonly List<string> _revoked = new List<string>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExePermissionsHardeningResult"/> class.
@@ -76,6 +83,12 @@ namespace Servy.Core.Security
         /// <summary>Gets the optional files (relative to the vault) that are not present and were skipped.</summary>
         public IReadOnlyList<string> Skipped => _skipped;
 
+        /// <summary>
+        /// Gets the files and folders, relative to the vault (the vault itself by its full path), from which a
+        /// revocation removed the account's explicit entries.
+        /// </summary>
+        public IReadOnlyList<string> Revoked => _revoked;
+
         internal void AddHardened(string name) => _hardened.Add(name);
 
         internal void AddMissing(string name) => _missing.Add(name);
@@ -85,6 +98,10 @@ namespace Servy.Core.Security
         internal void AddSkipped(string name) => _skipped.Add(name);
 
         internal void AddGrantedFolder(string name) => _grantedFolders.Add(name);
+
+        /// <summary>Records an item a revocation removed the account's entries from.</summary>
+        /// <param name="name">The item, relative to the vault.</param>
+        internal void AddRevoked(string name) => _revoked.Add(name);
 
         /// <summary>
         /// Sets the final status and returns this instance.

@@ -474,6 +474,122 @@ namespace Servy.Core.IntegrationTests.Security
 
         #endregion
 
+        #region Revocation (#7161)
+
+        [Fact]
+        public void RevokeIfUnused_AfterHardening_RemovesEveryEntryOfTheAccountAndKeepsTheOtherAccount()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            CreateVault();
+            GrantInheritedModify(TargetSid);
+            _sut.Harden(TargetAccount, CancellationToken.None);
+            _sut.Harden(@"NT AUTHORITY\NetworkService", CancellationToken.None);
+
+            // Act
+            var result = _sut.RevokeIfUnused(TargetAccount, new List<string> { @"NT AUTHORITY\NetworkService" }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
+            Assert.Empty(result.Failed);
+            var items = new List<string> { _vault };
+            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
+                items.Add(Path.Combine(_vault, folder));
+            foreach (var file in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, HandleFile,
+                ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, DbFile, KeyFile })
+                items.Add(Path.Combine(_vault, file));
+            foreach (var item in items)
+            {
+                Assert.Empty(ExplicitRules(item, TargetSid, AccessControlType.Allow));
+                Assert.Empty(ExplicitRules(item, TargetSid, AccessControlType.Deny));
+                Assert.Equal(0, AllowedRights(item, TargetSid));
+            }
+
+            // The key and the database are no longer readable, a file the service writes later inherits nothing,
+            // and the account that still runs a service keeps exactly what it had
+            var laterLog = Path.Combine(_vault, AppConfig.LogsFolderName, "later.log");
+            File.WriteAllText(laterLog, "later");
+            Assert.Equal(0, AllowedRights(laterLog, TargetSid));
+            Assert.True(Has(AllowedRights(laterLog, OtherSid), FileSystemRights.Modify));
+            Assert.True(Has(AllowedRights(Path.Combine(_vault, KeyFile), OtherSid), FileSystemRights.Read));
+            Assert.True(Has(AllowedRights(Path.Combine(_vault, DbFile), OtherSid), FileSystemRights.Write));
+            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, AppConfig.RecoveryFolderName), OtherSid, AccessControlType.Allow).Count);
+        }
+
+        [Fact]
+        public void RevokeIfUnused_AccountStillRunsAService_KeepsEverything()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            CreateVault();
+            _sut.Harden(TargetAccount, CancellationToken.None);
+            var before = Sddl(Path.Combine(_vault, KeyFile));
+
+            // Act
+            var result = _sut.RevokeIfUnused(TargetAccount, new List<string> { @"nt authority\localservice" }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
+            Assert.Equal(before, Sddl(Path.Combine(_vault, KeyFile)));
+            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
+                AssertWritableFolder(Path.Combine(_vault, folder));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_FileIsASymbolicLink_IsNotTouchedAndFails()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            CreateVault();
+            _sut.Harden(TargetAccount, CancellationToken.None);
+            var outside = Path.Combine(TempDirectory, "outside.exe");
+            File.WriteAllText(outside, "outside");
+            var outsideAcl = new FileInfo(outside).GetAccessControl(AccessControlSections.Access);
+            outsideAcl.AddAccessRule(new FileSystemAccessRule(TargetSid, FileSystemRights.Read, AccessControlType.Allow));
+            new FileInfo(outside).SetAccessControl(outsideAcl);
+            var link = Path.Combine(_vault, AppConfig.ServyRestarterExe);
+            File.Delete(link);
+            RunCmd($"mklink \"{link}\" \"{outside}\"");
+            var before = new FileInfo(outside).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+
+            // Act
+            var result = _sut.RevokeIfUnused(TargetAccount, new List<string>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
+            Assert.Equal(new[] { AppConfig.ServyRestarterExe }, result.Failed);
+            Assert.Equal(before, new FileInfo(outside).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access));
+            Assert.Empty(ExplicitRules(Path.Combine(_vault, KeyFile), TargetSid, AccessControlType.Allow));
+        }
+
+        [Fact]
+        public async Task RevokeIfUnusedAsync_LastServiceOfTheAccountRemoved_RevokesAndReturnsTrue()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            CreateVault();
+            _sut.Harden(TargetAccount, CancellationToken.None);
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = "local-system", RunAsLocalSystem = true },
+            });
+
+            // Act
+            var revoked = await _sut.RevokeIfUnusedAsync(TargetAccount, repository.Object, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(revoked);
+            Assert.Equal(0, AllowedRights(Path.Combine(_vault, KeyFile), TargetSid));
+            Assert.Empty(ExplicitRules(Path.Combine(_vault, AppConfig.DbFolderName), TargetSid, AccessControlType.Allow));
+        }
+
+        #endregion
+
         #region Seams against the real system
 
         [Theory]
