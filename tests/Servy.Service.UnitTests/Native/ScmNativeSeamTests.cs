@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using Xunit;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
@@ -167,6 +168,21 @@ namespace Servy.Service.UnitTests.Native
             _ctx.Logger.Verify(l => l.Error("SetServiceStatus failed with Win32 error code: 1314", It.IsAny<Exception>()), Times.Once);
         }
 
+        [Fact]
+        public void UpdateServiceStatus_NativeCallThrows_LogsTheExceptionMessage()
+        {
+            // Arrange
+            var service = BuildService();
+            TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+            _scm.SetServiceStatusThrows = new InvalidOperationException("boom");
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "UpdateServiceStatus", NativeMethods.SERVICE_RUNNING, 0);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Error("Exception in UpdateServiceStatus: boom", It.IsAny<Exception>()), Times.Once);
+        }
+
         #endregion
 
         #region OnStart
@@ -216,6 +232,73 @@ namespace Servy.Service.UnitTests.Native
             Assert.Equal(NativeMethods.SERVICE_ACCEPT_STOP | NativeMethods.SERVICE_ACCEPT_PRESHUTDOWN, status.dwControlsAccepted);
             Assert.Equal(new IntPtr(1234), _scm.LastHandle);
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Service handle obtained natively")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void OnStart_NotInTestMode_PreShutdownRegistrationFails_LogsTheSeamsWin32Error()
+        {
+            // Arrange
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            _scm.SetServiceStatusResult = false;
+            _scm.LastWin32Error = 5;
+            var failureLogged = ArrangeLogSignal(scopedLogger, l => l.Error("Failed to register PRESHUTDOWN support via native Win32. Error: 5", It.IsAny<Exception>()));
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "OnStart", new object[] { new string[0] });
+
+            // Assert
+            Assert.True(WaitForStatusCall(), "The PRESHUTDOWN registration never reached the native seam.");
+            Assert.True(SpinWait.SpinUntil(failureLogged, SetServiceStatusPollTimeoutMs), "The Win32 error the seam reported was never logged.");
+            scopedLogger.Verify(l => l.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support natively enabled.", It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void OnStart_NotInTestMode_TheNativeSeamReportsCancellation_LogsTheAbortedRegistration()
+        {
+            // Arrange
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            _scm.SetServiceStatusThrows = new OperationCanceledException();
+            var abortLogged = ArrangeLogSignal(scopedLogger, l => l.Info("PRESHUTDOWN registration aborted due to service shutdown.", It.IsAny<Exception>()));
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "OnStart", new object[] { new string[0] });
+
+            // Assert
+            Assert.True(WaitForStatusCall(), "The PRESHUTDOWN registration never reached the native seam.");
+            Assert.True(SpinWait.SpinUntil(abortLogged, SetServiceStatusPollTimeoutMs), "The cancelled registration was never logged as aborted.");
+        }
+
+        [Fact]
+        public void OnStart_NotInTestMode_TheNativeSeamThrows_LogsTheUnexpectedRegistrationError()
+        {
+            // Arrange
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var failure = new InvalidOperationException("boom");
+            _scm.SetServiceStatusThrows = failure;
+            var errorLogged = ArrangeLogSignal(scopedLogger, l => l.Error("Unexpected error during PRESHUTDOWN registration.", failure));
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "OnStart", new object[] { new string[0] });
+
+            // Assert
+            Assert.True(WaitForStatusCall(), "The PRESHUTDOWN registration never reached the native seam.");
+            Assert.True(SpinWait.SpinUntil(errorLogged, SetServiceStatusPollTimeoutMs), "The unexpected registration failure was never logged with its exception.");
+        }
+
+        [Fact]
+        public void OnStart_NotInTestMode_TearingDownDuringTheDelay_SkipsTheRegistration()
+        {
+            // Arrange
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var skipLogged = ArrangeLogSignal(scopedLogger, l => l.Info("Skipping PRESHUTDOWN registration: Service is already tearing down.", It.IsAny<Exception>()));
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "OnStart", new object[] { new string[0] });
+            TestReflection.SetField(service, "_isTearingDown", true);
+
+            // Assert
+            Assert.True(SpinWait.SpinUntil(skipLogged, SetServiceStatusPollTimeoutMs), "The tearing-down service never logged the skipped registration.");
+            Assert.Empty(_scm.StatusCalls);
         }
 
         #endregion
@@ -274,6 +357,21 @@ namespace Servy.Service.UnitTests.Native
 
             service = BuildService(handle);
             return scopedLogger;
+        }
+
+        /// <summary>
+        /// Arranges a thread-safe signal reporting whether the given logging call has arrived. The
+        /// delayed PRESHUTDOWN registration writes its log from a background task, so a test cannot
+        /// verify the call the moment <c>OnStart</c> returns.
+        /// </summary>
+        /// <param name="logger">The logger mock the background task writes to.</param>
+        /// <param name="call">The logging call to wait for.</param>
+        /// <returns>A predicate reporting whether the call has been made.</returns>
+        private static Func<bool> ArrangeLogSignal(Mock<IServyLogger> logger, Expression<Action<IServyLogger>> call)
+        {
+            var seen = 0;
+            logger.Setup(call).Callback(() => Interlocked.Exchange(ref seen, 1));
+            return () => Volatile.Read(ref seen) == 1;
         }
 
         /// <summary>Waits for the delayed PRESHUTDOWN registration to reach the fake seam.</summary>
@@ -367,6 +465,13 @@ namespace Servy.Service.UnitTests.Native
             /// <summary>Gets or sets the value <see cref="GetLastWin32Error"/> returns.</summary>
             public int LastWin32Error { get; set; }
 
+            /// <summary>
+            /// Gets or sets the exception <see cref="SetServiceStatus"/> throws once it has recorded
+            /// the call. <see langword="null"/> leaves the call returning
+            /// <see cref="SetServiceStatusResult"/>.
+            /// </summary>
+            public Exception SetServiceStatusThrows { get; set; }
+
             /// <summary>Gets the handle of the most recent status call.</summary>
             public IntPtr LastHandle { get; private set; }
 
@@ -389,12 +494,18 @@ namespace Servy.Service.UnitTests.Native
             /// <param name="handle">The handle the service reported against.</param>
             /// <param name="status">The status structure the service published.</param>
             /// <returns><see cref="SetServiceStatusResult"/>.</returns>
+            /// <exception cref="Exception">The exception <see cref="SetServiceStatusThrows"/> carries, when one is set.</exception>
             public bool SetServiceStatus(IntPtr handle, ref NativeMethods.SERVICE_STATUS status)
             {
                 lock (_sync)
                 {
                     LastHandle = handle;
                     _statusCalls.Add(status);
+                }
+
+                if (SetServiceStatusThrows != null)
+                {
+                    throw SetServiceStatusThrows;
                 }
 
                 return SetServiceStatusResult;
