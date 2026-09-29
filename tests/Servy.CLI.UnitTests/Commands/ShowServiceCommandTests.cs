@@ -658,6 +658,29 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task ExecuteAsync_FailureProgramSection_ShowsDashForEmptyValuesWhenActive()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.FailureProgramPath = @"C:\apps\onfailure.exe";
+            dto.FailureProgramStartupDirectory = null;
+            dto.FailureProgramParameters = null;
+
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains(CliStrings.Msg_Show_Group_FailureProgram, result.Message);
+            Assert.Equal(@"C:\apps\onfailure.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_FailureProgram, CliStrings.Msg_Show_Label_Executable));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_FailureProgram, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_FailureProgram, CliStrings.Msg_Show_Label_Parameters));
+        }
+
+        [Fact]
         public async Task ExecuteAsync_RecordAnInstallProduces_RendersTheDocumentedSample()
         {
             // Arrange
