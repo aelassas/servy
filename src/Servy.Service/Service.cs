@@ -646,6 +646,88 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Sends the kill request for a tracked hook's whole process tree by calling
+        /// <see cref="Helpers.ProcessHelper.KillProcessTree(Process)"/>.
+        /// </summary>
+        /// <param name="process">The tracked hook's process.</param>
+        /// <exception cref="System.ComponentModel.Win32Exception">
+        /// Propagated from <see cref="Helpers.ProcessHelper.KillProcessTree(Process)"/> when the
+        /// process could not be terminated.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// Propagated from <see cref="Helpers.ProcessHelper.KillProcessTree(Process)"/> when the
+        /// process is a remote one.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Propagated from <see cref="Helpers.ProcessHelper.KillProcessTree(Process)"/> when the
+        /// process has already exited or no process is associated with the object.
+        /// </exception>
+        /// <remarks>
+        /// This is a seam over <see cref="Helpers.ProcessHelper.KillProcessTree(Process)"/>, which is
+        /// what this branch calls where .NET 10 calls <c>Process.Kill(true)</c>; the production
+        /// implementation forwards to it unchanged, so the tracked-hook loop in <see cref="Cleanup"/>
+        /// behaves exactly as it did when it called the helper directly. It is overridable because no
+        /// user-mode test can make the kill fail on a live process it owns, so the "Failed to send
+        /// Kill signal" warning was never executed under test.
+        /// </remarks>
+        protected virtual void KillTrackedHook(Process process)
+        {
+            Helpers.ProcessHelper.KillProcessTree(process);
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether a tracked hook's process has exited by reading
+        /// <see cref="Process.HasExited"/>.
+        /// </summary>
+        /// <param name="process">The tracked hook's process.</param>
+        /// <returns>
+        /// <see langword="true"/> if the process has exited; otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">
+        /// Propagated from <see cref="Process.HasExited"/> when no process is associated with the object.
+        /// </exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">
+        /// Propagated from <see cref="Process.HasExited"/> when the exit code could not be read.
+        /// </exception>
+        /// <remarks>
+        /// This is a seam over <see cref="Process.HasExited"/>; the production implementation forwards
+        /// to it unchanged. It is overridable so a test can model a hook that survives the kill for the
+        /// whole <see cref="AppConfig.HookCleanupTimeoutMs"/> budget, which no ordinary user-mode
+        /// process does.
+        /// </remarks>
+        protected virtual bool HasTrackedHookExited(Process process)
+        {
+            return process.HasExited;
+        }
+
+        /// <summary>
+        /// Waits up to <paramref name="timeoutMs"/> milliseconds for a tracked hook's process to exit
+        /// by calling <see cref="Process.WaitForExit(int)"/>.
+        /// </summary>
+        /// <param name="process">The tracked hook's process.</param>
+        /// <param name="timeoutMs">The maximum time to wait, in milliseconds.</param>
+        /// <returns>
+        /// <see langword="true"/> if the process exited within the wait; otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">
+        /// Propagated from <see cref="Process.WaitForExit(int)"/> when no process is associated with
+        /// the object.
+        /// </exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">
+        /// Propagated from <see cref="Process.WaitForExit(int)"/> when the wait handle could not be
+        /// opened.
+        /// </exception>
+        /// <remarks>
+        /// This is a seam over <see cref="Process.WaitForExit(int)"/>; the production implementation
+        /// forwards to it unchanged. It is overridable so the bounded wait's pulse and budget
+        /// arithmetic can be observed without a test really waiting.
+        /// </remarks>
+        protected virtual bool WaitForTrackedHookExit(Process process, int timeoutMs)
+        {
+            return process.WaitForExit(timeoutMs);
+        }
+
+        /// <summary>
         /// Enumerates the entire descendant tree of a process by calling
         /// <see cref="ProcessExtensions.GetAllDescendants(int, DateTime)"/>.
         /// </summary>
@@ -2676,7 +2758,7 @@ namespace Servy.Service
                         try
                         {
                             // Always check HasExited first
-                            if (!hook.Process.HasExited)
+                            if (!HasTrackedHookExited(hook.Process))
                             {
                                 var opName = string.IsNullOrWhiteSpace(hook.OperationName) ? "unnamed" : hook.OperationName;
                                 int pid = 0;
@@ -2689,7 +2771,7 @@ namespace Servy.Service
                                 // 1. Issue the kill request
                                 try
                                 {
-                                    Helpers.ProcessHelper.KillProcessTree(hook.Process);
+                                    KillTrackedHook(hook.Process);
                                 }
                                 catch (Exception killEx)
                                 {
@@ -2701,14 +2783,14 @@ namespace Servy.Service
                                 int pulseIntervalMs = AppConfig.SafeKillProcessPulseIntervalMs;
                                 int elapsedMs = 0;
 
-                                while (!hook.Process.HasExited && elapsedMs < timeoutMs)
+                                while (!HasTrackedHookExited(hook.Process) && elapsedMs < timeoutMs)
                                 {
                                     int waitTime = Math.Min(pulseIntervalMs, timeoutMs - elapsedMs);
 
                                     // Request additional time to prevent SCM from terminating the service during a slow kernel teardown
                                     _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
 
-                                    if (hook.Process.WaitForExit(waitTime))
+                                    if (WaitForTrackedHookExit(hook.Process, waitTime))
                                     {
                                         break;
                                     }
@@ -2717,7 +2799,7 @@ namespace Servy.Service
                                 }
 
                                 // 3. Evaluate outcome
-                                if (!hook.Process.HasExited)
+                                if (!HasTrackedHookExited(hook.Process))
                                 {
                                     _logger?.Warn($"Tracked hook '{opName}' (PID: {pid}) did not exit within the {timeoutMs}ms budget. Proceeding with teardown to avoid SCM hang.");
                                 }

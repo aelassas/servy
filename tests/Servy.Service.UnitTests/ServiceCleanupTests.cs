@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Xunit;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -105,7 +107,18 @@ namespace Servy.Service.UnitTests
         /// </summary>
         private void SetTrackedHooks(params Hook[] hooks)
         {
-            var tracked = TestReflection.GetField<List<Hook>>(_service, "_trackedHooks");
+            SetTrackedHooks(_service, hooks);
+        }
+
+        /// <summary>
+        /// Replaces the tracked-hook list content of a specific service, for the tests that build
+        /// their own subclass instead of using the fixture's <see cref="_service"/>.
+        /// </summary>
+        /// <param name="service">The service whose tracked-hook list is replaced.</param>
+        /// <param name="hooks">The hooks teardown's cleanup loop should walk.</param>
+        private static void SetTrackedHooks(TestableService service, params Hook[] hooks)
+        {
+            var tracked = TestReflection.GetField<List<Hook>>(service, "_trackedHooks");
             tracked.Clear();
             tracked.AddRange(hooks);
         }
@@ -337,6 +350,207 @@ namespace Servy.Service.UnitTests
                     }
                     catch { /* teardown is best-effort: already gone, or the PID is no longer live */ }
                 }
+            }
+        }
+
+        /// <summary>
+        /// A kill that fails must not abort the hook's cleanup: the warning is logged and the wait
+        /// and outcome evaluation still run. No user-mode test can make a real kill throw on a live
+        /// process it owns, so this arm needs the seam.
+        /// </summary>
+        [Fact]
+        public void Cleanup_TrackedHookKillThrows_WarnsAndStillEvaluatesTheOutcome()
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            var exitedReads = 0;
+            var service = BuildHookKillingService(
+                kill: process => throw new InvalidOperationException("access denied"),
+                hasExited: process => ++exitedReads > 1,   // alive at the guard, gone afterwards
+                waitForExit: (process, ms) => true);
+            service.StartForTest();
+            using (var hookProcess = new Process())
+            {
+                SetTrackedHooks(service, new Hook { OperationName = "Post-Launch", Process = hookProcess });
+
+                // Act
+                service.Stop();
+
+                // Assert
+                scopedLogger.Verify(l => l.Warn("Failed to send Kill signal to Post-Launch hook: access denied", It.IsAny<Exception>()), Times.Once);
+
+                // The catch must not abort the hook's cleanup: the outcome is still evaluated and logged.
+                scopedLogger.Verify(l => l.Info("Tracked hook 'Post-Launch' cleaned up successfully.", It.IsAny<Exception>()), Times.Once);
+                scopedLogger.Verify(l => l.Error("Cleanup of tracked hook failed.", It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        /// <summary>
+        /// A hook that survives the whole budget pulses the SCM, never waits longer than one pulse
+        /// interval at a time, spends exactly the budget and warns instead of reporting success.
+        /// </summary>
+        [Fact]
+        public void Cleanup_TrackedHookSurvivesTheBudget_PulsesTheScmAndWarnsWithTheBudget()
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            var waits = new List<int>();
+            var killed = 0;
+            var service = BuildHookKillingService(
+                kill: process => killed++,
+                hasExited: process => false,
+                waitForExit: (process, ms) => { waits.Add(ms); return false; });
+            service.StartForTest();
+            using (var hookProcess = new Process())
+            {
+                SetTrackedHooks(service, new Hook { OperationName = "Post-Launch", Process = hookProcess });
+
+                // Act
+                service.Stop();
+
+                // Assert
+                Assert.Equal(1, killed);
+
+                // The waits never exceed one pulse and add up to exactly the budget.
+                Assert.All(waits, ms => Assert.True(ms <= AppConfig.SafeKillProcessPulseIntervalMs));
+                Assert.Equal(AppConfig.HookCleanupTimeoutMs, waits.Sum());
+                _ctx.Helper.Verify(h => h.RequestAdditionalTime(service, It.IsAny<int>(), null), Times.AtLeast(waits.Count));
+                scopedLogger.Verify(l => l.Warn($"Tracked hook 'Post-Launch' (PID: 0) did not exit within the {AppConfig.HookCleanupTimeoutMs}ms budget. Proceeding with teardown to avoid SCM hang.", It.IsAny<Exception>()), Times.Once);
+                scopedLogger.Verify(l => l.Info(It.Is<string>(m => m.EndsWith("cleaned up successfully.")), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        /// <summary>
+        /// A hook that exits during the first wait breaks out of the loop at once, so the budget is
+        /// not spent and the success arm is taken.
+        /// </summary>
+        [Fact]
+        public void Cleanup_TrackedHookExitsDuringTheFirstWait_BreaksOutAndLogsSuccess()
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            var exited = false;
+            var waits = 0;
+            var service = BuildHookKillingService(
+                kill: process => { },
+                hasExited: process => exited,
+                waitForExit: (process, ms) => { waits++; exited = true; return true; });
+            service.StartForTest();
+            using (var hookProcess = new Process())
+            {
+                SetTrackedHooks(service, new Hook { OperationName = "Post-Launch", Process = hookProcess });
+
+                // Act
+                service.Stop();
+
+                // Assert
+                Assert.Equal(1, waits);
+                scopedLogger.Verify(l => l.Info("Tracked hook 'Post-Launch' cleaned up successfully.", It.IsAny<Exception>()), Times.Once);
+                scopedLogger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("did not exit within")), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        /// <summary>
+        /// Builds a service wired to this fixture's mocks whose tracked-hook kill, exit check and
+        /// bounded wait are served by the supplied delegates instead of a real process.
+        /// </summary>
+        /// <param name="kill">The stand-in for the kill request, called with the hook's process.</param>
+        /// <param name="hasExited">The stand-in for the exit check, called with the hook's process.</param>
+        /// <param name="waitForExit">The stand-in for the bounded wait, called with the hook's process and the wait in milliseconds.</param>
+        /// <returns>A service whose three tracked-hook seams are served by the supplied delegates.</returns>
+        private HookKillingService BuildHookKillingService(
+            Action<Process> kill,
+            Func<Process, bool> hasExited,
+            Func<Process, int, bool> waitForExit)
+        {
+            return new HookKillingService(
+                kill,
+                hasExited,
+                waitForExit,
+                _ctx.Helper.Object,
+                _ctx.Logger.Object,
+                _ctx.StreamWriterFactory.Object,
+                _ctx.TimerFactory.Object,
+                _ctx.ProcessFactory.Object,
+                _ctx.PathValidator.Object,
+                _ctx.ServiceRepository.Object);
+        }
+
+        /// <summary>
+        /// Serves the tracked-hook kill, exit check and bounded wait from supplied delegates. With a
+        /// real <see cref="Process"/> no user-mode test can make the kill throw on a process it owns,
+        /// nor make one survive the kill for the whole cleanup budget, so the kill-failure warning,
+        /// the wait loop's pulse and budget arithmetic and the "did not exit within the budget" arm
+        /// were never executed under test.
+        /// </summary>
+        private sealed class HookKillingService : TestableService
+        {
+            private readonly Action<Process> _kill;
+            private readonly Func<Process, bool> _hasExited;
+            private readonly Func<Process, int, bool> _waitForExit;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="HookKillingService"/> class.
+            /// </summary>
+            /// <param name="kill">The stand-in for the kill request.</param>
+            /// <param name="hasExited">The stand-in for the exit check.</param>
+            /// <param name="waitForExit">The stand-in for the bounded wait.</param>
+            /// <param name="serviceHelper">The SCM helper the base service reports through.</param>
+            /// <param name="logger">The logger the base service writes to.</param>
+            /// <param name="streamWriterFactory">The factory for the redirected output writers.</param>
+            /// <param name="timerFactory">The factory for the health-check and rotation timers.</param>
+            /// <param name="processFactory">The factory for the child process wrappers.</param>
+            /// <param name="pathValidator">The validator the base service checks configured paths with.</param>
+            /// <param name="serviceRepository">The repository the base service reads its configuration from.</param>
+            public HookKillingService(
+                Action<Process> kill,
+                Func<Process, bool> hasExited,
+                Func<Process, int, bool> waitForExit,
+                Servy.Service.Helpers.IServiceHelper serviceHelper,
+                IServyLogger logger,
+                Servy.Service.StreamWriters.IStreamWriterFactory streamWriterFactory,
+                Servy.Service.Timers.ITimerFactory timerFactory,
+                IProcessFactory processFactory,
+                Servy.Service.Validation.IPathValidator pathValidator,
+                Servy.Core.Data.IServiceRepository serviceRepository)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
+            {
+                _kill = kill;
+                _hasExited = hasExited;
+                _waitForExit = waitForExit;
+            }
+
+            /// <summary>
+            /// Serves the kill request from the supplied delegate instead of killing a real tree.
+            /// </summary>
+            /// <param name="process">The tracked hook's process.</param>
+            protected override void KillTrackedHook(Process process)
+            {
+                _kill(process);
+            }
+
+            /// <summary>
+            /// Serves the exit check from the supplied delegate instead of reading the real process.
+            /// </summary>
+            /// <param name="process">The tracked hook's process.</param>
+            /// <returns>Whatever the supplied delegate returns.</returns>
+            protected override bool HasTrackedHookExited(Process process)
+            {
+                return _hasExited(process);
+            }
+
+            /// <summary>
+            /// Serves the bounded wait from the supplied delegate instead of really waiting.
+            /// </summary>
+            /// <param name="process">The tracked hook's process.</param>
+            /// <param name="timeoutMs">The maximum time to wait, in milliseconds.</param>
+            /// <returns>Whatever the supplied delegate returns.</returns>
+            protected override bool WaitForTrackedHookExit(Process process, int timeoutMs)
+            {
+                return _waitForExit(process, timeoutMs);
             }
         }
 
