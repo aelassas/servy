@@ -356,7 +356,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(result);
             Assert.True(File.Exists(targetPath));
 
-            // 2. VERIFICATION LOOP: Confirm the service management pipeline executed gracefully in order
+            // 2. Confirm the service discovery call was made exactly once
             _mockServiceHelper.Verify(s => s.GetRunningServyServices(), Times.Once);
 
             // 3. Confirm that the targeted services were both cleanly stopped and subsequently revived
