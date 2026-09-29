@@ -128,7 +128,7 @@ namespace Servy.Service
         private bool _preLaunchEnabled = false;
         private StartOptions? _options;
         private CancellationTokenSource? _cancellationSource;
-        private readonly IServiceRepository _serviceRepository;
+        private readonly IServiceRepository? _serviceRepository;
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
         private uint _checkPoint = 0;
@@ -363,7 +363,7 @@ namespace Servy.Service
 
                 // Load startup options
                 var fullArgs = _serviceHelper.GetArgs();
-                var options = _serviceHelper.ParseOptions(_serviceRepository, fullArgs);
+                var options = _serviceHelper.ParseOptions(_serviceRepository!, fullArgs);
 
                 if (options == null)
                 {
@@ -2000,7 +2000,7 @@ namespace Servy.Service
                 // are not marked to be ignored during update, and the update operation requires the full DTO to avoid overwriting existing values with wrong values.
                 // This is a bit inefficient, but PersistProcessState only runs on service start/stop and process exit,
                 // so the performance impact should be minimal in the grand scheme of things.
-                var serviceDto = _serviceRepository.GetByName(_serviceName, decrypt: true);
+                var serviceDto = _serviceRepository!.GetByName(_serviceName, decrypt: true);
 
                 if (serviceDto != null)
                 {
