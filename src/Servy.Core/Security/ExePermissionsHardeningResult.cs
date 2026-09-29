@@ -39,7 +39,8 @@ namespace Servy.Core.Security
     }
 
     /// <summary>
-    /// The outcome of hardening Servy's files for one account, with the files in each state.
+    /// The outcome of hardening Servy's files for one account, or of revoking that account's access to them,
+    /// with the items in each state.
     /// </summary>
     public sealed class ExePermissionsHardeningResult
     {
@@ -53,13 +54,13 @@ namespace Servy.Core.Security
         /// <summary>
         /// Initializes a new instance of the <see cref="ExePermissionsHardeningResult"/> class.
         /// </summary>
-        /// <param name="account">The account the hardening was run for.</param>
+        /// <param name="account">The account the hardening or revocation was run for.</param>
         public ExePermissionsHardeningResult(string account)
         {
             Account = account;
         }
 
-        /// <summary>Gets the account the hardening was run for.</summary>
+        /// <summary>Gets the account the hardening or revocation was run for.</summary>
         public string Account { get; }
 
         /// <summary>Gets the overall outcome.</summary>
@@ -100,7 +101,7 @@ namespace Servy.Core.Security
         internal void AddGrantedFolder(string name) => _grantedFolders.Add(name);
 
         /// <summary>Records an item a revocation removed the account's entries from.</summary>
-        /// <param name="name">The item, relative to the vault.</param>
+        /// <param name="name">The item, relative to the vault, or the vault itself by its full path.</param>
         internal void AddRevoked(string name) => _revoked.Add(name);
 
         /// <summary>
