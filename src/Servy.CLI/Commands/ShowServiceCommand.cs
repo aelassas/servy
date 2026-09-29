@@ -567,8 +567,7 @@ namespace Servy.CLI.Commands
             /// Adds a row that is always rendered, showing the not-set placeholder when the value is blank.
             /// </summary>
             /// <param name="label">The row label.</param>
-            /// <param name="value">The value to render.</param>
-            /// <param name="notSet">The placeholder string to render when the value is blank.</param>
+            /// <param name="value">The value to render, or <c>null</c>/blank to render the not-set placeholder.</param>
             public void Always(string label, string? value) =>
                 Rows.Add(new DetailRow(Prefix(label), Display(value, Strings.Msg_Show_ValueNotSet)));
 
