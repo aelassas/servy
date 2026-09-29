@@ -1085,8 +1085,8 @@ namespace Servy.Core.UnitTests.Validation
         {
             // Arrange
             // SecurityHelper.BroadUnprivilegedSids holds three principals and WarnIfDirectoryAclNotHardened
-            // warns about a write-class ACE for any of them, but the tests above only ever put the
-            // BuiltinUsers SID on a directory, so the other two arms have no coverage.
+            // warns about a write-class ACE for any of them. The tests above put only the BuiltinUsers SID
+            // on a directory, so this theory covers the other two.
             string testDir = Path.Combine(TempDirectory, $"acl_modify_dir_{sidType}");
             Directory.CreateDirectory(testDir);
             SetAccessRuleForSid(testDir, new SecurityIdentifier(sidType, null), FileSystemRights.Modify);
