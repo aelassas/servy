@@ -530,6 +530,16 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <summary>
+        /// Resolves the final, fully-qualified path of an open file handle.
+        /// </summary>
+        /// <param name="handle">The open file handle to resolve.</param>
+        /// <param name="finalPath">
+        /// When this method returns <c>true</c>, the resolved path; otherwise an empty string.
+        /// </param>
+        /// <returns><c>true</c> when the handle was resolved; otherwise, <c>false</c>.</returns>
+        internal delegate bool FinalPathResolver(SafeFileHandle handle, out string finalPath);
+
+        /// <summary>
         /// Attempts to initialize a file log writer in append mode with broad thread-sharing permissions.
         /// Ensures the target directory exists and safely disposes file streams if opening fails.
         /// Rejects paths traversing directory junctions or symbolic links to prevent privilege escalation attacks.
@@ -541,6 +551,37 @@ namespace Servy.Service.ProcessManagement
         /// <param name="logger">The operational logging instance to output tracing to.</param>
         /// <returns>An active autoflushing <see cref="StreamWriter"/> instance if initialization succeeds; otherwise, <c>null</c>.</returns>
         internal static StreamWriter TryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger)
+        {
+            return TryOpenAppendWriter(path, encoding, exePath, scope, logger, Helper.HasAncestorReparsePoint, PathSecurityGuard.TryGetFinalPathByHandle);
+        }
+
+        /// <summary>
+        /// Test seam for <see cref="TryOpenAppendWriter(string, Encoding, string, string, IServyLogger)"/>. It runs
+        /// exactly the same sequence of checks, with the ancestor reparse-point check and the handle-path resolver
+        /// supplied by the caller so that their refusal branches can be exercised.
+        /// </summary>
+        /// <remarks>
+        /// This overload wraps no behaviour of its own: the internal overload above forwards
+        /// <see cref="Helper.HasAncestorReparsePoint(string)"/> and
+        /// <see cref="PathSecurityGuard.TryGetFinalPathByHandle(SafeFileHandle, out string)"/> unchanged, so a
+        /// production call runs the same code with the same checks it ran before the seam existed.
+        /// </remarks>
+        /// <param name="path">The target destination absolute disk path for log output.</param>
+        /// <param name="encoding">The text encoding for the log file.</param>
+        /// <param name="exePath">The executable path, used only for log/error messages.</param>
+        /// <param name="scope">A label (e.g. 'stdout' or 'stderr') used in failure log messages.</param>
+        /// <param name="logger">The operational logging instance to output tracing to.</param>
+        /// <param name="hasAncestorReparsePoint">
+        /// Returns <c>true</c> when any ancestor directory of the given full path is a junction, symbolic link or
+        /// mount point. Called once before and once after the target directory is created.
+        /// </param>
+        /// <param name="resolveFinalPath">
+        /// Resolves an opened file handle to its final, fully-qualified path. Returning <c>false</c> makes the open
+        /// fail closed.
+        /// </param>
+        /// <returns>An active autoflushing <see cref="StreamWriter"/> instance if initialization succeeds; otherwise, <c>null</c>.</returns>
+        internal static StreamWriter TryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger,
+            Func<string, bool> hasAncestorReparsePoint, FinalPathResolver resolveFinalPath)
         {
             FileStream fs = null;
             try
@@ -554,7 +595,7 @@ namespace Servy.Service.ProcessManagement
                 string fullPath = Path.GetFullPath(path);
 
                 // 1. Check whether any parent or ancestor directory is a reparse point (junction/symlink)
-                if (Helper.HasAncestorReparsePoint(fullPath))
+                if (hasAncestorReparsePoint(fullPath))
                 {
                     logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction or symbolic link.");
                     return null;
@@ -563,7 +604,7 @@ namespace Servy.Service.ProcessManagement
                 Helper.EnsureDirectoryExists(fullPath);
 
                 // Re-verify ancestor directories after EnsureDirectoryExists creates any missing paths
-                if (Helper.HasAncestorReparsePoint(fullPath))
+                if (hasAncestorReparsePoint(fullPath))
                 {
                     logger.Error($"Refusing to write {scope} for '{exePath}': a directory in '{path}' is a junction or symbolic link.");
                     return null;
@@ -583,7 +624,7 @@ namespace Servy.Service.ProcessManagement
                 fs = new FileStream(fullPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
 
                 // 3. Verify the resolved handle path matches the intended target to defend against race conditions / symlink swaps
-                if (!PathSecurityGuard.TryGetFinalPathByHandle(fs.SafeFileHandle, out string handleFinalPath))
+                if (!resolveFinalPath(fs.SafeFileHandle, out string handleFinalPath))
                 {
                     logger.Error($"Refusing to write {scope} for '{exePath}': could not resolve the opened handle to a path.");
                     fs.Dispose();
