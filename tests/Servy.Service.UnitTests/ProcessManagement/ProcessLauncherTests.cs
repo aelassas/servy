@@ -67,6 +67,18 @@ namespace Servy.Service.UnitTests.ProcessManagement
         }
 
         /// <summary>
+        /// A handle resolver that throws, standing in for a native failure after the stream is already open.
+        /// </summary>
+        /// <param name="handle">The open file handle, ignored.</param>
+        /// <param name="finalPath">Never assigned; the method always throws.</param>
+        /// <returns>Never returns.</returns>
+        /// <exception cref="IOException">Always thrown.</exception>
+        private static bool Throws(SafeFileHandle handle, out string finalPath)
+        {
+            throw new IOException("resolver failed");
+        }
+
+        /// <summary>
         /// The path <see cref="ResolvesElsewhere"/> reports, standing in for a symlink swap won by an attacker.
         /// </summary>
         private string _swapTarget = string.Empty;
@@ -227,6 +239,32 @@ namespace Servy.Service.UnitTests.ProcessManagement
                 l => l.Error(
                     It.Is<string>(m => m.Contains(_swapTarget) && m.Contains(Path.GetFullPath(path))),
                     It.IsAny<Exception?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void TryOpenAppendWriter_FailureAfterOpen_DisposesTheStreamAndLogsTheException()
+        {
+            // Arrange
+            var path = Path.Combine(_tempDir, "out.log");
+
+            // Act
+            var writer = ProcessLauncher.TryOpenAppendWriter(
+                path, Encoding.UTF8, "app.exe", "stdout", _logger.Object, _ => false, Throws);
+
+            // Assert
+            Assert.Null(writer);
+            Assert.True(File.Exists(path));
+            using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // An exclusive open throws IOException while the failed writer's handle is still open, so it
+                // witnesses the fs?.Dispose() in the catch-all. This is the only arm that reaches that call
+                // with fs non-null: every earlier refusal returns before the FileStream is opened.
+            }
+            _logger.Verify(
+                l => l.Error(
+                    It.Is<string>(m => m.StartsWith("Disabling stdout capture") && m.Contains("after open failure")),
+                    It.Is<Exception?>(e => e is IOException && e.Message == "resolver failed")),
                 Times.Once);
         }
 
