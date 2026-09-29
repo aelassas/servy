@@ -136,6 +136,7 @@
     <Compile Include="RecoveryExecutionTests.cs" />
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="ProcessManagement\HookTests.cs" />
+    <Compile Include="ProcessManagement\ProcessLauncherTests.cs" />
     <Compile Include="ServiceCleanupTests.cs" />
     <Compile Include="ServiceTestContext.cs" />
     <Compile Include="ServiceTests.cs" />
