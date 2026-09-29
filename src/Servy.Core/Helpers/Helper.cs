@@ -579,7 +579,7 @@ namespace Servy.Core.Helpers
 
                             if (retries <= 0)
                             {
-                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and explicit delete fallback failed ({moveEx.Message}).", uex, moveEx);
+                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and fallback move failed ({moveEx.Message}).", uex, moveEx);
                             }
 
                             retries--;
