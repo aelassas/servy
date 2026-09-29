@@ -329,8 +329,8 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // Assert
                 Assert.False(result);
 
-                // VERIFICATION GUARD: Lock in proof that the underlying mock process killer was explicitly evaluated
-                // before the helper marked the copy pass execution as a failure state.
+                // The killer must have been reached exactly once, so the false result comes from the failed
+                // termination and not from an earlier exit such as a missing resource stream (the #3984 trap).
                 _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Once);
             }
         }
@@ -426,7 +426,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // and ProcessKiller is never invoked
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
 
-            // 2. VERIFICATION LOOP: Confirm the service management pipeline executed gracefully in order
+            // 2. Confirm the discovery call matched the isCli routing flag, and the other one was never made
             if (isCli)
             {
                 _mockServiceHelper.Verify(s => s.GetRunningServyCLIServices(), Times.Once);
