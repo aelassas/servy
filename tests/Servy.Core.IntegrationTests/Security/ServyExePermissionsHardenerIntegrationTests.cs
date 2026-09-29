@@ -388,8 +388,7 @@ namespace Servy.Core.IntegrationTests.Security
         #region Accounts that are not hardened
 
         [Theory]
-        [InlineData(@"BUILTIN\Administrators")]
-        [InlineData(@"NT AUTHORITY\SYSTEM")]
+        [ClassData(typeof(AdministrativePrincipalsData))]
         public void Harden_AdministrativePrincipal_ChangesNothing(string account)
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
@@ -478,13 +477,14 @@ namespace Servy.Core.IntegrationTests.Security
         #region Seams against the real system
 
         [Theory]
-        [InlineData("LocalService", WellKnownSidType.LocalServiceSid)]
-        [InlineData(@"NT AUTHORITY\NetworkService", WellKnownSidType.NetworkServiceSid)]
-        [InlineData(@"BUILTIN\Administrators", WellKnownSidType.BuiltinAdministratorsSid)]
+        [ClassData(typeof(WellKnownAccountData))]
         public void ResolveAccount_WellKnownNames_ResolveToTheirSid(string account, WellKnownSidType expected)
         {
+            // Arrange
+            var probe = new SeamProbe(_vault);
+
             // Act
-            var sid = new SeamProbe(_vault).Resolve(account);
+            var sid = probe.Resolve(account);
 
             // Assert
             Assert.Equal(new SecurityIdentifier(expected, null), sid);
@@ -691,6 +691,56 @@ namespace Servy.Core.IntegrationTests.Security
             public bool? IsMember(SecurityIdentifier sid) => IsAdministratorsMember(sid);
 
             public int LinkCount(string path) => GetHardLinkCount(path);
+        }
+
+        #endregion
+
+        #region Test Data
+
+        /// <summary>
+        /// Provides dynamic test data for administrative principals resolved against the local system.
+        /// </summary>
+        public class AdministrativePrincipalsData : TheoryData<string>
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AdministrativePrincipalsData"/> class and populates
+            /// localized names for built-in administrative principals.
+            /// </summary>
+            public AdministrativePrincipalsData()
+            {
+                // Arrange & Act: Resolve localized account name for BUILTIN\Administrators
+                var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                Add(adminSid.Translate(typeof(NTAccount)).Value);
+
+                // Arrange & Act: Resolve localized account name for NT AUTHORITY\SYSTEM
+                var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+                Add(systemSid.Translate(typeof(NTAccount)).Value);
+            }
+        }
+
+        /// <summary>
+        /// Provides dynamic test data for well-known account resolution tests.
+        /// </summary>
+        public class WellKnownAccountData : TheoryData<string, WellKnownSidType>
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="WellKnownAccountData"/> class and populates
+            /// localized well-known account names mapped to their respective <see cref="WellKnownSidType"/>.
+            /// </summary>
+            public WellKnownAccountData()
+            {
+                // Arrange & Act: Resolve localized account name for LocalService
+                var localServiceSid = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+                Add(localServiceSid.Translate(typeof(NTAccount)).Value, WellKnownSidType.LocalServiceSid);
+
+                // Arrange & Act: Resolve localized account name for NetworkService
+                var networkServiceSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+                Add(networkServiceSid.Translate(typeof(NTAccount)).Value, WellKnownSidType.NetworkServiceSid);
+
+                // Arrange & Act: Resolve localized account name for BUILTIN\Administrators
+                var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                Add(adminSid.Translate(typeof(NTAccount)).Value, WellKnownSidType.BuiltinAdministratorsSid);
+            }
         }
 
         #endregion
