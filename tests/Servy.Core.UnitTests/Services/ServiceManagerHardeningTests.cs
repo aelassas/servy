@@ -293,6 +293,57 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_StaleCasingRowDroppedFromDbOnly_RevokesItsAccount()
+        {
+            // Arrange: a record under another casing layout, whose service the SCM no longer has, so the
+            // casing-variance block drops the row with DeleteAsync instead of going through UninstallServiceAsync.
+            // The read before the drop decrypts and sees it; the read after it does not, because the row is gone.
+            const string legacyName = "hardenedservice";
+            _windowsServiceApi.Setup(x => x.GetServices()).Returns(new List<WindowsServiceInfo>());
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = legacyName, RunAsLocalSystem = false, UserAccount = @".\old-account" });
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto)null);
+            _serviceRepository.Setup(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            ArrangeServiceCreated();
+            var options = CreateOptions(@".\new-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.HardenAsync(@".\new-account", It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_StaleCasingRowDroppedFromDbOnly_KeepsAnUnchangedAccount()
+        {
+            // Arrange: the same drop, but the reinstall keeps the account the dropped row ran under, so the
+            // fallback must not hand the revocation the account the install has just granted.
+            const string legacyName = "hardenedservice";
+            _windowsServiceApi.Setup(x => x.GetServices()).Returns(new List<WindowsServiceInfo>());
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = legacyName, RunAsLocalSystem = false, UserAccount = @".\SVC-ACCOUNT" });
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto)null);
+            _serviceRepository.Setup(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            ArrangeServiceCreated();
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public async Task UninstallService_ServiceUnderCustomAccount_AsksToRevokeThatAccountAfterTheDelete()
         {
             // Arrange

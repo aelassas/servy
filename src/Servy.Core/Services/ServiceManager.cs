@@ -519,6 +519,15 @@ namespace Servy.Core.Services
                         var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
                         dto.Pid = serviceDto?.Pid;
 
+                        // The record whose account the revocation below compares against. The casing-variance block
+                        // dropped the legacy row, and the lookup above is case-insensitive (UNICODE_NOCASE), so it
+                        // cannot see it and serviceDto is null: without the fallback the legacy account would keep
+                        // the vault grants. Revoking straight after the drop is not an option because
+                        // ExecuteDatabaseRecoveryAsync can restore the row, so it waits for the success paths here.
+                        // On the SCM arm of that block UninstallServiceAsync has already revoked, and a second pass
+                        // finds no entry left to remove.
+                        var formerService = serviceDto ?? (legacyDroppedFromDb ? legacyBackupDto : null);
+
                         int totalWaitTime = ServiceHelper.CalculateStopTimeout(
                             options.StopTimeout,
                             serviceDto?.PreviousStopTimeout,
@@ -634,7 +643,7 @@ namespace Servy.Core.Services
                                     cancellationToken);
                                 Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                                 await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
-                                await RevokeExePermissionsIfUnusedAsync(options.ServiceName, serviceDto, lpServiceStartName, cancellationToken);
+                                await RevokeExePermissionsIfUnusedAsync(options.ServiceName, formerService, lpServiceStartName, cancellationToken);
                                 return OperationResult.Success();
                             }
 
@@ -653,7 +662,7 @@ namespace Servy.Core.Services
 
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
                         await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
-                        await RevokeExePermissionsIfUnusedAsync(options.ServiceName, serviceDto, lpServiceStartName, cancellationToken);
+                        await RevokeExePermissionsIfUnusedAsync(options.ServiceName, formerService, lpServiceStartName, cancellationToken);
                         return OperationResult.Success();
                     }
                     catch
