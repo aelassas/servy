@@ -382,7 +382,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ExecuteAsync_CategoryWithOnlyNullColumns_IsOmittedEntirely()
+        public async Task ExecuteAsync_CategoryWhoseTriggerIsUnset_IsOmittedEntirely()
         {
             // Arrange
             GivenService(MinimalDto());
@@ -395,7 +395,9 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             var lines = (result.Message ?? string.Empty).Split('\n').Select(l => l.TrimEnd('\r')).ToList();
 
-            // A section is dropped when every one of its columns is NULL or explicitly disabled.
+            // These categories are not built at all unless their trigger is set: a stdout or stderr
+            // path for Logs, health monitoring for Recovery, and the category's own executable path
+            // for Failure Program and each of the four hooks. MinimalDto sets none of them.
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_Logs, lines);
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_Recovery, lines);
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_PreLaunch, lines);
@@ -438,6 +440,28 @@ namespace Servy.CLI.UnitTests.Commands
             // row is there rather than the section being dropped.
             Assert.Contains(CliStrings.Msg_Show_Group_Account, result.Message);
             Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_RunAsLocalSystem));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_OnlyStderrPathSet_RendersTheLogsSection()
+        {
+            // Arrange
+            // The Logs trigger is either log path. Every other test that renders Logs sets StdoutPath,
+            // so without this case the StderrPath half of the condition can be deleted with the suite
+            // green, and a stderr-only service would lose its whole Logs section, rotation included.
+            var dto = MinimalDto();
+            dto.StdoutPath = null;
+            dto.StderrPath = @"C:\logs\err.log";
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(@"C:\logs\err.log", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stderr));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stdout));
         }
 
         [Fact]
