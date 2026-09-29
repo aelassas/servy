@@ -3090,6 +3090,7 @@ namespace Servy.Service
         /// forwards to it unchanged. It is overridable so the bounded wait's pulse and budget
         /// arithmetic can be observed without a test really waiting.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         protected virtual bool WaitForTrackedHookExit(Process process, int timeoutMs)
         {
             return process.WaitForExit(timeoutMs);
