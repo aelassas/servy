@@ -356,7 +356,8 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void SetConsoleCtrlHandler_NullCallbackReference_SucceedsValidly()
         {
-            // Passing null removes or sets default configuration components depending on the trailing boolean flag state parameters.
+            // With a null handler the flag is not add/remove: TRUE makes this process ignore CTRL+C and
+            // FALSE restores normal CTRL+C processing, which is what the finally below puts back.
             bool success = NativeMethods.SetConsoleCtrlHandler(IntPtr.Zero, true);
             try
             {
