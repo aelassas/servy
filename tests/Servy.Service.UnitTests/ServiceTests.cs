@@ -306,7 +306,7 @@ namespace Servy.Service.UnitTests
                 testException
             ), Times.Once);
 
-            // 3. Verify that the logger was never promoted/disposed due to early failure
+            // 3. Verify that the logger was never promoted due to the early failure
             _ctx.Logger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
         }
 
@@ -1943,13 +1943,13 @@ namespace Servy.Service.UnitTests
             // 1. Verify the stopping event fired successfully
             Assert.True(stopped);
 
-            // 2. Verify process stop was requested with its stop timeout limit
+            // 2. Verify process stop was requested
             _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
 
             // 3. Verify that the health-monitoring timer was stopped
             _mockTimer.Verify(t => t.Stop(), Times.Once);
 
-            // 4. Verify stdout and stderr writers were flushed and disposed cleanly
+            // 4. Verify stdout and stderr writers were disposed
             _mockStdoutWriter.Verify(w => w.Dispose(), Times.Once);
             _mockStderrWriter.Verify(w => w.Dispose(), Times.Once);
         }
@@ -2144,7 +2144,6 @@ namespace Servy.Service.UnitTests
                 Environment.ExitCode = originalExitCode;
             }
         }
-
 
         [Fact]
         public void OnCustomCommand_PreShutdownWithSlowTeardown_KeepsPulsingStopPendingUntilItCompletes()
