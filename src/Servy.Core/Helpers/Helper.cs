@@ -449,7 +449,7 @@ namespace Servy.Core.Helpers
                             }
                             break;
                         }
-                        catch (Exception deleteEx)
+                        catch (Exception moveEx)
                         {
                             if (backup != null && !File.Exists(path))
                             {
@@ -459,11 +459,11 @@ namespace Servy.Core.Helpers
 
                             if (retries <= 0)
                             {
-                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and explicit delete fallback failed ({deleteEx.Message}).", uex, deleteEx);
+                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and fallback move failed ({moveEx.Message}).", uex, moveEx);
                             }
 
                             retries--;
-                            Logger.Debug($"WriteFileAtomic retrying fallback delete after transient error: {deleteEx.Message} (retries left: {retries})");
+                            Logger.Debug($"WriteFileAtomic retrying fallback move after transient error: {moveEx.Message} (retries left: {retries})");
                             if (cancellationToken.WaitHandle.WaitOne(AppConfig.WriteFileAtomicRetryDelayMs))
                             {
                                 cancellationToken.ThrowIfCancellationRequested();
@@ -565,11 +565,11 @@ namespace Servy.Core.Helpers
                             if (backup != null)
                             {
                                 try { File.Delete(backup); }
-                                catch (Exception ex) { Logger.Debug($"WriteFileAtomicCore: could not remove backup copy '{backup}': {ex.Message}"); }
+                                catch (Exception deleteEx) { Logger.Debug($"WriteFileAtomicCore: could not remove backup copy '{backup}': {deleteEx.Message}"); }
                             }
                             break;
                         }
-                        catch (Exception deleteEx)
+                        catch (Exception moveEx)
                         {
                             if (backup != null && !File.Exists(path))
                             {
@@ -579,11 +579,11 @@ namespace Servy.Core.Helpers
 
                             if (retries <= 0)
                             {
-                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and explicit delete fallback failed ({deleteEx.Message}).", uex, deleteEx);
+                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and explicit delete fallback failed ({moveEx.Message}).", uex, moveEx);
                             }
 
                             retries--;
-                            Logger.Debug($"WriteFileAtomicCore retrying fallback delete after transient error: {deleteEx.Message} (retries left: {retries})");
+                            Logger.Debug($"WriteFileAtomicCore retrying fallback move after transient error: {moveEx.Message} (retries left: {retries})");
                             await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken);
                         }
                     }
