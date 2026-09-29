@@ -540,11 +540,14 @@ namespace Servy.CLI.Commands
         /// <summary>
         /// A category of the single-service report. A section with no rows is dropped by
         /// <see cref="Render"/>, so a category whose columns are all empty contributes no empty
-        /// heading. That is narrower than "an unused feature is not shown": every flag and timeout
-        /// is stored with an <c>AppConfig</c> default at install time, so every category holding one
-        /// of those columns - Account, Logs, Timeouts, Recovery, Pre-Launch, Pre-Stop, Other - is always
-        /// rendered, with those defaults, however the feature is configured. Only Failure Program,
-        /// Environment, Post-Launch and Post-Stop, whose columns are all strings, can be dropped.
+        /// heading. Account, Timeouts, Other and Environment are always built and rely on exactly
+        /// that, because every row they hold is added by <c>IfSet</c>. The first three still render
+        /// for a service Servy created - each flag and timeout is stored with an <c>AppConfig</c>
+        /// default at install time - while Environment is dropped unless environment variables or
+        /// dependencies are set. Logs, Recovery, Failure Program, Pre-Launch, Post-Launch, Pre-Stop
+        /// and Post-Stop are built only when their trigger is present - a stdout or stderr path,
+        /// health monitoring, or the category's own executable path - and then add every row with
+        /// <c>Always</c>, so a blank column shows the not-set placeholder instead of vanishing.
         /// </summary>
         private sealed class Section
         {
