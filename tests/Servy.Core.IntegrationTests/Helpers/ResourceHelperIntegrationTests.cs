@@ -521,26 +521,53 @@ namespace Servy.Core.IntegrationTests.Helpers
         public async Task CopyEmbeddedResource_WhenCancelledBeforeTermination_ReturnsFalse()
         {
             // Arrange
-            using var cts = new CancellationTokenSource();
-            cts.Cancel();
+            string fileName = "cancelapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+
+            // A stale, existing target, so TryPrepareExtraction asks for a copy instead of returning early.
+            File.WriteAllText(targetPath, "existing target");
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+
+            // The killer would report success, so nothing downstream of TerminateBlockingProcesses
+            // masks the Times.Never below: only the cancellation check keeps it from being reached.
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
 
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
                          .Returns(() => new MemoryStream(new byte[] { 0x01 }));
 
-            // Act
-            // The cancellation check before the process-termination step is not gated on stopServices,
-            // so a pre-cancelled token reaches it even with stopServices: false.
-            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object,
-                "Servy.Resources",
-                "cancelapp",
-                "exe",
-                stopServices: false,
-                cancellationToken: cts.Token);
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
 
-            // Assert: the OperationCanceledException arm of the outer catch, not the general one
-            Assert.False(result);
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+            // Lock the target exclusively so IsFileLocked returns true. Without this the target does not
+            // exist, IsFileLocked short-circuits on the missing file, and the killer is unreachable
+            // whether or not the cancellation check runs - which is what stopped the old test pinning it.
+            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                // The cancellation check before the process-termination step is not gated on stopServices,
+                // so a pre-cancelled token reaches it even with stopServices: false. LogCapture routes the
+                // static Logger into a private temp directory so the arm that ran can be read back.
+                var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object,
+                    "Servy.Resources",
+                    fileName,
+                    extension,
+                    stopServices: false,
+                    cancellationToken: cts.Token));
+
+                // Assert
+                Assert.False(result);
+
+                // The locked, stale target routes TerminateBlockingProcesses to the killer, so this now
+                // fails if the cancellation check is removed.
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+
+                // Both catch arms return false, so only the log tells them apart: this is the
+                // OperationCanceledException arm, not the general one.
+                Assert.Contains("was cancelled by the caller", textLogOutput);
+                Assert.DoesNotContain("Failed to copy embedded resource", textLogOutput);
+            }
         }
 
         [Fact]
