@@ -575,7 +575,7 @@ namespace Servy.Core.Helpers
                                             // 2c. Fallback and Comparison Logic
                                             if (exePath == null)
                                             {
-                                                exePath = expandedPath; // best-effort; Path.GetFileName below handles unquoted paths
+                                                exePath = expandedPath; // best-effort; matches below only when the ImagePath has no arguments
                                             }
 
                                             try
