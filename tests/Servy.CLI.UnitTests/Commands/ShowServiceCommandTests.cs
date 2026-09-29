@@ -465,15 +465,15 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_Logs, result.Message);
             Assert.Equal(@"C:\logs\out.log", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stdout));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stderr));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_ActiveStdout));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_ActiveStderr));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_SizeRotation));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationSize));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_DateRotation));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationPeriod));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_MaxFiles));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_LocalTimeRotation));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stderr));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_ActiveStdout));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_ActiveStderr));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_SizeRotation));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationSize));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_DateRotation));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationPeriod));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_MaxFiles));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_LocalTimeRotation));
         }
 
         [Fact]
@@ -501,14 +501,14 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_Recovery, result.Message);
             Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HealthCheck));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Heartbeat));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_MaxFailedChecks));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Recovery));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_OnCleanExit));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_MaxAttempts));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HeartbeatUrl));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_UrlTimeout));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_UrlFlags));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Heartbeat));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_MaxFailedChecks));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_Recovery));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_OnCleanExit));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_MaxAttempts));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HeartbeatUrl));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_UrlTimeout));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_UrlFlags));
         }
 
         [Fact]
@@ -536,14 +536,14 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_PreLaunch, result.Message);
             Assert.Equal(@"C:\apps\prelaunch.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Executable));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_StartupDir));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Parameters));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_EnvironmentVariables));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Stdout));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Stderr));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Timeout));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_RetryAttempts));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_IgnoreFailure));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_EnvironmentVariables));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Stdout));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Stderr));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_Timeout));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_RetryAttempts));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreLaunch, CliStrings.Msg_Show_Label_IgnoreFailure));
         }
 
         [Fact]
@@ -565,8 +565,8 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_PostLaunch, result.Message);
             Assert.Equal(@"C:\apps\postlaunch.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_Executable));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_StartupDir));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostLaunch, CliStrings.Msg_Show_Label_Parameters));
         }
 
         [Fact]
@@ -590,10 +590,10 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_PreStop, result.Message);
             Assert.Equal(@"C:\apps\prestop.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Executable));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_StartupDir));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Parameters));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Timeout));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_LogAsError));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_Timeout));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PreStop, CliStrings.Msg_Show_Label_LogAsError));
         }
 
         [Fact]
@@ -615,8 +615,8 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.Contains(CliStrings.Msg_Show_Group_PostStop, result.Message);
             Assert.Equal(@"C:\apps\poststop.exe", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_Executable));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_StartupDir));
-            Assert.Equal("-", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_StartupDir));
+            Assert.Equal(CliStrings.Msg_Show_ValueNotSet, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_PostStop, CliStrings.Msg_Show_Label_Parameters));
         }
 
         [Fact]
