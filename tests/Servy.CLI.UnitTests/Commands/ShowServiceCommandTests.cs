@@ -368,10 +368,19 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_PopulatedCategory_RendersItsHeadingAndRows()
         {
             // Arrange
+            // Failure Program is the category this test can only see because the arrange step
+            // populated it: MinimalDto leaves its trigger unset, which
+            // ExecuteAsync_CategoryWhoseTriggerIsUnset_IsOmittedEntirely pins. Its heading is also
+            // the only one checked here as a whole line - "Logs" is a substring of the "Debug Logs"
+            // row MinimalDto always renders in Other, so Assert.Contains on the report could not
+            // tell a missing Logs heading from a present one. The rotation size is deliberately not
+            // AppConfig.DefaultRotationSizeMB, so that row reflects this arrange line and not the
+            // fixture default.
             var dto = MinimalDto();
+            dto.FailureProgramPath = @"C:\apps\notify.exe";
             dto.StdoutPath = @"C:\logs\out.log";
             dto.EnableSizeRotation = true;
-            dto.RotationSize = 10;
+            dto.RotationSize = 25;
             GivenService(dto);
             GivenStatus(ServiceControllerStatus.Running);
             var opts = new ShowServiceOptions { ServiceName = ServiceName };
@@ -380,10 +389,14 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.Contains(CliStrings.Msg_Show_Group_Logs, result.Message);
+            var lines = (result.Message ?? string.Empty).Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+            Assert.Contains(CliStrings.Msg_Show_Group_FailureProgram, lines);
+            Assert.Equal(
+                @"C:\apps\notify.exe",
+                SectionRowValue(result.Message, CliStrings.Msg_Show_Group_FailureProgram, CliStrings.Msg_Show_Label_Executable));
             Assert.Equal(@"C:\logs\out.log", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_Stdout));
             Assert.Equal(CliStrings.Msg_Show_Yes, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_SizeRotation));
-            Assert.Equal(string.Format(CliStrings.Msg_Show_Megabytes, 10), SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationSize));
+            Assert.Equal(string.Format(CliStrings.Msg_Show_Megabytes, 25), SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Logs, CliStrings.Msg_Show_Label_RotationSize));
         }
 
         [Fact]
