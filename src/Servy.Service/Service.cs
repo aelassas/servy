@@ -337,6 +337,7 @@ namespace Servy.Service
 
                 // Centralized logging bootstrapper
                 _bootstrapEnvironment.ConfigureLogging(config, instanceLogger: _logger);
+                CoreSettingsLoader.WarnAboutIgnoredSettings(config, "Servy.Service.Net48.exe.config", _logger);
 
                 var isEventLogEnabled = ConfigParser.ParseBool(config["EnableEventLog"], AppConfig.DefaultEnableEventLog, "EnableEventLog");
                 AutoLog = isEventLogEnabled;

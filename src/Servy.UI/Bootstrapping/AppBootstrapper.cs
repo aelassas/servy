@@ -258,6 +258,7 @@ namespace Servy.UI.Bootstrapping
         {
             var config = ConfigurationManager.AppSettings;
             LoggerConfigurator.ConfigureFromAppSettings(config);
+            CoreSettingsLoader.WarnAboutIgnoredSettings(config, Path.GetFileName(AppDomain.CurrentDomain.SetupInformation.ConfigurationFile));
             _options.CustomConfigAction?.Invoke(config);
         }
 

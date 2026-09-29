@@ -1,4 +1,8 @@
+using Moq;
 using Servy.Core.Config;
+using Servy.Core.Logging;
+using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
@@ -37,18 +41,95 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
-        public void CoreSettingsLoader_HasNoEntryPointThatTakesTheApplicationSettings()
+        public void CoreSettingsLoader_NothingThatProducesTheSettingsTakesTheApplicationSettings()
         {
             // Arrange
-            // The settings are read-only: no public member may accept the appSettings collection
-            // (or any other source) that could relocate the database or the key.
+            // The settings are read-only: the only public member that produces them takes no
+            // appSettings collection (or any other source) that could relocate the database or the key.
             var methods = typeof(CoreSettingsLoader).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
 
             // Assert
-            var load = Assert.Single(methods);
+            var producers = methods.Where(m => m.ReturnType == typeof(CoreSettings)).ToList();
+            var load = Assert.Single(producers);
             Assert.Equal(nameof(CoreSettingsLoader.Load), load.Name);
             Assert.Empty(load.GetParameters());
-            Assert.DoesNotContain(methods, m => m.GetParameters().Any(p => typeof(NameValueCollection).IsAssignableFrom(p.ParameterType)));
+            Assert.DoesNotContain(methods, m => m.ReturnType != typeof(IReadOnlyList<string>)
+                && m.GetParameters().Any(p => typeof(NameValueCollection).IsAssignableFrom(p.ParameterType)));
+        }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_NoIgnoredKeySet_WarnsNothing()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var config = new NameValueCollection
+            {
+                { "LogLevel", "Debug" },
+                { "DefaultConnection", "   " },
+                { "Security:AESKeyFilePath", "" },
+            };
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "Servy.CLI.exe.config", logger.Object);
+
+            // Assert
+            Assert.Empty(found);
+            logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_NullConfig_WarnsNothing()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(null, "Servy.CLI.exe.config", logger.Object);
+
+            // Assert
+            Assert.Empty(found);
+            logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_EveryIgnoredKeySet_WarnsOnceNamingEachKeyAndTheFile()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var config = new NameValueCollection
+            {
+                { "Security:AESIVFilePath", "D:\\old\\iv.dat" },
+                { "DefaultConnection", "Data Source=D:\\old\\Servy.db" },
+                { "Security:AESKeyFilePath", "D:\\old\\key.dat" },
+            };
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "Servy.Service.Net48.exe.config", logger.Object);
+
+            // Assert
+            Assert.Equal(new[] { "DefaultConnection", "Security:AESKeyFilePath", "Security:AESIVFilePath" }, found);
+            logger.Verify(l => l.Warn(It.Is<string>(m =>
+                m.StartsWith("Servy.Service.Net48.exe.config sets DefaultConnection, Security:AESKeyFilePath, Security:AESIVFilePath, which Servy ignores since v10.2")
+                && m.Contains(AppConfig.ProgramDataPath)
+                && m.EndsWith("Remove these settings from Servy.Service.Net48.exe.config.")), null), Times.Once);
+            logger.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_OneIgnoredKeySet_NamesOnlyThatKey()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var config = new NameValueCollection { { "Security:AESKeyFilePath", "D:\\old\\key.dat" } };
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "Servy.Restarter.Net48.exe.config", logger.Object);
+
+            // Assert
+            Assert.Equal(new[] { "Security:AESKeyFilePath" }, found);
+            logger.Verify(l => l.Warn(It.Is<string>(m =>
+                m.StartsWith("Servy.Restarter.Net48.exe.config sets Security:AESKeyFilePath, which")
+                && m.EndsWith("Remove this setting from Servy.Restarter.Net48.exe.config.")), null), Times.Once);
         }
 
         [Fact]

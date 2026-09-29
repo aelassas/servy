@@ -124,6 +124,30 @@ namespace Servy.Restarter.UnitTests
         #region Operational Pipeline & Validation Branches
 
         [Fact]
+        public void Main_SettingsFileStillRelocatesTheDatabase_WarnsThatTheSettingIsIgnored()
+        {
+            // Arrange
+            // A pre-10.2 .exe.config that still points the database elsewhere. The setting has no
+            // effect (the test-only override supplies the database), and the restarter must say so
+            // once the scoped logger exists.
+            ConfigurationManager.AppSettings["DefaultConnection"] = "Data Source=D:\\old\\Servy.db";
+            try
+            {
+                // Act
+                Program.Main(new string[] { "UnmanagedNet48ServiceWithOldSettings", TempDirectory });
+
+                // Assert
+                AssertLogContainsMessage("Servy.Restarter.Net48.exe.config sets DefaultConnection, which Servy ignores since v10.2");
+            }
+            finally
+            {
+                // AppSettings accepts a new value in memory but refuses Remove ("The configuration is read only"),
+                // so blank the key instead: a blank value is what WarnAboutIgnoredSettings treats as unset.
+                ConfigurationManager.AppSettings["DefaultConnection"] = string.Empty;
+            }
+        }
+
+        [Fact]
         public void Main_ValidNameButServiceNotManaged_TriggersValidationFailureBranch()
         {
             // Arrange
