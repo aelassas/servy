@@ -78,7 +78,7 @@ namespace Servy.Core.Security
         /// <summary>Gets the required files (relative to the vault) that are not present.</summary>
         public IReadOnlyList<string> Missing => _missing;
 
-        /// <summary>Gets the files and folders (relative to the vault), or the vault itself, that could not be hardened.</summary>
+        /// <summary>Gets the files and folders (relative to the vault), or the vault itself, that could not be hardened, or from which a revocation could not remove the account's entries.</summary>
         public IReadOnlyList<string> Failed => _failed;
 
         /// <summary>Gets the optional files (relative to the vault) that are not present and were skipped.</summary>
