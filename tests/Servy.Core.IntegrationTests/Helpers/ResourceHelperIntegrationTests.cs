@@ -369,7 +369,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-            Assert.True(_resourceHelper.HasCopiedResources); // A written file inherits the vault's grant and must be re-hardened
+            Assert.True(_resourceHelper.HasCopiedResources); // A newly written file carries no grant for the service accounts, so it must be re-hardened
             Assert.True(File.Exists(targetPath));
             var writtenBytes = File.ReadAllBytes(targetPath);
             Assert.Equal(dummyData, writtenBytes);
