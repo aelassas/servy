@@ -1336,7 +1336,7 @@ namespace Servy.Core.Services
         /// Retrieves the account name under which the service runs.
         /// </summary>
         /// <param name="svcHandle">A valid handle to the target Windows service.</param>
-        /// <returns>The account string or <c>null</c> if it couldn't be retrieved.</returns>
+        /// <returns>The account string, or <c>null</c> if no account is configured. A failed query throws instead.</returns>
         /// <exception cref="Win32Exception">Thrown when the Win32 subsystem encounters an infrastructural or security impediment.</exception>
         private string GetServiceUser(SafeServiceHandle svcHandle)
         {
