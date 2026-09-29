@@ -170,7 +170,7 @@ namespace Servy.CLI.Commands
             var core = new Section(null);
             core.Always(Strings.Msg_Show_Label_Name, dto.Name);
             core.Always(Strings.Msg_Show_Label_Status, ResolveStatusToken(dto.Name, cancellationToken));
-            core.Always(Strings.Msg_Show_Label_Pid, dto.Pid.HasValue ? dto.Pid.Value.ToString(CultureInfo.InvariantCulture) : null);
+            core.Always(Strings.Msg_Show_Label_Pid, dto.Pid?.ToString(CultureInfo.InvariantCulture));
             core.Always(Strings.Msg_Show_Label_DisplayName, dto.DisplayName);
             core.Always(Strings.Msg_Show_Label_Description, dto.Description);
             core.Always(Strings.Msg_Show_Label_StartupType, FormatEnum(typeof(ServiceStartType), dto.StartupType));
@@ -190,35 +190,41 @@ namespace Servy.CLI.Commands
             account.IfSet(Strings.Msg_Show_Label_Password, Secret(dto.Password, decrypted: false));
             sections.Add(account);
 
-            var logs = new Section(Strings.Msg_Show_Group_Logs);
-            logs.IfSet(Strings.Msg_Show_Label_Stdout, dto.StdoutPath);
-            logs.IfSet(Strings.Msg_Show_Label_Stderr, dto.StderrPath);
-            logs.IfSet(Strings.Msg_Show_Label_ActiveStdout, dto.ActiveStdoutPath);
-            logs.IfSet(Strings.Msg_Show_Label_ActiveStderr, dto.ActiveStderrPath);
-            logs.IfSet(Strings.Msg_Show_Label_SizeRotation, FormatBoolean(dto.EnableSizeRotation));
-            logs.IfSet(Strings.Msg_Show_Label_RotationSize, FormatMegabytes(dto.RotationSize));
-            logs.IfSet(Strings.Msg_Show_Label_DateRotation, FormatBoolean(dto.EnableDateRotation));
-            logs.IfSet(Strings.Msg_Show_Label_RotationPeriod, FormatEnum(typeof(DateRotationType), dto.DateRotationType));
-            logs.IfSet(Strings.Msg_Show_Label_MaxFiles, dto.MaxRotations.HasValue ? dto.MaxRotations.Value.ToString(CultureInfo.InvariantCulture) : null);
-            logs.IfSet(Strings.Msg_Show_Label_LocalTimeRotation, FormatBoolean(dto.UseLocalTimeForRotation));
-            sections.Add(logs);
+            if (!string.IsNullOrWhiteSpace(dto.StdoutPath) || !string.IsNullOrWhiteSpace(dto.StderrPath))
+            {
+                var logs = new Section(Strings.Msg_Show_Group_Logs);
+                logs.Always(Strings.Msg_Show_Label_Stdout, dto.StdoutPath, "-");
+                logs.Always(Strings.Msg_Show_Label_Stderr, dto.StderrPath, "-");
+                logs.Always(Strings.Msg_Show_Label_ActiveStdout, dto.ActiveStdoutPath, "-");
+                logs.Always(Strings.Msg_Show_Label_ActiveStderr, dto.ActiveStderrPath, "-");
+                logs.Always(Strings.Msg_Show_Label_SizeRotation, FormatBoolean(dto.EnableSizeRotation), "-");
+                logs.Always(Strings.Msg_Show_Label_RotationSize, FormatMegabytes(dto.RotationSize), "-");
+                logs.Always(Strings.Msg_Show_Label_DateRotation, FormatBoolean(dto.EnableDateRotation), "-");
+                logs.Always(Strings.Msg_Show_Label_RotationPeriod, FormatEnum(typeof(DateRotationType), dto.DateRotationType), "-");
+                logs.Always(Strings.Msg_Show_Label_MaxFiles, dto.MaxRotations?.ToString(CultureInfo.InvariantCulture), "-");
+                logs.Always(Strings.Msg_Show_Label_LocalTimeRotation, FormatBoolean(dto.UseLocalTimeForRotation), "-");
+                sections.Add(logs);
+            }
 
             var timeouts = new Section(Strings.Msg_Show_Group_Timeouts);
             timeouts.IfSet(Strings.Msg_Show_Label_Start, FormatSeconds(dto.StartTimeout));
             timeouts.IfSet(Strings.Msg_Show_Label_Stop, FormatSeconds(dto.StopTimeout));
             sections.Add(timeouts);
 
-            var recovery = new Section(Strings.Msg_Show_Group_Recovery);
-            recovery.IfSet(Strings.Msg_Show_Label_HealthCheck, FormatBoolean(dto.EnableHealthMonitoring));
-            recovery.IfSet(Strings.Msg_Show_Label_Heartbeat, FormatSeconds(dto.HeartbeatInterval));
-            recovery.IfSet(Strings.Msg_Show_Label_MaxFailedChecks, dto.MaxFailedChecks.HasValue ? dto.MaxFailedChecks.Value.ToString(CultureInfo.InvariantCulture) : null);
-            recovery.IfSet(Strings.Msg_Show_Label_Recovery, FormatEnum(typeof(RecoveryAction), dto.RecoveryAction));
-            recovery.IfSet(Strings.Msg_Show_Label_OnCleanExit, FormatBoolean(dto.RecoveryOnCleanExit));
-            recovery.IfSet(Strings.Msg_Show_Label_MaxAttempts, dto.MaxRestartAttempts.HasValue ? dto.MaxRestartAttempts.Value.ToString(CultureInfo.InvariantCulture) : null);
-            recovery.IfSet(Strings.Msg_Show_Label_HeartbeatUrl, dto.HeartbeatUrl);
-            recovery.IfSet(Strings.Msg_Show_Label_UrlTimeout, FormatSeconds(dto.HeartbeatUrlTimeoutSeconds));
-            recovery.IfSet(Strings.Msg_Show_Label_UrlFlags, FormatBoolean(dto.EnableHeartbeatUrlFlags));
-            sections.Add(recovery);
+            if (dto.EnableHealthMonitoring == true)
+            {
+                var recovery = new Section(Strings.Msg_Show_Group_Recovery);
+                recovery.Always(Strings.Msg_Show_Label_HealthCheck, FormatBoolean(dto.EnableHealthMonitoring), "-");
+                recovery.Always(Strings.Msg_Show_Label_Heartbeat, FormatSeconds(dto.HeartbeatInterval), "-");
+                recovery.Always(Strings.Msg_Show_Label_MaxFailedChecks, dto.MaxFailedChecks?.ToString(CultureInfo.InvariantCulture), "-");
+                recovery.Always(Strings.Msg_Show_Label_Recovery, FormatEnum(typeof(RecoveryAction), dto.RecoveryAction), "-");
+                recovery.Always(Strings.Msg_Show_Label_OnCleanExit, FormatBoolean(dto.RecoveryOnCleanExit), "-");
+                recovery.Always(Strings.Msg_Show_Label_MaxAttempts, dto.MaxRestartAttempts?.ToString(CultureInfo.InvariantCulture), "-");
+                recovery.Always(Strings.Msg_Show_Label_HeartbeatUrl, dto.HeartbeatUrl, "-");
+                recovery.Always(Strings.Msg_Show_Label_UrlTimeout, FormatSeconds(dto.HeartbeatUrlTimeoutSeconds), "-");
+                recovery.Always(Strings.Msg_Show_Label_UrlFlags, FormatBoolean(dto.EnableHeartbeatUrlFlags), "-");
+                sections.Add(recovery);
+            }
 
             var failure = new Section(Strings.Msg_Show_Group_FailureProgram);
             failure.IfSet(Strings.Msg_Show_Label_Executable, dto.FailureProgramPath);
@@ -231,37 +237,49 @@ namespace Servy.CLI.Commands
             environment.IfSet(Strings.Msg_Show_Label_Dependencies, dto.ServiceDependencies);
             sections.Add(environment);
 
-            var preLaunch = new Section(Strings.Msg_Show_Group_PreLaunch);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Executable, dto.PreLaunchExecutablePath);
-            preLaunch.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PreLaunchStartupDirectory);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PreLaunchParameters, decrypted));
-            preLaunch.IfSet(Strings.Msg_Show_Label_EnvironmentVariables, Secret(dto.PreLaunchEnvironmentVariables, decrypted));
-            preLaunch.IfSet(Strings.Msg_Show_Label_Stdout, dto.PreLaunchStdoutPath);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Stderr, dto.PreLaunchStderrPath);
-            preLaunch.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreLaunchTimeoutSeconds));
-            preLaunch.IfSet(Strings.Msg_Show_Label_RetryAttempts, dto.PreLaunchRetryAttempts.HasValue ? dto.PreLaunchRetryAttempts.Value.ToString(CultureInfo.InvariantCulture) : null);
-            preLaunch.IfSet(Strings.Msg_Show_Label_IgnoreFailure, FormatBoolean(dto.PreLaunchIgnoreFailure));
-            sections.Add(preLaunch);
+            if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath))
+            {
+                var preLaunch = new Section(Strings.Msg_Show_Group_PreLaunch);
+                preLaunch.Always(Strings.Msg_Show_Label_Executable, dto.PreLaunchExecutablePath, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_StartupDir, dto.PreLaunchStartupDirectory, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PreLaunchParameters, decrypted), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_EnvironmentVariables, Secret(dto.PreLaunchEnvironmentVariables, decrypted), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Stdout, dto.PreLaunchStdoutPath, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Stderr, dto.PreLaunchStderrPath, "-");
+                preLaunch.Always(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreLaunchTimeoutSeconds), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_RetryAttempts, dto.PreLaunchRetryAttempts?.ToString(CultureInfo.InvariantCulture), "-");
+                preLaunch.Always(Strings.Msg_Show_Label_IgnoreFailure, FormatBoolean(dto.PreLaunchIgnoreFailure), "-");
+                sections.Add(preLaunch);
+            }
 
-            var postLaunch = new Section(Strings.Msg_Show_Group_PostLaunch);
-            postLaunch.IfSet(Strings.Msg_Show_Label_Executable, dto.PostLaunchExecutablePath);
-            postLaunch.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PostLaunchStartupDirectory);
-            postLaunch.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PostLaunchParameters, decrypted));
-            sections.Add(postLaunch);
+            if (!string.IsNullOrWhiteSpace(dto.PostLaunchExecutablePath))
+            {
+                var postLaunch = new Section(Strings.Msg_Show_Group_PostLaunch);
+                postLaunch.Always(Strings.Msg_Show_Label_Executable, dto.PostLaunchExecutablePath, "-");
+                postLaunch.Always(Strings.Msg_Show_Label_StartupDir, dto.PostLaunchStartupDirectory, "-");
+                postLaunch.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PostLaunchParameters, decrypted), "-");
+                sections.Add(postLaunch);
+            }
 
-            var preStop = new Section(Strings.Msg_Show_Group_PreStop);
-            preStop.IfSet(Strings.Msg_Show_Label_Executable, dto.PreStopExecutablePath);
-            preStop.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PreStopStartupDirectory);
-            preStop.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PreStopParameters, decrypted));
-            preStop.IfSet(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreStopTimeoutSeconds));
-            preStop.IfSet(Strings.Msg_Show_Label_LogAsError, FormatBoolean(dto.PreStopLogAsError));
-            sections.Add(preStop);
+            if (!string.IsNullOrWhiteSpace(dto.PreStopExecutablePath))
+            {
+                var preStop = new Section(Strings.Msg_Show_Group_PreStop);
+                preStop.Always(Strings.Msg_Show_Label_Executable, dto.PreStopExecutablePath, "-");
+                preStop.Always(Strings.Msg_Show_Label_StartupDir, dto.PreStopStartupDirectory, "-");
+                preStop.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PreStopParameters, decrypted), "-");
+                preStop.Always(Strings.Msg_Show_Label_Timeout, FormatSeconds(dto.PreStopTimeoutSeconds), "-");
+                preStop.Always(Strings.Msg_Show_Label_LogAsError, FormatBoolean(dto.PreStopLogAsError), "-");
+                sections.Add(preStop);
+            }
 
-            var postStop = new Section(Strings.Msg_Show_Group_PostStop);
-            postStop.IfSet(Strings.Msg_Show_Label_Executable, dto.PostStopExecutablePath);
-            postStop.IfSet(Strings.Msg_Show_Label_StartupDir, dto.PostStopStartupDirectory);
-            postStop.IfSet(Strings.Msg_Show_Label_Parameters, Secret(dto.PostStopParameters, decrypted));
-            sections.Add(postStop);
+            if (!string.IsNullOrWhiteSpace(dto.PostStopExecutablePath))
+            {
+                var postStop = new Section(Strings.Msg_Show_Group_PostStop);
+                postStop.Always(Strings.Msg_Show_Label_Executable, dto.PostStopExecutablePath, "-");
+                postStop.Always(Strings.Msg_Show_Label_StartupDir, dto.PostStopStartupDirectory, "-");
+                postStop.Always(Strings.Msg_Show_Label_Parameters, Secret(dto.PostStopParameters, decrypted), "-");
+                sections.Add(postStop);
+            }
 
             var other = new Section(Strings.Msg_Show_Group_Other);
             other.IfSet(Strings.Msg_Show_Label_ConsoleUI, FormatBoolean(dto.EnableConsoleUI));
@@ -341,15 +359,14 @@ namespace Servy.CLI.Commands
                     Display(service.Description, notSet),
                     Display(FormatEnum(typeof(ServiceStartType), service.StartupType), notSet),
                     ResolveStatusToken(service.Name, cancellationToken),
-                    Display(service.Pid.HasValue ? service.Pid.Value.ToString(CultureInfo.InvariantCulture) : null, notSet)
+                    Display(service.Pid?.ToString(CultureInfo.InvariantCulture), notSet)
                 });
             }
 
             var widths = new int[headers.Length];
             for (var col = 0; col < headers.Length; col++)
             {
-                var index = col;
-                widths[col] = rows.Select(r => r[index].Length).Concat(new[] { headers[index].Length }).Max();
+                widths[col] = rows.Select(r => r[col].Length).Concat(new[] { headers[col].Length }).Max();
             }
 
             var sb = new StringBuilder();
@@ -406,9 +423,8 @@ namespace Servy.CLI.Commands
         {
             var status = _serviceManager.GetServiceStatus(serviceName, cancellationToken: cancellationToken);
 
-            return status.HasValue
-                ? status.Value.ToString()
-                : (_serviceManager.IsServiceInstalled(serviceName, cancellationToken)
+            return status?.ToString()
+                ?? (_serviceManager.IsServiceInstalled(serviceName, cancellationToken)
                         ? nameof(ServiceStatus.Unknown)
                         : nameof(ServiceStatus.NotInstalled));
         }
@@ -450,26 +466,20 @@ namespace Servy.CLI.Commands
         /// Log As Error - are predicates rather than features, and "Ignore Failure: Enabled" is wrong in a
         /// way "Ignore Failure: Yes" is not.
         /// </remarks>
-        private static string FormatBoolean(bool? value)
-        {
-            return value.HasValue ? (value.Value ? Strings.Msg_Show_Yes : Strings.Msg_Show_No) : null;
-        }
+        private static string FormatBoolean(bool? value) =>
+            value.HasValue ? (value.Value ? Strings.Msg_Show_Yes : Strings.Msg_Show_No) : null;
 
         /// <summary>Renders an optional second count with its unit.</summary>
         /// <param name="value">The stored seconds, or <c>null</c> when unset.</param>
         /// <returns>The rendered duration, or <c>null</c> when unset.</returns>
-        private static string FormatSeconds(int? value)
-        {
-            return value.HasValue ? string.Format(Strings.Msg_Show_Seconds, value.Value.ToString(CultureInfo.InvariantCulture)) : null;
-        }
+        private static string FormatSeconds(int? value) =>
+            value.HasValue ? string.Format(Strings.Msg_Show_Seconds, value.Value.ToString(CultureInfo.InvariantCulture)) : null;
 
         /// <summary>Renders an optional megabyte count with its unit.</summary>
         /// <param name="value">The stored megabytes, or <c>null</c> when unset.</param>
         /// <returns>The rendered size, or <c>null</c> when unset.</returns>
-        private static string FormatMegabytes(int? value)
-        {
-            return value.HasValue ? string.Format(Strings.Msg_Show_Megabytes, value.Value.ToString(CultureInfo.InvariantCulture)) : null;
-        }
+        private static string FormatMegabytes(int? value) =>
+            value.HasValue ? string.Format(Strings.Msg_Show_Megabytes, value.Value.ToString(CultureInfo.InvariantCulture)) : null;
 
         /// <summary>
         /// Renders a column that is encrypted at rest: the value when the caller asked for it, the mask
@@ -494,10 +504,8 @@ namespace Servy.CLI.Commands
         /// <param name="value">The value to display.</param>
         /// <param name="notSet">The placeholder to use when the value is blank.</param>
         /// <returns>The value, or the placeholder.</returns>
-        private static string Display(string value, string notSet)
-        {
-            return string.IsNullOrWhiteSpace(value) ? notSet : value;
-        }
+        private static string Display(string value, string notSet) =>
+            string.IsNullOrWhiteSpace(value) ? notSet : value;
 
         #endregion
 
@@ -509,10 +517,10 @@ namespace Servy.CLI.Commands
         private sealed class DetailRow
         {
             /// <summary>Gets the indented label, which also fixes the width of the label column.</summary>
-            public string Prefix { get; private set; }
+            public string Prefix { get; }
 
             /// <summary>Gets the rendered value.</summary>
-            public string Value { get; private set; }
+            public string Value { get; }
 
             /// <summary>
             /// Initializes a new instance of the <see cref="DetailRow"/> class.
@@ -540,10 +548,10 @@ namespace Servy.CLI.Commands
             private const string Indent = "  ";
 
             /// <summary>Gets the group heading, or <c>null</c> for the leading ungrouped block.</summary>
-            public string Title { get; private set; }
+            public string Title { get; }
 
             /// <summary>Gets the rows collected for this section.</summary>
-            public List<DetailRow> Rows { get; private set; }
+            public List<DetailRow> Rows { get; } = new List<DetailRow>();
 
             /// <summary>
             /// Initializes a new instance of the <see cref="Section"/> class.
@@ -552,7 +560,6 @@ namespace Servy.CLI.Commands
             public Section(string title)
             {
                 Title = title;
-                Rows = new List<DetailRow>();
             }
 
             /// <summary>
@@ -560,10 +567,9 @@ namespace Servy.CLI.Commands
             /// </summary>
             /// <param name="label">The row label.</param>
             /// <param name="value">The value to render.</param>
-            public void Always(string label, string value)
-            {
-                Rows.Add(new DetailRow(Prefix(label), Display(value, Strings.Msg_Show_ValueNotSet)));
-            }
+            /// <param name="notSet">The placeholder string to render when the value is blank.</param>
+            public void Always(string label, string value, string notSet = null) =>
+                Rows.Add(new DetailRow(Prefix(label), Display(value, notSet ?? Strings.Msg_Show_ValueNotSet)));
 
             /// <summary>
             /// Adds a row only when the value is present, so an unconfigured field takes no line.
@@ -580,10 +586,7 @@ namespace Servy.CLI.Commands
             /// <summary>Indents a label when it belongs to a group.</summary>
             /// <param name="label">The row label.</param>
             /// <returns>The indented label.</returns>
-            private string Prefix(string label)
-            {
-                return Title == null ? label : Indent + label;
-            }
+            private string Prefix(string label) => Title == null ? label : Indent + label;
         }
 
         #endregion
