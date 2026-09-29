@@ -763,8 +763,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Theory]
         [InlineData("SELECT * FROM MyTable\r\nWHERE Id = 1", null, "SELECT * FROM MyTable  WHERE Id = 1")]
         [InlineData("SELECT LongQueryStringThatExceedsTheStandardTruncationLimitForLogs", null, "SELECT LongQueryStringThatExceedsTheStandardTruncationLimitF...")] // Default 60-char limit
-        [InlineData("SELECT VeryLongQueryStringThatNeedsCustomTruncationParametersForTesting", 25, "SELECT VeryLongQueryStrin...")] // Sync logger profile bound (25 chars + ...)
-        [InlineData("SELECT VeryLongQueryStringThatNeedsCustomTruncationParametersForTesting", 50, "SELECT VeryLongQueryStringThatNeedsCustomTruncatio...")] // Async logger profile bound (50 chars + ...)
+        [InlineData("SELECT VeryLongQueryStringThatNeedsCustomTruncationParametersForTesting", 25, "SELECT VeryLongQueryStrin...")] // Explicit maxLength (25 chars + ...); both production call sites use the 60-char default
+        [InlineData("SELECT VeryLongQueryStringThatNeedsCustomTruncationParametersForTesting", 50, "SELECT VeryLongQueryStringThatNeedsCustomTruncatio...")] // Explicit maxLength (50 chars + ...); both production call sites use the 60-char default
         [InlineData("", null, "Unknown Query")]
         [InlineData(null, null, "Unknown Query")]
         public void FormatSqlForLog_Variants_EvaluatesCorrectly(string inputSql, int? maxLength, string expectedLoggedSql)
