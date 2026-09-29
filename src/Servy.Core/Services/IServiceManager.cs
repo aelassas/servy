@@ -59,6 +59,24 @@ namespace Servy.Core.Services
         Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Revokes the vault access that was granted to the account a removed service ran under,
+        /// when no remaining service still runs under that account.
+        /// </summary>
+        /// <param name="formerService">
+        /// The service's database record as it was before the removal, read with <c>decrypt: false</c>;
+        /// <c>null</c> does nothing.
+        /// </param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while revoking.</param>
+        /// <returns>A task that completes once the revocation has been attempted.</returns>
+        /// <remarks>
+        /// <see cref="UninstallServiceAsync"/> already performs this step on both of its paths, including the
+        /// one that deletes an orphan database record. This member exposes the same step to a front end that
+        /// deletes such a record directly. A revocation that fails is logged and never propagates, so a
+        /// removal is never failed by it.
+        /// </remarks>
+        Task RevokeVaultAccessIfUnusedAsync(ServiceDto? formerService, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Starts the specified Windows service and waits for it to reach the <see cref="ServiceControllerStatus.Running"/> state.
         /// </summary>
         /// <param name="serviceName">The unique name of the service to start.</param>

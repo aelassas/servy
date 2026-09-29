@@ -730,6 +730,12 @@ namespace Servy.Core.Services
             }
         }
 
+        /// <inheritdoc />
+        public Task RevokeVaultAccessIfUnusedAsync(ServiceDto? formerService, CancellationToken cancellationToken = default)
+        {
+            return RevokeExePermissionsIfUnusedAsync(formerService?.Name ?? string.Empty, formerService, null, cancellationToken);
+        }
+
         /// <summary>
         /// Revokes the vault access of the account a service ran under before it was uninstalled or moved to another
         /// account, unless a remaining service still runs under it (#7161).

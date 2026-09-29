@@ -1043,6 +1043,52 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
+        public async Task RemoveServiceAsync_ServiceUnderCustomAccount_RevokesItsVaultAccessAfterTheDelete()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            var record = new ServiceDto { Name = service.Name, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
+            var order = new List<string>();
+
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+            _serviceRepositoryMock.Setup(r => r.DeleteAsync(service.Name, It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("delete")).ReturnsAsync(1);
+            _serviceManagerMock.Setup(m => m.RevokeVaultAccessIfUnusedAsync(It.IsAny<ServiceDto?>(), It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("revoke")).Returns(Task.CompletedTask);
+
+            // Act
+            var result = await sut.RemoveServiceAsync(service, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            _serviceManagerMock.Verify(m => m.RevokeVaultAccessIfUnusedAsync(record, It.IsAny<CancellationToken>()), Times.Once);
+            Assert.Equal(new[] { "delete", "revoke" }, order);
+        }
+
+        [Fact]
+        public async Task RemoveServiceAsync_RepositoryDeleteReturnsZeroRows_RevokesNothing()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = service.Name, RunAsLocalSystem = false, UserAccount = @".\svc-account" });
+            _serviceRepositoryMock.Setup(r => r.DeleteAsync(service.Name, It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+            // Act
+            var result = await sut.RemoveServiceAsync(service, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _serviceManagerMock.Verify(m => m.RevokeVaultAccessIfUnusedAsync(It.IsAny<ServiceDto?>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public async Task RemoveServiceAsync_NullOrWhitespaceServiceInput_ReturnsFalse()
         {
             // Arrange

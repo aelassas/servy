@@ -434,6 +434,9 @@ namespace Servy.Manager.Services
                     var success = res > 0;
                     if (success)
                     {
+                        // 3. Revoke the vault access the removed account still holds, as the orphan
+                        //    record path of UninstallServiceAsync does (#7161).
+                        await _serviceManager.RevokeVaultAccessIfUnusedAsync(existing, cancellationToken);
                         RemoveService(service);
                         Logger.Info($"Service {service.Name} removed successfully.");
                     }
