@@ -344,6 +344,33 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_ExistingServiceMovedToAnotherAccount_RevokesThePreviousAccountAfterTheUpsert()
+        {
+            // Arrange: the same move as InstallService_ExistingServiceMovedToAnotherAccount_RevokesThePreviousAccount,
+            // with the call order recorded. The order is what makes the revocation work: the real
+            // RevokeIfUnusedAsync asks the repository whether any remaining record still names the account, so it
+            // must run after the UpsertAsync that rewrites this service's own row. Revoking first would read the
+            // stale row, see the former account still in use and revoke nothing. The mocked hardener never reads
+            // the repository, so only an explicit order assertion can pin it.
+            ArrangeServiceAlreadyExists();
+            ArrangeRecord(@".\old-account");
+            var order = new List<string>();
+            _serviceRepository.Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("upsert")).ReturnsAsync(1);
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("revoke")).ReturnsAsync(true);
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            Assert.Equal(new[] { "upsert", "revoke" }, order);
+        }
+
+        [Fact]
         public async Task UninstallService_ServiceUnderCustomAccount_AsksToRevokeThatAccountAfterTheDelete()
         {
             // Arrange
