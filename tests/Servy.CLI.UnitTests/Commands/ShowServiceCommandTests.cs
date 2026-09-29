@@ -1082,7 +1082,9 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_NoName_OrdersServicesByNameIgnoringCase()
         {
             // Arrange
-            GivenServices(MinimalDto("zulu"), MinimalDto("Alpha"), MinimalDto("mike"));
+            // Upper-case names that sort AFTER a lower-case one: an ordinal comparer puts Mike and
+            // Zulu before alpha, so only a case-insensitive one yields alpha, Mike, Zulu.
+            GivenServices(MinimalDto("Zulu"), MinimalDto("alpha"), MinimalDto("Mike"));
             GivenStatus(ServiceControllerStatus.Stopped);
             var opts = new ShowServiceOptions();
 
@@ -1091,8 +1093,8 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             var body = result.Message ?? string.Empty;
-            Assert.True(body.IndexOf("Alpha", StringComparison.Ordinal) < body.IndexOf("mike", StringComparison.Ordinal));
-            Assert.True(body.IndexOf("mike", StringComparison.Ordinal) < body.IndexOf("zulu", StringComparison.Ordinal));
+            Assert.True(body.IndexOf("alpha", StringComparison.Ordinal) < body.IndexOf("Mike", StringComparison.Ordinal));
+            Assert.True(body.IndexOf("Mike", StringComparison.Ordinal) < body.IndexOf("Zulu", StringComparison.Ordinal));
         }
 
         [Fact]
