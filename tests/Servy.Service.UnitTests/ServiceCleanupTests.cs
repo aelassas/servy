@@ -403,7 +403,9 @@ namespace Servy.Service.UnitTests
 
         /// <summary>
         /// A hook that exits during the first wait breaks out of the loop at once, so the budget is
-        /// not spent and the success arm is taken.
+        /// not spent and the success arm is taken. The <c>break</c> itself is pinned by the number of
+        /// exit checks: skipping the loop's re-check is its only observable effect, because a wait that
+        /// returns <c>true</c> already means the process is gone.
         /// </summary>
         [Fact]
         public void Cleanup_TrackedHookExitsDuringTheFirstWait_BreaksOutAndLogsSuccess()
@@ -413,9 +415,10 @@ namespace Servy.Service.UnitTests
             var scopedLogger = SetupStart(options);
             var exited = false;
             var waits = 0;
+            var exitChecks = 0;
             var service = BuildHookKillingService(
                 kill: _ => { },
-                hasExited: _ => exited,
+                hasExited: _ => { exitChecks++; return exited; },
                 waitForExit: (_, _) => { waits++; exited = true; return true; });
             service.StartForTest();
             using var hookProcess = new Process();
@@ -426,6 +429,10 @@ namespace Servy.Service.UnitTests
 
             // Assert
             Assert.Equal(1, waits);
+
+            // The guard, the loop condition and the outcome check, and nothing more: the break skips
+            // the loop's re-check. Without it the loop condition is read a second time, making four.
+            Assert.Equal(3, exitChecks);
             scopedLogger.Verify(l => l.Info("Tracked hook 'Post-Launch' cleaned up successfully.", It.IsAny<Exception>()), Times.Once);
             scopedLogger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("did not exit within")), It.IsAny<Exception>()), Times.Never);
         }
