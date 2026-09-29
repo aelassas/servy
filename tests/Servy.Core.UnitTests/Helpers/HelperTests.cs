@@ -384,7 +384,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers Branch 2: serviceName != serviceName.Trim()
+        /// Covers Branch 2: serviceName != serviceName.TrimStart()
         /// </summary>
         [Theory]
         [InlineData(" MyService")] // Leading space
@@ -400,7 +400,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers Branch 2: serviceName != serviceName.Trim()
+        /// Covers Branch 2: serviceName != serviceName.TrimEnd()
         /// </summary>
         [Theory]
         [InlineData("MyService ")] // Trailing space
@@ -458,7 +458,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers Branch 3b: serviceName.Any(c => char.IsControl(c) || IsDisallowedNameChar(c))
+        /// Covers Branch 3b: IsValidServiceNameCharset's name.Any(IsDisallowedNameChar) (Unicode control, format, line and paragraph separator categories)
         /// </summary>
         [Theory]
         [InlineData("My\nService")] // Newline
