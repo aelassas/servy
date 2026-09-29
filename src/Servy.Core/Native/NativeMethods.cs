@@ -472,8 +472,9 @@ namespace Servy.Core.Native
         /// using the pointer returned by this function.
         /// </para>
         /// <para>
-        /// This method is essential for correctly resolving unquoted service paths that contain spaces
-        /// (e.g., "C:\Program Files\Servy\Servy.Service.exe"), as it mirrors the OS's own argument parsing logic.
+        /// This method resolves a quoted service path that contains spaces
+        /// (e.g., <c>"C:\Program Files\Servy\Servy.Service.exe" MyService</c>) to its executable. An unquoted path is split
+        /// at its first space, unlike the Service Control Manager, which tries each space-delimited prefix in turn.
         /// </para>
         /// </remarks>
         [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
