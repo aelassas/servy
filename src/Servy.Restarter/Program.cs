@@ -102,6 +102,7 @@ namespace Servy.Restarter
 
                 // 6. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
+                CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.restarter.json", scopedLogger);
 
                 var maxHostWaitSeconds = AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond;
                 if (restartTimeout > maxHostWaitSeconds)

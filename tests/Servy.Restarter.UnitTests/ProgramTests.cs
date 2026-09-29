@@ -135,6 +135,29 @@ namespace Servy.Restarter.UnitTests
         #region Operational Pipeline & Validation Exceptions
 
         [Fact]
+        public void Main_SettingsFileStillRelocatesTheDatabase_WarnsThatTheSettingIsIgnored()
+        {
+            // Arrange
+            // A pre-10.2 appsettings.restarter.json that still points the database elsewhere. The
+            // setting has no effect (the test-only override supplies the database), and the
+            // restarter must say so once the scoped logger exists.
+            File.WriteAllText(_tempConfigPath,
+                "{\r\n" +
+                "  \"ConnectionStrings\": {\r\n" +
+                "    \"DefaultConnection\": \"Data Source=D:\\\\old\\\\Servy.db\"\r\n" +
+                "  },\r\n" +
+                "  \"RestartTimeoutSeconds\": \"30\"\r\n" +
+                "}");
+            string serviceName = "GhostUnmanagedServiceWithOldSettings";
+
+            // Act
+            Program.Main(new string[] { serviceName, TempDirectory });
+
+            // Assert
+            AssertLogContainsMessage("appsettings.restarter.json sets ConnectionStrings:DefaultConnection, which Servy ignores since v10.2");
+        }
+
+        [Fact]
         public void Main_ValidNameButServiceNotManaged_TriggersValidationFailureBranch()
         {
             // Arrange

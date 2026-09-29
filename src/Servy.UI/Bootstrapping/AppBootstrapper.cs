@@ -261,6 +261,7 @@ namespace Servy.UI.Bootstrapping
         private void ApplyLoggerSettings()
         {
             LoggerConfigurator.ConfigureFromAppSettings(_configuration!);
+            CoreSettingsLoader.WarnAboutIgnoredSettings(_configuration, Path.GetFileName(_options.AppSettingsFileName!));
             _options.CustomConfigAction?.Invoke(_configuration!);
         }
 

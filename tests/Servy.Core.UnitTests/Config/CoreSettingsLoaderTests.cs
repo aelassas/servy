@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
+using Moq;
 using Servy.Core.Config;
+using Servy.Core.Logging;
 using System.Reflection;
 
 namespace Servy.Core.UnitTests.Config
@@ -34,19 +36,99 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
-        public void CoreSettingsLoader_HasNoEntryPointThatTakesTheApplicationSettings()
+        public void CoreSettingsLoader_NothingThatProducesTheSettingsTakesTheApplicationSettings()
         {
             // Arrange
-            // The settings are read-only: no public member may accept an IConfiguration (or any
-            // other source) that could relocate the database or the key.
+            // The settings are read-only: the only public member that produces them takes no
+            // IConfiguration (or any other source) that could relocate the database or the key.
             var methods = typeof(CoreSettingsLoader).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
 
             // Assert
-            var load = Assert.Single(methods);
+            var producers = methods.Where(m => m.ReturnType == typeof(CoreSettingsLoader.CoreSettings)).ToList();
+            var load = Assert.Single(producers);
             Assert.Equal(nameof(CoreSettingsLoader.Load), load.Name);
             Assert.Empty(load.GetParameters());
-            Assert.DoesNotContain(methods, m => m.GetParameters().Any(p => typeof(IConfiguration).IsAssignableFrom(p.ParameterType)));
+            Assert.DoesNotContain(methods, m => m.ReturnType != typeof(IReadOnlyList<string>)
+                && m.GetParameters().Any(p => typeof(IConfiguration).IsAssignableFrom(p.ParameterType)));
         }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_NoIgnoredKeySet_WarnsNothing()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var config = BuildConfig(new Dictionary<string, string?>
+            {
+                { "LogLevel", "Debug" },
+                { "ConnectionStrings:DefaultConnection", "   " },
+                { "Security:AESKeyFilePath", "" },
+            });
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.cli.json", logger.Object);
+
+            // Assert
+            Assert.Empty(found);
+            logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception?>()), Times.Never);
+        }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_NullConfig_WarnsNothing()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(null, "appsettings.cli.json", logger.Object);
+
+            // Assert
+            Assert.Empty(found);
+            logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception?>()), Times.Never);
+        }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_EveryIgnoredKeySet_WarnsOnceNamingEachKeyAndTheFile()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var config = BuildConfig(new Dictionary<string, string?>
+            {
+                { "Security:AESIVFilePath", @"D:\\old\\iv.dat" },
+                { "ConnectionStrings:DefaultConnection", @"Data Source=D:\\old\\Servy.db" },
+                { "Security:AESKeyFilePath", @"D:\\old\\key.dat" },
+            });
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.service.json", logger.Object);
+
+            // Assert
+            Assert.Equal(new[] { "ConnectionStrings:DefaultConnection", "Security:AESKeyFilePath", "Security:AESIVFilePath" }, found);
+            logger.Verify(l => l.Warn(It.Is<string>(m =>
+                m.StartsWith("appsettings.service.json sets ConnectionStrings:DefaultConnection, Security:AESKeyFilePath, Security:AESIVFilePath, which Servy ignores since v10.2")
+                && m.Contains(AppConfig.ProgramDataPath)
+                && m.EndsWith("Remove these settings from appsettings.service.json.")), null), Times.Once);
+            logger.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void WarnAboutIgnoredSettings_OneIgnoredKeySet_NamesOnlyThatKey()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var config = BuildConfig(new Dictionary<string, string?> { { "Security:AESKeyFilePath", @"D:\\old\\key.dat" } });
+
+            // Act
+            var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.restarter.json", logger.Object);
+
+            // Assert
+            Assert.Equal(new[] { "Security:AESKeyFilePath" }, found);
+            logger.Verify(l => l.Warn(It.Is<string>(m =>
+                m.StartsWith("appsettings.restarter.json sets Security:AESKeyFilePath, which")
+                && m.EndsWith("Remove this setting from appsettings.restarter.json.")), null), Times.Once);
+        }
+
+        private static IConfiguration BuildConfig(Dictionary<string, string?> settings)
+            => new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 
         [Fact]
         public void Load_TestOverride_IsReturnedUntilCleared()

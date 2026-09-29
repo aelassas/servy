@@ -119,6 +119,7 @@ namespace Servy.CLI
                     var aesIVFilePath = coreSettings.AESIVFilePath;
 
                     LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
+                    CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.cli.json");
 
                     if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
                     {
