@@ -422,7 +422,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-            Assert.True(_resourceHelper.HasCopiedResources); // A written file inherits the vault's grant and must be re-hardened
+            Assert.True(_resourceHelper.HasCopiedResources); // A newly written file carries no grant for the service accounts, so it must be re-hardened
 
             // Verify .exe trigger
             _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents("main.exe", It.IsAny<bool>()), Times.Once);
