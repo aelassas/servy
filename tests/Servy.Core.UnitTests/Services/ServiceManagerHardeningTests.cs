@@ -17,10 +17,13 @@ using static Servy.Core.Native.NativeMethods;
 namespace Servy.Core.UnitTests.Services
 {
     /// <summary>
-    /// Covers the call <see cref="ServiceManager.InstallServiceAsync"/> makes to
-    /// <see cref="IServyExePermissionsHardener"/> once a service is installed: made for an account other than
-    /// Local System, on both the "created" and the "already existed, reconfigured" paths, skipped for Local
-    /// System and for a failed install, and never allowed to turn a successful install into a failed one.
+    /// Covers the calls <see cref="ServiceManager"/> makes to <see cref="IServyExePermissionsHardener"/>.
+    /// <see cref="ServiceManager.InstallServiceAsync"/> hardens for an account other than Local System, on both the
+    /// "created" and the "already existed, reconfigured" paths, skipped for Local System and for a failed install.
+    /// It also revokes the previous account's access when a reconfigured service moves to another account (#7161).
+    /// <see cref="ServiceManager.UninstallServiceAsync"/> revokes the removed service's account after the delete,
+    /// including for an orphan database record, and skips it for Local System and for a failed delete. Neither
+    /// call is ever allowed to turn a successful install or uninstall into a failed one.
     /// </summary>
     public class ServiceManagerHardeningTests : IDisposable
     {
