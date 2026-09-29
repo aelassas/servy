@@ -149,7 +149,7 @@ namespace Servy.Core.Helpers
         ///    <item>All double quotes are escaped with a backslash.</item>
         ///    <item>All backslashes preceding a quote or the end of the string are doubled.</item>
         ///    <item>Trailing backslashes are doubled to avoid truncation.</item>
-        ///    <item>Any null characters (<c>\0</c>) are replaced with the literal sequence <c>\\0</c> for safety.</item>
+        ///    <item>Any NUL characters (U+0000) are replaced with the two-character sequence <c>\0</c> (a backslash followed by the digit zero) for safety.</item>
         /// </list>
         /// For example, <c>C:\Path\"File</c> becomes <c>"C:\Path\\\"File"</c>.
         /// </returns>
@@ -176,7 +176,7 @@ namespace Servy.Core.Helpers
         /// <remarks>
         /// - Escapes all backslashes preceding a quote.
         /// - Doubles trailing backslashes before the closing quote.
-        /// - Replaces any null characters (<c>\0</c>) with the literal sequence <c>\\0</c>.
+        /// - Replaces any NUL characters (U+0000) with the two-character sequence <c>\0</c> (a backslash followed by the digit zero).
         /// </remarks>
         public static string EscapeArgs(string input) => EscapeCore(input, escapeQuotes: true);
 
@@ -191,7 +191,7 @@ namespace Servy.Core.Helpers
         /// - Doubles all backslashes preceding a quote; the quote is emitted as-is.
         /// - Unlike <see cref="EscapeArgs(string?)"/>, trailing backslashes are left unchanged, because the result
         ///   is not intended to be followed by a closing quote.
-        /// - Replaces any null characters (<c>\0</c>) with the literal sequence <c>\\0</c>.
+        /// - Replaces any NUL characters (U+0000) with the two-character sequence <c>\0</c> (a backslash followed by the digit zero).
         /// </remarks>
         public static string EscapeBackslashes(string input) => EscapeCore(input, escapeQuotes: false);
 
