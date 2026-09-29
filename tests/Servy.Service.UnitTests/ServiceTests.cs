@@ -1350,6 +1350,231 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Start(), Times.Never);
         }
 
+        /// <summary>
+        /// The text the top-of-attempt teardown check logs before an attempt is started.
+        /// </summary>
+        private const string TopOfAttemptTeardownAbort = "Pre-launch process aborted due to service teardown.";
+
+        /// <summary>
+        /// The text both of the back-off wait's teardown checks log, which is why a test that means
+        /// to pin one of them has to tell them apart by something other than this string.
+        /// </summary>
+        private const string BackOffTeardownAbort = "Pre-launch process aborted during back-off wait due to service teardown.";
+
+        /// <summary>
+        /// How long after the back-off wait starts the token is cancelled in
+        /// <see cref="OnStart_PreLaunchCancelledInsideTheBackOffSliceWait_AbortsFromTheWaitHandle"/>.
+        /// The only slice is <see cref="AppConfig.PreLaunchRetryInitialDelayMs"/> long, so this leaves
+        /// a wide margin on both sides: late enough that the loop's top-of-attempt check has already
+        /// passed, early enough that the handle is signalled while the wait is still running.
+        /// </summary>
+        private const int BackOffCancelDelayMs = 200;
+
+        /// <summary>
+        /// The smallest wait the back-off abort may report and still prove it came from the wait
+        /// handle: the top-of-attempt check returns without waiting at all, and both log the same text.
+        /// </summary>
+        private const int MinObservedBackOffWaitMs = 100;
+
+        /// <summary>
+        /// The smallest elapsed time a start whose back-off used the <see cref="Thread.Sleep(int)"/>
+        /// fallback may report. A back-off that never slept its slice returns in a few milliseconds.
+        /// </summary>
+        private const int MinObservedSleepFallbackMs = 800;
+
+        /// <summary>
+        /// Builds the options a synchronous pre-launch retry test needs: one retry, so that a failed
+        /// attempt 1 reaches the back-off wait, and a timeout long enough that the attempt is decided
+        /// by its exit code rather than by the wait.
+        /// </summary>
+        /// <returns>The start options to hand to <see cref="SetupStandardServiceStart"/>.</returns>
+        private static StartOptions CreatePreLaunchRetryOptions() => new StartOptions
+        {
+            ServiceName = "TestService",
+            ExecutablePath = "test.exe",
+            PreLaunchExecutablePath = "prelaunch.exe",
+            PreLaunchTimeoutInSeconds = 10,
+            PreLaunchIgnoreFailure = false,
+            PreLaunchRetryAttempts = 1 // maxAttempts = 2, so a failed attempt 1 reaches the back-off wait
+        };
+
+        /// <summary>
+        /// Creates a pre-launch wrapper whose attempt starts and then exits with a non-zero code,
+        /// which is what drives the synchronous pre-launch into its back-off wait.
+        /// </summary>
+        /// <returns>The configured mock.</returns>
+        private static Mock<IProcessWrapper> CreateFailingPreLaunch()
+        {
+            var failing = new Mock<IProcessWrapper>();
+            failing.Setup(p => p.Start()).Returns(true);
+
+            // WaitForExit must be stubbed: ProcessLauncher polls it, and an unstubbed mock returns
+            // false forever, which turns the attempt into a timeout instead of an exit-code check.
+            failing.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            failing.Setup(p => p.ExitCode).Returns(1);
+            return failing;
+        }
+
+        [Fact]
+        public void OnStart_PreLaunchFireAndForgetOwnsANativeProcess_IsTrackedAsPreLaunchAndNotDisposed()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 0 // 0 means Fire and Forget
+            };
+            SetupStandardServiceStart(options);
+
+            using (var nativeProcess = new Process())
+            {
+                var mockPreLaunchProcess = new Mock<IProcessWrapper>();
+                mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+                mockPreLaunchProcess.Setup(p => p.UnderlyingProcess).Returns(nativeProcess);
+                _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                    .Returns(mockPreLaunchProcess.Object);
+
+                var tracked = TestReflection.GetField<List<Hook>>(_service, "_trackedHooks");
+
+                // Act
+                _service.StartForTest();
+
+                // Assert: a fire-and-forget hook that owns a native handle is kept so teardown can
+                // kill the orphan, which is also why it must not be released here
+                lock (tracked)
+                {
+                    Assert.Contains(tracked, h => h.OperationName == "Pre-Launch" && ReferenceEquals(h.Process, nativeProcess));
+                }
+                mockPreLaunchProcess.Verify(p => p.Dispose(), Times.Never);
+            }
+        }
+
+        [Fact]
+        public void OnStart_PreLaunchTornDownAfterTheLastBackOffSlice_AbortsBeforeTheNextAttempt()
+        {
+            // Arrange
+            var options = CreatePreLaunchRetryOptions();
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            var failing = CreateFailingPreLaunch();
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Returns(failing.Object);
+
+            // Teardown is signalled by the SCM pulse that follows the only back-off slice, so both of
+            // the back-off checks have already run and the wait is over; the only arm left to see it
+            // is the top-of-attempt check of attempt 2. The flag is needed because the pre-launch
+            // process wait pulses the SCM through the same helper method.
+            var inBackOff = false;
+            scopedLogger.Setup(l => l.Info(It.Is<string>(s => s.StartsWith("Waiting ")), It.IsAny<Exception>()))
+                .Callback(() => inBackOff = true);
+            _ctx.Helper.Setup(h => h.RequestAdditionalTime(_service, It.IsAny<int>(), null))
+                .Callback(() =>
+                {
+                    if (inBackOff)
+                    {
+                        TestReflection.SetField(_service, "_isTearingDown", true);
+                    }
+                });
+
+            // Act
+            _service.StartForTest();
+
+            // Assert: the abort came from the top of attempt 2, not from the back-off wait
+            scopedLogger.Verify(l => l.Error(TopOfAttemptTeardownAbort, null), Times.Once);
+            scopedLogger.Verify(l => l.Error(BackOffTeardownAbort, null), Times.Never);
+
+            // ... and attempt 2 never got as far as starting a process
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Never);
+            _ctx.ProcessFactory.Verify(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()), Times.Once);
+            scopedLogger.Verify(l => l.Error("Pre-launch process failed after all retry attempts.", null), Times.Never);
+            _mockProcess.Verify(p => p.Start(), Times.Never);
+        }
+
+        [Fact]
+        public void OnStart_PreLaunchCancelledInsideTheBackOffSliceWait_AbortsFromTheWaitHandle()
+        {
+            // Arrange
+            var options = CreatePreLaunchRetryOptions();
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            var failing = CreateFailingPreLaunch();
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Returns(failing.Object);
+
+            var backOffWait = new Stopwatch();
+            using (var backOffStarted = new ManualResetEventSlim(false))
+            {
+                // The token is cancelled from another thread a little after the wait starts, so the
+                // top-of-attempt check has already passed and only the wait handle can observe it.
+                // Both aborts log the same text, so the elapsed wait is what tells them apart.
+                var canceller = new Thread(() =>
+                {
+                    if (backOffStarted.Wait(TestTimeouts.CiGenerous))
+                    {
+                        Thread.Sleep(BackOffCancelDelayMs);
+                        TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource").Cancel();
+                    }
+                });
+                canceller.IsBackground = true;
+                canceller.Start();
+
+                scopedLogger.Setup(l => l.Info(It.Is<string>(s => s.StartsWith("Waiting ")), It.IsAny<Exception>()))
+                    .Callback(() =>
+                    {
+                        backOffWait.Start();
+                        backOffStarted.Set();
+                    });
+                scopedLogger.Setup(l => l.Error(BackOffTeardownAbort, null)).Callback(() => backOffWait.Stop());
+
+                // Act
+                _service.StartForTest();
+
+                // Assert: the wait handle saw the cancellation, and it had been waiting when it did
+                Assert.True(canceller.Join(TestTimeouts.CiGenerous), "the cancelling thread never finished");
+                scopedLogger.Verify(l => l.Error(BackOffTeardownAbort, null), Times.Once);
+                scopedLogger.Verify(l => l.Error(TopOfAttemptTeardownAbort, null), Times.Never);
+                Assert.True(backOffWait.ElapsedMilliseconds >= MinObservedBackOffWaitMs,
+                    $"the abort came after only {backOffWait.ElapsedMilliseconds}ms of waiting, which is the top-of-attempt check rather than the wait handle");
+
+                // ... and the abort returned instead of sleeping the slice out and retrying
+                scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Never);
+                _mockProcess.Verify(p => p.Start(), Times.Never);
+            }
+        }
+
+        [Fact]
+        public void OnStart_PreLaunchBackOffWithoutACancellationSource_SleepsTheSliceAndRetries()
+        {
+            // Arrange
+            var options = CreatePreLaunchRetryOptions();
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            var failing = CreateFailingPreLaunch();
+
+            // Clearing the source inside attempt 1 takes the wait-handle arm out of the back-off, so
+            // the Thread.Sleep fallback is the only thing left that can consume the slice.
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Callback(() => TestReflection.SetField(_service, "_cancellationSource", null))
+                .Returns(failing.Object);
+
+            var elapsed = Stopwatch.StartNew();
+
+            // Act
+            _service.StartForTest();
+            elapsed.Stop();
+
+            // Assert: the fallback waited the slice out, so the retry ran and no abort was logged
+            Assert.True(elapsed.ElapsedMilliseconds >= MinObservedSleepFallbackMs,
+                $"the start returned after {elapsed.ElapsedMilliseconds}ms, so the back-off slice was never slept");
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Once);
+            scopedLogger.Verify(l => l.Error(TopOfAttemptTeardownAbort, null), Times.Never);
+            scopedLogger.Verify(l => l.Error(BackOffTeardownAbort, null), Times.Never);
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(_service, It.IsAny<int>(), null), Times.AtLeastOnce);
+            _mockProcess.Verify(p => p.Start(), Times.Never);
+        }
+
         #endregion
 
         #region Post-Launch Hook Tests
