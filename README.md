@@ -46,7 +46,7 @@ scoop bucket add extras
 scoop install servy
 ```
 
-[![Patch My PC](https://img.shields.io/badge/Patch_My_PC-catalog-brightgreen)](https://patchmypc.com/supported-products/)
+[![Patch My PC](https://img.shields.io/badge/patch_my_pc-catalog-brightgreen)](https://patchmypc.com/supported-products/)
 
 Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
 
