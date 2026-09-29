@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Xunit;
 
 namespace Servy.Service.UnitTests.ProcessManagement
@@ -227,6 +228,66 @@ namespace Servy.Service.UnitTests.ProcessManagement
                     It.Is<string>(m => m.Contains(_swapTarget) && m.Contains(Path.GetFullPath(path))),
                     It.IsAny<Exception?>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public void ApplyLanguageFixes_NullStartInfo_ReturnsWithoutThrowing()
+        {
+            // Arrange, Act & Assert
+            Assert.Null(Record.Exception(() => ProcessLauncher.ApplyLanguageFixes(null!, logger: null)));
+        }
+
+        [Fact]
+        public void ApplyLanguageFixes_DetectionTimesOutWithNullLogger_DoesNotThrow()
+        {
+            // Arrange
+            var python = new ProcessStartInfo { FileName = @"C:\py\python.exe", UseShellExecute = false };
+            var java = new ProcessStartInfo { FileName = "java.exe", Arguments = "-jar app.jar", UseShellExecute = false };
+
+            // Act
+            var pythonEx = Record.Exception(
+                () => ProcessLauncher.ApplyLanguageFixes(python, null, _ => throw Timeout("python"), _ => false));
+            var javaEx = Record.Exception(
+                () => ProcessLauncher.ApplyLanguageFixes(java, null, _ => false, _ => throw Timeout("-jar app.jar")));
+
+            // Assert
+            Assert.Null(pythonEx);
+            Assert.Null(javaEx);
+            Assert.Equal("-Dfile.encoding=UTF-8 -jar app.jar", java.Arguments);
+        }
+
+        [Fact]
+        public void Start_ChildExitsOnTheFinalPoll_ReturnsWithoutTimeoutOrKill()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var process = new Mock<IProcessWrapper>();
+            process.Setup(p => p.Start()).Returns(true);
+            process.Setup(p => p.WaitForExit(It.Is<int>(ms => ms > 0)))
+                   .Callback<int>(ms => Thread.Sleep(ms))
+                   .Returns(false);                                 // never exits inside a slice
+            process.Setup(p => p.WaitForExit(0)).Returns(true);     // ...but has exited by the final poll
+            var factory = new Mock<IProcessFactory>();
+            factory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                   .Returns(process.Object);
+            int heartbeats = 0;
+            var options = new ProcessLaunchOptions
+            {
+                ExecutablePath = @"C:\tools\hook.exe",
+                TimeoutMs = 50,
+                WaitChunkMs = 10,
+                OnScmHeartbeat = _ => heartbeats++,
+            };
+
+            // Act
+            var result = ProcessLauncher.Start(options, factory.Object, logger.Object);
+
+            // Assert
+            Assert.Same(process.Object, result);
+            Assert.True(heartbeats > 0);
+            process.Verify(p => p.WaitForExit(0), Times.Once);
+            process.Verify(p => p.Kill(It.IsAny<bool>()), Times.Never);
+            logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception?>()), Times.Never);
         }
     }
 }
