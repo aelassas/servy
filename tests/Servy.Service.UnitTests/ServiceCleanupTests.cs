@@ -312,10 +312,43 @@ namespace Servy.Service.UnitTests
             using (var running = Process.Start(new ProcessStartInfo("cmd.exe", "/c ping -n 60 127.0.0.1 >nul") { UseShellExecute = false, CreateNoWindow = true }))
             {
                 var pid = running.Id;
+                var childPid = 0;
+                var ownedChildren = new List<Process>();
 
                 try
                 {
                     Assert.False(running.HasExited, "the helper process exited before the test could track it");
+
+                    // cmd.exe launches ping.exe asynchronously, so poll until that child is visible, and
+                    // match it by NAME: a console host can also show up as a child here and it exits with
+                    // its client even when the kill spares the tree, so it witnesses nothing.
+                    var sw = Stopwatch.StartNew();
+                    while (childPid == 0 && sw.ElapsedMilliseconds < TestTimeouts.CiGenerousMs)
+                    {
+                        foreach (var candidate in ProcessExtensions.GetChildren(pid, running.StartTime))
+                        {
+                            try
+                            {
+                                if (childPid == 0 && candidate.ProcessName.Equals("ping", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    childPid = candidate.Id;
+                                }
+                            }
+                            catch (InvalidOperationException) { /* the candidate exited while we read its name */ }
+
+                            candidate.Dispose();
+                        }
+
+                        if (childPid == 0) System.Threading.Thread.Sleep(50);
+                    }
+
+                    Assert.NotEqual(0, childPid);
+
+                    // Our own handle on the child, so the wait below outlives CleanupTrackedHooks disposing
+                    // the hook's process. WaitForExit waits on the handle and not on the number, so PID
+                    // reuse cannot make it lie.
+                    ownedChildren.Add(Process.GetProcessById(childPid));
+
                     SetTrackedHooks(new Hook { OperationName = operationName, Process = running });
 
                     // Act
@@ -336,19 +369,33 @@ namespace Servy.Service.UnitTests
                     scopedLogger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("did not exit within")), It.IsAny<Exception>()), Times.Never);
                     scopedLogger.Verify(l => l.Error("Cleanup of tracked hook failed.", It.IsAny<Exception>()), Times.Never);
                     Assert.Empty(GetTrackedHooks());
+
+                    // ...and the whole TREE went with it, which is the part every assertion above misses:
+                    // they all read cmd.exe, and cmd.exe dies just as promptly from a kill that spares its
+                    // children, leaving ping.exe orphaned for the rest of its 60 seconds.
+                    Assert.True(ownedChildren[0].WaitForExit(TestTimeouts.CiGenerousMs),
+                        "the hook's ping child survived the cleanup");
                 }
                 finally
                 {
-                    // Never leave the helper behind if an assertion above failed before Cleanup killed
-                    // it. Go by PID: the handle above may already be disposed by CleanupTrackedHooks.
-                    try
+                    // Never leave the helper or its child behind if an assertion above failed before
+                    // Cleanup killed them. Go by PID: the handle above may already be disposed by
+                    // CleanupTrackedHooks.
+                    foreach (var leftoverPid in new[] { pid, childPid })
                     {
-                        using (var leftover = Process.GetProcessById(pid))
+                        if (leftoverPid <= 0) continue;
+
+                        try
                         {
-                            Servy.Service.Helpers.ProcessHelper.KillProcessTree(leftover);
+                            using (var leftover = Process.GetProcessById(leftoverPid))
+                            {
+                                Servy.Service.Helpers.ProcessHelper.KillProcessTree(leftover);
+                            }
                         }
+                        catch { /* teardown is best-effort: already gone, or the PID is no longer live */ }
                     }
-                    catch { /* teardown is best-effort: already gone, or the PID is no longer live */ }
+
+                    foreach (var child in ownedChildren) child.Dispose();
                 }
             }
         }
