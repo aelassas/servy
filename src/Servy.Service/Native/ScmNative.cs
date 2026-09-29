@@ -1,5 +1,6 @@
 using Servy.Core.Native;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Servy.Service.Native
@@ -30,6 +31,7 @@ namespace Servy.Service.Native
         /// <param name="handle">The native service status handle to report against.</param>
         /// <param name="status">The status structure to publish.</param>
         /// <returns><see langword="true"/> when the call succeeded; otherwise <see langword="false"/>.</returns>
+        [ExcludeFromCodeCoverage]
         public bool SetServiceStatus(IntPtr handle, ref NativeMethods.SERVICE_STATUS status)
         {
             return NativeMethods.SetServiceStatus(handle, ref status);
@@ -39,6 +41,7 @@ namespace Servy.Service.Native
         /// Returns <see cref="Marshal.GetLastWin32Error"/>.
         /// </summary>
         /// <returns>The Win32 error code the last native call on this thread set.</returns>
+        [ExcludeFromCodeCoverage]
         public int GetLastWin32Error()
         {
             return Marshal.GetLastWin32Error();
