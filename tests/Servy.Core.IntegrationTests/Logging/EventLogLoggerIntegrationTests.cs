@@ -416,14 +416,21 @@ namespace Servy.Core.IntegrationTests.Logging
         [InlineData(LogLevel.Error, LogLevel.Error, true)]
         public void Report_RespectsLogLevelFiltering(LogLevel currentLevel, LogLevel targetLevel, bool expectEmitted)
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var logger = new RecordingEventLogLogger(source, currentLevel, "ReportPrefix"))
             {
+                // Act
                 logger.Report(targetLevel, "Report Title", "Report Body");
 
+                // Assert
                 if (expectEmitted)
                 {
                     Assert.Contains(logger.Formatted, f => f.Contains("Report Title"));
+
+                    // The sink is disabled (this constructor passes isEventLogEnabled: false), so the
+                    // "title\nbody" block - formatted only on the way to SafeWriteToEventLog - must never appear.
+                    Assert.DoesNotContain(logger.Formatted, f => f.Contains("Report Body"));
                 }
                 else
                 {
@@ -441,6 +448,11 @@ namespace Servy.Core.IntegrationTests.Logging
             string source = GenerateSourceName();
             using (var logger = new RecordingEventLogLogger(source, LogLevel.Debug, true))
             {
+                // The sink must really be on, or the DoesNotContain below passes for the wrong reason:
+                // a runner where InitializeEventLog fails clears the flag and skips the sink branch
+                // whatever the level term says.
+                Assert.True(logger.IsEventLogEnabled);
+
                 // Act
                 // Debug report should route to file log only, never writing to Windows Event Log
                 string logOutput = LogCapture.Run(() =>
