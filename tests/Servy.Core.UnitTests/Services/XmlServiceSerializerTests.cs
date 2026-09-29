@@ -1,8 +1,10 @@
 using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
 using Servy.Testing;
+using System.Xml;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -194,6 +196,80 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
             Assert.Equal(AppConfig.DefaultRotationSizeMB, result.RotationSize);
             Assert.Equal((int)AppConfig.DefaultStartupType, result.StartupType);
+        }
+
+        #endregion
+
+        #region FormatLineInfo Tests
+
+        [Fact]
+        public void FormatLineInfo_WrappedXmlException_ReportsLineAndPosition()
+        {
+            // Arrange
+            // XmlSerializer wraps the reader's XmlException in an InvalidOperationException, the
+            // shape a real malformed import produces, so this pins the ex.InnerException half of
+            // the ?? in FormatLineInfo. The document spans two lines so line and position differ.
+            var serializer = SecureXml.CreateStrictServiceDtoSerializer();
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+            {
+                using (var stringReader = new StringReader("<ServiceDto>\n  <Name>Unclosed"))
+                using (var xmlReader = SecureXml.CreateReader(stringReader))
+                {
+                    serializer.Deserialize(xmlReader);
+                }
+            });
+            var inner = Assert.IsType<XmlException>(ex.InnerException);
+
+            // Act
+            var info = (string?)TestReflection.InvokeNonPublic(_serializer, "FormatLineInfo", ex);
+
+            // Assert
+            Assert.Equal($" at line {inner.LineNumber}, position {inner.LinePosition}", info);
+            // Guards the assertion above against a swap of the two coordinates in the
+            // interpolation, which would otherwise render the same string.
+            Assert.NotEqual(inner.LineNumber, inner.LinePosition);
+        }
+
+        [Fact]
+        public void FormatLineInfo_BareXmlException_ReportsLineAndPosition()
+        {
+            // Arrange
+            // Pins the (ex as XmlException) half of the ??, which no deserialization test reaches:
+            // XmlSerializer always wraps the reader's exception.
+            var ex = new XmlException("boom", null, 3, 7);
+
+            // Act
+            var info = (string?)TestReflection.InvokeNonPublic(_serializer, "FormatLineInfo", ex);
+
+            // Assert
+            Assert.Equal(" at line 3, position 7", info);
+        }
+
+        [Fact]
+        public void FormatLineInfo_XmlExceptionWithoutPosition_ReturnsEmpty()
+        {
+            // Arrange
+            // A line without a position must not produce a " at line 3, position 0" suffix, which
+            // is what the && in the gate exists to prevent.
+            var ex = new XmlException("boom", null, 3, 0);
+
+            // Act
+            var info = (string?)TestReflection.InvokeNonPublic(_serializer, "FormatLineInfo", ex);
+
+            // Assert
+            Assert.Equal(string.Empty, info);
+        }
+
+        [Fact]
+        public void FormatLineInfo_ExceptionWithoutXmlException_ReturnsEmpty()
+        {
+            // Arrange & Act
+            // Pins the default branch: neither half of the ?? matches, so both coordinates stay 0.
+            var info = (string?)TestReflection.InvokeNonPublic(
+                _serializer, "FormatLineInfo", new FormatException("no position"));
+
+            // Assert
+            Assert.Equal(string.Empty, info);
         }
 
         #endregion
