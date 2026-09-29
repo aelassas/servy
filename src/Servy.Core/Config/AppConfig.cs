@@ -192,6 +192,11 @@ namespace Servy.Core.Config
         public const string AESKeyFileName = "aes_key.dat";
 
         /// <summary>
+        /// The file name of the legacy AES initialization vector in <see cref="SecurityFolderPath"/>.
+        /// </summary>
+        public const string AESIVFileName = "aes_iv.dat";
+
+        /// <summary>
         /// Path to the database folder.
         /// </summary>
         public static readonly string DbFolderPath = Path.Combine(ProgramDataPath, DbFolderName);
@@ -249,7 +254,7 @@ namespace Servy.Core.Config
         /// Maintaining a single source of truth for this path prevents "split-brain" encryption issues between the configuration UI and the Windows Service.
         /// It is not configurable: <see cref="CoreSettingsLoader.Load"/> always returns it and ignores a <c>Security:AESIVFilePath</c> key in the application settings.
         /// </remarks>
-        public static readonly string DefaultAESIVPath = Path.Combine(SecurityFolderPath, "aes_iv.dat");
+        public static readonly string DefaultAESIVPath = Path.Combine(SecurityFolderPath, AESIVFileName);
 
         #endregion
 
