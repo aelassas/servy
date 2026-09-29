@@ -9,6 +9,7 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Service.CommandLine;
+using Servy.Service.Native;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
@@ -92,6 +93,8 @@ namespace Servy.Service
         private readonly IStreamWriterFactory _streamWriterFactory;
         private readonly ITimerFactory _timerFactory;
         private readonly IProcessFactory _processFactory;
+        /// <summary>Seam over the console and Service Control Manager native calls; the production implementation forwards each one unchanged.</summary>
+        private readonly IScmNative _scmNative;
         private readonly IPathValidator _pathValidator;
         private string _serviceName;
         private string _realExePath;
@@ -189,6 +192,38 @@ namespace Servy.Service
             IPathValidator pathValidator,
             IServiceRepository serviceRepository
             ) // allow injection
+            : this(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, new ScmNative())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Service"/> class with full dependency injection,
+        /// including the console and Service Control Manager native seam.
+        /// </summary>
+        /// <param name="serviceHelper">The service helper.</param>
+        /// <param name="logger">The logger wrapper.</param>
+        /// <param name="streamWriterFactory">The stream writer factory.</param>
+        /// <param name="timerFactory">The timer factory.</param>
+        /// <param name="processFactory">The process factory.</param>
+        /// <param name="pathValidator">The path validator.</param>
+        /// <param name="serviceRepository">The service repository.</param>
+        /// <param name="scmNative">The console and Service Control Manager native seam.</param>
+        /// <exception cref="ArgumentNullException">Any argument is <see langword="null"/>.</exception>
+        /// <remarks>
+        /// This overload exists so a test can observe the native calls the SCM path makes. The public
+        /// constructors pass <see cref="ScmNative"/>, whose members forward unchanged, so production
+        /// behaviour is identical either way.
+        /// </remarks>
+        internal Service(
+            Helpers.IServiceHelper serviceHelper,
+            IServyLogger logger,
+            IStreamWriterFactory streamWriterFactory,
+            ITimerFactory timerFactory,
+            IProcessFactory processFactory,
+            IPathValidator pathValidator,
+            IServiceRepository serviceRepository,
+            IScmNative scmNative
+            )
         {
             ServiceName = AppConfig.EventSource;
             AutoLog = false; // Servy owns its event-log output via LoggerConfigurator
@@ -200,6 +235,7 @@ namespace Servy.Service
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _scmNative = scmNative ?? throw new ArgumentNullException(nameof(scmNative));
             _options = null;
         }
 
@@ -232,6 +268,7 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
+            _scmNative = new ScmNative();
             _options = null;
 
             Logger.Initialize("Servy.Service.log");
@@ -338,8 +375,7 @@ namespace Servy.Service
         {
             try
             {
-                _ = FreeConsole();
-                _ = SetConsoleCtrlHandler(IntPtr.Zero, true);
+                _scmNative.DetachConsole();
 
                 // Prevent thread pool starvation under high concurrent HTTP ping loads
                 if (ServicePointManager.DefaultConnectionLimit < AppConfig.DefaultHttpConnectionLimit)
@@ -384,7 +420,7 @@ namespace Servy.Service
                 if (!isTestMode)
                 {
                     // ServiceBase exposes the status handle directly; the native SetServiceStatus calls below need it.
-                    _serviceHandle = ServiceHandle;
+                    _serviceHandle = GetNativeServiceHandle();
 
                     if (_serviceHandle != IntPtr.Zero)
                     {
@@ -499,9 +535,9 @@ namespace Servy.Service
                                 dwWaitHint = 0
                             };
 
-                            if (!SetServiceStatus(_serviceHandle, ref status))
+                            if (!_scmNative.SetServiceStatus(_serviceHandle, ref status))
                             {
-                                int error = Marshal.GetLastWin32Error();
+                                int error = _scmNative.GetLastWin32Error();
                                 _logger?.Error($"Failed to register PRESHUTDOWN support via native Win32. Error: {error}");
                             }
                             else
@@ -784,6 +820,23 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Gets the native status handle the Service Control Manager assigned to this service.
+        /// </summary>
+        /// <returns>
+        /// <see cref="System.ServiceProcess.ServiceBase.ServiceHandle"/>, which is
+        /// <see cref="IntPtr.Zero"/> when the process is not running under the SCM.
+        /// </returns>
+        /// <remarks>
+        /// <see cref="System.ServiceProcess.ServiceBase.ServiceHandle"/> is protected, so it cannot be
+        /// read through an injected seam. Overridable instead, so a test can supply a handle without a
+        /// real SCM registration. The production body is the property read it replaces.
+        /// </remarks>
+        protected virtual IntPtr GetNativeServiceHandle()
+        {
+            return ServiceHandle;
+        }
+
+        /// <summary>
         /// Updates the service status by calling the Win32 SetServiceStatus API.
         /// This informs the SCM of the service's current state and expected wait times.
         /// </summary>
@@ -828,9 +881,9 @@ namespace Servy.Service
                 };
 
                 // Invoke the P/Invoke method to update the SCM
-                if (!SetServiceStatus(_serviceHandle, ref status))
+                if (!_scmNative.SetServiceStatus(_serviceHandle, ref status))
                 {
-                    int error = Marshal.GetLastWin32Error();
+                    int error = _scmNative.GetLastWin32Error();
                     _logger?.Error($"SetServiceStatus failed with Win32 error code: {error}");
                 }
             }

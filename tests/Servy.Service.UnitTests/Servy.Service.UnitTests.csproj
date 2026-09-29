@@ -129,6 +129,7 @@
     <Compile Include="Helpers\EnvironmentVariableHelperTests.cs" />
     <Compile Include="Helpers\SequentialEnvTestsCollection.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
+    <Compile Include="Native\ScmNativeSeamTests.cs" />
     <Compile Include="ProcessManagementTests.cs" />
     <Compile Include="ProcessExitOutcomeTests.cs" />
     <Compile Include="RecoveryExecutionTests.cs" />
