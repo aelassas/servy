@@ -34,5 +34,26 @@ namespace Servy.Core.Security
         /// <paramref name="serviceRepository"/>, it does not throw.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="serviceRepository"/> is null.</exception>
         Task HardenServiceAccountsAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Revokes what the hardening granted <paramref name="targetAccount"/> in the vault - its explicit entries on
+        /// the vault root, the writable folders and every hardened file - unless a service in
+        /// <paramref name="serviceRepository"/> still runs under that account.
+        /// </summary>
+        /// <param name="targetAccount">The account a removed or reconfigured service ran under.</param>
+        /// <param name="serviceRepository">The repository of the services that remain; an account one of them runs
+        /// under keeps its access. Accounts are compared by SID, so <c>.\user</c> and <c>MACHINE\user</c> are the same
+        /// account.</param>
+        /// <param name="cancellationToken">A token that stops the revocation between two items.</param>
+        /// <returns>
+        /// <see langword="true"/> when the access was revoked, when a remaining service still uses the account, or when
+        /// there was nothing to revoke (Local System, the Administrators group or Local System's own SID);
+        /// <see langword="false"/> when it could not be revoked (the process is not elevated, the vault is missing or is
+        /// a link, the account cannot be resolved or is a broad group, the repository cannot be read, the run was
+        /// cancelled, or an item could not be rewritten). Every outcome is logged. Apart from a null
+        /// <paramref name="serviceRepository"/>, it does not throw.
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="serviceRepository"/> is null.</exception>
+        Task<bool> RevokeIfUnusedAsync(string targetAccount, IServiceRepository serviceRepository, CancellationToken cancellationToken);
     }
 }

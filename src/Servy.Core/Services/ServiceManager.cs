@@ -634,6 +634,7 @@ namespace Servy.Core.Services
                                     cancellationToken);
                                 Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                                 await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
+                                await RevokeExePermissionsIfUnusedAsync(options.ServiceName, serviceDto, lpServiceStartName, cancellationToken);
                                 return OperationResult.Success();
                             }
 
@@ -652,6 +653,7 @@ namespace Servy.Core.Services
 
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
                         await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
+                        await RevokeExePermissionsIfUnusedAsync(options.ServiceName, serviceDto, lpServiceStartName, cancellationToken);
                         return OperationResult.Success();
                     }
                     catch
@@ -734,6 +736,44 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
+        /// Revokes the vault access of the account a service ran under before it was uninstalled or moved to another
+        /// account, unless a remaining service still runs under it (#7161).
+        /// </summary>
+        /// <param name="serviceName">The service that was uninstalled or reconfigured, for the log.</param>
+        /// <param name="formerService">The service's record as it was before the change; <see langword="null"/> when
+        /// there was none, which revokes nothing.</param>
+        /// <param name="currentAccount">The account the service runs under now, or <see langword="null"/> after an
+        /// uninstall. The same account (compared case-insensitively) revokes nothing.</param>
+        /// <param name="cancellationToken">A token that stops the revocation between two items.</param>
+        /// <returns>A task that completes when the revocation has finished or failed.</returns>
+        /// <remarks>
+        /// The uninstall or install has already succeeded when this runs, so a failure here is logged and never turns
+        /// it into a failed operation.
+        /// </remarks>
+        private async Task RevokeExePermissionsIfUnusedAsync(string serviceName, ServiceDto formerService, string currentAccount, CancellationToken cancellationToken)
+        {
+            if (_exePermissionsHardener == null || formerService == null)
+                return;
+
+            var formerAccount = ServyExePermissionsHardener.GetServiceAccounts(new[] { formerService }).FirstOrDefault();
+            if (formerAccount == null || string.Equals(formerAccount, currentAccount?.Trim(), StringComparison.OrdinalIgnoreCase))
+                return;
+
+            try
+            {
+                if (!await _exePermissionsHardener.RevokeIfUnusedAsync(formerAccount, _serviceRepository, cancellationToken))
+                {
+                    Logger.Warn($"The vault access of '{formerAccount}' was not fully revoked after service '{serviceName}' stopped using it. " +
+                        "See the log above.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Revoking the vault access of '{formerAccount}' (service '{serviceName}') failed.", ex);
+            }
+        }
+
+        /// <summary>
         /// Orchestrates an isolated database rollback sequence to restore state tracking for a legacy
         /// service variant if the subsequent installation pipeline fails or is canceled.
         /// </summary>
@@ -802,6 +842,7 @@ namespace Servy.Core.Services
                             {
                                 await _serviceRepository.DeleteAsync(serviceName, cancellationToken);
                                 Logger.Info($"Service '{serviceName}' was not found in SCM, but orphan database record was successfully cleaned up.");
+                                await RevokeExePermissionsIfUnusedAsync(serviceName, existingDbService, null, cancellationToken);
                                 return OperationResult.Success();
                             }
                             return OperationResult.Failure(string.Format(Strings.Msg_ServiceNotFoundDetailed, serviceName));
@@ -822,9 +863,10 @@ namespace Servy.Core.Services
                     }
 
                     // 2. The Wait Loop: Now fully cancellable
+                    ServiceDto service;
                     using (var sc = _controllerFactory(serviceName))
                     {
-                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
+                        service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
                         int waitTimeout = ServiceHelper.CalculateStopTimeout(
                             service?.StopTimeout,
                             service?.PreviousStopTimeout,
@@ -872,6 +914,7 @@ namespace Servy.Core.Services
                         await _serviceRepository.DeleteAsync(serviceName, cancellationToken);
 
                         Logger.Info($"Service '{serviceName}' uninstalled successfully.");
+                        await RevokeExePermissionsIfUnusedAsync(serviceName, service, null, cancellationToken);
                         return OperationResult.Success();
                     }
                     else

@@ -658,6 +658,367 @@ namespace Servy.Core.UnitTests.Security
 
         #endregion
 
+        #region RevokeIfUnused
+
+        private static readonly SecurityIdentifier NetworkServiceSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+
+        [Fact]
+        public void RevokeIfUnused_AccountDoesNotResolve_ChangesNothing()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory) { Sid = null };
+
+            // Act
+            var result = sut.RevokeIfUnused("ghost", new List<string>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
+            Assert.Empty(result.Revoked);
+        }
+
+        [Theory]
+        [InlineData(WellKnownSidType.WorldSid, ExePermissionsHardeningStatus.InvalidAccount)]
+        [InlineData(WellKnownSidType.BuiltinUsersSid, ExePermissionsHardeningStatus.InvalidAccount)]
+        [InlineData(WellKnownSidType.BuiltinAdministratorsSid, ExePermissionsHardeningStatus.Skipped)]
+        [InlineData(WellKnownSidType.LocalSystemSid, ExePermissionsHardeningStatus.Skipped)]
+        public void RevokeIfUnused_BroadGroupOrAdministrativePrincipal_IsNeverPurged(WellKnownSidType principal, ExePermissionsHardeningStatus expected)
+        {
+            // Arrange
+            var sid = new SecurityIdentifier(principal, null);
+            AddAce(TempDirectory, sid);
+            var sut = new TestableHardener(TempDirectory) { Sid = sid };
+
+            // Act
+            var result = sut.RevokeIfUnused("principal", new List<string>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(expected, result.Status);
+            Assert.True(ItemHasAce(TempDirectory, sid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_SameAccountStillUsedUnderAnotherCase_KeepsItsEntries()
+        {
+            // Arrange
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var result = sut.RevokeIfUnused(@".\svc", new List<string> { @".\SVC" }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
+            Assert.Contains(@"'.\SVC'", result.Reason);
+            Assert.True(ItemHasAce(logs, LocalServiceSid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_SameAccountStillUsedUnderAnotherSpelling_KeepsItsEntries()
+        {
+            // Arrange: two spellings of one account resolve to the same SID
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { Resolver = _ => LocalServiceSid };
+
+            // Act
+            var result = sut.RevokeIfUnused(@".\svc", new List<string> { @"HOST\svc" }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
+            Assert.True(ItemHasAce(logs, LocalServiceSid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_OnlyOtherAccountsRemain_RemovesEveryEntryOfTheAccountAndKeepsTheirs()
+        {
+            // Arrange
+            AddAce(TempDirectory, LocalServiceSid);
+            var db = GrantedFolder(AppConfig.DbFolderName, LocalServiceSid);
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            AddAce(logs, NetworkServiceSid);
+            var recovery = GrantedFolder(AppConfig.RecoveryFolderName, LocalServiceSid);
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            AddAce(exe, NetworkServiceSid);
+            var cli = Path.Combine(TempDirectory, AppConfig.ServyServiceCLIExe);
+            File.WriteAllText(cli, "cli");
+            var sut = new TestableHardener(TempDirectory) { Resolver = a => a == "other" ? NetworkServiceSid : LocalServiceSid };
+
+            // Act
+            var result = sut.RevokeIfUnused("svc", new List<string> { "other" }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
+            Assert.Equal(new[] { TempDirectory, AppConfig.DbFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName, AppConfig.ServyServiceUIExe }, result.Revoked);
+            Assert.Empty(result.Failed);
+            foreach (var item in new[] { TempDirectory, db, logs, recovery, exe })
+                Assert.False(ItemHasAce(item, LocalServiceSid), $"{item} still names the account");
+            Assert.True(ItemHasAce(logs, NetworkServiceSid));
+            Assert.True(ItemHasAce(exe, NetworkServiceSid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_NothingWasGranted_RevokesNothingAndSucceeds()
+        {
+            // Arrange
+            Directory.CreateDirectory(Path.Combine(TempDirectory, AppConfig.LogsFolderName));
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var result = sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
+            Assert.Empty(result.Revoked);
+            Assert.Empty(result.Failed);
+        }
+
+        [Fact]
+        public void RevokeIfUnused_NotElevated_ChangesNothing()
+        {
+            // Arrange
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { Elevated = false };
+
+            // Act
+            var result = sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.NotElevated, result.Status);
+            Assert.True(ItemHasAce(logs, LocalServiceSid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_VaultMissing_ChangesNothing()
+        {
+            // Arrange
+            var sut = new TestableHardener(Path.Combine(TempDirectory, "missing"));
+
+            // Act
+            var result = sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.VaultNotFound, result.Status);
+        }
+
+        [Fact]
+        public void RevokeIfUnused_FileWithASecondHardLink_IsNotTouchedAndTheRestIsStillRevoked()
+        {
+            // Arrange
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { HardLinkCount = _ => 2 };
+
+            // Act
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None));
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
+            Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, capture.Result.Failed);
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+            Assert.False(ItemHasAce(logs, LocalServiceSid));
+            Assert.Contains("it has 2 NTFS hard links", capture.Log);
+        }
+
+        [Fact]
+        public void RevokeIfUnused_Cancelled_StopsBeforeTheFolders()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory);
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", new List<string>(), cts.Token));
+
+                // Assert
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+            }
+        }
+
+        [Theory]
+        [InlineData(ExePermissionsHardeningStatus.Revoked, true)]
+        [InlineData(ExePermissionsHardeningStatus.InUse, true)]
+        [InlineData(ExePermissionsHardeningStatus.Skipped, true)]
+        [InlineData(ExePermissionsHardeningStatus.Failed, false)]
+        [InlineData(ExePermissionsHardeningStatus.NotElevated, false)]
+        [InlineData(ExePermissionsHardeningStatus.VaultNotFound, false)]
+        [InlineData(ExePermissionsHardeningStatus.InvalidAccount, false)]
+        public void ReportRevokeResult_OnlyAnOutcomeThatLeftTheGrantsInPlaceUnwantedIsAFailure(ExePermissionsHardeningStatus status, bool expected)
+        {
+            // Act
+            var reported = ServyExePermissionsHardener.ReportRevokeResult(new ExePermissionsHardeningResult("svc").Complete(status, "reason"));
+
+            // Assert
+            Assert.Equal(expected, reported);
+        }
+
+        [Fact]
+        public async Task RevokeIfUnusedAsync_NullRepository_Throws()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => sut.RevokeIfUnusedAsync("svc", null, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("LocalSystem")]
+        [InlineData(@"NT AUTHORITY\SYSTEM")]
+        public async Task RevokeIfUnusedAsync_LocalSystemOrBlank_ReturnsTrueWithoutReadingTheRepository(string account)
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var revoked = await sut.RevokeIfUnusedAsync(account, repository.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(revoked);
+            repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.Equal(0, sut.ResolveCalls);
+        }
+
+        [Fact]
+        public async Task RevokeIfUnusedAsync_ARemainingServiceRunsUnderTheAccount_KeepsItsEntries()
+        {
+            // Arrange
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = "remaining", RunAsLocalSystem = false, UserAccount = @" .\svc " },
+            });
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync(@"  .\svc  ", repository.Object, CancellationToken.None));
+
+            // Assert
+            Assert.True(capture.Result);
+            Assert.True(ItemHasAce(logs, LocalServiceSid));
+            Assert.Contains(@"Kept the access of '.\svc' to Servy's vault", capture.Log);
+        }
+
+        [Fact]
+        public async Task RevokeIfUnusedAsync_NoRemainingServiceRunsUnderTheAccount_RevokesItsEntries()
+        {
+            // Arrange
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = "local-system", RunAsLocalSystem = true },
+                new ServiceDto { Name = "stale", RunAsLocalSystem = true, UserAccount = @".\svc" },
+            });
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync(@".\svc", repository.Object, CancellationToken.None));
+
+            // Assert
+            Assert.True(capture.Result);
+            Assert.False(ItemHasAce(logs, LocalServiceSid));
+            Assert.Contains(@"Revoked the access of '.\svc' to Servy's vault: ", capture.Log);
+        }
+
+        [Fact]
+        public async Task RevokeIfUnusedAsync_RepositoryThrows_ReturnsFalseAndKeepsTheEntries()
+        {
+            // Arrange
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("database locked"));
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync("svc", repository.Object, CancellationToken.None));
+
+            // Assert
+            Assert.False(capture.Result);
+            Assert.True(ItemHasAce(logs, LocalServiceSid));
+            Assert.Contains("Revoking the vault access of 'svc' failed.", capture.Log);
+        }
+
+        [Fact]
+        public async Task RevokeIfUnusedAsync_Cancelled_ReturnsFalseInsteadOfThrowing()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            var sut = new TestableHardener(TempDirectory);
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act
+                var revoked = await sut.RevokeIfUnusedAsync("svc", repository.Object, cts.Token);
+
+                // Assert
+                Assert.False(revoked);
+                repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Creates a writable folder in the vault carrying the two entries the hardening grants <paramref name="sid"/>.
+        /// </summary>
+        private string GrantedFolder(string name, SecurityIdentifier sid)
+        {
+            var path = Path.Combine(TempDirectory, name);
+            Directory.CreateDirectory(path);
+            var folder = new DirectoryInfo(path);
+            var acl = folder.GetAccessControl(AccessControlSections.Access);
+            acl.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.ReadAndExecute | FileSystemRights.CreateFiles,
+                InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
+            acl.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.Modify,
+                InheritanceFlags.ObjectInherit, PropagationFlags.InheritOnly, AccessControlType.Allow));
+            folder.SetAccessControl(acl);
+            return path;
+        }
+
+        /// <summary>
+        /// Adds an explicit Read entry for <paramref name="sid"/> on a file or directory the test owns.
+        /// </summary>
+        private static void AddAce(string path, SecurityIdentifier sid)
+        {
+            if (Directory.Exists(path))
+            {
+                var directory = new DirectoryInfo(path);
+                var acl = directory.GetAccessControl(AccessControlSections.Access);
+                acl.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.Read, AccessControlType.Allow));
+                directory.SetAccessControl(acl);
+            }
+            else
+            {
+                var file = new FileInfo(path);
+                var acl = file.GetAccessControl(AccessControlSections.Access);
+                acl.AddAccessRule(new FileSystemAccessRule(sid, FileSystemRights.Read, AccessControlType.Allow));
+                file.SetAccessControl(acl);
+            }
+        }
+
+        /// <summary>
+        /// Whether a file or directory carries an explicit entry for <paramref name="sid"/>.
+        /// </summary>
+        private static bool ItemHasAce(string path, SecurityIdentifier sid)
+        {
+            AuthorizationRuleCollection rules;
+            if (Directory.Exists(path))
+                rules = new DirectoryInfo(path).GetAccessControl(AccessControlSections.Access).GetAccessRules(true, false, typeof(SecurityIdentifier));
+            else
+                rules = new FileInfo(path).GetAccessControl(AccessControlSections.Access).GetAccessRules(true, false, typeof(SecurityIdentifier));
+
+            return rules.Cast<FileSystemAccessRule>().Any(r => sid.Equals(r.IdentityReference));
+        }
+
         /// <summary>
         /// Whether the vault directory carries an explicit entry for <paramref name="sid"/>.
         /// </summary>
@@ -716,13 +1077,18 @@ namespace Servy.Core.UnitTests.Security
 
             protected override bool IsProcessElevated() => Elevated;
 
+            /// <summary>
+            /// When set, resolves each account on its own instead of every account resolving to <see cref="Sid"/>.
+            /// </summary>
+            public Func<string, SecurityIdentifier> Resolver { get; set; }
+
             protected override SecurityIdentifier ResolveAccount(string account)
             {
                 ResolveCalls++;
                 LastResolvedAccount = account;
                 if (ResolveException != null)
                     throw ResolveException;
-                return Sid;
+                return Resolver != null ? Resolver(account) : Sid;
             }
 
             protected override bool? IsAdministratorsMember(SecurityIdentifier sid)
