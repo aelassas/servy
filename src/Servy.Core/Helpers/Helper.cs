@@ -146,10 +146,10 @@ namespace Servy.Core.Helpers
         /// <returns>
         /// A properly quoted string where:
         /// <list type="bullet">
-        ///   <item>All double quotes are escaped with a backslash.</item>
-        ///   <item>All backslashes preceding a quote or the end of the string are doubled.</item>
-        ///   <item>Trailing backslashes are doubled to avoid truncation.</item>
-        ///   <item>Any null characters (<c>\0</c>) are replaced with the literal sequence <c>\\0</c> for safety.</item>
+        ///    <item>All double quotes are escaped with a backslash.</item>
+        ///    <item>All backslashes preceding a quote or the end of the string are doubled.</item>
+        ///    <item>Trailing backslashes are doubled to avoid truncation.</item>
+        ///    <item>Any null characters (<c>\0</c>) are replaced with the literal sequence <c>\\0</c> for safety.</item>
         /// </list>
         /// For example, <c>C:\Path\"File</c> becomes <c>"C:\Path\\\"File"</c>.
         /// </returns>
@@ -424,30 +424,44 @@ namespace Servy.Core.Helpers
                     }
                     catch (Win32Exception ex) when (ex.NativeErrorCode == 5)
                     {
-                        // Destination file has explicit file-level ACLs (e.g. Read & Execute only),
-                        // but the runner account has Modify / Delete Child rights on the parent directory.
-                        // Fall back to explicitly deleting the target directory entry before moving.
+                        // Destination file has explicit file-level ACLs restricting direct overwrite (e.g., Read & Execute + Delete),
+                        // but grants explicit Delete permissions on the target binary.
+                        // Fall back to moving the target aside before replacing.
+                        string backup = null;
                         try
                         {
-                            Logger.Debug($"WriteFileAtomic: AtomicSecureMove denied on hardened target '{path}'. Fallback deleting target via parent directory permissions.");
+                            Logger.Debug($"WriteFileAtomic: AtomicSecureMove denied on hardened target '{path}'. Fallback moving target file aside.");
                             if (File.Exists(path))
                             {
-                                File.Delete(path);
+                                backup = GetUniqueTempPath(path);
+                                File.Move(path, backup);
                             }
 
                             NativeMethodsHelpers.AtomicSecureMove(tmp, path);
                             clearedReadOnly = false;
+
+                            if (backup != null)
+                            {
+                                try { File.Delete(backup); }
+                                catch (Exception deleteEx) { Logger.Debug($"WriteFileAtomic: could not remove backup copy '{backup}': {deleteEx.Message}"); }
+                            }
                             break;
                         }
-                        catch (Exception deleteEx)
+                        catch (Exception moveEx)
                         {
+                            if (backup != null && !File.Exists(path))
+                            {
+                                try { File.Move(backup, path); }
+                                catch (Exception restoreEx) { Logger.Warn($"WriteFileAtomic: the original of '{path}' is preserved at '{backup}' but could not be restored: {restoreEx.Message}"); }
+                            }
+
                             if (retries <= 0)
                             {
-                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({ex.Message}) and folder-level delete fallback failed ({deleteEx.Message}).", ex, deleteEx);
+                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({ex.Message}) and fallback move failed ({moveEx.Message}).", ex, moveEx);
                             }
 
                             retries--;
-                            Logger.Debug($"WriteFileAtomic retrying fallback delete after transient error: {deleteEx.Message} (retries left: {retries})");
+                            Logger.Debug($"WriteFileAtomic retrying fallback move after transient error: {moveEx.Message} (retries left: {retries})");
                             if (cancellationToken.WaitHandle.WaitOne(AppConfig.WriteFileAtomicRetryDelayMs))
                             {
                                 cancellationToken.ThrowIfCancellationRequested();
@@ -532,28 +546,42 @@ namespace Servy.Core.Helpers
                     {
                         // Destination file has explicit file-level ACLs restricting direct overwrite (e.g., Read & Execute + Delete),
                         // but grants explicit Delete permissions on the target binary.
-                        // Fall back to explicitly deleting the target file entry before moving.
+                        // Fall back to moving the target aside before replacing.
+                        string backup = null;
                         try
                         {
-                            Logger.Debug($"WriteFileAtomicCore: File.Move overwrite denied on hardened target '{path}'. Fallback deleting target file.");
+                            Logger.Debug($"WriteFileAtomicCore: File.Move overwrite denied on hardened target '{path}'. Fallback moving target file aside.");
                             if (File.Exists(path))
                             {
-                                File.Delete(path);
+                                backup = GetUniqueTempPath(path);
+                                File.Move(path, backup);
                             }
 
                             File.Move(tmp, path);
                             clearedReadOnly = false;
+
+                            if (backup != null)
+                            {
+                                try { File.Delete(backup); }
+                                catch (Exception deleteEx) { Logger.Debug($"WriteFileAtomicCore: could not remove backup copy '{backup}': {deleteEx.Message}"); }
+                            }
                             break;
                         }
-                        catch (Exception deleteEx)
+                        catch (Exception moveEx)
                         {
+                            if (backup != null && !File.Exists(path))
+                            {
+                                try { File.Move(backup, path); }
+                                catch (Exception restoreEx) { Logger.Warn($"WriteFileAtomicCore: the original of '{path}' is preserved at '{backup}' but could not be restored: {restoreEx.Message}"); }
+                            }
+
                             if (retries <= 0)
                             {
-                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and explicit delete fallback failed ({deleteEx.Message}).", uex, deleteEx);
+                                throw new AggregateException($"Failed to replace hardened file '{path}'. Direct move failed ({uex.Message}) and fallback move failed ({moveEx.Message}).", uex, moveEx);
                             }
 
                             retries--;
-                            Logger.Debug($"WriteFileAtomicCore retrying fallback delete after transient error: {deleteEx.Message} (retries left: {retries})");
+                            Logger.Debug($"WriteFileAtomicCore retrying fallback move after transient error: {moveEx.Message} (retries left: {retries})");
                             await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken);
                         }
                     }
@@ -857,6 +885,5 @@ namespace Servy.Core.Helpers
                 || cat == UnicodeCategory.LineSeparator       // U+2028
                 || cat == UnicodeCategory.ParagraphSeparator; // U+2029
         }
-
     }
 }
