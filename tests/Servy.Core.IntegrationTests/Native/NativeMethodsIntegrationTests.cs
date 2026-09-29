@@ -356,12 +356,14 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void SetConsoleCtrlHandler_NullCallbackReference_SucceedsValidly()
         {
+            // Act
             // With a null handler the flag is not add/remove: TRUE makes this process ignore CTRL+C and
             // FALSE restores normal CTRL+C processing, which is what the finally below puts back.
             bool success = NativeMethods.SetConsoleCtrlHandler(IntPtr.Zero, true);
             try
             {
-                Assert.True(success, "Registering the default Ctrl handler (null callback, add=true) should succeed.");
+                // Assert
+                Assert.True(success, "SetConsoleCtrlHandler(null, TRUE) - making this process ignore CTRL+C - should succeed.");
             }
             finally
             {
