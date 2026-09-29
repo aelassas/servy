@@ -350,5 +350,26 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         #endregion
+
+        [Fact]
+        public void Validate_SeveralBadRecords_ReportsEveryOneWithItsOwnPosition()
+        {
+            // Arrange: record 1 is valid, 2 has no '=', 3 is valid, 4 has an empty key, 5 has a null terminator in its value
+            string input = "A=1;NOEQUALS;B=2;=EMPTYKEY;C=VAL\0UE";
+
+            // Act
+            bool isValid = EnvironmentVariablesValidator.Validate(input, out List<string> errorMessages);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(
+                new[]
+                {
+                    string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 2),
+                    string.Format(Strings.Msg_EnvironmentVariableKeyEmpty, 4),
+                    string.Format(Strings.Msg_EnvironmentVariableValueInvalidChars, "C"),
+                },
+                errorMessages);
+        }
     }
 }
