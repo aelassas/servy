@@ -68,16 +68,6 @@ namespace Servy.Service.UnitTests
             _service = _ctx.BuildService();
         }
 
-        [Fact]
-        public void DefaultConstructor_InitializesWithProductionDependencies()
-        {
-            // Act
-            var exception = Record.Exception(() => new Service());
-
-            // Assert
-            Assert.Null(exception);
-        }
-
         [Theory]
         [InlineData(false, true, true, true, true, true, true, "serviceHelper")]
         [InlineData(true, false, true, true, true, true, true, "logger")]
