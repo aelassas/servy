@@ -97,6 +97,12 @@ namespace Servy.UI.Design
         public Task<OperationResult> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
+        /// <summary>
+        /// Does nothing: there is no vault to revoke access to at design time.
+        /// </summary>
+        public Task RevokeVaultAccessIfUnusedAsync(ServiceDto formerService, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
