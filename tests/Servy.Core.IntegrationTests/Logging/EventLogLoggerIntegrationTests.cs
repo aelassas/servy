@@ -435,19 +435,27 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void Report_DebugLevel_FileOnly_SkipsEventLog()
         {
+            // Arrange
             if (!_isElevated) return;
 
             string source = GenerateSourceName();
-            using (var logger = new EventLogLogger(source, LogLevel.Debug, isEventLogEnabled: true))
+            using (var logger = new RecordingEventLogLogger(source, LogLevel.Debug, true))
             {
+                // Act
                 // Debug report should route to file log only, never writing to Windows Event Log
                 string logOutput = LogCapture.Run(() =>
                 {
                     logger.Report(LogLevel.Debug, "Debug Report Title", "Debug Report Body");
                 }, LogLevel.Debug);
 
+                // Assert
                 Assert.Contains("Debug Report Title", logOutput);
                 Assert.Contains("Debug Report Body", logOutput);
+
+                // The Event Log sink is the only caller that formats the title and the body as one
+                // block, so a formatted entry carrying the body means the Debug report reached it.
+                Assert.Contains(logger.Formatted, f => f.Contains("Debug Report Title"));
+                Assert.DoesNotContain(logger.Formatted, f => f.Contains("Debug Report Body"));
             }
         }
 
@@ -497,11 +505,13 @@ namespace Servy.Core.IntegrationTests.Logging
 
             try
             {
-                using (var logger = new EventLogLogger(source, LogLevel.Info, isEventLogEnabled: true))
+                using (var logger = new RecordingEventLogLogger(source, LogLevel.Info, true))
                 {
+                    // Arrange
                     string title = "Integration Report " + Guid.NewGuid().ToString("N");
                     string body = "Report Body Content";
 
+                    // Act
                     logger.Report(LogLevel.Info, title, body);
 
                     using (var eventLog = new EventLog(AppConfig.EventLogName))
@@ -532,6 +542,7 @@ namespace Servy.Core.IntegrationTests.Logging
                             }
                         }
 
+                        // Assert
                         if (foundEntry != null)
                         {
                             Assert.Contains(title, foundEntry.Message);
@@ -539,7 +550,20 @@ namespace Servy.Core.IntegrationTests.Logging
                             Assert.Equal(EventLogEntryType.Information, foundEntry.EntryType);
                             Assert.Equal(EventIds.Info, foundEntry.InstanceId);
                         }
+                        else
+                        {
+                            // The polling window can expire without the entry appearing (slow Event Log
+                            // flush, rotation eviction, write routed elsewhere). Report it the way the
+                            // truncation test above does, so a run that read nothing back says so.
+                            Trace.WriteLine($"Warning: No EventLog entry from source '{source}' appeared after {maxRetries} retries; Event Log read-back not verified this run.");
+                        }
                     }
+
+                    // The read-back above is best-effort, so the contract is pinned on the one
+                    // deterministic observable: the Event Log sink is the only caller that formats
+                    // the title and the body as a single block, so this fails when the report never
+                    // reaches the sink.
+                    Assert.Contains(logger.Formatted, f => f.Contains(title) && f.Contains(body));
                 }
             }
             finally
@@ -713,6 +737,11 @@ namespace Servy.Core.IntegrationTests.Logging
 
             public RecordingEventLogLogger(string source, LogLevel level, string prefix)
                 : base(source, level, false, prefix)
+            {
+            }
+
+            public RecordingEventLogLogger(string source, LogLevel level, bool isEventLogEnabled)
+                : base(source, level, isEventLogEnabled)
             {
             }
 
