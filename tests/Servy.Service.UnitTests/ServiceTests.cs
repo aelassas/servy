@@ -3,12 +3,10 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
-using Servy.Core.Security;
-using Servy.Service.Bootstrap;
 using Servy.Service.CommandLine;
+using Servy.Service.Native;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
@@ -18,7 +16,6 @@ using Servy.Testing;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using static Servy.Core.Config.CoreSettingsLoader;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -106,6 +103,42 @@ namespace Servy.Service.UnitTests
             // Assert
             var argumentNullException = Assert.IsType<ArgumentNullException>(exception);
             Assert.Equal(expectedParamName, argumentNullException.ParamName);
+        }
+
+        [Theory]
+        [InlineData(0, "serviceHelper")]
+        [InlineData(1, "logger")]
+        [InlineData(2, "streamWriterFactory")]
+        [InlineData(3, "timerFactory")]
+        [InlineData(4, "processFactory")]
+        [InlineData(5, "pathValidator")]
+        [InlineData(6, "serviceRepository")]
+        [InlineData(7, "scmNative")]
+        public void Constructor_ScmNativeOverload_NullArgument_ThrowsArgumentNullException(int nullIndex, string expectedParamName)
+        {
+            // Arrange
+            var serviceHelper = nullIndex == 0 ? null : new Mock<IServiceHelper>().Object;
+            var logger = nullIndex == 1 ? null : new Mock<IServyLogger>().Object;
+            var streamWriterFactory = nullIndex == 2 ? null : new Mock<IStreamWriterFactory>().Object;
+            var timerFactory = nullIndex == 3 ? null : new Mock<ITimerFactory>().Object;
+            var processFactory = nullIndex == 4 ? null : new Mock<IProcessFactory>().Object;
+            var pathValidator = nullIndex == 5 ? null : new Mock<IPathValidator>().Object;
+            var serviceRepository = nullIndex == 6 ? null : new Mock<IServiceRepository>().Object;
+            var scmNative = nullIndex == 7 ? null : new Mock<IScmNative>().Object;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new Service(
+                serviceHelper!,
+                logger!,
+                streamWriterFactory!,
+                timerFactory!,
+                processFactory!,
+                pathValidator!,
+                serviceRepository!,
+                scmNative!
+            ));
+
+            Assert.Equal(expectedParamName, ex.ParamName);
         }
 
         #region Production Constructor Guard Clauses

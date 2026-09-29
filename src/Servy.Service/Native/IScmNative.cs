@@ -13,7 +13,7 @@ namespace Servy.Service.Native
     /// same arguments, in the same order and on the calling thread, so a service wired to it behaves
     /// exactly as it did when the calls were inline.
     /// </remarks>
-    internal interface IScmNative
+    public interface IScmNative
     {
         /// <summary>
         /// Detaches the current process from its console and makes it ignore CTRL+C, by calling
