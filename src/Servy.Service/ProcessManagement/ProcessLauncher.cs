@@ -412,6 +412,29 @@ namespace Servy.Service.ProcessManagement
         /// <param name="psi">The start info to modify.</param>
         /// <param name="logger">The logger instance for operational telemetry.</param>
         public static void ApplyLanguageFixes(ProcessStartInfo psi, IServyLogger? logger)
+            => ApplyLanguageFixes(psi, logger, PythonExeRegex.IsMatch, JavaFileEncodingRegex.IsMatch);
+
+        /// <summary>
+        /// Test seam for <see cref="ApplyLanguageFixes(ProcessStartInfo, IServyLogger?)"/>. It applies exactly the same
+        /// fixes, with the two detection matchers supplied by the caller so that their timeout fallbacks can be exercised.
+        /// </summary>
+        /// <remarks>
+        /// This overload wraps no behaviour of its own: the public overload forwards
+        /// <see cref="Regex.IsMatch(string)"/> of the two compiled detection patterns unchanged, so a production call
+        /// runs the same code with the same matchers it ran before the seam existed.
+        /// </remarks>
+        /// <param name="psi">The start info to modify.</param>
+        /// <param name="logger">The logger instance for operational telemetry.</param>
+        /// <param name="isPythonExecutable">
+        /// Returns <c>true</c> when the executable's filename stem names a Python runtime.
+        /// May throw <see cref="RegexMatchTimeoutException"/>, which is caught and treated as "not Python".
+        /// </param>
+        /// <param name="hasJavaFileEncoding">
+        /// Returns <c>true</c> when the arguments already carry a <c>-Dfile.encoding</c> flag.
+        /// May throw <see cref="RegexMatchTimeoutException"/>, which is caught and treated as "not present".
+        /// </param>
+        internal static void ApplyLanguageFixes(ProcessStartInfo psi, IServyLogger? logger,
+            Func<string, bool> isPythonExecutable, Func<string, bool> hasJavaFileEncoding)
         {
             if (psi == null || string.IsNullOrEmpty(psi.FileName))
             {
@@ -423,7 +446,7 @@ namespace Servy.Service.ProcessManagement
             // Python Logic:
             // Matches 'python', 'pythonw', 'python2', 'python3', 'python3.x', and the Windows launchers 'py' and 'pyw' (see PythonExeRegex).
             bool isPython;
-            try { isPython = PythonExeRegex.IsMatch(fileNameOnly); }
+            try { isPython = isPythonExecutable(fileNameOnly); }
             catch (RegexMatchTimeoutException ex)
             {
                 logger?.Warn($"ApplyLanguageFixes: Python detection regex timed out on '{fileNameOnly}' ({ex.Message}); assuming not Python.");
@@ -454,7 +477,7 @@ namespace Servy.Service.ProcessManagement
                 bool hasEncoding;
                 try
                 {
-                    hasEncoding = JavaFileEncodingRegex.IsMatch(currentArgs);
+                    hasEncoding = hasJavaFileEncoding(currentArgs);
                 }
                 catch (RegexMatchTimeoutException ex)
                 {
