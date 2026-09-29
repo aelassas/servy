@@ -775,8 +775,8 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            // The account is shown; the credential never is. This is the contract the service already
-            // documents for debug logging - sensitive data is never shown by the CLI or the module.
+            // The account is shown; the credential never is. The password is the one encrypted column
+            // that stays masked even under --decrypt, the same way export files leave it out.
             Assert.Equal(@".\svcuser", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_UserAccount));
             Assert.Equal(CliStrings.Msg_Show_Masked, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_Password));
             Assert.DoesNotContain("SuperSecret123!", result.Message);
