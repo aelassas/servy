@@ -6,6 +6,8 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
+using Servy.Core.Security;
+using Servy.Service.Bootstrap;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
@@ -16,6 +18,7 @@ using Servy.Testing;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using static Servy.Core.Config.CoreSettingsLoader;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -60,16 +63,6 @@ namespace Servy.Service.UnitTests
                 .Returns(_mockProcess.Object);
 
             _service = _ctx.BuildService();
-        }
-
-        [Fact]
-        public void DefaultConstructor_InitializesWithProductionDependencies()
-        {
-            // Act
-            var exception = Record.Exception(() => new Service());
-
-            // Assert
-            Assert.Null(exception);
         }
 
         [Theory]

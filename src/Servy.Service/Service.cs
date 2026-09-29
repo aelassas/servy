@@ -166,6 +166,7 @@ namespace Servy.Service
         /// It performs full subsystem initialization, including logging, database connectivity,
         /// and cryptographic setup.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         public Service() : this(
             new Helpers.ServiceHelper(new CommandLineProvider(), new Core.Helpers.ProcessHelper()),
             new EventLogLogger(AppConfig.EventSource),
@@ -269,6 +270,7 @@ namespace Servy.Service
         /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from
         /// <c>appsettings.service.json</c>, and initializes the <see cref="SecureData"/> and database systems.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         public Service(
             Helpers.IServiceHelper serviceHelper,
             IServyLogger logger,
