@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Servy.Core.Security
 {
     /// <summary>
-    /// The overall outcome of hardening Servy's files for one account.
+    /// The overall outcome of hardening Servy's files for one account, or of revoking that account's access to them.
     /// </summary>
     public enum ExePermissionsHardeningStatus
     {
@@ -13,7 +13,7 @@ namespace Servy.Core.Security
         /// <summary>Every file that exists was hardened; some required files are not present yet.</summary>
         Incomplete,
 
-        /// <summary>The vault is a link or its access could not be revoked, or a writable folder or at least one present file could not be hardened.</summary>
+        /// <summary>The vault is a link or its access could not be revoked, or a writable folder or at least one present file could not be hardened; for a revocation, the vault is a link or the account's entries could not be removed from at least one item.</summary>
         Failed,
 
         /// <summary>
