@@ -119,6 +119,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bootstrap\ServiceBootstrapSeamTests.cs" />
     <Compile Include="CommandLine\CommandLineProviderTests.cs" />
     <Compile Include="CommandLine\StartOptionsParserTests.cs" />
     <Compile Include="CommandLine\StartOptionsTests.cs" />
