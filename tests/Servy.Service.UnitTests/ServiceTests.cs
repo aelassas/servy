@@ -62,6 +62,16 @@ namespace Servy.Service.UnitTests
             _service = _ctx.BuildService();
         }
 
+        [Fact]
+        public void DefaultConstructor_InitializesWithProductionDependencies()
+        {
+            // Act
+            var exception = Record.Exception(() => new Service());
+
+            // Assert
+            Assert.Null(exception);
+        }
+
         [Theory]
         [InlineData(false, true, true, true, true, true, true, "serviceHelper")]
         [InlineData(true, false, true, true, true, true, true, "logger")]
@@ -2364,7 +2374,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             // The continuation runs on the thread pool, so wait for the log line instead of reading it at once
-            Assert.True(logged.Wait(TestTimeouts.CiGenerous), "the faulted reset task was never logged");
+            Assert.True(logged.Wait(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken), "the faulted reset task was never logged");
             scopedLogger.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Background restart-attempts reset failed")),
                 It.Is<Exception>(e => e is ObjectDisposedException)), Times.Once);
