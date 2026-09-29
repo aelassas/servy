@@ -425,6 +425,32 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal("Simulated disk failure", inner.Message);
         }
 
+        [Fact]
+        public void SaveFile_WriteFailsOverAPreExistingFile_KeepsTheFile()
+        {
+            // Arrange
+            // The two sibling failure tests above both target a path that did not exist, so
+            // createdByUs is true and the finally deleting the file is the expected outcome. This
+            // one pre-creates the target, which is the input the #2039 guard exists for.
+            var filePath = Path.Combine(TempDirectory, "existing_export.json");
+            File.WriteAllText(filePath, "original contents");
+            _command.PathValidator = (userPath, mode, access, share) =>
+            {
+                var resolvedPath = Path.GetFullPath(userPath);
+                var throwingStream = new ThrowingFlushFileStream(resolvedPath);
+                return new ExportServiceCommand.PathSecurityResultWithStream(PathSecurityResult.Success(resolvedPath), throwingStream);
+            };
+
+            // Act
+            Assert.Throws<IOException>(() => InvokeSaveFile(filePath, "data"));
+
+            // Assert
+            // The file existed before the call, so the failed write must not delete it (#2039).
+            // What it now CONTAINS is a separate question: the stream is opened OpenOrCreate and
+            // truncated before the failing flush, so only existence is asserted here.
+            Assert.True(File.Exists(filePath), "A failed export must not delete a file that existed before the call.");
+        }
+
         /// <summary>
         /// A real, writable file stream whose first forced flush-to-disk fails, standing in for a
         /// write-time IO failure (disk full, sharing violation) without needing one to occur.
