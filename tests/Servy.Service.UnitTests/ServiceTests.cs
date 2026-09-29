@@ -2112,6 +2112,41 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void OnStart_WhenTheBackgroundResetTaskFaults_LogsTheFailure()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "Test",
+                ExecutablePath = "test.exe",
+                EnableHealthMonitoring = true,
+                HeartbeatIntervalInSeconds = 30,
+                MaxFailedChecks = 3,
+                RecoveryAction = RecoveryAction.RestartService
+            };
+            var scopedLogger = SetupRestartableServiceStart(options);
+            using var logged = new ManualResetEventSlim(false);
+            scopedLogger
+                .Setup(l => l.Error(It.Is<string>(s => s.Contains("Background restart-attempts reset failed")), It.IsAny<Exception>()))
+                .Callback(() => logged.Set());
+
+            // ConditionalResetRestartAttemptsAsync awaits _fileSemaphore outside its own try, and nothing
+            // else on the synchronous start path takes it, so disposing it faults the reset task and only
+            // the reset task
+            TestReflection.GetField<SemaphoreSlim>(_service, "_fileSemaphore").Dispose();
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            // The continuation runs on the thread pool, so wait for the log line instead of reading it at once
+            Assert.True(logged.Wait(TestTimeouts.CiGenerous), "the faulted reset task was never logged");
+            scopedLogger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Background restart-attempts reset failed")),
+                It.Is<Exception>(e => e is ObjectDisposedException)), Times.Once);
+        }
+
+        [Fact]
         public async Task FlushAndShutdownLogger_WhenTheLoggerDisposeHangs_ReturnsAfterTheFlushBudget()
         {
             // Arrange
