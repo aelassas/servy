@@ -137,6 +137,14 @@ namespace Servy.CLI.UnitTests
             // reporting, which Helper.PrintAndReturn writes to Console.Error. Assert it here so a
             // regression that routes the failure message to stdout, or drops it entirely, is caught.
             Assert.False(string.IsNullOrWhiteSpace(result.StdErr), "The failure message must still reach stderr; --quiet suppresses the progress animation only.");
+
+            // start is the eighth MapResult lambda mapped with requireDatabase: true, and the only one
+            // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler does not cover. Pinning
+            // the message here is what makes that mapping falsifiable: remapped to requireDatabase:
+            // false the verb would reach EnsureServiceBinariesAsync, or its own handler, and still end
+            // in an Error exit with some text on stderr - which the three assertions above cannot tell
+            // apart from this one.
+            Assert.Contains("aesKeyFilePath must be an absolute path", result.StdErr);
         }
 
         [Fact]
@@ -203,7 +211,9 @@ namespace Servy.CLI.UnitTests
         public async Task Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler(string commandLine)
         {
             // Arrange
-            // These seven verbs are the MapResult lambdas mapped with requireDatabase: true, so
+            // These seven verbs are seven of the eight MapResult lambdas mapped with
+            // requireDatabase: true - start, the eighth, is pinned the same way by
+            // Main_QuietFlagProvided_AltersExecutionToQuietPath - so
             // ExecuteWithRuntimeAsync runs EnsureDatabase before the handler. The fixture overrides the
             // key with a relative AESKeyFilePath, so AppFoldersHelper.EnsureFolders rejects it on its
             // absolute-path check - before any folder, ACL, event source, database or embedded
