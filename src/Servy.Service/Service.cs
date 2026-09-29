@@ -17,8 +17,8 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.ServiceProcess;
 using System.Text;
@@ -3116,6 +3116,7 @@ namespace Servy.Service
         /// observed from a test without ending the test host. Like <see cref="Environment.Exit(int)"/>,
         /// the production implementation does not return.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         protected virtual void TerminateProcess(int exitCode)
         {
             Environment.Exit(exitCode);
@@ -3133,6 +3134,7 @@ namespace Servy.Service
         /// read through an injected seam. Overridable instead, so a test can supply a handle without a
         /// real SCM registration. The production body is the property read it replaces.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         protected virtual IntPtr GetNativeServiceHandle()
         {
             return ServiceHandle;
