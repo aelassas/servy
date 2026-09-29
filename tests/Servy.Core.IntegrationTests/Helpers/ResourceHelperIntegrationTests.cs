@@ -579,22 +579,36 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 cts.Cancel();
 
+                // The killer would report success, so nothing downstream of TerminateBlockingProcesses
+                // masks the Times.Never below: only the cancellation check keeps it from being reached.
+                _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+
                 _fakeAssembly.OnGetManifestResourceStream = name => new MemoryStream(new byte[] { 0x01 });
 
                 // Act
                 // The cancellation check before the process-termination step is not gated on stopServices,
-                // so a pre-cancelled token reaches it even with stopServices: false.
-                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                // so a pre-cancelled token reaches it even with stopServices: false. LogCapture routes the
+                // static Logger into a private temp directory so the arm that ran can be read back.
+                var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
                     _fakeAssembly,
                     "Servy.Resources",
                     "cancelapp",
                     "exe",
                     stopServices: false,
-                    cancellationToken: cts.Token);
+                    cancellationToken: cts.Token));
 
-                // Assert: the OperationCanceledException arm of the outer catch, not the general one
+                // Assert
                 Assert.False(result);
+
+                // An exe target goes straight to the killer on this branch - TerminateBlockingProcesses
+                // has no IsFileLocked probe for it - so this already fails if the cancellation check is
+                // removed, and no locked target file is needed to make it reachable the way main needs one.
                 _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+
+                // Both catch arms return false, so only the log tells them apart: this is the
+                // OperationCanceledException arm, not the general one.
+                Assert.Contains("was cancelled by the caller", textLogOutput);
+                Assert.DoesNotContain("Failed to copy embedded resource", textLogOutput);
             }
         }
 
