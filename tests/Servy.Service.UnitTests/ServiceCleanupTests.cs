@@ -337,8 +337,8 @@ namespace Servy.Service.UnitTests
         }
 
         /// <summary>
-        /// A kill that fails must not abort the hook's cleanup: the warning is logged and the wait
-        /// and outcome evaluation still run. No user-mode test can make a real <c>Process.Kill</c>
+        /// A kill that fails must not abort the hook's cleanup: the warning is logged and the exit
+        /// check and outcome evaluation still run. No user-mode test can make a real <c>Process.Kill</c>
         /// throw on a live process it owns, so this arm needs the seam.
         /// </summary>
         [Fact]
