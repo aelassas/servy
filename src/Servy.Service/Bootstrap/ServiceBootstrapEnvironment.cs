@@ -8,6 +8,7 @@ using Servy.Infrastructure.Helpers;
 using System;
 using System.Collections.Specialized;
 using System.Configuration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Service.Bootstrap
 {
@@ -19,6 +20,7 @@ namespace Servy.Service.Bootstrap
     /// <see cref="Servy.Service.Service"/>: same target, same arguments, same order, same thread and the
     /// same exception behaviour. The type holds no state, so an instance can be shared.
     /// </remarks>
+    [ExcludeFromCodeCoverage]
     internal sealed class ServiceBootstrapEnvironment : IServiceBootstrapEnvironment
     {
         /// <summary>
