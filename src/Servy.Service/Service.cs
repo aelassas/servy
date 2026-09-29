@@ -9,6 +9,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using Servy.Service.Bootstrap;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.Native;
@@ -110,6 +111,8 @@ namespace Servy.Service
         private readonly IProcessFactory _processFactory;
         /// <summary>Seam over the console and Service Control Manager native calls; the production implementation forwards each one unchanged.</summary>
         private readonly IScmNative _scmNative;
+        /// <summary>Seam over the machine-touching and process-global start-up calls of the production constructor; the production implementation forwards each one unchanged. Null on the injection constructors, which perform no production setup.</summary>
+        private readonly IServiceBootstrapEnvironment? _bootstrapEnvironment;
         private readonly IPathValidator _pathValidator;
         private string? _serviceName;
         private string? _realExePath;
@@ -274,6 +277,37 @@ namespace Servy.Service
             IProcessFactory processFactory,
             IPathValidator pathValidator
             )
+            : this(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, new ServiceBootstrapEnvironment())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Service"/> class with core dependencies and performs
+        /// production setup through the supplied bootstrap environment.
+        /// </summary>
+        /// <param name="serviceHelper">The service helper instance to use.</param>
+        /// <param name="logger">The logger instance to use for logging.</param>
+        /// <param name="streamWriterFactory">Factory to create rotating stream writers for stdout and stderr.</param>
+        /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
+        /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
+        /// <param name="pathValidator">Path Validator.</param>
+        /// <param name="bootstrapEnvironment">The seam over the machine-touching and process-global start-up calls.</param>
+        /// <exception cref="ArgumentNullException">Any argument is <see langword="null"/>.</exception>
+        /// <remarks>
+        /// This overload exists so a test can construct the production start-up path without touching the
+        /// event log, ProgramData, SQLite or the process-global logger. The public constructor passes
+        /// <see cref="ServiceBootstrapEnvironment"/>, whose members forward unchanged, so production
+        /// behaviour is identical either way.
+        /// </remarks>
+        internal Service(
+            Helpers.IServiceHelper serviceHelper,
+            IServyLogger logger,
+            IStreamWriterFactory streamWriterFactory,
+            ITimerFactory timerFactory,
+            IProcessFactory processFactory,
+            IPathValidator pathValidator,
+            IServiceBootstrapEnvironment bootstrapEnvironment
+            )
         {
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -281,25 +315,23 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
+            _bootstrapEnvironment = bootstrapEnvironment ?? throw new ArgumentNullException(nameof(bootstrapEnvironment));
             _scmNative = new ScmNative();
             _options = null;
 
-            Logger.Initialize("Servy.Service.log");
+            _bootstrapEnvironment.InitializeLogger("Servy.Service.log");
 
             try
             {
                 ServiceName = AppConfig.EventSource;
 
                 // Ensure event source exists
-                Helper.EnsureEventSourceExists();
+                _bootstrapEnvironment.EnsureEventSourceExists();
 
                 // Load configuration from appsettings.service.json
-                var config = new ConfigurationBuilder()
-                    .SetBasePath(AppFoldersHelper.GetAppDirectory())
-                    .AddJsonFile("appsettings.service.json", optional: true, reloadOnChange: false)
-                    .Build();
+                var config = _bootstrapEnvironment.BuildConfiguration();
 
-                var coreSettings = CoreSettingsLoader.Load();
+                var coreSettings = _bootstrapEnvironment.LoadCoreSettings();
                 var connectionString = coreSettings.ConnectionString;
                 var aesKeyFilePath = coreSettings.AESKeyFilePath;
                 var aesIVFilePath = coreSettings.AESIVFilePath;
@@ -315,20 +347,20 @@ namespace Servy.Service
                 }
 
                 // Centralized logging bootstrapper
-                LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: _logger);
+                _bootstrapEnvironment.ConfigureLogging(config, instanceLogger: _logger);
 
                 var isEventLogEnabled = ConfigParser.ParseBool(config["EnableEventLog"], AppConfig.DefaultEnableEventLog, "EnableEventLog");
                 AutoLog = isEventLogEnabled;
 
                 // --- Log Service-specific timing configurations ---
-                Logger.Report(LogLevel.Debug, "Servy Service Context Configuration Loaded:",
+                _bootstrapEnvironment.ReportDebug("Servy Service Context Configuration Loaded:",
                     $"  WaitChunkMs: {_waitChunkMs}" + Environment.NewLine +
                     $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}");
 
                 // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
-                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                if (!_bootstrapEnvironment.IsSqliteVersionSafe(out var detectedVersion))
                 {
-                    Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                    _bootstrapEnvironment.LogError($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
                                  $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
 
                     Environment.ExitCode = AppConfig.ServiceSpecificErrorCode;
@@ -336,16 +368,12 @@ namespace Servy.Service
                 }
 
                 // Initialize database and helpers
-                _dbContext = new AppDbContext(connectionString);
-                DatabaseInitializer.InitializeDatabase(_dbContext, SQLiteDbInitializer.Initialize);
+                var dataStack = _bootstrapEnvironment.CreateDataStack(connectionString, aesKeyFilePath, aesIVFilePath);
 
-                var dapperExecutor = new DapperExecutor(_dbContext);
-                _protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                _secureData = new SecureData(_protectedKeyProvider);
-                var xmlSerializer = new XmlServiceSerializer();
-                var jsonSerializer = new JsonServiceSerializer();
-
-                _serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
+                _dbContext = dataStack.DbContext;
+                _protectedKeyProvider = dataStack.ProtectedKeyProvider;
+                _secureData = dataStack.SecureData;
+                _serviceRepository = dataStack.ServiceRepository;
 
                 // Enable Shutdown Notifications
                 CanShutdown = true;
@@ -353,7 +381,7 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 // Without Logger.Initialize in the constructor, this would be lost.
-                Logger.Error("Fatal error during service construction.", ex);
+                _bootstrapEnvironment.LogError("Fatal error during service construction.", ex);
 
                 // If the environment exit code was successfully set to a custom error
                 // (like 13 from ProtectedKeyProvider), preserve it. Otherwise, set a generic service failure code.
