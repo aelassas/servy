@@ -139,7 +139,8 @@ namespace Servy.Testing
 
         /// <summary>
         /// Settle window (500 ms) allowed after a force kill before the stop sequence re-checks the
-        /// process, matching the production post-kill wait.
+        /// process. Shorter than the production post-kill wait,
+        /// <see cref="Servy.Core.Config.AppConfig.DefaultPostKillWaitMs"/> (3,000 ms).
         /// </summary>
         /// <seealso cref="ProcessWrapperGracefulStopMs"/>
         public const int ProcessWrapperPostKillWaitMs = 500;
