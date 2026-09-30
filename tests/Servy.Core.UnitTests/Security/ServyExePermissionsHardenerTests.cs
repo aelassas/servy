@@ -15,9 +15,10 @@ namespace Servy.Core.UnitTests.Security
     /// <summary>
     /// Covers the decisions <see cref="ServyExePermissionsHardener"/> makes before and around the ACL writes: which
     /// status each precondition leads to, which files it hardens with which rights, how each outcome is reported, and
-    /// which accounts a re-apply covers. The seams replace elevation, account resolution and group membership, and
-    /// the vault is an empty temporary directory, so no file ACL is ever rewritten here; the ACL writes themselves are
-    /// covered by <c>ServyExePermissionsHardenerIntegrationTests</c>. Outcomes are told apart by the log, hence the
+    /// which accounts a re-apply covers. The seams replace elevation, account resolution, group membership and the
+    /// hard link count, and the vault is a temporary directory, so every ACL rewritten here belongs to an item the test
+    /// created; what the hardening leaves on each file is covered by
+    /// <c>ServyExePermissionsHardenerIntegrationTests</c>. Outcomes are told apart by the log, hence the
     /// sequential logger collection.
     /// </summary>
     [Collection(LoggerCollection.Name)]
