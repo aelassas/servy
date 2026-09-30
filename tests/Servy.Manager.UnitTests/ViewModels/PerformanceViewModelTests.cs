@@ -264,7 +264,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
 
                     // 2. Keep the message pump processing while waiting for Task.Run to finish
-                    var pumpTimeout = TimeSpan.FromSeconds(10);
+                    var pumpTimeout = TestTimeouts.CiGenerous;
                     var sw = Stopwatch.StartNew();
                     while (!task.IsCompleted)
                     {
