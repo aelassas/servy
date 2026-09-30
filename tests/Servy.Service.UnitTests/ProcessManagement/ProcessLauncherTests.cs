@@ -3,6 +3,7 @@ using Moq;
 using Servy.Core.Logging;
 using Servy.Core.Validation;
 using Servy.Service.ProcessManagement;
+using Servy.Service.UnitTests.Helpers;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -329,5 +330,244 @@ namespace Servy.Service.UnitTests.ProcessManagement
             process.Verify(p => p.Kill(It.IsAny<bool>()), Times.Never);
             logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception?>()), Times.Never);
         }
+
+        #region Start - redirect handler failure paths, drain and orphan cleanup (#7187)
+
+        /// <summary>
+        /// The unopenable path the integration suite already uses to force
+        /// <see cref="ProcessLauncher.TryOpenAppendWriter(string, Encoding, string, string, IServyLogger)"/> into its
+        /// catch arm. The extended-length prefix bypasses managed path validation and guarantees the open fails.
+        /// </summary>
+        private const string UnopenablePath = @"\\?\C:\illegal|char.log";
+
+        /// <summary>
+        /// Builds a <see cref="Mock{T}"/> of <see cref="IProcessWrapper"/> that starts successfully, captures the two
+        /// redirect handlers <see cref="ProcessLauncher.Start(ProcessLaunchOptions, IProcessFactory, IServyLogger)"/>
+        /// attaches, and runs <paramref name="duringWait"/> inside the synchronous wait - which is where the real
+        /// output pump raises them, before the finally block disposes the writers.
+        /// </summary>
+        /// <param name="duringWait">
+        /// Receives the captured stdout and stderr handlers (either may be <see langword="null"/> when that stream is
+        /// not redirected) and is invoked once, from inside <see cref="IProcessWrapper.WaitForExit(int)"/>.
+        /// </param>
+        /// <returns>The configured mock, whose <c>Object</c> the test hands to a fake <see cref="IProcessFactory"/>.</returns>
+        private static Mock<IProcessWrapper> ScriptedWrapper(
+            Action<DataReceivedEventHandler?, DataReceivedEventHandler?> duringWait)
+        {
+            DataReceivedEventHandler? outHandler = null;
+            DataReceivedEventHandler? errHandler = null;
+
+            var wrapper = new Mock<IProcessWrapper>();
+            wrapper.Setup(p => p.Start()).Returns(true);
+            wrapper.SetupAdd(p => p.OutputDataReceived += It.IsAny<DataReceivedEventHandler>())
+                   .Callback<DataReceivedEventHandler>(h => outHandler = h);
+            wrapper.SetupAdd(p => p.ErrorDataReceived += It.IsAny<DataReceivedEventHandler>())
+                   .Callback<DataReceivedEventHandler>(h => errHandler = h);
+            wrapper.Setup(p => p.WaitForExit(It.IsAny<int>()))
+                   .Returns(() => { duringWait(outHandler, errHandler); return true; });
+            wrapper.Setup(p => p.Kill(It.IsAny<bool>())).Returns(true);
+            return wrapper;
+        }
+
+        /// <summary>
+        /// Builds a fake <see cref="IProcessFactory"/> that always hands back <paramref name="wrapper"/>.
+        /// </summary>
+        /// <param name="wrapper">The scripted wrapper the launcher should receive.</param>
+        /// <returns>The factory instance to pass to <see cref="ProcessLauncher.Start(ProcessLaunchOptions, IProcessFactory, IServyLogger)"/>.</returns>
+        private static IProcessFactory FactoryFor(Mock<IProcessWrapper> wrapper)
+        {
+            var factory = new Mock<IProcessFactory>();
+            factory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                   .Returns(wrapper.Object);
+            return factory.Object;
+        }
+
+        /// <summary>
+        /// Builds the synchronous, redirecting launch options the handler tests need.
+        /// </summary>
+        /// <param name="stdout">The stdout log path, or <see langword="null"/> to leave stdout unredirected.</param>
+        /// <param name="stderr">The stderr log path, or <see langword="null"/> to leave stderr unredirected.</param>
+        /// <returns>Options with <c>FireAndForget = false</c>, <c>RedirectToWriters = true</c> and a bounded wait budget.</returns>
+        private static ProcessLaunchOptions SyncOptions(string? stdout, string? stderr) =>
+            new ProcessLaunchOptions
+            {
+                ExecutablePath = @"C:\tools\hook.exe",
+                FireAndForget = false,
+                EnableConsoleUI = false,
+                RedirectToWriters = true,
+                TimeoutMs = 5000,
+                WaitChunkMs = 50,
+                StdoutPath = stdout,
+                StderrPath = stderr,
+            };
+
+        [Fact]
+        public void Start_SamePath_StderrOpensSharedWriterFirst_WritesBothLinesToOneFile()
+        {
+            // Arrange
+            var log = Path.Combine(_tempDir, "both.log");
+            var wrapper = ScriptedWrapper((o, e) =>
+            {
+                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("err-first"));
+                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("out-second"));
+            });
+
+            // Act
+            ProcessLauncher.Start(SyncOptions(log, log), FactoryFor(wrapper), _logger.Object);
+
+            // Assert
+            Assert.Equal(new[] { "err-first", "out-second" }, File.ReadAllLines(log));
+            _logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception?>()), Times.Never);
+        }
+
+        [Fact]
+        public void Start_SamePath_SharedWriterOpenFails_LatchesAfterOneLogLine()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) =>
+            {
+                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
+                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
+            });
+
+            // Act
+            ProcessLauncher.Start(SyncOptions(UnopenablePath, UnopenablePath), FactoryFor(wrapper), _logger.Object);
+
+            // Assert
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.StartsWith("Disabling multiplexed stdout/stderr capture")), It.IsAny<Exception?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void Start_IndependentStderrOpenFails_LatchesAfterOneLogLine()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) =>
+            {
+                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
+                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
+            });
+
+            // Act
+            ProcessLauncher.Start(
+                SyncOptions(Path.Combine(_tempDir, "out.log"), UnopenablePath),
+                FactoryFor(wrapper),
+                _logger.Object);
+
+            // Assert
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.StartsWith("Disabling stderr capture")), It.IsAny<Exception?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void Start_StdoutOpenFails_LatchesAfterOneLogLine()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) =>
+            {
+                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
+                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
+            });
+
+            // Act
+            ProcessLauncher.Start(SyncOptions(UnopenablePath, null), FactoryFor(wrapper), _logger.Object);
+
+            // Assert
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.StartsWith("Disabling stdout capture")), It.IsAny<Exception?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void Start_StdoutLineArrivesAfterTheWriterIsDisposed_WarnsAndDoesNotThrow()
+        {
+            // Arrange
+            DataReceivedEventHandler? captured = null;
+            var wrapper = ScriptedWrapper((o, e) =>
+            {
+                captured = o;
+                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first"));
+            });
+            ProcessLauncher.Start(
+                SyncOptions(Path.Combine(_tempDir, "out.log"), null),
+                FactoryFor(wrapper),
+                _logger.Object);   // the finally block has now disposed the writer
+
+            // Act
+            var ex = Record.Exception(() =>
+                captured!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("late")));
+
+            // Assert
+            Assert.Null(ex);
+            _logger.Verify(
+                l => l.Warn(It.Is<string>(m => m.StartsWith("Failed to write stdout line")), It.IsAny<Exception?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void Start_StderrLineArrivesAfterTheWriterIsDisposed_WarnsAndDoesNotThrow()
+        {
+            // Arrange
+            DataReceivedEventHandler? captured = null;
+            var wrapper = ScriptedWrapper((o, e) =>
+            {
+                captured = e;
+                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first"));
+            });
+            ProcessLauncher.Start(
+                SyncOptions(Path.Combine(_tempDir, "out.log"), Path.Combine(_tempDir, "err.log")),
+                FactoryFor(wrapper),
+                _logger.Object);   // the finally block has now disposed both writers
+
+            // Act
+            var ex = Record.Exception(() =>
+                captured!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("late")));
+
+            // Assert
+            Assert.Null(ex);
+            _logger.Verify(
+                l => l.Warn(It.Is<string>(m => m.StartsWith("Failed to write stderr line")), It.IsAny<Exception?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void Start_DrainWaitThrows_IsSwallowedAndTheWrapperIsStillReturned()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) => { });
+            wrapper.Setup(p => p.WaitForExit()).Throws(new InvalidOperationException("drain failed"));
+
+            // Act
+            var result = ProcessLauncher.Start(SyncOptions(null, null), FactoryFor(wrapper), _logger.Object);
+
+            // Assert
+            Assert.Same(wrapper.Object, result);
+            _logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception?>()), Times.Never);
+            wrapper.Verify(p => p.Dispose(), Times.Never);
+        }
+
+        [Fact]
+        public void Start_WaitThrowsAndOrphanKillThrows_WarnsDisposesAndRethrowsTheOriginal()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) => throw new InvalidOperationException("wait failed"));
+            wrapper.Setup(p => p.Kill(It.IsAny<bool>())).Throws(new InvalidOperationException("kill failed"));
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => ProcessLauncher.Start(SyncOptions(null, null), FactoryFor(wrapper), _logger.Object));
+
+            // Assert
+            Assert.Equal("wait failed", ex.Message);
+            _logger.Verify(
+                l => l.Warn(It.Is<string>(m => m.StartsWith("Failed to kill orphaned child after launch failure")
+                                            && m.Contains("kill failed")), It.IsAny<Exception?>()),
+                Times.Once);
+            wrapper.Verify(p => p.Dispose(), Times.Once);
+        }
+
+        #endregion
     }
 }
