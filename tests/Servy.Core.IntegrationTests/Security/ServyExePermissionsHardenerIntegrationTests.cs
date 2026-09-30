@@ -33,6 +33,7 @@ namespace Servy.Core.IntegrationTests.Security
         private static readonly SecurityIdentifier OtherSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
         private static readonly SecurityIdentifier UsersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+        private static readonly SecurityIdentifier EveryoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
 
         private static readonly string DbFile = Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName);
         private static readonly string KeyFile = Path.Combine(AppConfig.SecurityFolderName, AppConfig.AESKeyFileName);
@@ -281,6 +282,29 @@ namespace Servy.Core.IntegrationTests.Security
             var target = Assert.Single(ExplicitRules(exe, TargetSid, AccessControlType.Allow));
             Assert.False(Has((int)target.FileSystemRights, FileSystemRights.WriteData));
             Assert.True(Has(AllowedRights(exe, OtherSid), FileSystemRights.ReadAndExecute));
+        }
+
+        [Fact]
+        public void Harden_BroadGroupDeny_IsKeptWhileItsGrantIsPurged()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange
+            CreateVault();
+            var exe = Path.Combine(_vault, AppConfig.ServyServiceUIExe);
+            var acl = new FileInfo(exe).GetAccessControl();
+            acl.AddAccessRule(new FileSystemAccessRule(EveryoneSid, FileSystemRights.WriteData, AccessControlType.Deny));
+            acl.AddAccessRule(new FileSystemAccessRule(EveryoneSid, FileSystemRights.Read, AccessControlType.Allow));
+            new FileInfo(exe).SetAccessControl(acl);
+
+            // Act
+            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
+            Assert.Empty(ExplicitRules(exe, EveryoneSid, AccessControlType.Allow));
+            var deny = Assert.Single(ExplicitRules(exe, EveryoneSid, AccessControlType.Deny));
+            Assert.True(Has((int)deny.FileSystemRights, FileSystemRights.WriteData));
         }
 
         #endregion
