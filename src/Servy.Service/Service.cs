@@ -1164,18 +1164,25 @@ namespace Servy.Service
         /// Internal unprotected write logic.
         /// </summary>
         /// <param name="attempts">The number of restart attempts to persist.</param>
+        /// <remarks>
+        /// The file is rewritten in place (<see cref="FileMode.Create"/> truncates an existing file) rather than through
+        /// a temporary file and a rename: a rename needs Delete on both files, and the service account only has Read and
+        /// Write on the files in <c>recovery\</c> (#7241). A crash in the middle of the write can leave the file empty or
+        /// truncated; the read path treats that as corrupt content and resets the counter to 0.
+        /// </remarks>
         private void WriteAttemptsInternal(int attempts)
         {
-            // Use the atomic helper to ensure we don't corrupt the file on crash
-            Helper.WriteFileAtomic(_restartAttemptsFile, stream =>
+            using (var fs = new FileStream(_restartAttemptsFile, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                // Use StreamWriter for cleaner string handling.
-                // We use leaveOpen: true so the Helper can perform the final Flush() on the FileStream.
-                using (var sw = new StreamWriter(stream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
+                // BOM-less UTF8, the same encoding the counter has always been written in
+                using (var sw = new StreamWriter(fs, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
                 {
                     sw.Write(attempts.ToString(CultureInfo.InvariantCulture));
                 }
-            });
+
+                // Force the counter to disk, as the atomic helper did before the rename
+                fs.Flush(flushToDisk: true);
+            }
         }
 
         /// <summary>

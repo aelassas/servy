@@ -142,10 +142,13 @@ namespace Servy.Core.IntegrationTests.Security
                 File.WriteAllText(file, string.Empty);
             }
 
-            // Assert: SQLite's side files, the logs and the recovery state are writable and deletable...
+            // Assert: SQLite's side files and the logs are writable and deletable...
             Assert.True(Has(AllowedRights(wal, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
             Assert.True(Has(AllowedRights(log, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
-            Assert.True(Has(AllowedRights(recovery, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+
+            // ...the recovery state is writable but not deletable, since it is rewritten in place (#7241)...
+            Assert.True(Has(AllowedRights(recovery, TargetSid), FileSystemRights.Read | FileSystemRights.Write));
+            Assert.False(Has(AllowedRights(recovery, TargetSid), FileSystemRights.Delete), "the recovery state is not deletable");
 
             // ...and a file anywhere else carries no grant at all
             Assert.Equal(0, AllowedRights(planted, TargetSid));
@@ -734,7 +737,8 @@ namespace Servy.Core.IntegrationTests.Security
 
         /// <summary>
         /// Asserts the target's two entries on a writable folder: List and Create Files on the folder itself (never
-        /// Delete on it), and Modify on the files created in it.
+        /// Delete on it), and the rights <see cref="ServyExePermissionsHardener.GetWritableFolderFileRights"/> names on
+        /// the files created in it - without Delete in <c>recovery\</c> (#7241).
         /// </summary>
         private static void AssertWritableFolder(string path)
         {
@@ -748,7 +752,10 @@ namespace Servy.Core.IntegrationTests.Security
 
             var files = Assert.Single(rules, r => r.InheritanceFlags == InheritanceFlags.ObjectInherit);
             Assert.Equal(PropagationFlags.InheritOnly, files.PropagationFlags);
-            Assert.True(Has((int)files.FileSystemRights, FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+            var expected = ServyExePermissionsHardener.GetWritableFolderFileRights(Path.GetFileName(path));
+            Assert.True(Has((int)files.FileSystemRights, expected));
+            if ((expected & FileSystemRights.Delete) == 0)
+                Assert.False(Has((int)files.FileSystemRights, FileSystemRights.Delete), $"the files in {path} are not deletable");
 
             Assert.False(Has(AllowedRights(path, TargetSid), FileSystemRights.Delete), $"{path} itself is not deletable");
         }

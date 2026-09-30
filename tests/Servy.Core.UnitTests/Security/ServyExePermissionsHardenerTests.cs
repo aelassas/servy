@@ -327,6 +327,31 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(new[] { "db", "logs", "recovery" }, folders);
         }
 
+        [Theory]
+        [InlineData("db")]
+        [InlineData("logs")]
+        public void GetWritableFolderFileRights_DatabaseAndLogs_AreReadWriteDelete(string folder)
+        {
+            // Act
+            var rights = ServyExePermissionsHardener.GetWritableFolderFileRights(folder);
+
+            // Assert: SQLite deletes its side files and the logger rotates its files, so Delete is needed here
+            Assert.Equal(FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete, rights);
+        }
+
+        [Theory]
+        [InlineData("recovery")]
+        [InlineData("RECOVERY")]
+        public void GetWritableFolderFileRights_Recovery_IsReadWriteWithoutDelete(string folder)
+        {
+            // Act
+            var rights = ServyExePermissionsHardener.GetWritableFolderFileRights(folder);
+
+            // Assert: the restart-attempts counter is rewritten in place, so it never needs Delete (#7241)
+            Assert.Equal(FileSystemRights.Read | FileSystemRights.Write, rights);
+            Assert.Equal(0, (int)(rights & FileSystemRights.Delete));
+        }
+
         [Fact]
         public void GetTargetFiles_ListsEveryFileWithItsRights()
         {
