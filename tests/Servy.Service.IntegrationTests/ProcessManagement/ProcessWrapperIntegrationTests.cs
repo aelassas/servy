@@ -1038,13 +1038,20 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Kill_PostKillWaitTimesOut_ReturnsFalseAndLogsWarn()
         {
             // Arrange
+            var waits = new List<int>();
+
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 Assert.True(wrapper.Start());
 
                 // The real Process.Kill still runs; only the wait is driven, which is the arm #6043 added so
-                // ProcessLauncher's orphan-cleanup catch can fire on a kill that did not take.
-                wrapper.ExitWaiter = (_, __) => false;
+                // ProcessLauncher's orphan-cleanup catch can fire on a kill that did not take. The argument is
+                // recorded as well, so the budget Kill(bool) passes is pinned and not only the warning text.
+                wrapper.ExitWaiter = (_, ms) =>
+                {
+                    waits.Add(ms);
+                    return false;
+                };
 
                 // Act
                 var result = wrapper.Kill();
@@ -1052,6 +1059,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Assert
                 Assert.False(result);
                 Assert.Contains(_logger.Warnings, m => m.Contains("killed, but did not exit within"));
+                Assert.Equal(new[] { AppConfig.DefaultPostKillWaitMs }, waits);
             }
         }
 
@@ -1083,6 +1091,44 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // exitCode.HasValue arm is the one that logs.
                 Assert.Contains(_logger.Infos, m => m.Contains($"canceled with code {child.ExitCode}."));
                 Assert.DoesNotContain(_logger.Infos, m => m.Contains("canceled gracefully."));
+            }
+        }
+
+        [Fact]
+        public void Stop_ForwardsTheStopTimeoutToTheGracefulWaitAndThePostKillBudgetToTheSecond()
+        {
+            // Arrange
+            var waits = new List<int>();
+
+            // The two budgets must differ, or a swap between the waits would pass by accident. They do:
+            // ProcessWrapperGracefulStopMs is 1000 and AppConfig.DefaultPostKillWaitMs is 3000.
+            Assert.NotEqual(TestTimeouts.ProcessWrapperGracefulStopMs, AppConfig.DefaultPostKillWaitMs);
+
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            {
+                Assert.True(wrapper.Start());
+
+                // Whether or not SendCtrlC attaches, 'sent' ends up true, so the graceful wait runs first; it
+                // reports no exit, so the force-kill block and its own wait follow. The real Process.Kill still
+                // runs through the default ProcessKiller, so no child outlives the test.
+                wrapper.MainWindowCloser = _ => true;
+                wrapper.ExitWaiter = (_, ms) =>
+                {
+                    waits.Add(ms);
+                    return false;
+                };
+
+                // Act
+                var result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                // Assert
+                Assert.False(result);
+
+                // The sequence, not the set: the caller's stop timeout reaches the graceful wait and the
+                // post-kill budget reaches the second one. This is what #1971 and #1227 each had to fix.
+                Assert.Equal(
+                    new[] { TestTimeouts.ProcessWrapperGracefulStopMs, AppConfig.DefaultPostKillWaitMs },
+                    waits);
             }
         }
 
