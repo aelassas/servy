@@ -201,6 +201,26 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
+        [Fact]
+        public void Initialize_MigrationFailsHalfway_RollsBackTheVersionAndRethrows()
+        {
+            // Arrange - a view squatting on the table name makes ReconcileSchema's ALTER TABLE fail
+            //           after version 1 has been written inside the same transaction. CREATE TABLE
+            //           IF NOT EXISTS is a silent no-op while the view exists, so ApplyVersion1
+            //           bumps the version over a table that was never created.
+            using (var conn = OpenConnection())
+            {
+                conn.Execute($"CREATE VIEW {StateSqlConstants.ServiceStateTableName} AS SELECT 'x' AS Name;");
+
+                // Act
+                var ex = Record.Exception(() => SQLiteStateDbInitializer.Initialize(conn));
+
+                // Assert
+                Assert.NotNull(ex);
+                Assert.Equal(0, conn.QuerySingle<int>("SELECT COUNT(*) FROM SchemaInfo;"));
+            }
+        }
+
         /// <summary>
         /// Reads the column names of the runtime-state table, in declaration order.
         /// </summary>
