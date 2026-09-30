@@ -21,7 +21,7 @@ This video demonstrates Servy 1.0. While Servy has evolved significantly since t
 
 ## Why?
 
-See [NOTES.md](NOTES.md) for details.
+See [NOTES.md](NOTES.md).
 
 ## Getting Started
 
