@@ -292,7 +292,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Recovery Action Help</value>
   </data>
   <data name="Info_RecoveryAction" xml:space="preserve">
-    <value>Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, or a user account without the required privileges.</value>
+    <value>Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, an IIS AppPool identity (IIS APPPOOL\...), or a user account without the required privileges.</value>
   </data>
 
   <data name="Label_RecoveryOnCleanExit" xml:space="preserve">

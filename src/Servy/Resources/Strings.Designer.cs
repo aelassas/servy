@@ -1699,7 +1699,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, or a user account without the required privileges..
+        ///   Looks up a localized string similar to Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, an IIS AppPool identity (IIS APPPOOL\...), or a user account without the required privileges..
         /// </summary>
         public static string Info_RecoveryAction {
             get {
