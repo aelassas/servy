@@ -44,7 +44,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _mockUiDispatcher = new Mock<IUiDispatcher>();
             _mockProcessKiller = new Mock<IProcessKiller>();
 
-            // InitTimer() reads PerformanceRefreshIntervalInMs; give it a sane interval
+            // InitTimer() reads PerformanceRefreshIntervalMs; give it a sane interval
             _mockAppConfig.Setup(c => c.PerformanceRefreshIntervalMs).Returns(1000);
 
             // Stub out formatting helpers to return predictable metric text
