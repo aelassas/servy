@@ -278,6 +278,88 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task Repository_NameDifferingOnlyInCase_ReachesTheSameRow()
+        {
+            // Arrange
+            var repo = CreateInitializedRepository();
+            await repo.UpsertAsync(new ServiceStateDto { Name = "MyService", Pid = 11 }, TestContext.Current.CancellationToken);
+
+            // Act
+            await repo.UpsertAsync(new ServiceStateDto { Name = "myservice", Pid = 22 }, TestContext.Current.CancellationToken);
+            var fetched = await repo.GetAsync("MYSERVICE", TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(fetched);
+            Assert.Equal(22, fetched!.Pid);
+
+            var all = (await repo.GetAllAsync(TestContext.Current.CancellationToken)).ToList();
+            Assert.Single(all);
+        }
+
+        [Fact]
+        public async Task Repository_DeleteInAnotherCase_RemovesTheRow()
+        {
+            // Arrange
+            var repo = CreateInitializedRepository();
+            await repo.UpsertAsync(new ServiceStateDto { Name = "MyService", Pid = 11 }, TestContext.Current.CancellationToken);
+
+            // Act
+            var deleted = await repo.DeleteAsync("myservice", TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(1, deleted);
+            Assert.Empty(await repo.GetAllAsync(TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task Repository_NonAsciiCasingDifference_ReachesTheSameRow()
+        {
+            // Arrange - built-in NOCASE folds ASCII only; only UNICODE_NOCASE folds 'Ö'/'ö'.
+            var repo = CreateInitializedRepository();
+            await repo.UpsertAsync(new ServiceStateDto { Name = "ÖffnenService", Pid = 7 }, TestContext.Current.CancellationToken);
+
+            // Act
+            var fetched = await repo.GetAsync("öffnenservice", TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(fetched);
+            Assert.Equal(7, fetched!.Pid);
+        }
+
+        [Fact]
+        public async Task Repository_GetAll_OrdersNamesCaseInsensitively()
+        {
+            // Arrange - under the binary default 'Beta' sorts before 'alpha'.
+            var repo = CreateInitializedRepository();
+            await repo.UpsertAsync(new ServiceStateDto { Name = "Beta" }, TestContext.Current.CancellationToken);
+            await repo.UpsertAsync(new ServiceStateDto { Name = "alpha" }, TestContext.Current.CancellationToken);
+
+            // Act
+            var names = (await repo.GetAllAsync(TestContext.Current.CancellationToken)).Select(s => s.Name).ToList();
+
+            // Assert
+            Assert.Equal(new[] { "alpha", "Beta" }, names);
+        }
+
+        [Fact]
+        public void Initialize_NameKey_DeclaresTheCaseInsensitiveCollation()
+        {
+            // Arrange
+            using (var conn = OpenConnection())
+            {
+                // Act
+                SQLiteStateDbInitializer.Initialize(conn);
+
+                // Assert
+                var ddl = conn.QuerySingle<string>(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name=@Name;",
+                    new { Name = StateSqlConstants.ServiceStateTableName });
+
+                Assert.Contains("COLLATE UNICODE_NOCASE", ddl);
+            }
+        }
+
+        [Fact]
         public async Task Repository_GetAll_IsOrderedByName()
         {
             // Arrange
