@@ -56,11 +56,12 @@ namespace Servy.Core.Services
                         return null;
                     }
 
-                    // 3. Remove this SID's existing Allow ACEs if present (prevents duplicate ACE bloat on updates).
-                    //    A Deny ACE an administrator added is left in place: only the grant written here is replaced.
+                    // Remove this SID's existing Allow ACEs if present (prevents duplicate ACE bloat on updates).
+                    // A Deny ACE an administrator added is left in place, but every Allow ACE for this SID is replaced,
+                    // including one an administrator added.
                     RemoveAllowAces(acl, sid);
 
-                    // 4. Insert new explicit Allow ACE
+                    // Insert new explicit Allow ACE
                     acl.InsertAce(
                         acl.Count,
                         new CommonAce(
@@ -110,7 +111,7 @@ namespace Servy.Core.Services
                         return null;
                     }
 
-                    // 3. Remove the account's Allow ACEs only, so an administrator's Deny ACE survives the revocation
+                    // Remove the account's Allow ACEs only, so an administrator's Deny ACE survives the revocation
                     if (RemoveAllowAces(acl, sid) == 0)
                     {
                         return null;
