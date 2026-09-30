@@ -99,6 +99,13 @@ namespace Servy.Infrastructure.Data
         /// <remarks>
         /// The name is trimmed for the same reason the configuration repository trims it: a padded name
         /// would create a second, unreachable row for the same service.
+        /// <para>
+        /// Case is deliberately not folded here. The <c>Name</c> key is declared
+        /// <c>COLLATE UNICODE_NOCASE</c> by <see cref="SQLiteStateDbInitializer"/>, so the engine
+        /// resolves <c>MyService</c> and <c>myservice</c> to the same row for every statement below,
+        /// and the name the caller used is the one stored - exactly as the configuration database
+        /// behaves.
+        /// </para>
         /// </remarks>
         /// <param name="name">The service name to normalize.</param>
         /// <returns>The trimmed name.</returns>

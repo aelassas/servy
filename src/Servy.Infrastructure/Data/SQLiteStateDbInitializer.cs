@@ -4,6 +4,7 @@ using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.SQLite;
 using System.Linq;
 using System.Reflection;
 
@@ -75,6 +76,12 @@ namespace Servy.Infrastructure.Data
             {
                 throw new ArgumentNullException(nameof(connection));
             }
+
+            // Register the collation sequence BEFORE any DDL or PRAGMA is sent to the SQLite engine,
+            // exactly as SQLiteDbInitializer does for the configuration database. The Name key of the
+            // runtime-state table is declared COLLATE UNICODE_NOCASE, so the sequence has to resolve
+            // both when the table is created and when an existing file's index is parsed.
+            SQLiteFunction.RegisterFunction(typeof(UnicodeNoCaseCollation));
 
             // The version tracking table is created outside the transaction, exactly as the
             // configuration database does it: the CHECK constraint guarantees a single row.
@@ -166,6 +173,15 @@ namespace Servy.Infrastructure.Data
         /// Builds the CREATE TABLE statement for the runtime-state table from the DTO and the column
         /// list, so the DDL has no hand-maintained copy of either.
         /// </summary>
+        /// <remarks>
+        /// The <c>Name</c> key carries <c>COLLATE UNICODE_NOCASE</c>, the same collation the
+        /// configuration database keys service names with (<see cref="SQLiteDbInitializer"/> version 6
+        /// and every lookup in <c>ServiceRepository</c>). The SCM treats <c>MyService</c> and
+        /// <c>myservice</c> as one service, so the two files have to agree on which names are equal:
+        /// with a binary key, one service could own two runtime-state rows and a lookup in another
+        /// case would find none. Declaring it on the column makes <c>WHERE Name = @Name</c>,
+        /// <c>ON CONFLICT(Name)</c> and <c>ORDER BY Name</c> use it without repeating it per statement.
+        /// </remarks>
         /// <returns>The CREATE TABLE statement.</returns>
         private static string BuildCreateTableSql()
         {
@@ -173,7 +189,7 @@ namespace Servy.Infrastructure.Data
 
             return $@"
                 CREATE TABLE IF NOT EXISTS {StateSqlConstants.ServiceStateTableName} (
-                    Name TEXT NOT NULL PRIMARY KEY,
+                    Name TEXT NOT NULL PRIMARY KEY COLLATE UNICODE_NOCASE,
                 {string.Join(",\r\n                ", columns)}
                 );";
         }
