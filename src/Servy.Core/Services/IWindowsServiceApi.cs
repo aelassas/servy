@@ -8,8 +8,8 @@ namespace Servy.Core.Services
     /// Provides an abstraction for invoking native Windows Service API functions.
     /// </summary>
     /// <remarks>
-    /// Apart from <see cref="EnsureLogOnAsServiceRight"/>, <see cref="GrantServiceControlRights"/> and
-    /// <see cref="GetServices"/>, the members mirror the Win32
+    /// Apart from <see cref="EnsureLogOnAsServiceRight"/>, <see cref="GrantServiceControlRights"/>,
+    /// <see cref="RevokeServiceControlRights"/> and <see cref="GetServices"/>, the members mirror the Win32
     /// service control manager functions and do not throw on failure: a <see langword="bool"/>-returning member
     /// returns <see langword="false"/>, and a handle-returning member returns a handle whose <c>IsInvalid</c> is
     /// <see langword="true"/>. The reason is available only from <see cref="IWin32ErrorProvider.GetLastWin32Error"/>,
@@ -17,9 +17,9 @@ namespace Servy.Core.Services
     /// null test or a log statement included), because any intervening P/Invoke overwrites the thread's last-error
     /// slot. <see cref="GetServices"/> does not follow this convention: it can propagate an exception (for example a
     /// <see cref="System.ComponentModel.Win32Exception"/>) from the underlying service enumeration instead of
-    /// returning an empty sequence or an invalid handle. <see cref="GrantServiceControlRights"/> returns nothing: it
-    /// throws an <see cref="ArgumentException"/> for an unusable handle and logs every later failure without
-    /// surfacing it.
+    /// returning an empty sequence or an invalid handle. <see cref="GrantServiceControlRights"/> and
+    /// <see cref="RevokeServiceControlRights"/> return nothing: each throws an <see cref="ArgumentException"/> for an
+    /// unusable handle and logs every later failure without surfacing it.
     /// </remarks>
     public interface IWindowsServiceApi
     {
