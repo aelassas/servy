@@ -121,6 +121,7 @@ namespace Servy.Core.Services
             {
                 var sid = LogonAsServiceGrant.AccountToSidOrThrow(accountName);
 
+        private static bool EditServiceDacl(SafeServiceHandle serviceHandle, Func<RawAcl?, RawAcl?> edit)
                 // 1. Get required buffer size
                 uint bytesNeeded = 0;
                 QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, null, 0, out bytesNeeded);
