@@ -397,50 +397,13 @@ namespace Servy.Core.IntegrationTests.Helpers
                 WorkingDirectory = tempPath,
             };
 
-            var parentProcess = Process.Start(psi)
-                ?? throw new InvalidOperationException("Failed to spawn the orchestration PowerShell process.");
-            _trackedProcesses.Add(parentProcess);
+            const string marker = "CHILD_PID:";
+            var (parentProcess, handshakeLine) = StartWithHandshake(
+                psi,
+                line => line.StartsWith(marker, StringComparison.Ordinal),
+                TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds));
 
-            var errBuilder = new StringBuilder();
-            parentProcess.ErrorDataReceived += (s, e) =>
-            {
-                if (e.Data != null)
-                {
-                    lock (errBuilder)
-                    {
-                        errBuilder.AppendLine(e.Data);
-                    }
-                }
-            };
-            parentProcess.BeginErrorReadLine();
-
-            int childPid = -1;
-            var readTask = Task.Run(() =>
-            {
-                while (!parentProcess.HasExited)
-                {
-                    string? line = parentProcess.StandardOutput.ReadLine();
-                    const string marker = "CHILD_PID:";
-                    if (line != null && line.StartsWith(marker, StringComparison.Ordinal))
-                    {
-                        return int.Parse(line.Substring(marker.Length), CultureInfo.InvariantCulture);
-                    }
-                }
-                return -1;
-            });
-
-            if (readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds)))
-            {
-                childPid = readTask.Result;
-            }
-
-            string errOutput;
-            lock (errBuilder)
-            {
-                errOutput = errBuilder.ToString();
-            }
-
-            Assert.True(childPid > 0, $"Failed to resolve child process ID from the orchestration script. Stderr: {errOutput}");
+            int childPid = int.Parse(handshakeLine.Substring(marker.Length), CultureInfo.InvariantCulture);
 
             var childProcess = Process.GetProcessById(childPid);
             _trackedProcesses.Add(childProcess);
@@ -474,34 +437,140 @@ namespace Servy.Core.IntegrationTests.Helpers
                 FileName = PowerShellPath,
                 Arguments = $"-NoProfile -NonInteractive -Command \"{psScript}\"",
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
 
-            var lockingProcess = Process.Start(psi);
-            _trackedProcesses.Add(lockingProcess!);
-
-            var readTask = Task.Run(() =>
-            {
-                while (lockingProcess != null && !lockingProcess.HasExited)
-                {
-                    string? line = lockingProcess.StandardOutput.ReadLine();
-                    if (line != null && line.Contains("LOCKED"))
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            });
-
             // Validate the handshake the same way SpawnProcessTree validates its CHILD_PID one:
-            // a timeout, or a child that exited without ever printing LOCKED, is a failed spawn.
-            if (!readTask.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds)) || !readTask.Result)
-            {
-                return null;
-            }
+            // a timeout, or a child that exited without ever printing LOCKED, is a failed spawn
+            // and is retried on a fresh instance.
+            var (lockingProcess, _) = StartWithHandshake(
+                psi,
+                line => line.Contains("LOCKED"),
+                TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds));
 
             return lockingProcess;
+        }
+
+        /// <summary>
+        /// Starts <paramref name="psi"/> and waits for the first standard-output line that satisfies <paramref name="accept"/>.
+        /// </summary>
+        /// <remarks>
+        /// A start that exits, or that prints nothing acceptable within <paramref name="budget"/>, is killed and retried
+        /// up to <paramref name="maxAttempts"/> times. A cold powershell.exe on a loaded CI runner occasionally stalls
+        /// before its first output line, and a stalled instance does not recover with more time, so the fix is a fresh
+        /// instance rather than a wider budget (see #7128; #6975 had already widened the tree budget from 15 s to 20 s).
+        /// Killing the stalled instance is also what unblocks the reader task still sitting in <c>ReadLine</c>.
+        /// Every started process is tracked, so <see cref="Dispose"/> cleans up whatever this method leaves behind.
+        /// </remarks>
+        /// <param name="psi">The start information. <see cref="ProcessStartInfo.RedirectStandardOutput"/> must be set;
+        /// when <see cref="ProcessStartInfo.RedirectStandardError"/> is set, stderr is captured and reported on failure.</param>
+        /// <param name="accept">Predicate identifying the handshake line among the process's standard-output lines.</param>
+        /// <param name="budget">How long one attempt may take to produce an accepted line.</param>
+        /// <param name="maxAttempts">How many attempts to make before giving up.</param>
+        /// <returns>The live process and the accepted handshake line.</returns>
+        /// <exception cref="InvalidOperationException"><see cref="Process.Start(ProcessStartInfo)"/> returned no process,
+        /// or every attempt failed; in the latter case the message lists each attempt's outcome.</exception>
+        private (Process Process, string Line) StartWithHandshake(
+            ProcessStartInfo psi,
+            Func<string, bool> accept,
+            TimeSpan budget,
+            int maxAttempts = 3)
+        {
+            var outcomes = new List<string>();
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var process = Process.Start(psi)
+                    ?? throw new InvalidOperationException($"Process.Start returned null for '{psi.FileName}'.");
+                _trackedProcesses.Add(process);
+
+                var errBuilder = new StringBuilder();
+                if (psi.RedirectStandardError)
+                {
+                    process.ErrorDataReceived += (s, e) =>
+                    {
+                        if (e.Data != null)
+                        {
+                            lock (errBuilder)
+                            {
+                                errBuilder.AppendLine(e.Data);
+                            }
+                        }
+                    };
+                    process.BeginErrorReadLine();
+                }
+
+                // EOF (a null line) means the process exited without ever printing an acceptable line.
+                var readTask = Task.Run(() =>
+                {
+                    string? line;
+                    while ((line = process.StandardOutput.ReadLine()) != null)
+                    {
+                        if (accept(line))
+                        {
+                            return line;
+                        }
+                    }
+                    return null;
+                });
+
+                var stopwatch = Stopwatch.StartNew();
+                bool completed = readTask.Wait(budget);
+                stopwatch.Stop();
+
+                if (completed && readTask.Result != null)
+                {
+                    return (process, readTask.Result);
+                }
+
+                // Kill the stalled or dead instance before retrying; this also unblocks the reader above.
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // The process exited between the check and the kill.
+                }
+                process.WaitForExit(5000);
+
+                string errOutput;
+                lock (errBuilder)
+                {
+                    errOutput = errBuilder.ToString().Trim();
+                }
+
+                string reason = completed
+                    ? $"exited without the handshake, exit code {ExitCodeOrUnknown(process)}"
+                    : $"no handshake in {stopwatch.Elapsed.TotalSeconds:F1} s";
+                outcomes.Add($"attempt {attempt}: {reason}"
+                    + (errOutput.Length > 0 ? $", stderr: {errOutput}" : string.Empty));
+            }
+
+            throw new InvalidOperationException(
+                $"No handshake from '{psi.FileName}' after {maxAttempts} attempts: {string.Join("; ", outcomes)}");
+        }
+
+        /// <summary>
+        /// Formats a process's exit code, or "unknown" when it is not available.
+        /// </summary>
+        /// <param name="process">The process to read the exit code from.</param>
+        /// <returns>The exit code in hexadecimal, or "unknown" when the process has not exited.</returns>
+        private static string ExitCodeOrUnknown(Process process)
+        {
+            try
+            {
+                return $"0x{process.ExitCode:X8}";
+            }
+            catch (InvalidOperationException)
+            {
+                return "unknown";
+            }
         }
 
         #endregion
