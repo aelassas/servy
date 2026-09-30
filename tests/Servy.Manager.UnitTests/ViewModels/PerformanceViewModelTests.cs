@@ -260,7 +260,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                                      .Returns(Task.CompletedTask);
 
                     // Act
-                    // Use TestReflection to invoke OnTickAsync, which now supports inheritance hierarchy traversal
+                    // OnTickAsync is declared on MonitoringViewModelBase; TestReflection.InvokeNonPublic searches base types
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
 
                     // 2. Keep the message pump processing while waiting for Task.Run to finish
