@@ -93,6 +93,9 @@
     <Compile Include="Data\ServiceRepository.cs" />
     <Compile Include="Data\SqlConstants.cs" />
     <Compile Include="Data\SQLiteDbInitializer.cs" />
+    <Compile Include="Data\SQLiteStateDbInitializer.cs" />
+    <Compile Include="Data\ServiceStateRepository.cs" />
+    <Compile Include="Data\StateSqlConstants.cs" />
     <Compile Include="Data\UnicodeNoCaseCollation.cs" />
     <Compile Include="Helpers\DatabaseInitializer.cs" />
     <Compile Include="Helpers\DatabaseValidator.cs" />

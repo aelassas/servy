@@ -184,6 +184,17 @@ namespace Servy.Core.Config
         /// <summary>
         /// The name of the security folder under <see cref="ProgramDataPath"/>.
         /// </summary>
+        /// <summary>
+        /// The file name of the SQLite runtime-state database in <see cref="DbFolderPath"/>.
+        /// </summary>
+        /// <remarks>
+        /// This database holds only the state a running wrapper writes back about its own service
+        /// (<c>Pid</c>, <c>ActiveStdoutPath</c>, <c>ActiveStderrPath</c>). It is a separate file from
+        /// <see cref="DatabaseFileName"/> so a service log-on account can be allowed to write its own
+        /// runtime state without being allowed to write any service's configuration.
+        /// </remarks>
+        public const string StateDatabaseFileName = "Servy.state.db";
+
         public const string SecurityFolderName = "security";
 
         /// <summary>
@@ -235,6 +246,16 @@ namespace Servy.Core.Config
         /// It is not configurable: <see cref="CoreSettingsLoader.Load"/> always returns it and ignores a <c>DefaultConnection</c> key in the application settings.
         /// </remarks>
         public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, DatabaseFileName)};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
+
+        /// <summary>
+        /// The default SQLite connection string for the runtime-state database.
+        /// </summary>
+        /// <remarks>
+        /// This string configures the connection to <c>Servy.state.db</c> within the
+        /// <see cref="DbFolderPath"/>, with the same resilience settings as
+        /// <see cref="DefaultConnectionString"/>. Like that one it is not configurable.
+        /// </remarks>
+        public static readonly string DefaultStateConnectionString = $"Data Source={Path.Combine(DbFolderPath, StateDatabaseFileName)};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
 
         /// <summary>
         /// The default file path for the AES encryption key.

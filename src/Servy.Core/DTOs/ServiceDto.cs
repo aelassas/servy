@@ -24,6 +24,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Child Process PID.
         /// </summary>
+        /// <remarks>
+        /// This is runtime state, not configuration. It still lives on this DTO and in
+        /// <c>Servy.db</c> today; any runtime-state column added in the future belongs in the separate
+        /// runtime-state database (<see cref="Servy.Core.Config.AppConfig.StateDatabaseFileName"/>, see
+        /// <see cref="ServiceStateDto"/>), never here, so a service log-on account never needs write
+        /// access to the configuration database.
+        /// </remarks>
         [JsonIgnore]
         [XmlIgnore]
         [SqlColumn("INTEGER")]
@@ -384,6 +391,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Absolute file path where standard output is currently being redirected; null if not redirected or not running.
         /// </summary>
+        /// <remarks>
+        /// This is runtime state, not configuration. It still lives on this DTO and in
+        /// <c>Servy.db</c> today; any runtime-state column added in the future belongs in the separate
+        /// runtime-state database (<see cref="Servy.Core.Config.AppConfig.StateDatabaseFileName"/>, see
+        /// <see cref="ServiceStateDto"/>), never here, so a service log-on account never needs write
+        /// access to the configuration database.
+        /// </remarks>
         [JsonIgnore]
         [XmlIgnore]
         [SqlColumn("TEXT")]
@@ -392,6 +406,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Absolute file path where standard error output is currently being redirected; null if not redirected or not running.
         /// </summary>
+        /// <remarks>
+        /// This is runtime state, not configuration. It still lives on this DTO and in
+        /// <c>Servy.db</c> today; any runtime-state column added in the future belongs in the separate
+        /// runtime-state database (<see cref="Servy.Core.Config.AppConfig.StateDatabaseFileName"/>, see
+        /// <see cref="ServiceStateDto"/>), never here, so a service log-on account never needs write
+        /// access to the configuration database.
+        /// </remarks>
         [JsonIgnore]
         [XmlIgnore]
         [SqlColumn("TEXT")]
