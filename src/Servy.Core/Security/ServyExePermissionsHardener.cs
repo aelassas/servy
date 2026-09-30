@@ -411,7 +411,7 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="relativePath">The writable folder, relative to <see cref="VaultDirectory"/>.</param>
         /// <returns>
-        /// Read and Write for <c>recovery\</c>, whose only file, the service's restart-attempts counter, is rewritten in
+        /// Read and Write for <c>recovery\</c>, whose files, one restart-attempts counter per service, are rewritten in
         /// place and never renamed or deleted (#7241); Read, Write and Delete for every other writable folder, where the
         /// logger rotates its files and SQLite deletes its <c>-wal</c>/<c>-shm</c> files.
         /// </returns>
