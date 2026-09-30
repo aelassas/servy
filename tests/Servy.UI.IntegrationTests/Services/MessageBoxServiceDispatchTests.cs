@@ -7,8 +7,7 @@ namespace Servy.UI.IntegrationTests.Services
     /// Unit-level tests for <see cref="MessageBoxService"/> that drive the two branches
     /// <see cref="MessageBoxServiceIntegrationTests"/> cannot reach: the constructor null-guard,
     /// and the non-headless dispatch call. They use a mocked <see cref="IUiDispatcher"/> and never
-    /// touch a real WPF dispatcher, but they live in this project because it is the only test
-    /// project that references Servy.UI, and in this collection because
+    /// touch a real WPF dispatcher, but they live in this project, and in this collection, because
     /// <see cref="UiHeadlessFixture"/> owns the process-global <see cref="UiHeadless.IsEnabled"/>
     /// flag that the dispatch test has to flip.
     /// </summary>
