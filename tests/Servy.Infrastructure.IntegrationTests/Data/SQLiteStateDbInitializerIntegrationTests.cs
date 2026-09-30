@@ -71,7 +71,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 var columns = conn.Query($"PRAGMA table_info({StateSqlConstants.ServiceStateTableName});")
                     .Select(r => (string)r.name).ToList();
-                Assert.Equal(new[] { "Name", "Pid", "ActiveStdoutPath", "ActiveStderrPath" }, columns);
+                Assert.Equal(new[] { "Name", "Pid", "ActiveStdoutPath", "ActiveStderrPath", "PreviousStopTimeout" }, columns);
             }
         }
 
@@ -226,7 +226,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Name = "svc",
                 Pid = 1234,
                 ActiveStdoutPath = @"C:\logs\out.log",
-                ActiveStderrPath = @"C:\logs\err.log"
+                ActiveStderrPath = @"C:\logs\err.log",
+                PreviousStopTimeout = 45
             };
 
             // Act
@@ -240,6 +241,87 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(1234, read.Pid);
             Assert.Equal(@"C:\logs\out.log", read.ActiveStdoutPath);
             Assert.Equal(@"C:\logs\err.log", read.ActiveStderrPath);
+            Assert.Equal(45, read.PreviousStopTimeout);
+        }
+
+        [Fact]
+        public void Initialize_FreshDatabase_DeclaresPreviousStopTimeoutAsInteger()
+        {
+            // Arrange
+            using (var conn = OpenConnection())
+            {
+                // Act
+                SQLiteStateDbInitializer.Initialize(conn);
+
+                // Assert
+                var declaredType = conn.Query($"PRAGMA table_info({StateSqlConstants.ServiceStateTableName});")
+                    .Where(r => (string)r.name == "PreviousStopTimeout")
+                    .Select(r => (string)r.type)
+                    .Single();
+                Assert.Equal("INTEGER", declaredType);
+            }
+        }
+
+        [Fact]
+        public void Initialize_ExistingTableWithoutPreviousStopTimeout_AddsItAndKeepsTheRows()
+        {
+            // Arrange - a runtime-state table written before PreviousStopTimeout moved here, with a row
+            //           in it, which is what an upgrade over a step 1 file looks like.
+            using (var conn = OpenConnection())
+            {
+                conn.Execute($@"
+                    CREATE TABLE {StateSqlConstants.ServiceStateTableName} (
+                        Name TEXT NOT NULL PRIMARY KEY,
+                        Pid INTEGER,
+                        ActiveStdoutPath TEXT,
+                        ActiveStderrPath TEXT
+                    );");
+                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY CHECK (Id = 1), Version INTEGER NOT NULL);");
+                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 1);");
+                conn.Execute($"INSERT INTO {StateSqlConstants.ServiceStateTableName} (Name, Pid) VALUES ('svc', 7);");
+
+                // Act
+                SQLiteStateDbInitializer.Initialize(conn);
+
+                // Assert
+                Assert.Contains("PreviousStopTimeout", ReadColumns(conn));
+                Assert.Equal(7, conn.QuerySingle<int>($"SELECT Pid FROM {StateSqlConstants.ServiceStateTableName} WHERE Name = 'svc';"));
+                Assert.Null(conn.QuerySingleOrDefault<int?>($"SELECT PreviousStopTimeout FROM {StateSqlConstants.ServiceStateTableName} WHERE Name = 'svc';"));
+            }
+        }
+
+        [Fact]
+        public async Task Repository_PreviousStopTimeout_IsReplacedByAnUpsertLikeTheOtherRuntimeValues()
+        {
+            // Arrange
+            var repo = CreateInitializedRepository();
+            await repo.UpsertAsync(new ServiceStateDto { Name = "svc", PreviousStopTimeout = 30 }, TestContext.Current.CancellationToken);
+
+            // Act
+            await repo.UpsertAsync(new ServiceStateDto { Name = "svc", PreviousStopTimeout = 90 }, TestContext.Current.CancellationToken);
+
+            // Assert
+            var all = (await repo.GetAllAsync(TestContext.Current.CancellationToken)).ToList();
+            Assert.Single(all);
+            Assert.Equal(90, all[0].PreviousStopTimeout);
+        }
+
+        [Fact]
+        public async Task Repository_PreviousStopTimeout_IsClearedByAnUpsertThatOmitsIt()
+        {
+            // Arrange - the upsert replaces the whole row, so a state written without the timeout has
+            //           to clear a stored one rather than leave the old value behind.
+            var repo = CreateInitializedRepository();
+            await repo.UpsertAsync(new ServiceStateDto { Name = "svc", PreviousStopTimeout = 30 }, TestContext.Current.CancellationToken);
+
+            // Act
+            await repo.UpsertAsync(new ServiceStateDto { Name = "svc", Pid = 11 }, TestContext.Current.CancellationToken);
+            var read = await repo.GetAsync("svc", TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(read);
+            Assert.Equal(11, read!.Pid);
+            Assert.Null(read.PreviousStopTimeout);
         }
 
         [Fact]
@@ -274,6 +356,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(read!.Pid);
             Assert.Null(read.ActiveStdoutPath);
             Assert.Null(read.ActiveStderrPath);
+            Assert.Null(read.PreviousStopTimeout);
         }
 
         [Fact]
