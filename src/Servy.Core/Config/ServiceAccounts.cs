@@ -100,6 +100,39 @@ namespace Servy.Core.Config
         }
 
         /// <summary>
+        /// True when an explicit service control and status grant may be written for the account.
+        /// A virtual account (NT SERVICE\...) is eligible: its per-service SID belongs to that one
+        /// service, so a grant to it cannot reach any other service. LocalService and NetworkService
+        /// are not eligible - they are shared by every service that runs under them, so a grant to
+        /// one of them would let all of those services control this one. LocalSystem already holds
+        /// full control over its own service, and an IIS AppPool identity is not a Servy log-on
+        /// account.
+        /// </summary>
+        /// <param name="account">The account name to check.</param>
+        /// <returns>
+        /// <c>true</c> if an explicit service control and status grant may be written for the
+        /// account; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool IsEligibleForServiceControlGrant(string account)
+        {
+            if (string.IsNullOrWhiteSpace(account)) return false;
+
+            // Keep trimming for safety
+            account = account.Trim();
+
+            const string virtualAccountPrefix = @"NT SERVICE\";
+
+            if (account.StartsWith(virtualAccountPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                // Nothing after the prefix is a paste artefact rather than an account, and has no
+                // per-service SID to grant to.
+                return account.Length > virtualAccountPrefix.Length;
+            }
+
+            return !IsBuiltInServiceAccount(account);
+        }
+
+        /// <summary>
         /// True when the account represents a group Managed Service Account (gMSA).
         /// Identified by a trailing '$' and empty or whitespace password context.
         /// </summary>
