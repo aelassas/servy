@@ -46,34 +46,7 @@ namespace Servy.Core.Services
             {
                 var sid = LogonAsServiceGrant.AccountToSidOrThrow(accountName);
 
-                bool updated = EditServiceDacl(serviceHandle, acl =>
-                {
-                    if (acl == null)
-                    {
-                        // A missing (NULL) DACL already grants every principal full access.
-                        // Replacing it with a one-entry DACL would inadvertently lock out Administrators and SYSTEM.
-                        Logger.Warn($"Service security descriptor has a NULL DACL; account '{accountName}' already possesses implicit full control.");
-                        return null;
-                    }
-
-                    // Remove this SID's existing Allow ACEs if present (prevents duplicate ACE bloat on updates).
-                    // A Deny ACE an administrator added is left in place, but every Allow ACE for this SID is replaced,
-                    // including one an administrator added.
-                    RemoveAllowAces(acl, sid);
-
-                    // Insert new explicit Allow ACE
-                    acl.InsertAce(
-                        acl.Count,
-                        new CommonAce(
-                            AceFlags.None,
-                            AceQualifier.AccessAllowed,
-                            (int)SERVICE_CONTROL_AND_STATUS_ACCESS,
-                            sid,
-                            false,
-                            null));
-
-                    return acl;
-                });
+                bool updated = EditServiceDacl(serviceHandle, acl => BuildGrantedDacl(acl, sid, accountName));
 
                 if (updated)
                 {
@@ -183,6 +156,57 @@ namespace Servy.Core.Services
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Computes the discretionary access control list (DACL) that grants an account the service control and
+        /// status rights, by replacing the account's existing Allow entries with a single entry for
+        /// <c>SERVICE_CONTROL_AND_STATUS_ACCESS</c>.
+        /// </summary>
+        /// <param name="acl">
+        /// The service's current DACL, edited in place, or <see langword="null"/> when the security descriptor has a
+        /// NULL DACL.
+        /// </param>
+        /// <param name="sid">The account the rights are granted to.</param>
+        /// <param name="accountName">The account name, used only in the log message of the NULL DACL case.</param>
+        /// <returns>
+        /// <paramref name="acl"/> with the account's previous Allow entries replaced by one entry for
+        /// <c>SERVICE_CONTROL_AND_STATUS_ACCESS</c>; or <see langword="null"/> when <paramref name="acl"/> is
+        /// <see langword="null"/>, so that nothing is written back to the service.
+        /// </returns>
+        /// <remarks>
+        /// This is the body of the edit delegate <see cref="GrantServiceControlRights"/> passes to
+        /// <see cref="EditServiceDacl"/>, extracted so that it can be exercised without a live service handle. It is
+        /// pure managed code over <see cref="RawAcl"/> and forwards nothing: the grant path calls it with exactly the
+        /// ACL the Service Control Manager returned and writes back exactly what it returns.
+        /// </remarks>
+        internal static RawAcl BuildGrantedDacl(RawAcl acl, SecurityIdentifier sid, string accountName)
+        {
+            if (acl == null)
+            {
+                // A missing (NULL) DACL already grants every principal full access.
+                // Replacing it with a one-entry DACL would inadvertently lock out Administrators and SYSTEM.
+                Logger.Warn($"Service security descriptor has a NULL DACL; account '{accountName}' already possesses implicit full control.");
+                return null;
+            }
+
+            // Remove this SID's existing Allow ACEs if present (prevents duplicate ACE bloat on updates).
+            // A Deny ACE an administrator added is left in place, but every Allow ACE for this SID is replaced,
+            // including one an administrator added.
+            RemoveAllowAces(acl, sid);
+
+            // Insert new explicit Allow ACE
+            acl.InsertAce(
+                acl.Count,
+                new CommonAce(
+                    AceFlags.None,
+                    AceQualifier.AccessAllowed,
+                    (int)SERVICE_CONTROL_AND_STATUS_ACCESS,
+                    sid,
+                    false,
+                    null));
+
+            return acl;
         }
 
         /// <summary>
