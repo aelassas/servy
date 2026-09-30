@@ -143,9 +143,9 @@ namespace Servy.Core.IntegrationTests.Security
             }
 
             // Assert: SQLite's side files, the logs and the recovery state are writable and deletable...
-            Assert.True(Has(AllowedRights(wal, TargetSid), FileSystemRights.Modify));
-            Assert.True(Has(AllowedRights(log, TargetSid), FileSystemRights.Modify));
-            Assert.True(Has(AllowedRights(recovery, TargetSid), FileSystemRights.Modify));
+            Assert.True(Has(AllowedRights(wal, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+            Assert.True(Has(AllowedRights(log, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+            Assert.True(Has(AllowedRights(recovery, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
 
             // ...and a file anywhere else carries no grant at all
             Assert.Equal(0, AllowedRights(planted, TargetSid));
@@ -524,7 +524,7 @@ namespace Servy.Core.IntegrationTests.Security
             var laterLog = Path.Combine(_vault, AppConfig.LogsFolderName, "later.log");
             File.WriteAllText(laterLog, "later");
             Assert.Equal(0, AllowedRights(laterLog, TargetSid));
-            Assert.True(Has(AllowedRights(laterLog, OtherSid), FileSystemRights.Modify));
+            Assert.True(Has(AllowedRights(laterLog, OtherSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
             Assert.True(Has(AllowedRights(Path.Combine(_vault, KeyFile), OtherSid), FileSystemRights.Read));
             Assert.True(Has(AllowedRights(Path.Combine(_vault, DbFile), OtherSid), FileSystemRights.Write));
             Assert.Equal(2, ExplicitRules(Path.Combine(_vault, AppConfig.RecoveryFolderName), OtherSid, AccessControlType.Allow).Count);
@@ -742,13 +742,13 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Equal(2, rules.Count);
 
             var self = Assert.Single(rules, r => r.InheritanceFlags == InheritanceFlags.None);
-            Assert.True(Has((int)self.FileSystemRights, FileSystemRights.ReadAndExecute | FileSystemRights.CreateFiles));
+            Assert.True(Has((int)self.FileSystemRights, FileSystemRights.Read | FileSystemRights.CreateFiles));
             Assert.False(Has((int)self.FileSystemRights, FileSystemRights.Delete));
             Assert.False(Has((int)self.FileSystemRights, FileSystemRights.DeleteSubdirectoriesAndFiles));
 
             var files = Assert.Single(rules, r => r.InheritanceFlags == InheritanceFlags.ObjectInherit);
             Assert.Equal(PropagationFlags.InheritOnly, files.PropagationFlags);
-            Assert.True(Has((int)files.FileSystemRights, FileSystemRights.Modify));
+            Assert.True(Has((int)files.FileSystemRights, FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
 
             Assert.False(Has(AllowedRights(path, TargetSid), FileSystemRights.Delete), $"{path} itself is not deletable");
         }
