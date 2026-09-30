@@ -1308,6 +1308,100 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        /// <summary>
+        /// Verifies that <see cref="ProcessWrapper.Kill(bool)"/> forwards its flag, by killing a parent
+        /// that owns a detached child and asserting the child ends too.
+        /// </summary>
+        /// <remarks>
+        /// The sibling test above kills a childless process, so it stays green if the argument is dropped.
+        /// The parent/child shape here is the one
+        /// <c>StopDescendants_KillsEntireTree_AndHandlesRecursion</c> already uses: a PowerShell parent that
+        /// starts a detached cmd.exe and then stays alive, so the child is reachable only through the
+        /// process tree and a single-process kill leaves it running.
+        /// </remarks>
+        [Fact]
+        public void Kill_EntireProcessTree_AlsoEndsTheChild()
+        {
+            // Arrange
+            string commandArgs = "-NoProfile -WindowStyle Hidden -Command \"$p = Start-Process cmd.exe -ArgumentList '/c timeout /t 100 /nobreak' -WindowStyle Hidden -PassThru; while ($true) { Start-Sleep 1 }\"";
+            int childPid = 0;
+
+            try
+            {
+                using (var wrapper = CreateWrapper("powershell.exe", commandArgs, createNoWindow: true))
+                {
+                    Assert.True(wrapper.Start());
+
+                    int parentPid = wrapper.UnderlyingProcess.Id;
+                    DateTime parentStartTime = wrapper.UnderlyingProcess.StartTime;
+
+                    // Poll until the child has finished spawning, on the same budget the tree test uses.
+                    bool childSpawned = SpinWait.SpinUntil(() =>
+                    {
+                        try
+                        {
+                            foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
+                            {
+                                using (child)
+                                {
+                                    if (child.ProcessName.Equals("cmd", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        childPid = child.Id;
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // Suppress intermittent access deviations while the child is initializing
+                        }
+                        return false;
+                    }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+
+                    Assert.True(childSpawned && childPid > 0,
+                        "Child cmd.exe never spawned; the test cannot tell a tree kill from a single-process kill.");
+
+                    // Act
+                    bool result = wrapper.Kill(entireProcessTree: true);
+
+                    // Assert
+                    Assert.True(result);
+
+                    bool childEnded = SpinWait.SpinUntil(() =>
+                    {
+                        try
+                        {
+                            using (var child = Process.GetProcessById(childPid))
+                            {
+                                child.Refresh();
+                                return child.HasExited;
+                            }
+                        }
+                        catch (ArgumentException)
+                        {
+                            // Process identifier has been completely cleared out by the OS kernel
+                            return true;
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // Process state tracking references are dead/gone
+                            return true;
+                        }
+                    }, TestTimeouts.DescendantExitWait);
+
+                    Assert.True(childEnded,
+                        $"Kill(entireProcessTree: true) left the child cmd.exe with PID {childPid} running.");
+                }
+            }
+            finally
+            {
+                // A dropped flag leaves the child behind, so reap it by identifier rather than
+                // letting a failing run leak a 100 second timeout onto the runner.
+                KillByIdIfRunning(childPid);
+            }
+        }
+
         #endregion
 
         #region Win32 Interop & SendCtrlC Signal Exception Tests
