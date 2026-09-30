@@ -46,9 +46,9 @@ namespace Servy.Core.Security
     /// The service writes in three folders only: SQLite creates and deletes the <c>-wal</c>/<c>-shm</c> files next to
     /// <c>db\Servy.db</c>, the logger writes and rotates <c>logs\</c>, and the recovery state in <c>recovery\</c> is
     /// replaced through a temporary file on every save. Each of those folders gives the account List and Create Files on
-    /// the folder and Modify on the files in it (except <c>Servy.db</c>, which is hardened on its own), never Delete on
-    /// the folder: it can neither rename nor delete a folder, and outside those three folders it can write or delete
-    /// nothing. An account that a previous version granted Modify on the vault root loses that grant when it is
+    /// the folder and Read, Write and Delete on the files in it (except <c>Servy.db</c>, which is hardened on its own),
+    /// never Delete on the folder: it can neither rename nor delete a folder, and outside those three folders it can write
+    /// or delete nothing. An account that a previous version granted Modify on the vault root loses that grant when it is
     /// hardened again.
     /// </para>
     /// <para>
