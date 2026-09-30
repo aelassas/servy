@@ -604,6 +604,10 @@ namespace Servy.Core.Services
                                         throw new Win32Exception(err, $"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
                                     }
 
+                                    // Take back the previous account's control rights before granting the new one's,
+                                    // so a service moved to another account leaves nobody behind who can stop it
+                                    RevokeServiceControlRightsIfAccountChanged(existingServiceHandle, formerService, lpServiceStartName);
+
                                     // Grant the service account the necessary rights to control the service
                                     _windowsServiceApi.GrantServiceControlRights(existingServiceHandle, lpServiceStartName);
 
@@ -791,6 +795,38 @@ namespace Servy.Core.Services
             catch (Exception ex)
             {
                 Logger.Error($"Revoking the vault access of '{formerAccount}' (service '{serviceName}') failed.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Takes back the service-object control rights of the account a reconfigured service no longer runs under.
+        /// </summary>
+        /// <param name="serviceHandle">The open handle of the service being reconfigured.</param>
+        /// <param name="formerService">The service's record as it was before the change; <see langword="null"/> when
+        /// there was none, which revokes nothing.</param>
+        /// <param name="currentAccount">The account the service runs under now, or <see langword="null"/> for Local
+        /// System. The same account (compared case-insensitively) revokes nothing.</param>
+        /// <remarks>
+        /// The grant this takes back belongs to this one service, so unlike the vault grants it needs no "still used
+        /// by another service" check. The reconfiguration has already succeeded when this runs, so a failure here is
+        /// logged and never turns it into a failed operation.
+        /// </remarks>
+        private void RevokeServiceControlRightsIfAccountChanged(SafeServiceHandle serviceHandle, ServiceDto formerService, string currentAccount)
+        {
+            if (formerService == null)
+                return;
+
+            var formerAccount = ServyExePermissionsHardener.GetServiceAccounts(new[] { formerService }).FirstOrDefault();
+            if (formerAccount == null || string.Equals(formerAccount, currentAccount?.Trim(), StringComparison.OrdinalIgnoreCase))
+                return;
+
+            try
+            {
+                _windowsServiceApi.RevokeServiceControlRights(serviceHandle, formerAccount);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Revoking the service control rights of '{formerAccount}' (service '{formerService.Name}') failed.", ex);
             }
         }
 
