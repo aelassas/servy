@@ -42,7 +42,7 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Performs asynchronous initialization for the UserControl.
-        /// Automatically triggers an initial service search if the service list is currently empty.
+        /// Automatically triggers an initial service search if no search has completed yet for the view model.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
