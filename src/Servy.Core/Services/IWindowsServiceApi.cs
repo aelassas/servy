@@ -47,14 +47,18 @@ namespace Servy.Core.Services
         void EnsureLogOnAsServiceRight(string accountName);
 
         /// <summary>
-        /// Grants the specified user or service account the discretionary access control list (DACL) permissions 
+        /// Grants the specified user or service account the discretionary access control list (DACL) permissions
         /// required to query status and restart the service via ServiceControl mechanisms without requiring full administration rights.
         /// </summary>
         /// <param name="serviceHandle">A valid handle to the target service opened with <c>SERVICE_READ_CONTROL</c> and <c>SERVICE_WRITE_DAC</c> rights.</param>
         /// <param name="accountName">The account name (e.g. <c>DOMAIN\user</c>, <c>.\user</c>, or machine account) to grant permissions to.</param>
+        /// <remarks>
+        /// A null, empty or whitespace <paramref name="accountName"/>, or a built-in service account, is skipped and
+        /// nothing is granted. Every failure after the handle check (the account not resolving to a SID, or a
+        /// <see cref="Win32Exception"/> from querying or setting the service security descriptor) is logged and not
+        /// rethrown, so the caller cannot tell a grant that failed from one that succeeded.
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when <paramref name="serviceHandle"/> is null, invalid, or closed.</exception>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="accountName"/> is null or empty.</exception>
-        /// <exception cref="Win32Exception">Thrown when querying or setting the service security descriptor fails.</exception>
         void GrantServiceControlRights(SafeServiceHandle? serviceHandle, string accountName);
 
         /// <summary>
