@@ -227,7 +227,7 @@ namespace Servy.CLI.Options
         /// <item><description>RestartComputer - Restart the computer.</description></item>
         /// </list>
         /// </summary>
-        [Option("recoveryAction", HelpText = "Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer. RestartService and RestartComputer actions are not available if the service runs under NT AUTHORITY\\LocalService, NT AUTHORITY\\NetworkService, or a user account without the required privileges. Only used when health monitoring is enabled.")]
+        [Option("recoveryAction", HelpText = "Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer. Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\\LocalService, NT AUTHORITY\\NetworkService, an IIS AppPool identity (IIS APPPOOL\\...), or a user account without the required privileges. Only used when health monitoring is enabled.")]
         public string RecoveryAction { get; set; }
 
         /// <summary>
