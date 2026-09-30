@@ -16,9 +16,11 @@ namespace Servy.Service.UnitTests.ProcessManagement
 {
     /// <summary>
     /// Unit tests for <see cref="ProcessLauncher"/>'s language-fix null guard and detection fallbacks, for the
-    /// security refusals of <see cref="ProcessLauncher.TryOpenAppendWriter(string, Encoding, string, string, IServyLogger)"/>,
-    /// and for the final exit poll <see cref="ProcessLauncher.Start(ProcessLaunchOptions, IProcessFactory, IServyLogger)"/>
-    /// makes once its synchronous wait budget has run out.
+    /// security refusals and the post-open failure dispose of
+    /// <see cref="ProcessLauncher.TryOpenAppendWriter(string, Encoding, string, string, IServyLogger)"/>, and for
+    /// <see cref="ProcessLauncher.Start(ProcessLaunchOptions, IProcessFactory, IServyLogger)"/>'s final exit poll once its
+    /// synchronous wait budget has run out, its redirect-handler open and write failures, its best-effort output
+    /// drain and its orphaned-child kill.
     /// </summary>
     /// <remarks>
     /// The two detection patterns are anchored, compiled and private, so no input can make them time out.
