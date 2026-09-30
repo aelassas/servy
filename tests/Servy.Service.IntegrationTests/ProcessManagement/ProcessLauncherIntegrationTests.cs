@@ -430,6 +430,40 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void TryOpenAppendWriter_ExistingPlainFile_AppendsAfterPreviousContent()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), $"Servy_Test_{Guid.NewGuid():N}");
+            string logPath = Path.Combine(tempDir, "stdout.log");
+            var encoding = new UTF8Encoding(false);
+            Directory.CreateDirectory(tempDir);
+            File.WriteAllText(logPath, "previous-run" + Environment.NewLine, encoding);
+            var mockLogger = new Mock<IServyLogger>();
+
+            try
+            {
+                // Act
+                using (var writer = ProcessLauncher.TryOpenAppendWriter(logPath, encoding, "test.exe", "stdout", mockLogger.Object))
+                {
+                    Assert.NotNull(writer);
+                    writer.WriteLine("this-run");
+                }
+
+                // Assert
+                // The previous run's line must survive: FileMode.Create or OpenOrCreate would lose it.
+                Assert.Equal(new[] { "previous-run", "this-run" }, File.ReadAllLines(logPath));
+                mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, recursive: true); } catch { }
+                }
+            }
+        }
+
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
