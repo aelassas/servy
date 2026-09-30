@@ -366,6 +366,88 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_ExistingServiceMovedToAnotherAccount_RevokesThePreviousAccountsServiceControlRights()
+        {
+            // Arrange
+            ArrangeServiceAlreadyExists();
+            ArrangeRecord(@".\old-account");
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\old-account"), Times.Once);
+            _windowsServiceApi.Verify(x => x.GrantServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\svc-account"), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_ExistingServiceMovedToLocalSystem_RevokesThePreviousAccountsServiceControlRights()
+        {
+            // Arrange: Local System gets no grant of its own, so the former account's is the only one left to remove
+            ArrangeServiceAlreadyExists();
+            ArrangeRecord(@".\old-account");
+            var options = CreateOptions(null);
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\old-account"), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_ExistingServiceKeepsItsAccount_RevokesNoServiceControlRights()
+        {
+            // Arrange: the same account, written with another case
+            ArrangeServiceAlreadyExists();
+            ArrangeRecord(@".\SVC-ACCOUNT");
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_ExistingServiceWithoutPreviousRecord_RevokesNoServiceControlRights()
+        {
+            // Arrange: no former record, so there is no former account to take anything back from
+            ArrangeServiceAlreadyExists();
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_RevokingTheServiceControlRightsThrows_InstallStillSucceeds()
+        {
+            // Arrange
+            ArrangeServiceAlreadyExists();
+            ArrangeRecord(@".\old-account");
+            _windowsServiceApi.Setup(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()))
+                .Throws(new InvalidOperationException("revocation failed"));
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.GrantServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\svc-account"), Times.Once);
+        }
+
+        [Fact]
         public async Task UninstallService_ServiceUnderCustomAccount_AsksToRevokeThatAccountAfterTheDelete()
         {
             // Arrange

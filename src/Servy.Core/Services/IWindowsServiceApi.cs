@@ -62,6 +62,22 @@ namespace Servy.Core.Services
         void GrantServiceControlRights(SafeServiceHandle? serviceHandle, string accountName);
 
         /// <summary>
+        /// Removes the explicit Allow entries that <see cref="GrantServiceControlRights"/> wrote for an account that
+        /// no longer runs the service, so it can no longer query, start, stop or pause it.
+        /// </summary>
+        /// <param name="serviceHandle">A valid handle to the target service opened with <c>SERVICE_READ_CONTROL</c> and <c>SERVICE_WRITE_DAC</c> rights.</param>
+        /// <param name="accountName">The account name (e.g. <c>DOMAIN\user</c>, <c>.\user</c>, or machine account) whose grant is taken back.</param>
+        /// <remarks>
+        /// A null, empty or whitespace <paramref name="accountName"/>, or a built-in service account, is skipped and
+        /// nothing is revoked. Only the account's Allow entries are removed; a Deny entry an administrator added is
+        /// left in place. Every failure after the handle check (the account not resolving to a SID, or a
+        /// <see cref="Win32Exception"/> from querying or setting the service security descriptor) is logged and not
+        /// rethrown, so the caller cannot tell a revocation that failed from one that succeeded.
+        /// </remarks>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="serviceHandle"/> is null, invalid, or closed.</exception>
+        void RevokeServiceControlRights(SafeServiceHandle? serviceHandle, string accountName);
+
+        /// <summary>
         /// Creates a service object and adds it to the specified service control manager database.
         /// </summary>
         /// <param name="hSCManager">A handle to the service control manager.</param>
