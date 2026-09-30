@@ -912,21 +912,25 @@ namespace Servy.Service
         /// </summary>
         /// <param name="attempts">The number of restart attempts to persist.</param>
         /// <param name="ct">The cancellation token.</param>
+        /// <remarks>
+        /// The file is rewritten in place (<see cref="FileMode.Create"/> truncates an existing file) rather than through
+        /// a temporary file and a rename: a rename needs Delete on both files, and the service account only has Read and
+        /// Write on the files in <c>recovery\</c> (#7241). A crash in the middle of the write can leave the file empty or
+        /// truncated; <see cref="ReadAttemptsInternalAsync"/> reads that as corrupt content and resets the counter to 0.
+        /// </remarks>
         private async Task WriteAttemptsInternalAsync(int attempts, CancellationToken ct)
         {
-            await Helper.WriteFileAtomicAsync(
-                _restartAttemptsFile!,
-                async (fs, ct) =>
+            using (var fs = new FileStream(_restartAttemptsFile!, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                // BOM-less UTF8, the same encoding the counter has always been written in
+                using (var sw = new StreamWriter(fs, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
                 {
-                    // Use BOM-less UTF8 and leaveOpen to allow the atomic helper
-                    // to manage the final FileStream lifecycle.
-                    using (var sw = new StreamWriter(fs, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
-                    {
-                        // Pass the 'ct' to the WriteAsync overload
-                        await sw.WriteAsync(attempts.ToString(CultureInfo.InvariantCulture).AsMemory(), ct);
-                    }
-                },
-                ct);
+                    await sw.WriteAsync(attempts.ToString(CultureInfo.InvariantCulture).AsMemory(), ct);
+                }
+
+                // Force the counter to disk, as the atomic helper did before the rename
+                fs.Flush(flushToDisk: true);
+            }
         }
 
         /// <summary>

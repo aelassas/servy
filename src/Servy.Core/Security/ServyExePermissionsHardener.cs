@@ -12,7 +12,8 @@ namespace Servy.Core.Security
     /// <summary>
     /// Hardens Servy's vault for a service account with the least privilege the service needs: Read &amp; Execute on
     /// Servy's binaries, Read on its configuration files and encryption key, Read, Write on its configuration database,
-    /// and Read, Write, Delete on the files it creates in <c>db\</c>, <c>logs\</c> and <c>recovery\</c>. The account
+    /// Read, Write, Delete on the files it creates in <c>db\</c> and <c>logs\</c>, and Read, Write on the files it
+    /// creates in <c>recovery\</c>. The account
     /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself.
     /// </summary>
     /// <remarks>
@@ -38,11 +39,12 @@ namespace Servy.Core.Security
     /// </para>
     /// <para>
     /// The service writes in three folders only: SQLite creates and deletes the <c>-wal</c>/<c>-shm</c> files next to
-    /// <c>db\Servy.db</c>, the logger writes and rotates <c>logs\</c>, and the recovery state in <c>recovery\</c> is
-    /// replaced through a temporary file on every save. Each of those folders gives the account List and Create Files on
-    /// the folder and Read, Write and Delete on the files in it (except <c>Servy.db</c>, which is hardened on its own),
-    /// never Delete on the folder: it can neither rename nor delete a folder, and outside those three folders it can write
-    /// or delete nothing. An account that a previous version granted Modify on the vault root loses that grant when it is
+    /// <c>db\Servy.db</c>, the logger writes and rotates <c>logs\</c>, and the restart-attempts counter in
+    /// <c>recovery\</c> is rewritten in place (#7241). Each of those folders gives the account List and Create Files on
+    /// the folder, and the file rights <see cref="GetWritableFolderFileRights"/> names for the files in it: Read, Write
+    /// and Delete in <c>db\</c> (except <c>Servy.db</c>, which is hardened on its own) and <c>logs\</c>, Read and Write
+    /// only in <c>recovery\</c>. It never gets Delete on a folder: it can neither rename nor delete a folder, and outside
+    /// those three folders it can write or delete nothing. An account that a previous version granted Modify on the vault root loses that grant when it is
     /// hardened again.
     /// </para>
     /// <para>
@@ -405,6 +407,20 @@ namespace Servy.Core.Security
             => new[] { AppConfig.DbFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName };
 
         /// <summary>
+        /// Returns the rights the target gets on the files inside one of the <see cref="GetWritableFolders"/> folders.
+        /// </summary>
+        /// <param name="relativePath">The writable folder, relative to <see cref="VaultDirectory"/>.</param>
+        /// <returns>
+        /// Read and Write for <c>recovery\</c>, whose only file, the service's restart-attempts counter, is rewritten in
+        /// place and never renamed or deleted (#7241); Read, Write and Delete for every other writable folder, where the
+        /// logger rotates its files and SQLite deletes its <c>-wal</c>/<c>-shm</c> files.
+        /// </returns>
+        internal static FileSystemRights GetWritableFolderFileRights(string relativePath)
+            => string.Equals(relativePath, AppConfig.RecoveryFolderName, StringComparison.OrdinalIgnoreCase)
+                ? FileSystemRights.Read | FileSystemRights.Write
+                : FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete;
+
+        /// <summary>
         /// Removes every explicit entry the target holds on the vault root, such as the Modify grant and the Delete
         /// denial a previous version wrote there.
         /// </summary>
@@ -511,8 +527,9 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Lets the target create files in a writable folder and read, write and delete the files created there,
-        /// creating the folder first when it does not exist yet.
+        /// Lets the target create files in a writable folder and use the files created there with the rights
+        /// <see cref="GetWritableFolderFileRights"/> names for that folder, creating the folder first when it does not
+        /// exist yet.
         /// </summary>
         /// <param name="relativePath">The folder, relative to <see cref="VaultDirectory"/>.</param>
         /// <param name="targetSid">The target account.</param>
@@ -546,10 +563,11 @@ namespace Servy.Core.Security
                     PropagationFlags.None,
                     AccessControlType.Allow));
 
-                // The files in it: read, write and delete (log rotation, atomic replacement, SQLite side files)
+                // The files in it: read and write, plus delete where the service needs it (log rotation, SQLite side
+                // files) - not in recovery\, whose counter file is rewritten in place
                 acl.AddAccessRule(new FileSystemAccessRule(
                     targetSid,
-                    FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete,
+                    GetWritableFolderFileRights(relativePath),
                     InheritanceFlags.ObjectInherit,
                     PropagationFlags.InheritOnly,
                     AccessControlType.Allow));

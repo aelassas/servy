@@ -138,6 +138,46 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task CheckHealth_RestartAttemptsExhausted_ShorterCounterReplacesTheWholeFile()
+        {
+            // Arrange: a two-digit counter on disk, so the reset writes fewer bytes than the file holds (#7241 writes the
+            // file in place, and an in-place write that does not truncate would leave "02", which reads back as 2)
+            var service = _ctx.Build();
+            var attemptsFile = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.dat");
+            await File.WriteAllTextAsync(attemptsFile, "12", TestContext.Current.CancellationToken);
+
+            try
+            {
+                TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.HasExited).Returns(true);
+                mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+                service.SetChildProcess(mockProcess.Object);
+                service.SetRestartAttemptsFile(attemptsFile);
+                service.SetMaxFailedChecks(1);
+                service.SetMaxRestartAttempts(12);   // already at 12 on disk => exhausted
+                service.SetRecoveryAction(RecoveryAction.RestartProcess);
+                service.SetFailedChecks(0);
+
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert: the file holds exactly "0" - no stale digit left behind, no temporary file beside it
+                Assert.Equal("0", await File.ReadAllTextAsync(attemptsFile, TestContext.Current.CancellationToken));
+                Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(attemptsFile)!, Path.GetFileName(attemptsFile) + ".*.tmp"));
+            }
+            finally
+            {
+                if (File.Exists(attemptsFile))
+                {
+                    try { File.Delete(attemptsFile); } catch { /* teardown is best-effort */ }
+                }
+            }
+        }
+
+        [Fact]
         public async Task CheckHealth_RestartAttemptsBelowCap_IncrementsAndPersistsCounter()
         {
             // Arrange
@@ -585,7 +625,7 @@ namespace Servy.Service.UnitTests
                 service.SetRecoveryAction(RecoveryAction.RestartProcess);
                 service.SetFailedChecks(0);
 
-                // FileShare.Read lets the counter be read but denies the atomic replace that persists it
+                // FileShare.Read lets the counter be read but denies the in-place write that persists it
                 using (new FileStream(attemptsFile, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     // Act
