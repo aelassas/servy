@@ -532,6 +532,72 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        /// <summary>
+        /// The constructor declares the logger nullable and every log call in the stop path is written
+        /// <c>_logger?.</c> to honour that, but <see cref="CreateWrapper"/> always supplies one, so the
+        /// logger-absent side of those null-conditional calls has no other cover. Replacing any of them with
+        /// <c>_logger.</c> throws for a caller that passes the documented <see langword="null"/>.
+        /// </summary>
+        [Fact]
+        public void StopPath_WithNullLogger_SweepsDescendantsAndStopsTheTreeWithoutThrowing()
+        {
+            // Arrange - same real process tree as StopDescendants_WithActiveChildren_..., but the wrapper is
+            // built directly so that it gets no logger, which CreateWrapper cannot do.
+            string commandArgs = "-NoProfile -Command \"$p = Start-Process cmd.exe -ArgumentList '/c timeout /t 100 /nobreak' -WindowStyle Hidden -PassThru; while ($true) { Start-Sleep 1 }\"";
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = commandArgs,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = Path.GetTempPath(),
+            };
+
+            using (var wrapper = new ProcessWrapper(psi, null))
+            {
+                // Add the wrapper to the safety tracking list, as CreateWrapper would have
+                _wrappersToCleanup.Add(wrapper);
+
+                wrapper.Start();
+
+                int parentPid = wrapper.Id;
+                DateTime parentStartTime = wrapper.StartTime;
+
+                // Wait for the child process to spawn, so the descendant sweep has something to log about
+                bool childSpawned = SpinWait.SpinUntil(() =>
+                {
+                    try
+                    {
+                        var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+                        bool spawned = children.Count > 0;
+                        foreach (var c in children) c.Dispose();
+                        return spawned;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+
+                Assert.True(childSpawned, "Child process never spawned; the logger-absent stop path cannot be verified.");
+
+                // Act - drive the descendant sweep and then the graceful-stop-or-kill path, both of which log
+                var descendantSweep = Record.Exception(() =>
+                    wrapper.StopDescendants(parentPid, parentStartTime, TestTimeouts.CleanupWaitMs));
+                var stop = Record.Exception(() => wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs));
+
+                // Assert
+                Assert.Null(descendantSweep);
+                Assert.Null(stop);
+                Assert.True(
+                    SpinWait.SpinUntil(() => wrapper.HasExited, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds)),
+                    "The parent process is still running, so the stop path did not run to completion.");
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
         #region StopTree Internal Branch Tests
 
         [Fact]
