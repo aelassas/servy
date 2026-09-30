@@ -2044,7 +2044,8 @@ namespace Servy.Service.UnitTests
 
                 // OnCustomCommand checks _isRebooting before it looks at the handle, so the handle does
                 // not decide this branch. It is set non-zero anyway so that a later reordering of those
-                // two checks cannot reach the null-handle fallback, whose Environment.Exit would end the test host.
+                // two checks cannot reach the null-handle fallback, whose TerminateProcess this recording
+                // service turns into a ProcessTerminatedException instead of the pre-shutdown bypass under test.
                 TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
                 TestReflection.SetField(service, "_isRebooting", true);
 
