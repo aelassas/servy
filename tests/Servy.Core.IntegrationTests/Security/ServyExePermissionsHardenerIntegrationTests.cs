@@ -657,6 +657,20 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
+        public void ResolveAccount_NameNtAccountRejects_ReturnsNull()
+        {
+            // Arrange
+            var probe = new SeamProbe(_vault);
+            var name = new string('a', 600);
+
+            // Act
+            var sid = probe.Resolve(name);
+
+            // Assert
+            Assert.Null(sid);
+        }
+
+        [Fact]
         public void ResolveAccount_RelativeNotation_ResolvesALocalAccount()
         {
             // Arrange
