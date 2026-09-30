@@ -169,7 +169,7 @@ jobs:
           Function Save-ChangelogFiles {
               param($Releases)
 
-              # Clean up any existing archive files from disk and stage their removal for git tracking
+              # Delete any existing archive files from disk; the Commit and Push step's 'git add CHANGELOG*.md' stages their removal
               Get-ChildItem -Path . -Filter "CHANGELOG-*.md" | ForEach-Object {
                   Remove-Item $_.FullName -Force
               }
@@ -223,7 +223,7 @@ jobs:
               }
               [System.IO.File]::WriteAllText("CHANGELOG.md", $mainContent, $utf8NoBom)
 
-              # Write each archive file recursively with 400 KB bounds
+              # Write each archive chunk (built above within the 400 KB bound) to its own file
               $runningGlobalIdx = $mainChunk.Count
               for ($c = 1; $c -lt $chunks.Count; $c++) {
                   $chunk = $chunks[$c]
