@@ -106,8 +106,9 @@ namespace Servy.Core.Config
         /// service, so a grant to it cannot reach any other service. LocalService and NetworkService
         /// are not eligible - they are shared by every service that runs under them, so a grant to
         /// one of them would let all of those services control this one. LocalSystem already holds
-        /// full control over its own service, and an IIS AppPool identity is not a Servy log-on
-        /// account.
+        /// full control over its own service. An IIS AppPool identity, which the install paths accept
+        /// as a log-on account, is not eligible either: the worker processes of that application pool
+        /// run under the same SID, so a grant to it would let them control this service.
         /// </summary>
         /// <param name="account">The account name to check.</param>
         /// <returns>
