@@ -586,7 +586,8 @@ namespace Servy.Core.Services
                                     displayName: displayName
                                 );
 
-                                // Open the existing service for configuration updates (delayed start and pre-shutdown)
+                                // Open the existing service for configuration updates (delayed start and pre-shutdown) and for the
+                                // DACL grant below, which needs SERVICE_READ_CONTROL and SERVICE_WRITE_DAC
                                 using (var existingServiceHandle = _windowsServiceApi.OpenService(
                                     scmHandle,
                                     options.ServiceName,
