@@ -286,7 +286,7 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Handles tasks when the Main tab is selected: stops background monitoring and searches in
-        /// every other tab, triggers a service search if the list is empty, and starts the periodic
+        /// every other tab, triggers a service search if none has completed yet, and starts the periodic
         /// refresh timer.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
@@ -322,7 +322,7 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Handles tasks when the Logs tab is selected: stops background monitoring and timers in
-        /// every other tab, and triggers a search for logs if the logs collection is empty.
+        /// every other tab, and triggers a search for logs if none has completed yet.
         /// </summary>
         /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
         /// <param name="logsVm">
