@@ -729,7 +729,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             int maxLen = AppConfig.MaxEnvVarExpandedLength;
 
-            // We create a base variable that is just under half the max length.
+            // We create a base variable that is just over half the max length.
             // Referencing it twice in OVERFLOW will cause the inline expansion to breach the limit.
             string largePayload = new string('A', (maxLen / 2) + 100);
 
