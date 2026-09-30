@@ -177,7 +177,7 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="SelectionChanged"/> event of the main <see cref="TabControl"/>.
+        /// Handles the <see cref="Selector.SelectionChanged"/> event of the main <see cref="TabControl"/>.
         /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous tab transition logic.
         /// </summary>
         /// <param name="sender">The <see cref="TabControl"/> that raised the event.</param>
@@ -480,7 +480,7 @@ namespace Servy.Manager.Views
         /// Provides data for the closing event.
         /// </param>
         /// <remarks>
-        /// This explicitly calls <see cref="Application.Current.Shutdown"/> to guarantee
+        /// This explicitly calls <see cref="Application.Shutdown()"/> to guarantee
         /// that no background threads, timers, or hidden windows keep the process alive.
         /// </remarks>
         protected override void OnClosing(CancelEventArgs e)
