@@ -104,6 +104,13 @@ namespace Servy.UI.UnitTests.Design
             // Act & Assert - Collection branches
             Assert.Empty(manager.GetAllServices(cancellationToken: ct));
             Assert.Null(manager.GetDependencies("test", ct));
+
+            // Act & Assert - No-op branches
+            // Capture the tasks instead of awaiting them: awaiting an already-completed task
+            // asserts nothing, while synchronous completion is the property the designer depends
+            // on - a stub that started yielding would leave it awaiting something that never resumes.
+            Assert.Equal(TaskStatus.RanToCompletion, manager.RevokeVaultAccessIfUnusedAsync(null, ct).Status);
+            Assert.Equal(TaskStatus.RanToCompletion, manager.RevokeVaultAccessIfUnusedAsync(new ServiceDto { Name = "test" }, ct).Status);
         }
 
         #endregion
