@@ -488,6 +488,7 @@ namespace Servy.Core.UnitTests.Validation
         [Fact]
         public void ValidatePath_AncestorDirectorySymlink_ReturnsFail()
         {
+            // Arrange
             string realDir = Path.Combine(TempDirectory, "real_dir");
             string linkDir = Path.Combine(TempDirectory, "link_dir");
             Directory.CreateDirectory(realDir);
@@ -502,9 +503,11 @@ namespace Servy.Core.UnitTests.Validation
                 return; // Symlink creation unavailable on this runner
             }
 
+            // Act
             var result = PathSecurityGuard.ValidatePath(
                 Path.Combine(linkDir, "config.json"), FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
 
+            // Assert
             Assert.False(result.IsValid);
             Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.Equal(Strings.Msg_SecurityDirReparsePointProhibited, result.ErrorMessage);
@@ -514,6 +517,7 @@ namespace Servy.Core.UnitTests.Validation
         [Fact]
         public void ValidatePathOnly_AncestorDirectorySymlink_ReturnsFail()
         {
+            // Arrange
             string realDir = Path.Combine(TempDirectory, "real_dir");
             string linkDir = Path.Combine(TempDirectory, "link_dir");
             Directory.CreateDirectory(realDir);
@@ -528,9 +532,11 @@ namespace Servy.Core.UnitTests.Validation
                 return; // Symlink creation unavailable on this runner
             }
 
+            // Act
             var result = PathSecurityGuard.ValidatePathOnly(
                 Path.Combine(linkDir, "config.json"), FileMode.Open);
 
+            // Assert
             Assert.False(result.IsValid);
             Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.Equal(Strings.Msg_SecurityDirReparsePointProhibited, result.ErrorMessage);
