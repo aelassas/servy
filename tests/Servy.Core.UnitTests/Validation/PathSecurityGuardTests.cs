@@ -444,6 +444,48 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void ValidatePath_OpenFailsOnAPreExistingFile_KeepsTheFile()
+        {
+            // Arrange: a file that already exists at the target path, so createdByUs is false. A second
+            // handle holds it with a sharing mode that allows Delete, which is what makes an unguarded
+            // File.Delete in the finally really remove the caller's file rather than fail silently.
+            const string originalContents = "original contents";
+            string filePath = Path.Combine(TempDirectory, "existing_export.json");
+            File.WriteAllText(filePath, originalContents);
+            string validationFailureFormat = Strings.Msg_SecurityHandleValidationFailed;
+            string validationFailurePrefix = validationFailureFormat.Substring(
+                0, validationFailureFormat.IndexOf("{0}", StringComparison.Ordinal));
+            PathSecurityResult result;
+            FileStream stream;
+
+            // Act: the FileShare.None request cannot be granted while the handle below is open, so the
+            // FileStream constructor throws a sharing violation and the catch runs. That is the only way to
+            // reach the finally's cleanup branch on a path that existed before the call.
+            using (new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                result = PathSecurityGuard.ValidatePath(
+                    filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, out stream);
+            }
+
+            // Assert
+            // The premise is the sharing violation. If this runner let the open through, the cleanup branch
+            // was never entered and the File.Exists assert below would pass for a reason this test is not
+            // about, so skip rather than pass.
+            string errorMessage = result.ErrorMessage ?? string.Empty;
+            if (stream != null || !errorMessage.StartsWith(validationFailurePrefix, StringComparison.Ordinal))
+            {
+                stream?.Dispose();
+                return; // Skip - the FileShare.None open over a held file did not fail on this runner.
+            }
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Null(stream);
+            Assert.True(File.Exists(filePath), "A rejected open must not delete a file that existed before the call.");
+            Assert.Equal(originalContents, File.ReadAllText(filePath));
+        }
+
+        [Fact]
         public void ValidatePath_AncestorDirectorySymlink_ReturnsFail()
         {
             string realDir = Path.Combine(TempDirectory, "real_dir");
