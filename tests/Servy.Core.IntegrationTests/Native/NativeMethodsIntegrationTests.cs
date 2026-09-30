@@ -79,6 +79,32 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(0x00000400u, NativeMethods.POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE);
         }
 
+        [Fact]
+        public void ServiceControlAndStatusAccess_CombinesTheEightRightsServiceControllerNeeds()
+        {
+            // Arrange
+            const uint expected = NativeMethods.SERVICE_QUERY_CONFIG
+                                | (uint)NativeMethods.SERVICE_QUERY_STATUS
+                                | NativeMethods.SERVICE_ENUMERATE_DEPENDENTS
+                                | NativeMethods.SERVICE_START
+                                | NativeMethods.SERVICE_STOP
+                                | NativeMethods.SERVICE_PAUSE_CONTINUE
+                                | NativeMethods.SERVICE_INTERROGATE
+                                | NativeMethods.SERVICE_READ_CONTROL;
+
+            // Act
+            uint actual = NativeMethods.SERVICE_CONTROL_AND_STATUS_ACCESS;
+
+            // Assert
+            // The literal is spelled out so a dropped term in the composite fails here rather than
+            // surfacing as an ordinary "Access is denied" from ServiceController.Stop().
+            Assert.Equal(0x000200FDu, actual);
+            Assert.Equal(expected, actual);
+            Assert.Equal(0x0008u, NativeMethods.SERVICE_ENUMERATE_DEPENDENTS);
+            Assert.Equal(0x0040u, NativeMethods.SERVICE_PAUSE_CONTINUE);
+            Assert.Equal(0x0080u, NativeMethods.SERVICE_INTERROGATE);
+        }
+
         #endregion
 
         #region Regression Test (Process Snapshot Name Validity)

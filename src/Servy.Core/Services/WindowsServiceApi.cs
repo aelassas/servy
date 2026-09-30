@@ -82,7 +82,7 @@ namespace Servy.Core.Services
                     new CommonAce(
                         AceFlags.None,
                         AceQualifier.AccessAllowed,
-                        (int)ServiceAccessRights.ControlAndStatusAccess,
+                        (int)SERVICE_CONTROL_AND_STATUS_ACCESS,
                         sid,
                         false,
                         null));

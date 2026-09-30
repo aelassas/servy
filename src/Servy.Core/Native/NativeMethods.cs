@@ -105,6 +105,27 @@ namespace Servy.Core.Native
         /// <summary>Access right to modify the discretionary access control list (DACL) in the security descriptor.</summary>
         public const uint SERVICE_WRITE_DAC = 0x00040000;
 
+        /// <summary>Access right to enumerate the services that depend on this service.</summary>
+        public const uint SERVICE_ENUMERATE_DEPENDENTS = 0x0008;
+
+        /// <summary>Access right to pause or continue the service.</summary>
+        public const uint SERVICE_PAUSE_CONTINUE = 0x0040;
+
+        /// <summary>Access right to send an interrogate control code to the service.</summary>
+        public const uint SERVICE_INTERROGATE = 0x0080;
+
+        /// <summary>
+        /// Full rights required for ServiceController.Stop() and Start() to succeed without Access Denied.
+        /// </summary>
+        public const uint SERVICE_CONTROL_AND_STATUS_ACCESS = SERVICE_QUERY_CONFIG
+                                                            | (uint)SERVICE_QUERY_STATUS
+                                                            | SERVICE_ENUMERATE_DEPENDENTS
+                                                            | SERVICE_START
+                                                            | SERVICE_STOP
+                                                            | SERVICE_PAUSE_CONTINUE
+                                                            | SERVICE_INTERROGATE
+                                                            | SERVICE_READ_CONTROL;
+
         #endregion
 
         #region Service Configuration & Type Flags
@@ -689,62 +710,6 @@ namespace Servy.Core.Native
 
         /// <summary>Security information flag indicating that the discretionary access control list (DACL) is being queried or set.</summary>
         public const uint DACL_SECURITY_INFORMATION = 0x00000004;
-
-        /// <summary>Defines access rights for opening and manipulating Windows service security descriptors and controls.</summary>
-        [Flags]
-        public enum ServiceAccessRights : uint
-        {
-            /// <summary>Access right to query the service configuration parameters.</summary>
-            QueryConfig = 0x0001,
-
-            /// <summary>Access right to change the service configuration parameters.</summary>
-            ChangeConfig = 0x0002,
-
-            /// <summary>Access right to query the current status of the service.</summary>
-            QueryStatus = 0x0004,
-
-            /// <summary>Access right to enumerate services that depend on this service.</summary>
-            EnumerateDependents = 0x0008,
-
-            /// <summary>Access right to start the service.</summary>
-            Start = 0x0010,
-
-            /// <summary>Access right to stop the service.</summary>
-            Stop = 0x0020,
-
-            /// <summary>Access right to pause or continue the service.</summary>
-            PauseContinue = 0x0040,
-
-            /// <summary>Access right to send an interrogate control code to the service.</summary>
-            Interrogate = 0x0080,
-
-            /// <summary>Access right to send user-defined control codes to the service.</summary>
-            UserDefinedControl = 0x0100,
-
-            /// <summary>Access right to delete the service object from the SCM database.</summary>
-            Delete = 0x00010000,
-
-            /// <summary>Access right to read the information in the security descriptor of the service.</summary>
-            ReadControl = 0x00020000,
-
-            /// <summary>Access right to modify the discretionary access control list (DACL) in the security descriptor of the service.</summary>
-            WriteDac = 0x00040000,
-
-            /// <summary>Access right to change the owner in the security descriptor of the service.</summary>
-            WriteOwner = 0x00080000,
-
-            /// <summary>
-            /// Full rights required for ServiceController.Stop() and Start() to succeed without Access Denied.
-            /// </summary>
-            ControlAndStatusAccess = QueryConfig
-                                   | QueryStatus
-                                   | EnumerateDependents
-                                   | Start
-                                   | Stop
-                                   | PauseContinue
-                                   | Interrogate
-                                   | ReadControl
-        }
 
         /// <summary>Retrieves a copy of the security descriptor associated with a service object.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
