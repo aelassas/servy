@@ -56,8 +56,11 @@ namespace Servy.Core.Services
         /// <param name="serviceHandle">A valid handle to the target service opened with <c>SERVICE_READ_CONTROL</c> and <c>SERVICE_WRITE_DAC</c> rights.</param>
         /// <param name="accountName">The account name (e.g. <c>DOMAIN\user</c>, <c>.\user</c>, or machine account) to grant permissions to.</param>
         /// <remarks>
-        /// A null, empty or whitespace <paramref name="accountName"/>, or a built-in service account, is skipped and
-        /// nothing is granted. Every failure after the handle check (the account not resolving to a SID, or a
+        /// A null, empty or whitespace <paramref name="accountName"/>, or an account that is not eligible for an explicit grant
+        /// (<see cref="Servy.Core.Config.ServiceAccounts.IsEligibleForServiceControlGrant"/>: LocalSystem, the
+        /// shared LocalService and NetworkService identities, and IIS AppPool identities), is skipped and
+        /// nothing is granted. A virtual account (<c>NT SERVICE\...</c>) IS granted: its per-service SID belongs
+        /// to this service alone, so the grant cannot reach any other service. Every failure after the handle check (the account not resolving to a SID, or a
         /// <see cref="Win32Exception"/> from querying or setting the service security descriptor) is logged and not
         /// rethrown, so the caller cannot tell a grant that failed from one that succeeded.
         /// </remarks>
@@ -71,8 +74,10 @@ namespace Servy.Core.Services
         /// <param name="serviceHandle">A valid handle to the target service opened with <c>SERVICE_READ_CONTROL</c> and <c>SERVICE_WRITE_DAC</c> rights.</param>
         /// <param name="accountName">The account name (e.g. <c>DOMAIN\user</c>, <c>.\user</c>, or machine account) whose grant is taken back.</param>
         /// <remarks>
-        /// A null, empty or whitespace <paramref name="accountName"/>, or a built-in service account, is skipped and
-        /// nothing is revoked. Only the account's Allow entries are removed; a Deny entry an administrator added is
+        /// A null, empty or whitespace <paramref name="accountName"/>, or an account that is not eligible for an explicit grant
+        /// (<see cref="Servy.Core.Config.ServiceAccounts.IsEligibleForServiceControlGrant"/>: LocalSystem, the
+        /// shared LocalService and NetworkService identities, and IIS AppPool identities), is skipped and
+        /// nothing is revoked. A virtual account (<c>NT SERVICE\...</c>) IS revoked, symmetrically with the grant. Only the account's Allow entries are removed; a Deny entry an administrator added is
         /// left in place. Every failure after the handle check (the account not resolving to a SID, or a
         /// <see cref="Win32Exception"/> from querying or setting the service security descriptor) is logged and not
         /// rethrown, so the caller cannot tell a revocation that failed from one that succeeded.

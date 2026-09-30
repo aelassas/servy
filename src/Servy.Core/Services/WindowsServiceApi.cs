@@ -35,7 +35,7 @@ namespace Servy.Core.Services
                 throw new ArgumentException("Service handle is null, invalid, or closed.", nameof(serviceHandle));
             }
 
-            if (string.IsNullOrWhiteSpace(accountName) || ServiceAccounts.IsBuiltInServiceAccount(accountName))
+            if (!ServiceAccounts.IsEligibleForServiceControlGrant(accountName))
             {
                 return;
             }
@@ -112,7 +112,7 @@ namespace Servy.Core.Services
                 throw new ArgumentException("Service handle is null, invalid, or closed.", nameof(serviceHandle));
             }
 
-            if (string.IsNullOrWhiteSpace(accountName) || ServiceAccounts.IsBuiltInServiceAccount(accountName))
+            if (!ServiceAccounts.IsEligibleForServiceControlGrant(accountName))
             {
                 return;
             }

@@ -202,6 +202,89 @@ namespace Servy.Core.UnitTests.Config
 
         #endregion
 
+        #region IsEligibleForServiceControlGrant Tests
+
+        [Theory]
+        // Null / Empty / Whitespace
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        // Virtual accounts: the per-service SID belongs to this service alone, so the grant is safe.
+        [InlineData(@"NT SERVICE\MyService", true)]
+        [InlineData(@"nt service\foobar", true)]
+        [InlineData(@"  NT SERVICE\MyService  ", true)]
+        // Nothing after the prefix is a paste artefact, not an account with a SID to grant to.
+        [InlineData(@"NT SERVICE\", false)]
+        // Shared built-in runners: a grant would let every service using them control this one.
+        [InlineData(@"NT AUTHORITY\LocalService", false)]
+        [InlineData(@"NT AUTHORITY\NetworkService", false)]
+        [InlineData("LocalService", false)]
+        [InlineData("NetworkService", false)]
+        // LocalSystem already holds full control over its own service.
+        [InlineData("LocalSystem", false)]
+        [InlineData(@"NT AUTHORITY\SYSTEM", false)]
+        // An IIS AppPool identity is not a Servy log-on account.
+        [InlineData(@"IIS APPPOOL\MyAppPool", false)]
+        [InlineData(@"IIS APPPOOL\", false)]
+        // Custom accounts were already eligible and stay so.
+        [InlineData(@"DOMAIN\SomeUser", true)]
+        [InlineData(@".\CustomUser", true)]
+        [InlineData("Administrator", true)]
+        public void IsEligibleForServiceControlGrant_EvaluatesCorrectly(string? account, bool expected)
+        {
+            // Act
+            bool result = ServiceAccounts.IsEligibleForServiceControlGrant(account);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void IsEligibleForServiceControlGrant_VirtualAccount_IsTheOneBuiltInFormThatIsEligible()
+        {
+            // Arrange
+            // A virtual account is a built-in OS-managed identity, so the two predicates deliberately
+            // disagree about it: SID translation and the LSA privilege path still skip it, while the
+            // service control grant is written for it. This pins that difference, which is the whole
+            // fix for #7225 - without it RestartService fails with Access Denied under NT SERVICE\.
+            var virtualAccount = @"NT SERVICE\MyService";
+            var sharedAccount = ServiceAccounts.LocalService;
+
+            // Act
+            var virtualIsBuiltIn = ServiceAccounts.IsBuiltInServiceAccount(virtualAccount);
+            var virtualIsEligible = ServiceAccounts.IsEligibleForServiceControlGrant(virtualAccount);
+            var sharedIsBuiltIn = ServiceAccounts.IsBuiltInServiceAccount(sharedAccount);
+            var sharedIsEligible = ServiceAccounts.IsEligibleForServiceControlGrant(sharedAccount);
+
+            // Assert
+            Assert.True(virtualIsBuiltIn);
+            Assert.True(virtualIsEligible);
+            Assert.True(sharedIsBuiltIn);
+            Assert.False(sharedIsEligible);
+        }
+
+        [Theory]
+        [InlineData(@"NT AUTHORITY\LocalService")]
+        [InlineData(@"NT AUTHORITY\NetworkService")]
+        [InlineData("LocalService")]
+        [InlineData("NetworkService")]
+        [InlineData(@"BUILTIN\LocalService")]
+        [InlineData(@"BUILTIN\NetworkService")]
+        [InlineData(@".\Local Service")]
+        [InlineData(@".\Network Service")]
+        public void IsEligibleForServiceControlGrant_EverySharedRunnerAlias_ReturnsFalse(string alias)
+        {
+            // Act
+            // Every documented spelling of the two shared runners has to be refused, not just the
+            // canonical one: a grant reached through an alias is as shared as one reached directly.
+            bool result = ServiceAccounts.IsEligibleForServiceControlGrant(alias);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        #endregion
+
         #region IsGmsa Tests
 
         [Theory]
