@@ -8,12 +8,6 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Reflection;
 
-using Dapper;
-using Servy.Core.DTOs;
-using Servy.Core.Logging;
-using System.Data.Common;
-using System.Reflection;
-
 namespace Servy.Infrastructure.Data
 {
     /// <summary>
