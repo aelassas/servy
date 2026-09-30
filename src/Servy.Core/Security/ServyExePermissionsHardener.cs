@@ -399,8 +399,9 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the service creates, rewrites and deletes
-        /// files: the database folder (SQLite's <c>-wal</c>/<c>-shm</c> files), the logs and the recovery state.
+        /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the service creates and rewrites files:
+        /// the database folder (SQLite's <c>-wal</c>/<c>-shm</c> files, which it also deletes), the logs (rotated and deleted)
+        /// and the recovery state (rewritten in place, never deleted).
         /// </summary>
         /// <returns>The writable folders.</returns>
         internal static IReadOnlyList<string> GetWritableFolders()
@@ -564,7 +565,7 @@ namespace Servy.Core.Security
                     AccessControlType.Allow));
 
                 // The files in it: read and write, plus delete where the service needs it (log rotation, SQLite side
-                // files) - not in recovery\, whose counter file is rewritten in place
+                // files) - not in recovery\, whose counter files, one per service, are rewritten in place
                 acl.AddAccessRule(new FileSystemAccessRule(
                     targetSid,
                     GetWritableFolderFileRights(relativePath),
