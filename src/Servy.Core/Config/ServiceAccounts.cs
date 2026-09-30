@@ -82,7 +82,9 @@ namespace Servy.Core.Config
         /// <summary>
         /// True when the account is an OS-managed passwordless service identity: a documented
         /// built-in alias, a virtual account (NT SERVICE\...) or an IIS AppPool identity.
-        /// These must not be sent through SID translation or LSA privilege assignment.
+        /// These must not be sent through LSA privilege assignment, nor through SID translation, with one
+        /// exception: a virtual account resolves to its per-service SID, and <see cref="IsEligibleForServiceControlGrant"/>
+        /// admits it to the service control grant, which translates it.
         /// </summary>
         /// <param name="account">The account name to check.</param>
         /// <returns><c>true</c> if the account is a built-in OS-managed service identity; otherwise, <c>false</c>.</returns>
