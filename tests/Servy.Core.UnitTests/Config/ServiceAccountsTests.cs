@@ -228,7 +228,7 @@ namespace Servy.Core.UnitTests.Config
         // LocalSystem already holds full control over its own service.
         [InlineData("LocalSystem", false)]
         [InlineData(@"NT AUTHORITY\SYSTEM", false)]
-        // An IIS AppPool identity is not a Servy log-on account.
+        // An IIS AppPool identity is accepted as a log-on account, but its SID is shared by the pool's worker processes.
         [InlineData(@"IIS APPPOOL\MyAppPool", false)]
         [InlineData(@"IIS APPPOOL\", false)]
         // Custom accounts were already eligible and stay so.
