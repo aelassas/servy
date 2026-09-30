@@ -216,8 +216,13 @@ namespace Servy.Core.Services
         /// <param name="acl">The list to edit in place.</param>
         /// <param name="sid">The account whose Allow entries are removed.</param>
         /// <returns>The number of entries removed.</returns>
-        [ExcludeFromCodeCoverage]
-        private static int RemoveAllowAces(RawAcl acl, SecurityIdentifier sid)
+        /// <remarks>
+        /// Pure managed code over <see cref="RawAcl"/>, so it is <see langword="internal"/> rather than
+        /// <see langword="private"/> and carries no <see cref="ExcludeFromCodeCoverageAttribute"/>: it holds the
+        /// Allow-only rule that keeps an administrator's Deny entry alive across a grant or a revocation, and both
+        /// callers around it need a live service handle.
+        /// </remarks>
+        internal static int RemoveAllowAces(RawAcl acl, SecurityIdentifier sid)
         {
             int removed = 0;
             for (int i = acl.Count - 1; i >= 0; i--)

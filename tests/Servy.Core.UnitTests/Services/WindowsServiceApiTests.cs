@@ -15,6 +15,12 @@ namespace Servy.Core.UnitTests.Services
     /// case pins that an administrator's Deny entry and other accounts' entries survive, that the account's own
     /// Allow entries are replaced rather than duplicated, and that the inserted entry carries exactly
     /// <c>SERVICE_CONTROL_AND_STATUS_ACCESS</c>.
+    /// <para>
+    /// Also covers <see cref="WindowsServiceApi.RemoveAllowAces"/> directly, the helper both the grant and the
+    /// revocation share: it carries the #7221 rule that only the account's Allow entries are removed, and its
+    /// return value is what tells <see cref="WindowsServiceApi.RevokeServiceControlRights"/> whether there was
+    /// anything to write back.
+    /// </para>
     /// </summary>
     public class WindowsServiceApiTests
     {
@@ -88,6 +94,50 @@ namespace Servy.Core.UnitTests.Services
             var granted = Assert.IsType<CommonAce>(result[1]);
             Assert.Equal(Target, granted.SecurityIdentifier);
             Assert.Equal((int)SERVICE_CONTROL_AND_STATUS_ACCESS, granted.AccessMask);
+        }
+
+        [Fact]
+        public void RemoveAllowAces_RemovesOnlyTheAccountsAllowEntries_KeepsItsDenyAndOtherAccounts()
+        {
+            // Arrange
+            var acl = new RawAcl(GenericAcl.AclRevision, 4);
+            acl.InsertAce(0, Ace(AceQualifier.AccessDenied, 0x20, Target));
+            acl.InsertAce(1, Ace(AceQualifier.AccessAllowed, 0x1F0, Target));
+            acl.InsertAce(2, Ace(AceQualifier.AccessAllowed, 0x1F0, Other));
+            acl.InsertAce(3, Ace(AceQualifier.AccessAllowed, 0x14, Target));
+
+            // Act
+            var removed = WindowsServiceApi.RemoveAllowAces(acl, Target);
+
+            // Assert
+            Assert.Equal(2, removed);
+            Assert.Equal(2, acl.Count);
+
+            var deny = Assert.IsType<CommonAce>(acl[0]);
+            Assert.Equal(AceQualifier.AccessDenied, deny.AceQualifier);
+            Assert.Equal(Target, deny.SecurityIdentifier);
+
+            var kept = Assert.IsType<CommonAce>(acl[1]);
+            Assert.Equal(AceQualifier.AccessAllowed, kept.AceQualifier);
+            Assert.Equal(Other, kept.SecurityIdentifier);
+        }
+
+        [Fact]
+        public void RemoveAllowAces_AccountHasNoAllowEntry_ReturnsZeroAndLeavesTheListUnchanged()
+        {
+            // Arrange
+            var acl = new RawAcl(GenericAcl.AclRevision, 2);
+            acl.InsertAce(0, Ace(AceQualifier.AccessDenied, 0x20, Target));
+            acl.InsertAce(1, Ace(AceQualifier.AccessAllowed, 0x1F0, Other));
+
+            // Act
+            var removed = WindowsServiceApi.RemoveAllowAces(acl, Target);
+
+            // Assert
+            Assert.Equal(0, removed);
+            Assert.Equal(2, acl.Count);
+            Assert.Equal(Target, Assert.IsType<CommonAce>(acl[0]).SecurityIdentifier);
+            Assert.Equal(Other, Assert.IsType<CommonAce>(acl[1]).SecurityIdentifier);
         }
 
         /// <summary>
