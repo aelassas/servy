@@ -50,7 +50,10 @@ namespace Servy.Core.Services
                 {
                     if (acl == null)
                     {
-                        acl = new RawAcl(GenericAcl.AclRevision, 1);
+                        // A missing (NULL) DACL already grants every principal full access.
+                        // Replacing it with a one-entry DACL would inadvertently lock out Administrators and SYSTEM.
+                        Logger.Warn($"Service security descriptor has a NULL DACL; account '{accountName}' already possesses implicit full control.");
+                        return null;
                     }
 
                     // 3. Remove this SID's existing Allow ACEs if present (prevents duplicate ACE bloat on updates).
