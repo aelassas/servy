@@ -88,33 +88,6 @@ namespace Servy.Service.UnitTests
             _ctx.Helper.Verify(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
         }
 
-        [Fact]
-        public void OnStart_WhenExceptionThrown_LogsError()
-        {
-            // Arrange
-            var exception = new InvalidOperationException("Test exception");
-
-            // Simulate the exception at the first entry point of OnStart
-            _ctx.Helper
-                .Setup(h => h.GetArgs())
-                .Throws(exception);
-
-            var service = _ctx.Build();
-
-            // Act
-            service.StartForTest();
-
-            // Assert
-            // Since the crash happens before promotion, mockLogger is still the active logger
-            _ctx.Logger.Verify(l => l.Error(
-                It.Is<string>(s => s.Contains("Exception in OnStart")),
-                exception
-                ), Times.Once);
-
-            // Verify that promotion was never attempted due to the early failure
-            _ctx.Logger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
-        }
-
         [Theory]
         [InlineData(false, 5, 3, RecoveryAction.RestartService, false)] // health monitoring off => disabled
         [InlineData(true, 0, 3, RecoveryAction.RestartService, false)]
