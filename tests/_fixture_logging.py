@@ -13,7 +13,7 @@ import sys
 def setup_logging(script_file, log_name=None):
     """Configure root logging for a fixture and return the fixture's own directory.
 
-    Lines go to <SERVY_TEST_LOG_DIR or ./logs>/<log_name, or the script's own name>.log
+    Lines go to <SERVY_TEST_LOG_DIR, or logs/ next to script_file>/<log_name, or the script's own name>.log
     and to stdout, in the format every fixture has always used. Pass __file__ as
     script_file; log_name overrides the derived file name.
     """
