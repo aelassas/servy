@@ -116,6 +116,25 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task ExecuteSearchPipelineAsync_FetchReturnsNoMatches_SetsHasSearched()
+        {
+            // Arrange
+            // The two tests above only assert that an ABORTED pipeline leaves HasSearched false, so
+            // nothing pins the assignment #6029 added. A no-op swap hook lets the pipeline run to
+            // completion, and RunSearchAsync's fetch returns 0 matches, which is the count the flag
+            // must be set for: the views gate their initial search on it, not on an empty list.
+            var cursorService = new Mock<ICursorService>();
+            var viewModel = new RacingSearchViewModel(cursorService.Object, _ => { });
+
+            // Act
+            await viewModel.RunSearchAsync();
+
+            // Assert
+            Assert.Equal(1, viewModel.FetchCallCount);
+            Assert.True(viewModel.HasSearched);
+        }
+
+        [Fact]
         public async Task Dispose_WhileSearchHoldsTheWaitState_RestoresTheIdleSearchUiState()
         {
             // Arrange
