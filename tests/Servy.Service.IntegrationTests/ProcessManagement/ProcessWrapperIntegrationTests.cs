@@ -1095,6 +1095,38 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
+        public void StopTree_DescendantObtainedByPidStopsGracefully_LogsCanceledGracefully()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var childWrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            {
+                Assert.True(childWrapper.Start());
+
+                // The instance shape GetChildren produces (ProcessExtensions.cs builds each descendant with
+                // Process.GetProcessById), so ExitCode is not readable and the exitCode.HasValue arm is skipped.
+                // This is the instance every descendant StopTree stops in production arrives as.
+                using (var enumerated = Process.GetProcessById(childWrapper.Id))
+                {
+                    wrapper.ChildEnumerator = (pid, startTime) => new List<Process>();
+                    wrapper.MainWindowCloser = _ => true;
+                    wrapper.ExitWaiter = (p, ms) =>
+                    {
+                        p.Kill();
+                        return p.WaitForExit(ms);
+                    };
+
+                    // Act
+                    TestReflection.InvokeNonPublic(wrapper, "StopTree", enumerated, TestTimeouts.CiGenerousMs);
+
+                    // Assert
+                    Assert.Contains(_logger.Infos, m => m.Contains("canceled gracefully."));
+                    Assert.DoesNotContain(_logger.Infos, m => m.Contains("canceled with code"));
+                }
+            }
+        }
+
+        [Fact]
         public void Stop_ForwardsTheStopTimeoutToTheGracefulWaitAndThePostKillBudgetToTheSecond()
         {
             // Arrange
