@@ -568,6 +568,39 @@ namespace Servy.Service.UnitTests.ProcessManagement
                                             && m.Contains("kill failed")), It.IsAny<Exception?>()),
                 Times.Once);
             wrapper.Verify(p => p.Dispose(), Times.Once);
+
+            // The orphan cleanup must terminate the whole tree: a hook is often a shell whose real
+            // work is a child, and a single-process kill would leave that child running unsupervised.
+            wrapper.Verify(p => p.Kill(true), Times.Once);
+        }
+
+        /// <summary>
+        /// Verifies that a synchronous launch which never observes an exit kills the whole process tree
+        /// rather than the launched process alone.
+        /// </summary>
+        /// <remarks>
+        /// Two sites pass the flag on this path: the timeout terminator in the wait heartbeat, and the
+        /// orphan cleanup in the finally block that runs again once the <see cref="TimeoutException"/>
+        /// propagates. Neither may fall back to a single-process kill, so the test pins the argument
+        /// rather than the call count.
+        /// </remarks>
+        [Fact]
+        public void Start_SynchronousTimeout_KillsTheWholeTree()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) => { });
+            wrapper.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
+            var options = SyncOptions(null, null);
+            options.TimeoutMs = 1;
+            options.WaitChunkMs = 1;
+
+            // Act
+            Assert.Throws<TimeoutException>(
+                () => ProcessLauncher.Start(options, FactoryFor(wrapper), _logger.Object));
+
+            // Assert
+            wrapper.Verify(p => p.Kill(true), Times.AtLeastOnce);
+            wrapper.Verify(p => p.Kill(false), Times.Never);
         }
 
         #endregion
