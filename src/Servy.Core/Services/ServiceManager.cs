@@ -800,8 +800,8 @@ namespace Servy.Core.Services
         /// <param name="serviceHandle">The open handle of the service being reconfigured.</param>
         /// <param name="formerService">The service's record as it was before the change; <see langword="null"/> when
         /// there was none, which revokes nothing.</param>
-        /// <param name="currentAccount">The account the service runs under now, or <see langword="null"/> for Local
-        /// System. The same account (compared case-insensitively) revokes nothing.</param>
+        /// <param name="currentAccount">The account the service runs under now, or <see cref="ServiceAccounts.LocalSystem"/>
+        /// for Local System. The same account (compared case-insensitively) revokes nothing.</param>
         /// <remarks>
         /// The grant this takes back belongs to this one service, so unlike the vault grants it needs no "still used
         /// by another service" check. The reconfiguration has already succeeded when this runs, so a failure here is
