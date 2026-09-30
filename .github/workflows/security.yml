@@ -58,11 +58,12 @@ jobs:
         shell: pwsh
         run: |
           $maxRetries = [int]$env:MAX_RETRIES
-          for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+          $maxAttempts = $maxRetries + 1
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
               dotnet restore Servy.sln
               if ($LASTEXITCODE -eq 0) { break }
-              if ($attempt -eq $maxRetries) { throw "Restore failed for Servy.sln (exit $LASTEXITCODE) after $maxRetries attempts" }
-              Write-Host "dotnet restore failed (attempt $attempt/$maxRetries), retrying..."
+              if ($attempt -eq $maxAttempts) { throw "Restore failed for Servy.sln (exit $LASTEXITCODE) after $maxAttempts attempts" }
+              Write-Host "dotnet restore failed (attempt $attempt/$maxAttempts), retrying..."
               Start-Sleep -Seconds ([math]::Pow(2, $attempt))
           }
 
@@ -75,11 +76,12 @@ jobs:
           # Fetch structured analysis data directly via JSON serialization to avoid brittle string matching
           $maxRetries = [int]$env:MAX_RETRIES
           $rawJson = $null
-          for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+          $maxAttempts = $maxRetries + 1
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
               $rawJson = dotnet list Servy.sln package --vulnerable --include-transitive --format json
               if ($LASTEXITCODE -eq 0) { break }
-              if ($attempt -eq $maxRetries) { throw "dotnet list package --vulnerable failed (exit $LASTEXITCODE) after $maxRetries attempts." }
-              Write-Host "dotnet list package --vulnerable failed (attempt $attempt/$maxRetries), retrying..."
+              if ($attempt -eq $maxAttempts) { throw "dotnet list package --vulnerable failed (exit $LASTEXITCODE) after $maxAttempts attempts." }
+              Write-Host "dotnet list package --vulnerable failed (attempt $attempt/$maxAttempts), retrying..."
               Start-Sleep -Seconds ([math]::Pow(2, $attempt))
           }
 
@@ -151,11 +153,12 @@ jobs:
         shell: pwsh
         run: |
           $maxRetries = [int]$env:MAX_RETRIES
-          for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+          $maxAttempts = $maxRetries + 1
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
               dotnet build Servy.sln --configuration Debug
               if ($LASTEXITCODE -eq 0) { break }
-              if ($attempt -eq $maxRetries) { throw "Debug build failed for Servy.sln (exit $LASTEXITCODE) after $maxRetries attempts" }
-              Write-Host "dotnet build failed (attempt $attempt/$maxRetries), retrying..."
+              if ($attempt -eq $maxAttempts) { throw "Debug build failed for Servy.sln (exit $LASTEXITCODE) after $maxAttempts attempts" }
+              Write-Host "dotnet build failed (attempt $attempt/$maxAttempts), retrying..."
               Start-Sleep -Seconds ([math]::Pow(2, $attempt))
           }
 

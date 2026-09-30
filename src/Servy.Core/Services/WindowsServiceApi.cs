@@ -1,5 +1,10 @@
+using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Core.Native;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
@@ -19,6 +24,88 @@ namespace Servy.Core.Services
         [ExcludeFromCodeCoverage]
         public void EnsureLogOnAsServiceRight(string accountName)
             => LogonAsServiceGrant.Ensure(accountName);
+
+        /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
+        public void GrantServiceControlRights(SafeServiceHandle? serviceHandle, string accountName)
+        {
+            if (serviceHandle == null || serviceHandle.IsInvalid || serviceHandle.IsClosed)
+            {
+                throw new ArgumentException("Service handle is null, invalid, or closed.", nameof(serviceHandle));
+            }
+
+            if (string.IsNullOrWhiteSpace(accountName) || ServiceAccounts.IsBuiltInServiceAccount(accountName))
+            {
+                return;
+            }
+
+            try
+            {
+                var sid = LogonAsServiceGrant.AccountToSidOrThrow(accountName);
+
+                // 1. Get required buffer size
+                uint bytesNeeded = 0;
+                QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, null, 0, out bytesNeeded);
+
+                if (bytesNeeded == 0)
+                {
+                    int err = Marshal.GetLastWin32Error();
+                    Logger.Warn($"QueryServiceObjectSecurity buffer check returned 0 bytes needed. Win32 error: {err}");
+                    return;
+                }
+
+                byte[] psd = new byte[bytesNeeded];
+                if (!QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, psd, bytesNeeded, out _))
+                {
+                    int err = Marshal.GetLastWin32Error();
+                    throw new Win32Exception(err, $"Failed to query service security descriptor. Win32 error: {err}");
+                }
+
+                // 2. Parse Self-Relative Security Descriptor
+                var rawSd = new RawSecurityDescriptor(psd, 0);
+
+                if (rawSd.DiscretionaryAcl == null)
+                {
+                    rawSd.DiscretionaryAcl = new RawAcl(GenericAcl.AclRevision, 1);
+                }
+
+                // 3. Remove existing ACE for this SID if present (prevents duplicate ACE bloat on updates)
+                for (int i = rawSd.DiscretionaryAcl.Count - 1; i >= 0; i--)
+                {
+                    if (rawSd.DiscretionaryAcl[i] is CommonAce ace && ace.SecurityIdentifier == sid)
+                    {
+                        rawSd.DiscretionaryAcl.RemoveAce(i);
+                    }
+                }
+
+                // 4. Insert new explicit Allow ACE
+                rawSd.DiscretionaryAcl.InsertAce(
+                    rawSd.DiscretionaryAcl.Count,
+                    new CommonAce(
+                        AceFlags.None,
+                        AceQualifier.AccessAllowed,
+                        (int)ServiceAccessRights.ControlAndStatusAccess,
+                        sid,
+                        false,
+                        null));
+
+                // 5. Convert back to binary self-relative form
+                byte[] updatedPsd = new byte[rawSd.BinaryLength];
+                rawSd.GetBinaryForm(updatedPsd, 0);
+
+                if (!SetServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, updatedPsd))
+                {
+                    int err = Marshal.GetLastWin32Error();
+                    throw new Win32Exception(err, $"Failed to set service security descriptor. Win32 error: {err}");
+                }
+
+                Logger.Info($"Successfully granted service control & status rights to account '{accountName}'.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"CRITICAL: Failed to grant service control rights for account '{accountName}'.", ex);
+            }
+        }
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]

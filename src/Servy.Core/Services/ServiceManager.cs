@@ -426,7 +426,7 @@ namespace Servy.Core.Services
                         hSCManager: scmHandle,
                         lpServiceName: options.ServiceName,
                         lpDisplayName: displayName,
-                        dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
+                        dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE | SERVICE_READ_CONTROL | SERVICE_WRITE_DAC,
                         dwServiceType: SERVICE_WIN32_OWN_PROCESS,
                         dwStartType: ToScmStartType(options.StartType),
                         dwErrorControl: SERVICE_ERROR_NORMAL,
@@ -533,6 +533,9 @@ namespace Servy.Core.Services
 
                         if (serviceCreated)
                         {
+                            // Grant the service account the necessary rights to control the service
+                            _windowsServiceApi.GrantServiceControlRights(serviceHandle, lpServiceStartName);
+
                             var enablePreShutdownConfigSuccess = EnablePreShutdown(serviceHandle!, finalTimeoutMs);
 
                             if (enablePreShutdownConfigSuccess)
@@ -587,7 +590,7 @@ namespace Servy.Core.Services
                                 using (var existingServiceHandle = _windowsServiceApi.OpenService(
                                     scmHandle,
                                     options.ServiceName,
-                                    SERVICE_CHANGE_CONFIG))
+                                    SERVICE_CHANGE_CONFIG | SERVICE_READ_CONTROL | SERVICE_WRITE_DAC))
                                 {
                                     if (existingServiceHandle == null || existingServiceHandle.IsInvalid)
                                     {
@@ -595,6 +598,9 @@ namespace Servy.Core.Services
                                         Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
                                         throw new Win32Exception(err, $"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
                                     }
+
+                                    // Grant the service account the necessary rights to control the service
+                                    _windowsServiceApi.GrantServiceControlRights(existingServiceHandle, lpServiceStartName);
 
                                     // 1. Update Pre-shutdown Timeout for existing service
                                     // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.

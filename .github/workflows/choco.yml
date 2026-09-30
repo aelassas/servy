@@ -201,10 +201,11 @@ jobs:
         run: |
           $nupkg = "setup/choco/servy/servy.${env:VERSION}.0.nupkg"
           $maxRetries = [int]$env:MAX_RETRIES
-          for ($i = 1; $i -le $maxRetries; $i++) {
+          $maxAttempts = $maxRetries + 1
+          for ($i = 1; $i -le $maxAttempts; $i++) {
               choco push $nupkg --source "https://community.chocolatey.org/api/v2/package" --api-key $env:CHOCOLATEY_API_KEY
               if ($LASTEXITCODE -eq 0) { break }
-              if ($i -eq $maxRetries) { throw "choco push failed with exit code $LASTEXITCODE after $maxRetries attempts" }
-              Write-Warning "choco push attempt $i of $maxRetries failed (exit $LASTEXITCODE). Retrying in 15 seconds..."
+              if ($i -eq $maxAttempts) { throw "choco push failed with exit code $LASTEXITCODE after $maxAttempts attempts" }
+              Write-Warning "choco push attempt $i of $maxAttempts failed (exit $LASTEXITCODE). Retrying in 15 seconds..."
               Start-Sleep -Seconds 15
           }

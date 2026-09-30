@@ -72,16 +72,17 @@ jobs:
 
           Write-Host "Fetching releases for $repo..."
           $maxRetries = [int]$env:MAX_RETRIES
+          $maxAttempts = $maxRetries + 1
           $rawJson = $null
-          for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
               # Use --slurp to combine paginated responses into a single JSON array,
               # preventing 'ConvertFrom-Json' from failing on concatenated array fragments.
               $rawJson = gh api repos/$repo/releases --paginate --slurp
               if ($LASTEXITCODE -eq 0) { break }
-              if ($attempt -eq $maxRetries) {
-                  throw 'gh api releases failed (exit ' + $LASTEXITCODE + ') after ' + $maxRetries + ' attempts. Aborting changelog update.'
+              if ($attempt -eq $maxAttempts) {
+                  throw 'gh api releases failed (exit ' + $LASTEXITCODE + ') after ' + $maxAttempts + ' attempts. Aborting changelog update.'
               }
-              Write-Host "gh api releases failed (attempt $attempt/$maxRetries), retrying..."
+              Write-Host "gh api releases failed (attempt $attempt/$maxAttempts), retrying..."
               Start-Sleep -Seconds ([math]::Pow(2, $attempt))
           }
 
