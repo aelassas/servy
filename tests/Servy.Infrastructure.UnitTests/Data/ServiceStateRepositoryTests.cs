@@ -118,7 +118,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task UpsertAsync_WritesNameAndTheThreeRuntimeColumns()
+        public async Task UpsertAsync_WritesNameAndEveryRuntimeColumn()
         {
             // Arrange
             string capturedSql = null;
@@ -133,7 +133,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                 Name = "svc",
                 Pid = 17,
                 ActiveStdoutPath = @"C:\logs\out.log",
-                ActiveStderrPath = @"C:\logs\err.log"
+                ActiveStderrPath = @"C:\logs\err.log",
+                PreviousStopTimeout = 45
             };
 
             // Act
@@ -147,6 +148,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(17, type.GetProperty("Pid").GetValue(captured));
             Assert.Equal(@"C:\logs\out.log", type.GetProperty("ActiveStdoutPath").GetValue(captured));
             Assert.Equal(@"C:\logs\err.log", type.GetProperty("ActiveStderrPath").GetValue(captured));
+            Assert.Equal(45, type.GetProperty("PreviousStopTimeout").GetValue(captured));
         }
 
         [Fact]
@@ -200,7 +202,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public void StateSqlConstants_ColumnSetIsExactlyTheRuntimeState()
         {
             // Arrange
-            var expected = new[] { "Pid", "ActiveStdoutPath", "ActiveStderrPath" };
+            var expected = new[] { "Pid", "ActiveStdoutPath", "ActiveStderrPath", "PreviousStopTimeout" };
 
             // Act
             var actual = StateSqlConstants.Columns;

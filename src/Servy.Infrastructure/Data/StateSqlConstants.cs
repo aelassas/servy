@@ -26,7 +26,8 @@ namespace Servy.Infrastructure.Data
         {
             "Pid",
             "ActiveStdoutPath",
-            "ActiveStderrPath"
+            "ActiveStderrPath",
+            "PreviousStopTimeout"
         };
 
         /// <summary>

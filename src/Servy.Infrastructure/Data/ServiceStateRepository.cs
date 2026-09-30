@@ -75,7 +75,8 @@ namespace Servy.Infrastructure.Data
                     Name = key,
                     state.Pid,
                     state.ActiveStdoutPath,
-                    state.ActiveStderrPath
+                    state.ActiveStderrPath,
+                    state.PreviousStopTimeout
                 },
                 cancellationToken: cancellationToken);
         }

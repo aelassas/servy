@@ -52,5 +52,20 @@ namespace Servy.Core.DTOs
         /// </remarks>
         [SqlColumn("TEXT")]
         public string ActiveStderrPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the stop timeout in seconds the wrapper last ran with, or
+        /// <see langword="null"/> when the service has never recorded one.
+        /// </summary>
+        /// <remarks>
+        /// This is the value a running wrapper writes back about itself, not the configured
+        /// <see cref="ServiceDto.StopTimeout"/>: the two differ for as long as a configuration change
+        /// has not been picked up by a restart. It is runtime state for the same reason the three
+        /// properties above are - it is produced by the wrapper at run time and is meaningless until
+        /// the service has started at least once - so it belongs in the runtime-state database rather
+        /// than on <see cref="ServiceDto"/>.
+        /// </remarks>
+        [SqlColumn("INTEGER")]
+        public int? PreviousStopTimeout { get; set; }
     }
 }
