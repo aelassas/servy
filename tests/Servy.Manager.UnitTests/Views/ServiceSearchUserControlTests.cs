@@ -137,6 +137,40 @@ namespace Servy.Manager.UnitTests.Views
         }
 
         [Fact]
+        public async Task UserControl_Loaded_WhenPreviousSearchMatchedNothing_DoesNotSearchAgain()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                // The case #6029 was about: a completed search that matched nothing leaves Services
+                // empty while HasSearched is true. The sibling above sets both, so only this
+                // arrangement can tell the HasSearched gate from the emptiness check it replaced.
+                var control = new TestServiceSearchUserControl();
+                var viewModel = CreateIsolatedViewModel();
+
+                viewModel.SetHasSearched(true);
+                control.DataContext = viewModel;
+
+                // Complete the test command's gate up front. The gate under test should never run it,
+                // but a regression that does would otherwise leave LastLoadedTask awaiting this source
+                // forever, so the test would hang instead of reporting the redundant search.
+                viewModel.CommandTcs.SetResult(null);
+
+                // Act
+                control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+
+                var task = control.LastLoadedTask;
+                Assert.NotNull(task);
+                await task;
+
+                // Assert
+                Assert.Empty(viewModel.Services);
+                Assert.Equal(TaskStatus.RanToCompletion, task.Status);
+                Assert.False(viewModel.ExecuteAsyncWasCalled);
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task UserControl_Loaded_WhenServicesAreEmpty_ExecutesInitialSearchCommandSuccessfully()
         {
             await Helper.RunOnSTA(async () =>
