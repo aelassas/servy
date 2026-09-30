@@ -1,6 +1,8 @@
+using Servy.Core.Config;
 using Servy.Core.Native;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -937,6 +939,178 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 {
                     throw new InvalidOperationException(DisposeFailureMessage);
                 }
+            }
+        }
+
+        #endregion
+
+        #region Stop Failure Arm Seam Tests
+
+        [Fact]
+        public void Stop_CloseMainWindowThrowsOnLiveProcess_FallsThroughToKill()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            {
+                Assert.True(wrapper.Start());
+
+                // The process stays alive, so the 'when (process.HasExited)' filter on the first catch does
+                // not match and the catch-all arm #2129 added is the one that runs.
+                wrapper.MainWindowCloser = _ => throw new InvalidOperationException("window call failed");
+
+                // Act
+                var result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                // Assert
+                Assert.False(result);   // force-killed, not "already exited" (the #2129 regression)
+                Assert.Contains(_logger.Warnings, m =>
+                    m.StartsWith("CloseMainWindow failed for") && m.Contains("Falling through to force-kill."));
+                Assert.True(wrapper.HasExited);
+            }
+        }
+
+        [Fact]
+        public void Stop_CloseMainWindowThrowsAfterProcessExited_ReturnsNullAndLogsDebug()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            {
+                Assert.True(wrapper.Start());
+
+                // The seam kills the process first, so 'when (process.HasExited)' matches and the Debug arm
+                // #1852 added is the one that runs: a process that truly died between Ctrl+C and the window
+                // request is reported as already gone rather than force-killed.
+                wrapper.MainWindowCloser = p =>
+                {
+                    p.Kill();
+                    p.WaitForExit(TestTimeouts.CleanupWaitMs);
+                    throw new InvalidOperationException("no process is associated with this object");
+                };
+
+                // Act
+                var result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                // Assert
+                Assert.Null(result);
+                Assert.Contains(_logger.Debugs, m => m.StartsWith("CloseMainWindow noted process exit for"));
+            }
+        }
+
+        [Fact]
+        public void Stop_KillThrowsAndProcessDoesNotExit_LogsBothWarningsAndReturnsFalse()
+        {
+            // Arrange
+            var pid = 0;
+
+            try
+            {
+                using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+                {
+                    Assert.True(wrapper.Start());
+                    pid = wrapper.Id;
+
+                    // No window request succeeds, the kill itself fails, and the post-kill wait never observes
+                    // an exit - so both Warn arms of the force-kill block run on the one call.
+                    wrapper.MainWindowCloser = _ => false;
+                    wrapper.ProcessKiller = _ => throw new Win32Exception(Errors.ERROR_ACCESS_DENIED);
+                    wrapper.ExitWaiter = (_, __) => false;
+
+                    // Act
+                    var result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                    // Assert
+                    Assert.False(result);
+                    Assert.Contains(_logger.Warnings, m => m.StartsWith("Kill failed for"));
+                    Assert.Contains(_logger.Warnings, m =>
+                        m.Contains("killed, but did not exit within")
+                        && m.Contains($"{AppConfig.DefaultPostKillWaitMs / (double)AppConfig.MillisecondsPerSecond}s."));
+                }
+            }
+            finally
+            {
+                // The seams suppressed the real kill, so the child outlives its wrapper: reap it by PID
+                // rather than through the disposed wrapper (the #7067 lesson).
+                KillByIdIfRunning(pid);
+            }
+        }
+
+        [Fact]
+        public void Kill_PostKillWaitTimesOut_ReturnsFalseAndLogsWarn()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            {
+                Assert.True(wrapper.Start());
+
+                // The real Process.Kill still runs; only the wait is driven, which is the arm #6043 added so
+                // ProcessLauncher's orphan-cleanup catch can fire on a kill that did not take.
+                wrapper.ExitWaiter = (_, __) => false;
+
+                // Act
+                var result = wrapper.Kill();
+
+                // Assert
+                Assert.False(result);
+                Assert.Contains(_logger.Warnings, m => m.Contains("killed, but did not exit within"));
+            }
+        }
+
+        [Fact]
+        public void StopTree_DescendantStopsGracefully_LogsCanceledWithExitCode()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var childWrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            {
+                Assert.True(childWrapper.Start());
+                var child = childWrapper.UnderlyingProcess;
+
+                // No grandchildren, so the cascade terminates at this node; the window request succeeds and
+                // the wait reports a graceful exit, which is the only way to reach the result == true branch.
+                wrapper.ChildEnumerator = (pid, startTime) => new List<Process>();
+                wrapper.MainWindowCloser = _ => true;
+                wrapper.ExitWaiter = (p, ms) =>
+                {
+                    p.Kill();
+                    return p.WaitForExit(ms);
+                };
+
+                // Act
+                TestReflection.InvokeNonPublic(wrapper, "StopTree", child, TestTimeouts.CiGenerousMs);
+
+                // Assert
+                // The child was started by its own Process instance, so ExitCode is readable and the
+                // exitCode.HasValue arm is the one that logs.
+                Assert.Contains(_logger.Infos, m => m.Contains($"canceled with code {child.ExitCode}."));
+                Assert.DoesNotContain(_logger.Infos, m => m.Contains("canceled gracefully."));
+            }
+        }
+
+        /// <summary>
+        /// Kills a process by identifier when it is still running, swallowing the races a best-effort reap
+        /// runs into: the process exiting between the lookup and the kill, or the identifier being reused.
+        /// </summary>
+        /// <param name="processId">The identifier of the process to reap; 0 and negatives are ignored.</param>
+        private static void KillByIdIfRunning(int processId)
+        {
+            if (processId <= 0)
+            {
+                return;
+            }
+
+            try
+            {
+                // Fully qualified: this assembly declares its own wrapper-shaped TestProcessCleanup, which
+                // the enclosing namespace would otherwise resolve to.
+                Servy.Testing.TestProcessCleanup.KillAndDispose(Process.GetProcessById(processId));
+            }
+            catch (ArgumentException)
+            {
+                // Already gone; nothing to reap.
+            }
+            catch (InvalidOperationException)
+            {
+                // The handle went stale between the lookup and the kill.
             }
         }
 

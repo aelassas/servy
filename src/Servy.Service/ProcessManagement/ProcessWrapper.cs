@@ -28,6 +28,40 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         internal Func<int, DateTime, List<Process>> ChildEnumerator { get; set; } = ProcessExtensions.GetChildren;
 
+        /// <summary>
+        /// Gets or sets how <see cref="TryStopGracefullyOrKill"/> asks a process to close its main window.
+        /// Defaults to <see cref="Process.CloseMainWindow"/>; substituted by tests to drive the window
+        /// request's success and both of its failure arms without a process whose window call really fails.
+        /// </summary>
+        /// <remarks>
+        /// The default forwards unchanged to <see cref="Process.CloseMainWindow"/> on the calling thread, so
+        /// an unconfigured wrapper behaves exactly as it did before this seam existed.
+        /// </remarks>
+        internal Func<Process, bool> MainWindowCloser { get; set; } = p => p.CloseMainWindow();
+
+        /// <summary>
+        /// Gets or sets how <see cref="TryStopGracefullyOrKill"/> force-kills a process. Defaults to
+        /// <see cref="Process.Kill()"/>; substituted by tests to drive the kill-failure arm.
+        /// </summary>
+        /// <remarks>
+        /// The default forwards unchanged to <see cref="Process.Kill()"/> on the calling thread, so an
+        /// unconfigured wrapper behaves exactly as it did before this seam existed. <see cref="Kill(bool)"/>
+        /// keeps its own <see cref="Process.Kill(bool)"/> call, whose failure arm is already covered.
+        /// </remarks>
+        internal Action<Process> ProcessKiller { get; set; } = p => p.Kill();
+
+        /// <summary>
+        /// Gets or sets how <see cref="TryStopGracefullyOrKill"/> and <see cref="Kill(bool)"/> wait for a
+        /// process to exit. Defaults to <see cref="Process.WaitForExit(int)"/>; substituted by tests to drive
+        /// the graceful-exit and post-kill-timeout arms deterministically.
+        /// </summary>
+        /// <remarks>
+        /// The default forwards unchanged to <see cref="Process.WaitForExit(int)"/> with the same timeout, on
+        /// the calling thread, so an unconfigured wrapper behaves exactly as it did before this seam existed.
+        /// The public <see cref="WaitForExit(int)"/> member is deliberately not routed through it.
+        /// </remarks>
+        internal Func<Process, int, bool> ExitWaiter { get; set; } = (p, ms) => p.WaitForExit(ms);
+
         #endregion
 
         /// <summary>
@@ -269,7 +303,7 @@ namespace Servy.Service.ProcessManagement
             {
                 try
                 {
-                    sent = process.CloseMainWindow();
+                    sent = MainWindowCloser(process);
                 }
                 catch (InvalidOperationException ex) when (process.HasExited)
                 {
@@ -285,7 +319,7 @@ namespace Servy.Service.ProcessManagement
                 }
             }
 
-            if (sent.Value && process.WaitForExit(timeoutMs))
+            if (sent.Value && ExitWaiter(process, timeoutMs))
             {
                 return true;
             }
@@ -295,14 +329,14 @@ namespace Servy.Service.ProcessManagement
 
             try
             {
-                process.Kill();
+                ProcessKiller(process);
             }
             catch (Exception ex)
             {
                 _logger?.Warn($"Kill failed for '{process.Format()}': {ex.Message}");
             }
 
-            if (!process.WaitForExit(postKillWaitMs))
+            if (!ExitWaiter(process, postKillWaitMs))
             {
                 _logger?.Warn($"Process '{process.Format()}' killed, but did not exit within {postKillWaitMs / (double)AppConfig.MillisecondsPerSecond}s.");
             }
@@ -469,7 +503,7 @@ namespace Servy.Service.ProcessManagement
                 return false;
             }
 
-            if (!_process.WaitForExit(AppConfig.DefaultPostKillWaitMs))
+            if (!ExitWaiter(_process, AppConfig.DefaultPostKillWaitMs))
             {
                 _logger?.Warn($"Process '{_process.Format()}' killed, but did not exit within {AppConfig.DefaultPostKillWaitMs / (double)AppConfig.MillisecondsPerSecond}s.");
                 return false;
