@@ -116,7 +116,7 @@ namespace Servy.Manager.UnitTests.Views
 
                 // Add a dummy entry and mark HasSearched = true to represent an already-populated, searched view model
                 viewModel.Services.Add(new DependencyService { Name = "ExistingService" });
-                viewModel.SetHasSearched(true); // Or viewModel.HasSearched = true if setter is accessible
+                viewModel.SetHasSearched(true); // HasSearched has a protected setter, so the test double exposes it
 
                 control.DataContext = viewModel;
 
