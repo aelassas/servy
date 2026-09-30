@@ -103,13 +103,20 @@ namespace Servy.Infrastructure.Data
                         currentVersion = 1;
                     }
 
-                    // A file written by a newer Servy is left alone rather than downgraded.
+                    // A file written by a newer Servy is left alone rather than downgraded, and the
+                    // reconciliation pass is skipped with it: it would ADD COLUMN for every name in
+                    // StateSqlConstants.Columns that the newer file does not carry, so an older build
+                    // would put back a column a later version had renamed or dropped. The runtime
+                    // state is rebuilt by the wrapper, so continuing read-only is enough here, where
+                    // SQLiteDbInitializer refuses outright for the configuration database.
                     if (currentVersion > LatestSchemaVersion)
                     {
                         Logger.Warn($"Runtime-state database reports schema version {currentVersion}, which is newer than the {LatestSchemaVersion} this build knows. No migration was applied.");
                     }
-
-                    ReconcileSchema(connection, transaction);
+                    else
+                    {
+                        ReconcileSchema(connection, transaction);
+                    }
 
                     transaction.Commit();
                 }

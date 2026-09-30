@@ -163,13 +163,51 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 SQLiteStateDbInitializer.Initialize(conn);
                 conn.Execute("UPDATE SchemaInfo SET Version = @v WHERE Id = 1;", new { v = SQLiteStateDbInitializer.LatestSchemaVersion + 5 });
+                var before = ReadColumns(conn);
 
                 // Act
                 SQLiteStateDbInitializer.Initialize(conn);
 
                 // Assert
                 Assert.Equal(SQLiteStateDbInitializer.LatestSchemaVersion + 5, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(before, ReadColumns(conn));
             }
+        }
+
+        [Fact]
+        public void Initialize_NewerSchemaOnDisk_DoesNotAddBackAColumnTheFileDropped()
+        {
+            // Arrange - a file written by a newer Servy that no longer carries two of the columns
+            // this build knows about. Reconciling it would ADD COLUMN them back, which is the
+            // downgrade the warning says does not happen.
+            using (var conn = OpenConnection())
+            {
+                conn.Execute($@"
+                    CREATE TABLE {StateSqlConstants.ServiceStateTableName} (
+                        Name TEXT NOT NULL PRIMARY KEY,
+                        Pid INTEGER
+                    );");
+                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY CHECK (Id = 1), Version INTEGER NOT NULL);");
+                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, @v);", new { v = SQLiteStateDbInitializer.LatestSchemaVersion + 5 });
+
+                // Act
+                SQLiteStateDbInitializer.Initialize(conn);
+
+                // Assert
+                var columns = ReadColumns(conn);
+                Assert.Equal(new[] { "Name", "Pid" }, columns);
+                Assert.DoesNotContain("ActiveStdoutPath", columns);
+                Assert.DoesNotContain("ActiveStderrPath", columns);
+            }
+        }
+
+        /// <summary>
+        /// Reads the column names of the runtime-state table, in declaration order.
+        /// </summary>
+        private static List<string> ReadColumns(DbConnection connection)
+        {
+            return connection.Query($"PRAGMA table_info({StateSqlConstants.ServiceStateTableName});")
+                .Select(r => (string)r.name).ToList();
         }
 
         [Fact]
