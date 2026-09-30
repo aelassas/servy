@@ -11,7 +11,9 @@ namespace Servy.Manager.UnitTests.ViewModels
 {
     /// <summary>
     /// Covers the disposal race window in <see cref="SearchableViewModelBase.ExecuteSearchPipelineAsync"/>
-    /// that opens between the atomic search-token swap and the recheck a few statements later.
+    /// that opens between the atomic search-token swap and the recheck a few statements later, and the
+    /// wait-state restore <see cref="SearchableViewModelBase.ClearActiveSearchContext"/> performs when a
+    /// search is disposed after that window has closed.
     /// </summary>
     public class SearchableViewModelBaseTests
     {
