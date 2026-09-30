@@ -1,6 +1,7 @@
 using Servy.Core.Native;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
@@ -46,6 +47,17 @@ namespace Servy.Core.Services
         /// e.g. access denied when the caller is not running elevated.
         /// </exception>
         void EnsureLogOnAsServiceRight(string accountName);
+
+        /// <summary>
+        /// Grants the specified user or service account the discretionary access control list (DACL) permissions 
+        /// required to query status and restart the service via ServiceControl mechanisms without requiring full administration rights.
+        /// </summary>
+        /// <param name="serviceHandle">A valid handle to the target service opened with <c>SERVICE_READ_CONTROL</c> and <c>SERVICE_WRITE_DAC</c> rights.</param>
+        /// <param name="accountName">The account name (e.g. <c>DOMAIN\user</c>, <c>.\user</c>, or machine account) to grant permissions to.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="serviceHandle"/> is null, invalid, or closed.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="accountName"/> is null or empty.</exception>
+        /// <exception cref="Win32Exception">Thrown when querying or setting the service security descriptor fails.</exception>
+        void GrantServiceControlRights(SafeServiceHandle serviceHandle, string accountName);
 
         /// <summary>
         /// Creates a service object and adds it to the specified service control manager database.

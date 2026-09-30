@@ -59,7 +59,7 @@ namespace Servy.Core.Native
         /// Thrown if the account cannot be resolved to a SID, often due to a non-existent account
         /// or an unreachable Domain Controller.
         /// </exception>
-        private static SecurityIdentifier AccountToSidOrThrow(string account)
+        public static SecurityIdentifier AccountToSidOrThrow(string account)
         {
             if (string.IsNullOrWhiteSpace(account))
                 throw new ArgumentException("Account name cannot be empty.", nameof(account));

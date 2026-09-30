@@ -229,7 +229,8 @@ namespace Servy.Core.Security
             // The same account can be written two ways (.\user and MACHINE\user), so the SIDs decide
             foreach (var other in remainingAccounts ?? (IReadOnlyCollection<string>)Array.Empty<string>())
             {
-                if (string.Equals(other, account, StringComparison.OrdinalIgnoreCase) || targetSid.Equals(ResolveAccount(other)))
+                var otherSid = ResolveAccount(other);
+                if (string.Equals(other, account, StringComparison.OrdinalIgnoreCase) || (otherSid != null && targetSid.Equals(otherSid)))
                     return result.Complete(ExePermissionsHardeningStatus.InUse, $"another service still runs under it (as '{other}')");
             }
 
@@ -532,7 +533,7 @@ namespace Servy.Core.Security
                 // The folder itself: list it and create files in it, but never delete or rename it
                 acl.AddAccessRule(new FileSystemAccessRule(
                     targetSid,
-                    FileSystemRights.ReadAndExecute | FileSystemRights.CreateFiles,
+                    FileSystemRights.Read | FileSystemRights.CreateFiles,
                     InheritanceFlags.None,
                     PropagationFlags.None,
                     AccessControlType.Allow));
@@ -540,7 +541,7 @@ namespace Servy.Core.Security
                 // The files in it: read, write and delete (log rotation, atomic replacement, SQLite side files)
                 acl.AddAccessRule(new FileSystemAccessRule(
                     targetSid,
-                    FileSystemRights.Modify,
+                    FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete,
                     InheritanceFlags.ObjectInherit,
                     PropagationFlags.InheritOnly,
                     AccessControlType.Allow));
