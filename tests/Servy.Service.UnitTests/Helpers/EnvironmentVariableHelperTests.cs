@@ -789,8 +789,9 @@ namespace Servy.Service.UnitTests.Helpers
             var vars = new List<EnvironmentVariable>
             {
                 new EnvironmentVariable { Name = "LARGE_BLOCK", Value = largeChunk },
-                // This composition remains small (under maxLen) during initialization,
-                // avoiding the inline guard and forcing the outer loop to manage the truncation point.
+                // This composition is small (under maxLen) before expansion. Substituting %LARGE_BLOCK%
+                // makes it exactly maxLen + 1, so ExpandWithDictionary's inline guard truncates it, with
+                // the token ending exactly on the cut line.
                 new EnvironmentVariable { Name = "OVERFLOW_VAR", Value = "%LARGE_BLOCK%" + fineTuningPad + token + "X" }
             };
 
@@ -800,8 +801,8 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             string resultValue = expanded["OVERFLOW_VAR"];
 
-            // The outer look-behind filter should acknowledge the token is completely intact,
-            // ignore it, and let Step 5 safely collapse it to '%'.
+            // TrimToSafeBoundary should find no token straddling the cut, drop only the trailing "X",
+            // and let Step 5 safely collapse the intact token to '%'.
             Assert.True(resultValue.EndsWith("%"), $"Expected string to end with collapsed escape character '%' but got trailing value: {resultValue.Substring(resultValue.Length - 5)}");
             Assert.DoesNotContain(EnvironmentVariableHelper.PercentEscapeToken, resultValue);
             Assert.Equal(maxLen - token.Length + 1, resultValue.Length);
