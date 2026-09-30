@@ -96,23 +96,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void GetChildren_InvalidStartTime_ThrowsArgumentException()
         {
-            // Arrange
-            var root = SpawnProcessTree(1);
-            List<Process> realChildren = new List<Process>();
-
-            try
-            {
-                // Control: children are visible with the genuine start time
-                realChildren = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
-                Assert.NotEmpty(realChildren);
-
-                // Act & Assert: DateTime.MinValue must suppress the same children
-                Assert.Throws<ArgumentException>(() => ProcessExtensions.GetChildren(root.Id, DateTime.MinValue));
-            }
-            finally
-            {
-                foreach (var child in realChildren) child.Dispose();
-            }
+            // Arrange, Act & Assert
+            // The guard runs before any snapshot, so the throw depends only on the argument:
+            // a positive PID with no process behind it reaches it without spawning a tree.
+            var ex = Assert.Throws<ArgumentException>(() => ProcessExtensions.GetChildren(111, DateTime.MinValue));
+            Assert.Equal("parentStartTime", ex.ParamName);
         }
 
         [Theory]
@@ -128,29 +116,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void GetAllDescendants_InvalidStartDate_ThrowsArgumentException()
         {
             // Arrange, Act & Assert
-            Assert.Throws<ArgumentException>(() => ProcessExtensions.GetAllDescendants(111, DateTime.MinValue));
-        }
-
-        [Fact]
-        public void GetAllDescendants_InvalidStartTime_ThrowsArgumentException()
-        {
-            // Arrange
-            var root = SpawnProcessTree(1);
-            List<Process> descendants = new List<Process>();
-
-            try
-            {
-                // Control: descendants are visible with the genuine start time
-                descendants = WaitForProcessName(root, "powershell", ProcessExtensions.GetAllDescendants);
-                Assert.NotEmpty(descendants);
-
-                // Act & Assert: DateTime.MinValue must suppress the same descendants
-                Assert.Throws<ArgumentException>(() => ProcessExtensions.GetAllDescendants(root.Id, DateTime.MinValue));
-            }
-            finally
-            {
-                foreach (var d in descendants) d.Dispose();
-            }
+            var ex = Assert.Throws<ArgumentException>(() => ProcessExtensions.GetAllDescendants(111, DateTime.MinValue));
+            Assert.Equal("parentStartTime", ex.ParamName);
         }
 
         [Fact]
