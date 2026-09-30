@@ -46,58 +46,35 @@ namespace Servy.Core.Services
             {
                 var sid = LogonAsServiceGrant.AccountToSidOrThrow(accountName);
 
-                // 1. Get required buffer size
-                uint bytesNeeded = 0;
-                QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, null, 0, out bytesNeeded);
-
-                if (bytesNeeded == 0)
+                bool updated = EditServiceDacl(serviceHandle, acl =>
                 {
-                    int err = Marshal.GetLastWin32Error();
-                    Logger.Warn($"QueryServiceObjectSecurity buffer check returned 0 bytes needed. Win32 error: {err}");
-                    return;
-                }
+                    if (acl == null)
+                    {
+                        acl = new RawAcl(GenericAcl.AclRevision, 1);
+                    }
 
-                byte[] psd = new byte[bytesNeeded];
-                if (!QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, psd, bytesNeeded, out _))
+                    // 3. Remove this SID's existing Allow ACEs if present (prevents duplicate ACE bloat on updates).
+                    //    A Deny ACE an administrator added is left in place: only the grant written here is replaced.
+                    RemoveAllowAces(acl, sid);
+
+                    // 4. Insert new explicit Allow ACE
+                    acl.InsertAce(
+                        acl.Count,
+                        new CommonAce(
+                            AceFlags.None,
+                            AceQualifier.AccessAllowed,
+                            (int)SERVICE_CONTROL_AND_STATUS_ACCESS,
+                            sid,
+                            false,
+                            null));
+
+                    return acl;
+                });
+
+                if (updated)
                 {
-                    int err = Marshal.GetLastWin32Error();
-                    throw new Win32Exception(err, $"Failed to query service security descriptor. Win32 error: {err}");
+                    Logger.Info($"Successfully granted service control & status rights to account '{accountName}'.");
                 }
-
-                // 2. Parse Self-Relative Security Descriptor
-                var rawSd = new RawSecurityDescriptor(psd, 0);
-
-                if (rawSd.DiscretionaryAcl == null)
-                {
-                    rawSd.DiscretionaryAcl = new RawAcl(GenericAcl.AclRevision, 1);
-                }
-
-                // 3. Remove this SID's existing Allow ACEs if present (prevents duplicate ACE bloat on updates).
-                //    A Deny ACE an administrator added is left in place: only the grant written here is replaced.
-                RemoveAllowAces(rawSd.DiscretionaryAcl, sid);
-
-                // 4. Insert new explicit Allow ACE
-                rawSd.DiscretionaryAcl.InsertAce(
-                    rawSd.DiscretionaryAcl.Count,
-                    new CommonAce(
-                        AceFlags.None,
-                        AceQualifier.AccessAllowed,
-                        (int)SERVICE_CONTROL_AND_STATUS_ACCESS,
-                        sid,
-                        false,
-                        null));
-
-                // 5. Convert back to binary self-relative form
-                byte[] updatedPsd = new byte[rawSd.BinaryLength];
-                rawSd.GetBinaryForm(updatedPsd, 0);
-
-                if (!SetServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, updatedPsd))
-                {
-                    int err = Marshal.GetLastWin32Error();
-                    throw new Win32Exception(err, $"Failed to set service security descriptor. Win32 error: {err}");
-                }
-
-                Logger.Info($"Successfully granted service control & status rights to account '{accountName}'.");
             }
             catch (Exception ex)
             {
@@ -123,54 +100,85 @@ namespace Servy.Core.Services
             {
                 var sid = LogonAsServiceGrant.AccountToSidOrThrow(accountName);
 
-                // 1. Get required buffer size
-                uint bytesNeeded = 0;
-                QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, null, 0, out bytesNeeded);
-
-                if (bytesNeeded == 0)
+                bool updated = EditServiceDacl(serviceHandle, acl =>
                 {
-                    int err = Marshal.GetLastWin32Error();
-                    Logger.Warn($"QueryServiceObjectSecurity buffer check returned 0 bytes needed. Win32 error: {err}");
-                    return;
-                }
+                    if (acl == null)
+                    {
+                        return null;
+                    }
 
-                byte[] psd = new byte[bytesNeeded];
-                if (!QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, psd, bytesNeeded, out _))
+                    // 3. Remove the account's Allow ACEs only, so an administrator's Deny ACE survives the revocation
+                    if (RemoveAllowAces(acl, sid) == 0)
+                    {
+                        return null;
+                    }
+
+                    return acl;
+                });
+
+                if (updated)
                 {
-                    int err = Marshal.GetLastWin32Error();
-                    throw new Win32Exception(err, $"Failed to query service security descriptor. Win32 error: {err}");
+                    Logger.Info($"Successfully revoked service control & status rights from account '{accountName}'.");
                 }
-
-                // 2. Parse Self-Relative Security Descriptor
-                var rawSd = new RawSecurityDescriptor(psd, 0);
-
-                if (rawSd.DiscretionaryAcl == null)
-                {
-                    return;
-                }
-
-                // 3. Remove the account's Allow ACEs only, so an administrator's Deny ACE survives the revocation
-                if (RemoveAllowAces(rawSd.DiscretionaryAcl, sid) == 0)
-                {
-                    return;
-                }
-
-                // 4. Convert back to binary self-relative form
-                byte[] updatedPsd = new byte[rawSd.BinaryLength];
-                rawSd.GetBinaryForm(updatedPsd, 0);
-
-                if (!SetServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, updatedPsd))
-                {
-                    int err = Marshal.GetLastWin32Error();
-                    throw new Win32Exception(err, $"Failed to set service security descriptor. Win32 error: {err}");
-                }
-
-                Logger.Info($"Successfully revoked service control & status rights from account '{accountName}'.");
             }
             catch (Exception ex)
             {
                 Logger.Error($"CRITICAL: Failed to revoke service control rights for account '{accountName}'.", ex);
             }
+        }
+
+        /// <summary>
+        /// Reads the service's security descriptor, applies <paramref name="edit"/> to its discretionary access control list (DACL),
+        /// and writes the updated descriptor back to the Service Control Manager when <paramref name="edit"/> returns a non-null ACL.
+        /// </summary>
+        /// <param name="serviceHandle">A valid handle to the target service opened with <c>READ_CONTROL</c> and <c>WRITE_DAC</c> rights.</param>
+        /// <param name="edit">A delegate that modifies the DACL in place (or produces a new one) and returns the ACL to write, or <see langword="null"/> to cancel the write operation.</param>
+        /// <returns><see langword="true"/> if an updated security descriptor was written to the service; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="Win32Exception">Thrown when querying or setting the service security descriptor fails.</exception>
+        [ExcludeFromCodeCoverage]
+        private static bool EditServiceDacl(SafeServiceHandle serviceHandle, Func<RawAcl, RawAcl> edit)
+        {
+            // 1. Get required buffer size
+            uint bytesNeeded = 0;
+            QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, null, 0, out bytesNeeded);
+
+            if (bytesNeeded == 0)
+            {
+                int err = Marshal.GetLastWin32Error();
+                Logger.Warn($"QueryServiceObjectSecurity buffer check returned 0 bytes needed. Win32 error: {err}");
+                return false;
+            }
+
+            byte[] psd = new byte[bytesNeeded];
+            if (!QueryServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, psd, bytesNeeded, out _))
+            {
+                int err = Marshal.GetLastWin32Error();
+                throw new Win32Exception(err, $"Failed to query service security descriptor. Win32 error: {err}");
+            }
+
+            // 2. Parse Self-Relative Security Descriptor
+            var rawSd = new RawSecurityDescriptor(psd, 0);
+
+            // 3. Perform caller-specified DACL modification
+            var updatedAcl = edit(rawSd.DiscretionaryAcl);
+            if (updatedAcl == null)
+            {
+                return false;
+            }
+
+            rawSd.DiscretionaryAcl = updatedAcl;
+
+            // 4. Convert back to binary self-relative form and apply
+            byte[] updatedPsd = new byte[rawSd.BinaryLength];
+            rawSd.GetBinaryForm(updatedPsd, 0);
+
+            if (!SetServiceObjectSecurity(serviceHandle, DACL_SECURITY_INFORMATION, updatedPsd))
+            {
+                int err = Marshal.GetLastWin32Error();
+                throw new Win32Exception(err, $"Failed to set service security descriptor. Win32 error: {err}");
+            }
+
+            return true;
         }
 
         /// <summary>
