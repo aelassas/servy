@@ -12,7 +12,7 @@
 # standing, so that what gets measured is Servy's own teardown.
 #
 # Install with:
-# .\servy-cli.exe install --name "ServyCtrlCTree" --path "C:\path\to\python.exe" --params "C:\path\to\tests\ctrlc_child.py" --env "PYTHON_EXE=C:\path\to\python.exe"
+# .\servy-cli.exe install --name "ServyCtrlCTree" --path "C:\path\to\python.exe" --params "C:\path\to\tests\ctrlc_child.py" --envVars "PYTHON_EXE=C:\path\to\python.exe"
 
 import time
 import sys

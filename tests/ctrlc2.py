@@ -9,7 +9,7 @@
 # standing, so that what gets measured is Servy's own teardown.
 #
 # Install with:
-# .\servy-cli.exe install --name "ServyCtrlC2" --path "C:\path\to\python.exe" --params "C:\path\to\tests\ctrlc2.py" --env "PYTHON_EXE=C:\path\to\python.exe"
+# .\servy-cli.exe install --name "ServyCtrlC2" --path "C:\path\to\python.exe" --params "C:\path\to\tests\ctrlc2.py" --envVars "PYTHON_EXE=C:\path\to\python.exe"
 #
 # Ladder: ctrlc_child.py spawns this script and notepad.exe; this script spawns ctrlc.py, the leaf.
 
