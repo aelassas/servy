@@ -256,21 +256,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                                      .Returns(Task.CompletedTask);
 
                     // Act
-                    // Use TestReflection to invoke OnTickAsync, which now supports inheritance hierarchy traversal
-                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
-
-                    // 2. Keep the message pump processing while waiting for Task.Run to finish
-                    var pumpTimeout = TimeSpan.FromSeconds(10);
-                    var sw = Stopwatch.StartNew();
-                    while (!task.IsCompleted)
-                    {
-                        if (sw.Elapsed > pumpTimeout)
-                            throw new TimeoutException($"OnTickAsync did not complete within {pumpTimeout.TotalSeconds:0}s.");
-                        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
-                        Thread.Sleep(1);
-                    }
-
-                    task.GetAwaiter().GetResult();
+                    PumpUntilCompleted((Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!);
 
                     // Assert
                     Assert.Equal("2050", vm.Pid);
