@@ -281,6 +281,67 @@ namespace Servy.Manager.UnitTests.ViewModels
             _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "RowSvc" && s.Pid == 123), It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        /// <summary>
+        /// Reads one row command's predicate, selected by the command's property name, so the theory
+        /// below can vary which command it exercises without reflection.
+        /// </summary>
+        /// <param name="vm">The row view model whose command predicate is read.</param>
+        /// <param name="commandName">
+        /// The name of the command property to read, as <c>nameof</c> spells it.
+        /// </param>
+        /// <returns><c>true</c> when the selected command can execute; otherwise <c>false</c>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// <paramref name="commandName"/> is not one of the state-gated row commands.
+        /// </exception>
+        private static bool CanExecuteByName(ServiceRowViewModel vm, string commandName)
+        {
+            if (commandName == nameof(ServiceRowViewModel.StartCommand)) return vm.StartCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.StopCommand)) return vm.StopCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.RestartCommand)) return vm.RestartCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.UninstallCommand)) return vm.UninstallCommand.CanExecute(null);
+
+            throw new ArgumentOutOfRangeException(nameof(commandName), commandName, "Unknown state-gated row command.");
+        }
+
+        [Theory]
+        [InlineData(nameof(ServiceRowViewModel.StartCommand), false, ServiceStatus.Stopped)]
+        [InlineData(nameof(ServiceRowViewModel.StopCommand), false, ServiceStatus.Running)]
+        [InlineData(nameof(ServiceRowViewModel.RestartCommand), false, ServiceStatus.Running)]
+        [InlineData(nameof(ServiceRowViewModel.RestartCommand), true, ServiceStatus.Stopped)]
+        [InlineData(nameof(ServiceRowViewModel.UninstallCommand), false, ServiceStatus.Stopped)]
+        public void StateGatedCommands_CanExecute_IsFalseWhenTheServiceCannotTakeTheAction(string commandName, bool isInstalled, ServiceStatus status)
+        {
+            // Arrange - every other term of the predicate holds, so only the varied one can disable it
+            var vm = new ServiceRowViewModel(
+                new Service { Name = "RowSvc", Pid = 123, IsInstalled = isInstalled, Status = status },
+                _serviceCommandsMock.Object,
+                _cursorServiceMock.Object
+            );
+
+            // Act
+            var canExecute = CanExecuteByName(vm, commandName);
+
+            // Assert
+            Assert.False(canExecute);
+        }
+
+        [Fact]
+        public void CopyPidCommand_CanExecute_IsFalseWithoutAPid()
+        {
+            // Arrange
+            var vm = new ServiceRowViewModel(
+                new Service { Name = "RowSvc", Pid = null },
+                _serviceCommandsMock.Object,
+                _cursorServiceMock.Object
+            );
+
+            // Act
+            var canExecute = vm.CopyPidCommand.CanExecute(null);
+
+            // Assert
+            Assert.False(canExecute);
+        }
+
         #endregion
 
         #region Properties & Model Propagation Tests
@@ -416,6 +477,78 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.StartCommand.CanExecuteChanged -= handler;
                     vm.StopCommand.CanExecuteChanged -= handler;
                     vm.RestartCommand.CanExecuteChanged -= handler;
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task Service_PropertyChanged_IsInstalledUpdated_RaisesCanExecuteChangedOnCommands()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var service = new Service { Name = "RowSvc", IsInstalled = false, Status = ServiceStatus.Stopped };
+                var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+                var wasRaised = false;
+                EventHandler handler = (sender, args) => wasRaised = true;
+
+                vm.StartCommand.CanExecuteChanged += handler;
+
+                try
+                {
+                    // Assert state transition before mutation
+                    Assert.False(vm.StartCommand.CanExecute(null));
+
+                    // Act - an install is the IsInstalled term of the requery trigger
+                    service.IsInstalled = true;
+
+                    // Pump the STA dispatcher frames so CommandManager.RequerySuggested fires
+                    await Dispatcher.Yield(DispatcherPriority.Background);
+
+                    // Assert
+                    Assert.True(wasRaised, "CanExecuteChanged was not raised when a relevant property (IsInstalled) was updated.");
+                    Assert.True(vm.StartCommand.CanExecute(null));
+                }
+                finally
+                {
+                    vm.StartCommand.CanExecuteChanged -= handler;
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task Service_PropertyChanged_PidUpdated_RaisesCanExecuteChangedOnCommands()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var service = new Service { Name = "RowSvc", IsInstalled = true, Status = ServiceStatus.Running, Pid = 123 };
+                var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+                var wasRaised = false;
+                EventHandler handler = (sender, args) => wasRaised = true;
+
+                vm.CopyPidCommand.CanExecuteChanged += handler;
+
+                try
+                {
+                    // Assert state transition before mutation
+                    Assert.True(vm.CopyPidCommand.CanExecute(null));
+
+                    // Act - losing the PID is the Pid term of the requery trigger
+                    service.Pid = null;
+
+                    // Pump the STA dispatcher frames so CommandManager.RequerySuggested fires
+                    await Dispatcher.Yield(DispatcherPriority.Background);
+
+                    // Assert
+                    Assert.True(wasRaised, "CanExecuteChanged was not raised when a relevant property (Pid) was updated.");
+                    Assert.False(vm.CopyPidCommand.CanExecute(null));
+                }
+                finally
+                {
+                    vm.CopyPidCommand.CanExecuteChanged -= handler;
                 }
             }, createApp: true);
         }
